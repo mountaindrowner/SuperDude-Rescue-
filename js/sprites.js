@@ -406,6 +406,33 @@ window.SDD = window.SDD || {};
     px(g, 0, 6, 16, 1, C.brickD);
     px(g, 4, 3, 3, 1, C.brickD); px(g, 10, 3, 3, 1, C.brickD);
   }
+  function paintVine(g) {
+    px(g, 7, 0, 2, 16, '#3a7a32');               // stem
+    px(g, 6, 0, 1, 16, '#2c5524');
+    px(g, 9, 0, 1, 16, '#5fa14a');
+    // leaves
+    px(g, 3, 2, 3, 2, '#4c8d3d'); px(g, 4, 1, 2, 1, '#74b65a');
+    px(g, 10, 8, 3, 2, '#4c8d3d'); px(g, 11, 7, 2, 1, '#74b65a');
+    px(g, 2, 11, 3, 2, '#3a7a32'); px(g, 3, 12, 1, 1, '#74b65a');
+    px(g, 11, 13, 3, 2, '#4c8d3d'); px(g, 12, 14, 2, 1, '#74b65a');
+  }
+  function paintWater(g) {
+    px(g, 0, 0, 16, 16, '#2a6cb8');
+    px(g, 0, 0, 16, 1, '#3a86d6');
+    px(g, 0, 8, 16, 1, '#3a7ac6');
+    px(g, 2, 4, 3, 1, '#5fa0e6'); px(g, 9, 11, 3, 1, '#5fa0e6');
+    px(g, 11, 3, 2, 1, '#5fa0e6'); px(g, 3, 13, 2, 1, '#5fa0e6');
+  }
+  function paintWaterTop(g) {
+    px(g, 0, 0, 16, 16, '#2a6cb8');
+    // wavy surface stripe at top
+    px(g, 0, 0, 16, 3, '#74c2ff');
+    px(g, 0, 3, 16, 1, '#3a86d6');
+    px(g, 2, 1, 3, 1, '#ffffff'); px(g, 8, 0, 3, 1, '#ffffff'); px(g, 13, 1, 2, 1, '#ffffff');
+    px(g, 0, 0, 1, 4, '#3a7ac6'); px(g, 15, 0, 1, 4, '#3a7ac6');
+    // belly shimmer
+    px(g, 4, 9, 3, 1, '#5fa0e6'); px(g, 11, 12, 3, 1, '#5fa0e6');
+  }
   function paintQ(g, kind) {
     var used = kind === 'used';
     var a = used ? C.qC : C.qA, b = used ? C.qCd : C.qB, lt = used ? '#c3ab84' : C.qL;
@@ -542,6 +569,9 @@ window.SDD = window.SDD || {};
     sprites['tile_dirt'] = spritePlain(16, 16, paintDirt);
     sprites['tile_brick'] = spritePlain(16, 16, paintBrick);
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
+    sprites['tile_vine'] = spritePlain(16, 16, paintVine);
+    sprites['tile_water'] = spritePlain(16, 16, paintWater);
+    sprites['tile_water_top'] = spritePlain(16, 16, paintWaterTop);
     sprites['tile_qcore'] = spritePlain(16, 16, function (g) { paintQ(g, 'core'); });
     sprites['tile_qgrow'] = spritePlain(16, 16, function (g) { paintQ(g, 'grow'); });
     sprites['tile_qblast'] = spritePlain(16, 16, function (g) { paintQ(g, 'blast'); });

@@ -48,6 +48,7 @@ window.SDD = window.SDD || {};
     this.invuln = 0;
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
+    this.climbing = false; this.inWater = false;
     this.dead = false; this.deadT = 0; this.deadDone = false; this.pitDeath = false;
     this.win = false; this.winT = 0;
   }
@@ -118,6 +119,52 @@ window.SDD = window.SDD || {};
     }
 
     var In = SDD.input;
+    var T = C.TILE;
+
+    // ----- vine climb detection (Day 3+) -----
+    var atVine = false;
+    var midCol = Math.floor((this.x + this.w / 2) / T);
+    var topRow = Math.floor((this.y + 2) / T);
+    var botRow = Math.floor((this.y + this.h - 2) / T);
+    for (var vy_ = topRow; vy_ <= botRow; vy_++) {
+      if (level.map.get(midCol, vy_) === 'V') { atVine = true; break; }
+    }
+    if (atVine && (In.held('up') || In.held('down') || this.climbing)) this.climbing = true;
+    else this.climbing = false;
+
+    if (this.climbing) {
+      this.vx = 0; this.vy = 0;
+      if (In.held('up')) this.vy = -1.3;
+      else if (In.held('down')) this.vy = 1.4;
+      if (In.held('left')) { this.vx = -0.7; this.facing = -1; }
+      else if (In.held('right')) { this.vx = 0.7; this.facing = 1; }
+      if (In.pressed('jump')) {
+        this.climbing = false;
+        this.vy = C.JUMP_SMALL * 0.7;
+        SDD.audio.sfx('jump');
+      }
+      if (this.blastCD > 0) this.blastCD--;
+      if (this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
+        var bx_ = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
+        var by_ = this.y + (this.big ? 9 : 4);
+        level.spawnBlast(bx_, by_, this.facing);
+        this.blastCD = 20; this.blastAnim = 11;
+        SDD.audio.sfx('blast');
+      }
+      this.onHeadBump = function () {};
+      this.hitWall = 0;
+      mc(this, level.map);
+      this.animT++;
+      this.frame = (this.blastAnim > 0) ? 'blast'
+        : (Math.abs(this.vy) > 0.1 || Math.abs(this.vx) > 0.1)
+          ? ((Math.floor(this.animT / 8) % 2) ? 'walk1' : 'walk2')
+          : 'idle';
+      if (this.blastAnim > 0) this.blastAnim--;
+      if (this.invuln > 0) this.invuln--;
+      if (this.y > level.map.pxH + 28) this.die(true);
+      return;
+    }
+
     var maxV = this.big ? C.MOVE_MAX_BIG : C.MOVE_MAX_SMALL;
     var left = In.held('left'), right = In.held('right');
 
