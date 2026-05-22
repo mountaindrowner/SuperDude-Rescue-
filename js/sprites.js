@@ -406,6 +406,39 @@ window.SDD = window.SDD || {};
     px(g, 0, 6, 16, 1, C.brickD);
     px(g, 4, 3, 3, 1, C.brickD); px(g, 10, 3, 3, 1, C.brickD);
   }
+  function paintNPC(g) {
+    // long brown hair (no cap)
+    px(g, 5, 0, 10, 4, '#6e4a26');
+    px(g, 5, 0, 10, 1, '#9a7340');
+    px(g, 4, 4, 1, 5, '#6e4a26');
+    px(g, 15, 4, 1, 5, '#6e4a26');
+    // face
+    px(g, 5, 4, 10, 6, C.skin);
+    px(g, 5, 4, 10, 1, C.skinL);
+    px(g, 5, 5, 1, 4, C.skinD);
+    // simple eyes
+    px(g, 7, 7, 1, 1, C.out); px(g, 12, 7, 1, 1, C.out);
+    // beard
+    px(g, 5, 9, 10, 2, '#6e4a26');
+    px(g, 8, 9, 4, 1, C.skinD);
+    // neck
+    px(g, 9, 11, 4, 1, C.skinD);
+    // tunic
+    px(g, 4, 12, 12, 14, '#c9a374');
+    px(g, 4, 12, 2, 14, '#dbb98e');
+    px(g, 14, 12, 2, 14, '#a07f4f');
+    px(g, 9, 14, 2, 2, '#7a8d3d');   // little leaf accent
+    // belt
+    px(g, 4, 20, 12, 2, '#7a4f24');
+    // arms
+    px(g, 2, 13, 2, 9, C.skin);
+    px(g, 16, 13, 2, 9, C.skin);
+    px(g, 2, 22, 2, 2, C.skin); px(g, 16, 22, 2, 2, C.skin);
+    // legs (bare)
+    px(g, 6, 26, 3, 4, C.skin); px(g, 11, 26, 3, 4, C.skin);
+    // sandals
+    px(g, 5, 30, 5, 1, '#6e4a26'); px(g, 10, 30, 5, 1, '#6e4a26');
+  }
   function paintVine(g) {
     px(g, 7, 0, 2, 16, '#3a7a32');               // stem
     px(g, 6, 0, 1, 16, '#2c5524');
@@ -570,6 +603,7 @@ window.SDD = window.SDD || {};
     sprites['tile_brick'] = spritePlain(16, 16, paintBrick);
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
     sprites['tile_vine'] = spritePlain(16, 16, paintVine);
+    sprites['npc_adam'] = spriteO(20, 31, paintNPC);
     sprites['tile_water'] = spritePlain(16, 16, paintWater);
     sprites['tile_water_top'] = spritePlain(16, 16, paintWaterTop);
     sprites['tile_qcore'] = spritePlain(16, 16, function (g) { paintQ(g, 'core'); });

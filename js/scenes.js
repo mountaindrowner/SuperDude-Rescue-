@@ -506,6 +506,10 @@ window.SDD = window.SDD || {};
           e = new SDD.ent.TimePart(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h; e.baseY = e.y;
           this.items.push(e);
+        } else if (s.type === 'npc') {
+          e = new SDD.ent.NPC(0, 0, s.kind || 'adam');
+          e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
+          this.items.push(e);
         }
       }
       for (var m = 0; m < L.movers.length; m++) {
@@ -621,6 +625,13 @@ window.SDD = window.SDD || {};
           }
         } else if (e instanceof Ent.TimePart) {
           if (E.overlap(pl, e) && !pl.dead) this.completeLevel();
+        } else if (e instanceof Ent.NPC) {
+          if (E.overlap(pl, e) && !pl.dead && !e.gave) {
+            e.gave = true; e.bubbleT = 140;
+            this.cores += 3; this.score += 150;
+            A.sfx('core');
+            this.burst(e.x + e.w / 2, e.y + 4, '#9bf0ff', 6);
+          }
         }
       }
       // player blasts vs enemies and orbs

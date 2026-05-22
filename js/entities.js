@@ -461,9 +461,34 @@ window.SDD = window.SDD || {};
     drawBC(ctx, 'timepart', this, cam);
   };
 
+  // ===================== NPC (Day 6 Stage 2: Mankind) =====================
+  function NPC(x, y, kind) {
+    this.x = x; this.y = y; this.w = 12; this.h = 26;
+    this.kind = kind || 'adam';
+    this.gave = false; this.bubbleT = 0; this.t = 0;
+    this.remove = false;
+  }
+  NPC.prototype.update = function () {
+    this.t++;
+    if (this.bubbleT > 0) this.bubbleT--;
+  };
+  NPC.prototype.draw = function (ctx, cam) {
+    softShadow(ctx, this, cam);
+    drawBC(ctx, 'npc_' + this.kind, this, cam);
+    if (this.bubbleT > 0) {
+      var bx = Math.round(this.x + this.w / 2 - cam.x);
+      var by = Math.round(this.y - cam.y - 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillRect(bx - 22, by - 10, 44, 10);
+      ctx.strokeStyle = '#1a1a2a'; ctx.lineWidth = 1;
+      ctx.strokeRect(bx - 22 + 0.5, by - 10 + 0.5, 43, 9);
+      SDD.sprites.text(ctx, 'BLESSINGS!', bx, by - 8, '#1a1a2a', 1, 'center');
+    }
+  };
+
   SDD.ent = {
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
-    ItemDrop: ItemDrop, TimePart: TimePart
+    ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC
   };
 })();
