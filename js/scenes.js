@@ -470,6 +470,8 @@ window.SDD = window.SDD || {};
       var L = SDD.levels[this.day + '-' + this.stage] || SDD.level1, T = C.TILE;
       var grid = L.tiles.map(function (r) { return r.slice(); });
       this.map = new E.TileMap(grid);
+      this.gravityScale = L.gravityScale || 1;
+      this.skyTheme = L.skyTheme || null;
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
       this.cores = 0; this.score = 0; this.timeSteps = 0;

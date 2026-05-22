@@ -109,9 +109,10 @@ window.SDD = window.SDD || {};
 
   Player.prototype.update = function (level) {
     if (this.dead) { this.updateDead(); return; }
+    var gs = level.gravityScale || 1;
     if (this.win) {
       this.winT++;
-      this.vy += C.GRAVITY;
+      this.vy += C.GRAVITY * gs;
       this.vx *= 0.8;
       mc(this, level.map);
       this.frame = (this.winT % 40 < 20) ? 'jump' : 'idle';
@@ -179,18 +180,36 @@ window.SDD = window.SDD || {};
       else if (this.vx < 0) { this.vx += C.FRICTION; if (this.vx > 0) this.vx = 0; }
     }
 
-    this.vy += C.GRAVITY;
-    if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
-
-    if (this.onGround) this.coyote = C.COYOTE; else if (this.coyote > 0) this.coyote--;
-    if (In.pressed('jump')) this.jumpBuf = C.JUMP_BUFFER; else if (this.jumpBuf > 0) this.jumpBuf--;
-    if (this.jumpBuf > 0 && this.coyote > 0) {
-      this.vy = this.big ? C.JUMP_BIG : C.JUMP_SMALL;
-      this.jumpBuf = 0; this.coyote = 0;
-      SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
+    // water detection (Day 5+): center-tile lookup
+    this.inWater = false;
+    {
+      var wcx = Math.floor((this.x + this.w / 2) / T);
+      var wcy = Math.floor((this.y + this.h / 2) / T);
+      var wt = level.map.get(wcx, wcy);
+      if (wt === 'W' || wt === '~') this.inWater = true;
     }
-    // variable jump height: releasing A caps upward speed
-    if (!In.held('jump') && this.vy < -2.6) this.vy = -2.6;
+
+    if (this.inWater) {
+      // swim physics: heavy drag, mild gravity, paddle on jump press
+      this.vy *= 0.92; this.vx *= 0.92;
+      this.vy += C.GRAVITY * 0.18 * gs;
+      if (this.vy > 2.2) this.vy = 2.2;
+      if (In.pressed('jump')) { this.vy = -2.7; SDD.audio.sfx('jump'); }
+      this.coyote = 0; this.jumpBuf = 0;
+    } else {
+      this.vy += C.GRAVITY * gs;
+      if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+
+      if (this.onGround) this.coyote = C.COYOTE; else if (this.coyote > 0) this.coyote--;
+      if (In.pressed('jump')) this.jumpBuf = C.JUMP_BUFFER; else if (this.jumpBuf > 0) this.jumpBuf--;
+      if (this.jumpBuf > 0 && this.coyote > 0) {
+        this.vy = this.big ? C.JUMP_BIG : C.JUMP_SMALL;
+        this.jumpBuf = 0; this.coyote = 0;
+        SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
+      }
+      // variable jump height: releasing A caps upward speed
+      if (!In.held('jump') && this.vy < -2.6) this.vy = -2.6;
+    }
 
     // blast
     if (this.blastCD > 0) this.blastCD--;
