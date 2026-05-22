@@ -1,0 +1,379 @@
+// entities.js - the player, enemies, items, projectiles, moving platforms.
+window.SDD = window.SDD || {};
+
+(function () {
+  var SDD = window.SDD;
+  var C = SDD.C;
+  var mc = SDD.engine.moveAndCollide;
+  var overlap = SDD.engine.overlap;
+  var clamp = SDD.engine.clamp;
+
+  function spr(name) { return SDD.sprites.get(name); }
+  function drawBC(ctx, name, e, cam) {
+    var s = spr(name); if (!s) return;
+    var dx = Math.round(e.x - cam.x + e.w / 2 - s.width / 2);
+    var dy = Math.round(e.y - cam.y + e.h - s.height);
+    ctx.drawImage(s, dx, dy);
+  }
+
+  // ===================== PLAYER =====================
+  function Player(x, y) {
+    this.x = x; this.y = y; this.w = 10; this.h = 14;
+    this.vx = 0; this.vy = 0;
+    this.facing = 1;
+    this.big = false; this.hasBlast = false;
+    this.onGround = false; this.coyote = 0; this.jumpBuf = 0;
+    this.invuln = 0;
+    this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
+    this.ridePlat = null;
+    this.dead = false; this.deadT = 0; this.deadDone = false; this.pitDeath = false;
+    this.win = false; this.winT = 0;
+  }
+
+  Player.prototype.grow = function () {
+    if (this.big) return;
+    this.big = true;
+    this.y -= 12; this.h = 26; this.w = 12; this.x -= 1;
+    SDD.audio.sfx('grow');
+  };
+  Player.prototype.giveBlast = function () {
+    this.hasBlast = true;
+    SDD.audio.sfx('power');
+  };
+  Player.prototype.shrink = function () {
+    if (!this.big) return;
+    this.big = false;
+    this.y += 12; this.h = 14; this.w = 10; this.x += 1;
+  };
+
+  // returns true if the hit "lands" (used to suppress repeated hits)
+  Player.prototype.hurt = function () {
+    if (this.invuln > 0 || this.dead || this.win) return false;
+    if (this.big) {
+      this.shrink();
+      this.invuln = C.INVULN_STEPS;
+      SDD.audio.sfx('hit');
+      return true;
+    }
+    this.die(false);
+    return true;
+  };
+
+  Player.prototype.die = function (pit) {
+    if (this.dead) return;
+    this.dead = true; this.deadT = 0; this.pitDeath = !!pit;
+    this.vx = 0; this.vy = pit ? 2 : -5;
+    SDD.audio.sfx('die');
+  };
+
+  Player.prototype.victory = function () {
+    if (this.win) return;
+    this.win = true; this.winT = 0; this.vx = 0;
+  };
+
+  Player.prototype.updateDead = function () {
+    this.deadT++;
+    if (this.pitDeath) {
+      this.y += 4;
+      if (this.deadT > 36) this.deadDone = true;
+    } else {
+      if (this.deadT > 22) { this.vy += 0.34; this.y += this.vy; }
+      if (this.deadT > 150) this.deadDone = true;
+    }
+  };
+
+  Player.prototype.onHeadBump = function () {};  // set per-update by the level
+
+  Player.prototype.update = function (level) {
+    if (this.dead) { this.updateDead(); return; }
+    if (this.win) {
+      this.winT++;
+      this.vy += C.GRAVITY;
+      this.vx *= 0.8;
+      mc(this, level.map);
+      this.frame = (this.winT % 40 < 20) ? 'jump' : 'idle';
+      return;
+    }
+
+    var In = SDD.input;
+    var maxV = this.big ? C.MOVE_MAX_BIG : C.MOVE_MAX_SMALL;
+    var left = In.held('left'), right = In.held('right');
+
+    if (left && !right) {
+      this.vx -= C.MOVE_ACCEL; if (this.vx < -maxV) this.vx = -maxV;
+      this.facing = -1;
+    } else if (right && !left) {
+      this.vx += C.MOVE_ACCEL; if (this.vx > maxV) this.vx = maxV;
+      this.facing = 1;
+    } else {
+      if (this.vx > 0) { this.vx -= C.FRICTION; if (this.vx < 0) this.vx = 0; }
+      else if (this.vx < 0) { this.vx += C.FRICTION; if (this.vx > 0) this.vx = 0; }
+    }
+
+    this.vy += C.GRAVITY;
+    if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+
+    if (this.onGround) this.coyote = C.COYOTE; else if (this.coyote > 0) this.coyote--;
+    if (In.pressed('jump')) this.jumpBuf = C.JUMP_BUFFER; else if (this.jumpBuf > 0) this.jumpBuf--;
+    if (this.jumpBuf > 0 && this.coyote > 0) {
+      this.vy = this.big ? C.JUMP_BIG : C.JUMP_SMALL;
+      this.jumpBuf = 0; this.coyote = 0;
+      SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
+    }
+    // variable jump height: releasing A caps upward speed
+    if (!In.held('jump') && this.vy < -2.6) this.vy = -2.6;
+
+    // blast
+    if (this.blastCD > 0) this.blastCD--;
+    if (this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
+      var bx = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
+      var by = this.y + (this.big ? 9 : 4);
+      level.spawnBlast(bx, by, this.facing);
+      this.blastCD = 20; this.blastAnim = 11;
+      SDD.audio.sfx('blast');
+    }
+
+    var prevFeet = this.y + this.h;
+
+    // ride a moving platform from the previous step
+    if (this.ridePlat) { this.x += this.ridePlat.dx; this.y += this.ridePlat.dy; }
+
+    var self = this;
+    this.onHeadBump = function (tx, ty, code) { level.hitBlock(tx, ty, code); };
+    this.hitWall = 0;
+    mc(this, level.map);
+
+    // moving platforms (one-way: land on top)
+    this.ridePlat = null;
+    for (var i = 0; i < level.platforms.length; i++) {
+      var p = level.platforms[i];
+      var feet = this.y + this.h;
+      var horiz = this.x + this.w > p.x + 2 && this.x < p.x + p.w - 2;
+      if (this.vy >= 0 && horiz && prevFeet <= p.y + 3 && feet >= p.y && feet <= p.y + 10) {
+        this.y = p.y - this.h; this.vy = 0; this.onGround = true; this.ridePlat = p;
+      }
+    }
+
+    // animation
+    if (this.blastAnim > 0) { this.blastAnim--; this.frame = 'blast'; }
+    else if (!this.onGround) this.frame = 'jump';
+    else if (Math.abs(this.vx) > 0.3) {
+      this.animT++;
+      this.frame = (Math.floor(this.animT / 6) % 2) ? 'walk1' : 'walk2';
+    } else { this.frame = 'idle'; this.animT = 0; }
+
+    if (this.invuln > 0) this.invuln--;
+
+    // fell into a pit
+    if (this.y > level.map.pxH + 28) this.die(true);
+  };
+
+  Player.prototype.draw = function (ctx, cam) {
+    if (this.invuln > 0 && (this.invuln % 8) < 4) return;
+    var size = this.big ? 'big' : 'small';
+    var fr = this.dead ? 'hurt' : this.frame;
+    var dir = this.facing > 0 ? 'r' : 'l';
+    drawBC(ctx, 'danny_' + size + '_' + fr + '_' + dir, this, cam);
+  };
+
+  // ===================== WALKER =====================
+  function Walker(x, y) {
+    this.x = x; this.y = y; this.w = 12; this.h = 10;
+    this.vx = 0; this.vy = 0; this.dir = -1;
+    this.onGround = false; this.dead = false; this.deadT = 0; this.remove = false;
+    this.animT = 0; this.stompable = true;
+  }
+  Walker.prototype.update = function (level) {
+    if (this.dead) { this.deadT++; if (this.deadT > 24) this.remove = true; return; }
+    this.vy += C.GRAVITY; if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+    this.vx = this.dir * 0.55;
+    this.hitWall = 0;
+    mc(this, level.map);
+    if (this.hitWall) this.dir = -this.hitWall;
+    if (this.onGround) {
+      var T = C.TILE;
+      var footX = this.dir > 0 ? this.x + this.w + 1 : this.x - 1;
+      var bx = Math.floor(footX / T), by = Math.floor((this.y + this.h + 3) / T);
+      if (!level.map.isSolid(bx, by) && !level.map.isOneWay(bx, by)) this.dir = -this.dir;
+    }
+    this.animT++;
+  };
+  Walker.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
+  Walker.prototype.zap = function () { this.dead = true; this.deadT = 0; };
+  Walker.prototype.draw = function (ctx, cam) {
+    var f = this.dead ? 1 : (Math.floor(this.animT / 8) % 2);
+    var dir = this.dir > 0 ? 'r' : 'l';
+    drawBC(ctx, 'walker_' + f + '_' + dir, this, cam);
+  };
+
+  // ===================== WISP (flyer) =====================
+  function Wisp(x, y) {
+    this.x = x; this.y = y; this.w = 10; this.h = 10;
+    this.homeY = y; this.minX = x - 26; this.maxX = x + 26;
+    this.t = Math.random() * 6.28; this.dir = Math.random() < 0.5 ? -1 : 1;
+    this.dead = false; this.deadT = 0; this.remove = false;
+    this.animT = 0; this.stompable = true;
+  }
+  Wisp.prototype.update = function () {
+    if (this.dead) { this.deadT++; this.y += 2.4; if (this.deadT > 22) this.remove = true; return; }
+    this.t += 0.05;
+    this.y = this.homeY + Math.sin(this.t) * 28;
+    this.x += this.dir * 0.5;
+    if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
+    if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
+    this.animT++;
+  };
+  Wisp.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
+  Wisp.prototype.zap = function () { this.dead = true; this.deadT = 0; };
+  Wisp.prototype.draw = function (ctx, cam) {
+    var f = this.dead ? 1 : (Math.floor(this.animT / 14) % 2);
+    drawBC(ctx, 'wisp_' + f, this, cam);
+  };
+
+  // ===================== THROWER =====================
+  function Thrower(x, y) {
+    this.x = x; this.y = y; this.w = 12; this.h = 14;
+    this.vx = 0; this.vy = 0; this.onGround = false;
+    this.facing = -1; this.cd = SDD.engine.randInt(70, 130);
+    this.throwAnim = 0; this.dead = false; this.deadT = 0; this.remove = false;
+    this.stompable = false;
+  }
+  Thrower.prototype.update = function (level) {
+    if (this.dead) { this.deadT++; if (this.deadT > 24) this.remove = true; return; }
+    this.vy += C.GRAVITY; if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+    this.vx = 0;
+    mc(this, level.map);
+    this.facing = (level.player.x + level.player.w / 2 < this.x + this.w / 2) ? -1 : 1;
+    this.cd--;
+    if (this.cd <= 0) {
+      this.cd = SDD.engine.randInt(110, 170);
+      this.throwAnim = 20;
+      var ox = this.facing > 0 ? this.x + this.w : this.x - 8;
+      level.spawnOrb(ox, this.y + 4, this.facing);
+      SDD.audio.sfx('bump');
+    }
+    if (this.throwAnim > 0) this.throwAnim--;
+  };
+  Thrower.prototype.zap = function () { this.dead = true; this.deadT = 0; };
+  Thrower.prototype.draw = function (ctx, cam) {
+    var f = this.dead ? 1 : (this.throwAnim > 8 ? 1 : 0);
+    var dir = this.facing > 0 ? 'r' : 'l';
+    drawBC(ctx, 'thrower_' + f + '_' + dir, this, cam);
+  };
+
+  // ===================== DARK ORB =====================
+  function Orb(x, y, dir) {
+    this.x = x; this.y = y; this.w = 8; this.h = 8;
+    this.vx = dir * 1.15; this.vy = -0.5; this.life = 280; this.remove = false;
+  }
+  Orb.prototype.update = function (level) {
+    this.vy += 0.022;
+    this.x += this.vx; this.y += this.vy;
+    this.life--;
+    if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;
+  };
+  Orb.prototype.draw = function (ctx, cam) { drawBC(ctx, 'orb', this, cam); };
+
+  // ===================== PLAYER BLAST =====================
+  function Blast(x, y, dir) {
+    this.x = x; this.y = y; this.w = 10; this.h = 6;
+    this.dir = dir; this.vx = dir * 3.3; this.traveled = 0; this.remove = false;
+  }
+  Blast.prototype.update = function (level) {
+    this.x += this.vx; this.traveled += 3.3;
+    var T = C.TILE;
+    var cx = Math.floor((this.x + (this.dir > 0 ? this.w : 0)) / T);
+    var cy = Math.floor((this.y + this.h / 2) / T);
+    if (level.map.isSolid(cx, cy)) this.remove = true;
+    if (this.traveled > 70) this.remove = true;
+  };
+  Blast.prototype.draw = function (ctx, cam) {
+    drawBC(ctx, this.dir > 0 ? 'playerblast_r' : 'playerblast_l', this, cam);
+  };
+
+  // ===================== MOVING PLATFORM =====================
+  function MovPlat(x, y, opt) {
+    this.x = x; this.y = y; this.w = 32; this.h = 10;
+    this.x0 = x; this.y0 = y;
+    this.x1 = (opt && opt.x1 != null) ? opt.x1 : x;
+    this.y1 = (opt && opt.y1 != null) ? opt.y1 : y;
+    this.spd = (opt && opt.spd) || 0.018;
+    this.t = (opt && opt.phase) || 0;
+    this.dx = 0; this.dy = 0;
+  }
+  MovPlat.prototype.update = function () {
+    var px = this.x, py = this.y;
+    this.t += this.spd;
+    var k = (Math.sin(this.t) + 1) / 2;
+    this.x = clamp(this.x0 + (this.x1 - this.x0) * k, Math.min(this.x0, this.x1), Math.max(this.x0, this.x1));
+    this.y = this.y0 + (this.y1 - this.y0) * k;
+    this.dx = this.x - px; this.dy = this.y - py;
+  };
+  MovPlat.prototype.draw = function (ctx, cam) {
+    var s = spr('movplat');
+    ctx.drawImage(s, Math.round(this.x - cam.x), Math.round(this.y - cam.y));
+  };
+
+  // ===================== POWER CORE =====================
+  function Core(x, y) {
+    this.x = x; this.y = y; this.w = 12; this.h = 14;
+    this.baseY = y; this.t = Math.random() * 6.28; this.remove = false;
+  }
+  Core.prototype.update = function () { this.t += 0.1; this.y = this.baseY + Math.sin(this.t) * 2.5; };
+  Core.prototype.draw = function (ctx, cam) {
+    var f = (Math.floor(this.t * 2) % 2);
+    drawBC(ctx, 'core_' + f, this, cam);
+  };
+
+  // ===================== ITEM DROP (grow / blast) =====================
+  function ItemDrop(x, y, kind) {
+    this.x = x; this.y = y; this.w = 14; this.h = 14;
+    this.kind = kind;                 // 'grow' or 'blast'
+    this.emerge = 16; this.vx = 0; this.vy = 0; this.t = 0;
+    this.remove = false;
+  }
+  ItemDrop.prototype.update = function (level) {
+    this.t++;
+    if (this.emerge > 0) { this.y -= 1; this.emerge--; if (this.emerge === 0 && this.kind === 'grow') this.vx = 0.55; return; }
+    if (this.kind === 'grow') {
+      this.vy += C.GRAVITY; if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+      this.hitWall = 0;
+      mc(this, level.map);
+      if (this.hitWall) this.vx = -this.hitWall * 0.55;
+      if (this.vx === 0) this.vx = 0.55;
+    } else {
+      this.y += Math.sin(this.t * 0.12) * 0.35;
+    }
+  };
+  ItemDrop.prototype.draw = function (ctx, cam) {
+    var f = (Math.floor(this.t / 10) % 2);
+    drawBC(ctx, (this.kind === 'grow' ? 'grow_' : 'blastitem_') + f, this, cam);
+  };
+
+  // ===================== TIME MACHINE PART (goal) =====================
+  function TimePart(x, y) {
+    this.x = x; this.y = y; this.w = 14; this.h = 14;
+    this.baseY = y; this.t = 0; this.remove = false;
+  }
+  TimePart.prototype.update = function () { this.t += 0.08; this.y = this.baseY + Math.sin(this.t) * 3; };
+  TimePart.prototype.draw = function (ctx, cam) {
+    var s = spr('timepart');
+    var dx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
+    var dy = Math.round(this.y - cam.y + this.h - s.height);
+    // soft glow
+    ctx.save();
+    ctx.globalAlpha = 0.25 + Math.sin(this.t * 2) * 0.12;
+    ctx.fillStyle = '#9bf0ff';
+    ctx.beginPath();
+    ctx.arc(dx + s.width / 2, dy + s.height / 2, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.drawImage(s, dx, dy);
+  };
+
+  SDD.ent = {
+    Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
+    Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
+    ItemDrop: ItemDrop, TimePart: TimePart
+  };
+})();

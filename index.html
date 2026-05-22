@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0a0a1a">
+<title>Super Dude Danny</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game" width="320" height="180"></canvas>
+
+  <!-- On-screen touch controls (shown only on touch devices) -->
+  <div id="touch-controls" aria-hidden="true">
+    <div id="dpad">
+      <button class="tc-btn tc-up"    data-action="up">&#9650;</button>
+      <button class="tc-btn tc-left"  data-action="left">&#9664;</button>
+      <button class="tc-btn tc-right" data-action="right">&#9654;</button>
+      <button class="tc-btn tc-down"  data-action="down">&#9660;</button>
+    </div>
+    <div id="action-pad">
+      <button class="tc-btn tc-b" data-action="blast">B</button>
+      <button class="tc-btn tc-a" data-action="jump">A</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game scripts: plain classic scripts, loaded in dependency order so the
+     game runs straight from the file system with no build step or server. -->
+<script src="js/save.js"></script>
+<script src="js/input.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/level1.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
