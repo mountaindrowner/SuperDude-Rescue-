@@ -43,15 +43,15 @@ window.SDD = window.SDD || {};
   // ---- palette ----
   var C = {
     out: '#15111e',
-    skin: '#edb079', skinL: '#ffd2a2', skinD: '#c4854f',
-    hair: '#43301f', hairL: '#6c4d31',
-    capR: '#e2433a', capL: '#ff7060', capD: '#a52a22',
-    coat: '#eef0fa', coatL: '#ffffff', coatD: '#b9bed4',
-    shirt: '#23222f',
-    atom: '#ffd23a', atomL: '#fff0a8',
-    jean: '#3f63d8', jeanL: '#5f81ec', jeanD: '#293f93',
-    shoe: '#2d2937', shoeL: '#4c4860',
-    lens: '#cfecff',
+    skin: '#e7a778', skinL: '#ffc89a', skinD: '#bb7c49',
+    hair: '#46331f', hairL: '#6a4f30',
+    cap: '#34344c', capL: '#52526e', capD: '#20202f',
+    coat: '#eef0f8', coatL: '#ffffff', coatD: '#c3c7da',
+    shirt: '#1c1c28', shirtL: '#30303f',
+    atom: '#ffffff',
+    jean: '#4060bd', jeanL: '#5c80de', jeanD: '#2b4181',
+    shoe: '#edeff6', shoeL: '#ffffff', shoeD: '#363643',
+    lens: '#bfe6ff',
     shA: '#4b3d72', shB: '#332a52', shL: '#6f5d9c', shEye: '#ff89b0',
     wiA: '#7d61b8', wiB: '#594390', wiL: '#bca4ec', wiEye: '#fff4ff',
     thA: '#4e3d68', thB: '#34294a', thL: '#705c92', thEye: '#ff5d5d',
@@ -151,99 +151,154 @@ window.SDD = window.SDD || {};
   }
 
   // ================= Danny =================
-  function paintHead(g, oy) {
-    // backwards cap
-    px(g, 6, oy, 5, 1, C.capR);
-    px(g, 5, oy + 1, 7, 2, C.capR);
-    px(g, 4, oy + 3, 8, 1, C.capR);
-    px(g, 6, oy, 4, 1, C.capL);          // dome highlight
-    px(g, 5, oy + 1, 5, 1, C.capL);
-    px(g, 4, oy + 3, 8, 1, C.capD);      // cap band shadow
-    px(g, 2, oy + 3, 3, 2, C.capR);      // backwards brim
-    px(g, 2, oy + 4, 3, 1, C.capD);
-    // hair at the back
-    px(g, 11, oy + 3, 2, 4, C.hair);
-    px(g, 12, oy + 3, 1, 3, C.hairL);
-    // face
-    px(g, 5, oy + 4, 6, 5, C.skin);
-    px(g, 11, oy + 4, 1, 3, C.skin);
-    px(g, 5, oy + 4, 6, 1, C.skinL);     // forehead highlight
-    px(g, 5, oy + 4, 1, 4, C.skinD);     // cheek shadow under brim
-    // glasses
-    px(g, 5, oy + 5, 7, 1, C.out);
-    px(g, 6, oy + 5, 2, 1, C.lens);
-    px(g, 9, oy + 5, 2, 1, C.lens);
-    px(g, 8, oy + 5, 1, 1, C.out);
-    // nose + beard
-    px(g, 10, oy + 6, 1, 1, C.skinD);
-    px(g, 5, oy + 7, 7, 2, C.hair);
-    px(g, 5, oy + 7, 7, 1, C.hairL);
-    px(g, 7, oy + 7, 3, 1, C.skinD);     // mouth
-  }
-
-  function legParams(frame) {
-    if (frame === 'walk1') return { lx: 3, rx: 9, ls: 2, rs: 9 };
-    if (frame === 'walk2') return { lx: 5, rx: 8, ls: 5, rs: 8 };
-    return { lx: 4, rx: 8, ls: 3, rs: 8 };
-  }
-
-  function paintDannySmall(g, frame) {
-    paintHead(g, 1);
-    px(g, 7, 10, 3, 1, C.skinD);                 // neck
-    // coat torso
-    px(g, 4, 10, 9, 4, C.coat);
-    px(g, 12, 10, 1, 4, C.coatD);                // coat right shade
-    px(g, 4, 10, 1, 4, C.coatL);                 // coat left highlight
-    px(g, 7, 10, 3, 3, C.shirt);                 // shirt
-    px(g, 8, 11, 1, 1, C.atom);                  // atom symbol
-    px(g, 6, 10, 1, 3, C.coatD); px(g, 10, 10, 1, 3, C.coatD); // lapels
-    if (frame === 'jump') {
-      px(g, 3, 8, 1, 3, C.coat); px(g, 13, 8, 1, 3, C.coat);
-      px(g, 3, 7, 1, 1, C.skin); px(g, 13, 7, 1, 1, C.skin);
-    } else if (frame === 'blast') {
-      px(g, 3, 11, 1, 3, C.coat); px(g, 3, 14, 1, 1, C.skin);
-      px(g, 13, 11, 2, 1, C.coat); px(g, 15, 11, 1, 1, C.skin);
-      px(g, 13, 10, 1, 1, C.atom);
-    } else {
-      px(g, 3, 10, 1, 4, C.coat); px(g, 13, 10, 1, 4, C.coat);
-      px(g, 3, 14, 1, 1, C.skin); px(g, 13, 14, 1, 1, C.skin);
-      px(g, 3, 13, 1, 1, C.atom);                // watch
-    }
-    var L = legParams(frame);
-    px(g, L.lx, 14, 3, 3, C.jean); px(g, L.rx, 14, 3, 3, C.jean);
-    px(g, L.lx, 14, 1, 3, C.jeanL); px(g, L.rx, 14, 1, 3, C.jeanL);
-    px(g, L.lx + 2, 14, 1, 3, C.jeanD); px(g, L.rx + 2, 14, 1, 3, C.jeanD);
-    px(g, L.ls, 17, 4, 1, C.shoe); px(g, L.rs, 17, 4, 1, C.shoe);
-    px(g, L.ls, 17, 4, 1, C.shoe);
+  // small white atom emblem, top-left at x,y (5x5)
+  function paintAtom(g, x, y) {
+    px(g, x + 1, y, 1, 1, C.atom); px(g, x + 3, y, 1, 1, C.atom);
+    px(g, x, y + 2, 1, 1, C.atom); px(g, x + 4, y + 2, 1, 1, C.atom);
+    px(g, x + 2, y + 2, 1, 1, C.atom);
+    px(g, x + 1, y + 4, 1, 1, C.atom); px(g, x + 3, y + 4, 1, 1, C.atom);
   }
 
   function paintDannyBig(g, frame) {
-    paintHead(g, 3);
-    px(g, 7, 12, 3, 1, C.skinD);                 // neck
-    px(g, 3, 12, 11, 13, C.coat);                // coat torso
-    px(g, 13, 12, 1, 13, C.coatD);
-    px(g, 3, 12, 1, 13, C.coatL);
-    px(g, 6, 12, 4, 9, C.shirt);                 // shirt
-    px(g, 7, 15, 2, 2, C.atom);
-    px(g, 5, 12, 1, 12, C.coatD); px(g, 10, 12, 1, 12, C.coatD);
-    if (frame === 'jump') {
-      px(g, 2, 9, 2, 5, C.coat); px(g, 13, 9, 2, 5, C.coat);
-      px(g, 2, 8, 2, 1, C.skin); px(g, 13, 8, 2, 1, C.skin);
-    } else if (frame === 'blast') {
-      px(g, 2, 14, 2, 7, C.coat); px(g, 2, 21, 2, 2, C.skin);
-      px(g, 14, 15, 3, 2, C.coat); px(g, 17, 15, 1, 2, C.skin);
-      px(g, 14, 14, 1, 1, C.atom);
+    var jump = frame === 'jump', blast = frame === 'blast';
+    var ls = frame === 'walk1' ? 1 : (frame === 'walk2' ? -1 : 0), rs = -ls;
+
+    // ---- backwards cap ----
+    px(g, 7, 0, 6, 1, C.cap);
+    px(g, 6, 1, 8, 1, C.cap);
+    px(g, 5, 2, 10, 1, C.cap);
+    px(g, 4, 3, 12, 3, C.cap);
+    px(g, 7, 0, 3, 1, C.capL); px(g, 6, 1, 3, 1, C.capL);
+    px(g, 5, 2, 3, 1, C.capL); px(g, 4, 3, 3, 1, C.capL);
+    px(g, 4, 5, 12, 1, C.capD);
+    px(g, 1, 3, 4, 2, C.cap);                    // brim, pointing back
+    px(g, 1, 3, 4, 1, C.capL); px(g, 1, 5, 4, 1, C.capD);
+    // ---- hair ----
+    px(g, 14, 5, 3, 5, C.hair);
+    px(g, 15, 6, 2, 3, C.hairL);
+    // ---- face (bright, clean) ----
+    px(g, 5, 6, 10, 6, C.skin);
+    px(g, 5, 6, 10, 1, C.skinL);
+    px(g, 5, 6, 1, 4, C.skinD);                  // thin brim shadow only
+    px(g, 4, 8, 1, 2, C.skin);                   // ear
+    // ---- glasses ----
+    px(g, 5, 8, 3, 1, C.out); px(g, 6, 8, 1, 1, C.lens);
+    px(g, 10, 8, 3, 1, C.out); px(g, 11, 8, 1, 1, C.lens);
+    px(g, 8, 8, 2, 1, C.out);                    // bridge
+    // ---- nose + beard ----
+    px(g, 12, 10, 1, 1, C.skinD);
+    px(g, 5, 10, 10, 2, C.hair);
+    px(g, 5, 10, 10, 1, C.hairL);
+    px(g, 8, 10, 4, 1, C.skinD);                 // mouth
+    px(g, 9, 12, 4, 1, C.skinD);                 // neck
+
+    // ---- lab coat, open over a black tee ----
+    px(g, 3, 13, 14, 11, C.coat);
+    px(g, 3, 13, 2, 11, C.coatL);
+    px(g, 15, 13, 2, 11, C.coatD);
+    px(g, 7, 13, 6, 10, C.shirt);                // wide black shirt panel
+    px(g, 7, 13, 6, 1, C.shirtL);
+    px(g, 6, 13, 1, 11, C.coatD);                // lapel edges
+    px(g, 13, 13, 1, 11, C.coatD);
+    px(g, 5, 13, 2, 1, C.coatD); px(g, 13, 13, 2, 1, C.coatD); // collar
+    paintAtom(g, 7, 16);                         // atom on the chest
+    px(g, 3, 23, 4, 3, C.coat); px(g, 13, 23, 4, 3, C.coat);   // coat tails
+    px(g, 3, 23, 2, 3, C.coatL); px(g, 15, 23, 2, 3, C.coatD);
+
+    // ---- arms ----
+    if (jump) {
+      px(g, 1, 11, 3, 5, C.coat); px(g, 16, 11, 3, 5, C.coat);
+      px(g, 1, 11, 1, 5, C.coatL);
+      px(g, 1, 10, 3, 1, C.skin); px(g, 16, 10, 3, 1, C.skin);
+    } else if (blast) {
+      px(g, 1, 16, 3, 6, C.coat); px(g, 1, 16, 1, 6, C.coatL);
+      px(g, 1, 22, 3, 2, C.skin);
+      px(g, 16, 14, 3, 3, C.coat); px(g, 19, 15, 1, 2, C.skin);
     } else {
-      px(g, 2, 13, 2, 9, C.coat); px(g, 13, 13, 2, 9, C.coat);
-      px(g, 2, 22, 2, 2, C.skin); px(g, 13, 22, 2, 2, C.skin);
-      px(g, 2, 21, 2, 1, C.atom);
+      px(g, 1, 14, 3, 8, C.coat); px(g, 16, 14, 3, 8, C.coat);
+      px(g, 1, 14, 1, 8, C.coatL); px(g, 18, 14, 1, 8, C.coatD);
+      px(g, 1, 22, 3, 2, C.skin); px(g, 16, 22, 3, 2, C.skin);
+      px(g, 17, 21, 2, 1, '#d8def0');            // watch
     }
-    var s = frame === 'walk1' ? 1 : (frame === 'walk2' ? -1 : 0);
-    px(g, 3 + s, 25, 5, 7, C.jean); px(g, 9 - s, 25, 5, 7, C.jean);
-    px(g, 3 + s, 25, 1, 7, C.jeanL); px(g, 9 - s, 25, 1, 7, C.jeanL);
-    px(g, 6 + s, 25, 2, 7, C.jeanD); px(g, 12 - s, 25, 2, 7, C.jeanD);
-    px(g, 2 + s, 32, 6, 2, C.shoe); px(g, 9 - s, 32, 6, 2, C.shoe);
-    px(g, 2 + s, 32, 6, 1, C.shoeL); px(g, 9 - s, 32, 6, 1, C.shoeL);
+
+    // ---- jeans ----
+    px(g, 5 + ls, 24, 5, 6, C.jean);
+    px(g, 10 + rs, 24, 5, 6, C.jean);
+    px(g, 5 + ls, 24, 1, 6, C.jeanL);
+    px(g, 14 + rs, 24, 1, 6, C.jeanD);
+    px(g, 9, 24, 2, 5, C.jeanD);
+
+    // ---- white sneakers ----
+    px(g, 4 + ls, 29, 7, 2, C.shoe); px(g, 9 + rs, 29, 7, 2, C.shoe);
+    px(g, 4 + ls, 29, 7, 1, C.shoeL); px(g, 9 + rs, 29, 7, 1, C.shoeL);
+    px(g, 4 + ls, 30, 7, 1, C.shoeD); px(g, 9 + rs, 30, 7, 1, C.shoeD);
+  }
+
+  function paintDannySmall(g, frame) {
+    var jump = frame === 'jump', blast = frame === 'blast';
+    var ls = frame === 'walk1' ? 1 : (frame === 'walk2' ? -1 : 0), rs = -ls;
+
+    // ---- backwards cap ----
+    px(g, 5, 0, 5, 1, C.cap);
+    px(g, 4, 1, 7, 1, C.cap);
+    px(g, 3, 2, 9, 2, C.cap);
+    px(g, 5, 0, 3, 1, C.capL); px(g, 4, 1, 3, 1, C.capL); px(g, 3, 2, 3, 1, C.capL);
+    px(g, 3, 3, 9, 1, C.capD);
+    px(g, 1, 2, 3, 1, C.cap); px(g, 1, 2, 3, 1, C.capL);
+    px(g, 1, 3, 3, 1, C.capD);
+    // ---- hair ----
+    px(g, 10, 3, 3, 5, C.hair);
+    px(g, 11, 4, 2, 3, C.hairL);
+    // ---- face (bright, clean) ----
+    px(g, 4, 4, 8, 6, C.skin);
+    px(g, 4, 4, 8, 1, C.skinL);
+    px(g, 4, 4, 1, 4, C.skinD);
+    px(g, 3, 6, 1, 2, C.skin);                   // ear
+    // ---- glasses ----
+    px(g, 4, 6, 3, 1, C.out); px(g, 5, 6, 1, 1, C.lens);
+    px(g, 8, 6, 3, 1, C.out); px(g, 9, 6, 1, 1, C.lens);
+    px(g, 7, 6, 1, 1, C.out);
+    // ---- nose + beard ----
+    px(g, 10, 7, 1, 1, C.skinD);
+    px(g, 4, 8, 8, 2, C.hair);
+    px(g, 4, 8, 8, 1, C.hairL);
+    px(g, 6, 8, 4, 1, C.skinD);                  // mouth
+    px(g, 6, 10, 4, 1, C.skinD);                 // neck
+
+    // ---- lab coat, open over a black tee ----
+    px(g, 2, 11, 12, 5, C.coat);
+    px(g, 2, 11, 2, 5, C.coatL);
+    px(g, 12, 11, 2, 5, C.coatD);
+    px(g, 5, 11, 6, 5, C.shirt);                 // black shirt panel
+    px(g, 5, 11, 6, 1, C.shirtL);
+    px(g, 4, 11, 1, 5, C.coatD); px(g, 11, 11, 1, 5, C.coatD);
+    px(g, 7, 13, 1, 1, C.atom);                  // atom (small cross)
+    px(g, 6, 13, 1, 1, C.atom); px(g, 8, 13, 1, 1, C.atom);
+    px(g, 7, 12, 1, 1, C.atom); px(g, 7, 14, 1, 1, C.atom);
+
+    // ---- arms ----
+    if (jump) {
+      px(g, 1, 9, 2, 3, C.coat); px(g, 13, 9, 2, 3, C.coat);
+      px(g, 1, 8, 2, 1, C.skin); px(g, 13, 8, 2, 1, C.skin);
+    } else if (blast) {
+      px(g, 1, 12, 2, 4, C.coat); px(g, 1, 16, 2, 1, C.skin);
+      px(g, 13, 12, 2, 2, C.coat); px(g, 15, 12, 1, 2, C.skin);
+    } else {
+      px(g, 1, 12, 2, 5, C.coat); px(g, 13, 12, 2, 5, C.coat);
+      px(g, 1, 17, 2, 1, C.skin); px(g, 13, 17, 2, 1, C.skin);
+      px(g, 13, 16, 2, 1, '#d8def0');            // watch
+    }
+
+    // ---- jeans ----
+    px(g, 4 + ls, 16, 4, 3, C.jean);
+    px(g, 8 + rs, 16, 4, 3, C.jean);
+    px(g, 4 + ls, 16, 1, 3, C.jeanL);
+    px(g, 11 + rs, 16, 1, 3, C.jeanD);
+
+    // ---- white sneakers ----
+    px(g, 3 + ls, 18, 5, 2, C.shoe); px(g, 8 + rs, 18, 5, 2, C.shoe);
+    px(g, 3 + ls, 18, 5, 1, C.shoeL); px(g, 8 + rs, 18, 5, 1, C.shoeL);
+    px(g, 3 + ls, 19, 5, 1, C.shoeD); px(g, 8 + rs, 19, 5, 1, C.shoeD);
   }
 
   // ================= enemies =================
@@ -455,8 +510,8 @@ window.SDD = window.SDD || {};
     var frames = ['idle', 'walk1', 'walk2', 'jump', 'blast', 'hurt'];
     frames.forEach(function (f) {
       var fr = f === 'hurt' ? 'idle' : f;
-      var s = spriteO(16, 18, function (g) { paintDannySmall(g, fr); });
-      var b = spriteO(18, 34, function (g) { paintDannyBig(g, fr); });
+      var s = spriteO(16, 20, function (g) { paintDannySmall(g, fr); });
+      var b = spriteO(20, 31, function (g) { paintDannyBig(g, fr); });
       sprites['danny_small_' + f + '_r'] = s;
       sprites['danny_small_' + f + '_l'] = flip(s);
       sprites['danny_big_' + f + '_r'] = b;
