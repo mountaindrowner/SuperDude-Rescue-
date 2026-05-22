@@ -558,10 +558,15 @@ window.SDD = window.SDD || {};
     finish: function () {
       var timeSec = Math.floor(this.timeSteps / 60);
       SDD.save.recordStage(this.day, this.stage, timeSec, this.cores);
-      go('results', {
-        day: this.day, stage: this.stage,
-        timeSec: timeSec, cores: this.cores, lives: this.lives
-      });
+      if (this.day === 7) {
+        A.stopMusic();
+        go('finale', { timeSec: timeSec, cores: this.cores, lives: this.lives });
+      } else {
+        go('results', {
+          day: this.day, stage: this.stage,
+          timeSec: timeSec, cores: this.cores, lives: this.lives
+        });
+      }
     },
 
     stepWorld: function () {
@@ -831,6 +836,119 @@ window.SDD = window.SDD || {};
       g.drawImage(S.get('danny_small_hurt_r'), 152, 92);
       text(g, "DANNY WILL TRY AGAIN!", 160, 124, '#dfe6ff', 1, 'center');
       if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 150, '#ffd23a', 1, 'center');
+    }
+  };
+
+  // =====================================================================
+  // FINALE - grand ending cinematic played after Day 7 is completed
+  // =====================================================================
+  var FINALE_BEATS = [
+    { lines: ['DANNY INSTALLS THE LAST', 'TIME-MACHINE PART...'] },
+    { lines: ["...HE HAS WITNESSED ALL SEVEN", "DAYS OF GOD'S CREATION."] },
+    { lines: ['THE TIME MACHINE ROARS TO LIFE!'] },
+    { lines: ['DANNY HURTLES THROUGH TIME...'] },
+    { lines: ['...AND ARRIVES SAFELY HOME', 'IN HIS LAB!'] },
+    { lines: ['THE END.', 'THANK YOU FOR PLAYING!'] }
+  ];
+  SDD.scenes.finale = {
+    enter: function (d) {
+      this.d = d || {}; this.beat = 0; this.t = 0;
+      A.startMusic('title');
+    },
+    update: function () {
+      this.t++;
+      if (this.beat === 2 && this.t % 18 === 0) A.sfx('power');
+      if (this.beat === 3 && this.t % 12 === 0) A.sfx('chirp');
+      if (this.beat === 4 && this.t === 1) A.sfx('win');
+      if (this.beat === 5 && this.t === 1) A.sfx('1up');
+      if (In.confirm() || this.t > 360) {
+        this.beat++; this.t = 0; A.sfx('select');
+        if (this.beat >= FINALE_BEATS.length) {
+          A.stopMusic();
+          go('menu');
+        }
+      }
+    },
+    render: function (g) {
+      var b = this.beat, t = this.t;
+      // backdrop varies per beat
+      var grd = g.createLinearGradient(0, 0, 0, 180);
+      if (b <= 1) { grd.addColorStop(0, '#1d2a52'); grd.addColorStop(1, '#7a92c0'); }
+      else if (b === 2) { grd.addColorStop(0, '#322a78'); grd.addColorStop(1, '#caa6c0'); }
+      else if (b === 3) {
+        // swirling time-travel: rapidly shifting bands
+        var k = (t / 4) % 1;
+        grd.addColorStop(0, 'hsl(' + Math.floor(t * 6) + ',70%,40%)');
+        grd.addColorStop(1, 'hsl(' + Math.floor(t * 6 + 120) + ',70%,60%)');
+      } else if (b === 4) { grd.addColorStop(0, '#1a2238'); grd.addColorStop(1, '#3a4870'); }
+      else { grd.addColorStop(0, '#142b40'); grd.addColorStop(1, '#e8c878'); }
+      g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+      if (b <= 1 || b === 4 || b === 5) drawStarfield(g, this.t);
+
+      // shared time-machine drawing
+      function machine(g, x, y, glow, broken, glowStrong) {
+        g.fillStyle = '#3b4a6a'; g.fillRect(x, y, 56, 44);
+        g.fillStyle = '#586a92'; g.fillRect(x + 3, y + 3, 50, 24);
+        g.fillStyle = glow ? '#bff0ff' : '#23304a'; g.fillRect(x + 7, y + 7, 42, 16);
+        g.fillStyle = '#2a3550'; g.fillRect(x, y + 44, 56, 6);
+        g.fillStyle = glow ? '#ffe893' : '#7a8bb0';
+        g.beginPath(); g.arc(x + 28, y + 3, 14, Math.PI, 0); g.fill();
+        if (glowStrong) {
+          g.fillStyle = 'rgba(255,236,170,0.45)';
+          g.fillRect(x - 14, y - 12, 84, 6);
+          g.fillRect(x - 6, y - 22, 68, 4);
+        }
+      }
+
+      var sprName = 'danny_big_idle_r';
+      if (b === 0) {
+        machine(g, 132, 84, false, false, false);
+        g.drawImage(S.get(sprName), 100, 102);
+        text(g, "DANNY'S LAB", 160, 24, '#cdd6e6', 1, 'center');
+      } else if (b === 1) {
+        machine(g, 132, 84, (t % 24 < 12), false, false);
+        g.drawImage(S.get(sprName), 100, 102);
+      } else if (b === 2) {
+        // machine glowing intensely
+        machine(g, 132, 84, true, false, true);
+        if (t % 14 < 7) {
+          g.fillStyle = 'rgba(255,255,255,0.35)';
+          g.fillRect(0, 0, 320, 180);
+        }
+        g.drawImage(S.get('danny_big_jump_r'), 100, 102);
+      } else if (b === 3) {
+        // swirl
+        for (var i = 0; i < 28; i++) {
+          var a = (t * 0.04 + i * 0.224) % 6.28;
+          var r = 8 + (i * 4 + t * 1.2) % 160;
+          var cx = 160 + Math.cos(a) * r, cy = 90 + Math.sin(a) * r * 0.7;
+          g.fillStyle = 'hsl(' + Math.floor(a * 80 + t * 4) + ',80%,75%)';
+          g.fillRect(cx, cy, 3, 3);
+        }
+        g.drawImage(S.get('danny_big_jump_r'), 144, 70 + Math.sin(t * 0.2) * 10);
+      } else if (b === 4) {
+        // arrived in lab
+        machine(g, 132, 84, false, false, false);
+        g.drawImage(S.get(sprName), 168, 102);
+        // lab floor + door
+        g.fillStyle = '#3a435c'; g.fillRect(0, 146, 320, 34);
+        g.fillStyle = '#2a3350'; g.fillRect(40, 100, 24, 46);
+      } else {
+        // The End card
+        tsh(g, 'THE END', 160, 60, '#ffd23a', '#a8631a', 5, 'center');
+        text(g, "DANNY'S CREATION ADVENTURE", 160, 110, '#1a1630', 1, 'center');
+        text(g, "IS COMPLETE", 160, 122, '#1a1630', 1, 'center');
+      }
+
+      // caption box
+      var lines = FINALE_BEATS[b] ? FINALE_BEATS[b].lines : [];
+      var bh = 16 + lines.length * 11;
+      g.fillStyle = 'rgba(8,8,20,0.86)'; g.fillRect(10, 178 - bh - 6, 300, bh);
+      g.strokeStyle = '#ffd23a'; g.strokeRect(10.5, 178 - bh - 5.5, 299, bh - 1);
+      for (var li = 0; li < lines.length; li++) {
+        text(g, lines[li], 160, 178 - bh + 2 + li * 11, '#ffffff', 1, 'center');
+      }
+      if (t % 40 < 26) text(g, 'PRESS A', 304, 168, '#ffd23a', 1, 'right');
     }
   };
 })();
