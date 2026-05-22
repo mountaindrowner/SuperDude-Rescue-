@@ -346,15 +346,22 @@ window.SDD = window.SDD || {};
       // nodes
       var unlocked = SDD.save.data.unlockedDay;
       for (var i = 0; i < NODES.length; i++) {
-        var nd = NODES[i], open = (i + 1) <= unlocked;
-        var done = SDD.save.data.completedDays.indexOf(i + 1) >= 0;
+        var nd = NODES[i], day = i + 1, open = day <= unlocked;
+        var done = SDD.save.data.completedDays.indexOf(day) >= 0;
         g.fillStyle = open ? (done ? '#7dff9a' : '#ffd23a') : '#5a5f78';
         g.beginPath(); g.arc(nd.x, nd.y, 9, 0, Math.PI * 2); g.fill();
-        g.fillStyle = open ? '#1a1640' : '#34384c';
-        text(g, '' + (i + 1), nd.x, nd.y - 3, open ? '#1a1640' : '#9498ac', 1, 'center');
+        text(g, '' + day, nd.x, nd.y - 3, open ? '#1a1640' : '#9498ac', 1, 'center');
         if (!open) {
           g.fillStyle = '#cdd2e4'; g.fillRect(nd.x - 3, nd.y + 6, 6, 5);
           g.fillRect(nd.x - 2, nd.y + 3, 4, 3);
+        } else {
+          // small stage-progress badge: e.g. "1/2" for days with multiple stages
+          var totalS = SDD.save.stagesForDay(day);
+          if (totalS > 1) {
+            var doneS = SDD.save.completedStagesOf(day);
+            text(g, doneS + '/' + totalS, nd.x, nd.y + 12,
+              done ? '#7dff9a' : '#ffd23a', 1, 'center');
+          }
         }
         if (i === this.idx) {
           g.strokeStyle = '#ffffff'; g.lineWidth = 1;
