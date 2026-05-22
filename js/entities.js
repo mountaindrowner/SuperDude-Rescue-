@@ -49,6 +49,7 @@ window.SDD = window.SDD || {};
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
     this.climbing = false; this.inWater = false;
+    this.prevOnGround = false; this.landT = 0;
     this.dead = false; this.deadT = 0; this.deadDone = false; this.pitDeath = false;
     this.win = false; this.winT = 0;
   }
@@ -115,7 +116,7 @@ window.SDD = window.SDD || {};
       this.vy += C.GRAVITY * gs;
       this.vx *= 0.8;
       mc(this, level.map);
-      this.frame = (this.winT % 40 < 20) ? 'jump' : 'idle';
+      this.frame = (this.winT % 40 < 20) ? 'victory' : 'idle0';
       return;
     }
 
@@ -158,7 +159,7 @@ window.SDD = window.SDD || {};
       this.animT++;
       this.frame = (this.blastAnim > 0) ? 'blast'
         : (Math.abs(this.vy) > 0.1 || Math.abs(this.vx) > 0.1)
-          ? ((Math.floor(this.animT / 8) % 2) ? 'walk1' : 'walk2')
+          ? 'walk' + (Math.floor(this.animT / 6) % 4)
           : 'idle';
       if (this.blastAnim > 0) this.blastAnim--;
       if (this.invuln > 0) this.invuln--;
@@ -242,13 +243,24 @@ window.SDD = window.SDD || {};
       }
     }
 
+    // land detection (transition from airborne to onGround)
+    if (!this.prevOnGround && this.onGround) this.landT = 6;
+    this.prevOnGround = this.onGround;
+    if (this.landT > 0) this.landT--;
+
     // animation
+    this.animT++;
     if (this.blastAnim > 0) { this.blastAnim--; this.frame = 'blast'; }
-    else if (!this.onGround) this.frame = 'jump';
-    else if (Math.abs(this.vx) > 0.3) {
-      this.animT++;
-      this.frame = (Math.floor(this.animT / 6) % 2) ? 'walk1' : 'walk2';
-    } else { this.frame = 'idle'; this.animT = 0; }
+    else if (!this.onGround) {
+      if (this.vy < -1.0) this.frame = 'jump';
+      else this.frame = 'fall';
+    }
+    else if (this.landT > 0) this.frame = 'land';
+    else if (Math.abs(this.vx) > 0.4) {
+      this.frame = 'walk' + (Math.floor(this.animT / 4) % 4);
+    } else {
+      this.frame = (Math.floor(this.animT / 28) % 2) ? 'idle1' : 'idle0';
+    }
 
     if (this.invuln > 0) this.invuln--;
 
@@ -260,7 +272,7 @@ window.SDD = window.SDD || {};
     if (!this.dead) softShadow(ctx, this, cam);
     if (this.invuln > 0 && (this.invuln % 8) < 4) return;
     var size = this.big ? 'big' : 'small';
-    var fr = this.dead ? 'hurt' : this.frame;
+    var fr = this.dead ? 'die' : this.frame;
     var dir = this.facing > 0 ? 'r' : 'l';
     drawBC(ctx, 'danny_' + size + '_' + fr + '_' + dir, this, cam);
   };

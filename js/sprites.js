@@ -151,154 +151,245 @@ window.SDD = window.SDD || {};
   }
 
   // ================= Danny =================
-  // small white atom emblem, top-left at x,y (5x5)
-  function paintAtom(g, x, y) {
-    px(g, x + 1, y, 1, 1, C.atom); px(g, x + 3, y, 1, 1, C.atom);
-    px(g, x, y + 2, 1, 1, C.atom); px(g, x + 4, y + 2, 1, 1, C.atom);
-    px(g, x + 2, y + 2, 1, 1, C.atom);
-    px(g, x + 1, y + 4, 1, 1, C.atom); px(g, x + 3, y + 4, 1, 1, C.atom);
-  }
-
+  // ---- tall Danny: 24x36, articulated arms + legs, 13 animation frames ----
   function paintDannyBig(g, frame) {
-    var jump = frame === 'jump', blast = frame === 'blast';
-    var ls = frame === 'walk1' ? 1 : (frame === 'walk2' ? -1 : 0), rs = -ls;
-
-    // ---- backwards cap ----
-    px(g, 7, 0, 6, 1, C.cap);
-    px(g, 6, 1, 8, 1, C.cap);
-    px(g, 5, 2, 10, 1, C.cap);
-    px(g, 4, 3, 12, 3, C.cap);
-    px(g, 7, 0, 3, 1, C.capL); px(g, 6, 1, 3, 1, C.capL);
-    px(g, 5, 2, 3, 1, C.capL); px(g, 4, 3, 3, 1, C.capL);
-    px(g, 4, 5, 12, 1, C.capD);
-    px(g, 1, 3, 4, 2, C.cap);                    // brim, pointing back
-    px(g, 1, 3, 4, 1, C.capL); px(g, 1, 5, 4, 1, C.capD);
-    // ---- hair ----
-    px(g, 14, 5, 3, 5, C.hair);
-    px(g, 15, 6, 2, 3, C.hairL);
-    // ---- face (bright, clean) ----
-    px(g, 5, 6, 10, 6, C.skin);
-    px(g, 5, 6, 10, 1, C.skinL);
-    px(g, 5, 6, 1, 4, C.skinD);                  // thin brim shadow only
-    px(g, 4, 8, 1, 2, C.skin);                   // ear
-    // ---- glasses ----
-    px(g, 5, 8, 3, 1, C.out); px(g, 6, 8, 1, 1, C.lens);
-    px(g, 10, 8, 3, 1, C.out); px(g, 11, 8, 1, 1, C.lens);
-    px(g, 8, 8, 2, 1, C.out);                    // bridge
-    // ---- nose + beard ----
-    px(g, 12, 10, 1, 1, C.skinD);
-    px(g, 5, 10, 10, 2, C.hair);
-    px(g, 5, 10, 10, 1, C.hairL);
-    px(g, 8, 10, 4, 1, C.skinD);                 // mouth
-    px(g, 9, 12, 4, 1, C.skinD);                 // neck
-
-    // ---- lab coat, open over a black tee ----
-    px(g, 3, 13, 14, 11, C.coat);
-    px(g, 3, 13, 2, 11, C.coatL);
-    px(g, 15, 13, 2, 11, C.coatD);
-    px(g, 7, 13, 6, 10, C.shirt);                // wide black shirt panel
-    px(g, 7, 13, 6, 1, C.shirtL);
-    px(g, 6, 13, 1, 11, C.coatD);                // lapel edges
-    px(g, 13, 13, 1, 11, C.coatD);
-    px(g, 5, 13, 2, 1, C.coatD); px(g, 13, 13, 2, 1, C.coatD); // collar
-    paintAtom(g, 7, 16);                         // atom on the chest
-    px(g, 3, 23, 4, 3, C.coat); px(g, 13, 23, 4, 3, C.coat);   // coat tails
-    px(g, 3, 23, 2, 3, C.coatL); px(g, 15, 23, 2, 3, C.coatD);
-
-    // ---- arms ----
-    if (jump) {
-      px(g, 1, 11, 3, 5, C.coat); px(g, 16, 11, 3, 5, C.coat);
-      px(g, 1, 11, 1, 5, C.coatL);
-      px(g, 1, 10, 3, 1, C.skin); px(g, 16, 10, 3, 1, C.skin);
-    } else if (blast) {
-      px(g, 1, 16, 3, 6, C.coat); px(g, 1, 16, 1, 6, C.coatL);
-      px(g, 1, 22, 3, 2, C.skin);
-      px(g, 16, 14, 3, 3, C.coat); px(g, 19, 15, 1, 2, C.skin);
-    } else {
-      px(g, 1, 14, 3, 8, C.coat); px(g, 16, 14, 3, 8, C.coat);
-      px(g, 1, 14, 1, 8, C.coatL); px(g, 18, 14, 1, 8, C.coatD);
-      px(g, 1, 22, 3, 2, C.skin); px(g, 16, 22, 3, 2, C.skin);
-      px(g, 17, 21, 2, 1, '#d8def0');            // watch
+    var bob = 0, legL = 0, legR = 0;
+    var armBack = 'down', armFront = 'down';
+    var hurt = false, die = false, victory = false;
+    switch (frame) {
+      case 'idle1':   bob = 1; break;
+      case 'walk0':   legL = -1; legR = 2;  armBack = 'fwd';  armFront = 'back'; break;
+      case 'walk1':   bob = -1; break;
+      case 'walk2':   legL = 2;  legR = -1; armBack = 'back'; armFront = 'fwd';  break;
+      case 'walk3':   bob = -1; break;
+      case 'jump':    bob = -1; armBack = 'up';  armFront = 'up';  break;
+      case 'fall':    armBack = 'out'; armFront = 'out'; break;
+      case 'land':    bob = 2; legL = -1; legR = 1; armBack = 'out'; armFront = 'out'; break;
+      case 'blast':   armFront = 'forward'; break;
+      case 'hurt':    hurt = true; bob = 1; armBack = 'out'; armFront = 'out'; break;
+      case 'die':     hurt = true; die = true; armBack = 'down'; armFront = 'down'; break;
+      case 'victory': bob = -1; armBack = 'up'; armFront = 'up'; victory = true; break;
     }
 
-    // ---- jeans ----
-    px(g, 5 + ls, 24, 5, 6, C.jean);
-    px(g, 10 + rs, 24, 5, 6, C.jean);
-    px(g, 5 + ls, 24, 1, 6, C.jeanL);
-    px(g, 14 + rs, 24, 1, 6, C.jeanD);
-    px(g, 9, 24, 2, 5, C.jeanD);
+    // ===== HEAD =====
+    var cy = 1 + bob;
+    px(g, 9, cy, 7, 1, C.cap);
+    px(g, 8, cy + 1, 9, 1, C.cap);
+    px(g, 7, cy + 2, 11, 1, C.cap);
+    px(g, 6, cy + 3, 13, 2, C.cap);
+    px(g, 9, cy, 4, 1, C.capL);
+    px(g, 8, cy + 1, 4, 1, C.capL);
+    px(g, 7, cy + 2, 4, 1, C.capL);
+    px(g, 6, cy + 3, 4, 1, C.capL);
+    px(g, 6, cy + 5, 13, 1, C.capD);
+    px(g, 1, cy + 3, 5, 2, C.cap);
+    px(g, 1, cy + 3, 5, 1, C.capL);
+    px(g, 1, cy + 5, 5, 1, C.capD);
+    px(g, 17, cy + 5, 3, 7, C.hair);
+    px(g, 18, cy + 6, 2, 5, C.hairL);
+    px(g, 6, cy + 8, 1, 2, C.hair);
+    px(g, 6, cy + 5, 13, 8, C.skin);
+    px(g, 6, cy + 5, 13, 1, C.skinL);
+    px(g, 6, cy + 5, 1, 6, C.skinD);
+    px(g, 4, cy + 8, 2, 3, C.skin);                          // ear
+    if (hurt) {
+      px(g, 7, cy + 7, 2, 3, '#ff5d5d');
+      px(g, 13, cy + 7, 2, 3, '#ff5d5d');
+      px(g, 6, cy + 8, 4, 1, C.out);
+      px(g, 12, cy + 8, 4, 1, C.out);
+    } else {
+      px(g, 6, cy + 8, 4, 1, C.out);
+      px(g, 7, cy + 8, 2, 1, C.lens);
+      px(g, 12, cy + 8, 4, 1, C.out);
+      px(g, 13, cy + 8, 2, 1, C.lens);
+      px(g, 10, cy + 8, 2, 1, C.out);                        // bridge
+    }
+    px(g, 16, cy + 10, 1, 1, C.skinD);                       // nose
+    px(g, 6, cy + 11, 13, 2, C.hair);
+    px(g, 6, cy + 11, 13, 1, C.hairL);
+    px(g, 10, cy + 11, 5, 1, C.skinD);                       // mouth
+    px(g, 11, cy + 13, 4, 1, C.skinD);                       // neck
 
-    // ---- white sneakers ----
-    px(g, 4 + ls, 29, 7, 2, C.shoe); px(g, 9 + rs, 29, 7, 2, C.shoe);
-    px(g, 4 + ls, 29, 7, 1, C.shoeL); px(g, 9 + rs, 29, 7, 1, C.shoeL);
-    px(g, 4 + ls, 30, 7, 1, C.shoeD); px(g, 9 + rs, 30, 7, 1, C.shoeD);
+    // ===== TORSO (fixed) =====
+    var by = 14, bh = 11;
+    px(g, 4, by, 17, bh, C.coat);
+    px(g, 4, by, 3, bh, C.coatL);
+    px(g, 19, by, 2, bh, C.coatD);
+    px(g, 7, by, 3, 1, C.coatD); px(g, 14, by, 3, 1, C.coatD); // collar
+    px(g, 8, by, 1, bh, C.coatD); px(g, 15, by, 1, bh, C.coatD); // lapel seams
+    // black shirt
+    px(g, 9, by, 6, bh, C.shirt);
+    px(g, 9, by, 6, 1, C.shirtL);
+    // atom emblem (diamond)
+    px(g, 11, 16, 1, 1, C.atom); px(g, 13, 16, 1, 1, C.atom);
+    px(g, 10, 17, 1, 1, C.atom); px(g, 14, 17, 1, 1, C.atom);
+    px(g, 12, 18, 1, 1, C.atom);
+    px(g, 10, 19, 1, 1, C.atom); px(g, 14, 19, 1, 1, C.atom);
+    px(g, 11, 20, 1, 1, C.atom); px(g, 13, 20, 1, 1, C.atom);
+
+    if (!die) {
+      // coat tails
+      px(g, 3, 25, 4, 3, C.coat); px(g, 17, 25, 4, 3, C.coat);
+      px(g, 3, 25, 2, 3, C.coatL); px(g, 19, 25, 2, 3, C.coatD);
+    }
+
+    // ===== ARMS =====
+    function arm(side, pose) {
+      var isBack = side === 'back';
+      if (pose === 'forward' && !isBack) {
+        px(g, 19, 15, 5, 3, C.coat);
+        px(g, 19, 15, 1, 3, C.coatL);
+        px(g, 23, 15, 1, 3, C.skin);
+        return;
+      }
+      if (pose === 'forward' && isBack) pose = 'down';
+      var dx, ay, ah, handY;
+      if (pose === 'down') { dx = isBack ? 2 : 19; ay = 14; ah = 8; handY = 22; }
+      else if (pose === 'fwd')  { dx = isBack ? 3 : 18; ay = 15; ah = 7; handY = 22; }
+      else if (pose === 'back') { dx = isBack ? 1 : 20; ay = 14; ah = 8; handY = 22; }
+      else if (pose === 'up')   { dx = isBack ? 2 : 19; ay = 8 + bob; ah = 6; handY = 7 + bob; }
+      else if (pose === 'out')  { dx = isBack ? 0 : 21; ay = 16; ah = 4; handY = 20; }
+      else                       { dx = isBack ? 2 : 19; ay = 14; ah = 8; handY = 22; }
+      px(g, dx, ay, 3, ah, C.coat);
+      if (isBack) px(g, dx, ay, 1, ah, C.coatL);
+      else        px(g, dx + 2, ay, 1, ah, C.coatD);
+      px(g, dx, handY, 3, 2, C.skin);
+      if (!isBack && pose === 'down') px(g, dx, handY - 1, 2, 1, '#d8def0'); // watch
+    }
+    arm('back', armBack);
+    arm('front', armFront);
+
+    // ===== LEGS + SHOES =====
+    if (!die) {
+      var lx = 7 + legL, rx = 13 + legR;
+      px(g, lx, 28, 4, 4, C.jean); px(g, lx, 28, 1, 4, C.jeanL); px(g, lx + 3, 28, 1, 4, C.jeanD);
+      px(g, rx, 28, 4, 4, C.jean); px(g, rx, 28, 1, 4, C.jeanL); px(g, rx + 3, 28, 1, 4, C.jeanD);
+      px(g, lx - 1, 32, 6, 3, C.shoe); px(g, lx - 1, 32, 6, 1, C.shoeL); px(g, lx - 1, 34, 6, 1, C.shoeD);
+      px(g, rx - 1, 32, 6, 3, C.shoe); px(g, rx - 1, 32, 6, 1, C.shoeL); px(g, rx - 1, 34, 6, 1, C.shoeD);
+    } else {
+      // collapsed shape on the ground
+      px(g, 2, 32, 20, 3, C.coat);
+      px(g, 2, 32, 20, 1, C.coatL);
+      px(g, 2, 34, 20, 1, C.coatD);
+    }
+
+    if (victory) {
+      px(g, 11, 0, 1, 1, C.atom); px(g, 13, 0, 1, 1, C.atom);
+      px(g, 4, 4, 1, 1, C.atom); px(g, 20, 4, 1, 1, C.atom);
+      px(g, 2, 12, 1, 1, C.atom); px(g, 22, 12, 1, 1, C.atom);
+    }
   }
 
+  // ---- short (chibi) Danny: 18x22, same 13 frames at smaller scale ----
   function paintDannySmall(g, frame) {
-    var jump = frame === 'jump', blast = frame === 'blast';
-    var ls = frame === 'walk1' ? 1 : (frame === 'walk2' ? -1 : 0), rs = -ls;
-
-    // ---- backwards cap ----
-    px(g, 5, 0, 5, 1, C.cap);
-    px(g, 4, 1, 7, 1, C.cap);
-    px(g, 3, 2, 9, 2, C.cap);
-    px(g, 5, 0, 3, 1, C.capL); px(g, 4, 1, 3, 1, C.capL); px(g, 3, 2, 3, 1, C.capL);
-    px(g, 3, 3, 9, 1, C.capD);
-    px(g, 1, 2, 3, 1, C.cap); px(g, 1, 2, 3, 1, C.capL);
-    px(g, 1, 3, 3, 1, C.capD);
-    // ---- hair ----
-    px(g, 10, 3, 3, 5, C.hair);
-    px(g, 11, 4, 2, 3, C.hairL);
-    // ---- face (bright, clean) ----
-    px(g, 4, 4, 8, 6, C.skin);
-    px(g, 4, 4, 8, 1, C.skinL);
-    px(g, 4, 4, 1, 4, C.skinD);
-    px(g, 3, 6, 1, 2, C.skin);                   // ear
-    // ---- glasses ----
-    px(g, 4, 6, 3, 1, C.out); px(g, 5, 6, 1, 1, C.lens);
-    px(g, 8, 6, 3, 1, C.out); px(g, 9, 6, 1, 1, C.lens);
-    px(g, 7, 6, 1, 1, C.out);
-    // ---- nose + beard ----
-    px(g, 10, 7, 1, 1, C.skinD);
-    px(g, 4, 8, 8, 2, C.hair);
-    px(g, 4, 8, 8, 1, C.hairL);
-    px(g, 6, 8, 4, 1, C.skinD);                  // mouth
-    px(g, 6, 10, 4, 1, C.skinD);                 // neck
-
-    // ---- lab coat, open over a black tee ----
-    px(g, 2, 11, 12, 5, C.coat);
-    px(g, 2, 11, 2, 5, C.coatL);
-    px(g, 12, 11, 2, 5, C.coatD);
-    px(g, 5, 11, 6, 5, C.shirt);                 // black shirt panel
-    px(g, 5, 11, 6, 1, C.shirtL);
-    px(g, 4, 11, 1, 5, C.coatD); px(g, 11, 11, 1, 5, C.coatD);
-    px(g, 7, 13, 1, 1, C.atom);                  // atom (small cross)
-    px(g, 6, 13, 1, 1, C.atom); px(g, 8, 13, 1, 1, C.atom);
-    px(g, 7, 12, 1, 1, C.atom); px(g, 7, 14, 1, 1, C.atom);
-
-    // ---- arms ----
-    if (jump) {
-      px(g, 1, 9, 2, 3, C.coat); px(g, 13, 9, 2, 3, C.coat);
-      px(g, 1, 8, 2, 1, C.skin); px(g, 13, 8, 2, 1, C.skin);
-    } else if (blast) {
-      px(g, 1, 12, 2, 4, C.coat); px(g, 1, 16, 2, 1, C.skin);
-      px(g, 13, 12, 2, 2, C.coat); px(g, 15, 12, 1, 2, C.skin);
-    } else {
-      px(g, 1, 12, 2, 5, C.coat); px(g, 13, 12, 2, 5, C.coat);
-      px(g, 1, 17, 2, 1, C.skin); px(g, 13, 17, 2, 1, C.skin);
-      px(g, 13, 16, 2, 1, '#d8def0');            // watch
+    var bob = 0, legL = 0, legR = 0;
+    var armBack = 'down', armFront = 'down';
+    var hurt = false, die = false, victory = false;
+    switch (frame) {
+      case 'idle1':   bob = 1; break;
+      case 'walk0':   legL = -1; legR = 1; armBack = 'fwd';  armFront = 'back'; break;
+      case 'walk1':   bob = -1; break;
+      case 'walk2':   legL = 1;  legR = -1; armBack = 'back'; armFront = 'fwd';  break;
+      case 'walk3':   bob = -1; break;
+      case 'jump':    bob = -1; armBack = 'up'; armFront = 'up'; break;
+      case 'fall':    armBack = 'out'; armFront = 'out'; break;
+      case 'land':    bob = 1; armBack = 'out'; armFront = 'out'; break;
+      case 'blast':   armFront = 'forward'; break;
+      case 'hurt':    hurt = true; bob = 1; armBack = 'out'; armFront = 'out'; break;
+      case 'die':     hurt = true; die = true; break;
+      case 'victory': bob = -1; armBack = 'up'; armFront = 'up'; victory = true; break;
     }
 
-    // ---- jeans ----
-    px(g, 4 + ls, 16, 4, 3, C.jean);
-    px(g, 8 + rs, 16, 4, 3, C.jean);
-    px(g, 4 + ls, 16, 1, 3, C.jeanL);
-    px(g, 11 + rs, 16, 1, 3, C.jeanD);
+    // ===== HEAD =====
+    var cy = 0 + bob;
+    px(g, 6, cy, 6, 1, C.cap);
+    px(g, 5, cy + 1, 8, 1, C.cap);
+    px(g, 4, cy + 2, 10, 2, C.cap);
+    px(g, 6, cy, 3, 1, C.capL); px(g, 5, cy + 1, 3, 1, C.capL); px(g, 4, cy + 2, 3, 1, C.capL);
+    px(g, 4, cy + 3, 10, 1, C.capD);
+    px(g, 1, cy + 2, 3, 2, C.cap);
+    px(g, 1, cy + 2, 3, 1, C.capL); px(g, 1, cy + 3, 3, 1, C.capD);
+    px(g, 12, cy + 4, 3, 4, C.hair);
+    px(g, 13, cy + 5, 2, 2, C.hairL);
+    px(g, 5, cy + 4, 9, 5, C.skin);
+    px(g, 5, cy + 4, 9, 1, C.skinL);
+    px(g, 5, cy + 4, 1, 4, C.skinD);
+    px(g, 4, cy + 6, 1, 2, C.skin);                          // ear
+    if (hurt) {
+      px(g, 6, cy + 5, 2, 2, '#ff5d5d');
+      px(g, 10, cy + 5, 2, 2, '#ff5d5d');
+    } else {
+      px(g, 5, cy + 6, 3, 1, C.out); px(g, 6, cy + 6, 1, 1, C.lens);
+      px(g, 9, cy + 6, 3, 1, C.out); px(g, 10, cy + 6, 1, 1, C.lens);
+      px(g, 8, cy + 6, 1, 1, C.out);                          // bridge
+    }
+    px(g, 12, cy + 7, 1, 1, C.skinD);                         // nose
+    px(g, 5, cy + 8, 9, 1, C.hair);                           // beard line
+    px(g, 7, cy + 8, 4, 1, C.skinD);                          // mouth
+    px(g, 8, cy + 9, 3, 1, C.skinD);                          // neck
 
-    // ---- white sneakers ----
-    px(g, 3 + ls, 18, 5, 2, C.shoe); px(g, 8 + rs, 18, 5, 2, C.shoe);
-    px(g, 3 + ls, 18, 5, 1, C.shoeL); px(g, 8 + rs, 18, 5, 1, C.shoeL);
-    px(g, 3 + ls, 19, 5, 1, C.shoeD); px(g, 8 + rs, 19, 5, 1, C.shoeD);
+    // ===== TORSO =====
+    var by = 10;
+    px(g, 3, by, 13, 6, C.coat);
+    px(g, 3, by, 2, 6, C.coatL);
+    px(g, 14, by, 2, 6, C.coatD);
+    px(g, 5, by, 2, 1, C.coatD); px(g, 12, by, 2, 1, C.coatD);
+    px(g, 6, by, 1, 6, C.coatD); px(g, 12, by, 1, 6, C.coatD);
+    px(g, 7, by, 5, 6, C.shirt);
+    px(g, 7, by, 5, 1, C.shirtL);
+    // atom (small cross)
+    px(g, 9, 11, 1, 1, C.atom);
+    px(g, 8, 12, 1, 1, C.atom); px(g, 10, 12, 1, 1, C.atom); px(g, 9, 12, 1, 1, C.atom);
+    px(g, 9, 13, 1, 1, C.atom);
+
+    if (!die) {
+      // coat tails
+      px(g, 2, 16, 3, 2, C.coat); px(g, 13, 16, 3, 2, C.coat);
+      px(g, 2, 16, 1, 2, C.coatL); px(g, 15, 16, 1, 2, C.coatD);
+    }
+
+    // ===== ARMS =====
+    function arm(side, pose) {
+      var isBack = side === 'back';
+      if (pose === 'forward' && !isBack) {
+        px(g, 14, 11, 4, 2, C.coat);
+        px(g, 17, 11, 1, 2, C.skin);
+        return;
+      }
+      if (pose === 'forward' && isBack) pose = 'down';
+      var dx, ay, ah, handY;
+      if (pose === 'down') { dx = isBack ? 1 : 14; ay = 10; ah = 5; handY = 15; }
+      else if (pose === 'fwd')  { dx = isBack ? 2 : 13; ay = 11; ah = 4; handY = 15; }
+      else if (pose === 'back') { dx = isBack ? 0 : 15; ay = 10; ah = 5; handY = 15; }
+      else if (pose === 'up')   { dx = isBack ? 1 : 14; ay = 5 + bob; ah = 4; handY = 4 + bob; }
+      else if (pose === 'out')  { dx = isBack ? 0 : 15; ay = 12; ah = 3; handY = 15; }
+      else                       { dx = isBack ? 1 : 14; ay = 10; ah = 5; handY = 15; }
+      px(g, dx, ay, 2, ah, C.coat);
+      if (isBack) px(g, dx, ay, 1, ah, C.coatL);
+      else        px(g, dx + 1, ay, 1, ah, C.coatD);
+      px(g, dx, handY, 2, 1, C.skin);
+      if (!isBack && pose === 'down') px(g, dx, handY - 1, 2, 1, '#d8def0'); // watch
+    }
+    arm('back', armBack);
+    arm('front', armFront);
+
+    // ===== LEGS + SHOES =====
+    if (!die) {
+      var lx = 4 + legL, rx = 9 + legR;
+      px(g, lx, 17, 3, 2, C.jean); px(g, lx, 17, 1, 2, C.jeanL); px(g, lx + 2, 17, 1, 2, C.jeanD);
+      px(g, rx, 17, 3, 2, C.jean); px(g, rx, 17, 1, 2, C.jeanL); px(g, rx + 2, 17, 1, 2, C.jeanD);
+      px(g, lx - 1, 19, 5, 2, C.shoe); px(g, lx - 1, 19, 5, 1, C.shoeL); px(g, lx - 1, 20, 5, 1, C.shoeD);
+      px(g, rx - 1, 19, 5, 2, C.shoe); px(g, rx - 1, 19, 5, 1, C.shoeL); px(g, rx - 1, 20, 5, 1, C.shoeD);
+    } else {
+      px(g, 1, 19, 16, 2, C.coat);
+      px(g, 1, 19, 16, 1, C.coatL);
+      px(g, 1, 20, 16, 1, C.coatD);
+    }
+
+    if (victory) {
+      px(g, 8, 0, 1, 1, C.atom); px(g, 10, 0, 1, 1, C.atom);
+      px(g, 1, 4, 1, 1, C.atom); px(g, 16, 4, 1, 1, C.atom);
+    }
   }
 
   // ================= enemies =================
@@ -567,15 +658,21 @@ window.SDD = window.SDD || {};
   }
 
   function build() {
-    var frames = ['idle', 'walk1', 'walk2', 'jump', 'blast', 'hurt'];
+    var frames = ['idle0', 'idle1', 'walk0', 'walk1', 'walk2', 'walk3',
+      'jump', 'fall', 'land', 'blast', 'hurt', 'die', 'victory'];
     frames.forEach(function (f) {
-      var fr = f === 'hurt' ? 'idle' : f;
-      var s = spriteO(16, 20, function (g) { paintDannySmall(g, fr); });
-      var b = spriteO(20, 31, function (g) { paintDannyBig(g, fr); });
+      var s = spriteO(18, 22, function (g) { paintDannySmall(g, f); });
+      var b = spriteO(24, 36, function (g) { paintDannyBig(g, f); });
       sprites['danny_small_' + f + '_r'] = s;
       sprites['danny_small_' + f + '_l'] = flip(s);
       sprites['danny_big_' + f + '_r'] = b;
       sprites['danny_big_' + f + '_l'] = flip(b);
+    });
+    // legacy aliases (existing scenes reference 'idle' by old name)
+    ['small', 'big'].forEach(function (sz) {
+      ['r', 'l'].forEach(function (dir) {
+        sprites['danny_' + sz + '_idle_' + dir] = sprites['danny_' + sz + '_idle0_' + dir];
+      });
     });
 
     [0, 1].forEach(function (i) {
