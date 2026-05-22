@@ -109,4 +109,6 @@ window.SDD = window.SDD || {};
     tiles: t, spawns: spawns, movers: movers,
     name: 'LIGHT AND DARKNESS'
   };
+  SDD.levels = SDD.levels || {};
+  SDD.levels['1-1'] = SDD.level1;
 })();

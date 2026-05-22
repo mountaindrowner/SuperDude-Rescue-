@@ -318,10 +318,15 @@ window.SDD = window.SDD || {};
       this.dannyX += (NODES[this.idx].x - this.dannyX) * 0.25;
       this.dannyY += (NODES[this.idx].y - this.dannyY) * 0.25;
       if (In.confirm()) {
+        var day = this.idx + 1;
         var unlocked = SDD.save.data.unlockedDay;
-        if (this.idx + 1 > unlocked) { this.msg = 'THAT DAY IS LOCKED'; this.msgT = 110; A.sfx('bump'); }
-        else if (this.idx === 0) { A.sfx('enter'); go('level', { day: 1 }); }
-        else { this.msg = 'DAY ' + (this.idx + 1) + ' - COMING SOON!'; this.msgT = 130; A.sfx('bump'); }
+        if (day > unlocked) { this.msg = 'THAT DAY IS LOCKED'; this.msgT = 110; A.sfx('bump'); }
+        else {
+          var stage = SDD.save.nextStage(day);
+          var key = day + '-' + stage;
+          if (SDD.levels && SDD.levels[key]) { A.sfx('enter'); go('level', { day: day, stage: stage }); }
+          else { this.msg = 'DAY ' + day + ' - COMING SOON!'; this.msgT = 130; A.sfx('bump'); }
+        }
       }
       if (In.pressed('pause')) { A.sfx('confirm'); go('menu'); }
     },
@@ -448,13 +453,14 @@ window.SDD = window.SDD || {};
   SDD.scenes.level = {
     enter: function (d) {
       this.day = (d && d.day) || 1;
+      this.stage = (d && d.stage) || 1;
       this.lives = 3;
       this.loadLevel();
       A.startMusic('level');
     },
 
     loadLevel: function () {
-      var L = SDD.level1, T = C.TILE;
+      var L = SDD.levels[this.day + '-' + this.stage] || SDD.level1, T = C.TILE;
       var grid = L.tiles.map(function (r) { return r.slice(); });
       this.map = new E.TileMap(grid);
       this.enemies = []; this.platforms = []; this.items = [];
@@ -538,8 +544,11 @@ window.SDD = window.SDD || {};
 
     finish: function () {
       var timeSec = Math.floor(this.timeSteps / 60);
-      SDD.save.recordDay(this.day, timeSec, this.cores);
-      go('results', { day: this.day, timeSec: timeSec, cores: this.cores, lives: this.lives });
+      SDD.save.recordStage(this.day, this.stage, timeSec, this.cores);
+      go('results', {
+        day: this.day, stage: this.stage,
+        timeSec: timeSec, cores: this.cores, lives: this.lives
+      });
     },
 
     stepWorld: function () {
@@ -707,7 +716,11 @@ window.SDD = window.SDD || {};
 
       this.drawHUD(g);
 
-      if (this.state === 'won') this.drawBanner(g, 'DAY 1 COMPLETE!', '#ffd23a');
+      if (this.state === 'won') {
+        var sf = SDD.save.stagesForDay(this.day);
+        var msg = sf > 1 ? ('DAY ' + this.day + '-' + this.stage + ' COMPLETE!') : ('DAY ' + this.day + ' COMPLETE!');
+        this.drawBanner(g, msg, '#ffd23a');
+      }
       if (this.state === 'gameover') this.drawBanner(g, 'GAME OVER', '#ff5d4a');
       if (this.state === 'paused') this.drawPause(g);
     },
@@ -716,7 +729,9 @@ window.SDD = window.SDD || {};
       g.fillStyle = 'rgba(8,8,20,0.6)'; g.fillRect(0, 0, 320, 14);
       text(g, 'LIVES ' + this.lives, 6, 4, '#ffffff', 1, 'left');
       text(g, 'CORES ' + this.cores, 86, 4, '#46f0ff', 1, 'left');
-      text(g, 'DAY 1', 160, 4, '#ffd23a', 1, 'center');
+      var sv = SDD.save;
+      var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
+      text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');
       var sec = Math.floor(this.timeSteps / 60);
       text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
     },
@@ -755,17 +770,22 @@ window.SDD = window.SDD || {};
       grd.addColorStop(0, '#1a3a5e'); grd.addColorStop(1, '#e8c878');
       g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
       drawStarfield(g, this.t);
-      tsh(g, 'DAY 1 COMPLETE!', 160, 24, '#ffffff', '#a8631a', 3, 'center');
+      var day = this.d.day || 1, stage = this.d.stage || 1;
+      var sf = SDD.save.stagesForDay(day);
+      var title = sf > 1 ? ('DAY ' + day + '-' + stage + ' COMPLETE!') : ('DAY ' + day + ' COMPLETE!');
+      tsh(g, title, 160, 24, '#ffffff', '#a8631a', 3, 'center');
       g.drawImage(S.get('danny_big_jump_r'), 144, 58 + Math.sin(this.t * 0.1) * 3);
 
-      var sv = SDD.save.data;
+      var sv = SDD.save.data, key = day + '-' + stage;
+      var bestT = sv.bestTimes && sv.bestTimes[key];
+      var bestC = (sv.bestCores && sv.bestCores[key]) || 0;
       var rows = [
         'TIME           ' + this.d.timeSec + ' SEC',
         'POWER CORES    ' + this.d.cores,
         'LIVES LEFT     ' + this.d.lives,
         '',
-        'BEST TIME      ' + (sv.bestTime != null ? sv.bestTime + ' SEC' : '-'),
-        'BEST CORES     ' + sv.bestCores
+        'BEST TIME      ' + (bestT != null ? bestT + ' SEC' : '-'),
+        'BEST CORES     ' + bestC
       ];
       for (var i = 0; i < rows.length; i++) text(g, rows[i], 70, 104 + i * 11, '#1a1630', 1, 'left');
       if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 172, '#1a1630', 1, 'center');
