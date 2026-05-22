@@ -375,13 +375,74 @@ window.SDD = window.SDD || {};
   // =====================================================================
   // LEVEL - Day 1 gameplay
   // =====================================================================
-  function hillLayer(g, camx, factor, baseY, color, r) {
+  // ---- scenic background: sky, sun, drifting clouds, parallax hills ----
+  var CLOUDS = [];
+  for (var _c = 0; _c < 9; _c++) {
+    CLOUDS.push({ x: _c * 165 + (_c * 71 % 120), y: 14 + (_c * 43 % 54), s: 0.62 + (_c % 3) * 0.33 });
+  }
+  function puff(g, x, y, s) {
+    g.beginPath();
+    g.arc(x, y, 7 * s, 0, 6.29);
+    g.arc(x + 9 * s, y + 2 * s, 9 * s, 0, 6.29);
+    g.arc(x + 20 * s, y, 6.5 * s, 0, 6.29);
+    g.arc(x + 11 * s, y - 5 * s, 7 * s, 0, 6.29);
+    g.fill();
+  }
+  function drawCloud(g, x, y, s, alpha) {
+    g.save();
+    g.globalAlpha = alpha * 0.8;
+    g.fillStyle = '#c6d2ea'; puff(g, x, y + 2.5 * s, s);
+    g.globalAlpha = alpha;
+    g.fillStyle = '#ffffff'; puff(g, x, y, s);
+    g.restore();
+  }
+  function drawSun(g, x, y, prog) {
+    g.save();
+    var grd = g.createRadialGradient(x, y, 2, x, y, 54);
+    grd.addColorStop(0, 'rgba(255,238,176,' + (0.5 + prog * 0.34) + ')');
+    grd.addColorStop(1, 'rgba(255,238,176,0)');
+    g.fillStyle = grd; g.fillRect(x - 54, y - 54, 108, 108);
+    g.fillStyle = lc([255, 206, 138], [255, 246, 206], prog);
+    g.beginPath(); g.arc(x, y, 13, 0, 6.29); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.85)';
+    g.beginPath(); g.arc(x - 3.5, y - 3.5, 5, 0, 6.29); g.fill();
+    g.restore();
+  }
+  function hillLayer(g, camx, factor, baseY, color, r, rim) {
+    var span = r * 1.4;
+    var off = -((((camx * factor) % span) + span) % span);
+    var x;
     g.fillStyle = color;
-    var span = r * 1.5;
-    var off = -((camx * factor) % span);
-    for (var x = off - span; x < 340; x += span) {
-      g.beginPath(); g.arc(x + r * 0.75, baseY, r, Math.PI, 0); g.fill();
+    for (x = off - span; x < 340; x += span) {
+      g.beginPath(); g.arc(x + r * 0.7, baseY, r, Math.PI, 0); g.fill();
     }
+    g.fillRect(0, baseY - 1, 320, 200);
+    if (rim) {
+      g.strokeStyle = rim; g.lineWidth = 2;
+      for (x = off - span; x < 340; x += span) {
+        g.beginPath(); g.arc(x + r * 0.7, baseY, r, Math.PI, 0); g.stroke();
+      }
+    }
+  }
+  function drawSky(g, camx, camy, prog, t) {
+    var grd = g.createLinearGradient(0, 0, 0, 180);
+    grd.addColorStop(0, lc([38, 30, 80], [92, 166, 248], prog));
+    grd.addColorStop(0.5, lc([88, 62, 122], [146, 204, 250], prog));
+    grd.addColorStop(1, lc([196, 142, 156], [226, 244, 255], prog));
+    g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+    if (prog < 0.6) { g.globalAlpha = (0.6 - prog) * 1.7; drawStarfield(g, t); g.globalAlpha = 1; }
+    drawSun(g, 46 + prog * 212, 150 - prog * 112, prog);
+    var span = 1480, i, c, cx;
+    for (i = 0; i < CLOUDS.length; i++) {
+      c = CLOUDS[i];
+      cx = (((c.x - camx * 0.14 - t * 0.05) % span) + span) % span - 80;
+      drawCloud(g, cx, c.y + camy * 0.04, c.s, 0.42 + prog * 0.46);
+    }
+    hillLayer(g, camx, 0.12, 152 - camy * 0.1, lc([56, 54, 100], [110, 142, 172], prog), 62, null);
+    hillLayer(g, camx, 0.27, 176 - camy * 0.15, lc([64, 62, 110], [96, 154, 96], prog), 56,
+      lc([88, 86, 138], [142, 202, 122], prog));
+    hillLayer(g, camx, 0.48, 197 - camy * 0.22, lc([52, 50, 90], [74, 134, 70], prog), 66,
+      lc([78, 76, 122], [120, 184, 98], prog));
   }
 
   SDD.scenes.level = {
@@ -609,20 +670,8 @@ window.SDD = window.SDD || {};
       var cam = { x: Math.round(this.camera.x), y: Math.round(this.camera.y) };
       var prog = E.clamp(this.camera.x / Math.max(1, this.map.pxW - C.VIEW_W), 0, 1);
 
-      // sky (cosmetic light/dark theme - darker at the start, brighter onward)
-      var grd = g.createLinearGradient(0, 0, 0, 180);
-      grd.addColorStop(0, lc([46, 36, 86], [120, 196, 255], prog));
-      grd.addColorStop(1, lc([150, 122, 162], [224, 244, 255], prog));
-      g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
-      // sun rising with progress
-      g.fillStyle = 'rgba(255,228,150,' + (0.4 + prog * 0.5) + ')';
-      var sx = 50 + prog * 210, sy = 140 - prog * 96;
-      g.beginPath(); g.arc(sx, sy, 16 + prog * 6, 0, Math.PI * 2); g.fill();
-      // far stars fade out as it gets bright
-      if (prog < 0.5) { g.globalAlpha = (0.5 - prog) * 2; drawStarfield(g, this.timeSteps); g.globalAlpha = 1; }
-      // parallax hills
-      hillLayer(g, cam.x, 0.22, 188 - cam.y * 0.15, lc([86, 96, 130], [120, 170, 110], prog), 70);
-      hillLayer(g, cam.x, 0.42, 210 - cam.y * 0.2, lc([70, 80, 110], [96, 150, 86], prog), 54);
+      // cosmetic light/dark theme - the sky brightens as Danny progresses
+      drawSky(g, cam.x, cam.y, prog, this.timeSteps);
 
       // tiles
       var T = C.TILE;

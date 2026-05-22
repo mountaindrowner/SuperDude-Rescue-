@@ -15,6 +15,28 @@ window.SDD = window.SDD || {};
     var dy = Math.round(e.y - cam.y + e.h - s.height);
     ctx.drawImage(s, dx, dy);
   }
+  // soft blob shadow at an entity's feet
+  function softShadow(ctx, e, cam) {
+    var sx = e.x + e.w / 2 - cam.x, sy = e.y + e.h - cam.y;
+    ctx.save();
+    ctx.globalAlpha = 0.26;
+    ctx.fillStyle = '#0a0a16';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, e.w * 0.62, 2.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  // soft radial glow behind collectibles / projectiles
+  function glow(ctx, cx, cy, r, color, alpha) {
+    var grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grd.addColorStop(0, color);
+    grd.addColorStop(1, 'rgba(10,10,22,0)');
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = grd;
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    ctx.restore();
+  }
 
   // ===================== PLAYER =====================
   function Player(x, y) {
@@ -169,6 +191,7 @@ window.SDD = window.SDD || {};
   };
 
   Player.prototype.draw = function (ctx, cam) {
+    if (!this.dead) softShadow(ctx, this, cam);
     if (this.invuln > 0 && (this.invuln % 8) < 4) return;
     var size = this.big ? 'big' : 'small';
     var fr = this.dead ? 'hurt' : this.frame;
@@ -201,6 +224,7 @@ window.SDD = window.SDD || {};
   Walker.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
   Walker.prototype.zap = function () { this.dead = true; this.deadT = 0; };
   Walker.prototype.draw = function (ctx, cam) {
+    if (!this.dead) softShadow(ctx, this, cam);
     var f = this.dead ? 1 : (Math.floor(this.animT / 8) % 2);
     var dir = this.dir > 0 ? 'r' : 'l';
     drawBC(ctx, 'walker_' + f + '_' + dir, this, cam);
@@ -256,6 +280,7 @@ window.SDD = window.SDD || {};
   };
   Thrower.prototype.zap = function () { this.dead = true; this.deadT = 0; };
   Thrower.prototype.draw = function (ctx, cam) {
+    if (!this.dead) softShadow(ctx, this, cam);
     var f = this.dead ? 1 : (this.throwAnim > 8 ? 1 : 0);
     var dir = this.facing > 0 ? 'r' : 'l';
     drawBC(ctx, 'thrower_' + f + '_' + dir, this, cam);
@@ -272,7 +297,10 @@ window.SDD = window.SDD || {};
     this.life--;
     if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;
   };
-  Orb.prototype.draw = function (ctx, cam) { drawBC(ctx, 'orb', this, cam); };
+  Orb.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 9, '#c061da', 0.5);
+    drawBC(ctx, 'orb', this, cam);
+  };
 
   // ===================== PLAYER BLAST =====================
   function Blast(x, y, dir) {
@@ -288,6 +316,7 @@ window.SDD = window.SDD || {};
     if (this.traveled > 70) this.remove = true;
   };
   Blast.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 12, '#fff0a0', 0.6);
     drawBC(ctx, this.dir > 0 ? 'playerblast_r' : 'playerblast_l', this, cam);
   };
 
@@ -321,6 +350,8 @@ window.SDD = window.SDD || {};
   }
   Core.prototype.update = function () { this.t += 0.1; this.y = this.baseY + Math.sin(this.t) * 2.5; };
   Core.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y,
+      11, '#46f0ff', 0.4 + Math.sin(this.t * 1.5) * 0.18);
     var f = (Math.floor(this.t * 2) % 2);
     drawBC(ctx, 'core_' + f, this, cam);
   };
@@ -346,6 +377,8 @@ window.SDD = window.SDD || {};
     }
   };
   ItemDrop.prototype.draw = function (ctx, cam) {
+    var col = this.kind === 'grow' ? '#ffb24a' : '#fff0a0';
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 13, col, 0.55);
     var f = (Math.floor(this.t / 10) % 2);
     drawBC(ctx, (this.kind === 'grow' ? 'grow_' : 'blastitem_') + f, this, cam);
   };
@@ -357,18 +390,9 @@ window.SDD = window.SDD || {};
   }
   TimePart.prototype.update = function () { this.t += 0.08; this.y = this.baseY + Math.sin(this.t) * 3; };
   TimePart.prototype.draw = function (ctx, cam) {
-    var s = spr('timepart');
-    var dx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
-    var dy = Math.round(this.y - cam.y + this.h - s.height);
-    // soft glow
-    ctx.save();
-    ctx.globalAlpha = 0.25 + Math.sin(this.t * 2) * 0.12;
-    ctx.fillStyle = '#9bf0ff';
-    ctx.beginPath();
-    ctx.arc(dx + s.width / 2, dy + s.height / 2, 14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.drawImage(s, dx, dy);
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y,
+      19, '#9bf0ff', 0.4 + Math.sin(this.t * 2) * 0.16);
+    drawBC(ctx, 'timepart', this, cam);
   };
 
   SDD.ent = {
