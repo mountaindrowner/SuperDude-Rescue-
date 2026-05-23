@@ -63,17 +63,18 @@ window.SDD = window.SDD || {};
   sp('thrower', 118, 10);
   sp('core', 114, 9); sp('core', 122, 9); sp('core', 128, 9);
 
-  // PIT with multiple short vines above (can climb or jump across)
-  // wide pit 131-180
+  // PIT with multiple vines hanging from the ceiling (climb or swing
+  // across). Vines extend all the way up to row 1 so they look rooted
+  // to the canopy / sky instead of floating in mid-air.
   box(131, 0, 131, 4, 'X');                                // anchor for vines
   box(180, 0, 180, 4, 'X');
-  vine(135, 5, 10);
-  vine(141, 5, 9);
-  vine(147, 5, 11);
-  vine(154, 5, 8);
-  vine(161, 5, 10);
-  vine(168, 5, 9);
-  vine(175, 5, 11);
+  vine(135, 1, 10);
+  vine(141, 1, 9);
+  vine(147, 1, 11);
+  vine(154, 1, 8);
+  vine(161, 1, 10);
+  vine(168, 1, 9);
+  vine(175, 1, 11);
   sp('core', 135, 6); sp('core', 141, 6); sp('core', 147, 6);
   sp('core', 154, 6); sp('core', 161, 6); sp('core', 168, 6); sp('core', 175, 6);
   sp('wisp', 140, 4); sp('wisp', 152, 3); sp('wisp', 165, 4);
@@ -83,24 +84,24 @@ window.SDD = window.SDD || {};
   sp('walker', 197, 10);
   sp('core', 184, 9); sp('core', 190, 7); sp('core', 200, 9); sp('core', 208, 9);
 
-  // ============== REWARD (215-259): vine-maze gate before goal ==============
-  // dense vine wall - many vines side by side, only the rightmost (or
-  // specific) leads up to the canopy with the goal
-  box(215, 2, 215, 13, 'X');                               // left wall
-  box(232, 2, 232, 13, 'X');                               // right wall (of maze)
-  box(215, 0, 232, 2, 'X');                                // ceiling
-  // vines inside the gate - climbing any of them up to row 3
-  vine(217, 3, 10);
-  vine(220, 3, 10);
-  vine(223, 3, 10);
-  vine(226, 3, 10);
-  vine(229, 3, 10);
-  sp('core', 217, 4); sp('core', 220, 4); sp('core', 223, 4);
-  sp('core', 226, 4); sp('core', 229, 4);
-  // Above the gate: small canopy walkway with the goal
-  box(216, 2, 231, 2, 'X');                                // canopy floor
-  // (remove the ceiling overlap on canopy area)
+  // ============== REWARD (215-259): vine climb to a canopy ==============
+  // Open ground at the base - walk in from the left. Four vines
+  // run from the canopy ledge down to ground level so any climb works
+  // (the original "maze" had a ceiling that sealed the gate). Goal is
+  // the time-machine part further along, after dropping off the canopy.
+  ground(215, 232);
+  // Canopy ledge - tall enough that you must climb to reach it.
+  box(220, 4, 232, 5, 'X');
+  // Four vines, all reaching from canopy down to ground.
+  vine(218, 6, 10);
+  vine(222, 6, 10);
+  vine(225, 6, 10);
+  vine(229, 6, 10);
+  // Cores on each vine to encourage exploration.
+  sp('core', 218, 7); sp('core', 222, 7); sp('core', 225, 7);
+  sp('core', 229, 7); sp('core', 226, 3);
 
+  // After the canopy, the ground resumes for the run to the goal.
   ground(233, 259);
   box(240, 8, 244, 13, 'X');
   box(248, 7, 252, 13, 'X');                               // goal pedestal

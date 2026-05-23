@@ -45,6 +45,7 @@ window.SDD = window.SDD || {};
     this.facing = 1;
     this.big = false; this.hasBlast = false;
     this.onGround = false; this.coyote = 0; this.jumpBuf = 0;
+    this.dropThrough = 0;
     this.invuln = 0;
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
@@ -241,7 +242,26 @@ window.SDD = window.SDD || {};
 
       if (this.onGround) this.coyote = C.COYOTE; else if (this.coyote > 0) this.coyote--;
       if (In.pressed('jump')) this.jumpBuf = C.JUMP_BUFFER; else if (this.jumpBuf > 0) this.jumpBuf--;
-      if (this.jumpBuf > 0 && this.coyote > 0) {
+
+      // Drop-through one-way platform: Down + A while standing on a
+      // one-way tile bypasses the jump and phases through the platform.
+      if (this.dropThrough > 0) this.dropThrough--;
+      var didDrop = false;
+      if (this.onGround && In.held('down') && this.jumpBuf > 0) {
+        var footRow = Math.floor((this.y + this.h) / T);
+        var fcLft = Math.floor(this.x / T);
+        var fcRgt = Math.floor((this.x + this.w - 1) / T);
+        for (var fx = fcLft; fx <= fcRgt; fx++) {
+          if (level.map.isOneWay(fx, footRow) && !level.map.isSolid(fx, footRow)) {
+            this.dropThrough = 6; this.jumpBuf = 0; this.coyote = 0;
+            this.y += 2; this.vy = 0.5; this.onGround = false;
+            SDD.audio.sfx('jump');
+            didDrop = true; break;
+          }
+        }
+      }
+
+      if (!didDrop && this.jumpBuf > 0 && this.coyote > 0) {
         this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul;
         this.jumpBuf = 0; this.coyote = 0;
         SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');

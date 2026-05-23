@@ -82,7 +82,10 @@ window.SDD = window.SDD || {};
       row = Math.floor((e.y + e.h - 1) / T);
       for (tx = lft; tx <= rgt; tx++) {
         var landSolid = map.isSolid(tx, row);
-        var landOne = map.isOneWay(tx, row) && preBottom <= row * T + 1;
+        // dropThrough: player pressed Down+A on a one-way platform.
+        // Skip one-way landing checks for the next few frames so we
+        // fall through cleanly.
+        var landOne = map.isOneWay(tx, row) && preBottom <= row * T + 1 && !e.dropThrough;
         if (landSolid || landOne) { e.y = row * T - e.h; e.vy = 0; e.onGround = true; break; }
       }
     } else if (e.vy < 0) {
@@ -101,10 +104,12 @@ window.SDD = window.SDD || {};
     // misses the next. That flipped onGround every other frame, which
     // re-triggered Player.landT and locked Danny on the landing pose
     // instead of cycling the run animation. Probe one pixel below.
-    if (!e.onGround && e.vy >= 0) {
+    if (!e.onGround && e.vy >= 0 && !e.dropThrough) {
       row = Math.floor((e.y + e.h) / T);
       for (tx = lft; tx <= rgt; tx++) {
-        if (map.isSolid(tx, row) || (map.isOneWay && map.isOneWay(tx, row))) {
+        var probeSolid = map.isSolid(tx, row);
+        var probeOne   = map.isOneWay && map.isOneWay(tx, row);
+        if (probeSolid || probeOne) {
           e.y = row * T - e.h; e.vy = 0; e.onGround = true; break;
         }
       }

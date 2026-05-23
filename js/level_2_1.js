@@ -52,30 +52,31 @@ window.SDD = window.SDD || {};
   sp('wisp', 80, 6); sp('wisp', 92, 4);
   sp('core', 78, 9); sp('core', 88, 9); sp('core', 96, 9);
 
-  // descending 3-step
-  oneway(102, 105, 4);
-  oneway(108, 111, 6);
-  oneway(114, 117, 8);
+  // ascending 3-step from the ground (was descending - impossible since
+  // the player had already landed at row 11 and the row-4 cloud was 7
+  // rows up). Now: each cloud is one normal jump above the last.
+  oneway(102, 105, 9);
+  oneway(108, 111, 7);
+  oneway(114, 117, 5);
   sp('walker', 116, 10);
-  sp('core', 103, 2); sp('core', 109, 4); sp('core', 115, 6);
+  sp('core', 103, 7); sp('core', 109, 5); sp('core', 115, 3);
 
   // ============== TWIST (115-160): narrow vertical column ==============
   ground(120, 160);
-  // wall splits the path - climb a column of one-ways on the left side
-  box(140, 0, 142, 13, 'X');
+  // wall splits the path - climb a column of one-ways on either side.
+  // Wall starts at row 4 (not row 0) so there's sky to jump over.
+  box(140, 4, 142, 13, 'X');
   oneway(133, 138, 9);
   oneway(133, 138, 7);
   oneway(133, 138, 5);
-  oneway(133, 138, 3);
-  oneway(143, 148, 3);
   oneway(143, 148, 5);
   oneway(143, 148, 7);
   oneway(143, 148, 9);
   sp('thrower', 137, 10);
   sp('wisp', 135, 6); sp('wisp', 145, 4);
-  sp('core', 135, 8); sp('core', 135, 6); sp('core', 135, 4); sp('core', 135, 2);
-  sp('core', 145, 2); sp('core', 145, 4); sp('core', 145, 6); sp('core', 145, 8);
-  qb(135, 1, 'B');                                          // blast at the top of the tower
+  sp('core', 135, 8); sp('core', 135, 6); sp('core', 135, 4);
+  sp('core', 145, 4); sp('core', 145, 6); sp('core', 145, 8);
+  qb(135, 3, 'B');                                          // blast on the high left cloud
 
   sp('walker', 152, 10); sp('walker', 158, 10);
   sp('core', 150, 9); sp('core', 154, 9); sp('core', 158, 9);

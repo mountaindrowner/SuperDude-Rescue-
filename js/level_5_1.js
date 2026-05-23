@@ -14,7 +14,11 @@ window.SDD = window.SDD || {};
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
 
   ground(0, W - 1);
-  sp('player', 4, 8);
+  // Spawn at row 5 so Danny starts at the upper edge of the first
+  // gate's gap (gap is rows 5-9), giving time to flap and find the
+  // rhythm before reaching the pillar. Was row 8 - gravity pulled
+  // Danny straight into the lower pillar before he could react.
+  sp('player', 4, 5);
 
   // Each gate: pillar from top to gapTop-1, then gap (gapH tall),
   // then pillar from gapTop+gapH down to row 12.
@@ -25,8 +29,10 @@ window.SDD = window.SDD || {};
   }
 
   // ============== TEACH (cols 0-90): wide, easy gates ==============
-  // gates spaced 18 tiles apart, gap height 5 (generous)
-  var teachGates = [[18, 5, 5], [36, 4, 5], [54, 6, 5], [72, 4, 5]];
+  // gates spaced 18 tiles apart, gap height 5 (generous).
+  // First gate is gap height 7 - extra forgiving for the very first
+  // flap of the level so the player learns the rhythm.
+  var teachGates = [[18, 4, 7], [36, 4, 5], [54, 6, 5], [72, 4, 5]];
   for (var i = 0; i < teachGates.length; i++) gate(teachGates[i][0], teachGates[i][1], teachGates[i][2]);
   for (var i = 0; i < teachGates.length; i++) {
     var gc = teachGates[i][0], gt = teachGates[i][1];

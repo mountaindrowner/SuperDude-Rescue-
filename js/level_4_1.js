@@ -44,7 +44,13 @@ window.SDD = window.SDD || {};
   flare(72, 100);
   sp('core', 64, 8); sp('core', 72, 8);
 
+  // mini-island + bridging moving platforms across the formerly-
+  // impassable 18-tile flare gap (cols 77-93). Each platform is a
+  // normal jump from the previous so any player can chain across.
   box(74, 9, 76, 13, 'X');
+  mover(78, 9, 82, 9, 0.022, 0);
+  mover(84, 9, 88, 9, 0.022, 1.6);
+  mover(90, 9, 93, 9, 0.022, 0.8);
   flare(80, 90);
   flare(88, 90);
   sp('core', 80, 8); sp('core', 88, 8);
@@ -72,9 +78,12 @@ window.SDD = window.SDD || {};
   sp('walker', 142, 10); sp('walker', 158, 10);
   sp('thrower', 165, 10);
   sp('wisp', 150, 4); sp('wisp', 167, 5);
-  // The light-blast power-up tucked at the top of a one-way
+  // The light-blast power-up tucked above a one-way platform. Block
+  // is at row 0 (top of map) so the player has clearance to stand on
+  // the platform and bump the block from below (was row 2 - too close
+  // to the platform to fit Danny in between).
   oneway(146, 149, 4);
-  qb(147, 2, 'B');
+  qb(147, 0, 'B');
   sp('core', 142, 9); sp('core', 147, 1); sp('core', 154, 9);
   sp('core', 161, 9); sp('core', 169, 9); sp('core', 173, 9);
 

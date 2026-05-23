@@ -475,7 +475,9 @@ window.SDD = window.SDD || {};
       }
     }
   }
-  // Day 1 'galactic' backdrop: deep space, nebulae, a distant planet, lots of stars.
+  // Day 1 'galactic' backdrop: deep space, nebulae, lots of stars. No
+  // planet anymore - Mark's note: "love the parallax, get rid of that
+  // planet". The "let there be light" radial burst stays central.
   function drawSkyGalactic(g, camx, camy, t) {
     var grd = g.createLinearGradient(0, 0, 0, 180);
     grd.addColorStop(0, '#02020c'); grd.addColorStop(1, '#0a0820');
@@ -489,13 +491,6 @@ window.SDD = window.SDD || {};
     nebula(80 - camx * 0.07, 50, 70, 'rgba(180,80,200,0.35)');
     nebula(240 - camx * 0.04, 95, 80, 'rgba(80,150,220,0.30)');
     nebula(150 - camx * 0.05, 130, 60, 'rgba(220,90,180,0.22)');
-    // distant planet
-    var pX = 220 - camx * 0.09, pY = 56;
-    nebula(pX, pY, 32, 'rgba(180,140,220,0.45)');
-    g.fillStyle = '#7c4ea8'; g.beginPath(); g.arc(pX, pY, 14, 0, 6.29); g.fill();
-    g.fillStyle = '#5a2e80'; g.beginPath(); g.arc(pX + 3, pY + 3, 11, 0, 6.29); g.fill();
-    g.strokeStyle = 'rgba(220,190,240,0.55)'; g.lineWidth = 1.5;
-    g.beginPath(); g.ellipse(pX, pY, 24, 6, 0, 0, 6.29); g.stroke();
     // base starfield
     drawStarfield(g, t);
     // brighter stars with twinkle + slow parallax
@@ -1158,22 +1153,22 @@ window.SDD = window.SDD || {};
       var day = this.d.day || 1, stage = this.d.stage || 1;
       var sf = SDD.save.stagesForDay(day);
       var title = sf > 1 ? ('DAY ' + day + '-' + stage + ' COMPLETE!') : ('DAY ' + day + ' COMPLETE!');
-      tsh(g, title, 160, 24, '#ffffff', '#a8631a', 3, 'center');
-      S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(this.t / 5) % 9, 144, 58 + Math.sin(this.t * 0.1) * 3);
+      tsh(g, title, 160, 18, '#ffffff', '#a8631a', 3, 'center');
+      S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(this.t / 5) % 9, 144, 40 + Math.sin(this.t * 0.1) * 3);
 
       var sv = SDD.save.data, key = day + '-' + stage;
       var bestT = sv.bestTimes && sv.bestTimes[key];
       var bestC = (sv.bestCores && sv.bestCores[key]) || 0;
+      // Tightened block - no LIVES LEFT row, no spacer; four contiguous
+      // rows starting higher up. Was line-height 11 starting at y=104.
       var rows = [
         'TIME           ' + this.d.timeSec + ' SEC',
         'POWER CORES    ' + this.d.cores,
-        'LIVES LEFT     ' + this.d.lives,
-        '',
         'BEST TIME      ' + (bestT != null ? bestT + ' SEC' : '-'),
         'BEST CORES     ' + bestC
       ];
-      for (var i = 0; i < rows.length; i++) text(g, rows[i], 70, 104 + i * 11, '#1a1630', 1, 'left');
-      if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 172, '#1a1630', 1, 'center');
+      for (var i = 0; i < rows.length; i++) text(g, rows[i], 70, 92 + i * 11, '#1a1630', 1, 'left');
+      if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 168, '#1a1630', 1, 'center');
     }
   };
 
