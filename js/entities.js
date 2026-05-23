@@ -40,7 +40,7 @@ window.SDD = window.SDD || {};
 
   // ===================== PLAYER =====================
   function Player(x, y) {
-    this.x = x; this.y = y; this.w = 10; this.h = 14;
+    this.x = x; this.y = y; this.w = 13; this.h = 18;
     this.vx = 0; this.vy = 0;
     this.facing = 1;
     this.big = false; this.hasBlast = false;
@@ -57,7 +57,7 @@ window.SDD = window.SDD || {};
   Player.prototype.grow = function () {
     if (this.big) return;
     this.big = true;
-    this.y -= 12; this.h = 26; this.w = 12; this.x -= 1;
+    this.y -= 13; this.h = 31; this.w = 14; this.x -= 1;
     SDD.audio.sfx('grow');
   };
   Player.prototype.giveBlast = function () {
@@ -67,7 +67,7 @@ window.SDD = window.SDD || {};
   Player.prototype.shrink = function () {
     if (!this.big) return;
     this.big = false;
-    this.y += 12; this.h = 14; this.w = 10; this.x += 1;
+    this.y += 13; this.h = 18; this.w = 13; this.x += 1;
   };
 
   // returns true if the hit "lands" (used to suppress repeated hits)

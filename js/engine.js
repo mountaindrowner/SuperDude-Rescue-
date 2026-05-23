@@ -95,6 +95,20 @@ window.SDD = window.SDD || {};
         }
       }
     }
+    // Sub-pixel ground probe. Gravity adds <1px to vy each frame so when
+    // an entity is sitting on ground its feet drift into the "air row"
+    // above the tile and the vy>0 landing check fires for one frame then
+    // misses the next. That flipped onGround every other frame, which
+    // re-triggered Player.landT and locked Danny on the landing pose
+    // instead of cycling the run animation. Probe one pixel below.
+    if (!e.onGround && e.vy >= 0) {
+      row = Math.floor((e.y + e.h) / T);
+      for (tx = lft; tx <= rgt; tx++) {
+        if (map.isSolid(tx, row) || (map.isOneWay && map.isOneWay(tx, row))) {
+          e.y = row * T - e.h; e.vy = 0; e.onGround = true; break;
+        }
+      }
+    }
   }
 
   // ---- camera ----
