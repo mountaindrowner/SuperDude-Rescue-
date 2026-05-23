@@ -771,6 +771,14 @@ window.SDD = window.SDD || {};
       this.gravityScale = L.gravityScale || 1;
       this.skyTheme = L.skyTheme || null;
       this.theme = L.theme || null;
+      // Mode flags - Player.update reads these via the level reference
+      // it gets each frame.
+      this.flappy = !!L.flappy;
+      this.flappySpeed = L.flappySpeed;
+      this.flappyFlap = L.flappyFlap;
+      this.flappyGravity = L.flappyGravity;
+      this.flappyMaxFall = L.flappyMaxFall;
+      this.underwater = !!L.underwater;
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
       this.cores = 0; this.score = 0; this.timeSteps = 0;

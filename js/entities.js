@@ -174,6 +174,37 @@ window.SDD = window.SDD || {};
     var maxV = this.big ? C.MOVE_MAX_BIG : C.MOVE_MAX_SMALL;
     var left = In.held('left'), right = In.held('right');
 
+    // ----- Flappy mode (Day 5.1) -----
+    // Danny auto-flies forward; tap A to flap up. Left/right ignored.
+    // Touching the ground OR ceiling = death.
+    if (level.flappy) {
+      this.facing = 1;
+      this.vx = level.flappySpeed || 1.4;
+      this.vy += C.GRAVITY * (level.flappyGravity || 0.85) * gs;
+      var maxFall = level.flappyMaxFall || 4.5;
+      if (this.vy > maxFall) this.vy = maxFall;
+      if (In.pressed('jump')) {
+        this.vy = -(level.flappyFlap || 3.4);
+        SDD.audio.sfx('jump');
+      }
+      // ceiling cap so a button-mashed Danny doesn't fly off the top
+      if (this.y < 4) { this.y = 4; if (this.vy < 0) this.vy = 0; }
+      this.coyote = 0; this.jumpBuf = 0;
+      this.onHeadBump = function () {};
+      this.hitWall = 0;
+      mc(this, level.map);
+      // Hitting the ground OR a pillar wall is death in flappy mode -
+      // there is no "ground" to land on and pillars are impassable.
+      if ((this.onGround || this.hitWall) && !SDD.save.data.options.god) {
+        this.die(false);
+      } else if ((this.onGround || this.hitWall) && SDD.save.data.options.god) {
+        this.y = 32; this.vy = 0; this.onGround = false;
+      }
+      this.animT++;
+      if (this.invuln > 0) this.invuln--;
+      return;
+    }
+
     if (left && !right) {
       this.vx -= C.MOVE_ACCEL; if (this.vx < -maxV) this.vx = -maxV;
       this.facing = -1;
@@ -268,8 +299,8 @@ window.SDD = window.SDD || {};
 
     if (this.invuln > 0) this.invuln--;
 
-    // fell into a pit
-    if (this.y > level.map.pxH + 28) {
+    // fell into a pit (skipped in fully-underwater levels - water IS the level)
+    if (!level.underwater && this.y > level.map.pxH + 28) {
       if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
       else this.die(true);
     }

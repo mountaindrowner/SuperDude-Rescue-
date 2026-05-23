@@ -1,74 +1,73 @@
-// level_5_1.js - Day 5 Stage 1 "The Skies" (the bird-soaring half of Day 5).
+// level_5_1.js - Day 5 Stage 1 "THE SKIES" (Flappy mode!)
+// Auto-scrolling sky scene. Danny flies forward on his own; tap A to flap.
+// Touching the ground or hitting an obstacle = death. Fly through the
+// gaps in each cloud-pillar gate, scoop up power cores, reach the
+// time-machine part at the end.
 window.SDD = window.SDD || {};
 
 (function () {
   var SDD = window.SDD;
-  var W = 120, H = 14, GROUND = 11;
+  var W = 180, H = 14, GROUND = 13;     // long auto-scroll, ground at very bottom
   var t = []; for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
   function setT(x, y, ch) { if (x >= 0 && x < W && y >= 0 && y < H) t[y][x] = ch; }
   function ground(x0, x1) { for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, 'X'); }
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
-  function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
-  function bricks(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '#'); }
-  function qb(x, y, ch) { setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
-  var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
-    movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
+
+  // Floor of death (looks like distant clouds; touching = lose a life).
+  ground(0, W - 1);
+
+  // Top ceiling (one row of bricks - prevents flying off the top).
+  // Player.update clamps y >= 4 in flappy mode so this is mostly visual.
+
+  sp('player', 4, 8);
+
+  // ---- Cloud-pillar gates ----
+  // Each "gate" is a vertical wall with a gap somewhere between rows 2
+  // and 10. Gap height = 4 tiles. Spaced ~12 tiles apart so the player
+  // has time to react.
+  function gate(col, gapTop) {
+    // pillar from row 0 to gapTop-1
+    for (var y = 0; y < gapTop; y++) setT(col, y, '#');
+    // pillar from gapTop+4 down to the ground row 12
+    for (var y = gapTop + 4; y <= 12; y++) setT(col, y, '#');
+  }
+  // gap row positions (top of gap), kid-friendly oscillation
+  var gates = [
+    [18, 4], [30, 6], [42, 3], [54, 7], [66, 5],
+    [78, 2], [90, 6], [102, 4], [114, 7], [126, 3],
+    [138, 5], [150, 6]
+  ];
+  for (var i = 0; i < gates.length; i++) gate(gates[i][0], gates[i][1]);
+
+  // Power cores in each gap so flying through pays off.
+  for (var i = 0; i < gates.length; i++) {
+    var gc = gates[i][0], gt = gates[i][1];
+    sp('core', gc, gt + 1);
+    sp('core', gc, gt + 2);
   }
 
-  ground(0, 15);
-  sp('player', 3, 10);
-  qb(8, 7, 'G'); qb(10, 7, '?');
-  sp('walker', 7, 10);
-  sp('wisp', 12, 7);
-  sp('core', 5, 9); sp('core', 11, 5);
-  sp('core', 16, 7); sp('core', 17, 6); sp('core', 18, 7);
+  // A few drifting wisps as bonus dodging challenge between gates.
+  sp('wisp', 24, 5);
+  sp('wisp', 48, 8);
+  sp('wisp', 72, 4);
+  sp('wisp', 96, 7);
+  sp('wisp', 120, 5);
+  sp('wisp', 144, 6);
 
-  ground(19, 32);
-  oneway(22, 24, 8); oneway(26, 28, 6); oneway(30, 32, 4);
-  qb(31, 1, 'B');
-  sp('wisp', 24, 5); sp('wisp', 28, 3);
-  sp('core', 23, 7); sp('core', 27, 5); sp('core', 31, 0);
-
-  mover(33, 9, 36, 9, 0.02, 0);
-  sp('core', 34, 7);
-
-  ground(37, 54);
-  bricks(40, 43, 8);
-  sp('thrower', 48, 10);
-  sp('wisp', 42, 6); sp('wisp', 46, 4);
-  qb(45, 6, '?');
-  sp('core', 41, 5); sp('core', 46, 3); sp('core', 50, 8);
-
-  mover(55, 9, 58, 9, 0.022, 0.6);
-  sp('core', 56, 7);
-
-  ground(59, 78);
-  box(62, 8, 65, 13, 'X');
-  oneway(68, 73, 5);
-  sp('walker', 64, 7); sp('wisp', 70, 3); sp('wisp', 74, 2);
-  qb(70, 2, '?');
-  sp('core', 64, 6); sp('core', 70, 1); sp('core', 75, 8);
-
-  mover(79, 9, 82, 9, 0.02, 0.3);
-
-  ground(83, 99);
-  box(85, 7, 90, 13, 'X');
-  bricks(92, 95, 8);
-  sp('thrower', 96, 10);
-  sp('walker', 88, 6);
-  sp('wisp', 94, 4);
-  sp('core', 86, 6); sp('core', 93, 7); sp('core', 97, 9);
-
-  ground(100, 119);
-  box(105, 10, 106, 13, 'X');
-  box(108, 9, 109, 13, 'X');
-  box(111, 8, 112, 13, 'X');
-  box(115, 9, 117, 13, 'X');
-  box(119, 0, 119, 13, 'X');
-  sp('timepart', 116, 8);
-  sp('core', 103, 9); sp('core', 110, 7); sp('core', 113, 9); sp('core', 116, 6);
+  // Final stretch: clear sky leading to the goal pillar.
+  box(W - 4, 0, W - 4, 12, 'X');     // back wall
+  sp('timepart', W - 7, 8);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['5-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE SKIES', theme: 'bird-sky' };
+  SDD.levels['5-1'] = {
+    width: W, height: H, ground: GROUND,
+    tiles: t, spawns: spawns, movers: [],
+    name: 'THE SKIES', theme: 'bird-sky',
+    flappy: true,
+    flappySpeed: 1.4,       // auto-forward velocity
+    flappyFlap: 3.6,        // upward impulse on A tap
+    flappyGravity: 0.85,    // multiplier on GRAVITY (snappy fall)
+    flappyMaxFall: 4.5
+  };
 })();
