@@ -69,5 +69,5 @@ window.SDD = window.SDD || {};
   sp('core', 103, 9); sp('core', 110, 7); sp('core', 113, 9); sp('core', 116, 6);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['4-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE SUN' };
+  SDD.levels['4-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE SUN', theme: 'sunlit' };
 })();

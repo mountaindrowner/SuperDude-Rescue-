@@ -103,6 +103,7 @@ window.SDD = window.SDD || {};
   SDD.levels['2-2'] = {
     width: W, height: H, ground: GROUND,
     tiles: t, spawns: spawns, movers: movers,
-    name: 'THE WATERS BELOW'
+    name: 'THE WATERS BELOW',
+    theme: 'sea-surface'
   };
 })();

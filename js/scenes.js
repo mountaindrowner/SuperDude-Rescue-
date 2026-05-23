@@ -33,6 +33,27 @@ window.SDD = window.SDD || {};
       g.fillRect(s.x | 0, s.y | 0, s.s, s.s);
     }
   }
+  // jagged electric arcs radiating from a point - used for time-machine charging
+  function electricArcs(g, cx, cy, t, count, len) {
+    count = count || 4; len = len || 34;
+    g.save();
+    g.strokeStyle = '#bff0ff'; g.lineWidth = 1;
+    for (var i = 0; i < count; i++) {
+      var angle = (t * 0.18 + i * (6.283 / count)) % 6.283;
+      g.beginPath();
+      var x1 = cx, y1 = cy;
+      g.moveTo(x1, y1);
+      for (var j = 1; j <= 5; j++) {
+        var f = j / 5;
+        x1 = cx + Math.cos(angle) * len * f + (Math.random() - 0.5) * 6;
+        y1 = cy + Math.sin(angle) * len * f + (Math.random() - 0.5) * 6;
+        g.lineTo(x1, y1);
+      }
+      g.stroke();
+    }
+    g.restore();
+  }
+
   function drawAtom(g, cx, cy, r, t) {
     g.save();
     g.translate(cx, cy);
@@ -145,8 +166,9 @@ window.SDD = window.SDD || {};
         machine(g, 138, 92, (t % 16 < 8), false);
         g.drawImage(S.get('danny_small_jump_r'), 100, 116);
       } else if (b === 2) {
-        if (t % 8 < 4) { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 320, 180); }
         machine(g, 138, 92, true, false);
+        electricArcs(g, 161, 100, t, 5, 38);
+        if (t % 18 < 9) { g.fillStyle = 'rgba(190,240,255,0.12)'; g.fillRect(0, 0, 320, 180); }
         g.drawImage(S.get('danny_small_hurt_l'), 150, 70 + Math.sin(t * 0.2) * 6);
       } else {
         machine(g, 150, 100, false, true);
@@ -157,15 +179,17 @@ window.SDD = window.SDD || {};
         g.beginPath(); g.arc(260, 150, 26, Math.PI, 0); g.fill();
       }
 
-      // caption box
+      // caption box - pinned to the bottom edge so it stays out of the action above
       var lines = INTRO_BEATS[b] ? INTRO_BEATS[b].lines : [];
       var bh = 16 + lines.length * 11;
-      g.fillStyle = 'rgba(8,8,20,0.86)'; g.fillRect(10, 178 - bh - 6, 300, bh);
-      g.strokeStyle = '#ffd23a'; g.strokeRect(10.5, 178 - bh - 5.5, 299, bh - 1);
+      var by_ = 180 - bh;
+      g.fillStyle = 'rgba(8,8,20,0.92)'; g.fillRect(8, by_, 304, bh);
+      g.strokeStyle = '#ffd23a'; g.strokeRect(8.5, by_ + 0.5, 303, bh - 1);
       for (var i = 0; i < lines.length; i++) {
-        text(g, lines[i], 160, 178 - bh + 2 + i * 11, '#ffffff', 1, 'center');
+        text(g, lines[i], 160, by_ + 6 + i * 11, '#ffffff', 1, 'center');
       }
-      if (t % 40 < 26) text(g, 'PRESS A', 304, 168, '#ffd23a', 1, 'right');
+      // bigger, shadowed PRESS A
+      if (t % 40 < 26) tsh(g, 'PRESS A', 312, by_ - 12, '#ffd23a', '#000000', 1, 'right');
     }
   };
 
@@ -482,6 +506,16 @@ window.SDD = window.SDD || {};
       g.strokeStyle = 'rgba(255,250,210,0.85)'; g.lineWidth = 1;
       g.beginPath(); g.moveTo(ssx, ssy); g.lineTo(ssx - 22, ssy - 6); g.stroke();
     }
+    // "let there be light" back-wall burst - large soft radial pulsing white core
+    var pulse = 0.7 + Math.sin(t * 0.03) * 0.3;
+    var bX = 160, bY = 100;
+    var burst = g.createRadialGradient(bX, bY, 4, bX, bY, 130);
+    burst.addColorStop(0, 'rgba(255,255,255,' + (0.55 * pulse) + ')');
+    burst.addColorStop(0.18, 'rgba(190,240,255,' + (0.35 * pulse) + ')');
+    burst.addColorStop(0.5, 'rgba(110,170,230,' + (0.18 * pulse) + ')');
+    burst.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = burst;
+    g.fillRect(bX - 130, bY - 130, 260, 260);
   }
 
   function drawSky(g, camx, camy, prog, t) {
@@ -504,6 +538,214 @@ window.SDD = window.SDD || {};
     hillLayer(g, camx, 0.48, 197 - camy * 0.22, lc([52, 50, 90], [74, 134, 70], prog), 66,
       lc([78, 76, 122], [120, 184, 98], prog));
   }
+
+  // ---- per-day signature sky drawers ----
+  function vGradient(g, c1, c2, c3) {
+    var grd = g.createLinearGradient(0, 0, 0, 180);
+    grd.addColorStop(0, c1);
+    if (c3) { grd.addColorStop(0.55, c2); grd.addColorStop(1, c3); }
+    else { grd.addColorStop(1, c2); }
+    g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+  }
+  function simpleSun(g, x, y, r, color, rays) {
+    g.save();
+    var grd = g.createRadialGradient(x, y, 2, x, y, r * 3);
+    grd.addColorStop(0, 'rgba(255,235,160,0.55)'); grd.addColorStop(1, 'rgba(255,235,160,0)');
+    g.fillStyle = grd; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+    g.fillStyle = color; g.beginPath(); g.arc(x, y, r, 0, 6.28); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.8)';
+    g.beginPath(); g.arc(x - r * 0.3, y - r * 0.3, r * 0.4, 0, 6.28); g.fill();
+    if (rays) {
+      g.strokeStyle = 'rgba(255,235,160,0.55)'; g.lineWidth = 1.5;
+      for (var k = 0; k < 8; k++) {
+        var a = k * 0.785;
+        g.beginPath();
+        g.moveTo(x + Math.cos(a) * r * 1.4, y + Math.sin(a) * r * 1.4);
+        g.lineTo(x + Math.cos(a) * r * 2.2, y + Math.sin(a) * r * 2.2);
+        g.stroke();
+      }
+    }
+    g.restore();
+  }
+  function driftClouds(g, camx, camy, alpha) {
+    var span = 1480;
+    for (var i = 0; i < CLOUDS.length; i++) {
+      var c = CLOUDS[i];
+      var cx = (((c.x - camx * 0.14) % span) + span) % span - 80;
+      drawCloud(g, cx, c.y + camy * 0.04, c.s, alpha);
+    }
+  }
+  function jaggedRow(g, camx, factor, baseY, color, peakH) {
+    g.fillStyle = color;
+    var span = 140;
+    var off = -(((camx * factor) % span) + span) % span;
+    for (var x = off - span; x < 340; x += span) {
+      g.beginPath();
+      g.moveTo(x, baseY);
+      for (var i = 0; i <= 6; i++) {
+        var pX = x + (i / 6) * span;
+        var pY = baseY - (Math.sin(i * 1.7) + 1) * peakH * 0.4 - peakH * 0.3;
+        g.lineTo(pX, pY);
+      }
+      g.lineTo(x + span, baseY);
+      g.fill();
+    }
+  }
+  function treeRow(g, camx, factor, baseY, color) {
+    g.fillStyle = color;
+    var span = 50;
+    var off = -(((camx * factor) % span) + span) % span;
+    for (var x = off - span; x < 340; x += span) {
+      g.fillRect(x + 22, baseY - 18, 4, 18);
+      g.beginPath(); g.arc(x + 24, baseY - 26, 14, 0, 6.28); g.fill();
+      g.beginPath(); g.arc(x + 16, baseY - 22, 10, 0, 6.28); g.fill();
+      g.beginPath(); g.arc(x + 32, baseY - 22, 10, 0, 6.28); g.fill();
+    }
+  }
+
+  function drawSky_sky(g, camx, camy, prog, t) {
+    vGradient(g, '#7fc4ff', '#e0f0ff');
+    simpleSun(g, 260, 40, 16, '#ffefa0', false);
+    driftClouds(g, camx, camy, 0.85);
+    hillLayer(g, camx, 0.2, 170 - camy * 0.1, '#9fd0ff', 50, '#c8e4ff');
+  }
+  function drawSky_sea_surface(g, camx, camy, prog, t) {
+    vGradient(g, '#7ec0f0', '#3a86d6', '#d8c490');
+    g.fillStyle = '#5fa0e6';
+    for (var i = 0; i < 320; i += 14) {
+      g.fillRect(((i + (t / 8) % 14) | 0), 108, 7, 1);
+    }
+    driftClouds(g, camx, camy, 0.6);
+    for (var f = 0; f < 4; f++) {
+      var fx = ((f * 80 + t * 0.3) % 320);
+      var fy = 130 + Math.sin(t * 0.1 + f) * 2;
+      g.fillStyle = '#1a5080';
+      g.fillRect(fx | 0, fy | 0, 3, 2);
+    }
+  }
+  function drawSky_rocky(g, camx, camy, prog, t) {
+    vGradient(g, '#d68a55', '#f5cd92');
+    simpleSun(g, 220, 40, 18, '#ffe0a8', false);
+    jaggedRow(g, camx, 0.12, 138, '#7a3e20', 70);
+    jaggedRow(g, camx, 0.22, 165, '#4a2a16', 50);
+    for (var i = 0; i < 18; i++) {
+      var dx = (((i * 47) - camx * 0.3 + t * 0.5) % 320 + 320) % 320;
+      var dy = 100 + ((i * 17) % 70);
+      g.fillStyle = 'rgba(255,200,140,0.35)';
+      g.fillRect(dx | 0, dy | 0, 1, 1);
+    }
+  }
+  function drawSky_forest(g, camx, camy, prog, t) {
+    vGradient(g, '#3a5e2c', '#9ed070');
+    for (var s = 0; s < 5; s++) {
+      var sx = 30 + s * 60 + Math.sin(t * 0.02 + s) * 4;
+      g.fillStyle = 'rgba(255,255,200,0.08)';
+      g.fillRect(sx | 0, 0, 24, 180);
+    }
+    treeRow(g, camx, 0.18, 168, '#1f3a18');
+    treeRow(g, camx, 0.34, 178, '#0f2410');
+  }
+  function drawSky_sunlit(g, camx, camy, prog, t) {
+    vGradient(g, '#ffcc60', '#fff0a0');
+    simpleSun(g, 160 - camx * 0.05, 60, 28, '#fff8c8', true);
+    driftClouds(g, camx, camy, 0.5);
+  }
+  function drawSky_cosmic_night(g, camx, camy, prog, t) {
+    vGradient(g, '#080620', '#1a1840');
+    drawStarfield(g, t);
+    var mX = 240 - camx * 0.06, mY = 50;
+    var ph = g.createRadialGradient(mX, mY, 3, mX, mY, 38);
+    ph.addColorStop(0, 'rgba(220,230,255,0.45)'); ph.addColorStop(1, 'rgba(220,230,255,0)');
+    g.fillStyle = ph; g.fillRect(mX - 38, mY - 38, 76, 76);
+    g.fillStyle = '#dde2f0'; g.beginPath(); g.arc(mX, mY, 16, 0, 6.28); g.fill();
+    g.fillStyle = '#b9c0d6'; g.beginPath(); g.arc(mX + 3, mY + 3, 13, 0, 6.28); g.fill();
+    g.strokeStyle = 'rgba(220,230,255,0.45)'; g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(50, 30); g.lineTo(80, 50); g.lineTo(110, 35); g.lineTo(130, 60);
+    g.stroke();
+  }
+  function drawSky_bird_sky(g, camx, camy, prog, t) {
+    vGradient(g, '#70bce0', '#bce0f0');
+    driftClouds(g, camx, camy, 0.5);
+    for (var i = 0; i < 8; i++) {
+      var bx = ((i * 53 - camx * 0.15 + t * 0.2) % 320 + 320) % 320;
+      var by = 30 + (i * 13) % 60;
+      g.strokeStyle = '#26486a'; g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(bx - 3, by + 2); g.lineTo(bx, by); g.lineTo(bx + 3, by + 2);
+      g.stroke();
+    }
+  }
+  function drawSky_seaside(g, camx, camy, prog, t) {
+    vGradient(g, '#5fa0e6', '#1a5080');
+    for (var i = 0; i < 320; i += 18) {
+      g.fillStyle = 'rgba(255,255,255,0.16)';
+      g.fillRect((((i + t * 0.4) % 320) | 0), 90 + (i % 50), 9, 1);
+    }
+    g.fillStyle = '#3a2860';
+    for (var c = 0; c < 4; c++) {
+      var cX = c * 80 + 20;
+      g.beginPath();
+      g.moveTo(cX, 178);
+      g.lineTo(cX + 4, 150); g.lineTo(cX + 10, 160); g.lineTo(cX + 14, 145);
+      g.lineTo(cX + 20, 155); g.lineTo(cX + 26, 178);
+      g.fill();
+    }
+  }
+  function drawSky_savanna(g, camx, camy, prog, t) {
+    vGradient(g, '#f8a648', '#ffd58a');
+    simpleSun(g, 240, 60, 22, '#ffe080', false);
+    for (var i = 0; i < 6; i++) {
+      var tx = ((i * 70 - camx * 0.18) % 320 + 320) % 320;
+      g.fillStyle = '#3a2818';
+      g.fillRect(tx + 5, 128, 2, 22);
+      g.beginPath();
+      g.ellipse(tx + 6, 126, 12, 4, 0, 0, 6.28);
+      g.fill();
+    }
+  }
+  function drawSky_village_dusk(g, camx, camy, prog, t) {
+    vGradient(g, '#3e2860', '#f5a05a', '#ffd28a');
+    simpleSun(g, 100, 130, 14, '#ff8060', false);
+    for (var i = 0; i < 12; i++) {
+      var rx = ((i * 32 - camx * 0.18) % 320 + 320) % 320;
+      var rh = 8 + (i * 7) % 16;
+      g.fillStyle = '#2a1c30';
+      g.fillRect(rx | 0, 150 - rh, 28, rh);
+      g.beginPath();
+      g.moveTo(rx - 2, 150 - rh); g.lineTo(rx + 14, 150 - rh - 8); g.lineTo(rx + 30, 150 - rh);
+      g.fill();
+    }
+  }
+  function drawSky_eden(g, camx, camy, prog, t) {
+    vGradient(g, '#a8d860', '#ffd28a');
+    simpleSun(g, 250, 50, 22, '#fff0a0', false);
+    var tX = 160 - camx * 0.08, tY = 150;
+    g.fillStyle = '#3a2818';
+    g.fillRect(tX - 3, tY - 60, 6, 60);
+    g.fillStyle = '#2c5a24';
+    g.beginPath(); g.arc(tX, tY - 70, 40, 0, 6.28); g.fill();
+    g.fillStyle = '#3a7a32';
+    g.beginPath(); g.arc(tX - 10, tY - 80, 25, 0, 6.28); g.fill();
+    g.beginPath(); g.arc(tX + 15, tY - 75, 22, 0, 6.28); g.fill();
+    g.fillStyle = '#ff8a5a';
+    for (var k = 0; k < 5; k++) g.fillRect(tX - 20 + k * 9, tY - 50 - (k % 2) * 8, 2, 2);
+  }
+
+  var THEMES = {
+    'galactic': function (g, x, y, p, t) { drawSkyGalactic(g, x, y, t); },
+    'sky': drawSky_sky,
+    'sea-surface': drawSky_sea_surface,
+    'rocky': drawSky_rocky,
+    'forest': drawSky_forest,
+    'sunlit': drawSky_sunlit,
+    'cosmic-night': drawSky_cosmic_night,
+    'bird-sky': drawSky_bird_sky,
+    'seaside': drawSky_seaside,
+    'savanna': drawSky_savanna,
+    'village-dusk': drawSky_village_dusk,
+    'eden': drawSky_eden
+  };
 
   SDD.scenes.level = {
     enter: function (d) {
@@ -758,8 +1000,9 @@ window.SDD = window.SDD || {};
       var cam = { x: Math.round(this.camera.x), y: Math.round(this.camera.y) };
       var prog = E.clamp(this.camera.x / Math.max(1, this.map.pxW - C.VIEW_W), 0, 1);
 
-      // cosmetic light/dark theme - the sky brightens as Danny progresses
-      if (this.theme === 'galactic') drawSkyGalactic(g, cam.x, cam.y, this.timeSteps);
+      // per-day signature sky (falls back to the original drawSky when no theme)
+      var skyFn = THEMES[this.theme];
+      if (skyFn) skyFn(g, cam.x, cam.y, prog, this.timeSteps);
       else drawSky(g, cam.x, cam.y, prog, this.timeSteps);
 
       // tiles
@@ -812,17 +1055,21 @@ window.SDD = window.SDD || {};
     },
 
     drawHUD: function (g) {
-      g.fillStyle = 'rgba(8,8,20,0.6)'; g.fillRect(0, 0, 320, 14);
+      // taller bar so we can fit a theme-name subtitle without crowding the play area
+      g.fillStyle = 'rgba(8,8,20,0.7)'; g.fillRect(0, 0, 320, 22);
       text(g, 'LIVES ' + this.lives, 6, 4, '#ffffff', 1, 'left');
       text(g, 'CORES ' + this.cores, 86, 4, '#46f0ff', 1, 'left');
       var sv = SDD.save;
       var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
       text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');
+      // theme name (level.name) as a small subtitle under DAY
+      var L = SDD.levels[this.day + '-' + this.stage];
+      if (L && L.name) text(g, L.name, 160, 14, '#dfe6ff', 1, 'center');
       var sec = Math.floor(this.timeSteps / 60);
       text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
       if (sv.data.options.god) {
-        g.fillStyle = 'rgba(255,210,80,0.75)'; g.fillRect(228, 14, 30, 11);
-        text(g, 'GOD', 243, 16, '#1a1630', 1, 'center');
+        g.fillStyle = 'rgba(255,210,80,0.85)'; g.fillRect(284, 14, 32, 8);
+        text(g, 'GOD', 300, 15, '#1a1630', 1, 'center');
       }
     },
 
@@ -973,10 +1220,8 @@ window.SDD = window.SDD || {};
       } else if (b === 2) {
         // machine glowing intensely
         machine(g, 132, 84, true, false, true);
-        if (t % 14 < 7) {
-          g.fillStyle = 'rgba(255,255,255,0.35)';
-          g.fillRect(0, 0, 320, 180);
-        }
+        electricArcs(g, 160, 105, t, 6, 48);
+        if (t % 22 < 10) { g.fillStyle = 'rgba(190,240,255,0.14)'; g.fillRect(0, 0, 320, 180); }
         g.drawImage(S.get('danny_big_jump_r'), 100, 102);
       } else if (b === 3) {
         // swirl
@@ -1002,15 +1247,16 @@ window.SDD = window.SDD || {};
         text(g, "IS COMPLETE", 160, 122, '#1a1630', 1, 'center');
       }
 
-      // caption box
+      // caption box - pinned to bottom edge so it doesn't cover the cinematic art
       var lines = FINALE_BEATS[b] ? FINALE_BEATS[b].lines : [];
       var bh = 16 + lines.length * 11;
-      g.fillStyle = 'rgba(8,8,20,0.86)'; g.fillRect(10, 178 - bh - 6, 300, bh);
-      g.strokeStyle = '#ffd23a'; g.strokeRect(10.5, 178 - bh - 5.5, 299, bh - 1);
+      var by_ = 180 - bh;
+      g.fillStyle = 'rgba(8,8,20,0.92)'; g.fillRect(8, by_, 304, bh);
+      g.strokeStyle = '#ffd23a'; g.strokeRect(8.5, by_ + 0.5, 303, bh - 1);
       for (var li = 0; li < lines.length; li++) {
-        text(g, lines[li], 160, 178 - bh + 2 + li * 11, '#ffffff', 1, 'center');
+        text(g, lines[li], 160, by_ + 6 + li * 11, '#ffffff', 1, 'center');
       }
-      if (t % 40 < 26) text(g, 'PRESS A', 304, 168, '#ffd23a', 1, 'right');
+      if (t % 40 < 26) tsh(g, 'PRESS A', 312, by_ - 12, '#ffd23a', '#000000', 1, 'right');
     }
   };
 })();

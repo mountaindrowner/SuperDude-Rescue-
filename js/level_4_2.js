@@ -81,7 +81,8 @@ window.SDD = window.SDD || {};
   SDD.levels = SDD.levels || {};
   SDD.levels['4-2'] = {
     width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers,
-    gravityScale: 0.5,
-    name: 'MOON & STARS'
+    gravityScale: 0.35,
+    name: 'MOON & STARS',
+    theme: 'cosmic-night'
   };
 })();

@@ -466,6 +466,10 @@ window.SDD = window.SDD || {};
     px(g, 0, 0, 16, 5, C.grass);                 // grass cap
     px(g, 0, 0, 16, 2, C.grassL);
     px(g, 0, 4, 16, 1, C.grassD);
+    // glassy sheen highlight stripe at the very top
+    px(g, 0, 0, 16, 1, '#dfffbf');
+    // faint diagonal reflection inside the grass
+    px(g, 3, 1, 1, 1, '#ffffff'); px(g, 11, 1, 1, 1, '#ffffff');
     // grass blades poking down
     px(g, 2, 5, 1, 2, C.grassD); px(g, 7, 5, 1, 2, C.grassD); px(g, 12, 5, 1, 2, C.grassD);
     px(g, 0, 5, 16, 1, C.dirtL);
@@ -483,13 +487,37 @@ window.SDD = window.SDD || {};
     px(g, 0, 15, 16, 1, C.dirtK); px(g, 0, 0, 1, 16, C.dirtD);
   }
   function paintBrick(g) {
-    px(g, 0, 0, 16, 16, C.mortar);
-    function b(x, y, w, h) {
-      px(g, x, y, w, h, C.brick);
-      px(g, x, y, w, 1, C.brickL);
-      px(g, x, y + h - 1, w, 1, C.brickD);
-    }
-    b(1, 1, 14, 6); b(1, 9, 6, 6); b(9, 9, 6, 6);
+    // ancient ruined masonry - uneven stones in earthen palette
+    px(g, 0, 0, 16, 16, '#4a3320');                // dark mortar base
+    // big stone block (upper-left), shape uneven
+    px(g, 1, 1, 8, 6, '#9c7440');
+    px(g, 1, 1, 8, 1, '#bb9056');                  // highlight
+    px(g, 1, 6, 8, 1, '#6d4f24');                  // shadow
+    px(g, 2, 2, 1, 1, '#7a5728');                  // chip
+    // medium stone (upper-right)
+    px(g, 10, 1, 5, 4, '#b68c50');
+    px(g, 10, 1, 5, 1, '#d4a766');
+    px(g, 10, 4, 5, 1, '#7a5728');
+    // stone (mid-right)
+    px(g, 10, 6, 5, 4, '#9c7440');
+    px(g, 10, 6, 5, 1, '#bb9056');
+    px(g, 10, 9, 5, 1, '#6d4f24');
+    // small stones bottom row
+    px(g, 1, 8, 4, 4, '#a07c44');
+    px(g, 1, 8, 4, 1, '#c19262');
+    px(g, 1, 11, 4, 1, '#6d4f24');
+    px(g, 6, 8, 3, 4, '#8e6938');
+    px(g, 6, 8, 3, 1, '#a98052');
+    px(g, 6, 11, 3, 1, '#5f4220');
+    // bottom stones
+    px(g, 1, 13, 6, 3, '#aa7e48');
+    px(g, 1, 13, 6, 1, '#c89556');
+    px(g, 8, 13, 7, 3, '#92692f');
+    px(g, 8, 13, 7, 1, '#b6864a');
+    px(g, 8, 15, 7, 1, '#5f4220');
+    // small dark chips for character
+    px(g, 5, 3, 1, 1, '#6d4f24'); px(g, 12, 2, 1, 1, '#6d4f24');
+    px(g, 3, 9, 1, 1, '#6d4f24'); px(g, 13, 8, 1, 1, '#6d4f24');
   }
   function paintPlatform(g) {
     px(g, 0, 0, 16, 7, C.brick);
@@ -538,9 +566,13 @@ window.SDD = window.SDD || {};
     px(g, 0, 0, 16, 3, '#ffffff');
     px(g, 0, 3, 16, 1, '#dfe8ff');
     px(g, 0, 4, 16, 1, '#7e9cd4');
+    // glassy specular highlight + diagonal reflection
+    px(g, 2, 1, 4, 1, '#ffffff'); px(g, 9, 1, 5, 1, '#ffffff');
+    px(g, 3, 6, 1, 1, '#ffffff'); px(g, 6, 8, 1, 1, '#ffffff');
+    px(g, 9, 10, 1, 1, '#ffffff'); px(g, 12, 12, 1, 1, '#ffffff');
     // subtle sparkles
-    px(g, 3, 7, 1, 1, '#ffffff'); px(g, 11, 9, 1, 1, '#ffffff');
-    px(g, 6, 11, 1, 1, '#ffffff'); px(g, 13, 13, 1, 1, '#ffffff');
+    px(g, 4, 5, 1, 1, '#cdebff'); px(g, 11, 6, 1, 1, '#cdebff');
+    px(g, 7, 11, 1, 1, '#cdebff'); px(g, 14, 9, 1, 1, '#cdebff');
     // darker base
     px(g, 0, 14, 16, 2, '#5070a0');
     px(g, 0, 15, 16, 1, '#374a78');
@@ -584,28 +616,58 @@ window.SDD = window.SDD || {};
   }
   function paintQ(g, kind) {
     var used = kind === 'used';
-    var a = used ? C.qC : C.qA, b = used ? C.qCd : C.qB, lt = used ? '#c3ab84' : C.qL;
-    px(g, 0, 0, 16, 16, b);
-    px(g, 1, 1, 14, 14, a);
-    px(g, 1, 1, 14, 2, lt);                      // top bevel
-    px(g, 1, 1, 2, 14, lt);                      // left bevel
-    px(g, 1, 13, 14, 2, b);                      // bottom shade
-    px(g, 13, 1, 2, 14, b);
-    px(g, 2, 2, 1, 1, b); px(g, 13, 2, 1, 1, b);
-    px(g, 2, 13, 1, 1, b); px(g, 13, 13, 1, 1, b);
-    if (used) return;
-    var m = C.qD;
-    px(g, 6, 5, 4, 1, m); px(g, 9, 5, 1, 2, m); px(g, 8, 7, 1, 1, m);
-    px(g, 7, 8, 1, 2, m); px(g, 7, 11, 1, 1, m);
-    px(g, 6, 4, 4, 1, C.white);
+    // outer metal casing
+    var shellL = used ? '#7a6850' : '#cfa05a';
+    var shellD = used ? '#544632' : '#8a6028';
+    var shell  = used ? '#9a8062' : '#b08040';
+    px(g, 0, 0, 16, 16, shellD);
+    px(g, 1, 1, 14, 14, shell);
+    px(g, 1, 1, 14, 2, shellL);              // top bevel
+    px(g, 1, 1, 2, 14, shellL);              // left bevel
+    px(g, 1, 13, 14, 2, shellD);             // bottom shade
+    px(g, 13, 1, 2, 14, shellD);
+    // corner rivets
+    px(g, 2, 2, 1, 1, shellD); px(g, 13, 2, 1, 1, shellD);
+    px(g, 2, 13, 1, 1, shellD); px(g, 13, 13, 1, 1, shellD);
+
+    // dark inset window in centre
+    var winDark = used ? '#1d1814' : '#0f1422';
+    var winLit  = used ? '#3a322a' : '#5fcfff';
+    var spark   = used ? '#5a4e3c' : '#bff0ff';
+    px(g, 4, 4, 8, 8, winDark);
+    // glowing core
+    px(g, 6, 6, 4, 4, winLit);
+    px(g, 7, 7, 2, 2, spark);
+    if (!used) {
+      // tiny circuit traces
+      px(g, 4, 7, 1, 1, '#2c8cb0'); px(g, 11, 7, 1, 1, '#2c8cb0');
+      px(g, 7, 4, 1, 1, '#2c8cb0'); px(g, 8, 11, 1, 1, '#2c8cb0');
+    }
+    // cogs at corners (3x3 each)
+    function cog(cx, cy) {
+      var dark = used ? '#3a3026' : '#4a3a1e';
+      var lite = used ? '#7a6850' : '#e6b870';
+      px(g, cx - 1, cy, 3, 1, dark);
+      px(g, cx, cy - 1, 1, 3, dark);
+      px(g, cx, cy, 1, 1, lite);
+    }
+    cog(3, 3); cog(12, 3); cog(3, 12); cog(12, 12);
   }
   function paintMovPlat(g) {
-    px(g, 0, 0, 36, 13, C.metalD);
-    px(g, 1, 1, 34, 10, C.metal);
-    px(g, 1, 1, 34, 2, C.metalL);
-    px(g, 1, 9, 34, 2, C.metalD);
-    px(g, 0, 12, 36, 1, '#3a435c');
-    for (var i = 4; i < 33; i += 8) { px(g, i, 4, 4, 4, C.metalD); px(g, i, 4, 4, 1, '#7c879e'); }
+    // warm brass / dark wood hover plank instead of cold blue metal
+    px(g, 0, 0, 36, 13, '#4a3220');
+    px(g, 1, 1, 34, 10, '#8b6a3c');
+    px(g, 1, 1, 34, 2, '#c4a070');                 // top highlight
+    px(g, 1, 9, 34, 2, '#5c4126');                 // bottom shade
+    px(g, 0, 12, 36, 1, '#2a1a0e');
+    // brass bolts evenly spaced
+    for (var i = 4; i < 33; i += 8) {
+      px(g, i, 3, 3, 3, '#3a2a14');
+      px(g, i, 3, 3, 1, '#e6c486');
+      px(g, i + 1, 4, 1, 1, '#fff4d0');
+    }
+    // soft glow underline
+    px(g, 2, 11, 32, 1, 'rgba(255,200,120,0.4)');
   }
 
   // ================= items =================

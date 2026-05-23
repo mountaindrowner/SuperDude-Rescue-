@@ -76,5 +76,5 @@ window.SDD = window.SDD || {};
   sp('core', 116, 9); sp('core', 124, 7); sp('core', 128, 9); sp('core', 134, 9);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['5-2'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE SEAS' };
+  SDD.levels['5-2'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE SEAS', theme: 'seaside' };
 })();

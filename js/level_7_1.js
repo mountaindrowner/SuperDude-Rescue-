@@ -41,5 +41,5 @@ window.SDD = window.SDD || {};
   sp('timepart', 90, 7);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['7-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: [], name: 'DAY OF REST' };
+  SDD.levels['7-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: [], name: 'DAY OF REST', theme: 'eden' };
 })();

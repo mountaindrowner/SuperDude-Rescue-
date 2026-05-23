@@ -92,6 +92,7 @@ window.SDD = window.SDD || {};
   SDD.levels['2-1'] = {
     width: W, height: H, ground: GROUND,
     tiles: t, spawns: spawns, movers: movers,
-    name: 'THE FIRMAMENT'
+    name: 'THE FIRMAMENT',
+    theme: 'sky'
   };
 })();
