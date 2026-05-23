@@ -40,11 +40,11 @@ const ISLANDS = [
   { d:3, s:1, name:'MOUNTAINS',   bbox:[168, 36, 216,  72], walkable_y:[50,62] },
   { d:3, s:2, name:'FOREST',      bbox:[216, 48, 272,  88], walkable_y:[50,58] },
   { d:4, s:1, name:'DESERT',      bbox:[272, 56, 318,  88], walkable_y:[56,64] },
-  { d:4, s:2, name:'NIGHT SKY',   bbox:[264,112, 318, 160], walkable_y:[112,122] },
-  { d:5, s:1, name:'CLOUDS',      bbox:[200,104, 264, 152], walkable_y:[104,116] },
-  { d:5, s:2, name:'UNDERWATER',  bbox:[128,112, 200, 152], walkable_y:[112,122] },
-  { d:6, s:1, name:'SAVANNA',     bbox:[ 72,112, 128, 152], walkable_y:[112,122] },
-  { d:6, s:2, name:'VILLAGE',     bbox:[  8,104,  72, 152], walkable_y:[108,120] },
+  { d:4, s:2, name:'NIGHT SKY',   bbox:[264,108, 318, 160], walkable_y:[108,124] },
+  { d:5, s:1, name:'CLOUDS',      bbox:[200,104, 264, 152], walkable_y:[104,120] },
+  { d:5, s:2, name:'UNDERWATER',  bbox:[128,112, 200, 152], walkable_y:[112,124] },
+  { d:6, s:1, name:'SAVANNA',     bbox:[ 72,112, 128, 152], walkable_y:[112,124] },
+  { d:6, s:2, name:'VILLAGE',     bbox:[  8,104,  72, 152], walkable_y:[108,124] },
   // Eden has a tall tree; grass walkable surface is below at y~150-166.
   { d:7, s:1, name:'EDEN GARDEN', bbox:[208,128, 272, 176], walkable_y:[152,168] }
 ];
