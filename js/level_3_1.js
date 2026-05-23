@@ -1,81 +1,114 @@
-// level_3_1.js - Day 3 Stage 1 "Forming Land" (the rocky-land half of Day 3).
-// Rocky, mountainous platforming with stepped plateaus. No new mechanic.
+// level_3_1.js - Day 3-1 "FORMING LAND" (Pass 3 redesign, ~240 tiles).
+// Signature mechanic: brick-stack climbing (vertical scrambling up
+// tight rock gaps). Teach: one ledge -> Test: brick column -> Twist:
+// zig-zag wall + narrow chasm -> Reward: high mountain run-up to goal.
 window.SDD = window.SDD || {};
 
 (function () {
   var SDD = window.SDD;
-  var W = 120, H = 14, GROUND = 11;
+  var W = 240, H = 14, GROUND = 11;
   var t = []; for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
   function setT(x, y, ch) { if (x >= 0 && x < W && y >= 0 && y < H) t[y][x] = ch; }
   function ground(x0, x1) { for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, 'X'); }
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
   function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
-  function bricks(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '#'); }
   function qb(x, y, ch) { setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
   var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // segment 1: gentle start, growth block early
-  ground(0, 15);
+  // ============== TEACH (0-50): flat ground, single ledge ==============
+  ground(0, 30);
   sp('player', 3, 10);
-  qb(8, 7, '?'); qb(10, 7, 'G');
-  sp('walker', 7, 10);
-  sp('core', 5, 9); sp('core', 11, 5);
-  sp('core', 16, 7); sp('core', 17, 6); sp('core', 18, 7);
+  sp('core', 6, 9); sp('core', 9, 9);
+  qb(13, 7, 'G');
+  sp('walker', 18, 10);                                    // first rock-crab
+  sp('core', 16, 9); sp('core', 22, 9);
 
-  // segment 2: rocky staircase up + down
-  ground(19, 32);
-  box(22, 10, 23, 13, 'X');
-  box(25, 9, 27, 13, 'X');
-  box(28, 8, 30, 13, 'X');
-  bricks(24, 26, 7); bricks(28, 30, 6);
-  sp('walker', 26, 8); sp('wisp', 29, 5);
-  sp('core', 23, 9); sp('core', 26, 6); sp('core', 30, 5); sp('core', 32, 9);
+  // First single ledge to jump onto
+  box(25, 9, 28, 13, 'X');
+  sp('core', 26, 7);
 
-  mover(33, 9, 36, 9, 0.02, 0);
-  sp('core', 34, 7);
+  ground(30, 50);
+  box(34, 8, 37, 13, 'X');                                 // taller ledge
+  sp('walker', 42, 10);
+  sp('wisp', 45, 7);
+  sp('core', 32, 9); sp('core', 35, 6); sp('core', 48, 9);
 
-  // segment 3: rock labyrinth
-  ground(37, 52);
-  bricks(40, 42, 8); bricks(45, 48, 9);
-  qb(43, 7, '?'); qb(44, 7, '?');
-  sp('thrower', 47, 10);
-  sp('walker', 50, 10);
-  sp('core', 38, 9); sp('core', 43, 5); sp('core', 49, 6);
-  sp('core', 53, 7); sp('core', 54, 6); sp('core', 55, 7);
+  // ============== TEST (50-110): brick column climbs ==============
+  ground(51, 90);
+  // First brick column: 3-step climb
+  box(55, 10, 56, 13, 'X');
+  box(58, 9, 59, 13, 'X');
+  box(61, 8, 62, 13, 'X');
+  box(64, 7, 65, 13, 'X');
+  sp('core', 55, 8); sp('core', 58, 7); sp('core', 61, 6); sp('core', 64, 5);
 
-  // segment 4: open canyon + flyer
-  ground(56, 72);
-  oneway(60, 63, 7);
-  oneway(66, 69, 5);
-  qb(68, 2, 'B');                          // light-blast block up high
-  sp('wisp', 62, 6); sp('thrower', 70, 10);
-  sp('core', 58, 9); sp('core', 61, 6); sp('core', 67, 4); sp('core', 68, 1);
+  // walking gap
+  sp('walker', 70, 10);
+  sp('thrower', 76, 10);
+  sp('core', 68, 9); sp('core', 73, 9); sp('core', 80, 9);
 
-  mover(73, 9, 76, 9, 0.022, 1.0);
-  sp('core', 74, 7);
+  // 2-tall brick wall to climb over (tight)
+  box(84, 8, 85, 13, 'X');
+  box(88, 7, 89, 13, 'X');
+  box(92, 6, 93, 13, 'X');
+  sp('core', 84, 6); sp('core', 88, 5); sp('core', 92, 4);
+  qb(92, 3, '?');
 
-  // segment 5: high mountain plateau
-  ground(77, 95);
-  box(80, 7, 89, 13, 'X');                 // big plateau
-  sp('walker', 84, 6); sp('walker', 88, 6);
-  bricks(83, 86, 5);
-  qb(87, 4, '?');
-  sp('core', 81, 6); sp('core', 85, 4); sp('core', 92, 9);
+  // ============== TWIST (110-170): zig-zag wall climbing ==============
+  ground(96, 140);
+  // zig-zag wall: alternating left/right stacks player has to weave through
+  box(102, 6, 104, 13, 'X');                               // wall sticks up from ground
+  box(108, 0, 110, 7, 'X');                                // wall hangs from top
+  box(114, 6, 116, 13, 'X');
+  box(120, 0, 122, 7, 'X');
+  box(126, 6, 128, 13, 'X');
+  // small one-way ledges to make the weave possible
+  oneway(105, 107, 8);
+  oneway(111, 113, 8);
+  oneway(117, 119, 8);
+  oneway(123, 125, 8);
+  sp('thrower', 100, 10);
+  sp('wisp', 113, 4); sp('wisp', 121, 4);
+  sp('core', 106, 7); sp('core', 112, 7); sp('core', 118, 7); sp('core', 124, 7);
+  qb(110, 8, 'B');                                          // blast power-up between zigs
 
-  mover(96, 9, 99, 9, 0.02, 0.5);
+  // gap with moving platform (relief after the climb)
+  mover(141, 9, 145, 9, 0.022, 0);
+  sp('core', 143, 7);
 
-  // final stretch + goal
-  ground(100, 119);
-  box(105, 10, 106, 13, 'X');
-  box(108, 9, 109, 13, 'X');
-  box(111, 8, 112, 13, 'X');
-  box(115, 9, 117, 13, 'X');
-  box(119, 0, 119, 13, 'X');
-  sp('timepart', 116, 8);
-  sp('core', 103, 9); sp('core', 108, 8); sp('core', 113, 9); sp('core', 116, 6);
+  // ============== TWIST 2 (147-185): narrow chasm ==============
+  ground(147, 180);
+  // tall walls with narrow gap; bricks form ascending stairs you must take
+  box(150, 0, 150, 8, 'X');                                // hanging
+  box(155, 9, 156, 13, 'X');
+  box(158, 7, 159, 13, 'X');
+  box(161, 5, 162, 13, 'X');
+  box(164, 3, 165, 13, 'X');
+  box(168, 0, 168, 5, 'X');                                // ceiling
+  sp('walker', 172, 10);
+  sp('thrower', 178, 10);
+  sp('core', 155, 8); sp('core', 158, 6); sp('core', 161, 4); sp('core', 164, 2);
+  sp('core', 167, 4); sp('core', 174, 9); sp('core', 178, 9);
+
+  // ============== REWARD (185-239): mountain run to goal ==============
+  mover(181, 9, 184, 9, 0.022, 0);
+
+  ground(186, 239);
+  box(192, 9, 195, 13, 'X');
+  box(199, 8, 202, 13, 'X');
+  box(206, 7, 209, 13, 'X');                               // staircase to summit
+  box(213, 6, 216, 13, 'X');                               // summit plateau
+  sp('walker', 220, 10);
+  sp('wisp', 225, 5);
+  box(228, 7, 233, 13, 'X');                               // goal pedestal at altitude
+  box(239, 0, 239, 13, 'X');
+  sp('timepart', 230, 6);
+  sp('core', 188, 9); sp('core', 193, 7); sp('core', 200, 6);
+  sp('core', 207, 5); sp('core', 214, 4); sp('core', 221, 9);
+  sp('core', 230, 4); sp('core', 235, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['3-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'FORMING LAND', theme: 'rocky' };

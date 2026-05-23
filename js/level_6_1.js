@@ -1,72 +1,96 @@
-// level_6_1.js - Day 6 Stage 1 "Wild Animals". Savanna/jungle platforming.
+// level_6_1.js - Day 6-1 "WILD ANIMALS" (Pass 3 redesign, ~240 tiles).
+// Signature mechanic: ENEMY GAUNTLET. Teach: 1 enemy -> Test: a pair
+// -> Twist: small wave + blast power-up acquired -> Reward: cleared
+// path through a big wave.
 window.SDD = window.SDD || {};
 
 (function () {
   var SDD = window.SDD;
-  var W = 120, H = 14, GROUND = 11;
+  var W = 240, H = 14, GROUND = 11;
   var t = []; for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
   function setT(x, y, ch) { if (x >= 0 && x < W && y >= 0 && y < H) t[y][x] = ch; }
   function ground(x0, x1) { for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, 'X'); }
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
   function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
-  function bricks(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '#'); }
   function qb(x, y, ch) { setT(x, y, ch); }
-  var spawns = []; function sp(t_, x, y, k) { var o = { type: t_, tx: x, ty: y }; if (k) o.kind = k; spawns.push(o); }
+  var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
   var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  ground(0, 16);
+  // ============== TEACH (0-50): 1 enemy at a time ==============
+  ground(0, 30);
   sp('player', 3, 10);
-  qb(8, 7, 'G'); qb(10, 7, '?');
-  sp('walker', 7, 10); sp('walker', 13, 10);
-  sp('core', 5, 9); sp('core', 11, 5); sp('core', 14, 8);
+  sp('core', 6, 9); sp('core', 9, 9);
+  qb(13, 7, 'G');                                          // grow early - need it
+  sp('walker', 18, 10);                                    // one rock-crab walker
+  sp('core', 16, 9); sp('core', 22, 9); sp('core', 26, 9);
 
-  sp('core', 17, 7); sp('core', 18, 6); sp('core', 19, 7);
+  ground(31, 60);
+  // open arena with one wisp
+  sp('wisp', 38, 7);
+  qb(42, 7, '?');
+  sp('walker', 48, 10);
+  sp('core', 33, 9); sp('core', 38, 5); sp('core', 44, 9); sp('core', 54, 9);
 
-  ground(20, 35);
-  bricks(24, 27, 8);
-  sp('wisp', 26, 6); sp('thrower', 32, 10);
-  qb(29, 6, '?');
-  sp('core', 23, 9); sp('core', 29, 4); sp('core', 33, 8);
+  // ============== TEST (60-130): pairs of enemies ==============
+  // First pair
+  ground(61, 100);
+  sp('walker', 68, 10); sp('walker', 75, 10);
+  sp('wisp', 72, 5);
+  sp('core', 65, 9); sp('core', 72, 4); sp('core', 78, 9); sp('core', 88, 9);
 
-  mover(36, 9, 39, 9, 0.02, 0);
-  sp('core', 37, 7);
+  // pair + thrower
+  sp('thrower', 92, 10);
+  sp('walker', 84, 10);
+  sp('wisp', 96, 4);
+  sp('core', 92, 7); sp('core', 96, 2);
 
-  ground(40, 58);
-  box(43, 8, 46, 13, 'X');
-  box(50, 7, 53, 13, 'X');
-  oneway(55, 57, 5);
-  qb(56, 2, 'B');
-  sp('walker', 45, 7); sp('walker', 52, 6); sp('wisp', 55, 4);
-  sp('core', 44, 7); sp('core', 51, 6); sp('core', 56, 1);
+  // ============== TWIST (100-180): BLAST acquired, small wave ==============
+  // gap with platform
+  mover(101, 9, 105, 9, 0.022, 0);
+  sp('core', 103, 7);
 
-  mover(59, 9, 62, 9, 0.022, 0.7);
+  ground(107, 145);
+  // Blast power-up arc: tower with the blast at top
+  box(112, 6, 115, 7, 'X');
+  oneway(118, 122, 4);
+  qb(120, 2, 'B');                                         // blast block - REWARD for climbing
+  sp('thrower', 125, 10);                                  // hide a thrower below
+  sp('wisp', 116, 4);
+  sp('core', 113, 4); sp('core', 120, 1); sp('core', 130, 9); sp('core', 138, 9);
 
-  ground(63, 80);
-  box(66, 9, 67, 13, 'X');
-  box(70, 8, 72, 13, 'X');
-  box(75, 7, 77, 13, 'X');
-  sp('thrower', 78, 10);
-  sp('wisp', 73, 5);
-  qb(71, 5, '?'); qb(76, 4, '?');
-  sp('core', 68, 9); sp('core', 71, 4); sp('core', 76, 3); sp('core', 79, 8);
+  // wave 1: enemies clustered (now blast-clearable)
+  sp('walker', 132, 10); sp('walker', 138, 10); sp('walker', 144, 10);
 
-  mover(81, 9, 84, 9, 0.02, 0.4);
+  // ============== TWIST 2 (145-200): bigger waves ==============
+  ground(147, 200);
+  // dense walker line
+  sp('walker', 152, 10); sp('walker', 158, 10); sp('walker', 164, 10);
+  sp('walker', 170, 10);
+  sp('thrower', 176, 10);
+  // platform up for safety/cores
+  box(155, 8, 168, 9, 'X');
+  oneway(172, 178, 6);
+  sp('wisp', 168, 6); sp('wisp', 184, 4);
+  qb(180, 7, '?'); qb(182, 7, '?');
+  sp('core', 150, 9); sp('core', 160, 7); sp('core', 167, 7);
+  sp('core', 175, 5); sp('core', 181, 5); sp('core', 188, 9);
+  sp('core', 194, 9);
 
-  ground(85, 99);
-  bricks(88, 91, 8);
-  sp('walker', 92, 10); sp('wisp', 95, 6);
-  sp('core', 86, 9); sp('core', 90, 6); sp('core', 95, 5); sp('core', 98, 9);
+  // ============== REWARD (200-239): cleared path to goal ==============
+  // smaller pit, easier
+  mover(201, 9, 205, 9, 0.022, 0);
+  sp('core', 203, 7);
 
-  ground(100, 119);
-  box(105, 10, 106, 13, 'X');
-  box(108, 9, 109, 13, 'X');
-  box(111, 8, 112, 13, 'X');
-  box(115, 9, 117, 13, 'X');
-  box(119, 0, 119, 13, 'X');
-  sp('timepart', 116, 8);
-  sp('core', 103, 9); sp('core', 110, 7); sp('core', 113, 9); sp('core', 116, 6);
+  ground(207, 239);
+  box(213, 9, 216, 13, 'X');
+  box(220, 8, 224, 13, 'X');                               // goal pedestal
+  box(239, 0, 239, 13, 'X');
+  sp('timepart', 222, 7);
+  sp('walker', 211, 10);                                   // last lone enemy
+  sp('core', 209, 9); sp('core', 215, 7); sp('core', 222, 6);
+  sp('core', 230, 9); sp('core', 236, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['6-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'WILD ANIMALS', theme: 'savanna' };

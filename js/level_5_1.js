@@ -1,73 +1,86 @@
-// level_5_1.js - Day 5 Stage 1 "THE SKIES" (Flappy mode!)
-// Auto-scrolling sky scene. Danny flies forward on his own; tap A to flap.
-// Touching the ground or hitting an obstacle = death. Fly through the
-// gaps in each cloud-pillar gate, scoop up power cores, reach the
-// time-machine part at the end.
+// level_5_1.js - Day 5-1 "THE SKIES" (Pass 3 expansion, ~360 tiles).
+// Flappy mode: Danny auto-flies forward, tap A to flap. Hit a pillar
+// or the ground = lose a life. Now twice as long with a difficulty
+// curve - wide gaps early, tighter gates later, wisp dodges between.
 window.SDD = window.SDD || {};
 
 (function () {
   var SDD = window.SDD;
-  var W = 180, H = 14, GROUND = 13;     // long auto-scroll, ground at very bottom
+  var W = 360, H = 14, GROUND = 13;
   var t = []; for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
   function setT(x, y, ch) { if (x >= 0 && x < W && y >= 0 && y < H) t[y][x] = ch; }
   function ground(x0, x1) { for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, 'X'); }
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
 
-  // Floor of death (looks like distant clouds; touching = lose a life).
   ground(0, W - 1);
-
-  // Top ceiling (one row of bricks - prevents flying off the top).
-  // Player.update clamps y >= 4 in flappy mode so this is mostly visual.
-
   sp('player', 4, 8);
 
-  // ---- Cloud-pillar gates ----
-  // Each "gate" is a vertical wall with a gap somewhere between rows 2
-  // and 10. Gap height = 4 tiles. Spaced ~12 tiles apart so the player
-  // has time to react.
-  function gate(col, gapTop) {
-    // pillar from row 0 to gapTop-1
+  // Each gate: pillar from top to gapTop-1, then gap (gapH tall),
+  // then pillar from gapTop+gapH down to row 12.
+  function gate(col, gapTop, gapH) {
+    gapH = gapH || 4;
     for (var y = 0; y < gapTop; y++) setT(col, y, '#');
-    // pillar from gapTop+4 down to the ground row 12
-    for (var y = gapTop + 4; y <= 12; y++) setT(col, y, '#');
+    for (var y = gapTop + gapH; y <= 12; y++) setT(col, y, '#');
   }
-  // gap row positions (top of gap), kid-friendly oscillation
-  var gates = [
-    [18, 4], [30, 6], [42, 3], [54, 7], [66, 5],
-    [78, 2], [90, 6], [102, 4], [114, 7], [126, 3],
-    [138, 5], [150, 6]
-  ];
-  for (var i = 0; i < gates.length; i++) gate(gates[i][0], gates[i][1]);
 
-  // Power cores in each gap so flying through pays off.
-  for (var i = 0; i < gates.length; i++) {
-    var gc = gates[i][0], gt = gates[i][1];
+  // ============== TEACH (cols 0-90): wide, easy gates ==============
+  // gates spaced 18 tiles apart, gap height 5 (generous)
+  var teachGates = [[18, 5, 5], [36, 4, 5], [54, 6, 5], [72, 4, 5]];
+  for (var i = 0; i < teachGates.length; i++) gate(teachGates[i][0], teachGates[i][1], teachGates[i][2]);
+  for (var i = 0; i < teachGates.length; i++) {
+    var gc = teachGates[i][0], gt = teachGates[i][1];
+    sp('core', gc, gt + 1); sp('core', gc, gt + 2);
+  }
+
+  // ============== TEST (cols 90-200): standard gates ==============
+  // 15-tile spacing, gap height 4
+  var testGates = [[90, 5, 4], [105, 3, 4], [120, 6, 4], [135, 4, 4],
+                   [150, 7, 4], [165, 2, 4], [180, 5, 4], [195, 6, 4]];
+  for (var i = 0; i < testGates.length; i++) gate(testGates[i][0], testGates[i][1], testGates[i][2]);
+  for (var i = 0; i < testGates.length; i++) {
+    var gc = testGates[i][0], gt = testGates[i][1];
+    sp('core', gc, gt + 1); sp('core', gc, gt + 2);
+  }
+  // wisps between to dodge
+  sp('wisp', 97, 4); sp('wisp', 112, 7); sp('wisp', 127, 3);
+  sp('wisp', 142, 6); sp('wisp', 157, 4); sp('wisp', 172, 7);
+  sp('wisp', 187, 3);
+
+  // ============== TWIST (cols 200-300): tighter gaps, faster ==============
+  // 12-tile spacing, gap height 3
+  var twistGates = [[208, 4, 3], [220, 6, 3], [232, 3, 3], [244, 7, 3],
+                    [256, 4, 3], [268, 6, 3], [280, 3, 3], [292, 5, 3]];
+  for (var i = 0; i < twistGates.length; i++) gate(twistGates[i][0], twistGates[i][1], twistGates[i][2]);
+  for (var i = 0; i < twistGates.length; i++) {
+    var gc = twistGates[i][0], gt = twistGates[i][1];
     sp('core', gc, gt + 1);
-    sp('core', gc, gt + 2);
   }
+  sp('wisp', 214, 7); sp('wisp', 226, 4); sp('wisp', 238, 7);
+  sp('wisp', 250, 3); sp('wisp', 262, 7); sp('wisp', 274, 4);
+  sp('wisp', 286, 7);
 
-  // A few drifting wisps as bonus dodging challenge between gates.
-  sp('wisp', 24, 5);
-  sp('wisp', 48, 8);
-  sp('wisp', 72, 4);
-  sp('wisp', 96, 7);
-  sp('wisp', 120, 5);
-  sp('wisp', 144, 6);
+  // ============== REWARD (cols 300-359): final stretch, clear sky ==============
+  // sparse gates, big gaps, then goal
+  gate(308, 4, 5);
+  gate(322, 6, 5);
+  gate(336, 4, 5);
+  for (var i = 0; i < 3; i++) {
+    var cs = [308, 322, 336][i], ts = [4, 6, 4][i];
+    sp('core', cs, ts + 1); sp('core', cs, ts + 2);
+  }
+  sp('wisp', 316, 5); sp('wisp', 330, 7);
 
-  // Final stretch: clear sky leading to the goal pillar.
-  box(W - 4, 0, W - 4, 12, 'X');     // back wall
+  box(W - 4, 0, W - 4, 12, 'X');
   sp('timepart', W - 7, 8);
+  sp('core', W - 10, 4); sp('core', W - 10, 7);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['5-1'] = {
     width: W, height: H, ground: GROUND,
     tiles: t, spawns: spawns, movers: [],
     name: 'THE SKIES', theme: 'bird-sky',
-    flappy: true,
-    flappySpeed: 1.4,       // auto-forward velocity
-    flappyFlap: 3.6,        // upward impulse on A tap
-    flappyGravity: 0.85,    // multiplier on GRAVITY (snappy fall)
-    flappyMaxFall: 4.5
+    flappy: true, flappySpeed: 1.4, flappyFlap: 3.6,
+    flappyGravity: 0.85, flappyMaxFall: 4.5
   };
 })();

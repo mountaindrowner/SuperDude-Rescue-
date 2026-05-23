@@ -1,98 +1,114 @@
-// level_2_1.js - Day 2 Stage 1 "The Firmament" (the sky half of Day 2).
-// Same engine and helpers as Day 1; theme is elevated / aerial. Final art
-// (sky tiles, cloud platforms) will swap in later via the sprites system.
+// level_2_1.js - Day 2-1 "THE FIRMAMENT" (Pass 3 redesign, ~240 tiles).
+// Signature mechanic: stacked one-way cloud ladders (vertical climbing
+// without vines). Teach: one cloud step -> Test: staircase -> Twist:
+// narrow vertical column with a thrower below -> Reward: high core
+// trail and a sky-high blast power-up.
 window.SDD = window.SDD || {};
 
 (function () {
   var SDD = window.SDD;
-
-  var W = 120, H = 14, GROUND = 11;
-
-  var t = [];
-  for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
-
+  var W = 240, H = 14, GROUND = 11;
+  var t = []; for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
   function setT(x, y, ch) { if (x >= 0 && x < W && y >= 0 && y < H) t[y][x] = ch; }
   function ground(x0, x1) { for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, 'X'); }
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
   function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
-  function bricks(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '#'); }
   function qb(x, y, ch) { setT(x, y, ch); }
-
-  var spawns = [];
-  function sp(type, tx, ty) { spawns.push({ type: type, tx: tx, ty: ty }); }
-  var movers = [];
-  function mover(tx, ty, tx1, ty1, spd, phase) {
-    movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: phase || 0 });
+  var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
+  var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
+    movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // ---- segment 1: gentle aerial start ----
-  ground(0, 15);
+  // ============== TEACH (0-50): one cloud step at a time ==============
+  ground(0, 30);
   sp('player', 3, 10);
-  qb(8, 7, '?');                  // core block
-  qb(10, 7, 'G');                 // growth power-up
-  sp('walker', 7, 10);
-  sp('core', 5, 9); sp('core', 12, 8);
-  // pit 16-18 (3 tiles, jumpable)
-  sp('core', 16, 7); sp('core', 17, 6); sp('core', 18, 7);
+  sp('core', 6, 9); sp('core', 9, 9); sp('core', 12, 9);
+  qb(15, 7, '?');
+  // First single one-way "cloud" floating above
+  oneway(18, 21, 8);
+  sp('core', 19, 6); sp('core', 20, 6);
+  sp('walker', 24, 10);
+  sp('core', 27, 9);
 
-  // ---- segment 2: floating staircase up ----
-  ground(19, 32);
-  oneway(22, 24, 8);
-  oneway(26, 28, 6);
-  oneway(30, 32, 4);
-  qb(31, 2, 'B');                 // light-blast power-up, high & tricky
-  sp('wisp', 24, 6);
-  sp('core', 23, 7); sp('core', 27, 5); sp('core', 31, 1);
-  // pit 33-36 (4 tiles) with a horizontal mover
-  mover(33, 9, 36, 9, 0.02, 0);
-  sp('core', 35, 7);
+  // small gap then a TWO-step ladder
+  sp('core', 31, 8); sp('core', 32, 7);
+  ground(34, 70);
+  oneway(38, 41, 9);
+  oneway(43, 46, 7);
+  sp('core', 39, 7); sp('core', 44, 5);
+  sp('walker', 50, 10);
+  sp('wisp', 55, 6);
+  sp('core', 53, 9); sp('core', 58, 7);
 
-  // ---- segment 3: elevated bricks + a thrower ----
-  ground(37, 52);
-  bricks(40, 43, 8);
-  bricks(46, 49, 6);
-  sp('thrower', 47, 10);
-  qb(41, 5, '?'); qb(48, 3, '?');
-  sp('core', 38, 9); sp('core', 42, 7); sp('core', 47, 5);
-  // pit 53-55
-  sp('core', 53, 7); sp('core', 54, 6); sp('core', 55, 7);
+  // ============== TEST (50-115): full cloud staircases ==============
+  oneway(60, 63, 9);
+  oneway(66, 69, 7);
+  oneway(72, 75, 5);
+  sp('core', 61, 7); sp('core', 67, 5); sp('core', 73, 3);
+  qb(73, 1, '?');
 
-  // ---- segment 4: open sky with a flyer + walker ----
-  ground(56, 72);
-  box(60, 9, 62, 13, 'X');        // small plateau
-  box(66, 8, 68, 13, 'X');        // higher plateau
-  sp('walker', 64, 10);
-  sp('wisp', 68, 6);
-  sp('core', 58, 9); sp('core', 61, 8); sp('core', 67, 7); sp('core', 71, 9);
-  // pit 73-76 (4 tiles) with mover
-  mover(73, 9, 76, 9, 0.022, 1.0);
-  sp('core', 74, 7);
+  ground(76, 100);
+  sp('thrower', 84, 10);
+  sp('wisp', 80, 6); sp('wisp', 92, 4);
+  sp('core', 78, 9); sp('core', 88, 9); sp('core', 96, 9);
 
-  // ---- segment 5: rolling open sky ----
-  ground(77, 95);
-  qb(82, 7, '?'); qb(83, 7, '?');
-  sp('walker', 86, 10);
-  sp('thrower', 92, 10);
-  sp('wisp', 89, 5);
-  sp('core', 80, 9); sp('core', 84, 5); sp('core', 88, 8); sp('core', 93, 9);
-  // pit 96-99 (4 tiles) with mover
-  mover(96, 9, 99, 9, 0.02, 0.5);
+  // descending 3-step
+  oneway(102, 105, 4);
+  oneway(108, 111, 6);
+  oneway(114, 117, 8);
+  sp('walker', 116, 10);
+  sp('core', 103, 2); sp('core', 109, 4); sp('core', 115, 6);
 
-  // ---- segment 6: approach to the goal ----
-  ground(100, 119);
-  box(105, 10, 106, 13, 'X');
-  box(108, 9, 109, 13, 'X');
-  box(111, 8, 112, 13, 'X');      // staircase up
-  box(116, 9, 118, 13, 'X');      // pedestal
-  box(119, 0, 119, 13, 'X');      // end wall
-  sp('timepart', 117, 8);
-  sp('core', 103, 9); sp('core', 107, 9); sp('core', 110, 8); sp('core', 114, 9); sp('core', 116, 6);
+  // ============== TWIST (115-160): narrow vertical column ==============
+  ground(120, 160);
+  // wall splits the path - climb a column of one-ways on the left side
+  box(140, 0, 142, 13, 'X');
+  oneway(133, 138, 9);
+  oneway(133, 138, 7);
+  oneway(133, 138, 5);
+  oneway(133, 138, 3);
+  oneway(143, 148, 3);
+  oneway(143, 148, 5);
+  oneway(143, 148, 7);
+  oneway(143, 148, 9);
+  sp('thrower', 137, 10);
+  sp('wisp', 135, 6); sp('wisp', 145, 4);
+  sp('core', 135, 8); sp('core', 135, 6); sp('core', 135, 4); sp('core', 135, 2);
+  sp('core', 145, 2); sp('core', 145, 4); sp('core', 145, 6); sp('core', 145, 8);
+  qb(135, 1, 'B');                                          // blast at the top of the tower
+
+  sp('walker', 152, 10); sp('walker', 158, 10);
+  sp('core', 150, 9); sp('core', 154, 9); sp('core', 158, 9);
+
+  // ============== REWARD (160-239): sky high-route to goal ==============
+  mover(161, 9, 165, 9, 0.022, 0);
+  sp('core', 163, 7);
+
+  ground(166, 200);
+  oneway(170, 173, 5);
+  oneway(176, 179, 3);
+  oneway(182, 185, 5);
+  oneway(188, 191, 7);
+  oneway(194, 197, 5);
+  sp('core', 171, 3); sp('core', 177, 1); sp('core', 183, 3);
+  sp('core', 189, 5); sp('core', 195, 3);
+  sp('thrower', 175, 10); sp('thrower', 192, 10);
+  sp('wisp', 184, 2); sp('wisp', 194, 1);
+
+  mover(201, 10, 204, 5, 0.024, 0);
+  sp('core', 202, 7); sp('core', 203, 4);
+
+  ground(206, 239);
+  box(212, 9, 214, 13, 'X');
+  box(217, 8, 219, 13, 'X');
+  box(222, 7, 224, 13, 'X');
+  box(228, 8, 232, 13, 'X');                               // goal pedestal
+  box(239, 0, 239, 13, 'X');
+  sp('timepart', 230, 7);
+  sp('walker', 210, 10); sp('wisp', 220, 4);
+  sp('core', 208, 9); sp('core', 213, 7); sp('core', 218, 6);
+  sp('core', 223, 5); sp('core', 230, 5); sp('core', 234, 9);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['2-1'] = {
-    width: W, height: H, ground: GROUND,
-    tiles: t, spawns: spawns, movers: movers,
-    name: 'THE FIRMAMENT',
-    theme: 'sky'
-  };
+  SDD.levels['2-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE FIRMAMENT', theme: 'sky' };
 })();
