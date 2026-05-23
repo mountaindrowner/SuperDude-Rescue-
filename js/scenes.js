@@ -204,13 +204,10 @@ window.SDD = window.SDD || {};
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
-      this.items.push({ label: '', act: 'god' });  // dynamic label set in render
       this.idx = SDD.save.hasSave() ? 1 : 0;
     },
     update: function () {
       this.t++;
-      this.items[this.items.length - 1].label =
-        'GOD MODE: ' + (SDD.save.data.options.god ? 'ON' : 'OFF');
       listNav(this, this.items.length);
       if (In.confirm()) {
         var act = this.items[this.idx].act;
@@ -219,10 +216,6 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
-        else if (act === 'god') {
-          SDD.save.data.options.god = !SDD.save.data.options.god;
-          SDD.save.save();
-        }
       }
     },
     render: function (g) {
@@ -238,12 +231,13 @@ window.SDD = window.SDD || {};
       S.drawDanny(g, 'big', 'idle', 'east', Math.floor(this.t / 18) % 4, 40, 96);
 
       for (var i = 0; i < this.items.length; i++) {
-        var y = 104 + i * 16;
+        var y = 110 + i * 16;
         var sel = i === this.idx;
         if (sel) text(g, '>', 110, y, '#ffd23a', 1, 'left');
         text(g, this.items[i].label, 160, y, sel ? '#ffffff' : '#9aa0c4', sel ? 2 : 1, 'center');
       }
-      if (this.t % 50 < 34) text(g, 'A SEVEN DAYS OF CREATION ADVENTURE', 160, 170, '#aab0d4', 1, 'center');
+      // Shorter tagline so it fits cleanly under the menu items.
+      if (this.t % 50 < 34) text(g, 'A CREATION ADVENTURE', 160, 172, '#aab0d4', 1, 'center');
     }
   };
 
@@ -254,7 +248,7 @@ window.SDD = window.SDD || {};
     enter: function (d) { this.from = (d && d.from) || 'menu'; this.idx = 0; this.t = 0; },
     update: function () {
       this.t++;
-      listNav(this, 3);
+      listNav(this, 4);
       var o = SDD.save.data.options;
       if (this.idx === 0 && In.confirm()) {
         o.muted = !o.muted; A.setMuted(o.muted); SDD.save.save();
@@ -264,25 +258,30 @@ window.SDD = window.SDD || {};
         if (In.pressed('left')) { o.volume = Math.max(0, o.volume - 0.1); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
         if (In.pressed('right')) { o.volume = Math.min(1, o.volume + 0.1); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
       }
-      if (this.idx === 2 && In.confirm()) { A.sfx('confirm'); go(this.from); }
+      if (this.idx === 2 && In.confirm()) {
+        o.god = !o.god; SDD.save.save(); A.sfx('confirm');
+      }
+      if (this.idx === 3 && In.confirm()) { A.sfx('confirm'); go(this.from); }
       if (In.pressed('pause')) { A.sfx('confirm'); go(this.from); }
     },
     render: function (g) {
       g.fillStyle = '#1a1640'; g.fillRect(0, 0, 320, 180);
       drawStarfield(g, this.t);
-      tsh(g, 'OPTIONS', 160, 26, '#ffd23a', '#a8631a', 3, 'center');
+      tsh(g, 'OPTIONS', 160, 22, '#ffd23a', '#a8631a', 3, 'center');
       var o = SDD.save.data.options;
       var rows = [
-        'SOUND:  ' + (o.muted ? 'OFF' : 'ON'),
-        'VOLUME: ' + ('[' + repeat('=', Math.round(o.volume * 10)) + repeat('.', 10 - Math.round(o.volume * 10)) + ']'),
+        'SOUND:    ' + (o.muted ? 'OFF' : 'ON'),
+        'VOLUME:   ' + ('[' + repeat('=', Math.round(o.volume * 10)) + repeat('.', 10 - Math.round(o.volume * 10)) + ']'),
+        'GOD MODE: ' + (o.god ? 'ON' : 'OFF'),
         'BACK'
       ];
       for (var i = 0; i < rows.length; i++) {
-        var y = 76 + i * 22, sel = i === this.idx;
+        var y = 64 + i * 20, sel = i === this.idx;
         if (sel) text(g, '>', 60, y, '#ffd23a', 1, 'left');
         text(g, rows[i], 76, y, sel ? '#ffffff' : '#9aa0c4', 1, 'left');
       }
       text(g, 'ARROWS TO CHANGE   A TO CONFIRM', 160, 158, '#8a90b4', 1, 'center');
+      text(g, 'TIP: PRESS G ANYWHERE TO TOGGLE GOD MODE', 160, 168, '#6d7398', 1, 'center');
     }
   };
   function repeat(ch, n) { var s = ''; for (var i = 0; i < n; i++) s += ch; return s; }
@@ -317,90 +316,110 @@ window.SDD = window.SDD || {};
   };
 
   // =====================================================================
-  // OVERWORLD - 7-day creation map
+  // OVERWORLD - 12 named stage nodes (each level is its own "world").
+  // The dotted path winds across the map; nodes light up as Danny clears
+  // them. The optional background art is a swap-in image at
+  // assets/overworld.png that gets composited under the path + nodes.
   // =====================================================================
-  var DAYS = [
-    { n: 1, name: 'LIGHT & DARKNESS' },
-    { n: 2, name: 'SKY & WATERS' },
-    { n: 3, name: 'LAND & PLANTS' },
-    { n: 4, name: 'SUN, MOON & STARS' },
-    { n: 5, name: 'BIRDS & SEA LIFE' },
-    { n: 6, name: 'ANIMALS & MANKIND' },
-    { n: 7, name: 'DAY OF REST' }
+  var STAGES = [
+    { d: 1, s: 1, x:  24, y: 138, name: 'LIGHT' },
+    { d: 2, s: 1, x:  52, y: 104, name: 'FIRMAMENT' },
+    { d: 2, s: 2, x:  78, y: 134, name: 'WATERS' },
+    { d: 3, s: 1, x: 104, y:  96, name: 'FORMING LAND' },
+    { d: 3, s: 2, x: 130, y: 128, name: 'VEGETATION' },
+    { d: 4, s: 1, x: 156, y:  84, name: 'THE SUN' },
+    { d: 4, s: 2, x: 182, y: 112, name: 'MOON & STARS' },
+    { d: 5, s: 1, x: 208, y:  84, name: 'THE SKIES' },
+    { d: 5, s: 2, x: 234, y: 120, name: 'THE SEAS' },
+    { d: 6, s: 1, x: 260, y:  90, name: 'WILD ANIMALS' },
+    { d: 6, s: 2, x: 286, y: 124, name: 'MANKIND' },
+    { d: 7, s: 1, x: 308, y: 100, name: 'DAY OF REST' }
   ];
-  var NODES = [
-    { x: 38, y: 122 }, { x: 78, y: 96 }, { x: 116, y: 130 }, { x: 158, y: 92 },
-    { x: 198, y: 126 }, { x: 240, y: 96 }, { x: 282, y: 120 }
-  ];
+  // Optional swap-in art (assets/overworld.png). Drawn under the path
+  // when present; otherwise we draw the gradient + starfield fallback.
+  var overworldImg = new Image();
+  var overworldImgOk = false;
+  overworldImg.onload  = function () { overworldImgOk = (overworldImg.width > 0); };
+  overworldImg.onerror = function () { overworldImgOk = false; };
+  overworldImg.src = 'assets/overworld.png';
+
+  function stageOpen(idx) {
+    if (idx === 0) return true;
+    var prev = STAGES[idx - 1];
+    return SDD.save.data.completedStages.indexOf(prev.d + '-' + prev.s) >= 0;
+  }
+  function stageDone(st) {
+    return SDD.save.data.completedStages.indexOf(st.d + '-' + st.s) >= 0;
+  }
+  function firstUnclearedIdx() {
+    for (var i = 0; i < STAGES.length; i++) if (!stageDone(STAGES[i])) return i;
+    return STAGES.length - 1;
+  }
+
   SDD.scenes.overworld = {
     enter: function () {
       this.t = 0;
-      this.idx = 0;
+      this.idx = firstUnclearedIdx();
       this.msg = ''; this.msgT = 0;
-      this.dannyX = NODES[0].x; this.dannyY = NODES[0].y;
+      this.dannyX = STAGES[this.idx].x; this.dannyY = STAGES[this.idx].y;
       A.startMusic('overworld');
     },
     update: function () {
       this.t++;
       if (this.msgT > 0) this.msgT--;
-      if (In.pressed('left') && this.idx > 0) { this.idx--; A.sfx('select'); }
-      if (In.pressed('right') && this.idx < 6) { this.idx++; A.sfx('select'); }
+      if (In.pressed('left')  && this.idx > 0)               { this.idx--; A.sfx('select'); }
+      if (In.pressed('right') && this.idx < STAGES.length-1) { this.idx++; A.sfx('select'); }
       // danny glides to the selected node
-      this.dannyX += (NODES[this.idx].x - this.dannyX) * 0.25;
-      this.dannyY += (NODES[this.idx].y - this.dannyY) * 0.25;
+      this.dannyX += (STAGES[this.idx].x - this.dannyX) * 0.25;
+      this.dannyY += (STAGES[this.idx].y - this.dannyY) * 0.25;
       if (In.confirm()) {
-        var day = this.idx + 1;
-        var unlocked = SDD.save.data.unlockedDay;
-        if (day > unlocked) { this.msg = 'THAT DAY IS LOCKED'; this.msgT = 110; A.sfx('bump'); }
-        else {
-          var stage = SDD.save.nextStage(day);
-          var key = day + '-' + stage;
-          if (SDD.levels && SDD.levels[key]) { A.sfx('enter'); go('level', { day: day, stage: stage }); }
-          else { this.msg = 'DAY ' + day + ' - COMING SOON!'; this.msgT = 130; A.sfx('bump'); }
+        var st = STAGES[this.idx];
+        if (!stageOpen(this.idx)) {
+          this.msg = 'LOCKED - FINISH "' + STAGES[this.idx - 1].name + '" FIRST';
+          this.msgT = 110; A.sfx('bump');
+        } else if (!SDD.levels || !SDD.levels[st.d + '-' + st.s]) {
+          this.msg = st.name + ' - COMING SOON!'; this.msgT = 130; A.sfx('bump');
+        } else {
+          A.sfx('enter'); go('level', { day: st.d, stage: st.s });
         }
       }
       if (In.pressed('pause')) { A.sfx('confirm'); go('menu'); }
     },
     render: function (g) {
-      var grd = g.createLinearGradient(0, 0, 0, 180);
-      grd.addColorStop(0, '#243a6e'); grd.addColorStop(1, '#6fae8a');
-      g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
-      drawStarfield(g, this.t);
-      // path
-      g.strokeStyle = 'rgba(255,230,150,0.7)'; g.lineWidth = 3;
-      g.setLineDash([4, 4]);
+      // Background: swap-in image if available, else gradient + starfield.
+      if (overworldImgOk) {
+        g.drawImage(overworldImg, 0, 0, 320, 180);
+      } else {
+        var grd = g.createLinearGradient(0, 0, 0, 180);
+        grd.addColorStop(0, '#243a6e'); grd.addColorStop(1, '#6fae8a');
+        g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+        drawStarfield(g, this.t);
+      }
+      // Dotted path connecting all 12 nodes
+      g.strokeStyle = 'rgba(255,230,150,0.7)'; g.lineWidth = 2;
+      g.setLineDash([3, 3]);
       g.beginPath();
-      g.moveTo(NODES[0].x, NODES[0].y);
-      for (var p = 1; p < NODES.length; p++) g.lineTo(NODES[p].x, NODES[p].y);
+      g.moveTo(STAGES[0].x, STAGES[0].y);
+      for (var p = 1; p < STAGES.length; p++) g.lineTo(STAGES[p].x, STAGES[p].y);
       g.stroke();
       g.setLineDash([]);
-      // nodes
-      var unlocked = SDD.save.data.unlockedDay;
-      for (var i = 0; i < NODES.length; i++) {
-        var nd = NODES[i], day = i + 1, open = day <= unlocked;
-        var done = SDD.save.data.completedDays.indexOf(day) >= 0;
+      // Nodes
+      for (var i = 0; i < STAGES.length; i++) {
+        var st = STAGES[i], open = stageOpen(i), done = stageDone(st);
         g.fillStyle = open ? (done ? '#7dff9a' : '#ffd23a') : '#5a5f78';
-        g.beginPath(); g.arc(nd.x, nd.y, 9, 0, Math.PI * 2); g.fill();
-        text(g, '' + day, nd.x, nd.y - 3, open ? '#1a1640' : '#9498ac', 1, 'center');
+        g.beginPath(); g.arc(st.x, st.y, 7, 0, Math.PI * 2); g.fill();
+        text(g, '' + (i + 1), st.x, st.y - 3, open ? '#1a1640' : '#9498ac', 1, 'center');
         if (!open) {
-          g.fillStyle = '#cdd2e4'; g.fillRect(nd.x - 3, nd.y + 6, 6, 5);
-          g.fillRect(nd.x - 2, nd.y + 3, 4, 3);
-        } else {
-          // small stage-progress badge: e.g. "1/2" for days with multiple stages
-          var totalS = SDD.save.stagesForDay(day);
-          if (totalS > 1) {
-            var doneS = SDD.save.completedStagesOf(day);
-            text(g, doneS + '/' + totalS, nd.x, nd.y + 12,
-              done ? '#7dff9a' : '#ffd23a', 1, 'center');
-          }
+          g.fillStyle = '#cdd2e4'; g.fillRect(st.x - 2, st.y + 4, 4, 4);
+          g.fillRect(st.x - 1, st.y + 2, 2, 2);
         }
         if (i === this.idx) {
           g.strokeStyle = '#ffffff'; g.lineWidth = 1;
-          g.strokeRect(nd.x - 12, nd.y - 12, 24, 24);
+          g.strokeRect(st.x - 10, st.y - 10, 20, 20);
         }
       }
-      // danny on the map - walks toward selected node
-      var dGap = NODES[this.idx].x - this.dannyX;
+      // Danny walking between nodes
+      var dGap = STAGES[this.idx].x - this.dannyX;
       var dY = this.dannyY - 26 + Math.sin(this.t * 0.1) * 1.5;
       if (Math.abs(dGap) > 1) {
         S.drawDanny(g, 'small', 'run', dGap < 0 ? 'west' : 'east',
@@ -409,17 +428,16 @@ window.SDD = window.SDD || {};
         S.drawDanny(g, 'small', 'idle', 'east',
           Math.floor(this.t / 18) % 4, this.dannyX - 11, dY);
       }
-
-      // header / selected day info
-      g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 0, 320, 22);
-      text(g, 'CREATION MAP', 8, 8, '#ffd23a', 1, 'left');
-      var sel = DAYS[this.idx];
-      var openSel = (this.idx + 1) <= unlocked;
-      text(g, 'DAY ' + sel.n + ': ' + sel.name, 312, 8, openSel ? '#ffffff' : '#8a90b4', 1, 'right');
-      // footer
-      g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 160, 320, 20);
-      if (this.msgT > 0) text(g, this.msg, 160, 166, '#ff8a6a', 1, 'center');
-      else text(g, 'ARROWS: CHOOSE DAY    A: ENTER', 160, 166, '#dfe6ff', 1, 'center');
+      // Header + selected world info
+      g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 0, 320, 18);
+      text(g, 'CREATION MAP', 6, 6, '#ffd23a', 1, 'left');
+      var sel = STAGES[this.idx], openSel = stageOpen(this.idx);
+      text(g, (this.idx + 1) + '. ' + sel.name, 314, 6,
+        openSel ? '#ffffff' : '#8a90b4', 1, 'right');
+      // Footer
+      g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 162, 320, 18);
+      if (this.msgT > 0) text(g, this.msg, 160, 168, '#ff8a6a', 1, 'center');
+      else text(g, 'ARROWS: CHOOSE WORLD    A: ENTER', 160, 168, '#dfe6ff', 1, 'center');
     }
   };
 
@@ -638,15 +656,74 @@ window.SDD = window.SDD || {};
       g.fillRect(dx | 0, dy | 0, 1, 1);
     }
   }
-  function drawSky_forest(g, camx, camy, prog, t) {
-    vGradient(g, '#3a5e2c', '#9ed070');
-    for (var s = 0; s < 5; s++) {
-      var sx = 30 + s * 60 + Math.sin(t * 0.02 + s) * 4;
-      g.fillStyle = 'rgba(255,255,200,0.08)';
-      g.fillRect(sx | 0, 0, 24, 180);
+  // Pine-tree row (taller, pointy silhouettes - for layered forest depth).
+  function pineRow(g, camx, factor, baseY, color, scale) {
+    scale = scale || 1;
+    g.fillStyle = color;
+    var span = Math.floor(38 * scale);
+    var off = -(((camx * factor) % span) + span) % span;
+    var trunkH = Math.floor(20 * scale), coneH = Math.floor(28 * scale), coneW = Math.floor(18 * scale);
+    for (var x = off - span; x < 340; x += span) {
+      var cx = x + Math.floor(span / 2);
+      // trunk
+      g.fillRect(cx - 2, baseY - trunkH, 4, trunkH);
+      // three-layer pine cone
+      g.beginPath();
+      g.moveTo(cx - coneW / 2, baseY - trunkH);
+      g.lineTo(cx + coneW / 2, baseY - trunkH);
+      g.lineTo(cx, baseY - trunkH - coneH);
+      g.fill();
+      g.beginPath();
+      g.moveTo(cx - coneW * 0.35, baseY - trunkH - coneH * 0.4);
+      g.lineTo(cx + coneW * 0.35, baseY - trunkH - coneH * 0.4);
+      g.lineTo(cx, baseY - trunkH - coneH * 1.3);
+      g.fill();
+      g.beginPath();
+      g.moveTo(cx - coneW * 0.22, baseY - trunkH - coneH * 0.8);
+      g.lineTo(cx + coneW * 0.22, baseY - trunkH - coneH * 0.8);
+      g.lineTo(cx, baseY - trunkH - coneH * 1.55);
+      g.fill();
     }
-    treeRow(g, camx, 0.18, 168, '#1f3a18');
-    treeRow(g, camx, 0.34, 178, '#0f2410');
+  }
+  // Soft mountain ridge silhouette - rounded triangles.
+  function mountainRidge(g, camx, factor, baseY, color, peakH) {
+    g.fillStyle = color;
+    var span = 110;
+    var off = -(((camx * factor) % span) + span) % span;
+    for (var x = off - span * 2; x < 340 + span; x += span) {
+      g.beginPath();
+      g.moveTo(x, baseY);
+      g.bezierCurveTo(x + span * 0.25, baseY - peakH * 0.7,
+                      x + span * 0.5, baseY - peakH,
+                      x + span * 0.75, baseY - peakH * 0.65);
+      g.lineTo(x + span, baseY);
+      g.fill();
+    }
+  }
+  function drawSky_forest(g, camx, camy, prog, t) {
+    // Layered forest: bright sky -> distant mountains -> mid pines ->
+    // near pines -> dense undergrowth, with sun shafts cutting through.
+    vGradient(g, '#88c4f0', '#cdf0e6');                 // pale sky
+    // Far mountains (very low parallax)
+    mountainRidge(g, camx, 0.08, 168, '#5f7a5e', 80);
+    mountainRidge(g, camx, 0.14, 172, '#4a6248', 60);
+    // Sun shafts through the canopy
+    for (var s = 0; s < 4; s++) {
+      var sx = 50 + s * 80 + Math.sin(t * 0.015 + s) * 6 - (camx * 0.3) % 320;
+      sx = ((sx % 380) + 380) % 380 - 30;
+      g.fillStyle = 'rgba(255,250,200,0.10)';
+      g.beginPath();
+      g.moveTo(sx, 0); g.lineTo(sx + 22, 0);
+      g.lineTo(sx + 34, 180); g.lineTo(sx - 8, 180);
+      g.closePath(); g.fill();
+    }
+    // Mid pine layer
+    pineRow(g, camx, 0.22, 174, '#2a5a26', 1.0);
+    // Near pine layer - bigger + darker
+    pineRow(g, camx, 0.45, 180, '#143818', 1.3);
+    // Dense underbrush at the very bottom
+    g.fillStyle = '#0e2810';
+    g.fillRect(0, 176, 320, 4);
   }
   function drawSky_sunlit(g, camx, camy, prog, t) {
     vGradient(g, '#ffcc60', '#fff0a0');

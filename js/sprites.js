@@ -598,28 +598,41 @@ window.SDD = window.SDD || {};
   // ----- themed Wisp variants (14w x 14h flying) -----
 
   // Small bird (sky / sea / bird-sky / seaside / savanna).
+  // Hawk silhouette - wider than tall, outstretched wings, pointy beak.
+  // Frame 0: wings gliding flat, Frame 1: wings raised (mid-flap).
   function paintWisp_bird(g, frame) {
-    var b = frame === 1 ? 1 : 0;
-    // body
-    px(g, 3, 4, 8, 5, C.bdA);
-    px(g, 4, 3, 6, 1, C.bdA);
-    // wing (flaps with frame)
-    if (b) {
-      px(g, 2, 3, 4, 3, C.bdL);
-      px(g, 8, 3, 4, 3, C.bdL);
+    var flap = frame === 1 ? 1 : 0;
+    // Body (narrow, centered)
+    px(g, 6, 5, 4, 4, C.bdA);
+    px(g, 5, 6, 6, 2, C.bdL);                    // lighter belly
+    px(g, 6, 5, 4, 1, C.bdB);                    // top of body shadow
+    // Tail (back, fanned)
+    px(g, 0, 6, 5, 1, C.bdA);
+    px(g, 1, 7, 4, 1, C.bdB);
+    px(g, 0, 5, 3, 1, C.bdA);                    // small upper-tail tuft
+    // Wings - the dramatic part. Outstretched flat (frame 0) or raised (frame 1).
+    if (flap) {
+      // raised wings - swept up + forward, angular
+      px(g, 7, 1, 4, 1, C.bdA);
+      px(g, 8, 2, 3, 1, C.bdL);
+      px(g, 9, 3, 3, 1, C.bdA);
+      px(g, 10, 4, 2, 1, C.bdB);
     } else {
-      px(g, 1, 5, 4, 2, C.bdL);
-      px(g, 9, 5, 4, 2, C.bdL);
+      // glide wings - flat, full span
+      px(g, 7, 4, 6, 1, C.bdA);
+      px(g, 9, 5, 5, 1, C.bdL);
+      px(g, 10, 6, 4, 1, C.bdB);
+      px(g, 12, 7, 2, 1, C.bdB);                 // wingtip droop
     }
-    // belly shading
-    px(g, 4, 7, 6, 1, C.bdB);
-    // beak
-    px(g, 11, 5, 2, 1, C.bdBeak);
-    // eye
-    px(g, 9, 4, 2, 2, C.white);
-    px(g, 9, 5, 1, 1, C.out);
-    // tail feathers
-    px(g, 3, 9, 2, 1, C.bdB); px(g, 9, 9, 2, 1, C.bdB);
+    // Sharp triangular beak
+    px(g, 4, 6, 1, 1, C.bdBeak);
+    px(g, 3, 6, 1, 1, C.bdBeak);
+    // Hawk eye (dark intense)
+    px(g, 7, 6, 1, 1, C.bdBeak);
+    px(g, 7, 6, 1, 1, C.out);
+    // Tail spread silhouette underneath
+    px(g, 2, 8, 4, 1, C.bdB);
+    px(g, 3, 9, 2, 1, C.bdB);
   }
 
   // Falling leaf flyer (forest / eden).
