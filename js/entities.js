@@ -233,18 +233,22 @@ window.SDD = window.SDD || {};
       if (In.pressed('jump')) { this.vy = -2.7; SDD.audio.sfx('jump'); }
       this.coyote = 0; this.jumpBuf = 0;
     } else {
-      this.vy += C.GRAVITY * gs;
+      // god mode: lighter gravity + extra-high jumps for fast testing
+      var godMul = SDD.save.data.options.god ? 0.6 : 1.0;
+      var godJumpMul = SDD.save.data.options.god ? 1.4 : 1.0;
+      this.vy += C.GRAVITY * gs * godMul;
       if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
 
       if (this.onGround) this.coyote = C.COYOTE; else if (this.coyote > 0) this.coyote--;
       if (In.pressed('jump')) this.jumpBuf = C.JUMP_BUFFER; else if (this.jumpBuf > 0) this.jumpBuf--;
       if (this.jumpBuf > 0 && this.coyote > 0) {
-        this.vy = this.big ? C.JUMP_BIG : C.JUMP_SMALL;
+        this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul;
         this.jumpBuf = 0; this.coyote = 0;
         SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
       }
-      // variable jump height: releasing A caps upward speed
-      if (!In.held('jump') && this.vy < -2.6) this.vy = -2.6;
+      // variable jump height: releasing A caps upward speed (looser in god)
+      var capV = SDD.save.data.options.god ? -3.6 : -2.6;
+      if (!In.held('jump') && this.vy < capV) this.vy = capV;
     }
 
     // blast
