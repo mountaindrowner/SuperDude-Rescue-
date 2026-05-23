@@ -786,6 +786,23 @@ window.SDD = window.SDD || {};
       this.winTimer = 0; this.goTimer = 0;
       this.pauseIdx = 0;
 
+      // Theme -> per-enemy-type visual variant. Lets each biome have
+      // its own consistent enemy archetypes that match the background.
+      var THEME_VARIANTS = {
+        'galactic':     { walker: null,    wisp: null,   thrower: null   }, // current shadow set
+        'sky':          { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
+        'sea-surface':  { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
+        'rocky':        { walker: 'rock',  wisp: 'leaf', thrower: 'rock' },
+        'forest':       { walker: 'leaf',  wisp: 'leaf', thrower: 'seed' },
+        'sunlit':       { walker: 'flame', wisp: 'star', thrower: 'sun'  },
+        'cosmic-night': { walker: null,    wisp: 'star', thrower: null   },
+        'bird-sky':     { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
+        'seaside':      { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
+        'savanna':      { walker: 'rock',  wisp: 'bird', thrower: 'rock' },
+        'village-dusk': { walker: 'leaf',  wisp: 'bat',  thrower: 'fruit'},
+        'eden':         { walker: 'leaf',  wisp: 'leaf', thrower: 'fruit'}
+      };
+      var variants = THEME_VARIANTS[this.theme] || {};
       for (var i = 0; i < L.spawns.length; i++) {
         var s = L.spawns[i], e;
         if (s.type === 'player') {
@@ -795,15 +812,18 @@ window.SDD = window.SDD || {};
         } else if (s.type === 'walker') {
           e = new SDD.ent.Walker(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
+          e.variant = variants.walker;
           this.enemies.push(e);
         } else if (s.type === 'thrower') {
           e = new SDD.ent.Thrower(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
+          e.variant = variants.thrower;
           this.enemies.push(e);
         } else if (s.type === 'wisp') {
           e = new SDD.ent.Wisp(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = s.ty * T + 8 - e.h / 2;
           e.homeY = e.y; e.minX = e.x - 26; e.maxX = e.x + 26;
+          e.variant = variants.wisp;
           this.enemies.push(e);
         } else if (s.type === 'core') {
           e = new SDD.ent.Core(0, 0);

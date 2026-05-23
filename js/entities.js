@@ -392,7 +392,8 @@ window.SDD = window.SDD || {};
     if (!this.dead) softShadow(ctx, this, cam);
     var f = this.dead ? 1 : (Math.floor(this.animT / 8) % 2);
     var dir = this.dir > 0 ? 'r' : 'l';
-    drawBC(ctx, 'walker_' + f + '_' + dir, this, cam);
+    var base = 'walker_' + f + '_' + dir;
+    drawBC(ctx, (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base, this, cam);
   };
 
   // ===================== WISP (flyer) =====================
@@ -416,7 +417,8 @@ window.SDD = window.SDD || {};
   Wisp.prototype.zap = function () { this.dead = true; this.deadT = 0; };
   Wisp.prototype.draw = function (ctx, cam) {
     var f = this.dead ? 1 : (Math.floor(this.animT / 14) % 2);
-    drawBC(ctx, 'wisp_' + f, this, cam);
+    var base = 'wisp_' + f;
+    drawBC(ctx, (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base, this, cam);
   };
 
   // ===================== THROWER =====================
@@ -448,7 +450,8 @@ window.SDD = window.SDD || {};
     if (!this.dead) softShadow(ctx, this, cam);
     var f = this.dead ? 1 : (this.throwAnim > 8 ? 1 : 0);
     var dir = this.facing > 0 ? 'r' : 'l';
-    drawBC(ctx, 'thrower_' + f + '_' + dir, this, cam);
+    var base = 'thrower_' + f + '_' + dir;
+    drawBC(ctx, (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base, this, cam);
   };
 
   // ===================== DARK ORB =====================

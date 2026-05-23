@@ -56,6 +56,29 @@ window.SDD = window.SDD || {};
     wiA: '#7d61b8', wiB: '#594390', wiL: '#bca4ec', wiEye: '#fff4ff',
     thA: '#4e3d68', thB: '#34294a', thL: '#705c92', thEye: '#ff5d5d',
     orbA: '#9b3fb0', orbB: '#6d2280', orbL: '#dd92ea',
+    // ---- themed enemy variants ----
+    // cloud (sky / sea-surface / bird-sky / seaside)
+    cldA: '#e8ecf5', cldL: '#ffffff', cldB: '#9aa6c2', cldEye: '#3a4055',
+    // rock (rocky / savanna)
+    rkA:  '#a89884', rkL:  '#cbb89e', rkB:  '#6b5a47', rkEye: '#241c14',
+    // leaf (forest / eden / village-dusk)
+    lfA:  '#5fb046', lfL:  '#86d860', lfB:  '#3b7a2a', lfStem: '#6a4528',
+    // flame (sunlit)
+    flA:  '#ff7430', flL:  '#ffd24a', flB:  '#c53a14', flEye: '#fff5d0',
+    // bird (sky / sea-surface / bird-sky / seaside / savanna)
+    bdA:  '#f7c84a', bdL:  '#ffe890', bdB:  '#b88a18', bdBeak: '#ff7a2a',
+    // star (sunlit / cosmic-night / galactic)
+    stA:  '#ffe680', stL:  '#ffffff', stB:  '#c69a30',
+    // bat (village-dusk)
+    btA:  '#5a3f78', btL:  '#7d5fa8', btB:  '#3a2854', btEye: '#ff5e5e',
+    // rain (sky / sea-surface)
+    rnA:  '#7a8db0', rnL:  '#a9bbe0', rnB:  '#43526f', rnDrop: '#6cd0ff',
+    // seed (forest / eden)
+    sdA:  '#3e7a32', sdL:  '#6cb44e', sdB:  '#235018', sdSeed: '#d8b97a',
+    // sun (sunlit)
+    snA:  '#ffc94a', snL:  '#fff2a8', snB:  '#cf8a12', snRay: '#ff8a30',
+    // fruit (village-dusk)
+    ftA:  '#d44a4a', ftL:  '#ff9090', ftB:  '#7a1f1f', ftLeaf: '#5fb046',
     bl1: '#ffffff', bl2: '#fff0a0', bl3: '#ffb43a',
     grass: '#7ec844', grassL: '#a8e86c', grassD: '#549231',
     dirt: '#bb7a42', dirtL: '#d6975c', dirtD: '#8a5328', dirtK: '#673c1d',
@@ -452,6 +475,312 @@ window.SDD = window.SDD || {};
     px(g, 0, 3, 1, 3, C.orbA); px(g, 8, 3, 1, 3, C.orbA);
   }
 
+  // ----- themed Walker variants (16w x 14h, frame 0=normal, 1=squish) -----
+
+  // Cloud-puff walker - white blobby cloud with eyes (sky / sea / seaside).
+  function paintWalker_cloud(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
+    px(g, 4, t, 8, 1, C.cldA);
+    px(g, 3, t + 1, 10, 1, C.cldA);
+    px(g, 2, t + 2, 12, 5 - sq, C.cldA);
+    px(g, 3, t + 7 - sq, 10, 1, C.cldA);
+    px(g, 4, t + 8 - sq, 8, 1, C.cldA);
+    // puffs
+    px(g, 1, t + 4, 2, 2, C.cldA); px(g, 13, t + 4, 2, 2, C.cldA);
+    // highlight
+    px(g, 3, t + 1, 8, 2, C.cldL);
+    px(g, 5, t, 5, 1, C.cldL);
+    // shading underneath
+    px(g, 2, t + 6 - sq, 12, 1, C.cldB);
+    // eyes + smile
+    px(g, 4, t + 3, 2, 2, C.cldEye);
+    px(g, 10, t + 3, 2, 2, C.cldEye);
+    px(g, 6, t + 6 - sq, 4, 1, C.cldEye);
+  }
+
+  // Rock-crab walker - earthen stone with stubby legs (rocky / savanna).
+  function paintWalker_rock(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
+    px(g, 3, t + 1, 10, 6 - sq, C.rkA);
+    px(g, 2, t + 3, 12, 3 - sq, C.rkA);
+    px(g, 4, t, 8, 1, C.rkA);
+    // top highlights (lit edges)
+    px(g, 4, t + 1, 8, 2, C.rkL);
+    px(g, 3, t + 3, 1, 1, C.rkL); px(g, 12, t + 3, 1, 1, C.rkL);
+    // dark crack/shadow
+    px(g, 4, t + 6 - sq, 8, 1, C.rkB);
+    px(g, 6, t + 4, 2, 1, C.rkB);
+    px(g, 10, t + 4, 1, 1, C.rkB);
+    // legs (claws)
+    px(g, 2, t + 7 - sq, 2, 2, C.rkB); px(g, 12, t + 7 - sq, 2, 2, C.rkB);
+    px(g, 6, t + 7 - sq, 2, 2, C.rkB); px(g, 8, t + 7 - sq, 2, 2, C.rkB);
+    // eyes
+    px(g, 5, t + 2, 2, 2, C.white); px(g, 10, t + 2, 2, 2, C.white);
+    px(g, 6, t + 3, 1, 1, C.rkEye); px(g, 11, t + 3, 1, 1, C.rkEye);
+  }
+
+  // Leaf/seed walker - green critter with leaves sprouting (forest / eden / village).
+  function paintWalker_leaf(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
+    // body
+    px(g, 4, t + 1, 8, 6 - sq, C.lfA);
+    px(g, 3, t + 2, 10, 4 - sq, C.lfA);
+    px(g, 5, t, 6, 1, C.lfA);
+    // leaf tufts on top
+    px(g, 4, t - 1, 2, 1, C.lfL);
+    px(g, 10, t - 1, 2, 1, C.lfL);
+    px(g, 7, t - 2, 2, 1, C.lfL);
+    // highlights
+    px(g, 4, t + 1, 8, 1, C.lfL);
+    // underside shadow
+    px(g, 3, t + 5 - sq, 10, 1, C.lfB);
+    // feet
+    px(g, 3, t + 7 - sq, 3, 1, C.lfStem);
+    px(g, 10, t + 7 - sq, 3, 1, C.lfStem);
+    // eyes + smile
+    px(g, 5, t + 3, 2, 2, C.white);
+    px(g, 9, t + 3, 2, 2, C.white);
+    px(g, 6, t + 4, 1, 1, C.out);
+    px(g, 10, t + 4, 1, 1, C.out);
+    px(g, 6, t + 6 - sq, 4, 1, C.lfB);
+  }
+
+  // Flame sprite walker - orange/red flame body (sunlit).
+  function paintWalker_flame(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
+    // flame outline
+    px(g, 5, t - 1, 6, 1, C.flA);
+    px(g, 4, t, 8, 1, C.flA);
+    px(g, 3, t + 1, 10, 6 - sq, C.flA);
+    px(g, 4, t + 7 - sq, 8, 1, C.flA);
+    // wavy flame tips
+    px(g, 4, t - 2, 1, 1, C.flA); px(g, 7, t - 3, 2, 1, C.flA); px(g, 11, t - 2, 1, 1, C.flA);
+    // bright core
+    px(g, 5, t + 2, 6, 3, C.flL);
+    px(g, 6, t + 1, 4, 2, C.flL);
+    // dark base
+    px(g, 4, t + 6 - sq, 8, 1, C.flB);
+    px(g, 3, t + 7 - sq, 2, 1, C.flB); px(g, 11, t + 7 - sq, 2, 1, C.flB);
+    // eyes (bright)
+    px(g, 5, t + 3, 2, 2, C.flEye); px(g, 9, t + 3, 2, 2, C.flEye);
+    px(g, 6, t + 4, 1, 1, C.out); px(g, 10, t + 4, 1, 1, C.out);
+  }
+
+  // ----- themed Wisp variants (14w x 14h flying) -----
+
+  // Small bird (sky / sea / bird-sky / seaside / savanna).
+  function paintWisp_bird(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    // body
+    px(g, 3, 4, 8, 5, C.bdA);
+    px(g, 4, 3, 6, 1, C.bdA);
+    // wing (flaps with frame)
+    if (b) {
+      px(g, 2, 3, 4, 3, C.bdL);
+      px(g, 8, 3, 4, 3, C.bdL);
+    } else {
+      px(g, 1, 5, 4, 2, C.bdL);
+      px(g, 9, 5, 4, 2, C.bdL);
+    }
+    // belly shading
+    px(g, 4, 7, 6, 1, C.bdB);
+    // beak
+    px(g, 11, 5, 2, 1, C.bdBeak);
+    // eye
+    px(g, 9, 4, 2, 2, C.white);
+    px(g, 9, 5, 1, 1, C.out);
+    // tail feathers
+    px(g, 3, 9, 2, 1, C.bdB); px(g, 9, 9, 2, 1, C.bdB);
+  }
+
+  // Falling leaf flyer (forest / eden).
+  function paintWisp_leaf(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    // tilted leaf
+    px(g, 4 + b, 2, 6, 1, C.lfA);
+    px(g, 3 + b, 3, 8, 2, C.lfA);
+    px(g, 2 + b, 5, 10, 3, C.lfA);
+    px(g, 3 + b, 8, 8, 2, C.lfA);
+    px(g, 4 + b, 10, 6, 1, C.lfA);
+    // highlights
+    px(g, 4 + b, 3, 4, 2, C.lfL);
+    px(g, 3 + b, 5, 3, 2, C.lfL);
+    // dark mid-vein
+    px(g, 6 + b, 4, 1, 6, C.lfB);
+    // stem
+    px(g, 9 - b, 11, 2, 2, C.lfStem);
+    // tiny eyes (cute leaf face)
+    px(g, 4 + b, 6, 1, 1, C.out); px(g, 8 + b, 6, 1, 1, C.out);
+  }
+
+  // Star flyer (sunlit / cosmic-night).
+  function paintWisp_star(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    // 5-point star silhouette
+    px(g, 6, 1 + b, 2, 1, C.stA);
+    px(g, 5, 2 + b, 4, 2, C.stA);
+    px(g, 1, 4 + b, 12, 3, C.stA);
+    px(g, 3, 7 + b, 8, 2, C.stA);
+    px(g, 1, 9 + b, 3, 1, C.stA); px(g, 10, 9 + b, 3, 1, C.stA);
+    px(g, 5, 10 + b, 4, 1, C.stA);
+    // bright core
+    px(g, 5, 4 + b, 4, 2, C.stL);
+    px(g, 6, 3 + b, 2, 1, C.stL);
+    // shading
+    px(g, 5, 6 + b, 4, 1, C.stB);
+    // eyes
+    px(g, 4, 5 + b, 1, 1, C.out); px(g, 9, 5 + b, 1, 1, C.out);
+  }
+
+  // Bat flyer (village-dusk).
+  function paintWisp_bat(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    // body
+    px(g, 5, 4, 4, 5, C.btA);
+    px(g, 6, 3, 2, 1, C.btA);
+    // wings (frame-driven flap)
+    if (b) {
+      px(g, 1, 3, 4, 2, C.btA); px(g, 9, 3, 4, 2, C.btA);
+      px(g, 2, 5, 3, 1, C.btA); px(g, 9, 5, 3, 1, C.btA);
+    } else {
+      px(g, 0, 5, 5, 3, C.btA); px(g, 9, 5, 5, 3, C.btA);
+      px(g, 1, 4, 4, 1, C.btL); px(g, 9, 4, 4, 1, C.btL);
+    }
+    // ears
+    px(g, 5, 2, 1, 1, C.btA); px(g, 8, 2, 1, 1, C.btA);
+    // belly shadow
+    px(g, 5, 7, 4, 1, C.btB);
+    // eyes (glowing red)
+    px(g, 5, 5, 1, 1, C.btEye); px(g, 8, 5, 1, 1, C.btEye);
+  }
+
+  // ----- themed Thrower variants (16w x 16h stationary) -----
+
+  // Rain cloud (sky / sea-surface).
+  function paintThrower_rain(g, frame) {
+    // puffy cloud body
+    px(g, 3, 2, 10, 4, C.rnA);
+    px(g, 2, 3, 12, 5, C.rnA);
+    px(g, 4, 1, 8, 1, C.rnA);
+    // bumpy edges
+    px(g, 1, 4, 1, 2, C.rnA); px(g, 14, 4, 1, 2, C.rnA);
+    // highlight
+    px(g, 3, 2, 10, 2, C.rnL);
+    px(g, 4, 1, 6, 1, C.rnL);
+    // dark base + dripping
+    px(g, 2, 7, 12, 2, C.rnB);
+    px(g, 3, 9, 3, 2, C.rnB); px(g, 7, 9, 3, 2, C.rnB); px(g, 11, 9, 3, 2, C.rnB);
+    // raindrops below (more on frame 1)
+    var lit = frame === 1;
+    px(g, 4, 11, 1, 3, C.rnDrop);
+    px(g, 8, 11, 1, 3, C.rnDrop);
+    px(g, 12, 11, 1, 3, C.rnDrop);
+    if (lit) {
+      px(g, 3, 14, 1, 1, C.rnDrop);
+      px(g, 11, 14, 1, 1, C.rnDrop);
+    }
+    // eyes
+    px(g, 4, 4, 2, 2, C.white); px(g, 10, 4, 2, 2, C.white);
+    px(g, 5, 5, 1, 1, C.out); px(g, 11, 5, 1, 1, C.out);
+  }
+
+  // Seed pod thrower (forest / eden).
+  function paintThrower_seed(g, frame) {
+    // bulb body
+    px(g, 4, 6, 8, 9, C.sdA);
+    px(g, 5, 5, 6, 1, C.sdA);
+    px(g, 3, 8, 10, 5, C.sdA);
+    // highlight on bulb
+    px(g, 4, 7, 4, 2, C.sdL);
+    // dark seam
+    px(g, 7, 8, 1, 6, C.sdB);
+    // little leaves at top sprouting
+    px(g, 5, 4, 2, 1, C.lfL); px(g, 9, 4, 2, 1, C.lfL);
+    px(g, 6, 3, 1, 1, C.lfL); px(g, 9, 3, 1, 1, C.lfL);
+    px(g, 7, 2, 2, 2, C.lfA);
+    // seeds in the mouth (visible when ready to throw)
+    var lit = frame === 1;
+    px(g, 6, 11, 4, 2, lit ? C.sdSeed : C.sdB);
+    // eyes
+    px(g, 4, 7, 2, 2, C.white); px(g, 10, 7, 2, 2, C.white);
+    px(g, 5, 8, 1, 1, C.out); px(g, 11, 8, 1, 1, C.out);
+  }
+
+  // Sun caster (sunlit) - bright sun with face.
+  function paintThrower_sun(g, frame) {
+    // core sun disc
+    px(g, 4, 4, 8, 8, C.snA);
+    px(g, 3, 5, 10, 6, C.snA);
+    px(g, 5, 3, 6, 1, C.snA); px(g, 5, 12, 6, 1, C.snA);
+    // bright center
+    px(g, 5, 5, 6, 6, C.snL);
+    px(g, 6, 4, 4, 8, C.snL);
+    // shadow underside
+    px(g, 4, 10, 8, 2, C.snB);
+    // rays (8 directions; longer/shorter by frame)
+    var r = frame === 1 ? 3 : 2;
+    for (var i = 0; i < r; i++) {
+      px(g, 8, 0 + i, 1, 1, C.snRay);          // up
+      px(g, 8, 14 - i, 1, 1, C.snRay);         // down
+      px(g, 0 + i, 8, 1, 1, C.snRay);          // left
+      px(g, 14 - i, 8, 1, 1, C.snRay);         // right
+    }
+    // eyes
+    px(g, 5, 6, 2, 2, C.out); px(g, 10, 6, 2, 2, C.out);
+    px(g, 6, 6, 1, 1, C.white); px(g, 11, 6, 1, 1, C.white);
+    // smile
+    px(g, 7, 9, 3, 1, C.snB);
+  }
+
+  // Stone pillar (rocky / savanna).
+  function paintThrower_rock(g, frame) {
+    // pillar body
+    px(g, 4, 2, 8, 13, C.rkA);
+    px(g, 3, 3, 10, 11, C.rkA);
+    px(g, 5, 1, 6, 1, C.rkA);
+    // top highlight
+    px(g, 4, 2, 8, 2, C.rkL);
+    px(g, 5, 1, 6, 1, C.rkL);
+    // cracks
+    px(g, 6, 5, 1, 3, C.rkB);
+    px(g, 9, 7, 1, 3, C.rkB);
+    px(g, 5, 11, 6, 1, C.rkB);
+    // dark base
+    px(g, 3, 13, 10, 2, C.rkB);
+    // eyes
+    var lit = frame === 1;
+    px(g, 5, 6, 2, 2, lit ? C.flL : C.white);
+    px(g, 9, 6, 2, 2, lit ? C.flL : C.white);
+    px(g, 6, 7, 1, 1, C.out); px(g, 10, 7, 1, 1, C.out);
+    px(g, 6, 10, 4, 1, C.rkB);                // mouth
+  }
+
+  // Fruit thrower (village-dusk) - cute fruit critter (gentle, no scary face).
+  function paintThrower_fruit(g, frame) {
+    // round fruit body
+    px(g, 4, 4, 8, 10, C.ftA);
+    px(g, 3, 5, 10, 8, C.ftA);
+    px(g, 5, 3, 6, 1, C.ftA);
+    // highlight
+    px(g, 5, 5, 4, 3, C.ftL);
+    px(g, 6, 4, 2, 1, C.ftL);
+    // dark side
+    px(g, 11, 7, 1, 5, C.ftB);
+    // stem + leaf on top
+    px(g, 8, 2, 1, 2, C.lfStem);
+    px(g, 5, 2, 3, 1, C.ftLeaf);
+    px(g, 6, 1, 2, 1, C.ftLeaf);
+    // little fruit it's holding (lit when about to throw)
+    var lit = frame === 1;
+    if (lit) {
+      px(g, 4, 11, 2, 2, C.ftA);
+      px(g, 10, 11, 2, 2, C.ftA);
+    }
+    // friendly eyes (closed-ish smile)
+    px(g, 5, 7, 1, 1, C.out); px(g, 10, 7, 1, 1, C.out);
+    px(g, 6, 9, 4, 1, C.ftB);                // smile
+  }
+
   function paintBlast(g) {
     px(g, 3, 1, 7, 6, C.bl3);
     px(g, 2, 2, 9, 4, C.bl2);
@@ -773,6 +1102,48 @@ window.SDD = window.SDD || {};
       sprites['core_' + i] = spriteO(14, 16, function (g) { paintCore(g, i); });
       sprites['grow_' + i] = spriteO(16, 16, function (g) { paintGrow(g, i); });
       sprites['blastitem_' + i] = spriteO(16, 16, function (g) { paintBlastItem(g, i); });
+
+      // ---- themed enemy variants ----
+      // Walker re-skins keyed by variant suffix
+      var WALK_VARS = {
+        cloud: paintWalker_cloud,
+        rock:  paintWalker_rock,
+        leaf:  paintWalker_leaf,
+        flame: paintWalker_flame
+      };
+      Object.keys(WALK_VARS).forEach(function (k) {
+        var painter = WALK_VARS[k];
+        var s = spriteO(16, 14, function (g) { painter(g, i); });
+        sprites['walker_' + i + '_r_' + k] = s;
+        sprites['walker_' + i + '_l_' + k] = flip(s);
+      });
+
+      // Wisp re-skins
+      var WISP_VARS = {
+        bird: paintWisp_bird,
+        leaf: paintWisp_leaf,
+        star: paintWisp_star,
+        bat:  paintWisp_bat
+      };
+      Object.keys(WISP_VARS).forEach(function (k) {
+        var painter = WISP_VARS[k];
+        sprites['wisp_' + i + '_' + k] = spriteO(14, 14, function (g) { painter(g, i); });
+      });
+
+      // Thrower re-skins
+      var THROW_VARS = {
+        rain:  paintThrower_rain,
+        seed:  paintThrower_seed,
+        sun:   paintThrower_sun,
+        rock:  paintThrower_rock,
+        fruit: paintThrower_fruit
+      };
+      Object.keys(THROW_VARS).forEach(function (k) {
+        var painter = THROW_VARS[k];
+        var ts = spriteO(16, 16, function (g) { painter(g, i); });
+        sprites['thrower_' + i + '_r_' + k] = ts;
+        sprites['thrower_' + i + '_l_' + k] = flip(ts);
+      });
     });
 
     sprites['orb'] = spriteO(9, 8, paintOrb);
