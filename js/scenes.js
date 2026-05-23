@@ -339,8 +339,8 @@ window.SDD = window.SDD || {};
     { d: 3, s: 2, x: 238, dy:  57, name: 'FOREST',      nextDir: 'right' },
     { d: 4, s: 1, x: 289, dy:  58, name: 'DESERT',      nextDir: 'down'  },
     { d: 4, s: 2, x: 282, dy: 110, name: 'NIGHT SKY',   nextDir: 'left'  },
-    { d: 5, s: 1, x: 217, dy: 117, name: 'CLOUDS',      nextDir: 'left'  },
-    { d: 5, s: 2, x: 156, dy: 118, name: 'UNDERWATER',  nextDir: 'left'  },
+    { d: 5, s: 1, x: 211, dy: 117, name: 'CLOUDS',      nextDir: 'left'  },
+    { d: 5, s: 2, x: 151, dy: 118, name: 'UNDERWATER',  nextDir: 'left'  },
     { d: 6, s: 1, x:  96, dy: 119, name: 'SAVANNA',     nextDir: 'left'  },
     { d: 6, s: 2, x:  40, dy: 120, name: 'VILLAGE',     nextDir: 'down'  },
     { d: 7, s: 1, x: 240, dy: 160, name: 'EDEN GARDEN', nextDir: null    }
