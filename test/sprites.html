@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Super Dude Danny - Sprite Test</title>
+  <base href="../">
+  <link rel="icon" href="data:,">
+  <style>
+    html, body { margin: 0; background: #15161e; color: #e8e8f0;
+                 font: 13px/1.4 monospace; }
+    h1 { margin: 0 0 8px; font-size: 16px; color: #ffe070; padding: 12px 14px 0; }
+    .meta { padding: 0 14px 14px; color: #aab; }
+    .grid { display: grid; gap: 10px; padding: 0 14px 24px;
+            grid-template-columns: 1fr; }
+    .row { background: #1d1e28; padding: 10px 12px; border-radius: 4px; }
+    .row h2 { margin: 0 0 8px; font-size: 13px; color: #ffe070; }
+    .frames { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+    .cell { background: #0e0f15; border: 1px solid #2a2d3a;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 4px; min-width: 86px; }
+    .cell canvas { image-rendering: pixelated; image-rendering: crisp-edges;
+                   background: #050609; display: block; }
+    .cell .label { font-size: 11px; color: #9aa; margin-top: 3px; }
+    .controls { padding: 0 14px 14px; }
+    .controls label { margin-right: 14px; }
+    input[type="number"] { width: 60px; background: #0e0f15; color: #fff;
+                           border: 1px solid #444; padding: 2px 4px; }
+    .ok  { color: #7fdc7f; } .bad { color: #ff6f6f; }
+    .legend { color: #888; font-size: 11px; margin-top: 4px; }
+    .legend b { color: #ff5050; }
+  </style>
+</head>
+<body>
+<h1>Super Dude Danny - Sprite Test Harness</h1>
+<div class="meta">
+  Renders every PixelLab animation frame at the in-game display size using
+  the real <code>sprites.js</code> loader and <code>pixDraw</code>. Compare
+  big vs small, verify animations cycle, check that feet sit on the
+  baseline. Red box = physics hitbox.
+</div>
+<div class="controls">
+  <label>big H <input id="bigH"   type="number" value="40"></label>
+  <label>small H <input id="smallH" type="number" value="26"></label>
+  <label>zoom <input id="zoom" type="number" value="4" min="1" max="8"></label>
+  <button id="redraw">Redraw</button>
+  <button id="play" data-on="0">Play animations</button>
+  <span id="status" style="margin-left:14px; color:#aab"></span>
+  <div class="legend">
+    Red = hitbox (small 10x14 / big 12x26). Gray line = feet baseline.
+    Each frame is the engine's actual draw output cropped from the PNG via
+    the per-anim union bbox.
+  </div>
+</div>
+<div id="grid" class="grid"></div>
+
+<!-- Hidden canvas to satisfy main.js boot path -->
+<canvas id="game" width="320" height="180" style="display:none"></canvas>
+
+<script src="js/save.js"></script>
+<script src="js/input.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/entities.js"></script>
+
+<script>
+(function () {
+  // Sprite test harness - does NOT boot the engine. Just builds the
+  // PixelLab loader (already running) and shows every frame.
+
+  var SDD = window.SDD;
+  var ANIMS = {
+    idle:      { frames: 4,  dirs: ['east','west'] },
+    walk:      { frames: 6,  dirs: ['east','west'] },
+    run:       { frames: 4,  dirs: ['east','west'] },
+    jump:      { frames: 9,  dirs: ['east','west'] },
+    blast:     { frames: 6,  dirs: ['east','west'] }, // big has 3 but loader handles overflow
+    hurt:      { frames: 6,  dirs: ['east','west'] },
+    die:       { frames: 7,  dirs: ['east','west'] },
+    celebrate: { frames: 9,  dirs: ['south'] }
+  };
+
+  function waitReady() {
+    var t = 0;
+    return new Promise(function (res) {
+      var iv = setInterval(function () {
+        t++;
+        if (SDD.sprites.pixelLab.ready) { clearInterval(iv); res(); }
+        else if (t > 100) { clearInterval(iv); res(); }
+      }, 100);
+    });
+  }
+
+  function actualFrames(size, anim) {
+    var f = SDD.sprites.pixelLab.frames[size];
+    if (!f || !f[anim]) return 0;
+    var dirs = f[anim];
+    var any = dirs.east || dirs.west || dirs.south;
+    return any ? any.length : 0;
+  }
+
+  function makeCell(size, anim, dir, idx, zoom) {
+    var cell = document.createElement('div');
+    cell.className = 'cell';
+    var c = document.createElement('canvas');
+    var hit = size === 'big' ? { w: 12, h: 26 } : { w: 10, h: 14 };
+    var dispH = SDD.sprites.pixDisplayH[size];
+    var bb = SDD.sprites.pixBBox(size, anim, dir);
+    // Cell canvas: wide enough for widest disp frame + hitbox + padding
+    var iW = Math.max(40, (bb ? Math.ceil(bb.w * dispH / bb.h) + 6 : 40));
+    var iH = dispH + 12;
+    c.width = iW * zoom; c.height = iH * zoom;
+    // build at internal resolution, then context.scale to zoom
+    var g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.scale(zoom, zoom);
+    g.fillStyle = '#050609'; g.fillRect(0, 0, iW, iH);
+    // baseline + hitbox
+    var baselineY = iH - 4;
+    g.strokeStyle = '#3a3d4a';
+    g.beginPath(); g.moveTo(0, baselineY + 0.5); g.lineTo(iW, baselineY + 0.5); g.stroke();
+    g.strokeStyle = '#ff5050';
+    g.strokeRect(iW / 2 - hit.w / 2 + 0.5, baselineY - hit.h + 0.5, hit.w, hit.h);
+    // draw sprite via real engine helper
+    var ok = SDD.sprites.pixDraw(g, size, anim, dir, idx, iW / 2, baselineY);
+    if (!ok) {
+      g.fillStyle = '#ff6f6f'; g.font = '7px monospace';
+      g.fillText('NO', 4, baselineY - 4);
+    }
+    cell.appendChild(c);
+    var lab = document.createElement('div');
+    lab.className = 'label';
+    lab.textContent = '#' + idx;
+    cell.appendChild(lab);
+    return cell;
+  }
+
+  function rebuild() {
+    var bigH   = parseInt(document.getElementById('bigH').value,   10) || 40;
+    var smallH = parseInt(document.getElementById('smallH').value, 10) || 26;
+    var zoom   = parseInt(document.getElementById('zoom').value,   10) || 4;
+    SDD.sprites.pixDisplayH.big   = bigH;
+    SDD.sprites.pixDisplayH.small = smallH;
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    var status = document.getElementById('status');
+    var pl = SDD.sprites.pixelLab;
+    status.innerHTML = pl.ready
+      ? '<span class="ok">PixelLab ready</span> &nbsp; ' + pl.total + ' frames, ' + pl.failed + ' failed'
+      : '<span class="bad">Loading PixelLab...</span> &nbsp; pending ' + pl.pending;
+    ['big', 'small'].forEach(function (size) {
+      var hdr = document.createElement('div');
+      hdr.className = 'row';
+      hdr.innerHTML = '<h2>' + size.toUpperCase() +
+        ' &nbsp; displayH = ' + SDD.sprites.pixDisplayH[size] + ' px</h2>';
+      grid.appendChild(hdr);
+
+      Object.keys(ANIMS).forEach(function (anim) {
+        var nF = actualFrames(size, anim);
+        if (!nF) return;
+        var dirs = ANIMS[anim].dirs;
+        dirs.forEach(function (dir) {
+          if (!SDD.sprites.pixelLab.frames[size][anim][dir]) return;
+          var row = document.createElement('div'); row.className = 'row';
+          var bb = SDD.sprites.pixBBox(size, anim, dir);
+          row.innerHTML = '<h2>' + anim + ' / ' + dir +
+            '  -  ' + nF + ' frames  -  bbox ' +
+            (bb ? bb.w + 'x' + bb.h + ' @ (' + bb.x + ',' + bb.y + ')' : 'none') + '</h2>';
+          var frames = document.createElement('div'); frames.className = 'frames';
+          for (var i = 0; i < nF; i++) frames.appendChild(makeCell(size, anim, dir, i, zoom));
+          row.appendChild(frames);
+          grid.appendChild(row);
+        });
+      });
+    });
+  }
+
+  // Live-play mode: cycle anims at engine pace by re-rendering every
+  // ~83ms (12 fps, matches game animT progression).
+  var playTimer = null;
+  function togglePlay() {
+    var btn = document.getElementById('play');
+    if (btn.dataset.on === '1') {
+      clearInterval(playTimer); playTimer = null;
+      btn.dataset.on = '0'; btn.textContent = 'Play animations';
+      rebuild();
+      return;
+    }
+    btn.dataset.on = '1'; btn.textContent = 'Stop';
+    var t = 0;
+    playTimer = setInterval(function () {
+      t++;
+      // re-render all cells with cycling frame indices
+      var bigH   = parseInt(document.getElementById('bigH').value,   10) || 40;
+      var smallH = parseInt(document.getElementById('smallH').value, 10) || 26;
+      var zoom   = parseInt(document.getElementById('zoom').value,   10) || 4;
+      SDD.sprites.pixDisplayH.big = bigH;
+      SDD.sprites.pixDisplayH.small = smallH;
+      var grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      ['big', 'small'].forEach(function (size) {
+        var hdr = document.createElement('div'); hdr.className = 'row';
+        hdr.innerHTML = '<h2>' + size.toUpperCase() +
+          '  -  ' + SDD.sprites.pixDisplayH[size] + 'px  -  PLAYING t=' + t + '</h2>';
+        grid.appendChild(hdr);
+        Object.keys(ANIMS).forEach(function (anim) {
+          var nF = actualFrames(size, anim);
+          if (!nF) return;
+          ANIMS[anim].dirs.forEach(function (dir) {
+            if (!SDD.sprites.pixelLab.frames[size][anim][dir]) return;
+            var row = document.createElement('div'); row.className = 'row';
+            row.innerHTML = '<h2>' + anim + ' / ' + dir + '</h2>';
+            var frames = document.createElement('div'); frames.className = 'frames';
+            // 1 live-playing cell + the static frames after for reference
+            var liveIdx = t % nF;
+            var live = makeCell(size, anim, dir, liveIdx, zoom + 1);
+            live.style.borderColor = '#ffe070';
+            frames.appendChild(live);
+            for (var i = 0; i < nF; i++) frames.appendChild(makeCell(size, anim, dir, i, zoom));
+            row.appendChild(frames);
+            grid.appendChild(row);
+          });
+        });
+      });
+    }, 120);
+  }
+
+  document.getElementById('redraw').onclick = rebuild;
+  document.getElementById('play').onclick = togglePlay;
+
+  waitReady().then(rebuild);
+})();
+</script>
+</body>
+</html>

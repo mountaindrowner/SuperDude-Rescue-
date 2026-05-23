@@ -318,14 +318,9 @@ window.SDD = window.SDD || {};
         anim = 'idle';
         idx = Math.floor(this.animT / 18) % 4;
       }
-      var img = SDD.sprites.pixFrame(size, anim, dirPL, idx);
-      if (img) {
-        var sz = SDD.sprites.pixSize[size];
-        var dx = Math.round(this.x + this.w / 2 - cam.x - sz.w / 2);
-        var dy = Math.round(this.y + this.h - cam.y - sz.h);
-        ctx.drawImage(img, dx, dy, sz.w, sz.h);
-        return;
-      }
+      var cx = Math.round(this.x + this.w / 2 - cam.x);
+      var baselineY = Math.round(this.y + this.h - cam.y);
+      if (SDD.sprites.pixDraw(ctx, size, anim, dirPL, idx, cx, baselineY)) return;
     }
     // Fallback: code-drawn Danny (used during loading and if the PNGs are missing)
     var fr = this.dead ? 'die' : this.frame;
