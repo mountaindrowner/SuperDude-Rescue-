@@ -308,12 +308,12 @@ window.SDD = window.SDD || {};
         else if (this.vy < 0) idx = 3;
         else if (this.vy < 2) idx = 5;
         else idx = 7;
-      } else if (Math.abs(this.vx) > maxV * 0.8) {
+      } else if (Math.abs(this.vx) > 0.4) {
+        // Run for all horizontal movement - the walk frames are very
+        // subtle and read as "not moving" when Danny is centered on the
+        // camera. Run frames have clear leg/arm swing.
         anim = 'run';
         idx = Math.floor(this.animT / 4) % 4;
-      } else if (Math.abs(this.vx) > 0.4) {
-        anim = 'walk';
-        idx = Math.floor(this.animT / 5) % 6;
       } else {
         anim = 'idle';
         idx = Math.floor(this.animT / 18) % 4;

@@ -17,14 +17,24 @@ window.SDD = window.SDD || {};
     if (s.enter) s.enter(data || {});
   };
 
+  // Internal render resolution. World coords are still 320x180 - we just
+  // run every draw through ctx.scale(K, K) so the canvas backing-store
+  // has 3x the pixels. Hand-drawn pixel art gets clean nearest-neighbour
+  // upscaling; PixelLab PNGs get rendered with much more detail.
+  var RENDER_SCALE = 3;
+  SDD.RENDER_SCALE = RENDER_SCALE;
+
   // ---- responsive canvas scaling (keeps the 16:9 pixel buffer crisp) ----
+  // Internal canvas is 960x540 (3x world). We fit it into the viewport at
+  // any fractional scale - image-rendering: pixelated keeps nearest-
+  // neighbour sampling, and the high internal res means small phones
+  // still get more detail than the old 320x180 buffer ever could.
   function resize() {
     var vw = window.innerWidth, vh = window.innerHeight;
-    var sc = Math.min(vw / 320, vh / 180);
-    if (sc >= 1) sc = Math.floor(sc);
-    else sc = Math.max(0.1, sc);
-    canvas.style.width = (320 * sc) + 'px';
-    canvas.style.height = (180 * sc) + 'px';
+    var sc = Math.min(vw / 960, vh / 540);
+    if (sc <= 0) sc = 0.1;
+    canvas.style.width = (960 * sc) + 'px';
+    canvas.style.height = (540 * sc) + 'px';
   }
 
   // ---- main loop ----
@@ -42,7 +52,11 @@ window.SDD = window.SDD || {};
       guard++;
     }
     if (guard >= 5) acc = 0;
-    if (SDD.scene && SDD.scene.render) SDD.scene.render(ctx);
+    if (SDD.scene && SDD.scene.render) {
+      ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+      SDD.scene.render(ctx);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     requestAnimationFrame(frame);
   }
 
