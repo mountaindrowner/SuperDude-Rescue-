@@ -916,6 +916,167 @@ window.SDD = window.SDD || {};
     px(g, 4, 12, 1, 1, '#dfeeff'); px(g, 11, 13, 1, 1, '#dfeeff');
     px(g, 0, 15, 16, 1, '#3f5680');
   }
+  function paintBrickGalactic(g) {
+    // dark cosmic meteor stone with star specks
+    px(g, 0, 0, 16, 16, '#1a1a2e');
+    px(g, 1, 1, 7, 6, '#2f2f4a'); px(g, 1, 1, 7, 1, '#4a4a6e');
+    px(g, 9, 1, 6, 5, '#262640'); px(g, 9, 1, 6, 1, '#3e3e60');
+    px(g, 1, 8, 6, 6, '#2c2c46'); px(g, 1, 8, 6, 1, '#444466');
+    px(g, 8, 7, 7, 7, '#272742'); px(g, 8, 7, 7, 1, '#404060');
+    // star specks
+    px(g, 3, 3, 1, 1, '#ffffff'); px(g, 12, 4, 1, 1, '#bfdfff');
+    px(g, 5, 11, 1, 1, '#bfdfff'); px(g, 11, 10, 1, 1, '#ffffff');
+    px(g, 0, 15, 16, 1, '#0e0e1c');
+  }
+
+  // ---- Bright-Sky family (sky / bird-sky): soft cloud ground ----
+  function paintGroundSky(g) {
+    px(g, 0, 0, 16, 16, '#cfe1f5');                 // pale cloud body
+    px(g, 0, 0, 16, 3, '#ffffff');                  // bright cap
+    px(g, 0, 3, 16, 1, '#e8f1ff');
+    px(g, 0, 4, 16, 1, '#8fb3da');                  // separator
+    // wispy highlights
+    px(g, 2, 1, 4, 1, '#ffffff'); px(g, 9, 1, 5, 1, '#ffffff');
+    px(g, 3, 6, 2, 1, '#ffffff'); px(g, 9, 7, 2, 1, '#ffffff');
+    // soft puff dots
+    px(g, 5, 9, 2, 2, '#dceafa'); px(g, 11, 11, 2, 2, '#dceafa');
+    // base shadow
+    px(g, 0, 14, 16, 2, '#7f9bc4'); px(g, 0, 15, 16, 1, '#5d769e');
+  }
+  function paintDirtSky(g) {
+    px(g, 0, 0, 16, 16, '#a5c1e1');
+    px(g, 0, 0, 16, 1, '#c2d8ef');
+    px(g, 2, 3, 1, 1, '#ffffff'); px(g, 10, 5, 1, 1, '#ffffff');
+    px(g, 6, 9, 1, 1, '#dceafa'); px(g, 13, 11, 1, 1, '#dceafa');
+    px(g, 0, 15, 16, 1, '#5d769e');
+  }
+  function paintBrickSky(g) {
+    // pillowy white/blue cloud bricks
+    px(g, 0, 0, 16, 16, '#7195c0');
+    px(g, 1, 1, 7, 6, '#e8f1ff'); px(g, 1, 1, 7, 1, '#ffffff');
+    px(g, 9, 1, 6, 5, '#dceafa'); px(g, 9, 1, 6, 1, '#ffffff');
+    px(g, 1, 8, 6, 6, '#dceafa'); px(g, 1, 8, 6, 1, '#ffffff');
+    px(g, 8, 7, 7, 7, '#e8f1ff'); px(g, 8, 7, 7, 1, '#ffffff');
+    px(g, 0, 15, 16, 1, '#5d769e');
+  }
+
+  // ---- Sea family (sea-surface / seaside): sandy beach + coral ----
+  function paintGroundSea(g) {
+    px(g, 0, 0, 16, 16, '#d4b066');                 // sand body
+    px(g, 0, 0, 16, 3, '#f4d68c');                  // pale top sand
+    px(g, 0, 3, 16, 1, '#ecc77a');
+    px(g, 0, 4, 16, 1, '#a07a3e');                  // separator
+    // sparkle highlights (sun on sand)
+    px(g, 3, 1, 1, 1, '#ffffff'); px(g, 11, 2, 1, 1, '#ffffff');
+    // shells / pebbles
+    px(g, 4, 8, 2, 1, '#ffead0'); px(g, 11, 11, 2, 1, '#ffead0');
+    px(g, 7, 12, 1, 1, '#9a6f30'); px(g, 2, 13, 1, 1, '#9a6f30');
+    px(g, 0, 15, 16, 1, '#7c5520');
+  }
+  function paintDirtSea(g) {
+    px(g, 0, 0, 16, 16, '#b89052');
+    px(g, 0, 0, 16, 1, '#d4ad6c');
+    px(g, 2, 3, 2, 1, '#9a6f30'); px(g, 10, 5, 3, 2, '#9a6f30');
+    px(g, 5, 9, 2, 2, '#9a6f30'); px(g, 12, 12, 2, 1, '#9a6f30');
+    px(g, 7, 6, 1, 1, '#ffead0'); px(g, 4, 12, 1, 1, '#ffead0');
+    px(g, 0, 15, 16, 1, '#7c5520');
+  }
+  function paintBrickSea(g) {
+    // coral brick - pinkish/orange chunks
+    px(g, 0, 0, 16, 16, '#7c4434');
+    px(g, 1, 1, 7, 6, '#ff8a72'); px(g, 1, 1, 7, 1, '#ffb09a');
+    px(g, 9, 1, 6, 5, '#e07058'); px(g, 9, 1, 6, 1, '#ff9a82');
+    px(g, 1, 8, 6, 6, '#e57860'); px(g, 1, 8, 6, 1, '#ffa68f');
+    px(g, 8, 7, 7, 7, '#d56850'); px(g, 8, 7, 7, 1, '#f08e76');
+    // coral pores
+    px(g, 3, 3, 1, 1, '#7c4434'); px(g, 12, 4, 1, 1, '#7c4434');
+    px(g, 5, 11, 1, 1, '#7c4434'); px(g, 11, 10, 1, 1, '#7c4434');
+    px(g, 0, 15, 16, 1, '#4a2820');
+  }
+
+  // ---- Rocky family (rocky / savanna): gray-tan stone ----
+  function paintGroundRocky(g) {
+    px(g, 0, 0, 16, 16, '#8a7a6c');                 // stone body
+    px(g, 0, 0, 16, 3, '#b09e88');                  // weathered top
+    px(g, 0, 3, 16, 1, '#a08e78');
+    px(g, 0, 4, 16, 1, '#6a5c4e');                  // separator
+    // small grass tufts
+    px(g, 2, 0, 1, 2, '#7ab846'); px(g, 8, 0, 1, 1, '#7ab846');
+    // chips + cracks
+    px(g, 4, 6, 3, 1, '#6a5c4e'); px(g, 11, 8, 2, 1, '#6a5c4e');
+    px(g, 3, 11, 2, 1, '#a89784'); px(g, 9, 12, 3, 1, '#a89784');
+    px(g, 6, 9, 1, 1, '#544638'); px(g, 13, 10, 1, 1, '#544638');
+    px(g, 0, 15, 16, 1, '#3e3328');
+  }
+  function paintDirtRocky(g) {
+    px(g, 0, 0, 16, 16, '#776656');
+    px(g, 0, 0, 16, 1, '#8d7a68');
+    px(g, 3, 3, 2, 2, '#544638'); px(g, 10, 5, 3, 2, '#544638');
+    px(g, 5, 9, 2, 2, '#544638'); px(g, 11, 11, 2, 2, '#544638');
+    px(g, 7, 7, 1, 1, '#a89784'); px(g, 2, 11, 1, 1, '#a89784');
+    px(g, 0, 15, 16, 1, '#3e3328');
+  }
+  function paintBrickRocky(g) {
+    // jagged gray rock chunks
+    px(g, 0, 0, 16, 16, '#3a2f28');
+    px(g, 1, 1, 7, 6, '#7c6c5e'); px(g, 1, 1, 7, 1, '#a08e78');
+    px(g, 9, 1, 6, 5, '#6e5e50'); px(g, 9, 1, 6, 1, '#8d7a68');
+    px(g, 1, 8, 6, 6, '#705f50'); px(g, 1, 8, 6, 1, '#8d7a68');
+    px(g, 8, 7, 7, 7, '#6a5a4c'); px(g, 8, 7, 7, 1, '#8a7868');
+    // cracks
+    px(g, 4, 3, 1, 2, '#3a2f28'); px(g, 11, 9, 1, 3, '#3a2f28');
+    px(g, 0, 15, 16, 1, '#241c14');
+  }
+
+  // ---- Sunlit family (sunlit): gold sand ----
+  function paintGroundSunlit(g) {
+    px(g, 0, 0, 16, 16, '#e8a346');                 // warm sand body
+    px(g, 0, 0, 16, 3, '#ffd068');                  // bright sun-bleached cap
+    px(g, 0, 3, 16, 1, '#f8b860');
+    px(g, 0, 4, 16, 1, '#a86820');                  // separator
+    // glittering specks
+    px(g, 3, 1, 1, 1, '#ffffff'); px(g, 11, 2, 1, 1, '#ffffff');
+    px(g, 6, 1, 1, 1, '#fff4c0');
+    // small dunes / pebbles
+    px(g, 4, 8, 3, 1, '#c08030'); px(g, 11, 11, 3, 1, '#c08030');
+    px(g, 7, 12, 1, 1, '#7e4e16'); px(g, 2, 13, 1, 1, '#7e4e16');
+    px(g, 0, 15, 16, 1, '#7e4e16');
+  }
+  function paintDirtSunlit(g) {
+    px(g, 0, 0, 16, 16, '#c98330');
+    px(g, 0, 0, 16, 1, '#dc9842');
+    px(g, 3, 3, 2, 1, '#7e4e16'); px(g, 11, 5, 2, 1, '#7e4e16');
+    px(g, 6, 9, 2, 2, '#7e4e16'); px(g, 12, 12, 2, 1, '#7e4e16');
+    px(g, 4, 7, 1, 1, '#fff4c0'); px(g, 10, 11, 1, 1, '#fff4c0');
+    px(g, 0, 15, 16, 1, '#5e3a10');
+  }
+  function paintBrickSunlit(g) {
+    // sandstone blocks
+    px(g, 0, 0, 16, 16, '#7e4e16');
+    px(g, 1, 1, 7, 6, '#e0a050'); px(g, 1, 1, 7, 1, '#ffc878');
+    px(g, 9, 1, 6, 5, '#cc923c'); px(g, 9, 1, 6, 1, '#f0b462');
+    px(g, 1, 8, 6, 6, '#d4983e'); px(g, 1, 8, 6, 1, '#f4b86a');
+    px(g, 8, 7, 7, 7, '#c88a32'); px(g, 8, 7, 7, 1, '#eaae5a');
+    // grain lines
+    px(g, 2, 3, 4, 1, '#a06820'); px(g, 11, 4, 3, 1, '#946018');
+    px(g, 2, 10, 4, 1, '#a06820'); px(g, 10, 11, 4, 1, '#946018');
+    px(g, 0, 15, 16, 1, '#5e3a10');
+  }
+
+  // ---- Lush brick variant (forest/eden/village-dusk): mossy stone ----
+  function paintBrickLush(g) {
+    px(g, 0, 0, 16, 16, '#3a2818');                 // dark earth mortar
+    px(g, 1, 1, 7, 6, '#7c6238'); px(g, 1, 1, 7, 1, '#9a7e4e');
+    px(g, 9, 1, 6, 5, '#6e5530'); px(g, 9, 1, 6, 1, '#8c7048');
+    px(g, 1, 8, 6, 6, '#705730'); px(g, 1, 8, 6, 1, '#8e7148');
+    px(g, 8, 7, 7, 7, '#6a5028'); px(g, 8, 7, 7, 1, '#8a6e44');
+    // moss tufts
+    px(g, 2, 1, 2, 1, '#5fa14a'); px(g, 11, 1, 2, 1, '#5fa14a');
+    px(g, 6, 8, 1, 1, '#74b65a'); px(g, 14, 7, 1, 1, '#74b65a');
+    // small chips
+    px(g, 5, 5, 1, 1, '#3a2818'); px(g, 12, 11, 1, 1, '#3a2818');
+    px(g, 0, 15, 16, 1, '#1f1408');
+  }
   function paintVine(g) {
     px(g, 7, 0, 2, 16, '#3a7a32');               // stem
     px(g, 6, 0, 1, 16, '#2c5524');
@@ -1155,10 +1316,43 @@ window.SDD = window.SDD || {};
 
     sprites['tile_ground'] = spritePlain(16, 16, paintGround);
     sprites['tile_dirt'] = spritePlain(16, 16, paintDirt);
-    sprites['tile_ground_galactic'] = spritePlain(16, 16, paintGroundGalactic);
-    sprites['tile_dirt_galactic'] = spritePlain(16, 16, paintDirtGalactic);
     sprites['tile_brick'] = spritePlain(16, 16, paintBrick);
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
+
+    // ---- Themed tile variants per family ----
+    // Family painters
+    var FAM_PAINTERS = {
+      cosmic:    { ground: paintGroundGalactic, dirt: paintDirtGalactic, brick: paintBrickGalactic },
+      'bright-sky': { ground: paintGroundSky,   dirt: paintDirtSky,      brick: paintBrickSky },
+      sea:       { ground: paintGroundSea,      dirt: paintDirtSea,      brick: paintBrickSea },
+      rocky:     { ground: paintGroundRocky,    dirt: paintDirtRocky,    brick: paintBrickRocky },
+      sunlit:    { ground: paintGroundSunlit,   dirt: paintDirtSunlit,   brick: paintBrickSunlit },
+      lush:      { ground: paintGround,         dirt: paintDirt,         brick: paintBrickLush }
+    };
+    // Theme -> family
+    var THEME_FAMILY = {
+      'galactic':     'cosmic',
+      'cosmic-night': 'cosmic',
+      'sky':          'bright-sky',
+      'bird-sky':     'bright-sky',
+      'sea-surface':  'sea',
+      'seaside':      'sea',
+      'rocky':        'rocky',
+      'savanna':      'rocky',
+      'sunlit':       'sunlit',
+      'forest':       'lush',
+      'eden':         'lush',
+      'village-dusk': 'lush'
+    };
+    Object.keys(THEME_FAMILY).forEach(function (theme) {
+      var fam = FAM_PAINTERS[THEME_FAMILY[theme]];
+      sprites['tile_ground_' + theme] = spritePlain(16, 16, fam.ground);
+      sprites['tile_dirt_'   + theme] = spritePlain(16, 16, fam.dirt);
+      sprites['tile_brick_'  + theme] = spritePlain(16, 16, fam.brick);
+    });
+    // legacy galactic-named aliases (some existing code paths use this)
+    sprites['tile_ground_galactic'] = sprites['tile_ground_galactic'];
+    sprites['tile_dirt_galactic']   = sprites['tile_dirt_galactic'];
     sprites['tile_vine'] = spritePlain(16, 16, paintVine);
     sprites['npc_adam'] = spriteO(20, 31, paintNPC);
     sprites['tile_water'] = spritePlain(16, 16, paintWater);

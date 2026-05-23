@@ -307,12 +307,6 @@ window.SDD = window.SDD || {};
   };
 
   Player.prototype.draw = function (ctx, cam) {
-    if (!this.dead) {
-      // Shadow scales with the visible PixelLab sprite, not the hitbox -
-      // so big Danny gets a big shadow and small Danny gets a small one.
-      var dh = SDD.sprites.pixDisplayH[this.big ? 'big' : 'small'];
-      softShadow(ctx, this, cam, dh * 0.42, Math.max(2, dh * 0.11));
-    }
     // Heavy "ouch" pose plays for the first ~24 steps of invuln, then we
     // fall back to the classic invincibility flicker.
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
@@ -389,7 +383,6 @@ window.SDD = window.SDD || {};
   Walker.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
   Walker.prototype.zap = function () { this.dead = true; this.deadT = 0; };
   Walker.prototype.draw = function (ctx, cam) {
-    if (!this.dead) softShadow(ctx, this, cam);
     var f = this.dead ? 1 : (Math.floor(this.animT / 8) % 2);
     var dir = this.dir > 0 ? 'r' : 'l';
     var base = 'walker_' + f + '_' + dir;
@@ -447,7 +440,6 @@ window.SDD = window.SDD || {};
   };
   Thrower.prototype.zap = function () { this.dead = true; this.deadT = 0; };
   Thrower.prototype.draw = function (ctx, cam) {
-    if (!this.dead) softShadow(ctx, this, cam);
     var f = this.dead ? 1 : (this.throwAnim > 8 ? 1 : 0);
     var dir = this.facing > 0 ? 'r' : 'l';
     var base = 'thrower_' + f + '_' + dir;
@@ -575,7 +567,6 @@ window.SDD = window.SDD || {};
     if (this.bubbleT > 0) this.bubbleT--;
   };
   NPC.prototype.draw = function (ctx, cam) {
-    softShadow(ctx, this, cam);
     drawBC(ctx, 'npc_' + this.kind, this, cam);
     if (this.bubbleT > 0) {
       var bx = Math.round(this.x + this.w / 2 - cam.x);

@@ -1052,8 +1052,12 @@ window.SDD = window.SDD || {};
             var base = this.map.isSolid(tx, ty - 1) ? 'tile_dirt' : 'tile_ground';
             name = (this.theme && S.get(base + '_' + this.theme)) ? base + '_' + this.theme : base;
           }
-          else if (code === '#') name = 'tile_brick';
-          else if (code === '=') name = 'tile_platform';
+          else if (code === '#') {
+            name = (this.theme && S.get('tile_brick_' + this.theme)) ? 'tile_brick_' + this.theme : 'tile_brick';
+          }
+          else if (code === '=') {
+            name = (this.theme && S.get('tile_platform_' + this.theme)) ? 'tile_platform_' + this.theme : 'tile_platform';
+          }
           else if (code === 'V') name = 'tile_vine';
           else if (code === 'W') name = 'tile_water';
           else if (code === '~') name = 'tile_water_top';
