@@ -31,9 +31,10 @@ window.SDD = window.SDD || {};
     img.src = path;
     return state;
   }
-  var ART_TITLE   = loadArt('assets/title.png');
-  var ART_LAB     = loadArt('assets/lab.png');
-  var ART_MACHINE = loadArt('assets/timemachine.png');
+  var ART_TITLE          = loadArt('assets/title.png');
+  var ART_LAB            = loadArt('assets/lab.png');
+  var ART_MACHINE        = loadArt('assets/timemachine.png');
+  var ART_MACHINE_BROKEN = loadArt('assets/timemachine_broken.png');
   function lc(a, b, t) {
     return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' +
       Math.round(a[1] + (b[1] - a[1]) * t) + ',' +
@@ -188,20 +189,22 @@ window.SDD = window.SDD || {};
         g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
       }
 
-      // Time-machine drawer. Uses the painted PNG when available;
-      // falls back to the original procedural sprite when not.
-      // For the painted machine, glow is layered on top. (Beat 3's
-      // "broken" still uses the procedural variant since the painted
-      // asset has no broken state yet.)
+      // Time-machine drawer. Uses the painted PNGs when available
+      // (intact for beats 0-2, busted variant for beat 3); falls
+      // back to the procedural sprite when neither is loaded. The
+      // dome + cyan glow are layered on top of the painted variant.
       function machine(g, cx, cy, glow, broken) {
-        if (ART_MACHINE.ok && !broken) {
-          // PNG is 1024x1536 (2:3 portrait). Render at 130 px tall
-          // (~2x the previous 64) so it actually reads as the focal
-          // object of the scene. cy is the machine's vertical center.
+        // Painted PNGs (intact + busted variants). PNGs are 1024x1536
+        // (2:3 portrait) - rendered at 150 px tall so the machine
+        // reads as the focal object. cy is the machine's vertical
+        // centre.
+        var artImg = broken ? (ART_MACHINE_BROKEN.ok ? ART_MACHINE_BROKEN.img : null)
+                            : (ART_MACHINE.ok        ? ART_MACHINE.img        : null);
+        if (artImg) {
           var mh = 150, mw = Math.round(mh * (1024 / 1536));  // ~100w
           var mx = cx - mw / 2, my = cy - mh / 2;
           g.imageSmoothingEnabled = false;
-          g.drawImage(ART_MACHINE.img, mx, my, mw, mh);
+          g.drawImage(artImg, mx, my, mw, mh);
           if (glow) {
             // Warm dome glow at the top of the machine + soft cyan
             // halo around the body.
