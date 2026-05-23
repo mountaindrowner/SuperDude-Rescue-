@@ -72,6 +72,7 @@ window.SDD = window.SDD || {};
 
   // returns true if the hit "lands" (used to suppress repeated hits)
   Player.prototype.hurt = function () {
+    if (SDD.save && SDD.save.data && SDD.save.data.options && SDD.save.data.options.god) return false;
     if (this.invuln > 0 || this.dead || this.win) return false;
     if (this.big) {
       this.shrink();
@@ -163,7 +164,10 @@ window.SDD = window.SDD || {};
           : 'idle';
       if (this.blastAnim > 0) this.blastAnim--;
       if (this.invuln > 0) this.invuln--;
-      if (this.y > level.map.pxH + 28) this.die(true);
+      if (this.y > level.map.pxH + 28) {
+      if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
+      else this.die(true);
+    }
       return;
     }
 
@@ -265,7 +269,10 @@ window.SDD = window.SDD || {};
     if (this.invuln > 0) this.invuln--;
 
     // fell into a pit
-    if (this.y > level.map.pxH + 28) this.die(true);
+    if (this.y > level.map.pxH + 28) {
+      if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
+      else this.die(true);
+    }
   };
 
   Player.prototype.draw = function (ctx, cam) {

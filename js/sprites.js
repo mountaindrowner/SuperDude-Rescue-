@@ -530,6 +530,31 @@ window.SDD = window.SDD || {};
     // sandals
     px(g, 5, 30, 5, 1, '#6e4a26'); px(g, 10, 30, 5, 1, '#6e4a26');
   }
+  // glowing white platform for Day 1's "let there be light" theme
+  function paintGroundGalactic(g) {
+    // body: pale blue holy glow
+    px(g, 0, 0, 16, 16, '#a8c4e8');
+    // bright cap on top
+    px(g, 0, 0, 16, 3, '#ffffff');
+    px(g, 0, 3, 16, 1, '#dfe8ff');
+    px(g, 0, 4, 16, 1, '#7e9cd4');
+    // subtle sparkles
+    px(g, 3, 7, 1, 1, '#ffffff'); px(g, 11, 9, 1, 1, '#ffffff');
+    px(g, 6, 11, 1, 1, '#ffffff'); px(g, 13, 13, 1, 1, '#ffffff');
+    // darker base
+    px(g, 0, 14, 16, 2, '#5070a0');
+    px(g, 0, 15, 16, 1, '#374a78');
+  }
+  function paintDirtGalactic(g) {
+    // deep glowing pale blue interior
+    px(g, 0, 0, 16, 16, '#7a9ed0');
+    px(g, 0, 0, 16, 1, '#9ec0e4');
+    // dotted starlit specks
+    px(g, 2, 3, 1, 1, '#dfeeff'); px(g, 10, 4, 1, 1, '#dfeeff');
+    px(g, 6, 8, 1, 1, '#dfeeff'); px(g, 13, 10, 1, 1, '#dfeeff');
+    px(g, 4, 12, 1, 1, '#dfeeff'); px(g, 11, 13, 1, 1, '#dfeeff');
+    px(g, 0, 15, 16, 1, '#3f5680');
+  }
   function paintVine(g) {
     px(g, 7, 0, 2, 16, '#3a7a32');               // stem
     px(g, 6, 0, 1, 16, '#2c5524');
@@ -697,6 +722,8 @@ window.SDD = window.SDD || {};
 
     sprites['tile_ground'] = spritePlain(16, 16, paintGround);
     sprites['tile_dirt'] = spritePlain(16, 16, paintDirt);
+    sprites['tile_ground_galactic'] = spritePlain(16, 16, paintGroundGalactic);
+    sprites['tile_dirt_galactic'] = spritePlain(16, 16, paintDirtGalactic);
     sprites['tile_brick'] = spritePlain(16, 16, paintBrick);
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
     sprites['tile_vine'] = spritePlain(16, 16, paintVine);

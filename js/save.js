@@ -21,7 +21,7 @@ window.SDD = window.SDD || {};
       completedDays: [],     // day numbers fully completed (all stages done)
       bestTimes: {},         // { "d-s": seconds }
       bestCores: {},         // { "d-s": int }
-      options: { muted: false, volume: 0.7 }
+      options: { muted: false, volume: 0.7, god: false }
     };
   }
 

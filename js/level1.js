@@ -107,7 +107,8 @@ window.SDD = window.SDD || {};
   SDD.level1 = {
     width: W, height: H, ground: GROUND,
     tiles: t, spawns: spawns, movers: movers,
-    name: 'LIGHT AND DARKNESS'
+    name: 'LIGHT AND DARKNESS',
+    theme: 'galactic'
   };
   SDD.levels = SDD.levels || {};
   SDD.levels['1-1'] = SDD.level1;

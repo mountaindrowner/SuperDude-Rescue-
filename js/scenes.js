@@ -180,10 +180,13 @@ window.SDD = window.SDD || {};
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
+      this.items.push({ label: '', act: 'god' });  // dynamic label set in render
       this.idx = SDD.save.hasSave() ? 1 : 0;
     },
     update: function () {
       this.t++;
+      this.items[this.items.length - 1].label =
+        'GOD MODE: ' + (SDD.save.data.options.god ? 'ON' : 'OFF');
       listNav(this, this.items.length);
       if (In.confirm()) {
         var act = this.items[this.idx].act;
@@ -192,6 +195,10 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
+        else if (act === 'god') {
+          SDD.save.data.options.god = !SDD.save.data.options.god;
+          SDD.save.save();
+        }
       }
     },
     render: function (g) {
@@ -436,6 +443,47 @@ window.SDD = window.SDD || {};
       }
     }
   }
+  // Day 1 'galactic' backdrop: deep space, nebulae, a distant planet, lots of stars.
+  function drawSkyGalactic(g, camx, camy, t) {
+    var grd = g.createLinearGradient(0, 0, 0, 180);
+    grd.addColorStop(0, '#02020c'); grd.addColorStop(1, '#0a0820');
+    g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+    // two nebula clouds (parallax)
+    function nebula(cx, cy, r, col) {
+      var rg = g.createRadialGradient(cx, cy, 4, cx, cy, r);
+      rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = rg; g.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+    nebula(80 - camx * 0.07, 50, 70, 'rgba(180,80,200,0.35)');
+    nebula(240 - camx * 0.04, 95, 80, 'rgba(80,150,220,0.30)');
+    nebula(150 - camx * 0.05, 130, 60, 'rgba(220,90,180,0.22)');
+    // distant planet
+    var pX = 220 - camx * 0.09, pY = 56;
+    nebula(pX, pY, 32, 'rgba(180,140,220,0.45)');
+    g.fillStyle = '#7c4ea8'; g.beginPath(); g.arc(pX, pY, 14, 0, 6.29); g.fill();
+    g.fillStyle = '#5a2e80'; g.beginPath(); g.arc(pX + 3, pY + 3, 11, 0, 6.29); g.fill();
+    g.strokeStyle = 'rgba(220,190,240,0.55)'; g.lineWidth = 1.5;
+    g.beginPath(); g.ellipse(pX, pY, 24, 6, 0, 0, 6.29); g.stroke();
+    // base starfield
+    drawStarfield(g, t);
+    // brighter stars with twinkle + slow parallax
+    for (var i = 0; i < 45; i++) {
+      var sx = ((((i * 73) % 320) - camx * 0.45) % 320 + 320) % 320;
+      var sy = ((i * 41) % 150);
+      var tw = 0.5 + 0.5 * Math.sin(t * 0.04 + i * 1.7);
+      g.fillStyle = 'rgba(255,255,255,' + (0.55 + tw * 0.45) + ')';
+      var sz = i % 6 === 0 ? 2 : 1;
+      g.fillRect(sx | 0, sy | 0, sz, sz);
+    }
+    // periodic shooting star
+    var stT = (t * 0.6) % 320;
+    if (stT < 50) {
+      var ssx = -30 + stT * 6, ssy = 24 + stT * 1.4;
+      g.strokeStyle = 'rgba(255,250,210,0.85)'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(ssx, ssy); g.lineTo(ssx - 22, ssy - 6); g.stroke();
+    }
+  }
+
   function drawSky(g, camx, camy, prog, t) {
     var grd = g.createLinearGradient(0, 0, 0, 180);
     grd.addColorStop(0, lc([38, 30, 80], [92, 166, 248], prog));
@@ -472,6 +520,7 @@ window.SDD = window.SDD || {};
       this.map = new E.TileMap(grid);
       this.gravityScale = L.gravityScale || 1;
       this.skyTheme = L.skyTheme || null;
+      this.theme = L.theme || null;
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
       this.cores = 0; this.score = 0; this.timeSteps = 0;
@@ -519,6 +568,11 @@ window.SDD = window.SDD || {};
       }
       this.camera = new E.Camera();
       this.camera.snap(this.player, this.map);
+      // god mode: start powered up
+      if (SDD.save.data.options.god && this.player) {
+        this.player.grow();
+        this.player.giveBlast();
+      }
     },
 
     // ---- level callbacks used by entities ----
@@ -705,7 +759,8 @@ window.SDD = window.SDD || {};
       var prog = E.clamp(this.camera.x / Math.max(1, this.map.pxW - C.VIEW_W), 0, 1);
 
       // cosmetic light/dark theme - the sky brightens as Danny progresses
-      drawSky(g, cam.x, cam.y, prog, this.timeSteps);
+      if (this.theme === 'galactic') drawSkyGalactic(g, cam.x, cam.y, this.timeSteps);
+      else drawSky(g, cam.x, cam.y, prog, this.timeSteps);
 
       // tiles
       var T = C.TILE;
@@ -714,7 +769,10 @@ window.SDD = window.SDD || {};
       for (var ty = t0y; ty <= t1y; ty++) {
         for (var tx = t0x; tx <= t1x; tx++) {
           var code = this.map.get(tx, ty), name = null;
-          if (code === 'X') name = this.map.isSolid(tx, ty - 1) ? 'tile_dirt' : 'tile_ground';
+          if (code === 'X') {
+            var base = this.map.isSolid(tx, ty - 1) ? 'tile_dirt' : 'tile_ground';
+            name = (this.theme && S.get(base + '_' + this.theme)) ? base + '_' + this.theme : base;
+          }
           else if (code === '#') name = 'tile_brick';
           else if (code === '=') name = 'tile_platform';
           else if (code === 'V') name = 'tile_vine';
@@ -762,6 +820,10 @@ window.SDD = window.SDD || {};
       text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');
       var sec = Math.floor(this.timeSteps / 60);
       text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
+      if (sv.data.options.god) {
+        g.fillStyle = 'rgba(255,210,80,0.75)'; g.fillRect(228, 14, 30, 11);
+        text(g, 'GOD', 243, 16, '#1a1630', 1, 'center');
+      }
     },
 
     drawBanner: function (g, msg, col) {

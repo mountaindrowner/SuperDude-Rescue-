@@ -68,6 +68,26 @@ window.SDD = window.SDD || {};
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', resize);
 
+    // God-mode shortcuts: N to skip the current level, 1-7 to jump to a day.
+    window.addEventListener('keydown', function (e) {
+      if (!SDD.save.data.options.god) return;
+      if (e.code === 'KeyN' && SDD.scene && SDD.scene._name === 'level' &&
+          SDD.scene.completeLevel && SDD.scene.state === 'play') {
+        e.preventDefault();
+        SDD.scene.completeLevel();
+        return;
+      }
+      var m = e.code.match(/^Digit([1-7])$/);
+      if (m) {
+        e.preventDefault();
+        var day = parseInt(m[1], 10);
+        if (SDD.levels[day + '-1']) {
+          SDD.save.data.unlockedDay = Math.max(SDD.save.data.unlockedDay, day);
+          SDD.setScene('level', { day: day, stage: 1 });
+        }
+      }
+    });
+
     SDD.setScene('logo');
     requestAnimationFrame(frame);
   }
