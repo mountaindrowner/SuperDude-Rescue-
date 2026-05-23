@@ -333,16 +333,16 @@ window.SDD = window.SDD || {};
   // is the opposite of the previous stage's nextDir.
   var STAGES = [
     { d: 1, s: 1, x:  32, dy:  52, name: 'COSMIC VOID', nextDir: 'right' },
-    { d: 2, s: 1, x:  76, dy:  52, name: 'DAWN SKY',    nextDir: 'right' },
-    { d: 2, s: 2, x: 128, dy:  60, name: 'OCEAN',       nextDir: 'right' },
-    { d: 3, s: 1, x: 188, dy:  56, name: 'MOUNTAINS',   nextDir: 'right' },
-    { d: 3, s: 2, x: 244, dy:  54, name: 'FOREST',      nextDir: 'right' },
-    { d: 4, s: 1, x: 296, dy:  60, name: 'DESERT',      nextDir: 'down'  },
-    { d: 4, s: 2, x: 292, dy: 116, name: 'NIGHT SKY',   nextDir: 'left'  },
-    { d: 5, s: 1, x: 232, dy: 110, name: 'CLOUDS',      nextDir: 'left'  },
-    { d: 5, s: 2, x: 164, dy: 116, name: 'UNDERWATER',  nextDir: 'left'  },
-    { d: 6, s: 1, x: 100, dy: 116, name: 'SAVANNA',     nextDir: 'left'  },
-    { d: 6, s: 2, x:  40, dy: 114, name: 'VILLAGE',     nextDir: 'down'  },
+    { d: 2, s: 1, x:  79, dy:  56, name: 'DAWN SKY',    nextDir: 'right' },
+    { d: 2, s: 2, x: 131, dy:  58, name: 'OCEAN',       nextDir: 'right' },
+    { d: 3, s: 1, x: 185, dy:  56, name: 'MOUNTAINS',   nextDir: 'right' },
+    { d: 3, s: 2, x: 241, dy:  54, name: 'FOREST',      nextDir: 'right' },
+    { d: 4, s: 1, x: 293, dy:  58, name: 'DESERT',      nextDir: 'down'  },
+    { d: 4, s: 2, x: 287, dy: 113, name: 'NIGHT SKY',   nextDir: 'left'  },
+    { d: 5, s: 1, x: 225, dy: 115, name: 'CLOUDS',      nextDir: 'left'  },
+    { d: 5, s: 2, x: 160, dy: 118, name: 'UNDERWATER',  nextDir: 'left'  },
+    { d: 6, s: 1, x:  98, dy: 119, name: 'SAVANNA',     nextDir: 'left'  },
+    { d: 6, s: 2, x:  40, dy: 117, name: 'VILLAGE',     nextDir: 'down'  },
     { d: 7, s: 1, x: 240, dy: 160, name: 'EDEN GARDEN', nextDir: null    }
   ];
   var OPPOSITE = { right: 'left', left: 'right', up: 'down', down: 'up' };
