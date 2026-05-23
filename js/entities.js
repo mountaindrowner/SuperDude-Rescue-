@@ -462,6 +462,67 @@ window.SDD = window.SDD || {};
     drawBC(ctx, 'orb', this, cam);
   };
 
+  // ===================== SKY HAZARDS (Day 4) =====================
+  // Solar flare - drops straight down with increasing speed. Hits player
+  // on contact like an Orb.
+  function SolarFlare(x, y) {
+    this.x = x; this.y = y; this.w = 8; this.h = 10;
+    this.vx = 0; this.vy = 1.0; this.life = 360; this.remove = false;
+  }
+  SolarFlare.prototype.update = function (level) {
+    this.vy += 0.045;
+    if (this.vy > 3.6) this.vy = 3.6;
+    this.y += this.vy;
+    this.life--;
+    if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;
+  };
+  SolarFlare.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 12, '#ffe070', 0.65);
+    drawBC(ctx, 'flare', this, cam);
+  };
+
+  // Meteor - drifts diagonally across the screen.
+  function Meteor(x, y, dir) {
+    this.x = x; this.y = y; this.w = 10; this.h = 8;
+    this.vx = (dir || 1) * 1.5; this.vy = 0.9;
+    this.life = 320; this.remove = false;
+  }
+  Meteor.prototype.update = function (level) {
+    this.vy += 0.012; // slight downward acceleration
+    this.x += this.vx; this.y += this.vy;
+    this.life--;
+    if (this.life <= 0 || this.y > level.map.pxH + 40 ||
+        this.x > level.map.pxW + 60 || this.x < -60) this.remove = true;
+  };
+  Meteor.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 10, '#ff9050', 0.7);
+    drawBC(ctx, this.vx > 0 ? 'meteor_r' : 'meteor_l', this, cam);
+  };
+
+  // HazardSpawner - invisible periodic spawner placed in level data.
+  // Lives in the "enemies" list so its update is called every frame.
+  function HazardSpawner(x, y, kind, period, dir) {
+    this.x = x; this.y = y; this.w = 1; this.h = 1;
+    this.kind = kind || 'flare';
+    this.period = period || 90;
+    this.t = Math.floor(Math.random() * this.period);
+    this.dir = dir || 1;
+    this.dead = false; this.deadT = 0; this.remove = false;
+    this.stompable = false; this.invisible = true;
+  }
+  HazardSpawner.prototype.update = function (level) {
+    this.t++;
+    if (this.t >= this.period) {
+      this.t = 0;
+      if (this.kind === 'flare') {
+        level.projectiles.push(new SolarFlare(this.x, this.y));
+      } else if (this.kind === 'meteor') {
+        level.projectiles.push(new Meteor(this.x, this.y, this.dir));
+      }
+    }
+  };
+  HazardSpawner.prototype.draw = function () {};
+
   // ===================== PLAYER BLAST =====================
   function Blast(x, y, dir) {
     this.x = x; this.y = y; this.w = 10; this.h = 6;
@@ -582,6 +643,7 @@ window.SDD = window.SDD || {};
   SDD.ent = {
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
-    ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC
+    ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC,
+    SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner
   };
 })();

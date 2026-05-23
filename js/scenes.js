@@ -837,6 +837,12 @@ window.SDD = window.SDD || {};
           e = new SDD.ent.NPC(0, 0, s.kind || 'adam');
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
           this.items.push(e);
+        } else if (s.type === 'skyhazard') {
+          // periodic projectile spawner placed in the level data
+          e = new SDD.ent.HazardSpawner(
+            s.tx * T + 8, s.ty * T + 8,
+            s.kind || 'flare', s.period || 90, s.dir || 1);
+          this.enemies.push(e);
         }
       }
       for (var m = 0; m < L.movers.length; m++) {
@@ -990,7 +996,9 @@ window.SDD = window.SDD || {};
               this.burst(o.x + 4, o.y + 4, '#fff09a', 5);
             }
           }
-        } else if (pr instanceof SDD.ent.Orb) {
+        } else if (pr instanceof SDD.ent.Orb ||
+                   pr instanceof SDD.ent.SolarFlare ||
+                   pr instanceof SDD.ent.Meteor) {
           if (!pl.dead && !pl.win && pl.invuln <= 0 && E.overlap(pl, pr)) {
             pr.remove = true;
             if (pl.hurt()) this.burst(pl.x + pl.w / 2, pl.y + pl.h / 2, '#ff8a6a', 6);

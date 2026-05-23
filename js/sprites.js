@@ -789,6 +789,35 @@ window.SDD = window.SDD || {};
     px(g, 5, 0, 3, 1, C.bl1); px(g, 5, 7, 3, 1, C.bl1);
   }
 
+  // Solar flare - bright yellow teardrop falling from sky
+  function paintFlare(g) {
+    px(g, 3, 0, 2, 1, '#ffffff');
+    px(g, 2, 1, 4, 2, '#fff4a0');
+    px(g, 1, 3, 6, 4, '#ffd048');
+    px(g, 1, 7, 6, 2, '#ff9020');
+    px(g, 2, 9, 4, 1, '#ff5a18');
+    // bright core
+    px(g, 3, 3, 2, 3, '#ffffff');
+    px(g, 3, 6, 2, 1, '#fff48a');
+  }
+
+  // Meteor - gray/brown rock with a flaming trail
+  function paintMeteor(g) {
+    // rock body (right half)
+    px(g, 3, 2, 6, 4, '#5a4a40');
+    px(g, 3, 2, 6, 1, '#8a7a6e');           // top highlight
+    px(g, 4, 3, 4, 2, '#7a6a5e');           // lit face
+    px(g, 3, 5, 6, 1, '#3a2e24');           // shadow
+    // craters
+    px(g, 5, 3, 1, 1, '#3a2e24'); px(g, 7, 4, 1, 1, '#3a2e24');
+    // flaming trail (left side)
+    px(g, 0, 2, 2, 1, '#ff8030');
+    px(g, 0, 3, 3, 2, '#ffd048');
+    px(g, 0, 5, 2, 1, '#ff5018');
+    px(g, 1, 2, 1, 1, '#fff4a0');
+    px(g, 1, 5, 1, 1, '#ffffff');
+  }
+
   // ================= tiles (16x16, no outline - they tile) =================
   function paintGround(g) {
     px(g, 0, 0, 16, 16, C.dirt);
@@ -1308,6 +1337,10 @@ window.SDD = window.SDD || {};
     });
 
     sprites['orb'] = spriteO(9, 8, paintOrb);
+    sprites['flare'] = spriteO(8, 10, paintFlare);
+    var mtr = spriteO(10, 8, paintMeteor);
+    sprites['meteor_r'] = mtr;
+    sprites['meteor_l'] = flip(mtr);
     var bl = spriteO(13, 8, paintBlast);
     sprites['playerblast_r'] = bl;
     sprites['playerblast_l'] = flip(bl);
