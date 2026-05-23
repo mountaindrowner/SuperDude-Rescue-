@@ -321,19 +321,22 @@ window.SDD = window.SDD || {};
   // them. The optional background art is a swap-in image at
   // assets/overworld.png that gets composited under the path + nodes.
   // =====================================================================
+  // Coordinates target the painted serpentine island map at
+  // assets/overworld.png. Top row 1-6 left->right, right-edge drop to
+  // 7, bottom row 8-11 right->left, bottom drop to Eden #12.
   var STAGES = [
-    { d: 1, s: 1, x:  24, y: 138, name: 'LIGHT' },
-    { d: 2, s: 1, x:  52, y: 104, name: 'FIRMAMENT' },
-    { d: 2, s: 2, x:  78, y: 134, name: 'WATERS' },
-    { d: 3, s: 1, x: 104, y:  96, name: 'FORMING LAND' },
-    { d: 3, s: 2, x: 130, y: 128, name: 'VEGETATION' },
-    { d: 4, s: 1, x: 156, y:  84, name: 'THE SUN' },
-    { d: 4, s: 2, x: 182, y: 112, name: 'MOON & STARS' },
-    { d: 5, s: 1, x: 208, y:  84, name: 'THE SKIES' },
-    { d: 5, s: 2, x: 234, y: 120, name: 'THE SEAS' },
-    { d: 6, s: 1, x: 260, y:  90, name: 'WILD ANIMALS' },
-    { d: 6, s: 2, x: 286, y: 124, name: 'MANKIND' },
-    { d: 7, s: 1, x: 308, y: 100, name: 'DAY OF REST' }
+    { d: 1, s: 1, x:  25, y:  46, name: 'COSMIC VOID' },
+    { d: 2, s: 1, x:  74, y:  46, name: 'DAWN SKY' },
+    { d: 2, s: 2, x: 122, y:  46, name: 'OCEAN' },
+    { d: 3, s: 1, x: 172, y:  46, name: 'MOUNTAINS' },
+    { d: 3, s: 2, x: 220, y:  46, name: 'FOREST' },
+    { d: 4, s: 1, x: 268, y:  46, name: 'DESERT' },
+    { d: 4, s: 2, x: 296, y: 100, name: 'NIGHT SKY' },
+    { d: 5, s: 1, x: 230, y: 102, name: 'CLOUDS' },
+    { d: 5, s: 2, x: 174, y: 108, name: 'UNDERWATER' },
+    { d: 6, s: 1, x: 114, y: 108, name: 'SAVANNA' },
+    { d: 6, s: 2, x:  42, y: 110, name: 'VILLAGE' },
+    { d: 7, s: 1, x: 188, y: 152, name: 'EDEN GARDEN' }
   ];
   // Optional swap-in art (assets/overworld.png). Drawn under the path
   // when present; otherwise we draw the gradient + starfield fallback.
@@ -386,7 +389,9 @@ window.SDD = window.SDD || {};
       if (In.pressed('pause')) { A.sfx('confirm'); go('menu'); }
     },
     render: function (g) {
-      // Background: swap-in image if available, else gradient + starfield.
+      // Background: painted island map if assets/overworld.png is present,
+      // otherwise the procedural gradient + starfield fallback so the
+      // scene still reads when the art file hasn't been added yet.
       if (overworldImgOk) {
         g.drawImage(overworldImg, 0, 0, 320, 180);
       } else {
@@ -394,31 +399,47 @@ window.SDD = window.SDD || {};
         grd.addColorStop(0, '#243a6e'); grd.addColorStop(1, '#6fae8a');
         g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
         drawStarfield(g, this.t);
+        // Without the painted image, draw a thin path so nodes feel linked.
+        g.strokeStyle = 'rgba(255,230,150,0.5)'; g.lineWidth = 1;
+        g.setLineDash([3, 3]);
+        g.beginPath();
+        g.moveTo(STAGES[0].x, STAGES[0].y);
+        for (var p = 1; p < STAGES.length; p++) g.lineTo(STAGES[p].x, STAGES[p].y);
+        g.stroke();
+        g.setLineDash([]);
       }
-      // Dotted path connecting all 12 nodes
-      g.strokeStyle = 'rgba(255,230,150,0.7)'; g.lineWidth = 2;
-      g.setLineDash([3, 3]);
-      g.beginPath();
-      g.moveTo(STAGES[0].x, STAGES[0].y);
-      for (var p = 1; p < STAGES.length; p++) g.lineTo(STAGES[p].x, STAGES[p].y);
-      g.stroke();
-      g.setLineDash([]);
-      // Nodes
+      // State overlays sit ON TOP of the painted islands:
+      //   locked -> dim translucent square,
+      //   done   -> soft pulsing green halo,
+      //   placeholder node disk only when the painted art isn't loaded.
+      var pulse = 0.25 + 0.12 * Math.sin(this.t * 0.1);
       for (var i = 0; i < STAGES.length; i++) {
         var st = STAGES[i], open = stageOpen(i), done = stageDone(st);
-        g.fillStyle = open ? (done ? '#7dff9a' : '#ffd23a') : '#5a5f78';
-        g.beginPath(); g.arc(st.x, st.y, 7, 0, Math.PI * 2); g.fill();
-        text(g, '' + (i + 1), st.x, st.y - 3, open ? '#1a1640' : '#9498ac', 1, 'center');
+        if (done) {
+          g.fillStyle = 'rgba(125,255,154,' + pulse.toFixed(3) + ')';
+          g.beginPath(); g.arc(st.x, st.y, 14, 0, Math.PI * 2); g.fill();
+        }
         if (!open) {
-          g.fillStyle = '#cdd2e4'; g.fillRect(st.x - 2, st.y + 4, 4, 4);
-          g.fillRect(st.x - 1, st.y + 2, 2, 2);
+          g.fillStyle = 'rgba(8,8,20,0.55)';
+          g.fillRect(st.x - 12, st.y - 12, 24, 24);
+          // small padlock so locked state reads even on the painted bg
+          g.fillStyle = '#cdd2e4';
+          g.fillRect(st.x - 2, st.y + 1, 4, 4);
+          g.fillRect(st.x - 1, st.y - 1, 2, 2);
+        }
+        if (!overworldImgOk) {
+          // Fallback node disk + number so the gradient screen is still usable.
+          g.fillStyle = open ? (done ? '#7dff9a' : '#ffd23a') : '#5a5f78';
+          g.beginPath(); g.arc(st.x, st.y, 7, 0, Math.PI * 2); g.fill();
+          text(g, '' + (i + 1), st.x, st.y - 3,
+            open ? '#1a1640' : '#9498ac', 1, 'center');
         }
         if (i === this.idx) {
           g.strokeStyle = '#ffffff'; g.lineWidth = 1;
-          g.strokeRect(st.x - 10, st.y - 10, 20, 20);
+          g.strokeRect(st.x - 11, st.y - 11, 22, 22);
         }
       }
-      // Danny walking between nodes
+      // Danny walking between islands
       var dGap = STAGES[this.idx].x - this.dannyX;
       var dY = this.dannyY - 26 + Math.sin(this.t * 0.1) * 1.5;
       if (Math.abs(dGap) > 1) {
@@ -428,16 +449,16 @@ window.SDD = window.SDD || {};
         S.drawDanny(g, 'small', 'idle', 'east',
           Math.floor(this.t / 18) % 4, this.dannyX - 11, dY);
       }
-      // Header + selected world info
-      g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 0, 320, 18);
+      // Header (top strip, 18px) - title + selected biome name
+      g.fillStyle = 'rgba(8,8,20,0.78)'; g.fillRect(0, 0, 320, 18);
       text(g, 'CREATION MAP', 6, 6, '#ffd23a', 1, 'left');
       var sel = STAGES[this.idx], openSel = stageOpen(this.idx);
       text(g, (this.idx + 1) + '. ' + sel.name, 314, 6,
         openSel ? '#ffffff' : '#8a90b4', 1, 'right');
-      // Footer
-      g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 162, 320, 18);
-      if (this.msgT > 0) text(g, this.msg, 160, 168, '#ff8a6a', 1, 'center');
-      else text(g, 'ARROWS: CHOOSE WORLD    A: ENTER', 160, 168, '#dfe6ff', 1, 'center');
+      // Footer (thin 12px strip so Eden island isn't clipped)
+      g.fillStyle = 'rgba(8,8,20,0.78)'; g.fillRect(0, 168, 320, 12);
+      if (this.msgT > 0) text(g, this.msg, 160, 172, '#ff8a6a', 1, 'center');
+      else text(g, 'ARROWS: PICK   A: ENTER', 160, 172, '#dfe6ff', 1, 'center');
     }
   };
 
