@@ -277,19 +277,26 @@ window.SDD = window.SDD || {};
 
   Player.prototype.draw = function (ctx, cam) {
     if (!this.dead) softShadow(ctx, this, cam);
-    if (this.invuln > 0 && (this.invuln % 8) < 4) return;
+    // Heavy "ouch" pose plays for the first ~24 steps of invuln, then we
+    // fall back to the classic invincibility flicker.
+    var freshHurt = this.invuln > C.INVULN_STEPS - 24;
+    if (!freshHurt && this.invuln > 0 && (this.invuln % 8) < 4) return;
     var size = this.big ? 'big' : 'small';
 
     // Prefer the PixelLab PNG sprites once they've finished loading.
     if (SDD.sprites.pixelLab && SDD.sprites.pixelLab.ready &&
         SDD.sprites.pixelLab.failed === 0) {
       var anim, idx, dirPL = this.facing > 0 ? 'east' : 'west';
+      var maxV = this.big ? C.MOVE_MAX_BIG : C.MOVE_MAX_SMALL;
       if (this.win) {
         anim = 'celebrate'; dirPL = 'south';
         idx = Math.floor(this.animT / 5) % 9;
       } else if (this.dead) {
         anim = 'die';
         idx = Math.min(6, Math.floor(this.deadT / 10));
+      } else if (freshHurt) {
+        anim = 'hurt';
+        idx = Math.min(5, Math.floor((C.INVULN_STEPS - this.invuln) / 4));
       } else if (this.blastAnim > 0) {
         anim = 'blast';
         idx = Math.floor((11 - this.blastAnim) / 4);
@@ -301,6 +308,9 @@ window.SDD = window.SDD || {};
         else if (this.vy < 0) idx = 3;
         else if (this.vy < 2) idx = 5;
         else idx = 7;
+      } else if (Math.abs(this.vx) > maxV * 0.8) {
+        anim = 'run';
+        idx = Math.floor(this.animT / 4) % 4;
       } else if (Math.abs(this.vx) > 0.4) {
         anim = 'walk';
         idx = Math.floor(this.animT / 5) % 6;

@@ -837,7 +837,7 @@ window.SDD = window.SDD || {};
   };
   // displayed pixel size on the in-game canvas (kept close to the
   // code-drawn Danny so the rest of the level still feels right)
-  var PL_SIZE = { big: { w: 44, h: 44 }, small: { w: 36, h: 36 } };
+  var PL_SIZE = { big: { w: 44, h: 44 }, small: { w: 32, h: 32 } };
 
   var pixelLab = { ready: false, frames: {}, pending: 0, total: 0, failed: 0 };
 
