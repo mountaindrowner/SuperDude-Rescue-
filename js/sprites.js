@@ -839,7 +839,7 @@ window.SDD = window.SDD || {};
   // The renderer crops each frame to the per-animation non-transparent
   // bounding box and scales the crop to this height. Big > small gives
   // the "I just took a hit" health-bar feedback.
-  var PL_DISPLAY_H = { big: 40, small: 26 };
+  var PL_DISPLAY_H = { big: 22, small: 12 };
 
   // Precomputed per-animation union bounding boxes (non-transparent
   // pixels) for every PixelLab frame. The PNGs have huge transparent
