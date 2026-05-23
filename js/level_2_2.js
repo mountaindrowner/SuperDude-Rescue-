@@ -30,7 +30,7 @@ window.SDD = window.SDD || {};
   sp('player', 3, 10);
   sp('core', 6, 9); sp('core', 9, 9);
   qb(13, 7, 'G');
-  sp('walker', 18, 10);
+  sp('crab', 18, 10);
   sp('core', 16, 9); sp('core', 22, 9); sp('core', 26, 9);
 
   // first water gap with ONE bobbing platform (visual water at bottom)
@@ -39,7 +39,7 @@ window.SDD = window.SDD || {};
   sp('core', 32, 7);
 
   ground(37, 55);
-  sp('walker', 42, 10);
+  sp('crab', 42, 10);
   sp('wisp', 48, 6);
   qb(50, 7, '?');
   sp('core', 39, 9); sp('core', 45, 9); sp('core', 50, 5); sp('core', 53, 9);
@@ -54,7 +54,7 @@ window.SDD = window.SDD || {};
 
   ground(81, 110);
   box(86, 9, 88, 13, 'X');                                 // mini island
-  sp('thrower', 92, 10);
+  sp('crab', 92, 10);
   sp('wisp', 96, 5);
   sp('core', 83, 9); sp('core', 87, 7); sp('core', 94, 9);
   sp('core', 100, 9); sp('core', 105, 9);
@@ -71,7 +71,7 @@ window.SDD = window.SDD || {};
   box(135, 9, 137, 13, 'X');
   oneway(140, 143, 7);
   sp('walker', 146, 10);
-  sp('thrower', 132, 10);
+  sp('crab', 132, 10);
   sp('core', 136, 7); sp('core', 142, 5); sp('core', 148, 9);
 
   // 2 moving platforms diagonally arranged
@@ -86,7 +86,7 @@ window.SDD = window.SDD || {};
   box(180, 8, 182, 13, 'X');
   qb(186, 4, 'B');                                         // blast power-up high up
   oneway(184, 188, 5);
-  sp('thrower', 190, 10);
+  sp('crab', 190, 10);
   sp('core', 178, 9); sp('core', 181, 6); sp('core', 186, 3); sp('core', 192, 9);
 
   // ============== REWARD (195-239): big flying-leap finale ==============

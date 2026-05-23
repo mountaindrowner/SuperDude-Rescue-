@@ -15,6 +15,8 @@ window.SDD = window.SDD || {};
   function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
   function qb(x, y, ch) { setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
+  // Shooting cloud-creature - a wisp that periodically drops a rain orb.
+  function shooter(x, y) { spawns.push({ type: 'wisp', tx: x, ty: y, shoots: true }); }
   var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
@@ -49,7 +51,7 @@ window.SDD = window.SDD || {};
 
   ground(76, 100);
   sp('thrower', 84, 10);
-  sp('wisp', 80, 6); sp('wisp', 92, 4);
+  sp('wisp', 80, 6); shooter(92, 3);                       // shooting cloud creature high up
   sp('core', 78, 9); sp('core', 88, 9); sp('core', 96, 9);
 
   // ascending 3-step from the ground (was descending - impossible since
@@ -94,7 +96,7 @@ window.SDD = window.SDD || {};
   sp('core', 171, 3); sp('core', 177, 1); sp('core', 183, 3);
   sp('core', 189, 5); sp('core', 195, 3);
   sp('thrower', 175, 10); sp('thrower', 192, 10);
-  sp('wisp', 184, 2); sp('wisp', 194, 1);
+  shooter(184, 2); sp('wisp', 194, 1);
 
   mover(201, 10, 204, 5, 0.024, 0);
   sp('core', 202, 7); sp('core', 203, 4);
@@ -106,7 +108,7 @@ window.SDD = window.SDD || {};
   box(228, 8, 232, 13, 'X');                               // goal pedestal
   box(239, 0, 239, 13, 'X');
   sp('timepart', 230, 7);
-  sp('walker', 210, 10); sp('wisp', 220, 4);
+  sp('walker', 210, 10); shooter(220, 3);
   sp('core', 208, 9); sp('core', 213, 7); sp('core', 218, 6);
   sp('core', 223, 5); sp('core', 230, 5); sp('core', 234, 9);
 

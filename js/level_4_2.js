@@ -1,8 +1,8 @@
-// level_4_2.js - Day 4-2 "MOON & STARS" (Pass 3 redesign, ~260 tiles).
-// Signature mechanic: LOW GRAVITY + drifting meteors. Teach: floaty
-// jumps clearing wider gaps -> Test: vertical climbing via low-grav
-// jumps -> Twist: meteors crossing the path -> Reward: big leap
-// finale over a meteor storm.
+// level_4_2.js - Day 4-2 "MOON & STARS" (Pass 5 redesign, ~260 tiles).
+// Signature mechanic: LOW GRAVITY + drifting meteors. Mark's note:
+// "less land, more moving themed platforms" - the level is now mostly
+// drifting cosmic platforms (stars / comets / moons) with sparse
+// island ground. Danny floats from one cosmic platform to the next.
 window.SDD = window.SDD || {};
 
 (function () {
@@ -22,92 +22,114 @@ window.SDD = window.SDD || {};
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // ============== TEACH (0-50): floaty jumps clear wider gaps ==============
-  ground(0, 25);
+  // ============== TEACH (0-50): floaty intro on a small island ==============
+  ground(0, 18);
   sp('player', 3, 10);
   sp('core', 6, 9); sp('core', 9, 9);
-  qb(13, 6, 'G');                                          // grow block tucked HIGH (low-g)
-  sp('walker', 18, 10);
-  sp('core', 16, 9); sp('core', 22, 9);
+  qb(13, 6, 'G');
+  sp('walker', 16, 10);
 
-  // first wide gap (impossible in normal gravity) cols 26-32
-  sp('core', 26, 8); sp('core', 28, 6); sp('core', 30, 6); sp('core', 32, 8);
+  // First cosmic-platform hop (drifting comet)
+  mover(20, 9, 24, 9, 0.022, 0);
+  sp('core', 22, 7);
 
-  ground(33, 65);
-  box(38, 5, 41, 6, 'X');                                  // floating island high up
-  qb(40, 4, '?');
-  sp('wisp', 44, 5);
-  sp('core', 36, 9); sp('core', 39, 3); sp('core', 47, 9); sp('core', 52, 5);
-  // big leap over cols 56-62
-  sp('core', 56, 7); sp('core', 59, 4); sp('core', 62, 7);
+  // Tiny landing island
+  box(26, 10, 29, 13, 'X');
+  sp('core', 27, 8);
 
-  // ============== TEST (65-130): vertical climbing via low-g jumps ==============
-  ground(66, 105);
-  // Tall floating-island staircase - tall jumps because of low-g
-  box(70, 7, 73, 8, 'X');
-  box(76, 4, 79, 5, 'X');
-  box(82, 1, 85, 2, 'X');                                  // very high
-  oneway(88, 91, 4);
-  sp('thrower', 78, 10);
-  sp('wisp', 87, 6);
-  sp('core', 71, 5); sp('core', 77, 2); sp('core', 83, 0); sp('core', 89, 2);
-  qb(83, 0, '?');
+  // Two more drifting platforms with cores
+  mover(31, 8, 35, 8, 0.022, 1.2);
+  sp('core', 33, 6);
+  mover(38, 7, 42, 7, 0.022, 0.4);
+  sp('core', 40, 5);
 
-  // descending leap
-  box(94, 6, 97, 7, 'X');
-  box(100, 9, 103, 10, 'X');
-  sp('core', 95, 4); sp('core', 101, 7);
+  // ============== TEST (45-110): rhythm of cosmic platforms =========
+  // Mid-air "starbase" island
+  box(46, 6, 50, 7, 'X');
+  qb(48, 4, '?');
+  sp('core', 47, 5); sp('core', 49, 5); sp('core', 48, 3);
+  sp('wisp', 52, 4);
 
-  // wide gap with single high platform
-  box(110, 4, 113, 5, 'X');
-  sp('core', 110, 2); sp('core', 113, 2);
+  // Vertical-bobbing platforms (rise + fall, big amplitude under low-g)
+  mover(54, 9, 57, 3, 0.025, 0);
+  mover(60, 3, 63, 9, 0.025, 1.6);
+  mover(66, 9, 69, 3, 0.025, 3.2);
+  sp('core', 55, 7); sp('core', 61, 5); sp('core', 67, 7);
 
-  // ============== TWIST (115-185): meteors cross the path ==============
-  ground(116, 155);
-  meteor(117, 2, 110, 1);                                  // meteor drifting right
-  meteor(135, 2, 110, -1);                                 // meteor drifting left
+  // Mini moon
+  box(73, 5, 78, 6, 'X');
+  sp('core', 74, 3); sp('core', 76, 3); sp('core', 78, 3);
+  qb(75, 3, '?');
+
+  // Long drifting comet to next island
+  mover(81, 6, 88, 6, 0.018, 0);
+  sp('core', 85, 4);
+
+  // Mid island
+  box(91, 8, 95, 9, 'X');
+  sp('walker', 93, 7);
+  sp('core', 92, 6); sp('core', 95, 6);
+
+  // ============== TWIST (100-180): meteors + climbing platforms =====
+  // Vertical climbing tower of moving platforms
+  mover(100, 9, 103, 9, 0.024, 0);
+  mover(105, 7, 108, 5, 0.024, 1.3);                       // climbs
+  mover(110, 5, 113, 3, 0.024, 2.6);                       // higher
+  mover(115, 3, 118, 1, 0.024, 0.5);                       // sky-high
+  sp('core', 101, 7); sp('core', 107, 4); sp('core', 112, 2); sp('core', 117, 0);
+  qb(117, 0, 'B');                                         // blast at the top
+
+  // Meteors sweep through the climbing zone
+  meteor(100, 2, 100, 1);
+  meteor(118, 2, 100, -1);
+
+  // Descending chain back to a small island
+  mover(122, 2, 125, 5, 0.024, 0);
+  mover(127, 5, 130, 8, 0.024, 1.2);
+  sp('core', 123, 1); sp('core', 128, 4);
+
+  // Small island
+  box(133, 9, 136, 10, 'X');
+  sp('thrower', 134, 8);
+  sp('core', 134, 7); sp('core', 136, 7);
+
+  // Wide meteor field - 3 drifting platforms + 3 meteors crossing
+  mover(140, 8, 144, 8, 0.022, 0);
+  mover(147, 6, 151, 6, 0.022, 1.5);
+  mover(154, 8, 158, 8, 0.022, 0.5);
+  meteor(140, 3, 90, 1);
+  meteor(160, 3, 90, -1);
   meteor(150, 2, 110, 1);
-  sp('walker', 122, 10); sp('walker', 142, 10);
-  sp('thrower', 130, 10);
-  sp('wisp', 138, 5);
-  box(125, 6, 128, 7, 'X');
-  box(133, 4, 136, 5, 'X');
-  box(141, 6, 144, 7, 'X');
-  qb(144, 2, 'B');                                         // blast power-up high
-  sp('core', 119, 9); sp('core', 126, 4); sp('core', 134, 2);
-  sp('core', 142, 4); sp('core', 144, 1); sp('core', 152, 9);
+  sp('core', 142, 6); sp('core', 149, 4); sp('core', 156, 6);
+  sp('wisp', 145, 3); sp('wisp', 153, 4);
 
-  // gap with rising platform under meteor storm
-  meteor(160, 2, 90, 1);
-  meteor(170, 2, 90, -1);
-  mover(157, 10, 159, 5, 0.024, 0);
-  sp('core', 158, 7);
+  // ============== REWARD (165-259): final cosmic descent ============
+  // Wider platforms for the final stretch (Mark's "jumping comets")
+  mover(165, 7, 170, 7, 0.020, 0);
+  mover(174, 5, 179, 5, 0.020, 1.5);
+  mover(183, 7, 188, 7, 0.020, 3.0);
+  mover(192, 4, 197, 4, 0.020, 0);
+  sp('core', 167, 5); sp('core', 176, 3); sp('core', 185, 5); sp('core', 194, 2);
 
-  ground(162, 195);
-  box(167, 4, 170, 5, 'X');
-  box(174, 1, 177, 2, 'X');                                // sky-high
-  oneway(180, 184, 5);
-  sp('thrower', 187, 10);
-  sp('wisp', 175, 4); sp('wisp', 191, 3);
-  sp('core', 168, 2); sp('core', 175, 0); sp('core', 182, 3); sp('core', 192, 9);
+  // Meteor finale
+  meteor(178, 1, 70, 1);
+  meteor(188, 1, 70, -1);
 
-  // ============== REWARD (195-259): big leap over meteor storm ==============
-  // wide pit with 2 sky platforms
-  meteor(198, 2, 80, 1);
-  meteor(208, 2, 80, -1);
-  meteor(218, 2, 80, 1);
-  box(200, 4, 203, 5, 'X');
-  box(210, 4, 213, 5, 'X');
-  box(220, 4, 223, 5, 'X');
-  sp('core', 201, 2); sp('core', 211, 2); sp('core', 221, 2);
-
-  ground(225, 259);
-  box(230, 9, 234, 13, 'X');
-  box(238, 6, 242, 13, 'X');                               // high goal pedestal
+  // Goal island at altitude
+  box(200, 5, 207, 6, 'X');
+  oneway(209, 213, 5);
+  box(215, 4, 222, 5, 'X');                                // goal pedestal at altitude
   box(259, 0, 259, 13, 'X');
-  sp('timepart', 240, 5);
-  sp('core', 227, 9); sp('core', 232, 7); sp('core', 240, 4);
-  sp('core', 246, 9); sp('core', 252, 9); sp('core', 256, 9);
+  sp('timepart', 218, 3);
+  sp('walker', 204, 5);
+  sp('wisp', 211, 3); sp('wisp', 225, 4);
+  sp('core', 202, 3); sp('core', 210, 3); sp('core', 218, 2);
+  sp('core', 230, 7); sp('core', 240, 9); sp('core', 250, 9);
+  // Decorative ground stripe across the bottom so the world has SOMETHING
+  // below the cosmic platforms - prevents pit anxiety.
+  ground(225, 258);
+  // few last cores at ground level for safety
+  sp('core', 245, 9); sp('core', 255, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['4-2'] = {

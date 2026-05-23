@@ -421,7 +421,7 @@ window.SDD = window.SDD || {};
     this.dead = false; this.deadT = 0; this.remove = false;
     this.animT = 0; this.stompable = true;
   }
-  Wisp.prototype.update = function () {
+  Wisp.prototype.update = function (level) {
     if (this.dead) { this.deadT++; this.y += 2.4; if (this.deadT > 22) this.remove = true; return; }
     this.t += 0.05;
     this.y = this.homeY + Math.sin(this.t) * 28;
@@ -429,6 +429,18 @@ window.SDD = window.SDD || {};
     if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
     if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
     this.animT++;
+    // shoot variant: periodic downward orb (cloud-creature rain drop)
+    if (this.shoots) {
+      if (this.shootCD == null) this.shootCD = SDD.engine.randInt(80, 140);
+      this.shootCD--;
+      if (this.shootCD <= 0 && level) {
+        this.shootCD = SDD.engine.randInt(140, 220);
+        var orb = new Orb(this.x + this.w / 2 - 4, this.y + this.h, 0);
+        orb.vx = 0; orb.vy = 0.6;       // drift down
+        level.projectiles.push(orb);
+        SDD.audio.sfx('bump');
+      }
+    }
   };
   Wisp.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
   Wisp.prototype.zap = function () { this.dead = true; this.deadT = 0; };
@@ -484,6 +496,89 @@ window.SDD = window.SDD || {};
   Orb.prototype.draw = function (ctx, cam) {
     glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 9, '#c061da', 0.5);
     drawBC(ctx, 'orb', this, cam);
+  };
+
+  // ===================== WATER JET (Day 2-2 crab projectile) =====================
+  // Slow horizontal-arc projectile; same hit logic as Orb.
+  function WaterJet(x, y, dir) {
+    this.x = x; this.y = y; this.w = 8; this.h = 6;
+    this.vx = dir * 1.6; this.vy = -1.2;
+    this.life = 220; this.remove = false;
+  }
+  WaterJet.prototype.update = function (level) {
+    this.vy += 0.06;
+    this.x += this.vx; this.y += this.vy;
+    this.life--;
+    if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;
+  };
+  WaterJet.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 9, '#6cd0ff', 0.55);
+    drawBC(ctx, this.vx > 0 ? 'waterjet_r' : 'waterjet_l', this, cam);
+  };
+
+  // ===================== CRAB (Day 2-2 - walker that throws) =====================
+  // Walks back and forth like a Walker AND periodically lobs a WaterJet
+  // at the player. Stompable (top is soft shell).
+  function Crab(x, y) {
+    this.x = x; this.y = y; this.w = 14; this.h = 10;
+    this.vx = 0; this.vy = 0; this.dir = -1;
+    this.onGround = false; this.dead = false; this.deadT = 0; this.remove = false;
+    this.animT = 0; this.stompable = true;
+    this.cd = SDD.engine.randInt(90, 150);
+    this.throwAnim = 0;
+  }
+  Crab.prototype.update = function (level) {
+    if (this.dead) { this.deadT++; if (this.deadT > 24) this.remove = true; return; }
+    this.vy += C.GRAVITY; if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+    this.vx = this.dir * 0.5;
+    this.hitWall = 0;
+    mc(this, level.map);
+    if (this.hitWall) this.dir = -this.hitWall;
+    if (this.onGround) {
+      var T = C.TILE;
+      var footX = this.dir > 0 ? this.x + this.w + 1 : this.x - 1;
+      var bx = Math.floor(footX / T), by = Math.floor((this.y + this.h + 3) / T);
+      if (!level.map.isSolid(bx, by) && !level.map.isOneWay(bx, by)) this.dir = -this.dir;
+    }
+    this.animT++;
+    // periodic water-jet
+    this.cd--;
+    if (this.cd <= 0 && this.onGround) {
+      this.cd = SDD.engine.randInt(120, 200);
+      this.throwAnim = 16;
+      var jetDir = (level.player.x + level.player.w / 2 < this.x + this.w / 2) ? -1 : 1;
+      var ox = jetDir > 0 ? this.x + this.w : this.x - 6;
+      level.projectiles.push(new WaterJet(ox, this.y + 2, jetDir));
+      SDD.audio.sfx('bump');
+    }
+    if (this.throwAnim > 0) this.throwAnim--;
+  };
+  Crab.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
+  Crab.prototype.zap = function () { this.dead = true; this.deadT = 0; };
+  Crab.prototype.draw = function (ctx, cam) {
+    var f = this.dead ? 1 : (this.throwAnim > 8 ? 1 : (Math.floor(this.animT / 8) % 2));
+    var dir = this.dir > 0 ? 'r' : 'l';
+    drawBC(ctx, 'crab_' + f + '_' + dir, this, cam);
+  };
+
+  // ===================== LAVA PLUME (Day 3-1) =====================
+  // Rises from a ground anchor, peaks, then falls back. Damages player
+  // on contact. Sister-class to SolarFlare but inverted.
+  function LavaPlume(x, y) {
+    this.x = x; this.y = y; this.w = 10; this.h = 14;
+    this.vx = 0; this.vy = -3.2;     // rises fast
+    this.life = 110; this.remove = false;
+    this.startY = y;
+  }
+  LavaPlume.prototype.update = function (level) {
+    this.vy += 0.10;                  // gravity pulls back down
+    this.y += this.vy;
+    this.life--;
+    if (this.life <= 0 || this.y > this.startY + 4) this.remove = true;
+  };
+  LavaPlume.prototype.draw = function (ctx, cam) {
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 14, '#ff7430', 0.75);
+    drawBC(ctx, 'lavaplume', this, cam);
   };
 
   // ===================== SKY HAZARDS (Day 4) =====================
@@ -542,10 +637,18 @@ window.SDD = window.SDD || {};
         level.projectiles.push(new SolarFlare(this.x, this.y));
       } else if (this.kind === 'meteor') {
         level.projectiles.push(new Meteor(this.x, this.y, this.dir));
+      } else if (this.kind === 'meteorH') {
+        // horizontal meteor (Day 4-1) - flat trajectory, no downward drift
+        var m = new Meteor(this.x, this.y, this.dir);
+        m.vy = 0;             // override the default downward bias
+        level.projectiles.push(m);
+      } else if (this.kind === 'lavaPlume') {
+        level.projectiles.push(new LavaPlume(this.x, this.y));
       }
     }
   };
   HazardSpawner.prototype.draw = function () {};
+  HazardSpawner.prototype.zap = function () {};      // blast can't kill the sky
 
   // ===================== PLAYER BLAST =====================
   function Blast(x, y, dir) {
@@ -668,6 +771,7 @@ window.SDD = window.SDD || {};
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
     ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC,
-    SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner
+    SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
+    Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume
   };
 })();

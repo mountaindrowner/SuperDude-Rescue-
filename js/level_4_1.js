@@ -17,6 +17,7 @@ window.SDD = window.SDD || {};
   function qb(x, y, ch) { setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
   function flare(x, period) { spawns.push({ type: 'skyhazard', kind: 'flare', tx: x, ty: 0, period: period || 110 }); }
+  function meteorH(x, y, period, dir) { spawns.push({ type: 'skyhazard', kind: 'meteorH', tx: x, ty: y || 5, period: period || 140, dir: dir || 1 }); }
   var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
@@ -91,10 +92,12 @@ window.SDD = window.SDD || {};
   mover(176, 9, 180, 9, 0.024, 0);
 
   ground(182, 215);
-  // dense flare storm - if you have blast you can clear flares,
-  // otherwise weave
+  // dense flare storm + horizontal solar gusts cross the path
   flare(184, 60); flare(190, 60); flare(196, 60);
   flare(202, 60); flare(208, 60);
+  meteorH(-2, 4, 130, 1);                                  // sweeps in from the left
+  meteorH(-2, 7, 160, 1);
+  meteorH(W + 2, 5, 150, -1);                              // and right
   sp('walker', 187, 10); sp('walker', 200, 10);
   sp('thrower', 210, 10);
   sp('core', 184, 9); sp('core', 190, 9); sp('core', 196, 9);

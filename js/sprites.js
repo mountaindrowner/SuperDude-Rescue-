@@ -475,6 +475,35 @@ window.SDD = window.SDD || {};
     px(g, 0, 3, 1, 3, C.orbA); px(g, 8, 3, 1, 3, C.orbA);
   }
 
+  // Sea crab (Day 2-2) - red shell with claws + eyestalks. Frame 0
+  // walks, frame 1 has claws raised (about to spit a water jet).
+  function paintCrab(g, frame) {
+    var lift = frame === 1 ? 1 : 0;
+    // shell body
+    px(g, 3, 5, 10, 4, '#d44a4a');
+    px(g, 4, 4, 8, 1, '#d44a4a');
+    px(g, 3, 5, 10, 2, '#ff7a6a');               // top highlight
+    px(g, 3, 8, 10, 1, '#7a1f1f');               // shadow
+    // shell spots
+    px(g, 5, 6, 1, 1, '#7a1f1f'); px(g, 10, 6, 1, 1, '#7a1f1f');
+    // eyes on stalks
+    px(g, 5, 2, 1, 2, '#d44a4a');
+    px(g, 4, 1, 2, 1, '#ffffff'); px(g, 4, 1, 1, 1, '#241010');
+    px(g, 10, 2, 1, 2, '#d44a4a');
+    px(g, 10, 1, 2, 1, '#ffffff'); px(g, 11, 1, 1, 1, '#241010');
+    // mouth
+    px(g, 7, 8, 2, 1, '#241010');
+    // legs (move with frame)
+    var leg = frame === 1 ? 1 : 0;
+    px(g, 1, 9, 2, 1, '#7a1f1f'); px(g, 13, 9, 2, 1, '#7a1f1f');
+    px(g, 1, 10 + leg, 2, 1, '#7a1f1f'); px(g, 13, 10 - leg, 2, 1, '#7a1f1f');
+    px(g, 4, 9, 2, 1, '#7a1f1f'); px(g, 10, 9, 2, 1, '#7a1f1f');
+    px(g, 4, 10 - leg, 2, 1, '#7a1f1f'); px(g, 10, 10 + leg, 2, 1, '#7a1f1f');
+    // claws (raised when about to throw)
+    px(g, 0, 5 - lift, 2, 2, '#d44a4a'); px(g, 14, 5 - lift, 2, 2, '#d44a4a');
+    px(g, 0, 4 - lift, 1, 1, '#ff7a6a'); px(g, 15, 4 - lift, 1, 1, '#ff7a6a');
+  }
+
   // ----- themed Walker variants (16w x 14h, frame 0=normal, 1=squish) -----
 
   // Cloud-puff walker - white blobby cloud with eyes (sky / sea / seaside).
@@ -799,6 +828,32 @@ window.SDD = window.SDD || {};
     // bright core
     px(g, 3, 3, 2, 3, '#ffffff');
     px(g, 3, 6, 2, 1, '#fff48a');
+  }
+
+  // Water jet - small blue droplet stream (Day 2-2 crab)
+  function paintWaterJet(g) {
+    px(g, 1, 1, 5, 4, '#6cd0ff');
+    px(g, 0, 2, 7, 2, '#6cd0ff');
+    px(g, 1, 1, 4, 2, '#bce8ff');                // bright top
+    px(g, 1, 4, 5, 1, '#3a90c8');                // shadow
+    // spray dots
+    px(g, 0, 5, 1, 1, '#6cd0ff'); px(g, 6, 5, 1, 1, '#6cd0ff');
+    px(g, 2, 0, 2, 1, '#ffffff');                // sparkle highlight
+  }
+
+  // Lava plume - tall orange/red column with flickering top
+  function paintLavaPlume(g) {
+    px(g, 3, 0, 4, 1, '#ffe070');                // bright top
+    px(g, 2, 1, 6, 2, '#ff9020');
+    px(g, 1, 3, 8, 4, '#ff5418');
+    px(g, 2, 7, 6, 3, '#c83214');                // dark base
+    px(g, 3, 10, 4, 3, '#7a1c0a');
+    // hot core
+    px(g, 4, 2, 2, 4, '#ffe890');
+    px(g, 4, 6, 2, 2, '#ffd048');
+    // licks at the sides
+    px(g, 0, 4, 1, 2, '#ff7430');
+    px(g, 9, 4, 1, 2, '#ff7430');
   }
 
   // Meteor - gray/brown rock with a flaming trail
@@ -1338,9 +1393,19 @@ window.SDD = window.SDD || {};
 
     sprites['orb'] = spriteO(9, 8, paintOrb);
     sprites['flare'] = spriteO(8, 10, paintFlare);
+    sprites['lavaplume'] = spriteO(10, 13, paintLavaPlume);
     var mtr = spriteO(10, 8, paintMeteor);
     sprites['meteor_r'] = mtr;
     sprites['meteor_l'] = flip(mtr);
+    var wj = spriteO(7, 6, paintWaterJet);
+    sprites['waterjet_r'] = wj;
+    sprites['waterjet_l'] = flip(wj);
+    // Sea crab (Day 2-2) - 16x14 walker variant.
+    [0, 1].forEach(function (f) {
+      var c = spriteO(16, 12, function (g) { paintCrab(g, f); });
+      sprites['crab_' + f + '_r'] = c;
+      sprites['crab_' + f + '_l'] = flip(c);
+    });
     var bl = spriteO(13, 8, paintBlast);
     sprites['playerblast_r'] = bl;
     sprites['playerblast_l'] = flip(bl);

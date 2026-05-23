@@ -819,6 +819,11 @@ window.SDD = window.SDD || {};
           e.x = s.tx * T + 8 - e.w / 2; e.y = s.ty * T + 8 - e.h / 2;
           e.homeY = e.y; e.minX = e.x - 26; e.maxX = e.x + 26;
           e.variant = variants.wisp;
+          if (s.shoots) e.shoots = true;
+          this.enemies.push(e);
+        } else if (s.type === 'crab') {
+          e = new SDD.ent.Crab(0, 0);
+          e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
           this.enemies.push(e);
         } else if (s.type === 'core') {
           e = new SDD.ent.Core(0, 0);
@@ -993,9 +998,12 @@ window.SDD = window.SDD || {};
           }
         } else if (pr instanceof SDD.ent.Orb ||
                    pr instanceof SDD.ent.SolarFlare ||
-                   pr instanceof SDD.ent.Meteor) {
+                   pr instanceof SDD.ent.Meteor ||
+                   pr instanceof SDD.ent.WaterJet ||
+                   pr instanceof SDD.ent.LavaPlume) {
           if (!pl.dead && !pl.win && pl.invuln <= 0 && E.overlap(pl, pr)) {
-            pr.remove = true;
+            // LavaPlume persists (it's a vertical column, not a single hit)
+            if (!(pr instanceof SDD.ent.LavaPlume)) pr.remove = true;
             if (pl.hurt()) this.burst(pl.x + pl.w / 2, pl.y + pl.h / 2, '#ff8a6a', 6);
           }
         }

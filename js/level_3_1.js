@@ -14,6 +14,7 @@ window.SDD = window.SDD || {};
   function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
   function qb(x, y, ch) { setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
+  function lava(x, period) { spawns.push({ type: 'skyhazard', kind: 'lavaPlume', tx: x, ty: 10, period: period || 90 }); }
   var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
@@ -45,9 +46,9 @@ window.SDD = window.SDD || {};
   box(64, 7, 65, 13, 'X');
   sp('core', 55, 8); sp('core', 58, 7); sp('core', 61, 6); sp('core', 64, 5);
 
-  // walking gap
+  // walking gap with a lava plume erupting at the seed-spitter's old spot
   sp('walker', 70, 10);
-  sp('thrower', 76, 10);
+  lava(76, 100);
   sp('core', 68, 9); sp('core', 73, 9); sp('core', 80, 9);
 
   // 2-tall brick wall to climb over (tight)
@@ -70,7 +71,7 @@ window.SDD = window.SDD || {};
   oneway(111, 113, 8);
   oneway(117, 119, 8);
   oneway(123, 125, 8);
-  sp('thrower', 100, 10);
+  lava(102, 110);
   sp('wisp', 113, 4); sp('wisp', 121, 4);
   sp('core', 106, 7); sp('core', 112, 7); sp('core', 118, 7); sp('core', 124, 7);
   qb(110, 8, 'B');                                          // blast power-up between zigs
@@ -89,7 +90,7 @@ window.SDD = window.SDD || {};
   box(164, 3, 165, 13, 'X');
   box(168, 0, 168, 5, 'X');                                // ceiling
   sp('walker', 172, 10);
-  sp('thrower', 178, 10);
+  lava(178, 90);
   sp('core', 155, 8); sp('core', 158, 6); sp('core', 161, 4); sp('core', 164, 2);
   sp('core', 167, 4); sp('core', 174, 9); sp('core', 178, 9);
 
