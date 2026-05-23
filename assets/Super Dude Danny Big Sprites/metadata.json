@@ -1,0 +1,286 @@
+{
+  "group_id": "f087aa34-ece9-4d63-b882-d7ad94c4f9c8",
+  "states": [
+    {
+      "character": {
+        "id": "2dd84d7b-e6c1-47b2-bb37-30040dc3db86",
+        "name": "A middle-aged science guy with",
+        "prompt": "An adult science guy with a lab coat, sneakers, jeans, a black shirt with an atom symbol on it. He\u2019s got stubble and a beard but it\u2019s small and black room glasses and a cap on backwards he\u2019s fit looking but not buff.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-05-22T20:59:42.839984+00:00"
+      },
+      "folder": "A_middle-aged_science_guy_with",
+      "frames": {
+        "rotations": {
+          "south": "A_middle-aged_science_guy_with/rotations/south.png",
+          "south-east": "A_middle-aged_science_guy_with/rotations/south-east.png",
+          "east": "A_middle-aged_science_guy_with/rotations/east.png",
+          "north-east": "A_middle-aged_science_guy_with/rotations/north-east.png",
+          "north": "A_middle-aged_science_guy_with/rotations/north.png",
+          "north-west": "A_middle-aged_science_guy_with/rotations/north-west.png",
+          "west": "A_middle-aged_science_guy_with/rotations/west.png",
+          "south-west": "A_middle-aged_science_guy_with/rotations/south-west.png"
+        },
+        "animations": {
+          "Running-b41545c8": {
+            "east": [
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/east/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/east/frame_003.png"
+            ],
+            "west": [
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/west/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Running-b41545c8/west/frame_003.png"
+            ]
+          },
+          "animation-a2ee175e": {
+            "east": [
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/east/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/east/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/east/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/east/frame_005.png"
+            ],
+            "west": [
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/west/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/west/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/west/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/animation-a2ee175e/west/frame_005.png"
+            ]
+          },
+          "Falling_Back_Death-e9590e90": {
+            "east": [
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_005.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/east/frame_006.png"
+            ],
+            "west": [
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_005.png",
+              "A_middle-aged_science_guy_with/animations/Falling_Back_Death-e9590e90/west/frame_006.png"
+            ]
+          },
+          "Jumping-74f7c99d": {
+            "west": [
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_005.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_006.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_007.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/west/frame_008.png"
+            ],
+            "east": [
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_005.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_006.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_007.png",
+              "A_middle-aged_science_guy_with/animations/Jumping-74f7c99d/east/frame_008.png"
+            ]
+          },
+          "Breathing_Idle-d3deb533": {
+            "east": [
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/east/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/east/frame_003.png"
+            ],
+            "west": [
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/west/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Breathing_Idle-d3deb533/west/frame_003.png"
+            ]
+          },
+          "Celebration_Southward-947d4e92": {
+            "south": [
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_005.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_006.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_007.png",
+              "A_middle-aged_science_guy_with/animations/Celebration_Southward-947d4e92/south/frame_008.png"
+            ]
+          },
+          "Lead_Jab-7c8ae1e9": {
+            "east": [
+              "A_middle-aged_science_guy_with/animations/Lead_Jab-7c8ae1e9/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Lead_Jab-7c8ae1e9/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Lead_Jab-7c8ae1e9/east/frame_002.png"
+            ],
+            "west": [
+              "A_middle-aged_science_guy_with/animations/Lead_Jab-7c8ae1e9/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Lead_Jab-7c8ae1e9/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Lead_Jab-7c8ae1e9/west/frame_002.png"
+            ]
+          },
+          "Taking_Punch-a33d4f84": {
+            "east": [
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/east/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/east/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/east/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/east/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/east/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/east/frame_005.png"
+            ],
+            "west": [
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/west/frame_000.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/west/frame_001.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/west/frame_002.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/west/frame_003.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/west/frame_004.png",
+              "A_middle-aged_science_guy_with/animations/Taking_Punch-a33d4f84/west/frame_005.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "d4896d6e-9b8b-4152-a044-810e4a24a649",
+        "name": "Smaller version",
+        "prompt": "An adult science guy with a lab coat, sneakers, jeans, a black shirt with an atom symbol on it. He\u2019s got stubble and a beard but it\u2019s small and black room glasses and a cap on backwards he\u2019s fit looking but not buff.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-05-22T21:17:06.068789+00:00"
+      },
+      "folder": "Smaller_version",
+      "frames": {
+        "rotations": {
+          "south": "Smaller_version/rotations/south.png",
+          "south-east": "Smaller_version/rotations/south-east.png",
+          "east": "Smaller_version/rotations/east.png",
+          "north-east": "Smaller_version/rotations/north-east.png",
+          "north": "Smaller_version/rotations/north.png",
+          "north-west": "Smaller_version/rotations/north-west.png",
+          "west": "Smaller_version/rotations/west.png",
+          "south-west": "Smaller_version/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "1027a295-b1f6-40ed-b736-de7b0c7bae1e",
+        "name": "A kid version of thi",
+        "prompt": "An adult science guy with a lab coat, sneakers, jeans, a black shirt with an atom symbol on it. He\u2019s got stubble and a beard but it\u2019s small and black room glasses and a cap on backwards he\u2019s fit looking but not buff.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-05-22T21:28:45.14063+00:00"
+      },
+      "folder": "A_kid_version_of_thi",
+      "frames": {
+        "rotations": {
+          "south": "A_kid_version_of_thi/rotations/south.png",
+          "south-east": "A_kid_version_of_thi/rotations/south-east.png",
+          "east": "A_kid_version_of_thi/rotations/east.png",
+          "north-east": "A_kid_version_of_thi/rotations/north-east.png",
+          "north": "A_kid_version_of_thi/rotations/north.png",
+          "north-west": "A_kid_version_of_thi/rotations/north-west.png",
+          "west": "A_kid_version_of_thi/rotations/west.png",
+          "south-west": "A_kid_version_of_thi/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "328655b0-762e-4448-b93f-bbe52e31298a",
+        "name": "Smaller version of t",
+        "prompt": "An adult science guy with a lab coat, sneakers, jeans, a black shirt with an atom symbol on it. He\u2019s got stubble and a beard but it\u2019s small and black room glasses and a cap on backwards he\u2019s fit looking but not buff.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-05-22T21:32:10.898879+00:00"
+      },
+      "folder": "Smaller_version_of_t",
+      "frames": {
+        "rotations": {
+          "south": "Smaller_version_of_t/rotations/south.png",
+          "south-east": "Smaller_version_of_t/rotations/south-east.png",
+          "east": "Smaller_version_of_t/rotations/east.png",
+          "north-east": "Smaller_version_of_t/rotations/north-east.png",
+          "north": "Smaller_version_of_t/rotations/north.png",
+          "north-west": "Smaller_version_of_t/rotations/north-west.png",
+          "west": "Smaller_version_of_t/rotations/west.png",
+          "south-west": "Smaller_version_of_t/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "b8e6e546-6a9d-4f34-807d-bfea929bc035",
+        "name": "Smaller version of t (copy)",
+        "prompt": "An adult science guy with a lab coat, sneakers, jeans, a black shirt with an atom symbol on it. He\u2019s got stubble and a beard but it\u2019s small and black room glasses and a cap on backwards he\u2019s fit looking but not buff.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-05-22T21:43:37.165169+00:00"
+      },
+      "folder": "Smaller_version_of_t_copy",
+      "frames": {
+        "rotations": {
+          "south": "Smaller_version_of_t_copy/rotations/south.png",
+          "south-east": "Smaller_version_of_t_copy/rotations/south-east.png",
+          "east": "Smaller_version_of_t_copy/rotations/east.png",
+          "north-east": "Smaller_version_of_t_copy/rotations/north-east.png",
+          "north": "Smaller_version_of_t_copy/rotations/north.png",
+          "north-west": "Smaller_version_of_t_copy/rotations/north-west.png",
+          "west": "Smaller_version_of_t_copy/rotations/west.png",
+          "south-west": "Smaller_version_of_t_copy/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.0",
+  "export_date": "2026-05-23T03:24:11.496147"
+}
