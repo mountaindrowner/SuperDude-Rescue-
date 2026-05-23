@@ -324,20 +324,28 @@ window.SDD = window.SDD || {};
   // Coordinates target the painted serpentine island map at
   // assets/overworld.png. Top row 1-6 left->right, right-edge drop to
   // 7, bottom row 8-11 right->left, bottom drop to Eden #12.
+  // Each stage has two anchors against the painted island art:
+  //   (x, y)  = island visual center -> the white selection frame
+  //             is centered here.
+  //   (x, dy) = Danny's feet on the island's top surface.
+  // nextDir is the direction the painted path leads to the FOLLOWING
+  // island; the previous direction is the opposite of the previous
+  // stage's nextDir. Backward nav uses that opposite automatically.
   var STAGES = [
-    { d: 1, s: 1, x:  32, y:  50, name: 'COSMIC VOID' },
-    { d: 2, s: 1, x:  75, y:  44, name: 'DAWN SKY' },
-    { d: 2, s: 2, x: 115, y:  52, name: 'OCEAN' },
-    { d: 3, s: 1, x: 162, y:  60, name: 'MOUNTAINS' },
-    { d: 3, s: 2, x: 210, y:  50, name: 'FOREST' },
-    { d: 4, s: 1, x: 252, y:  50, name: 'DESERT' },
-    { d: 4, s: 2, x: 290, y: 108, name: 'NIGHT SKY' },
-    { d: 5, s: 1, x: 190, y:  98, name: 'CLOUDS' },
-    { d: 5, s: 2, x: 137, y:  96, name: 'UNDERWATER' },
-    { d: 6, s: 1, x:  88, y:  98, name: 'SAVANNA' },
-    { d: 6, s: 2, x:  40, y: 100, name: 'VILLAGE' },
-    { d: 7, s: 1, x: 241, y: 148, name: 'EDEN GARDEN' }
+    { d: 1, s: 1, x:  28, y:  58, dy:  50, name: 'COSMIC VOID', nextDir: 'right' },
+    { d: 2, s: 1, x:  73, y:  60, dy:  50, name: 'DAWN SKY',    nextDir: 'right' },
+    { d: 2, s: 2, x: 125, y:  70, dy:  56, name: 'OCEAN',       nextDir: 'right' },
+    { d: 3, s: 1, x: 188, y:  80, dy:  85, name: 'MOUNTAINS',   nextDir: 'right' },
+    { d: 3, s: 2, x: 248, y:  73, dy:  58, name: 'FOREST',      nextDir: 'right' },
+    { d: 4, s: 1, x: 297, y:  73, dy:  58, name: 'DESERT',      nextDir: 'down'  },
+    { d: 4, s: 2, x: 296, y: 140, dy: 128, name: 'NIGHT SKY',   nextDir: 'left'  },
+    { d: 5, s: 1, x: 232, y: 132, dy: 120, name: 'CLOUDS',      nextDir: 'left'  },
+    { d: 5, s: 2, x: 165, y: 135, dy: 122, name: 'UNDERWATER',  nextDir: 'left'  },
+    { d: 6, s: 1, x: 100, y: 130, dy: 118, name: 'SAVANNA',     nextDir: 'left'  },
+    { d: 6, s: 2, x:  37, y: 130, dy: 118, name: 'VILLAGE',     nextDir: 'down'  },
+    { d: 7, s: 1, x: 237, y: 162, dy: 158, name: 'EDEN GARDEN', nextDir: null    }
   ];
+  var OPPOSITE = { right: 'left', left: 'right', up: 'down', down: 'up' };
   // Optional swap-in art (assets/overworld.png). Drawn under the path
   // when present; otherwise we draw the gradient + starfield fallback.
   var overworldImg = new Image();
@@ -364,23 +372,40 @@ window.SDD = window.SDD || {};
       this.t = 0;
       this.idx = firstUnclearedIdx();
       this.msg = ''; this.msgT = 0;
-      this.dannyX = STAGES[this.idx].x; this.dannyY = STAGES[this.idx].y;
+      this.dannyX = STAGES[this.idx].x; this.dannyY = STAGES[this.idx].dy;
       A.startMusic('overworld');
     },
     update: function () {
       this.t++;
       if (this.msgT > 0) this.msgT--;
-      if (In.pressed('left')  && this.idx > 0)               { this.idx--; A.sfx('select'); }
-      if (In.pressed('right') && this.idx < STAGES.length-1) { this.idx++; A.sfx('select'); }
-      // danny glides to the selected node
-      this.dannyX += (STAGES[this.idx].x - this.dannyX) * 0.25;
-      this.dannyY += (STAGES[this.idx].y - this.dannyY) * 0.25;
+      // Direction-aware navigation: pressing a direction only moves if
+      // the painted path actually goes that way from the current node,
+      // AND the destination is unlocked. No padlocks - the gate IS
+      // the navigation block.
+      var dirs = ['left', 'right', 'up', 'down'];
+      for (var di = 0; di < dirs.length; di++) {
+        var d = dirs[di];
+        if (!In.pressed(d)) continue;
+        var cur = STAGES[this.idx];
+        // Forward along the painted path
+        if (cur.nextDir === d && this.idx < STAGES.length - 1) {
+          if (stageOpen(this.idx + 1)) { this.idx++; A.sfx('select'); }
+          else { A.sfx('bump'); }
+          break;
+        }
+        // Backward along the painted path (opposite of prev's nextDir)
+        if (this.idx > 0 &&
+            OPPOSITE[STAGES[this.idx - 1].nextDir] === d) {
+          this.idx--; A.sfx('select');
+          break;
+        }
+      }
+      // Danny glides to where his feet should rest on the selected island
+      this.dannyX += (STAGES[this.idx].x  - this.dannyX) * 0.25;
+      this.dannyY += (STAGES[this.idx].dy - this.dannyY) * 0.25;
       if (In.confirm()) {
         var st = STAGES[this.idx];
-        if (!stageOpen(this.idx)) {
-          this.msg = 'LOCKED - FINISH "' + STAGES[this.idx - 1].name + '" FIRST';
-          this.msgT = 110; A.sfx('bump');
-        } else if (!SDD.levels || !SDD.levels[st.d + '-' + st.s]) {
+        if (!SDD.levels || !SDD.levels[st.d + '-' + st.s]) {
           this.msg = st.name + ' - COMING SOON!'; this.msgT = 130; A.sfx('bump');
         } else {
           A.sfx('enter'); go('level', { day: st.d, stage: st.s });
@@ -408,37 +433,25 @@ window.SDD = window.SDD || {};
         g.stroke();
         g.setLineDash([]);
       }
-      // State overlays sit ON TOP of the painted islands:
-      //   locked -> dim translucent square,
-      //   done   -> soft pulsing green halo,
-      //   placeholder node disk only when the painted art isn't loaded.
-      var pulse = 0.25 + 0.12 * Math.sin(this.t * 0.1);
-      for (var i = 0; i < STAGES.length; i++) {
-        var st = STAGES[i], open = stageOpen(i), done = stageDone(st);
-        if (done) {
-          g.fillStyle = 'rgba(125,255,154,' + pulse.toFixed(3) + ')';
-          g.beginPath(); g.arc(st.x, st.y, 14, 0, Math.PI * 2); g.fill();
-        }
-        if (!open) {
-          g.fillStyle = 'rgba(8,8,20,0.55)';
-          g.fillRect(st.x - 12, st.y - 12, 24, 24);
-          // small padlock so locked state reads even on the painted bg
-          g.fillStyle = '#cdd2e4';
-          g.fillRect(st.x - 2, st.y + 1, 4, 4);
-          g.fillRect(st.x - 1, st.y - 1, 2, 2);
-        }
-        if (!overworldImgOk) {
-          // Fallback node disk + number so the gradient screen is still usable.
+      // The painted art is the entire state UI - no locked/done
+      // overlays. Only the current node gets a white selection frame
+      // centered on its island. Fallback mode (no painted image) still
+      // draws node disks + numbers so the gradient screen is usable
+      // while the PNG is missing.
+      if (!overworldImgOk) {
+        for (var i = 0; i < STAGES.length; i++) {
+          var st = STAGES[i];
+          var open = stageOpen(i), done = stageDone(st);
           g.fillStyle = open ? (done ? '#7dff9a' : '#ffd23a') : '#5a5f78';
-          g.beginPath(); g.arc(st.x, st.y, 7, 0, Math.PI * 2); g.fill();
-          text(g, '' + (i + 1), st.x, st.y - 3,
+          g.beginPath(); g.arc(st.x, st.dy, 7, 0, Math.PI * 2); g.fill();
+          text(g, '' + (i + 1), st.x, st.dy - 3,
             open ? '#1a1640' : '#9498ac', 1, 'center');
         }
-        if (i === this.idx) {
-          g.strokeStyle = '#ffffff'; g.lineWidth = 1;
-          g.strokeRect(st.x - 11, st.y - 11, 22, 22);
-        }
       }
+      // Selection frame centered on the current island.
+      var sel = STAGES[this.idx];
+      g.strokeStyle = '#ffffff'; g.lineWidth = 1;
+      g.strokeRect(sel.x - 13, sel.y - 16, 26, 32);
       // Danny walking between islands
       var dGap = STAGES[this.idx].x - this.dannyX;
       var dY = this.dannyY - 26 + Math.sin(this.t * 0.1) * 1.5;
