@@ -839,7 +839,7 @@ window.SDD = window.SDD || {};
   // The renderer crops each frame to the per-animation non-transparent
   // bounding box and scales the crop to this height. Big > small gives
   // the "I just took a hit" health-bar feedback.
-  var PL_DISPLAY_H = { big: 36, small: 21 };
+  var PL_DISPLAY_H = { big: 36, small: 26 };
 
   // Precomputed per-animation union bounding boxes (non-transparent
   // pixels) for every PixelLab frame. The PNGs have huge transparent
@@ -950,6 +950,19 @@ window.SDD = window.SDD || {};
     pixFrame: pixFrame,
     pixBBox: pixBBox,
     pixDraw: pixDraw,
+    // Convenience: draw PixelLab Danny at the same (x, y) top-left that
+    // the old code-drawn sprites used in scenes (menu, intro, finale,
+    // overworld, results, game over). Falls back to the code-drawn art
+    // if PixelLab isn't loaded.
+    drawDanny: function (g, size, anim, dir, idx, x, y) {
+      var oldW = size === 'big' ? 28 : 22;
+      var oldH = size === 'big' ? 38 : 24;
+      if (pixelLab.ready && pixelLab.failed === 0 &&
+          pixDraw(g, size, anim, dir, idx, x + oldW / 2, y + oldH)) return;
+      var legacy = anim === 'celebrate' ? 'victory' : anim;
+      var s = sprites['danny_' + size + '_' + legacy + '_' + (dir === 'east' ? 'r' : 'l')];
+      if (s) g.drawImage(s, x, y);
+    },
     hasRealLogo: function () { return realLogoOk; },
     realLogo: function () { return realLogo; }
   };

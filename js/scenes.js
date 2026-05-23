@@ -157,22 +157,22 @@ window.SDD = window.SDD || {};
           g.fillRect(x - 6, y - 8, 58, 4);
         }
       }
-      var sprName = 'danny_small_idle_r';
+      var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
         machine(g, 150, 96, false, false);
-        g.drawImage(S.get(sprName), 96, 116);
+        S.drawDanny(g, 'small', 'idle', 'east', idleIdx, 96, 116);
         text(g, 'THE LAB - PRESENT DAY', 160, 26, '#9aa6c8', 1, 'center');
       } else if (b === 1) {
         machine(g, 138, 92, (t % 16 < 8), false);
-        g.drawImage(S.get('danny_small_jump_r'), 100, 116);
+        S.drawDanny(g, 'small', 'jump', 'east', 3, 100, 116);
       } else if (b === 2) {
         machine(g, 138, 92, true, false);
         electricArcs(g, 161, 100, t, 5, 38);
         if (t % 18 < 9) { g.fillStyle = 'rgba(190,240,255,0.12)'; g.fillRect(0, 0, 320, 180); }
-        g.drawImage(S.get('danny_small_hurt_l'), 150, 70 + Math.sin(t * 0.2) * 6);
+        S.drawDanny(g, 'small', 'hurt', 'west', Math.min(5, Math.floor(t / 4) % 6), 150, 70 + Math.sin(t * 0.2) * 6);
       } else {
         machine(g, 150, 100, false, true);
-        g.drawImage(S.get(sprName), 96, 124);
+        S.drawDanny(g, 'small', 'idle', 'east', idleIdx, 96, 124);
         // dawn ground
         g.fillStyle = '#86cf45'; g.fillRect(0, 150, 320, 30);
         g.fillStyle = '#ffd23a';
@@ -235,7 +235,7 @@ window.SDD = window.SDD || {};
       var bob = Math.sin(this.t * 0.05) * 2;
       tsh(g, 'SUPER DUDE', 160, 30 + bob, '#ffd23a', '#a8631a', 3, 'center');
       tsh(g, 'DANNY', 160, 56 + bob, '#ff5d4a', '#7a1f16', 5, 'center');
-      g.drawImage(S.get('danny_big_idle_r'), 40, 96);
+      S.drawDanny(g, 'big', 'idle', 'east', Math.floor(this.t / 18) % 4, 40, 96);
 
       for (var i = 0; i < this.items.length; i++) {
         var y = 104 + i * 16;
@@ -399,8 +399,16 @@ window.SDD = window.SDD || {};
           g.strokeRect(nd.x - 12, nd.y - 12, 24, 24);
         }
       }
-      // danny on the map
-      g.drawImage(S.get('danny_small_idle_r'), this.dannyX - 8, this.dannyY - 26 + Math.sin(this.t * 0.1) * 1.5);
+      // danny on the map - walks toward selected node
+      var dGap = NODES[this.idx].x - this.dannyX;
+      var dY = this.dannyY - 26 + Math.sin(this.t * 0.1) * 1.5;
+      if (Math.abs(dGap) > 1) {
+        S.drawDanny(g, 'small', 'run', dGap < 0 ? 'west' : 'east',
+          Math.floor(this.t / 4) % 4, this.dannyX - 11, dY);
+      } else {
+        S.drawDanny(g, 'small', 'idle', 'east',
+          Math.floor(this.t / 18) % 4, this.dannyX - 11, dY);
+      }
 
       // header / selected day info
       g.fillStyle = 'rgba(8,8,20,0.8)'; g.fillRect(0, 0, 320, 22);
@@ -1111,7 +1119,7 @@ window.SDD = window.SDD || {};
       var sf = SDD.save.stagesForDay(day);
       var title = sf > 1 ? ('DAY ' + day + '-' + stage + ' COMPLETE!') : ('DAY ' + day + ' COMPLETE!');
       tsh(g, title, 160, 24, '#ffffff', '#a8631a', 3, 'center');
-      g.drawImage(S.get('danny_big_jump_r'), 144, 58 + Math.sin(this.t * 0.1) * 3);
+      S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(this.t / 5) % 9, 144, 58 + Math.sin(this.t * 0.1) * 3);
 
       var sv = SDD.save.data, key = day + '-' + stage;
       var bestT = sv.bestTimes && sv.bestTimes[key];
@@ -1142,7 +1150,7 @@ window.SDD = window.SDD || {};
       g.fillStyle = '#14101e'; g.fillRect(0, 0, 320, 180);
       drawStarfield(g, this.t);
       tsh(g, 'GAME OVER', 160, 52, '#ff5d4a', '#5a1810', 3, 'center');
-      g.drawImage(S.get('danny_small_hurt_r'), 152, 92);
+      S.drawDanny(g, 'small', 'die', 'east', 6, 152, 92);
       text(g, "DANNY WILL TRY AGAIN!", 160, 124, '#dfe6ff', 1, 'center');
       if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 150, '#ffd23a', 1, 'center');
     }
@@ -1209,20 +1217,20 @@ window.SDD = window.SDD || {};
         }
       }
 
-      var sprName = 'danny_big_idle_r';
+      var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
         machine(g, 132, 84, false, false, false);
-        g.drawImage(S.get(sprName), 100, 102);
+        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 100, 102);
         text(g, "DANNY'S LAB", 160, 24, '#cdd6e6', 1, 'center');
       } else if (b === 1) {
         machine(g, 132, 84, (t % 24 < 12), false, false);
-        g.drawImage(S.get(sprName), 100, 102);
+        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 100, 102);
       } else if (b === 2) {
         // machine glowing intensely
         machine(g, 132, 84, true, false, true);
         electricArcs(g, 160, 105, t, 6, 48);
         if (t % 22 < 10) { g.fillStyle = 'rgba(190,240,255,0.14)'; g.fillRect(0, 0, 320, 180); }
-        g.drawImage(S.get('danny_big_jump_r'), 100, 102);
+        S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 100, 102);
       } else if (b === 3) {
         // swirl
         for (var i = 0; i < 28; i++) {
@@ -1232,11 +1240,11 @@ window.SDD = window.SDD || {};
           g.fillStyle = 'hsl(' + Math.floor(a * 80 + t * 4) + ',80%,75%)';
           g.fillRect(cx, cy, 3, 3);
         }
-        g.drawImage(S.get('danny_big_jump_r'), 144, 70 + Math.sin(t * 0.2) * 10);
+        S.drawDanny(g, 'big', 'jump', 'east', 3, 144, 70 + Math.sin(t * 0.2) * 10);
       } else if (b === 4) {
         // arrived in lab
         machine(g, 132, 84, false, false, false);
-        g.drawImage(S.get(sprName), 168, 102);
+        S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 168, 102);
         // lab floor + door
         g.fillStyle = '#3a435c'; g.fillRect(0, 146, 320, 34);
         g.fillStyle = '#2a3350'; g.fillRect(40, 100, 24, 46);
