@@ -147,6 +147,20 @@ window.SDD = window.SDD || {};
     { lines: ['BUT THE JUMP WENT WRONG', 'AND THE MACHINE BROKE APART!'] },
     { lines: ['STRANDED IN TIME, DANNY MUST FIND', 'POWER CORES AND MACHINE PARTS', 'TO REBUILD IT AND GET HOME.'] }
   ];
+  // Helper for drawing Danny at an arbitrary scale (he's fixed-size in
+  // the sprite renderer; the canvas transform handles scaling without
+  // smoothing so the pixel-art look survives).
+  // (fx, fy) = the position of his FEET centre on screen.
+  function drawDannyScaled(g, sz, anim, dir, frame, fx, fy, scale) {
+    var w = sz === 'big' ? 28 : 22;
+    var h = sz === 'big' ? 38 : 24;
+    g.save();
+    g.imageSmoothingEnabled = false;
+    g.translate(fx - (w * scale) / 2, fy - h * scale);
+    g.scale(scale, scale);
+    S.drawDanny(g, sz, anim, dir, frame, 0, 0);
+    g.restore();
+  }
   SDD.scenes.intro = {
     enter: function () { this.beat = 0; this.t = 0; },
     update: function () {
@@ -184,7 +198,7 @@ window.SDD = window.SDD || {};
           // PNG is 1024x1536 (2:3 portrait). Render at 130 px tall
           // (~2x the previous 64) so it actually reads as the focal
           // object of the scene. cy is the machine's vertical center.
-          var mh = 130, mw = Math.round(mh * (1024 / 1536));  // ~87w
+          var mh = 150, mw = Math.round(mh * (1024 / 1536));  // ~100w
           var mx = cx - mw / 2, my = cy - mh / 2;
           g.imageSmoothingEnabled = false;
           g.drawImage(ART_MACHINE.img, mx, my, mw, mh);
@@ -216,32 +230,31 @@ window.SDD = window.SDD || {};
           g.fillRect(x - 6, y - 8, 58, 4);
         }
       }
-      // Big Danny is 24x36; small was 18x22. Sprite-x = feet-center - 12,
-      // sprite-y = feet-y - 36. The intro now uses 'big' Danny since the
-      // larger machine made small Danny look tiny next to it.
+      // Big Danny drawn at 2x scale in the intro so he reads at the
+      // right weight next to the larger painted machine. drawDannyScaled
+      // takes feet-centre coordinates.
       var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
-        machine(g, 160, 90, false, false);
-        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 60, 122);
+        machine(g, 160, 97, false, false);
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 70, 156, 2);
         text(g, 'THE LAB - PRESENT DAY', 160, 26, '#9aa6c8', 1, 'center');
       } else if (b === 1) {
-        machine(g, 160, 90, (t % 16 < 8), false);
-        S.drawDanny(g, 'big', 'jump', 'east', 3, 60, 122);
+        machine(g, 160, 97, (t % 16 < 8), false);
+        drawDannyScaled(g, 'big', 'jump', 'east', 3, 70, 156, 2);
       } else if (b === 2) {
-        machine(g, 160, 90, true, false);
-        // More electric pulses at varying sizes - three rings of arcs
-        // around the machine center, each pulsing at a different rate
-        // and length so the surge feels chaotic.
-        electricArcs(g, 160, 90, t,        6, 70);
-        electricArcs(g, 160, 90, t + 5,    9, 44);
-        electricArcs(g, 160, 90, t + 11,  12, 24);
-        // (no more full-screen white flash; the arc layering carries
-        // the energy on its own.)
-        S.drawDanny(g, 'big', 'hurt', 'west', Math.min(5, Math.floor(t / 4) % 6),
-          138, 50 + Math.sin(t * 0.2) * 8);
+        machine(g, 160, 97, true, false);
+        // Three rings of arcs at varying lengths layered around the
+        // machine's centre, each at a different phase so the surge
+        // looks chaotic instead of mechanical.
+        electricArcs(g, 160,  97, t,        6, 78);
+        electricArcs(g, 160,  97, t + 5,    9, 48);
+        electricArcs(g, 160,  97, t + 11,  12, 26);
+        drawDannyScaled(g, 'big', 'hurt', 'west',
+          Math.min(5, Math.floor(t / 4) % 6),
+          230, 140 + Math.sin(t * 0.2) * 10, 2);
       } else {
-        machine(g, 160, 96, false, true);
-        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 60, 120);
+        machine(g, 160, 103, false, true);
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 70, 150, 2);
         // dawn ground
         g.fillStyle = '#86cf45'; g.fillRect(0, 150, 320, 30);
         g.fillStyle = '#ffd23a';
