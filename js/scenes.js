@@ -324,26 +324,26 @@ window.SDD = window.SDD || {};
   // Coordinates target the painted serpentine island map at
   // assets/overworld.png. Top row 1-6 left->right, right-edge drop to
   // 7, bottom row 8-11 right->left, bottom drop to Eden #12.
-  // Each stage has two anchors against the painted island art:
-  //   (x, y)  = island visual center -> the white selection frame
-  //             is centered here.
-  //   (x, dy) = Danny's feet on the island's top surface.
-  // nextDir is the direction the painted path leads to the FOLLOWING
-  // island; the previous direction is the opposite of the previous
-  // stage's nextDir. Backward nav uses that opposite automatically.
+  // (x, dy) is Danny's standing position on the painted island's
+  // walkable top surface. Coordinates measured against the painted
+  // overworld at game-native 320x180 resolution, then verified by
+  // /tmp/test_overworld.js (which holds the ground-truth bboxes and
+  // walkable-y bands for each island). nextDir is the direction the
+  // painted path leads to the FOLLOWING island; the previous direction
+  // is the opposite of the previous stage's nextDir.
   var STAGES = [
-    { d: 1, s: 1, x:  28, y:  58, dy:  50, name: 'COSMIC VOID', nextDir: 'right' },
-    { d: 2, s: 1, x:  73, y:  60, dy:  50, name: 'DAWN SKY',    nextDir: 'right' },
-    { d: 2, s: 2, x: 125, y:  70, dy:  56, name: 'OCEAN',       nextDir: 'right' },
-    { d: 3, s: 1, x: 188, y:  80, dy:  85, name: 'MOUNTAINS',   nextDir: 'right' },
-    { d: 3, s: 2, x: 248, y:  73, dy:  58, name: 'FOREST',      nextDir: 'right' },
-    { d: 4, s: 1, x: 297, y:  73, dy:  58, name: 'DESERT',      nextDir: 'down'  },
-    { d: 4, s: 2, x: 296, y: 140, dy: 128, name: 'NIGHT SKY',   nextDir: 'left'  },
-    { d: 5, s: 1, x: 232, y: 132, dy: 120, name: 'CLOUDS',      nextDir: 'left'  },
-    { d: 5, s: 2, x: 165, y: 135, dy: 122, name: 'UNDERWATER',  nextDir: 'left'  },
-    { d: 6, s: 1, x: 100, y: 130, dy: 118, name: 'SAVANNA',     nextDir: 'left'  },
-    { d: 6, s: 2, x:  37, y: 130, dy: 118, name: 'VILLAGE',     nextDir: 'down'  },
-    { d: 7, s: 1, x: 237, y: 162, dy: 158, name: 'EDEN GARDEN', nextDir: null    }
+    { d: 1, s: 1, x:  32, dy:  52, name: 'COSMIC VOID', nextDir: 'right' },
+    { d: 2, s: 1, x:  76, dy:  52, name: 'DAWN SKY',    nextDir: 'right' },
+    { d: 2, s: 2, x: 128, dy:  60, name: 'OCEAN',       nextDir: 'right' },
+    { d: 3, s: 1, x: 188, dy:  56, name: 'MOUNTAINS',   nextDir: 'right' },
+    { d: 3, s: 2, x: 244, dy:  54, name: 'FOREST',      nextDir: 'right' },
+    { d: 4, s: 1, x: 296, dy:  60, name: 'DESERT',      nextDir: 'down'  },
+    { d: 4, s: 2, x: 292, dy: 116, name: 'NIGHT SKY',   nextDir: 'left'  },
+    { d: 5, s: 1, x: 232, dy: 110, name: 'CLOUDS',      nextDir: 'left'  },
+    { d: 5, s: 2, x: 164, dy: 116, name: 'UNDERWATER',  nextDir: 'left'  },
+    { d: 6, s: 1, x: 100, dy: 116, name: 'SAVANNA',     nextDir: 'left'  },
+    { d: 6, s: 2, x:  40, dy: 114, name: 'VILLAGE',     nextDir: 'down'  },
+    { d: 7, s: 1, x: 240, dy: 160, name: 'EDEN GARDEN', nextDir: null    }
   ];
   var OPPOSITE = { right: 'left', left: 'right', up: 'down', down: 'up' };
   // Optional swap-in art (assets/overworld.png). Drawn under the path
@@ -372,7 +372,8 @@ window.SDD = window.SDD || {};
       this.t = 0;
       this.idx = firstUnclearedIdx();
       this.msg = ''; this.msgT = 0;
-      this.dannyX = STAGES[this.idx].x; this.dannyY = STAGES[this.idx].dy;
+      this.dannyX = STAGES[this.idx].x;
+      this.dannyY = STAGES[this.idx].dy;
       A.startMusic('overworld');
     },
     update: function () {
@@ -428,16 +429,14 @@ window.SDD = window.SDD || {};
         g.strokeStyle = 'rgba(255,230,150,0.5)'; g.lineWidth = 1;
         g.setLineDash([3, 3]);
         g.beginPath();
-        g.moveTo(STAGES[0].x, STAGES[0].y);
-        for (var p = 1; p < STAGES.length; p++) g.lineTo(STAGES[p].x, STAGES[p].y);
+        g.moveTo(STAGES[0].x, STAGES[0].dy);
+        for (var p = 1; p < STAGES.length; p++) g.lineTo(STAGES[p].x, STAGES[p].dy);
         g.stroke();
         g.setLineDash([]);
       }
-      // The painted art is the entire state UI - no locked/done
-      // overlays. Only the current node gets a white selection frame
-      // centered on its island. Fallback mode (no painted image) still
-      // draws node disks + numbers so the gradient screen is usable
-      // while the PNG is missing.
+      // Painted art is the entire state UI - no overlays per island.
+      // Fallback mode (no painted image yet) still draws node disks
+      // so the gradient backdrop is usable.
       if (!overworldImgOk) {
         for (var i = 0; i < STAGES.length; i++) {
           var st = STAGES[i];
@@ -448,10 +447,6 @@ window.SDD = window.SDD || {};
             open ? '#1a1640' : '#9498ac', 1, 'center');
         }
       }
-      // Selection frame centered on the current island.
-      var sel = STAGES[this.idx];
-      g.strokeStyle = '#ffffff'; g.lineWidth = 1;
-      g.strokeRect(sel.x - 13, sel.y - 16, 26, 32);
       // Danny walking between islands
       var dGap = STAGES[this.idx].x - this.dannyX;
       var dY = this.dannyY - 26 + Math.sin(this.t * 0.1) * 1.5;
@@ -462,6 +457,24 @@ window.SDD = window.SDD || {};
         S.drawDanny(g, 'small', 'idle', 'east',
           Math.floor(this.t / 18) % 4, this.dannyX - 11, dY);
       }
+      // Selection indicator: a small yellow bobbing arrow pointing
+      // down at Danny's head. Always follows Danny so it can never
+      // land off-island. Replaces the old white frame.
+      var ax = Math.round(this.dannyX);
+      var ay = Math.round(dY - 8 + Math.sin(this.t * 0.15) * 1.5);
+      // Black outline so the arrow stays readable on any biome color
+      g.fillStyle = '#1a1640';
+      g.fillRect(ax - 4, ay,     9, 1);
+      g.fillRect(ax - 3, ay + 1, 7, 1);
+      g.fillRect(ax - 2, ay + 2, 5, 1);
+      g.fillRect(ax - 1, ay + 3, 3, 1);
+      g.fillRect(ax,     ay + 4, 1, 1);
+      // Yellow fill on top of the outline
+      g.fillStyle = '#ffd23a';
+      g.fillRect(ax - 3, ay,     7, 1);
+      g.fillRect(ax - 2, ay + 1, 5, 1);
+      g.fillRect(ax - 1, ay + 2, 3, 1);
+      g.fillRect(ax,     ay + 3, 1, 1);
       // Header (top strip, 18px) - title + selected biome name
       g.fillStyle = 'rgba(8,8,20,0.78)'; g.fillRect(0, 0, 320, 18);
       text(g, 'CREATION MAP', 6, 6, '#ffd23a', 1, 'left');
