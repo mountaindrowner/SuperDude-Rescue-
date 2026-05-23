@@ -22,20 +22,31 @@ window.SDD = window.SDD || {};
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // ============== TEACH (0-50): floaty intro on a small island ==============
-  ground(0, 18);
+  // ============== TEACH (0-30): floaty intro on a tiny moonlet ==========
+  // Shorter starting island, then a drifting comet bridge to a small
+  // mid-air moonlet - the level reads as "space platforms" from the
+  // very first second instead of "stand on a long ground stripe".
+  ground(0, 7);                                            // tiny starting moonlet
   sp('player', 3, 10);
-  sp('core', 6, 9); sp('core', 9, 9);
-  qb(13, 6, 'G');
-  sp('walker', 16, 10);
+  sp('core', 6, 9);
+
+  // Drifting comet bridges the first gap.
+  mover(9, 10, 14, 10, 0.022, 0);
+  qb(11, 6, 'G');                                          // growth power-up over the gap (bonk while crossing)
+  sp('core', 12, 8);
+
+  // Small landing moonlet with the first walker
+  box(17, 10, 21, 13, 'X');
+  sp('walker', 19, 9);
+  sp('core', 19, 8);
 
   // First cosmic-platform hop (drifting comet)
-  mover(20, 9, 24, 9, 0.022, 0);
-  sp('core', 22, 7);
+  mover(23, 9, 28, 9, 0.022, 0);
+  sp('core', 25, 7);
 
   // Tiny landing island
-  box(26, 10, 29, 13, 'X');
-  sp('core', 27, 8);
+  box(29, 10, 31, 13, 'X');
+  sp('core', 30, 8);
 
   // Two more drifting platforms with cores
   mover(31, 8, 35, 8, 0.022, 1.2);
@@ -115,21 +126,20 @@ window.SDD = window.SDD || {};
   meteor(178, 1, 70, 1);
   meteor(188, 1, 70, -1);
 
-  // Goal island at altitude
+  // Goal island at altitude - last island in the void.
   box(200, 5, 207, 6, 'X');
   oneway(209, 213, 5);
   box(215, 4, 222, 5, 'X');                                // goal pedestal at altitude
-  box(259, 0, 259, 13, 'X');
+  box(259, 0, 259, 13, 'X');                               // right wall (end of level)
   sp('timepart', 218, 3);
   sp('walker', 204, 5);
-  sp('wisp', 211, 3); sp('wisp', 225, 4);
+  sp('wisp', 211, 3);
   sp('core', 202, 3); sp('core', 210, 3); sp('core', 218, 2);
-  sp('core', 230, 7); sp('core', 240, 9); sp('core', 250, 9);
-  // Decorative ground stripe across the bottom so the world has SOMETHING
-  // below the cosmic platforms - prevents pit anxiety.
-  ground(225, 258);
-  // few last cores at ground level for safety
-  sp('core', 245, 9); sp('core', 255, 9);
+  // Bottom decorative ground removed - the level is fully "space" now.
+  // Goal is at col 218 so the player never needs to walk past it; the
+  // right-side void (cols 224-258) is just visual breathing room
+  // before the right-wall. Falling past the bottom triggers the
+  // engine's standard pit-death (same as the other walking levels).
 
   SDD.levels = SDD.levels || {};
   SDD.levels['4-2'] = {
