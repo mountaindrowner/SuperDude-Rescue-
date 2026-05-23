@@ -16,13 +16,13 @@ window.SDD = window.SDD || {};
     ctx.drawImage(s, dx, dy);
   }
   // soft blob shadow at an entity's feet
-  function softShadow(ctx, e, cam) {
+  function softShadow(ctx, e, cam, rx, ry) {
     var sx = e.x + e.w / 2 - cam.x, sy = e.y + e.h - cam.y;
     ctx.save();
     ctx.globalAlpha = 0.26;
     ctx.fillStyle = '#0a0a16';
     ctx.beginPath();
-    ctx.ellipse(sx, sy, e.w * 0.62, 2.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx, sy, rx || (e.w * 0.62), ry || 2.6, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -276,7 +276,12 @@ window.SDD = window.SDD || {};
   };
 
   Player.prototype.draw = function (ctx, cam) {
-    if (!this.dead) softShadow(ctx, this, cam);
+    if (!this.dead) {
+      // Shadow scales with the visible PixelLab sprite, not the hitbox -
+      // so big Danny gets a big shadow and small Danny gets a small one.
+      var dh = SDD.sprites.pixDisplayH[this.big ? 'big' : 'small'];
+      softShadow(ctx, this, cam, dh * 0.42, Math.max(2, dh * 0.11));
+    }
     // Heavy "ouch" pose plays for the first ~24 steps of invuln, then we
     // fall back to the classic invincibility flicker.
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
