@@ -325,18 +325,18 @@ window.SDD = window.SDD || {};
   // assets/overworld.png. Top row 1-6 left->right, right-edge drop to
   // 7, bottom row 8-11 right->left, bottom drop to Eden #12.
   var STAGES = [
-    { d: 1, s: 1, x:  25, y:  46, name: 'COSMIC VOID' },
-    { d: 2, s: 1, x:  74, y:  46, name: 'DAWN SKY' },
-    { d: 2, s: 2, x: 122, y:  46, name: 'OCEAN' },
-    { d: 3, s: 1, x: 172, y:  46, name: 'MOUNTAINS' },
-    { d: 3, s: 2, x: 220, y:  46, name: 'FOREST' },
-    { d: 4, s: 1, x: 268, y:  46, name: 'DESERT' },
-    { d: 4, s: 2, x: 296, y: 100, name: 'NIGHT SKY' },
-    { d: 5, s: 1, x: 230, y: 102, name: 'CLOUDS' },
-    { d: 5, s: 2, x: 174, y: 108, name: 'UNDERWATER' },
-    { d: 6, s: 1, x: 114, y: 108, name: 'SAVANNA' },
-    { d: 6, s: 2, x:  42, y: 110, name: 'VILLAGE' },
-    { d: 7, s: 1, x: 188, y: 152, name: 'EDEN GARDEN' }
+    { d: 1, s: 1, x:  32, y:  50, name: 'COSMIC VOID' },
+    { d: 2, s: 1, x:  75, y:  44, name: 'DAWN SKY' },
+    { d: 2, s: 2, x: 115, y:  52, name: 'OCEAN' },
+    { d: 3, s: 1, x: 162, y:  60, name: 'MOUNTAINS' },
+    { d: 3, s: 2, x: 210, y:  50, name: 'FOREST' },
+    { d: 4, s: 1, x: 252, y:  50, name: 'DESERT' },
+    { d: 4, s: 2, x: 290, y: 108, name: 'NIGHT SKY' },
+    { d: 5, s: 1, x: 190, y:  98, name: 'CLOUDS' },
+    { d: 5, s: 2, x: 137, y:  96, name: 'UNDERWATER' },
+    { d: 6, s: 1, x:  88, y:  98, name: 'SAVANNA' },
+    { d: 6, s: 2, x:  40, y: 100, name: 'VILLAGE' },
+    { d: 7, s: 1, x: 241, y: 148, name: 'EDEN GARDEN' }
   ];
   // Optional swap-in art (assets/overworld.png). Drawn under the path
   // when present; otherwise we draw the gradient + starfield fallback.
