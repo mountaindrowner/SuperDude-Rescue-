@@ -279,6 +279,45 @@ window.SDD = window.SDD || {};
     if (!this.dead) softShadow(ctx, this, cam);
     if (this.invuln > 0 && (this.invuln % 8) < 4) return;
     var size = this.big ? 'big' : 'small';
+
+    // Prefer the PixelLab PNG sprites once they've finished loading.
+    if (SDD.sprites.pixelLab && SDD.sprites.pixelLab.ready &&
+        SDD.sprites.pixelLab.failed === 0) {
+      var anim, idx, dirPL = this.facing > 0 ? 'east' : 'west';
+      if (this.win) {
+        anim = 'celebrate'; dirPL = 'south';
+        idx = Math.floor(this.animT / 5) % 9;
+      } else if (this.dead) {
+        anim = 'die';
+        idx = Math.min(6, Math.floor(this.deadT / 10));
+      } else if (this.blastAnim > 0) {
+        anim = 'blast';
+        idx = Math.floor((11 - this.blastAnim) / 4);
+      } else if (this.landT > 0) {
+        anim = 'jump'; idx = 8;
+      } else if (!this.onGround) {
+        anim = 'jump';
+        if (this.vy < -3) idx = 1;
+        else if (this.vy < 0) idx = 3;
+        else if (this.vy < 2) idx = 5;
+        else idx = 7;
+      } else if (Math.abs(this.vx) > 0.4) {
+        anim = 'walk';
+        idx = Math.floor(this.animT / 5) % 6;
+      } else {
+        anim = 'idle';
+        idx = Math.floor(this.animT / 18) % 4;
+      }
+      var img = SDD.sprites.pixFrame(size, anim, dirPL, idx);
+      if (img) {
+        var sz = SDD.sprites.pixSize[size];
+        var dx = Math.round(this.x + this.w / 2 - cam.x - sz.w / 2);
+        var dy = Math.round(this.y + this.h - cam.y - sz.h);
+        ctx.drawImage(img, dx, dy, sz.w, sz.h);
+        return;
+      }
+    }
+    // Fallback: code-drawn Danny (used during loading and if the PNGs are missing)
     var fr = this.dead ? 'die' : this.frame;
     var dir = this.facing > 0 ? 'r' : 'l';
     drawBC(ctx, 'danny_' + size + '_' + fr + '_' + dir, this, cam);

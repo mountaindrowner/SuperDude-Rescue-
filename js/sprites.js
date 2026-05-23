@@ -800,6 +800,82 @@ window.SDD = window.SDD || {};
     buildLogoPlaceholder();
   }
 
+  // ---- PixelLab Danny sprite loader -----------------------------------
+  // Asynchronously loads the real PNG-per-frame sprite sheets that PixelLab
+  // exported (assets/Super Dude Danny ...). Once every frame has loaded
+  // (or failed), pixelLab.ready flips true and the Player.draw uses the
+  // real art. Falls back to the code-drawn Danny if the assets are missing.
+  var PL_BIG  = 'assets/Super Dude Danny Big Sprites/superdude dany big/animations';
+  var PL_SM   = 'assets/Super Dude Danny Small Sprites -';
+  var PL_MANIFEST = {
+    big: {
+      base: PL_BIG,
+      anims: {
+        idle:      { folder: 'Breathing_Idle-d3deb533', frames: 4 },
+        walk:      { folder: 'Walk-a2ee175e',           frames: 6 },
+        run:       { folder: 'Running-b41545c8',        frames: 4 },
+        jump:      { folder: 'Jumping-74f7c99d',        frames: 9 },
+        blast:     { folder: 'Blast-7c8ae1e9',          frames: 3 },
+        hurt:      { folder: 'Taking_Punch-a33d4f84',   frames: 6 },
+        die:       { folder: 'Falling_Back_Death-e9590e90', frames: 7 },
+        celebrate: { folder: 'Celebration_Southward-947d4e92', frames: 9, south: true }
+      }
+    },
+    small: {
+      base: PL_SM,
+      anims: {
+        idle:      { folder: 'Super Dude Danny Small Sprites - Breathing_Idle-a56ef1e4', frames: 4 },
+        walk:      { folder: 'Super Dude Danny Small Sprites - walk-',                    frames: 6 },
+        run:       { folder: 'Super Dude Danny Small Sprites - Running-393e3511',         frames: 4 },
+        jump:      { folder: 'Super Dude Danny Small Sprites - Jumping-f1b9a485',         frames: 9 },
+        blast:     { folder: 'Super Dude Danny Small Sprites - blast-40255b94',           frames: 6 },
+        hurt:      { folder: 'Super Dude Danny Small Sprites - Taking_Punch-6de79945',    frames: 6 },
+        die:       { folder: 'Super Dude Danny Small Sprites - Falling_Back_Death-e41fb900', frames: 7 },
+        celebrate: { folder: 'Super Dude Danny Small Sprites - Celebrating_southward-8d9f3045', frames: 9, south: true }
+      }
+    }
+  };
+  // displayed pixel size on the in-game canvas (kept close to the
+  // code-drawn Danny so the rest of the level still feels right)
+  var PL_SIZE = { big: { w: 44, h: 44 }, small: { w: 36, h: 36 } };
+
+  var pixelLab = { ready: false, frames: {}, pending: 0, total: 0, failed: 0 };
+
+  function loadPixelLab() {
+    Object.keys(PL_MANIFEST).forEach(function (size) {
+      var m = PL_MANIFEST[size];
+      pixelLab.frames[size] = {};
+      Object.keys(m.anims).forEach(function (anim) {
+        var a = m.anims[anim];
+        pixelLab.frames[size][anim] = {};
+        var dirs = a.south ? ['south'] : ['east', 'west'];
+        dirs.forEach(function (dir) {
+          pixelLab.frames[size][anim][dir] = [];
+          for (var f = 0; f < a.frames; f++) {
+            var fn = 'frame_' + (f < 10 ? '00' + f : f < 100 ? '0' + f : '' + f) + '.png';
+            var url = encodeURI(m.base + '/' + a.folder + '/' + dir + '/' + fn);
+            var img = new Image();
+            pixelLab.pending++; pixelLab.total++;
+            img.onload  = function () { if (--pixelLab.pending === 0) pixelLab.ready = true; };
+            img.onerror = function () { pixelLab.failed++; if (--pixelLab.pending === 0) pixelLab.ready = true; };
+            img.src = url;
+            pixelLab.frames[size][anim][dir][f] = img;
+          }
+        });
+      });
+    });
+  }
+  function pixFrame(size, anim, dir, idx) {
+    if (!pixelLab.ready || pixelLab.failed > 0) return null;
+    var ms = pixelLab.frames[size]; if (!ms) return null;
+    var ma = ms[anim];               if (!ma) return null;
+    var md = ma[dir] || ma.east || ma.south;
+    if (!md || !md.length) return null;
+    return md[((idx % md.length) + md.length) % md.length] || null;
+  }
+  // kick off loading at boot
+  loadPixelLab();
+
   // ---- LOGO SWAP POINT --------------------------------------------------
   // To use the real Church of the Crossroads logo: save it as assets/logo.png
   // - the loader below picks it up automatically and the intro scene shows it.
@@ -817,6 +893,9 @@ window.SDD = window.SDD || {};
     textShadow: textShadow,
     textWidth: textWidth,
     palette: C,
+    pixelLab: pixelLab,
+    pixSize: PL_SIZE,
+    pixFrame: pixFrame,
     hasRealLogo: function () { return realLogoOk; },
     realLogo: function () { return realLogo; }
   };
