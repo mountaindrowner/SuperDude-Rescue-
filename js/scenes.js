@@ -20,6 +20,20 @@ window.SDD = window.SDD || {};
   for (var i = 0; i < 70; i++) {
     STARS.push({ x: Math.random() * 320, y: Math.random() * 130, s: Math.random() < 0.25 ? 2 : 1 });
   }
+
+  // Optional swap-in artwork. Each loader sets <name>Ok=true once the
+  // PNG decodes; renderers fall back to procedural art when false so
+  // the game keeps working if a file is missing.
+  function loadArt(path) {
+    var img = new Image(); var state = { img: img, ok: false };
+    img.onload  = function () { state.ok = (img.width > 0); };
+    img.onerror = function () { state.ok = false; };
+    img.src = path;
+    return state;
+  }
+  var ART_TITLE   = loadArt('assets/title.png');
+  var ART_LAB     = loadArt('assets/lab.png');
+  var ART_MACHINE = loadArt('assets/timemachine.png');
   function lc(a, b, t) {
     return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' +
       Math.round(a[1] + (b[1] - a[1]) * t) + ',' +
@@ -78,6 +92,10 @@ window.SDD = window.SDD || {};
   // =====================================================================
   // LOGO - Church of the Crossroads intro card (fade in, chirp, fade out)
   // =====================================================================
+  // 5-second title card: 60 frames fade-in -> 180 frames hold ->
+  // 60 frames fade-out. Uses assets/title.png when present; falls
+  // back to the placeholder logo when not so the game still runs
+  // before the art is dropped in.
   SDD.scenes.logo = {
     enter: function () {
       this.t = 0; this.phase = 'in'; this.alpha = 0; this.chirped = false;
@@ -86,12 +104,12 @@ window.SDD = window.SDD || {};
       this.t++;
       if (!this.chirped && this.t > 6) { A.sfx('chirp'); this.chirped = true; }
       if (this.phase === 'in') {
-        this.alpha += 0.03;
+        this.alpha += 1 / 60;            // 1 sec to full alpha
         if (this.alpha >= 1) { this.alpha = 1; this.phase = 'hold'; this.t = 0; }
       } else if (this.phase === 'hold') {
-        if (this.t > 80) this.phase = 'out';
+        if (this.t > 180) this.phase = 'out';   // 3 sec hold
       } else {
-        this.alpha -= 0.03;
+        this.alpha -= 1 / 60;            // 1 sec fade-out
         if (this.alpha <= 0) { this.alpha = 0; go('menu'); return; }
       }
       if (In.confirm() && this.phase !== 'out') { this.phase = 'out'; }
@@ -100,17 +118,22 @@ window.SDD = window.SDD || {};
       g.fillStyle = '#05050d'; g.fillRect(0, 0, 320, 180);
       g.save();
       g.globalAlpha = this.alpha;
-      var logo = S.hasRealLogo() ? S.realLogo() : S.get('logoPlaceholder');
-      if (logo) {
-        var maxW = 240, maxH = 120;
-        var sc = Math.min(maxW / logo.width, maxH / logo.height);
-        var w = logo.width * sc, h = logo.height * sc;
-        g.imageSmoothingEnabled = false;
-        g.drawImage(logo, (320 - w) / 2, (180 - h) / 2 - 6, w, h);
+      g.imageSmoothingEnabled = false;
+      if (ART_TITLE.ok) {
+        // Painted card fills the full 16:9 canvas.
+        g.drawImage(ART_TITLE.img, 0, 0, 320, 180);
+      } else {
+        var logo = S.hasRealLogo() ? S.realLogo() : S.get('logoPlaceholder');
+        if (logo) {
+          var maxW = 240, maxH = 120;
+          var sc = Math.min(maxW / logo.width, maxH / logo.height);
+          var w = logo.width * sc, h = logo.height * sc;
+          g.drawImage(logo, (320 - w) / 2, (180 - h) / 2 - 6, w, h);
+        }
+        g.globalAlpha = this.alpha * 0.7;
+        text(g, 'PRESENTS', 160, 158, '#8a93b5', 1, 'center');
       }
       g.restore();
-      g.globalAlpha = this.alpha * 0.7;
-      text(g, 'PRESENTS', 160, 158, '#8a93b5', 1, 'center');
       g.globalAlpha = 1;
     }
   };
@@ -136,16 +159,48 @@ window.SDD = window.SDD || {};
     },
     render: function (g) {
       var b = this.beat, t = this.t;
-      if (b < 2) { g.fillStyle = '#14121f'; g.fillRect(0, 0, 320, 180); }
-      else { var grd = g.createLinearGradient(0, 0, 0, 180); grd.addColorStop(0, '#3a2c66'); grd.addColorStop(1, '#caa6c0'); g.fillStyle = grd; g.fillRect(0, 0, 320, 180); }
+      // Beats 0-2: in the lab. Beat 3: stranded in the dawn of creation.
+      if (b < 3 && ART_LAB.ok) {
+        g.imageSmoothingEnabled = false;
+        g.drawImage(ART_LAB.img, 0, 0, 320, 180);
+      } else if (b < 2) {
+        g.fillStyle = '#14121f'; g.fillRect(0, 0, 320, 180);
+      } else if (b < 3) {
+        // (fallback for beat 2 when no lab art)
+        g.fillStyle = '#14121f'; g.fillRect(0, 0, 320, 180);
+      } else {
+        var grd = g.createLinearGradient(0, 0, 0, 180);
+        grd.addColorStop(0, '#3a2c66'); grd.addColorStop(1, '#caa6c0');
+        g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+      }
 
-      // time machine
-      function machine(g, x, y, glow, broken) {
+      // Time-machine drawer. Uses the painted PNG when available;
+      // falls back to the original procedural sprite when not.
+      // For the painted machine, glow/broken are layered on top.
+      function machine(g, cx, by, glow, broken) {
+        if (ART_MACHINE.ok && !broken) {
+          // PNG is 1024x1536 (2:3 portrait). Render ~60 px tall, centered
+          // horizontally at cx with the base at by+46 to roughly match
+          // the old procedural footprint.
+          var mh = 64, mw = Math.round(mh * (1024 / 1536));  // ~43w
+          var mx = cx - mw / 2, my = by + 46 - mh;
+          g.imageSmoothingEnabled = false;
+          g.drawImage(ART_MACHINE.img, mx, my, mw, mh);
+          if (glow) {
+            // Warm dome glow on top + soft cyan halo around the machine.
+            g.fillStyle = 'rgba(255,232,147,0.55)';
+            g.beginPath(); g.arc(cx, my + 8, mw * 0.35, 0, Math.PI * 2); g.fill();
+            g.fillStyle = 'rgba(190,240,255,0.32)';
+            g.fillRect(mx - 4, my - 4, mw + 8, mh + 8);
+          }
+          return;
+        }
+        // Procedural fallback (old sprite, anchored top-left at x,y).
+        var x = cx - 23, y = by;
         g.fillStyle = '#3b4a6a'; g.fillRect(x, y, 46, 40);
         g.fillStyle = '#586a92'; g.fillRect(x + 3, y + 3, 40, 22);
         g.fillStyle = glow ? '#bff0ff' : '#23304a'; g.fillRect(x + 7, y + 7, 32, 14);
         g.fillStyle = '#2a3550'; g.fillRect(x, y + 40, 46, 6);
-        // dome
         g.fillStyle = glow ? '#ffe893' : '#7a8bb0';
         g.beginPath(); g.arc(x + 23, y + 3, 13, Math.PI, 0); g.fill();
         if (broken) {
@@ -159,19 +214,19 @@ window.SDD = window.SDD || {};
       }
       var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
-        machine(g, 150, 96, false, false);
+        machine(g, 173, 96, false, false);
         S.drawDanny(g, 'small', 'idle', 'east', idleIdx, 96, 116);
         text(g, 'THE LAB - PRESENT DAY', 160, 26, '#9aa6c8', 1, 'center');
       } else if (b === 1) {
-        machine(g, 138, 92, (t % 16 < 8), false);
+        machine(g, 161, 92, (t % 16 < 8), false);
         S.drawDanny(g, 'small', 'jump', 'east', 3, 100, 116);
       } else if (b === 2) {
-        machine(g, 138, 92, true, false);
+        machine(g, 161, 92, true, false);
         electricArcs(g, 161, 100, t, 5, 38);
         if (t % 18 < 9) { g.fillStyle = 'rgba(190,240,255,0.12)'; g.fillRect(0, 0, 320, 180); }
         S.drawDanny(g, 'small', 'hurt', 'west', Math.min(5, Math.floor(t / 4) % 6), 150, 70 + Math.sin(t * 0.2) * 6);
       } else {
-        machine(g, 150, 100, false, true);
+        machine(g, 173, 100, false, true);
         S.drawDanny(g, 'small', 'idle', 'east', idleIdx, 96, 124);
         // dawn ground
         g.fillStyle = '#86cf45'; g.fillRect(0, 150, 320, 30);
