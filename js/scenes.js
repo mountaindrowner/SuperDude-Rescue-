@@ -1028,7 +1028,10 @@ window.SDD = window.SDD || {};
           e.x = s.tx * T + 8 - e.w / 2; e.y = s.ty * T + 8 - e.h / 2;
           e.homeY = e.y; e.minX = e.x - 26; e.maxX = e.x + 26;
           e.variant = variants.wisp;
-          if (s.shoots) e.shoots = true;
+          // Shooter wisps always render as storm clouds so the player
+          // can tell at a glance which wisps are dangerous (vs the
+          // harmless theme-coloured flyers).
+          if (s.shoots) { e.shoots = true; e.variant = 'stormcloud'; }
           this.enemies.push(e);
         } else if (s.type === 'crab') {
           e = new SDD.ent.Crab(0, 0);

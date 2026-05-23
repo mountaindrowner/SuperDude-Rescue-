@@ -655,6 +655,35 @@ window.SDD = window.SDD || {};
     px(g, 4 + b, 6, 1, 1, C.out); px(g, 8 + b, 6, 1, 1, C.out);
   }
 
+  // Storm-cloud shooter wisp (14x14). A small flying rain cloud that
+  // drops orbs - visual cue that THIS wisp shoots, distinct from the
+  // harmless bird/leaf/star/bat variants. Frame 0 idle, frame 1 charging
+  // (bright lightning crackle inside).
+  function paintWisp_stormcloud(g, frame) {
+    var lit = frame === 1;
+    // puffy dark cloud body
+    px(g, 3, 2,  8, 3, C.rnA);
+    px(g, 2, 3, 10, 3, C.rnA);
+    px(g, 4, 1,  6, 1, C.rnA);
+    px(g, 1, 4,  1, 2, C.rnA); px(g, 12, 4, 1, 2, C.rnA);
+    // top highlight
+    px(g, 4, 2, 6, 1, C.rnL);
+    px(g, 3, 3, 4, 1, C.rnL);
+    // dark underbelly
+    px(g, 2, 6, 10, 1, C.rnB);
+    px(g, 3, 7,  3, 1, C.rnB); px(g, 8, 7, 3, 1, C.rnB);
+    // tiny menacing eyes
+    px(g, 4, 4, 1, 1, C.rnDrop); px(g, 9, 4, 1, 1, C.rnDrop);
+    // dripping rain tail underneath (more vivid when charging)
+    px(g, 4,  9, 1, 2, C.rnDrop);
+    px(g, 7,  9, 1, 2, C.rnDrop);
+    px(g, 10, 9, 1, 2, C.rnDrop);
+    if (lit) {
+      // crackle of energy across the cloud belly + a longer drop
+      px(g, 5, 5, 4, 1, C.rnDrop);
+      px(g, 7, 11, 1, 2, C.rnDrop);
+    }
+  }
   // Star flyer (sunlit / cosmic-night).
   function paintWisp_star(g, frame) {
     var b = frame === 1 ? 1 : 0;
@@ -1378,10 +1407,11 @@ window.SDD = window.SDD || {};
 
       // Wisp re-skins
       var WISP_VARS = {
-        bird: paintWisp_bird,
-        leaf: paintWisp_leaf,
-        star: paintWisp_star,
-        bat:  paintWisp_bat
+        bird:       paintWisp_bird,
+        leaf:       paintWisp_leaf,
+        star:       paintWisp_star,
+        bat:        paintWisp_bat,
+        stormcloud: paintWisp_stormcloud
       };
       Object.keys(WISP_VARS).forEach(function (k) {
         var painter = WISP_VARS[k];
