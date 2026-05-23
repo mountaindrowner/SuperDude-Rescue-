@@ -176,27 +176,31 @@ window.SDD = window.SDD || {};
 
       // Time-machine drawer. Uses the painted PNG when available;
       // falls back to the original procedural sprite when not.
-      // For the painted machine, glow/broken are layered on top.
-      function machine(g, cx, by, glow, broken) {
+      // For the painted machine, glow is layered on top. (Beat 3's
+      // "broken" still uses the procedural variant since the painted
+      // asset has no broken state yet.)
+      function machine(g, cx, cy, glow, broken) {
         if (ART_MACHINE.ok && !broken) {
-          // PNG is 1024x1536 (2:3 portrait). Render ~60 px tall, centered
-          // horizontally at cx with the base at by+46 to roughly match
-          // the old procedural footprint.
-          var mh = 64, mw = Math.round(mh * (1024 / 1536));  // ~43w
-          var mx = cx - mw / 2, my = by + 46 - mh;
+          // PNG is 1024x1536 (2:3 portrait). Render at 130 px tall
+          // (~2x the previous 64) so it actually reads as the focal
+          // object of the scene. cy is the machine's vertical center.
+          var mh = 130, mw = Math.round(mh * (1024 / 1536));  // ~87w
+          var mx = cx - mw / 2, my = cy - mh / 2;
           g.imageSmoothingEnabled = false;
           g.drawImage(ART_MACHINE.img, mx, my, mw, mh);
           if (glow) {
-            // Warm dome glow on top + soft cyan halo around the machine.
-            g.fillStyle = 'rgba(255,232,147,0.55)';
-            g.beginPath(); g.arc(cx, my + 8, mw * 0.35, 0, Math.PI * 2); g.fill();
-            g.fillStyle = 'rgba(190,240,255,0.32)';
-            g.fillRect(mx - 4, my - 4, mw + 8, mh + 8);
+            // Warm dome glow at the top of the machine + soft cyan
+            // halo around the body.
+            g.fillStyle = 'rgba(255,232,147,0.50)';
+            g.beginPath(); g.arc(cx, my + 12, mw * 0.45, 0, Math.PI * 2); g.fill();
+            g.fillStyle = 'rgba(190,240,255,0.22)';
+            g.fillRect(mx - 6, my - 6, mw + 12, mh + 12);
           }
           return;
         }
-        // Procedural fallback (old sprite, anchored top-left at x,y).
-        var x = cx - 23, y = by;
+        // Procedural fallback - cx/cy is now CENTER, not top-left, so
+        // shift back to the old top-left anchor here.
+        var x = cx - 23, y = cy - 23;
         g.fillStyle = '#3b4a6a'; g.fillRect(x, y, 46, 40);
         g.fillStyle = '#586a92'; g.fillRect(x + 3, y + 3, 40, 22);
         g.fillStyle = glow ? '#bff0ff' : '#23304a'; g.fillRect(x + 7, y + 7, 32, 14);
@@ -212,22 +216,32 @@ window.SDD = window.SDD || {};
           g.fillRect(x - 6, y - 8, 58, 4);
         }
       }
+      // Big Danny is 24x36; small was 18x22. Sprite-x = feet-center - 12,
+      // sprite-y = feet-y - 36. The intro now uses 'big' Danny since the
+      // larger machine made small Danny look tiny next to it.
       var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
-        machine(g, 173, 96, false, false);
-        S.drawDanny(g, 'small', 'idle', 'east', idleIdx, 96, 116);
+        machine(g, 160, 90, false, false);
+        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 60, 122);
         text(g, 'THE LAB - PRESENT DAY', 160, 26, '#9aa6c8', 1, 'center');
       } else if (b === 1) {
-        machine(g, 161, 92, (t % 16 < 8), false);
-        S.drawDanny(g, 'small', 'jump', 'east', 3, 100, 116);
+        machine(g, 160, 90, (t % 16 < 8), false);
+        S.drawDanny(g, 'big', 'jump', 'east', 3, 60, 122);
       } else if (b === 2) {
-        machine(g, 161, 92, true, false);
-        electricArcs(g, 161, 100, t, 5, 38);
-        if (t % 18 < 9) { g.fillStyle = 'rgba(190,240,255,0.12)'; g.fillRect(0, 0, 320, 180); }
-        S.drawDanny(g, 'small', 'hurt', 'west', Math.min(5, Math.floor(t / 4) % 6), 150, 70 + Math.sin(t * 0.2) * 6);
+        machine(g, 160, 90, true, false);
+        // More electric pulses at varying sizes - three rings of arcs
+        // around the machine center, each pulsing at a different rate
+        // and length so the surge feels chaotic.
+        electricArcs(g, 160, 90, t,        6, 70);
+        electricArcs(g, 160, 90, t + 5,    9, 44);
+        electricArcs(g, 160, 90, t + 11,  12, 24);
+        // (no more full-screen white flash; the arc layering carries
+        // the energy on its own.)
+        S.drawDanny(g, 'big', 'hurt', 'west', Math.min(5, Math.floor(t / 4) % 6),
+          138, 50 + Math.sin(t * 0.2) * 8);
       } else {
-        machine(g, 173, 100, false, true);
-        S.drawDanny(g, 'small', 'idle', 'east', idleIdx, 96, 124);
+        machine(g, 160, 96, false, true);
+        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 60, 120);
         // dawn ground
         g.fillStyle = '#86cf45'; g.fillRect(0, 150, 320, 30);
         g.fillStyle = '#ffd23a';
