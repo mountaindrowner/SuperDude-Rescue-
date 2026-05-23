@@ -74,8 +74,16 @@ window.SDD = window.SDD || {};
   }
 
   function reset() {
+    // Preserve user-set options across reset - god / audio settings
+    // are preferences, not progress, so a "New Game" shouldn't undo
+    // them.
+    var keepOptions = data && data.options
+      ? Object.assign({}, data.options)
+      : defaults().options;
     data = defaults();
+    data.options = keepOptions;
     try { localStorage.removeItem(KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
+    save();    // write back the reset state with options intact
   }
 
   // Record a finished stage and (if better) its stats; advance progress pointer.
