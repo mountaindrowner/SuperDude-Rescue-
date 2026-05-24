@@ -2595,7 +2595,21 @@ window.SDD = window.SDD || {};
     },
     update: function () {
       this.t++;
-      if (this.t > 30 && In.confirm()) { A.sfx('confirm'); go('overworld'); }
+      if (this.t > 30 && In.confirm()) {
+        A.sfx('confirm');
+        // After the final stage of a day, route into the Bible quiz
+        // if one exists for that day and the kid hasn't already passed
+        // it. Day 1 has no quiz; passed quizzes skip straight back to
+        // the map.
+        var day = this.d.day || 1, stage = this.d.stage || 1;
+        var lastStage = stage >= SDD.save.stagesForDay(day);
+        var hasQuiz = !!(SDD.quiz && SDD.quiz['day' + day]);
+        if (lastStage && hasQuiz && !SDD.save.isQuizPassed(day)) {
+          go('quiz', { day: day });
+        } else {
+          go('overworld');
+        }
+      }
     },
     render: function (g) {
       var grd = g.createLinearGradient(0, 0, 0, 180);
@@ -2624,6 +2638,248 @@ window.SDD = window.SDD || {};
         Math.floor(this.t / 5) % 9,
         240, 100 + Math.sin(this.t * 0.1) * 3);
       if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 168, '#1a1630', 1, 'center');
+    }
+  };
+
+  // =====================================================================
+  // QUIZ - end-of-day Bible verse fill-in-the-blank.
+  //
+  // Verse from SDD.quiz.forDay(day) at the active difficulty. Kid types
+  // the missing word with the on-screen keyboard (or a real keyboard).
+  // Graduated hints on wrong answers: nothing -> verse reference -> first
+  // letter -> reveal answer with "ask a parent" message. Always retryable
+  // until correct; passing records via SDD.save.recordQuizPassed(day) and
+  // returns to the overworld.
+  // =====================================================================
+  var QUIZ_KEYBOARD_ROWS = [
+    'QWERTYUIOP'.split(''),
+    'ASDFGHJKL'.split(''),
+    'ZXCVBNM'.split(''),
+    ['BACK', 'ENTER']
+  ];
+
+  function quizWrap(textStr, maxWidth, scale) {
+    // Greedy word-wrap on a string into an array of lines that each
+    // fit within maxWidth pixels at the given font scale. The blank
+    // token '___' is treated as ONE word.
+    scale = scale || 1;
+    var charW = 6 * scale;
+    var words = textStr.split(' ');
+    var lines = [], cur = '';
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      var trial = cur.length ? cur + ' ' + w : w;
+      if (trial.length * charW <= maxWidth) {
+        cur = trial;
+      } else {
+        if (cur) lines.push(cur);
+        cur = w;
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  SDD.scenes.quiz = {
+    enter: function (d) {
+      d = d || {};
+      this.day = d.day || 2;
+      this.verse = SDD.quiz.forDay(this.day);
+      if (!this.verse) {
+        // Defensive: if data is missing for some reason, mark as
+        // passed (so the kid isn't blocked) and bounce out.
+        SDD.save.recordQuizPassed(this.day);
+        go('overworld');
+        return;
+      }
+      this.answer = this.verse.answer.toUpperCase();
+      this.input = '';
+      this.hintLevel = 0;     // 0 ... 3
+      this.attempts = 0;
+      this.shakeT = 0;
+      this.passT = 0;         // >0 = playing the pass animation
+      this.kbRow = 0;
+      this.kbCol = 0;
+      this.t = 0;
+      A.startMusic('intro');
+      this.handleKey = this.handleKey.bind(this);
+      window.addEventListener('keydown', this.handleKey);
+    },
+    exit: function () {
+      window.removeEventListener('keydown', this.handleKey);
+    },
+    handleKey: function (e) {
+      if (this.passT > 0) return;
+      // Direct typing on a hardware keyboard
+      if (/^Key[A-Z]$/.test(e.code)) {
+        var ch = e.code.charAt(3);
+        this.typeLetter(ch);
+        e.preventDefault();
+        return;
+      }
+      if (e.code === 'Backspace') { this.typeBack(); e.preventDefault(); return; }
+      if (e.code === 'Enter') { this.trySubmit(); e.preventDefault(); return; }
+    },
+    typeLetter: function (ch) {
+      if (this.input.length >= this.answer.length) return;
+      this.input += ch;
+      A.sfx('select');
+    },
+    typeBack: function () {
+      if (this.input.length === 0) return;
+      this.input = this.input.slice(0, -1);
+      A.sfx('select');
+    },
+    trySubmit: function () {
+      if (this.input.length === 0) return;
+      if (this.input === this.answer) {
+        // Correct!
+        this.passT = 1;
+        A.sfx('1up');
+        SDD.save.recordQuizPassed(this.day);
+      } else {
+        // Wrong - bump hint level, shake, clear input for retry
+        this.attempts++;
+        this.hintLevel = Math.min(3, this.hintLevel + 1);
+        this.shakeT = 24;
+        this.input = '';
+        A.sfx('die');
+      }
+    },
+    update: function () {
+      this.t++;
+      if (this.shakeT > 0) this.shakeT--;
+      if (this.passT > 0) {
+        this.passT++;
+        if (this.passT > 110 && In.confirm()) {
+          this.exit();
+          go('overworld');
+        } else if (this.passT > 180) {
+          this.exit();
+          go('overworld');
+        }
+        return;
+      }
+      // On-screen keyboard navigation
+      var rows = QUIZ_KEYBOARD_ROWS;
+      var curRow = rows[this.kbRow];
+      var len = curRow.length;
+      if (In.pressed('up'))    { this.kbRow = (this.kbRow + rows.length - 1) % rows.length;
+                                 this.kbCol = Math.min(this.kbCol, rows[this.kbRow].length - 1); A.sfx('select'); }
+      if (In.pressed('down'))  { this.kbRow = (this.kbRow + 1) % rows.length;
+                                 this.kbCol = Math.min(this.kbCol, rows[this.kbRow].length - 1); A.sfx('select'); }
+      if (In.pressed('left'))  { this.kbCol = (this.kbCol + len - 1) % len; A.sfx('select'); }
+      if (In.pressed('right')) { this.kbCol = (this.kbCol + 1) % len; A.sfx('select'); }
+      if (In.confirm()) {
+        var key = curRow[this.kbCol];
+        if (key === 'BACK')      this.typeBack();
+        else if (key === 'ENTER') this.trySubmit();
+        else this.typeLetter(key);
+      }
+      // B button = quick backspace as a touch-controls shortcut
+      if (In.pressed('blast')) this.typeBack();
+    },
+    render: function (g) {
+      // Soft Eden-y backdrop
+      var grd = g.createLinearGradient(0, 0, 0, 180);
+      grd.addColorStop(0, '#3a6a4a'); grd.addColorStop(1, '#a8d68a');
+      g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+
+      // Title bar
+      tsh(g, 'DAY ' + this.day + ' BIBLE CHALLENGE', 160, 12, '#ffd23a', '#5a4a18', 1, 'center');
+
+      // Verse text - with the blank rendered as an inline box that
+      // shows the kid's typed letters + remaining underscores.
+      // Concatenate the kid's progress into the verse so word-wrap
+      // sees the blank as a fixed-length placeholder, then split into
+      // lines and overlay the input box on top of the placeholder.
+      var blankPlaceholder = ''; var i;
+      for (i = 0; i < this.answer.length; i++) {
+        blankPlaceholder += (i < this.input.length) ? this.input.charAt(i) : '_';
+      }
+      // Use a unique sentinel so we can identify which line/x contains
+      // the blank for overlay highlighting.
+      var rendered = this.verse.text.replace('___', blankPlaceholder);
+      var lines = quizWrap(rendered, 280, 1);
+
+      // shake offset
+      var shakeX = this.shakeT > 0 ? Math.round(Math.sin(this.shakeT * 0.9) * 3) : 0;
+
+      var top = 32;
+      for (i = 0; i < lines.length; i++) {
+        text(g, lines[i], 160 + shakeX, top + i * 12, '#1a2810', 1, 'center');
+      }
+      // Underline the blank placeholder by drawing a faint line below
+      // each underscore character region. The verse renderer above
+      // already showed letters where the kid had typed; below we draw
+      // bottom-of-cell dashes to emphasise the blank.
+      // (Skipped - the verse text itself reads clearly enough.)
+
+      // Hint line
+      var hintY = top + lines.length * 12 + 6;
+      if (this.passT === 0) {
+        if (this.hintLevel >= 1) {
+          text(g, 'LOOK IT UP: ' + this.verse.ref, 160, hintY, '#5a4a18', 1, 'center');
+        } else {
+          text(g, 'FILL IN THE MISSING WORD', 160, hintY, '#5a4a18', 1, 'center');
+        }
+        if (this.hintLevel >= 2) {
+          text(g, 'STARTS WITH: ' + this.answer.charAt(0), 160, hintY + 10, '#5a4a18', 1, 'center');
+        }
+        if (this.hintLevel >= 3) {
+          text(g, 'ANSWER: ' + this.answer + '   ASK A PARENT TO READ IT!', 160, hintY + 20, '#a83a18', 1, 'center');
+        }
+      } else {
+        // Pass animation - confetti-ish + "WELL DONE"
+        tsh(g, 'WELL DONE!', 160, hintY + 4, '#ffd23a', '#5a4a18', 2, 'center');
+        text(g, 'VERSE LEARNED.', 160, hintY + 24, '#1a2810', 1, 'center');
+        // Falling confetti dots
+        for (var c = 0; c < 18; c++) {
+          var cx = (c * 17 + this.passT * 1.3) % 320;
+          var cy = (this.passT * 1.6 + c * 11) % 180;
+          g.fillStyle = ['#ffd23a', '#9bf0a0', '#a8e6ff', '#ff8a6a'][c % 4];
+          g.fillRect(cx | 0, cy | 0, 2, 2);
+        }
+      }
+
+      // On-screen keyboard
+      var kbTop = 110;
+      var keySize = 18;
+      var keyGap = 2;
+      for (var r = 0; r < QUIZ_KEYBOARD_ROWS.length; r++) {
+        var row = QUIZ_KEYBOARD_ROWS[r];
+        var rowW;
+        if (r === 3) {
+          // BACK + ENTER row uses wider keys
+          rowW = 60 + keyGap + 60;
+        } else {
+          rowW = row.length * keySize + (row.length - 1) * keyGap;
+        }
+        var x0 = Math.round((320 - rowW) / 2);
+        var y = kbTop + r * (keySize + keyGap);
+        for (var k = 0; k < row.length; k++) {
+          var key = row[k];
+          var kw, kx;
+          if (r === 3) {
+            kw = 60;
+            kx = x0 + k * (60 + keyGap);
+          } else {
+            kw = keySize;
+            kx = x0 + k * (keySize + keyGap);
+          }
+          var sel = r === this.kbRow && k === this.kbCol;
+          // Special button colour for BACK/ENTER
+          var base = (r === 3) ? '#5a4a30' : '#1a2810';
+          var bg = sel ? '#ffd23a' : '#dfe6ce';
+          g.fillStyle = bg;
+          g.fillRect(kx, y, kw, keySize);
+          g.fillStyle = sel ? '#a8631a' : base;
+          g.fillRect(kx, y + keySize - 1, kw, 1);   // bottom shadow
+          var label = key;
+          var lblCol = sel ? '#5a4a18' : '#1a2810';
+          text(g, label, kx + kw / 2, y + 6, lblCol, 1, 'center');
+        }
+      }
     }
   };
 
