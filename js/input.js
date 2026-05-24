@@ -77,6 +77,22 @@ window.SDD = window.SDD || {};
     var btns = document.querySelectorAll('.tc-btn');
     for (var i = 0; i < btns.length; i++) bindButton(btns[i]);
 
+    // Mouse left-click anywhere on the canvas = blast (per Mark's
+    // "I need to code the keyboard button better for blasting, for
+    // like mouse 1 or something"). Right-click context menu is
+    // suppressed in case it's bound to something else later.
+    var cv = document.getElementById('game') || document.querySelector('canvas');
+    if (cv) {
+      cv.addEventListener('mousedown', function (e) {
+        if (e.button === 0) { e.preventDefault(); fireFirstGesture(); setDown('blast', true); }
+      });
+      cv.addEventListener('mouseup', function (e) {
+        if (e.button === 0) { setDown('blast', false); }
+      });
+      cv.addEventListener('mouseleave', function () { setDown('blast', false); });
+      cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    }
+
     window.addEventListener('pointerdown', fireFirstGesture);
     window.addEventListener('blur', function () {
       ACTIONS.forEach(function (a) { down[a] = false; });

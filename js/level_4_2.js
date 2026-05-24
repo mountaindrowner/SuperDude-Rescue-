@@ -94,8 +94,9 @@ window.SDD = window.SDD || {};
   qb(117, 0, 'B');                                         // blast at the top
 
   // Meteors sweep through the climbing zone
-  meteor(100, 2, 100, 1);
-  meteor(118, 2, 100, -1);
+  // Meteor count thinned per Mark - 7 meteors total was too much. Keep
+  // the climbing zone hazard at the top, drop the second pass.
+  meteor(100, 2, 130, 1);
 
   // Descending chain back to a small island
   mover(122, 2, 125, 5, 0.024, 0);
@@ -104,16 +105,15 @@ window.SDD = window.SDD || {};
 
   // Small island
   box(133, 9, 136, 10, 'X');
-  sp('thrower', 134, 8);
+  // Removed the thrower here per Mark - already plenty of meteor +
+  // wisp hazards in this stretch, no need for the purple launcher too.
   sp('core', 134, 7); sp('core', 136, 7);
 
   // Wide meteor field - 3 drifting platforms + 3 meteors crossing
   mover(140, 8, 144, 8, 0.022, 0);
   mover(147, 6, 151, 6, 0.022, 1.5);
   mover(154, 8, 158, 8, 0.022, 0.5);
-  meteor(140, 3, 90, 1);
-  meteor(160, 3, 90, -1);
-  meteor(150, 2, 110, 1);
+  meteor(150, 3, 120, 1);                                  // one wide-field meteor
   sp('core', 142, 6); sp('core', 149, 4); sp('core', 156, 6);
   sp('wisp', 145, 3); sp('wisp', 153, 4);
 
@@ -126,8 +126,7 @@ window.SDD = window.SDD || {};
   sp('core', 167, 5); sp('core', 176, 3); sp('core', 185, 5); sp('core', 194, 2);
 
   // Meteor finale
-  meteor(178, 1, 70, 1);
-  meteor(188, 1, 70, -1);
+  meteor(183, 1, 110, 1);                                  // one finale meteor
 
   // Goal island at altitude - last island in the void.
   box(200, 5, 207, 6, 'X');
@@ -147,6 +146,7 @@ window.SDD = window.SDD || {};
   SDD.levels = SDD.levels || {};
   SDD.levels['4-2'] = {
     width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers,
-    gravityScale: 0.35, name: 'MOON & STARS', theme: 'cosmic-night'
+    gravityScale: 0.32, jumpScale: 0.75,
+    name: 'MOON & STARS', theme: 'cosmic-night'
   };
 })();

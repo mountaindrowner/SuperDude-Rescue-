@@ -82,6 +82,8 @@ window.SDD = window.SDD || {};
       case 'block':    tone(180, t, 0.07, 'square', 0.22, 90); break;
       case 'bump':     tone(120, t, 0.07, 'square', 0.18, 70); break;
       case 'pause':    tone(520, t, 0.08, 'square', 0.18); break;
+      case 'step':     tone(180, t, 0.025, 'square', 0.06, 110); break;
+      case 'shrink':   tone(660, t, 0.07, 'square', 0.18); tone(440, t + 0.07, 0.09, 'square', 0.16); tone(294, t + 0.16, 0.12, 'square', 0.14); break;
       case 'enter':    tone(330, t, 0.1, 'square', 0.2, 660); break;
       case 'win':      [523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.14, 0.24, 'square', 0.24); }); break;
       case 'gameover': [392, 330, 262].forEach(function (f, i) { tone(f, t + i * 0.24, 0.34, 'triangle', 0.26); }); break;

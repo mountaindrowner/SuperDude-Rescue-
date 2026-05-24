@@ -46,7 +46,7 @@ window.SDD = window.SDD || {};
     this.big = false; this.hasBlast = false;
     this.onGround = false; this.coyote = 0; this.jumpBuf = 0;
     this.dropThrough = 0;
-    this.invuln = 0;
+    this.invuln = 0; this.shrinkAnim = 0;
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
     this.climbing = false; this.vineCooldown = 0; this.inWater = false;
@@ -69,6 +69,9 @@ window.SDD = window.SDD || {};
     if (!this.big) return;
     this.big = false;
     this.y += 8; this.h = 23; this.w = 13; this.x += 1;
+    // Quick size flicker (handled in draw) + audible shrink cue.
+    this.shrinkAnim = 24;
+    SDD.audio.sfx('shrink');
   };
 
   // returns true if the hit "lands" (used to suppress repeated hits)
@@ -78,7 +81,6 @@ window.SDD = window.SDD || {};
     if (this.big) {
       this.shrink();
       this.invuln = C.INVULN_STEPS;
-      SDD.audio.sfx('hit');
       return true;
     }
     this.die(false);
@@ -325,7 +327,10 @@ window.SDD = window.SDD || {};
       }
 
       if (!didDrop && this.jumpBuf > 0 && this.coyote > 0) {
-        this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul;
+        // Per-level jumpScale lets a low-grav level (e.g. 4-2) soften
+        // the launch so the jump feels floaty instead of explosive.
+        var js = level.jumpScale || 1.0;
+        this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul * js;
         this.jumpBuf = 0; this.coyote = 0;
         SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
       }
@@ -384,7 +389,14 @@ window.SDD = window.SDD || {};
       this.frame = (Math.floor(this.animT / 28) % 2) ? 'idle1' : 'idle0';
     }
 
+    // Quiet footstep tick while walking on the ground - fires every
+    // ~14 frames so it matches the walk cycle.
+    if (this.onGround && Math.abs(this.vx) > 0.4) {
+      if ((this.animT % 14) === 0) SDD.audio.sfx('step');
+    }
+
     if (this.invuln > 0) this.invuln--;
+    if (this.shrinkAnim > 0) this.shrinkAnim--;
 
     // fell into a pit (skipped in fully-underwater levels - water IS the level)
     if (!level.underwater && this.y > level.map.pxH + 28) {
@@ -399,6 +411,9 @@ window.SDD = window.SDD || {};
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
     if (!freshHurt && this.invuln > 0 && (this.invuln % 8) < 4) return;
     var size = this.big ? 'big' : 'small';
+    // Big->small shrink: flicker between sizes for ~24 frames so the
+    // transition reads visually (not just an instant size change).
+    if (this.shrinkAnim > 0 && (this.shrinkAnim % 6) < 3) size = 'big';
 
     // Prefer the PixelLab PNG sprites once they've finished loading.
     if (SDD.sprites.pixelLab && SDD.sprites.pixelLab.ready &&
@@ -587,7 +602,7 @@ window.SDD = window.SDD || {};
     this.vx = 0; this.vy = 0; this.dir = -1;
     this.onGround = false; this.dead = false; this.deadT = 0; this.remove = false;
     this.animT = 0; this.stompable = true;
-    this.cd = SDD.engine.randInt(90, 150);
+    this.cd = SDD.engine.randInt(120, 200);
     this.throwAnim = 0;
   }
   Crab.prototype.update = function (level) {
@@ -607,7 +622,9 @@ window.SDD = window.SDD || {};
     // periodic water-jet
     this.cd--;
     if (this.cd <= 0 && this.onGround) {
-      this.cd = SDD.engine.randInt(120, 200);
+      // 33% longer cooldown (120-200 -> 160-266) per Mark's feedback -
+      // crab water-jets fired too often on Day 2-2.
+      this.cd = SDD.engine.randInt(160, 266);
       this.throwAnim = 16;
       var jetDir = (level.player.x + level.player.w / 2 < this.x + this.w / 2) ? -1 : 1;
       var ox = jetDir > 0 ? this.x + this.w : this.x - 6;

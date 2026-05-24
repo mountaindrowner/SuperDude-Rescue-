@@ -487,9 +487,10 @@ window.SDD = window.SDD || {};
           break;
         }
       }
-      // Danny glides to where his feet should rest on the selected island
-      this.dannyX += (STAGES[this.idx].x  - this.dannyX) * 0.25;
-      this.dannyY += (STAGES[this.idx].dy - this.dannyY) * 0.25;
+      // Danny glides toward the selected island. Rate was 0.25 (too
+      // fast to see his run animation) - dropped to 0.10 per Mark.
+      this.dannyX += (STAGES[this.idx].x  - this.dannyX) * 0.10;
+      this.dannyY += (STAGES[this.idx].dy - this.dannyY) * 0.10;
       if (In.confirm()) {
         var st = STAGES[this.idx];
         if (!SDD.levels || !SDD.levels[st.d + '-' + st.s]) {
@@ -1077,7 +1078,7 @@ window.SDD = window.SDD || {};
     spawnOrb: function (x, y, dir) { this.projectiles.push(new SDD.ent.Orb(x, y, dir)); },
     hitBlock: function (tx, ty, code) {
       if (code === '?') {
-        this.map.set(tx, ty, 'U'); this.cores++; this.score += 50;
+        this.map.set(tx, ty, 'U'); this.gainCores(1); this.score += 50;
         this.burst(tx * 16 + 8, ty * 16 + 4, '#46f0ff', 6); A.sfx('core');
       } else if (code === 'G') {
         this.map.set(tx, ty, 'U');
@@ -1087,6 +1088,17 @@ window.SDD = window.SDD || {};
         this.map.set(tx, ty, 'U');
         this.items.push(new SDD.ent.ItemDrop(tx * 16 + 1, ty * 16 - 2, 'blast'));
         A.sfx('block');
+      }
+    },
+    // Add cores AND award 1up for every 20-core boundary crossed.
+    // Player keeps the cores - the bonus is purely for efficiency.
+    gainCores: function (n) {
+      var before = this.cores;
+      this.cores += n;
+      var bonuses = Math.floor(this.cores / 20) - Math.floor(before / 20);
+      if (bonuses > 0) {
+        this.lives += bonuses;
+        A.sfx('1up');
       }
     },
     burst: function (x, y, color, n) {
@@ -1169,7 +1181,7 @@ window.SDD = window.SDD || {};
         var Ent = SDD.ent;
         if (e instanceof Ent.Core) {
           if (E.overlap(pl, e) && !pl.dead) {
-            e.remove = true; this.cores++; this.score += 50;
+            e.remove = true; this.gainCores(1); this.score += 50;
             A.sfx('core'); this.burst(e.x + e.w / 2, e.y + e.h / 2, '#46f0ff', 5);
           }
         } else if (e instanceof Ent.ItemDrop) {
@@ -1184,7 +1196,7 @@ window.SDD = window.SDD || {};
         } else if (e instanceof Ent.NPC) {
           if (E.overlap(pl, e) && !pl.dead && !e.gave) {
             e.gave = true; e.bubbleT = 140;
-            this.cores += 3; this.score += 150;
+            this.gainCores(3); this.score += 150;
             A.sfx('core');
             this.burst(e.x + e.w / 2, e.y + 4, '#9bf0ff', 6);
           }

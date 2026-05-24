@@ -1297,13 +1297,28 @@ window.SDD = window.SDD || {};
   }
   function paintGrow(g, frame) {
     var p = frame === 1 ? 1 : 0;
+    // Dark outer ring for definition
+    px(g, 2, 3, 12, 10, C.out);
+    px(g, 3, 2, 10, 12, C.out);
+    // Warm base + bright inner gradient
     px(g, 3, 3, 10, 10, C.growA);
-    px(g, 4, 4, 8, 8, C.growL);
-    px(g, 5, 5, 5, 5, C.growW);
-    px(g, 3, 3, 10, 1, C.growL);
+    px(g, 4, 4,  8,  8, C.growL);
+    // Glossy top highlight strip
+    px(g, 4, 3,  8,  1, C.growW);
+    px(g, 5, 4,  6,  1, C.growW);
+    // Bottom shadow
     px(g, 3, 12, 10, 1, C.growB);
-    px(g, 7, 1 - p, 2, 14 + p * 2, C.growL);     // plus glow
-    px(g, 1 - p, 7, 14 + p * 2, 2, C.growL);
+    px(g, 4, 11,  8, 1, C.growB);
+    // Cross - 2 px wide bar centred on the 16x16 sprite's mid-seam
+    // (cols 7-8 / rows 7-8). 8 px long each arm so the whole cross
+    // fits inside the inner gradient box without sticking out.
+    px(g, 7, 4, 2, 8, C.growW);                  // vertical bar
+    px(g, 4, 7, 8, 2, C.growW);                  // horizontal bar
+    // Bright pulse highlight on the cross during frame 1
+    if (p) {
+      px(g, 6, 5, 4, 6, C.growW);
+      px(g, 5, 6, 6, 4, C.growW);
+    }
   }
   function paintBlastItem(g, frame) {
     var p = frame === 1 ? 1 : 0;
