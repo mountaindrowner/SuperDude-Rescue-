@@ -387,7 +387,14 @@ window.SDD = window.SDD || {};
       var p = level.platforms[i];
       var feet = this.y + this.h;
       var horiz = this.x + this.w > p.x && this.x < p.x + p.w;
-      if (this.vy >= 0 && horiz && prevFeet <= p.y + 3 && feet >= p.y && feet <= p.y + 10) {
+      // Re-latch tolerance must cover (a) the visual "sink" offset
+      // baked into the standing y, and (b) any upward platform motion
+      // this frame. Without (b), platforms moving up faster than ~1
+      // px/frame would carry the player's feet above the new platform
+      // top + sink and the player would fall through. Fixed Pass 9.
+      var upDy = Math.max(0, -(p.dy || 0));
+      var topTol = sink + upDy + 2;
+      if (this.vy >= 0 && horiz && prevFeet <= p.y + topTol && feet >= p.y && feet <= p.y + 10) {
         this.y = p.y - this.h + sink; this.vy = 0; this.onGround = true; this.ridePlat = p;
       }
     }
