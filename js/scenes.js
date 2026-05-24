@@ -583,20 +583,42 @@ window.SDD = window.SDD || {};
   for (var _c = 0; _c < 9; _c++) {
     CLOUDS.push({ x: _c * 165 + (_c * 71 % 120), y: 14 + (_c * 43 % 54), s: 0.62 + (_c % 3) * 0.33 });
   }
-  function puff(g, x, y, s) {
+  // Three cloud shape variants - puffy (default), wispy (long + low),
+  // layered (stacked rounded). Picked per-cloud via the cloud's seed
+  // so each cloud always looks the same but the sky has variety.
+  function puff(g, x, y, s, variant) {
     g.beginPath();
-    g.arc(x, y, 7 * s, 0, 6.29);
-    g.arc(x + 9 * s, y + 2 * s, 9 * s, 0, 6.29);
-    g.arc(x + 20 * s, y, 6.5 * s, 0, 6.29);
-    g.arc(x + 11 * s, y - 5 * s, 7 * s, 0, 6.29);
+    if (variant === 1) {
+      // Wispy: long and low
+      g.arc(x,           y,         5.5 * s, 0, 6.29);
+      g.arc(x + 7 * s,   y + 1 * s, 6.5 * s, 0, 6.29);
+      g.arc(x + 14 * s,  y,         5 * s,   0, 6.29);
+      g.arc(x + 20 * s,  y + 1 * s, 6 * s,   0, 6.29);
+      g.arc(x + 26 * s,  y,         5 * s,   0, 6.29);
+    } else if (variant === 2) {
+      // Layered: stacked round puffs
+      g.arc(x,           y,          6 * s,   0, 6.29);
+      g.arc(x + 7 * s,   y - 3 * s,  7 * s,   0, 6.29);
+      g.arc(x + 15 * s,  y - 1 * s,  6.5 * s, 0, 6.29);
+      g.arc(x + 8 * s,   y - 8 * s,  5 * s,   0, 6.29);
+      g.arc(x + 13 * s,  y + 3 * s,  5 * s,   0, 6.29);
+      g.arc(x + 2 * s,   y + 3 * s,  4.5 * s, 0, 6.29);
+    } else {
+      // Default puffy
+      g.arc(x,           y,         7 * s,   0, 6.29);
+      g.arc(x + 9 * s,   y + 2 * s, 9 * s,   0, 6.29);
+      g.arc(x + 20 * s,  y,         6.5 * s, 0, 6.29);
+      g.arc(x + 11 * s,  y - 5 * s, 7 * s,   0, 6.29);
+      g.arc(x + 4 * s,   y + 4 * s, 5 * s,   0, 6.29);
+    }
     g.fill();
   }
-  function drawCloud(g, x, y, s, alpha) {
+  function drawCloud(g, x, y, s, alpha, variant) {
     g.save();
     g.globalAlpha = alpha * 0.8;
-    g.fillStyle = '#c6d2ea'; puff(g, x, y + 2.5 * s, s);
+    g.fillStyle = '#c6d2ea'; puff(g, x, y + 2.5 * s, s, variant);
     g.globalAlpha = alpha;
-    g.fillStyle = '#ffffff'; puff(g, x, y, s);
+    g.fillStyle = '#ffffff'; puff(g, x, y, s, variant);
     g.restore();
   }
   function drawSun(g, x, y, prog) {
@@ -727,7 +749,9 @@ window.SDD = window.SDD || {};
     for (var i = 0; i < CLOUDS.length; i++) {
       var c = CLOUDS[i];
       var cx = (((c.x - camx * 0.14) % span) + span) % span - 80;
-      drawCloud(g, cx, c.y + camy * 0.04, c.s, alpha);
+      // Pick a variant from the cloud's index so each cloud has a
+      // stable shape but the sky shows all three (puffy/wispy/layered).
+      drawCloud(g, cx, c.y + camy * 0.04, c.s, alpha, i % 3);
     }
   }
   function jaggedRow(g, camx, factor, baseY, color, peakH) {
@@ -765,15 +789,48 @@ window.SDD = window.SDD || {};
     hillLayer(g, camx, 0.2, 170 - camy * 0.1, '#9fd0ff', 50, '#c8e4ff');
   }
   function drawSky_sea_surface(g, camx, camy, prog, t) {
+    // 4-layer parallax ocean per Mark's Day 2-2 request: sky gradient
+    // -> distant island chain -> mid island silhouettes -> far waves
+    // -> near foam line. Matches the 1-1 background's depth feel.
     vGradient(g, '#7ec0f0', '#3a86d6', '#d8c490');
-    g.fillStyle = '#5fa0e6';
-    for (var i = 0; i < 320; i += 14) {
-      g.fillRect(((i + (t / 8) % 14) | 0), 108, 7, 1);
-    }
     driftClouds(g, camx, camy, 0.6);
+    // Far island chain (low parallax)
+    g.fillStyle = '#6a8a9e';
+    var span1 = 100;
+    var off1 = -(((camx * 0.10) % span1) + span1) % span1;
+    for (var x = off1 - span1; x < 360; x += span1) {
+      g.beginPath();
+      g.moveTo(x + 10, 112); g.quadraticCurveTo(x + 25, 100, x + 40, 112);
+      g.lineTo(x + 60, 112); g.quadraticCurveTo(x + 75, 104, x + 90, 112);
+      g.closePath(); g.fill();
+    }
+    // Mid island silhouettes (more contrast, slightly lower + closer)
+    g.fillStyle = '#3e5e74';
+    var span2 = 80;
+    var off2 = -(((camx * 0.22) % span2) + span2) % span2;
+    for (var x2 = off2 - span2; x2 < 360; x2 += span2) {
+      g.beginPath();
+      g.moveTo(x2 + 18, 122); g.quadraticCurveTo(x2 + 30, 110, x2 + 44, 118);
+      g.quadraticCurveTo(x2 + 56, 112, x2 + 68, 122);
+      g.closePath(); g.fill();
+    }
+    // Far wave streaks (the old dotted lines done as cleaner foam)
+    g.fillStyle = 'rgba(255,255,255,0.30)';
+    for (var i = 0; i < 320; i += 18) {
+      var wx = ((i + (t * 0.4) % 18) | 0);
+      g.fillRect(wx, 128, 4, 1);
+      g.fillRect(wx + 9, 134, 3, 1);
+    }
+    // Near foam line just below the horizon
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    for (var k = 0; k < 320; k += 6) {
+      var fy2 = 142 + Math.sin(t * 0.08 + k * 0.07) * 0.8;
+      g.fillRect(k, fy2 | 0, 3, 1);
+    }
+    // Sparse fish silhouettes near the horizon
     for (var f = 0; f < 4; f++) {
       var fx = ((f * 80 + t * 0.3) % 320);
-      var fy = 130 + Math.sin(t * 0.1 + f) * 2;
+      var fy = 132 + Math.sin(t * 0.1 + f) * 2;
       g.fillStyle = '#1a5080';
       g.fillRect(fx | 0, fy | 0, 3, 2);
     }
@@ -1071,10 +1128,15 @@ window.SDD = window.SDD || {};
           this.enemies.push(e);
         }
       }
+      // Per-theme platform skin (e.g. cosmic-night gets constellation
+      // beams instead of wooden planks).
+      var platVariant = (this.theme === 'cosmic-night') ? 'cosmic' : null;
       for (var m = 0; m < L.movers.length; m++) {
         var mv = L.movers[m];
-        this.platforms.push(new SDD.ent.MovPlat(mv.tx * T, mv.ty * T,
-          { x1: mv.tx1 * T, y1: mv.ty1 * T, spd: mv.spd, phase: mv.phase }));
+        var plat = new SDD.ent.MovPlat(mv.tx * T, mv.ty * T,
+          { x1: mv.tx1 * T, y1: mv.ty1 * T, spd: mv.spd, phase: mv.phase });
+        if (platVariant) plat.variant = platVariant;
+        this.platforms.push(plat);
       }
       this.camera = new E.Camera();
       this.camera.snap(this.player, this.map);
@@ -1403,20 +1465,23 @@ window.SDD = window.SDD || {};
       var sf = SDD.save.stagesForDay(day);
       var title = sf > 1 ? ('DAY ' + day + '-' + stage + ' COMPLETE!') : ('DAY ' + day + ' COMPLETE!');
       tsh(g, title, 160, 18, '#ffffff', '#a8631a', 3, 'center');
-      S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(this.t / 5) % 9, 144, 40 + Math.sin(this.t * 0.1) * 3);
 
       var sv = SDD.save.data, key = day + '-' + stage;
       var bestT = sv.bestTimes && sv.bestTimes[key];
       var bestC = (sv.bestCores && sv.bestCores[key]) || 0;
-      // Tightened block - no LIVES LEFT row, no spacer; four contiguous
-      // rows starting higher up. Was line-height 11 starting at y=104.
+      // Stats block on the LEFT, Big Danny celebrating on the RIGHT
+      // (per Mark: "put Danny on the right side of that. There's an
+      // empty space"). Stats are tightened to four contiguous rows.
       var rows = [
         'TIME           ' + this.d.timeSec + ' SEC',
         'POWER CORES    ' + this.d.cores,
         'BEST TIME      ' + (bestT != null ? bestT + ' SEC' : '-'),
         'BEST CORES     ' + bestC
       ];
-      for (var i = 0; i < rows.length; i++) text(g, rows[i], 70, 92 + i * 11, '#1a1630', 1, 'left');
+      for (var i = 0; i < rows.length; i++) text(g, rows[i], 24, 92 + i * 11, '#1a1630', 1, 'left');
+      S.drawDanny(g, 'big', 'celebrate', 'south',
+        Math.floor(this.t / 5) % 9,
+        240, 100 + Math.sin(this.t * 0.1) * 3);
       if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 168, '#1a1630', 1, 'center');
     }
   };

@@ -776,7 +776,10 @@ window.SDD = window.SDD || {};
     this.dx = this.x - px; this.dy = this.y - py;
   };
   MovPlat.prototype.draw = function (ctx, cam) {
-    var s = spr('movplat');
+    // Per-platform variant set by the level scene from the theme.
+    // Defaults to the brass wood plank.
+    var s = spr((this.variant && SDD.sprites.get('movplat_' + this.variant))
+      ? 'movplat_' + this.variant : 'movplat');
     ctx.drawImage(s, Math.round(this.x - cam.x), Math.round(this.y - cam.y));
   };
 

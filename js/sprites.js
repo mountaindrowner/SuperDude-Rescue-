@@ -1312,6 +1312,30 @@ window.SDD = window.SDD || {};
     px(g, 2, 11, 32, 1, 'rgba(255,200,120,0.4)');
   }
 
+  // Cosmic-night moving platform - constellation / light-beam look
+  // for Day 4-2 per Mark. Dark purple core, bright cyan light beam
+  // along the top, scattered star pinpoints along the length.
+  function paintMovPlat_cosmic(g) {
+    // Soft outer glow band
+    px(g, 0, 1, 36, 11, 'rgba(120,180,255,0.18)');
+    // Dark core body
+    px(g, 1, 2, 34,  9, '#1a1d40');
+    px(g, 1, 2, 34,  1, '#3a4078');                // top edge
+    px(g, 1, 10, 34, 1, '#0e1028');                // bottom edge
+    // Bright cyan light beam along the top
+    px(g, 2, 3, 32,  2, '#7adfff');
+    px(g, 3, 3, 30,  1, '#ffffff');
+    // Star pinpoints (the "constellation" feel)
+    px(g,  5, 7, 1, 1, '#ffffff');
+    px(g, 11, 6, 1, 1, '#e0e8ff');
+    px(g, 17, 8, 1, 1, '#ffffff');
+    px(g, 23, 6, 1, 1, '#e0e8ff');
+    px(g, 29, 7, 1, 1, '#ffffff');
+    // Two-pixel "endpoint" dots (constellation node markers)
+    px(g, 2, 5, 2, 3, '#5a8de0');
+    px(g, 32, 5, 2, 3, '#5a8de0');
+  }
+
   // ================= items =================
   function paintCore(g, frame) {
     var p = frame === 1 ? 1 : 0;
@@ -1495,6 +1519,7 @@ window.SDD = window.SDD || {};
     sprites['playerblast_r'] = bl;
     sprites['playerblast_l'] = flip(bl);
     sprites['movplat'] = spriteO(36, 13, paintMovPlat);
+    sprites['movplat_cosmic'] = spriteO(36, 13, paintMovPlat_cosmic);
     sprites['timepart'] = spriteO(16, 16, paintTimePart);
 
     sprites['tile_ground'] = spritePlain(16, 16, paintGround);
