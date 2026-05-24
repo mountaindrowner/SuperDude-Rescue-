@@ -1094,29 +1094,84 @@ window.SDD = window.SDD || {};
   // streaming up -> light shafts from the surface. Sand seabed at the
   // bottom. Tinted slightly green so it reads as deep ocean.
   function drawSky_seaside(g, camx, camy, prog, t) {
-    // Depth gradient
-    vGradient(g, '#3da0c4', '#0e3a5e');
-    // Surface light shafts (vertical streaks, drift slowly)
-    for (var s = 0; s < 7; s++) {
-      var sx = 30 + s * 48 + Math.sin(t * 0.012 + s * 0.6) * 6;
+    // Depth gradient - lighter top (sunlit surface) to deep navy
+    vGradient(g, '#48b6dc', '#0a2a4e');
+    // Sunbeams from surface - stronger than before (was barely visible
+    // at alpha 0.07). Mix wider + narrower beams for variety.
+    var beams = [
+      { x:  20, w: 22, a: 0.18 },
+      { x:  60, w: 14, a: 0.13 },
+      { x: 105, w: 28, a: 0.22 },
+      { x: 150, w: 16, a: 0.14 },
+      { x: 190, w: 24, a: 0.20 },
+      { x: 230, w: 14, a: 0.13 },
+      { x: 270, w: 22, a: 0.18 }
+    ];
+    for (var s = 0; s < beams.length; s++) {
+      var bm = beams[s];
+      var sx = bm.x + Math.sin(t * 0.012 + s * 0.6) * 6;
       sx = (((sx - camx * 0.25) % 380) + 380) % 380 - 30;
-      g.fillStyle = 'rgba(180,230,255,0.07)';
+      g.fillStyle = 'rgba(190,235,255,' + bm.a + ')';
       g.beginPath();
-      g.moveTo(sx, 0); g.lineTo(sx + 18, 0);
-      g.lineTo(sx + 28, 180); g.lineTo(sx - 10, 180);
+      g.moveTo(sx, 0); g.lineTo(sx + bm.w, 0);
+      g.lineTo(sx + bm.w + 12, 180); g.lineTo(sx - 10, 180);
       g.closePath(); g.fill();
     }
+    // ----- DEEP BACK: drifting manta ray silhouette -----
+    // One huge silhouette slowly drifting through the deep parallax.
+    var mantaX = ((t * 0.18 - camx * 0.04) % 480 + 480) % 480 - 80;
+    var mantaY = 70 + Math.sin(t * 0.02) * 6;
+    g.fillStyle = '#0c2848';
+    // Triangular body
+    g.beginPath();
+    g.moveTo(mantaX,        mantaY);
+    g.lineTo(mantaX + 40,   mantaY - 8);
+    g.lineTo(mantaX + 60,   mantaY);
+    g.lineTo(mantaX + 40,   mantaY + 8);
+    g.closePath(); g.fill();
+    // Long thin tail
+    g.fillRect(mantaX + 60 | 0, mantaY | 0, 20, 1);
+    // Wing tip highlights
+    g.fillStyle = '#163660';
+    g.fillRect(mantaX + 8 | 0,  mantaY - 4, 24, 2);
+    g.fillRect(mantaX + 32 | 0, mantaY + 3, 18, 1);
+
     // Far coral mountain ridge silhouette
     mountainRidge(g, camx, 0.06, 160, '#1a4a6e', 70);
     // Mid coral mountain (taller, more saturated)
     mountainRidge(g, camx, 0.12, 168, '#2a6088', 50);
-    // Drifting big fish (4 silhouettes at far-back parallax)
+
+    // ----- FISH SCHOOLS in mid-parallax -----
+    // Two small schools of ~7 fish drifting in unison, with subtle
+    // body-bob within the school for life. The school as a whole
+    // follows a slow horizontal drift.
+    function drawSchool(baseX, baseY, dir, phase, color) {
+      g.fillStyle = color;
+      var schoolX = ((baseX + t * 0.5 * dir - camx * 0.16) % 420 + 420) % 420 - 60;
+      var schoolY = baseY + Math.sin(t * 0.04 + phase) * 3;
+      // Lay out fish in a loose diamond
+      var offsets = [
+        [0, 0], [9, -2], [9, 2], [18, 0], [18, -4], [18, 4], [27, 0]
+      ];
+      for (var fi = 0; fi < offsets.length; fi++) {
+        var fx = schoolX + offsets[fi][0] + Math.sin(t * 0.1 + fi) * 0.8;
+        var fy = schoolY + offsets[fi][1];
+        // Tiny fish - body 4x2 + tail wedge
+        g.fillRect(fx | 0, fy | 0, 4, 2);
+        var tailX = dir > 0 ? (fx | 0) - 2 : (fx | 0) + 4;
+        g.fillRect(tailX, fy | 0, 2, 1);
+        g.fillRect(tailX, (fy | 0) + 1, 2, 1);
+      }
+    }
+    drawSchool(80,  100, 1,  0,   '#7accee');
+    drawSchool(220,  60, -1, 1.5, '#88ddef');
+
+    // ----- 4 large lone fish silhouettes (kept from before) -----
     g.fillStyle = '#1a4070';
-    var fish = [[60, 80, 1], [180, 120, -1], [240, 60, 1], [110, 95, -1]];
+    var fish = [[60, 130, 1], [180, 145, -1], [240, 125, 1]];
     for (var fi = 0; fi < fish.length; fi++) {
       var fx = ((fish[fi][0] + t * 0.3 * fish[fi][2] - camx * 0.08) % 380 + 380) % 380 - 30;
       var fy = fish[fi][1] + Math.sin(t * 0.04 + fi) * 2;
-      // Simple fish silhouette: body ellipse + tail triangle
       g.beginPath();
       g.ellipse(fx, fy, 7, 3, 0, 0, 6.28); g.fill();
       g.beginPath();
@@ -1127,6 +1182,7 @@ window.SDD = window.SDD || {};
       g.lineTo(tailX + tailSign * 5, fy + 3);
       g.closePath(); g.fill();
     }
+
     // Mid coral spires - tall, slightly pink
     var midSpan = 80;
     var midOff = -(((camx * 0.22) % midSpan) + midSpan) % midSpan;
@@ -1137,11 +1193,11 @@ window.SDD = window.SDD || {};
       g.lineTo(x + 14, 145); g.lineTo(x + 20, 158); g.lineTo(x + 26, 138);
       g.lineTo(x + 32, 152); g.lineTo(x + 38, 178);
       g.fill();
-      // bright highlights
       g.fillStyle = '#c068a0';
       g.fillRect(x + 13, 148, 2, 6);
       g.fillRect(x + 25, 142, 2, 4);
     }
+
     // Near coral fronds - vibrant orange/yellow, larger parallax
     var nearSpan = 60;
     var nearOff = -(((camx * 0.45) % nearSpan) + nearSpan) % nearSpan;
@@ -1156,9 +1212,33 @@ window.SDD = window.SDD || {};
       g.fillStyle = '#ffd048';
       g.fillRect(nx + 6, 174, 1, 1); g.fillRect(nx + 28, 172, 1, 1);
     }
+
+    // ----- FOREGROUND swaying seaweed (closest parallax) -----
+    // Tall thin strands that sway side-to-side with sin(t). They sit
+    // semi-transparent so the player isn't visually blocked.
+    var swSpan = 38;
+    var swOff = -(((camx * 0.7) % swSpan) + swSpan) % swSpan;
+    for (var swX = swOff - swSpan; swX < 360; swX += swSpan) {
+      var swH = 50 + (((swX | 0) * 7) % 24);
+      var baseX = swX + 4;
+      g.fillStyle = 'rgba(40,120,72,0.55)';
+      // Build the strand as segments that sway more the higher up they are
+      for (var k = 0; k < swH; k += 3) {
+        var bend = Math.sin(t * 0.06 + swX * 0.05 + k * 0.04) * (k * 0.06);
+        g.fillRect((baseX + bend) | 0, 178 - k, 2, 3);
+      }
+      // Lighter accent strand alongside
+      g.fillStyle = 'rgba(80,170,110,0.45)';
+      for (var k2 = 0; k2 < swH - 6; k2 += 3) {
+        var bend2 = Math.sin(t * 0.06 + swX * 0.05 + k2 * 0.04 + 0.5) * (k2 * 0.05);
+        g.fillRect((baseX + 5 + bend2) | 0, 178 - k2, 1, 3);
+      }
+    }
+
     // Sand seabed strip
     g.fillStyle = '#c4a070'; g.fillRect(0, 176, 320, 4);
     g.fillStyle = '#8a6840'; g.fillRect(0, 178, 320, 2);
+
     // Bubble streams from the seabed drifting up
     for (var b2 = 0; b2 < 10; b2++) {
       var bx2 = ((b2 * 32 - camx * 0.5) % 320 + 320) % 320;
@@ -1358,7 +1438,7 @@ window.SDD = window.SDD || {};
         'sunlit':       { walker: 'flame', wisp: 'star', thrower: 'sun'  },
         'cosmic-night': { walker: null,    wisp: 'star', thrower: null   },
         'bird-sky':     { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
-        'seaside':      { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
+        'seaside':      { walker: 'clam',  wisp: 'jellyfish', thrower: 'rain' },
         'savanna':      { walker: 'lion',  wisp: 'bird', thrower: 'rock' },
         'village-dusk': { walker: 'leaf',  wisp: 'bat',  thrower: 'fruit'},
         'eden':         { walker: 'leaf',  wisp: 'leaf', thrower: 'fruit'}

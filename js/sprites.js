@@ -73,6 +73,8 @@ window.SDD = window.SDD || {};
     stA:  '#ffe680', stL:  '#ffffff', stB:  '#c69a30',
     // bat (village-dusk)
     btA:  '#5a3f78', btL:  '#7d5fa8', btB:  '#3a2854', btEye: '#ff5e5e',
+    // jellyfish (seaside) - translucent magenta/pink bell + trailing tentacles
+    jfA:  '#d878d8', jfL:  '#ffaee8', jfB:  '#8a3a90', jfEye: '#3a1234',
     // rain (sky / sea-surface)
     rnA:  '#7a8db0', rnL:  '#a9bbe0', rnB:  '#43526f', rnDrop: '#6cd0ff',
     // seed (forest / eden)
@@ -848,6 +850,36 @@ window.SDD = window.SDD || {};
     px(g, 5, 7, 4, 1, C.btB);
     // eyes (glowing red)
     px(g, 5, 5, 1, 1, C.btEye); px(g, 8, 5, 1, 1, C.btEye);
+  }
+
+  // Jellyfish flyer (seaside / underwater) - translucent magenta bell
+  // with hanging tentacles that sway between frames. Properly aquatic
+  // (was rendering as a hawk before because seaside used wisp:'bird').
+  function paintWisp_jellyfish(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    // Bell dome (top half) - rounded
+    px(g, 4, 3, 6, 1, C.jfA);
+    px(g, 3, 4, 8, 2, C.jfA);
+    px(g, 2, 6, 10, 1, C.jfA);
+    // Bell highlight - top-left sheen
+    px(g, 5, 3, 3, 1, C.jfL);
+    px(g, 4, 4, 2, 1, C.jfL);
+    // Bell shadow underside
+    px(g, 2, 7, 10, 1, C.jfB);
+    // Eyes - cute glowing dots under the bell
+    px(g, 5, 5, 1, 1, C.jfEye);
+    px(g, 8, 5, 1, 1, C.jfEye);
+    // Tentacles - 5 strands hanging down, swaying with frame
+    var sway = b ? 1 : -1;
+    px(g, 2 + sway, 8, 1, 4, C.jfA);     // far left
+    px(g, 4 - sway, 8, 1, 5, C.jfA);     // left
+    px(g, 6, 8, 1, 6, C.jfA);            // center (longest)
+    px(g, 9 + sway, 8, 1, 5, C.jfA);     // right
+    px(g, 11 - sway, 8, 1, 4, C.jfA);    // far right
+    // Tentacle highlights (pink tips)
+    px(g, 6, 12, 1, 2, C.jfL);
+    px(g, 4 - sway, 11, 1, 2, C.jfL);
+    px(g, 9 + sway, 11, 1, 2, C.jfL);
   }
 
   // ----- themed Thrower variants (16w x 16h stationary) -----
@@ -1775,7 +1807,8 @@ window.SDD = window.SDD || {};
         star:       paintWisp_star,
         bat:        paintWisp_bat,
         smoke:      paintWisp_smoke,
-        stormcloud: paintWisp_stormcloud
+        stormcloud: paintWisp_stormcloud,
+        jellyfish:  paintWisp_jellyfish
       };
       Object.keys(WISP_VARS).forEach(function (k) {
         var painter = WISP_VARS[k];
