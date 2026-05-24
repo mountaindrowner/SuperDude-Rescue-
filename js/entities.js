@@ -942,11 +942,158 @@ window.SDD = window.SDD || {};
     }
   };
 
+  // ===================== BUBBLE UPDRAFT (Day 5-2 chaos mechanic) =====
+  // Stationary column at a fixed x. Anywhere a player overlaps the
+  // column gets a strong upward push (vy clamped to negative). No
+  // damage - just throws the rhythm off as Mark wanted. Bubbles
+  // visually rise from the seabed.
+  function BubbleUp(x, y) {
+    this.x = x; this.y = y;
+    this.w = 14; this.h = 100;            // tall vertical zone
+    this.dead = false; this.remove = false;
+    this.invisible = true; this.stompable = false;
+    this.t = 0;
+  }
+  BubbleUp.prototype.update = function (level) {
+    this.t++;
+    var pl = level.player;
+    if (!pl || pl.dead) return;
+    if (overlap(pl, this)) {
+      // Push player up - cap their vy at a negative value so the
+      // updraft can't be neutralised by gravity.
+      if (pl.vy > -2.2) pl.vy = Math.max(-2.4, pl.vy - 0.6);
+    }
+  };
+  BubbleUp.prototype.draw = function (ctx, cam) {
+    // Drifting bubble column - small light rings rising
+    for (var i = 0; i < 6; i++) {
+      var by = this.y + this.h - ((this.t * 1.2 + i * 18) % this.h);
+      var bx = this.x + this.w / 2 + Math.sin(this.t * 0.05 + i) * 3;
+      var bs = 1 + (i % 3);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.arc(Math.round(bx - cam.x), Math.round(by - cam.y), bs, 0, 6.28);
+      ctx.fill();
+    }
+  };
+  BubbleUp.prototype.zap = function () {};
+  BubbleUp.prototype.stomped = function () {};
+
+  // ===================== OCTOPUS (Day 5-2 boss-y obstacle) ============
+  // Big sprawled silhouette. Body damages on contact - tentacles wave
+  // but aren't separate hitboxes (just visual). Doesn't move - the
+  // player goes AROUND.
+  function Octopus(x, y) {
+    this.x = x; this.y = y;
+    this.w = 56; this.h = 40;
+    this.dead = false; this.remove = false;
+    this.invisible = false; this.stompable = false;
+    this.t = 0;
+  }
+  Octopus.prototype.update = function (level) {
+    this.t++;
+    var pl = level.player;
+    if (!pl || pl.dead || pl.invuln > 0) return;
+    if (overlap(pl, this)) pl.hurt();
+  };
+  Octopus.prototype.draw = function (ctx, cam) {
+    var cx = Math.round(this.x + this.w / 2 - cam.x);
+    var cy = Math.round(this.y + 14 - cam.y);
+    // Dome body
+    ctx.fillStyle = '#a04068';
+    ctx.beginPath(); ctx.ellipse(cx, cy, 22, 14, 0, Math.PI, 0); ctx.fill();
+    // Lighter top dome highlight
+    ctx.fillStyle = '#d068a0';
+    ctx.beginPath(); ctx.ellipse(cx, cy - 2, 16, 8, 0, Math.PI, 0); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fff8d0';
+    ctx.beginPath(); ctx.arc(cx - 7, cy + 1, 3, 0, 6.28); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, cy + 1, 3, 0, 6.28); ctx.fill();
+    ctx.fillStyle = '#1a1640';
+    ctx.beginPath(); ctx.arc(cx - 7, cy + 2, 1.5, 0, 6.28); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, cy + 2, 1.5, 0, 6.28); ctx.fill();
+    // 6 tentacles draped down + sideways with slow sine sway
+    ctx.strokeStyle = '#a04068'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    for (var i = 0; i < 6; i++) {
+      var ang = (i / 5) * Math.PI - Math.PI;     // -PI to 0 (left to right)
+      var bx = cx + Math.cos(ang) * 18;
+      var by = cy + Math.abs(Math.sin(ang)) * 8 + 6;
+      var sway = Math.sin(this.t * 0.05 + i) * 3;
+      var ex = bx + (i - 2.5) * 2 + sway;
+      var ey = by + 20;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.quadraticCurveTo(bx + sway, by + 10, ex, ey);
+      ctx.stroke();
+    }
+    // Suction cup dots on tentacles
+    ctx.fillStyle = '#ffd0e0';
+    for (var s = 0; s < 6; s++) {
+      var sx = cx + (s - 2.5) * 9 + Math.sin(this.t * 0.05 + s) * 2;
+      ctx.fillRect(sx | 0, cy + 24, 1, 1);
+      ctx.fillRect(sx | 0, cy + 30, 1, 1);
+    }
+  };
+  Octopus.prototype.zap = function () {};
+  Octopus.prototype.stomped = function () {};
+
+  // ===================== TWISTER (Day 5-1 background-drift hazard) ===
+  // Drifts left-to-right across the screen at the player's altitude
+  // band. Contact triggers the same flappy wall-hit behaviour as
+  // hitting a pillar.
+  function Twister(x, y) {
+    this.x = x; this.y = y;
+    this.w = 14; this.h = 30;
+    this.vx = 1.6;
+    this.dead = false; this.remove = false;
+    this.stompable = false;
+    this.t = 0;
+  }
+  Twister.prototype.update = function (level) {
+    this.t++;
+    this.x += this.vx;
+    // Wrap across the visible camera area
+    var cam = level.camera;
+    if (cam && this.x > cam.x + 340) this.x = cam.x - 30;
+    if (this.x < -40) this.x = level.map.pxW + 20;
+    var pl = level.player;
+    if (!pl || pl.dead || pl.invuln > 0) return;
+    if (overlap(pl, this)) {
+      // Trigger the same bounce-back as a wall hit in flappy mode.
+      pl.flappyStunT = 24;
+      pl.vy = Math.max(pl.vy, 1.2);
+      SDD.audio.sfx('bump');
+    }
+  };
+  Twister.prototype.draw = function (ctx, cam) {
+    var cx = Math.round(this.x + this.w / 2 - cam.x);
+    var cy = Math.round(this.y - cam.y);
+    var sway = Math.sin(this.t * 0.15) * 2;
+    // Dark cone w/ spiral hint
+    ctx.fillStyle = 'rgba(80,90,120,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(cx - 8 + sway,     cy);
+    ctx.lineTo(cx + 8 + sway,     cy);
+    ctx.lineTo(cx + 4 + sway / 2, cy + 18);
+    ctx.lineTo(cx + 2,            cy + 28);
+    ctx.lineTo(cx + 1,            cy + 28);
+    ctx.lineTo(cx - 2 + sway / 2, cy + 18);
+    ctx.closePath(); ctx.fill();
+    // Spiral lines
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillRect((cx - 6 + sway) | 0,     cy + 3, 12, 1);
+    ctx.fillRect((cx - 4 + sway) | 0,     cy + 8, 8,  1);
+    ctx.fillRect((cx - 2 + sway / 2) | 0, cy + 14, 5, 1);
+  };
+  Twister.prototype.zap = function () {};
+  Twister.prototype.stomped = function () {};
+
   SDD.ent = {
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
     ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC,
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
-    Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume
+    Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
+    BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister
   };
 })();

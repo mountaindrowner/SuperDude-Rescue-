@@ -79,6 +79,19 @@ window.SDD = window.SDD || {};
   sp('wisp', 278, 5); sp('wisp', 292, 8);
   sp('core', 264, 6); sp('core', 278, 9); sp('core', 295, 5);
 
+  // ============== PASS 9: chaos additions ==============
+  // Bubble updraft columns - push Danny upward when he swims through.
+  // Adds rhythm interest + helps reach the higher coral gaps.
+  sp('bubble', 56, 4);
+  sp('bubble', 130, 4);
+  sp('bubble', 200, 4);
+  sp('bubble', 280, 4);
+  // Sprawled octopus - body damages on contact, just go around. One
+  // each per third of the level, in clear water so the player has
+  // room to navigate.
+  sp('octopus', 100, 7);
+  sp('octopus', 220, 7);
+
   // Goal: back wall + time-part
   box(W - 1, 0, W - 1, 13, 'X');
   sp('timepart', W - 5, 8);

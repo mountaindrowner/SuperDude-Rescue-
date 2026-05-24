@@ -55,6 +55,15 @@ window.SDD = window.SDD || {};
   }
   sp('wisp', 154, 7); sp('wisp', 172, 4);
 
+  // Drifting twisters - pass left-to-right through the mid-altitude
+  // band. Contact triggers the same bounce-stun as a wall hit (not
+  // an instant death). One per section so the difficulty bump is
+  // gentle per Mark's "nothing too complicated since that's already
+  // a hard stage."
+  sp('twister', 64, 6);
+  sp('twister', 110, 4);
+  sp('twister', 170, 7);
+
   box(W - 4, 0, W - 4, 12, 'X');
   sp('timepart', W - 7, 8);
   sp('core', W - 10, 4); sp('core', W - 10, 7);

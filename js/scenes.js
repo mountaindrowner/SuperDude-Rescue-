@@ -1335,6 +1335,16 @@ window.SDD = window.SDD || {};
             s.kind || 'flare', s.period || 90, s.dir || 1);
           e.tx = s.tx; e.ty = s.ty;                        // for nozzle decoration
           this.enemies.push(e);
+        } else if (s.type === 'bubble') {
+          e = new SDD.ent.BubbleUp(s.tx * T + 1, (s.ty || 1) * T);
+          this.enemies.push(e);
+        } else if (s.type === 'octopus') {
+          e = new SDD.ent.Octopus(s.tx * T, s.ty * T);
+          this.enemies.push(e);
+        } else if (s.type === 'twister') {
+          e = new SDD.ent.Twister(s.tx * T, (s.ty || 4) * T);
+          if (s.spd) e.vx = s.spd;
+          this.enemies.push(e);
         }
       }
       // Per-theme platform skin so movers don't all look like the
