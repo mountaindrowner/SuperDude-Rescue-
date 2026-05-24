@@ -7,7 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Super Dude">
 <title>Super Dude Danny</title>
+<!-- PWA: installable web app. Once added to the home screen the game
+     opens full-screen with no browser chrome, and a service worker
+     caches the shell so it runs offline after the first visit. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
 <!-- Hint the browser to prefetch the first-played tracks at top
      priority so they're buffered the moment the user presses a
      key on the title card (Mark Pass 9: 'music started really
@@ -60,5 +68,18 @@
 <script src="js/level_7_1.js"></script>
 <script src="js/scenes.js"></script>
 <script src="js/main.js"></script>
+
+<!-- Service worker registration. Runs only on http/https origins -
+     file:// loads (running index.html locally with no server) skip
+     it silently. -->
+<script>
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('service-worker.js').catch(function (err) {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
+</script>
 </body>
 </html>
