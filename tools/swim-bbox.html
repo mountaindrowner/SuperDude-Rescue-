@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Swim sprite bbox tuner</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #1a2438;
+    color: #e0e6f0;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 16px; margin: 0 0 6px 0; }
+  h2 { font-size: 13px; margin: 14px 0 6px 0; color: #ffe070; letter-spacing: .08em; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 14px; }
+  .panel { background: #2a3658; border: 1px solid #3a4a78; border-radius: 6px; padding: 10px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+  .field { display: grid; grid-template-columns: 80px 60px 1fr 50px; align-items: center; gap: 6px; margin: 3px 0; }
+  .field label { color: #cccccc; }
+  .field input[type=number] { width: 60px; background: #1a2438; color: #fff; border: 1px solid #4a5a8c; padding: 3px 4px; }
+  .field input[type=range] { width: 100%; }
+  .field .read { color: #80b0ff; text-align: right; }
+  .canvases { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  canvas { background: #0f1428; border: 1px solid #4a5a8c; image-rendering: pixelated; }
+  button { background: #3a4a78; color: #fff; border: 1px solid #5a6aa8; padding: 6px 10px; cursor: pointer; }
+  button:hover { background: #4a5a8c; }
+  button.active { background: #ffe070; color: #000; }
+  .btnrow { display: flex; gap: 6px; flex-wrap: wrap; }
+  .key { color: #ffe070; }
+  pre {
+    background: #0f1428; color: #b0e070;
+    padding: 8px 10px; border-radius: 4px;
+    font-size: 12px; line-height: 1.45;
+    white-space: pre-wrap;
+    border: 1px solid #4a5a8c;
+    user-select: all;
+  }
+  .legend { font-size: 11px; color: #8a9abc; margin-top: 4px; }
+  .frame-row { display: flex; gap: 4px; flex-wrap: wrap; margin: 4px 0 8px 0; }
+  .frame-row button { padding: 3px 7px; font-size: 11px; min-width: 28px; }
+  .helprow { color: #aab8d0; font-size: 11px; line-height: 1.5; margin: 6px 0; }
+  .ranges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Swim sprite bbox tuner</h1>
+  <div class="helprow">
+    Adjust bbox + display size on the left for Big and right for Small Danny.
+    Arrow keys nudge the focused number by 1. Play/pause cycles frames 0-8 at game speed.
+    The green outline shows the player's collision hitbox at the same scale,
+    so you can see how much the sprite extends beyond the player's actual physics.
+    When happy, copy the generated JS at the bottom into <code>js/sprites.js</code>.
+  </div>
+
+  <div class="row">
+    <!-- ================= BIG ================= -->
+    <div class="col">
+      <div class="panel">
+        <h2>BIG DANNY (96x96 source PNG)</h2>
+        <div class="canvases">
+          <div>
+            <div class="legend">SOURCE + bbox</div>
+            <canvas id="bigSrc" width="240" height="240"></canvas>
+          </div>
+          <div>
+            <div class="legend">RENDERED + hitbox (green)</div>
+            <canvas id="bigOut" width="240" height="240"></canvas>
+          </div>
+        </div>
+
+        <div class="frame-row" id="bigFrames"></div>
+        <div class="btnrow">
+          <button id="bigPlay">play</button>
+          <button id="bigPause">pause</button>
+          <span style="margin-left:auto;color:#aaa">frame <span id="bigFrameLbl">4</span></span>
+        </div>
+
+        <h2>bbox (crop window on the source PNG)</h2>
+        <div id="bigBboxFields"></div>
+
+        <h2>display size (px on the game canvas)</h2>
+        <div class="ranges">
+          <div id="bigDispW"></div>
+          <div id="bigDispH"></div>
+        </div>
+        <div class="legend">
+          aspect (w/h): <span id="bigAspect"></span>
+          &nbsp;|&nbsp; bbox-relative scale: <span id="bigBboxScale"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SMALL ================= -->
+    <div class="col">
+      <div class="panel">
+        <h2>SMALL DANNY (92x92 source PNG)</h2>
+        <div class="canvases">
+          <div>
+            <div class="legend">SOURCE + bbox</div>
+            <canvas id="smallSrc" width="240" height="240"></canvas>
+          </div>
+          <div>
+            <div class="legend">RENDERED + hitbox</div>
+            <canvas id="smallOut" width="240" height="240"></canvas>
+          </div>
+        </div>
+
+        <div class="frame-row" id="smallFrames"></div>
+        <div class="btnrow">
+          <button id="smallPlay">play</button>
+          <button id="smallPause">pause</button>
+          <span style="margin-left:auto;color:#aaa">frame <span id="smallFrameLbl">4</span></span>
+        </div>
+
+        <h2>bbox</h2>
+        <div id="smallBboxFields"></div>
+
+        <h2>display size</h2>
+        <div class="ranges">
+          <div id="smallDispW"></div>
+          <div id="smallDispH"></div>
+        </div>
+        <div class="legend">
+          aspect (w/h): <span id="smallAspect"></span>
+          &nbsp;|&nbsp; bbox-relative scale: <span id="smallBboxScale"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="margin-top:18px">code to paste into js/sprites.js</h2>
+  <div class="helprow">
+    PL_BBOX entries replace the existing <code>swim:</code> lines for each size.
+    PL_DISPLAY_OVERRIDE controls the on-canvas display height
+    (matched to bbox aspect so you don't have to think about it).
+  </div>
+  <pre id="codeOut"></pre>
+
+  <div class="btnrow" style="margin-top:10px">
+    <button id="reset">reset to current shipping values</button>
+    <button id="useUnion">use measured union bbox</button>
+    <button id="copyCode">copy code</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ===== ASSET PATHS =========================================================
+// Tool lives in tools/, sprites live in ../assets/...
+var FRAMES = 9;
+var BASE_PATHS = {
+  big:   '../assets/Super Dude Danny Big Sprites/Swimming_right_body_horizontal_paddling_with_hand-820a931e/east',
+  small: '../assets/Super Dude Danny Small Sprites -/Swimming_right_body_horizontal_paddling_with_hands-f8bee37d/east'
+};
+// SOURCE PNG DIMENSIONS (used to scale the preview)
+var SOURCE_DIM = { big: 96, small: 92 };
+
+// ===== STARTING VALUES =====================================================
+// These match what's currently shipping in js/sprites.js. Reset goes here.
+var CURRENT_SHIPPED = {
+  big:   { bbox: { x: 8,  y: 23, w: 78, h: 48 }, dispW: 59, dispH: 36 },
+  small: { bbox: { x: 10, y: 21, w: 72, h: 51 }, dispW: 51, dispH: 36 }
+};
+// Measured union bbox from /tmp/measure_swim.js
+var MEASURED_UNION = {
+  big:   { x: 8,  y: 23, w: 78, h: 48 },
+  small: { x: 10, y: 21, w: 72, h: 51 }
+};
+// Player hitbox in game pixels.
+var HITBOX = {
+  big:   { w: 18, h: 36 },
+  small: { w: 13, h: 23 }
+};
+
+// ===== STATE ===============================================================
+var state = JSON.parse(JSON.stringify(CURRENT_SHIPPED));
+var frameIdx = { big: 4, small: 4 };
+var playing  = { big: false, small: false };
+var imgs     = { big: [], small: [] };
+
+// ===== LOAD ALL FRAMES =====================================================
+function loadAll(cb) {
+  var pending = 0, total = 2 * FRAMES;
+  ['big', 'small'].forEach(function (size) {
+    for (var i = 0; i < FRAMES; i++) (function (i) {
+      var im = new Image();
+      pending++;
+      im.onload = function () { if (--pending === 0) cb(); };
+      im.onerror = function () { if (--pending === 0) cb(); };
+      im.src = BASE_PATHS[size] + '/frame_00' + i + '.png';
+      imgs[size].push(im);
+    })(i);
+  });
+}
+
+// ===== FIELD HELPERS =======================================================
+// One row: label | number input | slider | live readout
+function makeField(container, size, key, min, max, onChange) {
+  var row = document.createElement('div'); row.className = 'field';
+  var lbl = document.createElement('label'); lbl.textContent = key;
+  var num = document.createElement('input');
+  num.type = 'number'; num.min = min; num.max = max;
+  num.value = readVal(size, key);
+  var rng = document.createElement('input');
+  rng.type = 'range'; rng.min = min; rng.max = max;
+  rng.value = num.value;
+  var read = document.createElement('span'); read.className = 'read'; read.textContent = num.value;
+  function set(v) {
+    v = Math.max(min, Math.min(max, +v || 0));
+    num.value = v; rng.value = v; read.textContent = v;
+    writeVal(size, key, v);
+    onChange && onChange(v);
+    rebuildCode();
+    render(size);
+  }
+  num.addEventListener('input',  function () { set(num.value); });
+  rng.addEventListener('input',  function () { set(rng.value); });
+  num.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowUp')   { set(+num.value + 1); e.preventDefault(); }
+    if (e.key === 'ArrowDown') { set(+num.value - 1); e.preventDefault(); }
+  });
+  row.appendChild(lbl); row.appendChild(num); row.appendChild(rng); row.appendChild(read);
+  container.appendChild(row);
+  return { set: set, get: function () { return +num.value; }, num: num, rng: rng };
+}
+function readVal(size, key) {
+  if (key === 'x' || key === 'y' || key === 'w' || key === 'h') return state[size].bbox[key];
+  return state[size][key];
+}
+function writeVal(size, key, v) {
+  if (key === 'x' || key === 'y' || key === 'w' || key === 'h') state[size].bbox[key] = v;
+  else state[size][key] = v;
+}
+
+// ===== BUILD UI ============================================================
+var controls = { big: {}, small: {} };
+['big', 'small'].forEach(function (size) {
+  var src = SOURCE_DIM[size];
+  // bbox
+  var bboxC = document.getElementById(size + 'BboxFields');
+  controls[size].x = makeField(bboxC, size, 'x', 0, src - 1);
+  controls[size].y = makeField(bboxC, size, 'y', 0, src - 1);
+  controls[size].w = makeField(bboxC, size, 'w', 1, src);
+  controls[size].h = makeField(bboxC, size, 'h', 1, src);
+  // display
+  controls[size].dispW = makeField(document.getElementById(size + 'DispW'), size, 'dispW', 4, 160);
+  controls[size].dispH = makeField(document.getElementById(size + 'DispH'), size, 'dispH', 4, 120);
+
+  // frame chips
+  var fr = document.getElementById(size + 'Frames');
+  for (var i = 0; i < FRAMES; i++) (function (i) {
+    var b = document.createElement('button');
+    b.textContent = i;
+    b.addEventListener('click', function () { setFrame(size, i); });
+    fr.appendChild(b);
+  })(i);
+
+  document.getElementById(size + 'Play').addEventListener('click', function () { playing[size] = true; });
+  document.getElementById(size + 'Pause').addEventListener('click', function () { playing[size] = false; });
+});
+
+document.getElementById('reset').addEventListener('click', function () {
+  state = JSON.parse(JSON.stringify(CURRENT_SHIPPED));
+  applyStateToControls();
+});
+document.getElementById('useUnion').addEventListener('click', function () {
+  state.big.bbox = Object.assign({}, MEASURED_UNION.big);
+  state.small.bbox = Object.assign({}, MEASURED_UNION.small);
+  // Recompute display dims to current aspect at dispH=36
+  state.big.dispH = 36;
+  state.big.dispW = Math.round(state.big.bbox.w * 36 / state.big.bbox.h);
+  state.small.dispH = 36;
+  state.small.dispW = Math.round(state.small.bbox.w * 36 / state.small.bbox.h);
+  applyStateToControls();
+});
+document.getElementById('copyCode').addEventListener('click', function () {
+  var t = document.getElementById('codeOut').textContent;
+  navigator.clipboard && navigator.clipboard.writeText(t);
+  var b = document.getElementById('copyCode');
+  var was = b.textContent;
+  b.textContent = 'copied!';
+  setTimeout(function () { b.textContent = was; }, 1200);
+});
+
+function applyStateToControls() {
+  ['big', 'small'].forEach(function (size) {
+    controls[size].x.set(state[size].bbox.x);
+    controls[size].y.set(state[size].bbox.y);
+    controls[size].w.set(state[size].bbox.w);
+    controls[size].h.set(state[size].bbox.h);
+    controls[size].dispW.set(state[size].dispW);
+    controls[size].dispH.set(state[size].dispH);
+  });
+}
+
+function setFrame(size, i) {
+  frameIdx[size] = i;
+  document.getElementById(size + 'FrameLbl').textContent = i;
+  render(size);
+}
+
+// ===== RENDER ==============================================================
+function render(size) {
+  if (!imgs[size].length || !imgs[size][frameIdx[size]] ||
+      !imgs[size][frameIdx[size]].complete) return;
+  drawSource(size);
+  drawOutput(size);
+  // aspect + scale readouts
+  var b = state[size].bbox;
+  var aspect = (b.w / b.h).toFixed(2);
+  document.getElementById(size + 'Aspect').textContent = aspect + '  (' + b.w + ' / ' + b.h + ')';
+  var scale = (state[size].dispH / b.h).toFixed(3);
+  document.getElementById(size + 'BboxScale').textContent =
+    scale + ' (display ' + state[size].dispW + 'x' + state[size].dispH + ')';
+}
+
+// Draw source PNG (scaled up) + bbox overlay
+function drawSource(size) {
+  var canvas = document.getElementById(size + 'Src');
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#0f1428';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  var img = imgs[size][frameIdx[size]];
+  var src = SOURCE_DIM[size];
+  // fit source to canvas (sx zoom factor)
+  var zoom = canvas.width / src;
+  // checker bg so transparent pixels are visible
+  var t = 8;
+  for (var y = 0; y < canvas.height; y += t) for (var x = 0; x < canvas.width; x += t) {
+    var on = ((x / t + y / t) | 0) % 2;
+    ctx.fillStyle = on ? '#1a2438' : '#202d4a';
+    ctx.fillRect(x, y, t, t);
+  }
+  ctx.drawImage(img, 0, 0, src, src, 0, 0, canvas.width, canvas.height);
+  // bbox overlay
+  var b = state[size].bbox;
+  ctx.strokeStyle = '#ff5060';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(b.x * zoom + 0.5, b.y * zoom + 0.5, b.w * zoom, b.h * zoom);
+  // bbox label
+  ctx.fillStyle = '#ff5060';
+  ctx.font = '11px monospace';
+  ctx.fillText('bbox ' + b.w + 'x' + b.h + ' @ (' + b.x + ',' + b.y + ')', 4, 12);
+}
+
+// Render the cropped sprite at display size, next to player hitbox
+function drawOutput(size) {
+  var canvas = document.getElementById(size + 'Out');
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#0f1428';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // ground line near the bottom
+  ctx.fillStyle = '#3a4a78';
+  ctx.fillRect(0, canvas.height - 20, canvas.width, 1);
+  // Zoom factor: blow up so the sprite is at least ~3-4x larger than game scale.
+  var zoom = 3;
+  var img = imgs[size][frameIdx[size]];
+  var s = state[size];
+  var hit = HITBOX[size];
+  // Draw hitbox first (so sprite overlays it). Anchor: centre-x, baseline near bottom.
+  var cx = canvas.width / 2;
+  var baseY = canvas.height - 22;
+  var hx = cx - (hit.w * zoom) / 2;
+  var hy = baseY - hit.h * zoom;
+  ctx.fillStyle = 'rgba(80,255,120,0.18)';
+  ctx.fillRect(hx, hy, hit.w * zoom, hit.h * zoom);
+  ctx.strokeStyle = 'rgba(80,255,120,0.9)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(hx + 0.5, hy + 0.5, hit.w * zoom - 1, hit.h * zoom - 1);
+  // Sprite: bottom-centered on hitbox baseline, at dispW x dispH (then zoomed).
+  var spW = s.dispW * zoom, spH = s.dispH * zoom;
+  var sx = cx - spW / 2;
+  var sy = baseY - spH;
+  var b = s.bbox;
+  ctx.drawImage(img, b.x, b.y, b.w, b.h, sx, sy, spW, spH);
+  // labels
+  ctx.fillStyle = '#cccccc';
+  ctx.font = '11px monospace';
+  ctx.fillText(s.dispW + 'x' + s.dispH + ' display', 4, 12);
+  ctx.fillText('hitbox ' + hit.w + 'x' + hit.h, 4, 24);
+  ctx.fillText('zoom x' + zoom, 4, 36);
+}
+
+// ===== CODE OUT ============================================================
+function rebuildCode() {
+  function fmt(b) { return '{ x: ' + b.x + ', y: ' + b.y + ', w: ' + b.w + ', h: ' + b.h + ' }'; }
+  var b = state.big.bbox, s = state.small.bbox;
+  var out = '// ----- PL_BBOX patches (swim only) -----\n';
+  out += '// In PL_BBOX.big, replace the swim line with:\n';
+  out += 'swim: { east: ' + fmt(b) + ', west: ' + fmt(b) + ' },\n\n';
+  out += '// In PL_BBOX.small, replace the swim line with:\n';
+  out += 'swim: { east: ' + fmt(s) + ', west: ' + fmt(s) + ' },\n\n';
+  out += '// ----- PL_DISPLAY_OVERRIDE patches -----\n';
+  // If dispH differs from the default (36 big, 26 small), need override.
+  var bigOverride   = state.big.dispH;
+  var smallOverride = state.small.dispH;
+  out += 'var PL_DISPLAY_OVERRIDE = {\n';
+  out += '  big:   { swim: ' + bigOverride + ' },\n';
+  out += '  small: { swim: ' + smallOverride + ' }\n';
+  out += '};\n\n';
+  out += '// Note: bbox aspect is ' + (b.w / b.h).toFixed(2) + ' (big) / '
+      + (s.w / s.h).toFixed(2) + ' (small).\n';
+  out += '// dispW is derived by the engine: dispW = bbox.w * (dispH / bbox.h).\n';
+  out += '// Your current dispW = ' + state.big.dispW + ' (big), ' + state.small.dispW + ' (small).\n';
+  out += '// If those values are right, the engine will produce them automatically.\n';
+  document.getElementById('codeOut').textContent = out;
+}
+
+// ===== ANIMATION LOOP ======================================================
+var lastTick = 0;
+function tick(now) {
+  if (!lastTick) lastTick = now;
+  if (now - lastTick > 120) {
+    lastTick = now;
+    ['big', 'small'].forEach(function (size) {
+      if (playing[size]) setFrame(size, (frameIdx[size] + 1) % FRAMES);
+    });
+  }
+  requestAnimationFrame(tick);
+}
+
+// ===== BOOT ================================================================
+loadAll(function () {
+  rebuildCode();
+  render('big');
+  render('small');
+  requestAnimationFrame(tick);
+});
+</script>
+</body>
+</html>
