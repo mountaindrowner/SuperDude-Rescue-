@@ -1346,10 +1346,90 @@ window.SDD = window.SDD || {};
   Twister.prototype.zap = function () {};
   Twister.prototype.stomped = function () {};
 
+  // -----------------------------------------------------------------
+  // Checkpoint - a flag the player walks past to set a respawn point.
+  // On easy + medium difficulty, death respawns at the most recently
+  // triggered checkpoint instead of the stage start. Hard ignores them.
+  // The flag rises from grey/lowered to bright yellow/raised when hit.
+  // Sits on the entity list (this.items) for collision-against-player.
+  // -----------------------------------------------------------------
+  function Checkpoint(x, y, tx, ty) {
+    this.x = x; this.y = y; this.w = 12; this.h = 24;
+    this.tx = tx; this.ty = ty;          // tile coords - identity across respawns
+    this.triggered = false;
+    this.t = 0;        // animation tick - drives the raise transition
+    this.raiseT = 0;   // 0..20 lerp into the raised pose on trigger
+    this.remove = false;
+  }
+  Checkpoint.prototype.update = function (level) {
+    this.t++;
+    if (this.triggered && this.raiseT < 20) this.raiseT++;
+    if (this.triggered) return;
+    var p = level && level.player;
+    if (!p || p.dead || p.win) return;
+    if (overlap(this, p)) {
+      this.triggered = true;
+      // Respawn at the flag's base so death always puts the player
+      // back on the visible checkpoint - avoids weird mid-air respawns
+      // if the kid happened to brush the flag mid-jump.
+      level.lastCheckpoint = { x: this.x - p.w / 2 + this.w / 2, y: this.y + this.h - p.h };
+      if (!level.triggeredCheckpoints) level.triggeredCheckpoints = [];
+      level.triggeredCheckpoints.push(this.tx + ',' + this.ty);
+      if (SDD.audio && SDD.audio.sfx) SDD.audio.sfx('1up');
+    }
+  };
+  Checkpoint.prototype.draw = function (ctx, cam) {
+    var x = Math.round(this.x - cam.x);
+    var y = Math.round(this.y - cam.y);
+    // Pole (always present, stone-grey)
+    ctx.fillStyle = '#9aa0b0';
+    ctx.fillRect(x + 5, y, 2, this.h);
+    ctx.fillStyle = '#5a6070';
+    ctx.fillRect(x + 5, y, 1, this.h);
+    // Base block
+    ctx.fillStyle = '#5a6070';
+    ctx.fillRect(x + 1, y + this.h - 3, 10, 3);
+    ctx.fillStyle = '#3a4050';
+    ctx.fillRect(x + 1, y + this.h - 1, 10, 1);
+    // Flag - slides up the pole and changes colour when triggered.
+    // Untriggered flag sits at the bottom of the pole, dull grey.
+    // Triggered flag rises to the top and turns bright yellow.
+    var lerp = this.raiseT / 20;
+    var flagTop = this.triggered ? (y + 2 + Math.round(lerp * 0) ) : (y + this.h - 12);
+    // Animate the lerp
+    flagTop = Math.round((y + this.h - 12) + (this.triggered ? -((this.h - 14) * lerp) : 0));
+    var wave = this.triggered ? Math.sin(this.t * 0.18) * 1.5 : 0;
+    var flagW = 8;
+    var flagH = 6;
+    var fx = x + 7;
+    var fy = flagTop;
+    if (this.triggered) {
+      ctx.fillStyle = '#ffd23a';                  // bright sunflower
+      ctx.fillRect(fx, fy, flagW + Math.round(wave), flagH);
+      ctx.fillStyle = '#a8631a';                  // edge shadow
+      ctx.fillRect(fx, fy + flagH - 1, flagW + Math.round(wave), 1);
+      ctx.fillRect(fx + flagW + Math.round(wave) - 1, fy + 1, 1, flagH - 1);
+      // Sparkle on first trigger
+      if (this.raiseT < 14 && (this.raiseT % 3) === 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(fx + 2, fy - 1, 1, 1);
+        ctx.fillRect(fx + flagW - 1, fy + 2, 1, 1);
+      }
+    } else {
+      ctx.fillStyle = '#7a8090';                  // dull grey
+      ctx.fillRect(fx, fy, flagW, flagH);
+      ctx.fillStyle = '#5a6070';
+      ctx.fillRect(fx, fy + flagH - 1, flagW, 1);
+    }
+  };
+  Checkpoint.prototype.zap = function () {};
+  Checkpoint.prototype.stomped = function () {};
+
   SDD.ent = {
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
     ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC,
+    Checkpoint: Checkpoint,
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
     Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
     BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister

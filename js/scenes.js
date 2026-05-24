@@ -328,7 +328,7 @@ window.SDD = window.SDD || {};
       if (In.confirm()) {
         var act = this.items[this.idx].act;
         A.sfx('confirm');
-        if (act === 'new') { SDD.save.reset(); SDD.save.save(); go('intro'); }
+        if (act === 'new') { go('newgame'); }
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
@@ -358,6 +358,160 @@ window.SDD = window.SDD || {};
       // Bumped down to y=164 and the menu items pushed up to y=104 so
       // they don't collide with the tagline.
       if (this.t % 50 < 34) text(g, 'CROSSROADS FOUNDATION ADVENTURE', 160, 164, '#aab0d4', 1, 'center');
+    }
+  };
+
+  // =====================================================================
+  // NEW GAME - difficulty / save-slot picker. Tapping a slot loads that
+  // save: empty slots start a fresh intro, populated slots resume from
+  // the overworld with the previously-unlocked progress intact. ERASE
+  // sends to a sub-confirm so kids can wipe a save without dropping
+  // the others.
+  // =====================================================================
+  function slotStatusText(d) {
+    var sum = SDD.save.slotSummary(d);
+    if (!sum || sum.empty) return 'EMPTY';
+    var stagesDone = sum.completedStages.length;
+    var lbl = 'DAY ' + sum.unlockedDay;
+    if (SDD.save.stagesForDay(sum.unlockedDay) > 1) lbl += '-' + sum.unlockedStage;
+    return lbl + '   STAGES ' + stagesDone;
+  }
+
+  var DIFFICULTY_META = {
+    easy:   { label: 'EASY',   color: '#9bf0a0', desc: 'UNLIMITED LIVES + CHECKPOINTS' },
+    medium: { label: 'MEDIUM', color: '#ffd23a', desc: 'CLASSIC LIVES + CHECKPOINTS'   },
+    hard:   { label: 'HARD',   color: '#ff8a6a', desc: 'NO CHECKPOINTS - ONE LIFE LOST = STAGE START' }
+  };
+
+  SDD.scenes.newgame = {
+    enter: function () {
+      this.t = 0;
+      this.idx = 0;
+      this.confirmErase = null;          // when set: holds 'easy'/'medium'/'hard'
+      // Active difficulty starts highlighted so opening the picker keeps
+      // the cursor on the player's most recent slot.
+      var cur = SDD.save.curDifficulty();
+      var diffs = ['easy', 'medium', 'hard'];
+      var ci = diffs.indexOf(cur);
+      if (ci >= 0) this.idx = ci;
+    },
+    update: function () {
+      this.t++;
+      // Sub-confirm dialog handles its own input
+      if (this.confirmErase) {
+        if (In.pressed('left'))  { this.confirmYes = false; A.sfx('select'); }
+        if (In.pressed('right')) { this.confirmYes = true; A.sfx('select'); }
+        if (In.confirm()) {
+          A.sfx('confirm');
+          if (this.confirmYes) {
+            SDD.save.resetSlot(this.confirmErase);
+          }
+          this.confirmErase = null;
+          this.confirmYes = false;
+        }
+        if (In.pressed('pause')) { A.sfx('confirm'); this.confirmErase = null; this.confirmYes = false; }
+        return;
+      }
+      // 5 items: easy, medium, hard, ERASE A SAVE (only if any slot has progress), BACK
+      var items = this.buildItems();
+      listNav(this, items.length);
+      if (In.pressed('pause')) { A.sfx('confirm'); go('menu'); return; }
+      if (In.confirm()) {
+        var it = items[this.idx];
+        A.sfx('confirm');
+        if (it.act === 'play') {
+          var d = it.diff;
+          SDD.save.setDifficulty(d);
+          var sum = SDD.save.slotSummary(d);
+          if (sum.empty) {
+            SDD.save.resetSlot(d);                  // defensive - keep slot clean
+            go('intro');
+          } else {
+            go('overworld');
+          }
+        } else if (it.act === 'erase') {
+          // Open the erase sub-picker - pick which slot to wipe
+          this.eraseChoose = true;
+          this.idx = 0;
+        } else if (it.act === 'eraseChoose') {
+          if (it.disabled) return;
+          this.confirmErase = it.diff;
+          this.confirmYes = false;
+        } else if (it.act === 'back') {
+          if (this.eraseChoose) { this.eraseChoose = false; this.idx = 0; }
+          else { go('menu'); }
+        }
+      }
+    },
+    buildItems: function () {
+      var items = [];
+      if (this.eraseChoose) {
+        var diffs = ['easy', 'medium', 'hard'];
+        for (var i = 0; i < diffs.length; i++) {
+          var d = diffs[i];
+          var sum = SDD.save.slotSummary(d);
+          items.push({
+            act: 'eraseChoose', diff: d,
+            label: 'ERASE ' + DIFFICULTY_META[d].label,
+            sub: sum.empty ? '(EMPTY)' : slotStatusText(d),
+            disabled: sum.empty
+          });
+        }
+        items.push({ act: 'back', label: 'BACK' });
+        return items;
+      }
+      ['easy', 'medium', 'hard'].forEach(function (d) {
+        items.push({ act: 'play', diff: d, label: DIFFICULTY_META[d].label, sub: slotStatusText(d) });
+      });
+      var anyProgress = SDD.save.hasSave();
+      if (anyProgress) items.push({ act: 'erase', label: 'ERASE A SAVE' });
+      items.push({ act: 'back', label: 'BACK' });
+      return items;
+    },
+    render: function (g) {
+      var grd = g.createLinearGradient(0, 0, 0, 180);
+      grd.addColorStop(0, '#1a1640'); grd.addColorStop(1, '#4a3a78');
+      g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+      drawStarfield(g, this.t);
+      tsh(g, this.eraseChoose ? 'ERASE A SAVE' : 'SELECT DIFFICULTY',
+          160, 22, '#ffd23a', '#a8631a', 2, 'center');
+
+      var items = this.buildItems();
+      // Body list rendered from y=52, 22px per row to fit 5 items in the
+      // available 180px viewport with breathing room.
+      var rowH = 22;
+      for (var i = 0; i < items.length; i++) {
+        var y = 52 + i * rowH;
+        var sel = i === this.idx;
+        var it = items[i];
+        var meta = it.diff ? DIFFICULTY_META[it.diff] : null;
+        var color = sel ? '#ffffff' : (meta ? meta.color : '#9aa0c4');
+        if (sel) text(g, '>', 38, y, '#ffd23a', 1, 'left');
+        text(g, it.label, 56, y, color, 1, 'left');
+        if (it.sub) {
+          text(g, it.sub, 200, y, sel ? '#dfe6ff' : '#7a80a4', 1, 'left');
+        }
+        if (meta && sel) {
+          // One-line description hint for the focused difficulty
+          text(g, meta.desc, 160, 156, '#aab0d4', 1, 'center');
+        }
+      }
+      // Confirm dialog overlay
+      if (this.confirmErase) {
+        g.fillStyle = 'rgba(0,0,0,0.7)';
+        g.fillRect(0, 0, 320, 180);
+        g.fillStyle = '#1a1640';
+        g.fillRect(50, 60, 220, 60);
+        g.strokeStyle = '#ff8a6a';
+        g.lineWidth = 1;
+        g.strokeRect(50.5, 60.5, 220, 60);
+        tsh(g, 'ERASE ' + DIFFICULTY_META[this.confirmErase].label + '?',
+            160, 76, '#ff8a6a', '#5a1810', 1, 'center');
+        text(g, 'THIS CANT BE UNDONE.', 160, 90, '#dfe6ff', 1, 'center');
+        var noSel = !this.confirmYes;
+        text(g, (noSel ? '>' : ' ') + 'CANCEL', 90, 108, noSel ? '#ffffff' : '#9aa0c4', 1, 'left');
+        text(g, (!noSel ? '>' : ' ') + 'ERASE', 190, 108, !noSel ? '#ff8a6a' : '#9aa0c4', 1, 'left');
+      }
     }
   };
 
@@ -1816,7 +1970,13 @@ window.SDD = window.SDD || {};
     enter: function (d) {
       this.day = (d && d.day) || 1;
       this.stage = (d && d.stage) || 1;
-      this.lives = 3;
+      this.difficulty = SDD.save.curDifficulty();
+      // Easy mode runs with unlimited lives - no game-over screen.
+      // Med + Hard keep the classic 3-life budget.
+      this.lives = (this.difficulty === 'easy') ? Infinity : 3;
+      // Cleared on fresh entry into the stage; preserved across
+      // death respawns inside the same attempt.
+      this.lastCheckpoint = null;
       this.loadLevel();
       // Per-level music key (e.g. 'level_3_2'). Audio loader picks a
       // variant (a/b/c) at random if multiple exist. Falls back to the
@@ -1930,6 +2090,17 @@ window.SDD = window.SDD || {};
           e = new SDD.ent.Twister(s.tx * T, (s.ty || 4) * T);
           if (s.spd) e.vx = s.spd;
           this.enemies.push(e);
+        } else if (s.type === 'checkpoint') {
+          // Designer-placed flag near each stage's midpoint. Easy +
+          // medium difficulty respawn here on death; hard ignores it.
+          e = new SDD.ent.Checkpoint(s.tx * T + 2, (s.ty + 1) * T - 24, s.tx, s.ty);
+          // Restore triggered state across death-respawn so the kid
+          // doesn't have to re-walk past the checkpoint after dying.
+          var ckey = s.tx + ',' + s.ty;
+          if (this.triggeredCheckpoints && this.triggeredCheckpoints.indexOf(ckey) >= 0) {
+            e.triggered = true; e.raiseT = 20;
+          }
+          this.items.push(e);
         }
       }
       // Per-theme platform skin so movers don't all look like the
@@ -1959,6 +2130,15 @@ window.SDD = window.SDD || {};
         this.platforms.push(plat);
       }
       this.camera = new E.Camera();
+      // If we're respawning into this level from a death AND we have
+      // a checkpoint AND the difficulty respects checkpoints, teleport
+      // the freshly-spawned player onto the flag before snapping the
+      // camera. Hard mode ignores checkpoints by design.
+      if (this.lastCheckpoint && this.difficulty !== 'hard' && this.player) {
+        this.player.x = this.lastCheckpoint.x;
+        this.player.y = this.lastCheckpoint.y;
+        this.player.vx = 0; this.player.vy = 0;
+      }
       this.camera.snap(this.player, this.map);
       // god mode: start powered up
       if (SDD.save.data.options.god && this.player) {
@@ -2151,7 +2331,8 @@ window.SDD = window.SDD || {};
       this.stepWorld();
       if (this.player.deadDone && !this.deathHandled) {
         this.deathHandled = true;
-        this.lives--;
+        // Easy = unlimited lives (Infinity stays Infinity through --).
+        if (this.difficulty !== 'easy') this.lives--;
         if (this.lives > 0) { this.loadLevel(); }
         else { this.state = 'gameover'; this.goTimer = 0; A.stopMusic(); A.sfx('gameover'); }
       }
@@ -2168,7 +2349,14 @@ window.SDD = window.SDD || {};
       if (In.confirm()) {
         A.sfx('confirm');
         if (this.pauseIdx === 0) { this.state = 'play'; }
-        else if (this.pauseIdx === 1) { this.loadLevel(); }
+        else if (this.pauseIdx === 1) {
+          // RESTART = the kid wants to redo this stage from scratch:
+          // wipe checkpoints + reset lives so it's a true fresh attempt.
+          this.lastCheckpoint = null;
+          this.triggeredCheckpoints = [];
+          this.lives = (this.difficulty === 'easy') ? Infinity : 3;
+          this.loadLevel();
+        }
         else if (this.pauseIdx === 2) {
           // OPTIONS - jump to the options scene with from='pause' so
           // it returns to this paused state (not re-entering the level
@@ -2322,8 +2510,15 @@ window.SDD = window.SDD || {};
         // bright flash on the digit during the first 16 frames
         livesColor = (this.livesPulseT % 4 < 2) ? '#ffe070' : '#ffffff';
       }
-      text(g, 'LIVES ' + this.lives, 6, 4, livesColor, 1, 'left');
-      if (this.livesPulseT > 0) {
+      // Easy = unlimited lives, so the LIVES counter is meaningless.
+      // Replace it with an EASY badge so the kid (and Mark watching them
+      // play) always knows what mode is active.
+      if (this.difficulty === 'easy') {
+        text(g, 'EASY', 6, 4, '#9bf0a0', 1, 'left');
+      } else {
+        text(g, 'LIVES ' + this.lives, 6, 4, livesColor, 1, 'left');
+      }
+      if (this.livesPulseT > 0 && this.difficulty !== 'easy') {
         // "+1" rises 12 px above the LIVES label as it fades out.
         var t1 = (70 - this.livesPulseT) / 70;       // 0 -> 1
         var rise = Math.round(t1 * 12);
