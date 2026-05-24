@@ -19,23 +19,29 @@ window.SDD = window.SDD || {};
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // Helper: ledge from (x0,y0) to (x1,y1) with vines passing through it.
-  // At vine columns the ledge tiles become one-way (=) so the player
-  // can walk across the ledge from above but pass through them while
-  // climbing up. Vine itself extends from one row ABOVE the ledge top
-  // down to ground row 10, with the ledge rows in between kept as = so
-  // the ledge stays walkable.
+  // Helper: ledge from (x0,y0) to (x1,y1) with vines passing through.
+  // For each vine column, that col PLUS its left and right neighbours
+  // are one-way (=) instead of solid (X). The 3-col-wide one-way band
+  // is needed because the player body (18 px wide) always overlaps
+  // adjacent tile columns - a single one-way col would still have the
+  // body running into the solid X next door and getting blocked from
+  // climbing through. From above the ledge still reads as walkable
+  // (one-way is solid from the top).
   function canopy(x0, y0, x1, y1, vineCols) {
-    for (var x = x0; x <= x1; x++) {
-      var isVine = vineCols.indexOf(x) >= 0;
-      for (var y = y0; y <= y1; y++) {
-        setT(x, y, isVine ? '=' : 'X');
-      }
-    }
+    var oneCols = {};
     for (var i = 0; i < vineCols.length; i++) {
       var vc = vineCols[i];
-      setT(vc, y0 - 1, 'V');                     // vine above ledge
-      for (var vy = y1 + 1; vy <= 10; vy++) setT(vc, vy, 'V');   // below ledge
+      oneCols[vc - 1] = true; oneCols[vc] = true; oneCols[vc + 1] = true;
+    }
+    for (var x = x0; x <= x1; x++) {
+      for (var y = y0; y <= y1; y++) {
+        setT(x, y, oneCols[x] ? '=' : 'X');
+      }
+    }
+    for (var i2 = 0; i2 < vineCols.length; i2++) {
+      var vc2 = vineCols[i2];
+      setT(vc2, y0 - 1, 'V');                    // vine above ledge
+      for (var vy = y1 + 1; vy <= 10; vy++) setT(vc2, vy, 'V');   // below
     }
   }
 

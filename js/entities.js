@@ -142,13 +142,21 @@ window.SDD = window.SDD || {};
     }
     if (this.vineCooldown > 0) this.vineCooldown--;
     if (atVine) {
-      // Sticky: stay on if already climbing. Auto-grab on fall (unless
-      // we *just* jumped off a vine - then the cooldown prevents the
-      // auto-grab from yanking the player right back). Manual grab via
-      // up/down always works.
-      var autoGrab = this.vy > 0.5 && this.vineCooldown === 0;
-      if (this.climbing || autoGrab ||
-          In.held('up') || In.held('down')) {
+      // Sticky: stay on if already climbing. During vineCooldown, no
+      // new grabs of any kind so a recent jump-off or drop-through
+      // doesn't immediately yank the player back onto the vine - this
+      // includes blocking manual grabs (otherwise holding DOWN to
+      // drop through a canopy would re-grab the vine the moment the
+      // player falls past it).
+      var canGrab = this.vineCooldown === 0;
+      var autoGrab = canGrab && this.vy > 0.5;
+      // UP-grab works from the ground (player walks up to a vine and
+      // climbs). DOWN-grab only from mid-air (otherwise pressing DOWN
+      // while standing on a canopy that has a vine through it would
+      // grab the vine and block the player's drop-through).
+      var manualGrab = canGrab &&
+        (In.held('up') || (!this.onGround && In.held('down')));
+      if (this.climbing || autoGrab || manualGrab) {
         if (!this.climbing && autoGrab) {
           this.vy = 0;                        // catch the fall
         }
@@ -292,8 +300,15 @@ window.SDD = window.SDD || {};
         var fcRgt = Math.floor((this.x + this.w - 1) / T);
         for (var fx = fcLft; fx <= fcRgt; fx++) {
           if (level.map.isOneWay(fx, footRow) && !level.map.isSolid(fx, footRow)) {
-            this.dropThrough = 6; this.jumpBuf = 0; this.coyote = 0;
+            // 20 frames so the player falls fully past a 2-row canopy
+            // (3-2). 6 frames was enough for a single-thickness one-way
+            // but the sub-pixel probe caught the player on the second
+            // row of a 2-row stack.
+            this.dropThrough = 20; this.jumpBuf = 0; this.coyote = 0;
             this.y += 2; this.vy = 0.5; this.onGround = false;
+            // Disable vine auto-grab so the drop-through doesn't
+            // immediately snag a vine that hangs from this canopy.
+            this.vineCooldown = 30;
             SDD.audio.sfx('jump');
             didDrop = true; break;
           }
