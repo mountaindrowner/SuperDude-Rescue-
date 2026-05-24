@@ -131,15 +131,100 @@ window.SDD = window.SDD || {};
     }
   }
 
+  // ===================== MP3 music loader =====================
+  // Real composed tracks (Mark's compositions) live in assets/music/
+  // and take precedence over the procedural SONGS chiptune above.
+  // A track key may resolve to several variants (e.g. 'level_2_2'
+  // has _a, _b, _c) - on play we pick one at random.
+  var FILE_TRACKS = {};      // id  -> { el, loop }
+  var VARIANT_POOLS = {};    // key -> [id, id, id]
+  var currentFileTrack = null;
+  function loadFileTrack(id, path, loop) {
+    var a = new Audio();
+    a.preload = 'auto';
+    a.loop = loop !== false;
+    a.volume = muted ? 0 : volume;
+    a.src = path;
+    FILE_TRACKS[id] = { el: a, loop: loop !== false };
+  }
+  function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
+  function tryFileTrack(name) {
+    var ids = VARIANT_POOLS[name] || (FILE_TRACKS[name] ? [name] : null);
+    if (!ids) return false;
+    var id = ids[Math.floor(Math.random() * ids.length)];
+    var tr = FILE_TRACKS[id]; if (!tr) return false;
+    stopMusic();
+    try {
+      tr.el.currentTime = 0;
+      tr.el.volume = muted ? 0 : volume;
+      var p = tr.el.play();
+      if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
+      currentFileTrack = tr;
+      return true;
+    } catch (e) { return false; }
+  }
+  function stopFileTrack() {
+    if (currentFileTrack) {
+      try { currentFileTrack.el.pause(); } catch (e) {}
+      currentFileTrack = null;
+    }
+  }
+  function loadAllFileTracks() {
+    // Framing
+    loadFileTrack('title',      'assets/music/title.mp3');
+    loadFileTrack('menu',       'assets/music/menu.mp3');
+    loadFileTrack('intro',      'assets/music/intro.mp3');
+    loadFileTrack('overworld_a','assets/music/overworld_a.mp3');
+    loadFileTrack('overworld_b','assets/music/overworld_b.mp3');
+    loadFileTrack('results_a',  'assets/music/results_a.mp3', false);  // stinger
+    loadFileTrack('results_b',  'assets/music/results_b.mp3', false);
+    loadFileTrack('gameover_a', 'assets/music/gameover_a.mp3', false); // stinger
+    loadFileTrack('gameover_b', 'assets/music/gameover_b.mp3', false);
+    regPool('overworld', ['overworld_a', 'overworld_b']);
+    regPool('results',   ['results_a', 'results_b']);
+    regPool('gameover',  ['gameover_a', 'gameover_b']);
+    // Per-level pools
+    var levels = [
+      ['1_1', ['a','b']], ['2_1', ['a']], ['2_2', ['a','b','c']],
+      ['3_1', ['a','b','c']], ['3_2', ['a','b']],
+      ['4_1', ['a','b','c']], ['4_2', ['a','b','c']],
+      ['5_1', ['a','b','c']], ['5_2', ['a','b','c']],
+      ['6_1', ['a','b','c']], ['7_1', ['a','b']]
+    ];
+    for (var li = 0; li < levels.length; li++) {
+      var key = 'level_' + levels[li][0];
+      var ids = [];
+      for (var vi = 0; vi < levels[li][1].length; vi++) {
+        var v = levels[li][1][vi];
+        var id = key + '_' + v;
+        loadFileTrack(id, 'assets/music/' + id + '.mp3');
+        ids.push(id);
+      }
+      regPool(key, ids);
+    }
+    // Finale: no dedicated track yet - reuse Day 7 Eden tracks.
+    regPool('finale', ['level_7_1_a', 'level_7_1_b']);
+  }
+  loadAllFileTracks();
+
   function startMusic(name) {
-    if (curSong === name) return;
+    if (curSong === name && currentFileTrack) return;          // already playing
+    if (curSong === name && songState) return;                  // chiptune playing
     if (!ctx) { pendingSong = name; curSong = name; return; }
     resume();
+    // 1) Try Mark's MP3s first.
+    if (tryFileTrack(name)) { curSong = name; return; }
+    // 2) Fall back to procedural chiptune. If the name is a per-level
+    //    key (e.g. 'level_6_2') with no dedicated chiptune, fall back
+    //    further to the generic 'level' track.
     stopMusic();
     curSong = name;
     var song = SONGS[name];
+    if (!song && /^level_/.test(name)) song = SONGS.level;
+    if (!song && (name === 'overworld' || name === 'finale')) song = SONGS.overworld;
+    if (!song && (name === 'title' || name === 'menu' || name === 'intro')) song = SONGS.title;
     if (!song) return;
-    var stepDur = 60 / song.tempo / 4;  // 16th-note grid
+    var stepDur = 60 / song.tempo / 4;
     var t0 = ctx.currentTime + 0.1;
     songState = { song: song, stepDur: stepDur, melIdx: 0, basIdx: 0, melTime: t0, basTime: t0 };
     schedTimer = setInterval(scheduler, 25);
@@ -147,12 +232,20 @@ window.SDD = window.SDD || {};
   }
 
   function stopMusic() {
+    stopFileTrack();
     if (schedTimer) { clearInterval(schedTimer); schedTimer = null; }
     songState = null;
     curSong = null;
   }
 
-  function applyGain() { if (master) master.gain.value = muted ? 0 : volume; }
+  function applyGain() {
+    if (master) master.gain.value = muted ? 0 : volume;
+    // MP3 tracks have their own volume controls (independent of Web
+    // Audio master) - keep them in sync with the user's mix.
+    for (var id in FILE_TRACKS) {
+      try { FILE_TRACKS[id].el.volume = muted ? 0 : volume; } catch (e) {}
+    }
+  }
 
   SDD.audio = {
     init: init,

@@ -161,7 +161,7 @@ window.SDD = window.SDD || {};
     g.restore();
   }
   SDD.scenes.intro = {
-    enter: function () { this.beat = 0; this.t = 0; },
+    enter: function () { this.beat = 0; this.t = 0; A.startMusic('intro'); },
     update: function () {
       this.t++;
       if (In.confirm() || this.t > 320) {
@@ -281,7 +281,7 @@ window.SDD = window.SDD || {};
   SDD.scenes.menu = {
     enter: function () {
       this.t = 0;
-      A.startMusic('title');
+      A.startMusic('menu');
       this.items = [{ label: 'NEW GAME', act: 'new' }];
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
@@ -1036,7 +1036,10 @@ window.SDD = window.SDD || {};
       this.stage = (d && d.stage) || 1;
       this.lives = 3;
       this.loadLevel();
-      A.startMusic('level');
+      // Per-level music key (e.g. 'level_3_2'). Audio loader picks a
+      // variant (a/b/c) at random if multiple exist. Falls back to the
+      // generic 'level' chiptune for biomes without a track yet.
+      A.startMusic('level_' + this.day + '_' + this.stage);
     },
 
     loadLevel: function () {
@@ -1501,7 +1504,9 @@ window.SDD = window.SDD || {};
   SDD.scenes.results = {
     enter: function (d) {
       this.d = d || {}; this.t = 0;
-      A.startMusic('overworld');
+      // Celebration stinger first; when it finishes the overworld
+      // music takes over in scenes.overworld.enter().
+      A.startMusic('results');
     },
     update: function () {
       this.t++;
@@ -1541,7 +1546,7 @@ window.SDD = window.SDD || {};
   // GAME OVER
   // =====================================================================
   SDD.scenes.gameover = {
-    enter: function (d) { this.d = d || {}; this.t = 0; },
+    enter: function (d) { this.d = d || {}; this.t = 0; A.startMusic('gameover'); },
     update: function () {
       this.t++;
       if (this.t > 30 && In.confirm()) { A.sfx('confirm'); go('overworld'); }
@@ -1570,7 +1575,7 @@ window.SDD = window.SDD || {};
   SDD.scenes.finale = {
     enter: function (d) {
       this.d = d || {}; this.beat = 0; this.t = 0;
-      A.startMusic('title');
+      A.startMusic('finale');
     },
     update: function () {
       this.t++;
