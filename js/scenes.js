@@ -1258,14 +1258,47 @@ window.SDD = window.SDD || {};
   function drawSky_savanna(g, camx, camy, prog, t) {
     // Golden-hour gradient
     vGradient(g, '#f08040', '#ffb060', '#ffd890');
-    // Big setting sun (lower-right)
+    // ----- DRAMATIC SUN -----
+    // Big setting sun (lower-right). Now larger + with radiating rays
+    // + outer corona so it dominates the sky like a true golden hour.
+    var sunX = 250 - camx * 0.04;
+    var sunY = 78;
+    // Outermost soft halo (very large, very faint)
+    g.fillStyle = 'rgba(255,210,140,0.16)';
+    g.beginPath(); g.arc(sunX, sunY, 70, 0, 6.28); g.fill();
+    // Mid corona
+    g.fillStyle = 'rgba(255,200,120,0.32)';
+    g.beginPath(); g.arc(sunX, sunY, 48, 0, 6.28); g.fill();
+    // Inner glow
+    g.fillStyle = 'rgba(255,220,150,0.55)';
+    g.beginPath(); g.arc(sunX, sunY, 38, 0, 6.28); g.fill();
+    // Subtle rotating rays (8 thin lines that drift slowly)
+    g.strokeStyle = 'rgba(255,235,170,0.32)';
+    g.lineWidth = 1;
+    var rayRot = t * 0.003;
+    for (var rr = 0; rr < 8; rr++) {
+      var ang = rayRot + rr * (Math.PI / 4);
+      g.beginPath();
+      g.moveTo(sunX + Math.cos(ang) * 36, sunY + Math.sin(ang) * 36);
+      g.lineTo(sunX + Math.cos(ang) * 64, sunY + Math.sin(ang) * 64);
+      g.stroke();
+    }
+    // Solid sun disc (a touch larger - 30 px instead of 24)
     g.fillStyle = '#fff0a0';
-    g.beginPath(); g.arc(250 - camx * 0.04, 88, 24, 0, 6.28); g.fill();
-    g.fillStyle = 'rgba(255,180,90,0.45)';
-    g.beginPath(); g.arc(250 - camx * 0.04, 88, 32, 0, 6.28); g.fill();
+    g.beginPath(); g.arc(sunX, sunY, 30, 0, 6.28); g.fill();
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(sunX - 4, sunY - 6, 8, 0, 6.28); g.fill();   // hot core highlight
     // Distant haze band on the horizon
     g.fillStyle = 'rgba(255,200,140,0.35)';
     g.fillRect(0, 118, 320, 14);
+    // Heat-shimmer band: thin alternating rows of warm tint just above
+    // the horizon, intensity rippling on t. Sells "African heat."
+    for (var hs = 0; hs < 6; hs++) {
+      var hsY = 132 + hs;
+      var alpha = 0.06 + 0.04 * Math.sin(t * 0.04 + hs * 0.7);
+      g.fillStyle = 'rgba(255,220,170,' + alpha.toFixed(3) + ')';
+      g.fillRect(0, hsY, 320, 1);
+    }
     // Kilimanjaro silhouette (far parallax, dominant centre-left)
     var kx = 70 - camx * 0.06;
     g.fillStyle = '#7a4a40';
@@ -1329,12 +1362,66 @@ window.SDD = window.SDD || {};
       g.beginPath();
       g.ellipse(tx + 13, 121, 12, 3, 0, 0, 6.28); g.fill();
     }
-    // Dry grass tufts at the horizon
-    g.fillStyle = '#6a4a20';
-    for (var gi = 0; gi < 40; gi++) {
-      var gx = ((gi * 10 - camx * 0.5) % 320 + 320) % 320;
-      g.fillRect(gx | 0, 144, 1, 3);
+    // Distant herd of small zebra/wildebeest silhouettes - a tight
+    // cluster wandering in a line. Reads as a herd grazing at the
+    // far horizon line.
+    g.fillStyle = '#4a2e1a';
+    var herdAnchorX = ((20 + t * 0.04 - camx * 0.16) % 380 + 380) % 380 - 30;
+    var herdY = 138;
+    var herdPositions = [0, 7, 13, 21, 26, 34, 39, 47, 52];
+    for (var hi = 0; hi < herdPositions.length; hi++) {
+      var hX = herdAnchorX + herdPositions[hi];
+      // Tiny 4-legged body (body 4x2 + 2 legs)
+      g.fillRect(hX | 0,        herdY,     4, 2);
+      g.fillRect(hX | 0,        herdY + 2, 1, 2);
+      g.fillRect((hX + 3) | 0,  herdY + 2, 1, 2);
+      // Head (one pixel ahead)
+      g.fillRect((hX + 4) | 0,  herdY,     1, 1);
     }
+
+    // ----- CLOSE FOREGROUND ACACIA -----
+    // Two near-foreground acacias at the highest parallax tier so
+    // they actually frame the playfield instead of all trees being
+    // mid-distance.
+    var nearAcaciaSpan = 200;
+    var naOff = -(((camx * 0.65) % nearAcaciaSpan) + nearAcaciaSpan) % nearAcaciaSpan;
+    for (var na = naOff - nearAcaciaSpan; na < 360 + nearAcaciaSpan; na += nearAcaciaSpan) {
+      var naX = na + 30;
+      // Tall trunk
+      g.fillStyle = '#1a1008';
+      g.fillRect(naX, 116, 3, 28);
+      // Big umbrella canopy (chunkier)
+      g.fillStyle = '#0e2a14';
+      g.beginPath();
+      g.ellipse(naX + 1, 113, 26, 8, 0, 0, 6.28); g.fill();
+      g.fillStyle = '#1a4a2a';
+      g.beginPath();
+      g.ellipse(naX + 1, 111, 22, 5, 0, 0, 6.28); g.fill();
+      // Branch detail under canopy
+      g.fillStyle = '#0a0804';
+      g.fillRect(naX - 6, 116, 14, 1);
+    }
+
+    // ----- ANIMATED FOREGROUND GRASS -----
+    // Tall tufts that sway with t. Two depth layers - mid (alpha 0.5)
+    // and very-near (full alpha) - so the grass reads as motion-rich
+    // foreground that the player walks behind.
+    function drawTuftRow(baseY, parallax, density, alpha) {
+      var span = 320 / density;
+      var off = -(((camx * parallax) % span) + span) % span;
+      g.fillStyle = 'rgba(58,90,30,' + alpha + ')';
+      for (var ti = 0; ti < density + 2; ti++) {
+        var tx = off + ti * span + ((ti * 7) % 5);
+        var sway = Math.sin(t * 0.05 + ti * 0.5) * 1;
+        var tuftH = 4 + (ti % 3);
+        g.fillRect((tx + sway) | 0, baseY - tuftH, 1, tuftH);
+        g.fillRect((tx + 1 + sway) | 0, baseY - tuftH + 1, 1, tuftH - 1);
+        g.fillRect((tx + 2 + sway) | 0, baseY - tuftH, 1, tuftH);
+      }
+    }
+    drawTuftRow(146, 0.5, 30, '0.55');                  // mid horizon tufts
+    drawTuftRow(154, 0.85, 26, '0.85');                 // near foreground tufts
+
     // Vulture silhouettes circling slowly in the sky
     g.strokeStyle = '#3a2010'; g.lineWidth = 1;
     for (var vi = 0; vi < 3; vi++) {
@@ -1347,6 +1434,15 @@ window.SDD = window.SDD || {};
       g.lineTo(vx + 1, vy);
       g.lineTo(vx + 4, vy + 2);
       g.stroke();
+    }
+
+    // Dust motes drifting slowly across the lower third of the sky -
+    // "dry air, things in motion" feel.
+    for (var dm = 0; dm < 6; dm++) {
+      var dx = ((dm * 53 + t * 0.5 - camx * 0.3) % 340 + 340) % 340 - 10;
+      var dy = 90 + (dm * 11) % 40 + Math.sin(t * 0.06 + dm) * 2;
+      g.fillStyle = 'rgba(255,230,180,0.45)';
+      g.fillRect(dx | 0, dy | 0, 1, 1);
     }
   }
   function drawSky_village_dusk(g, camx, camy, prog, t) {
