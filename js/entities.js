@@ -442,34 +442,51 @@ window.SDD = window.SDD || {};
         SDD.sprites.pixelLab.failed === 0) {
       var anim, idx, dirPL = this.facing > 0 ? 'east' : 'west';
       var maxV = this.big ? C.MOVE_MAX_BIG : C.MOVE_MAX_SMALL;
+      // Per-level costume suffix - cosmic-night = spacesuit anims for
+      // run/jump/hurt/die, flappy = jetpack anim while flying.
+      var scene = SDD && SDD.scene;
+      var theme = scene && scene.theme;
+      var isFlappy = scene && scene.flappy;
+      var isUnder  = scene && scene.underwater;
+      var costume = (theme === 'cosmic-night') ? 'space' : '';
       if (this.win) {
         anim = 'celebrate'; dirPL = 'south';
         idx = Math.floor(this.animT / 5) % 9;
+      } else if (this.climbing) {
+        anim = 'climb'; dirPL = 'north';
+        idx = Math.floor(this.animT / 5) % 9;
+      } else if (isFlappy) {
+        // Jetpack ignite anim runs continuously while flying. Pause
+        // the cycle on the brief flap-stun so the burst loop pauses.
+        anim = 'jet';
+        idx = this.flappyStunT > 0 ? 0 : Math.floor(this.animT / 3) % 9;
       } else if (this.dead) {
-        anim = 'die';
+        anim = costume ? 'space_die' : 'die';
         idx = Math.min(6, Math.floor(this.deadT / 10));
       } else if (freshHurt) {
-        anim = 'hurt';
+        anim = costume ? 'space_hurt' : 'hurt';
         idx = Math.min(5, Math.floor((C.INVULN_STEPS - this.invuln) / 4));
       } else if (this.blastAnim > 0) {
-        anim = 'blast';
+        anim = 'blast';                                 // no spacesuit blast variant
         idx = Math.floor((11 - this.blastAnim) / 4);
+      } else if (isUnder) {
+        // Underwater swim anim - flap on flap input, gentle paddle
+        // otherwise.
+        anim = 'swim';
+        idx = Math.floor(this.animT / 5) % 9;
       } else if (this.landT > 0) {
-        anim = 'jump'; idx = 8;
+        anim = costume ? 'space_jump' : 'jump'; idx = 8;
       } else if (!this.onGround) {
-        anim = 'jump';
+        anim = costume ? 'space_jump' : 'jump';
         if (this.vy < -3) idx = 1;
         else if (this.vy < 0) idx = 3;
         else if (this.vy < 2) idx = 5;
         else idx = 7;
       } else if (Math.abs(this.vx) > 0.4) {
-        // Run for all horizontal movement - the walk frames are very
-        // subtle and read as "not moving" when Danny is centered on the
-        // camera. Run frames have clear leg/arm swing.
-        anim = 'run';
-        idx = Math.floor(this.animT / 4) % 4;
+        anim = costume ? 'space_run' : 'run';
+        idx = Math.floor(this.animT / 4) % (costume ? 9 : 4);
       } else {
-        anim = 'idle';
+        anim = 'idle';                                  // no spacesuit idle variant; reuse default
         idx = Math.floor(this.animT / 18) % 4;
       }
       var cx = Math.round(this.x + this.w / 2 - cam.x);

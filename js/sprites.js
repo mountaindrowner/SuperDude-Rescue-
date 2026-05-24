@@ -1826,6 +1826,16 @@ window.SDD = window.SDD || {};
   // real art. Falls back to the code-drawn Danny if the assets are missing.
   var PL_BIG  = 'assets/Super Dude Danny Big Sprites/superdude dany big/animations';
   var PL_SM   = 'assets/Super Dude Danny Small Sprites -';
+  // Costume sprite folders (uploaded by Mark): spacesuit (4-2 cosmic
+  // night), jetpack (5-1 flappy), climbing (3-2 vines), swimming
+  // (5-2 underwater). Climbing uses NORTH-facing frames (player
+  // looks up at the wall) - the manifest's `north` flag tells the
+  // loader where to fetch from. Jetpack is a single ignition anim
+  // looped during flight.
+  var PL_BIG_SPACE = PL_BIG.replace('/superdude dany big/animations',
+                                    '/In_a_spacesuit/animations');
+  var PL_BIG_JET   = PL_BIG.replace('/superdude dany big/animations',
+                                    '/With_a_jet_pack/animations');
   var PL_MANIFEST = {
     big: {
       base: PL_BIG,
@@ -1837,7 +1847,18 @@ window.SDD = window.SDD || {};
         blast:     { folder: 'Blast-7c8ae1e9',          frames: 3 },
         hurt:      { folder: 'Taking_Punch-a33d4f84',   frames: 6 },
         die:       { folder: 'Falling_Back_Death-e9590e90', frames: 7 },
-        celebrate: { folder: 'Celebration_Southward-947d4e92', frames: 9, south: true }
+        celebrate: { folder: 'Celebration_Southward-947d4e92', frames: 9, south: true },
+        // costumes / mode-specific anims
+        climb:     { base: 'assets/Super Dude Danny Big Sprites/Climbing_wall_Northward-c611a79f',
+                     folder: '', frames: 9, north: true, flat: true },
+        swim:      { base: 'assets/Super Dude Danny Big Sprites/Swimming_right_body_horizontal_paddling_with_hand-820a931e',
+                     folder: '', frames: 9, flat: true },
+        space_run:  { base: PL_BIG_SPACE, folder: 'Running-371bd9a3',          frames: 6 },
+        space_jump: { base: PL_BIG_SPACE, folder: 'Jumping-9fc36d7c',          frames: 9 },
+        space_hurt: { base: PL_BIG_SPACE, folder: 'Taking_Punch-19dd094a',     frames: 6 },
+        space_die:  { base: PL_BIG_SPACE, folder: 'Falling_Back_Death-e05d6ecc', frames: 7 },
+        jet:        { base: PL_BIG_JET,   folder: 'The_character_remains_in_a_profile_view_as_the_jet-0a9ef652',
+                      frames: 9 }
       }
     },
     small: {
@@ -1850,7 +1871,23 @@ window.SDD = window.SDD || {};
         blast:     { folder: 'Super Dude Danny Small Sprites - blast-40255b94',           frames: 6 },
         hurt:      { folder: 'Super Dude Danny Small Sprites - Taking_Punch-6de79945',    frames: 6 },
         die:       { folder: 'Super Dude Danny Small Sprites - Falling_Back_Death-e41fb900', frames: 7 },
-        celebrate: { folder: 'Super Dude Danny Small Sprites - Celebrating_southward-8d9f3045', frames: 9, south: true }
+        celebrate: { folder: 'Super Dude Danny Small Sprites - Celebrating_southward-8d9f3045', frames: 9, south: true },
+        // costumes / mode-specific anims
+        climb:     { base: 'assets/Super Dude Danny Small Sprites -/Climbing_a_wall_northward-0eb39d4b',
+                     folder: '', frames: 9, north: true, flat: true },
+        swim:      { base: 'assets/Super Dude Danny Small Sprites -/Swimming_right_body_horizontal_paddling_with_hands-f8bee37d',
+                     folder: '', frames: 9, flat: true },
+        space_run:  { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
+                      folder: 'Running-38414bec',          frames: 6 },
+        space_jump: { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
+                      folder: 'Two-Footed_Jump-bbb9b56b',  frames: 7 },
+        space_hurt: { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
+                      folder: 'Taking_Punch-6f96794c',     frames: 6 },
+        space_die:  { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
+                      folder: 'Falling_Back_Death-8c64bce0', frames: 7 },
+        jet:        { base: 'assets/Super Dude Danny Small Sprites -/With_a_jetpack/animations',
+                      folder: 'The_characters_jetpack_ignites_emitting_a_burst_of-1690deaa',
+                      frames: 9 }
       }
     }
   };
@@ -1873,7 +1910,17 @@ window.SDD = window.SDD || {};
       blast:     { east: { x: 35, y: 26, w: 34, h: 46 }, west: { x: 26, y: 27, w: 33, h: 45 } },
       hurt:      { east: { x: 33, y: 26, w: 30, h: 47 }, west: { x: 33, y: 26, w: 30, h: 47 } },
       die:       { east: { x: 32, y: 26, w: 39, h: 46 }, west: { x: 25, y: 26, w: 39, h: 46 } },
-      celebrate: { south: { x: 27, y: 23, w: 44, h: 49 } }
+      celebrate: { south: { x: 27, y: 23, w: 44, h: 49 } },
+      // Costume bboxes (Pass 9 sprite drop). Hand-tuned to roughly
+      // match the analogous base-anim bbox - approximations only;
+      // can be re-measured if any look noticeably off.
+      climb:      { north: { x: 36, y: 22, w: 24, h: 50 } },
+      swim:       { east:  { x: 28, y: 30, w: 40, h: 36 }, west: { x: 28, y: 30, w: 40, h: 36 } },
+      space_run:  { east:  { x: 35, y: 25, w: 26, h: 48 }, west: { x: 35, y: 25, w: 26, h: 48 } },
+      space_jump: { east:  { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } },
+      space_hurt: { east:  { x: 33, y: 26, w: 30, h: 47 }, west: { x: 33, y: 26, w: 30, h: 47 } },
+      space_die:  { east:  { x: 32, y: 26, w: 39, h: 46 }, west: { x: 25, y: 26, w: 39, h: 46 } },
+      jet:        { east:  { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } }
     },
     small: {
       idle:      { east: { x: 36, y: 24, w: 19, h: 45 }, west: { x: 35, y: 24, w: 20, h: 45 } },
@@ -1883,7 +1930,16 @@ window.SDD = window.SDD || {};
       blast:     { east: { x: 35, y: 25, w: 28, h: 44 }, west: { x: 29, y: 25, w: 28, h: 44 } },
       hurt:      { east: { x: 30, y: 26, w: 28, h: 43 }, west: { x: 34, y: 26, w: 28, h: 43 } },
       die:       { east: { x: 29, y: 25, w: 36, h: 44 }, west: { x: 28, y: 26, w: 33, h: 42 } },
-      celebrate: { south: { x: 24, y: 22, w: 44, h: 47 } }
+      celebrate: { south: { x: 24, y: 22, w: 44, h: 47 } },
+      // Costume bboxes for small Danny (92x92 PNGs - slightly tighter
+      // than the 96x96 big ones).
+      climb:      { north: { x: 34, y: 20, w: 24, h: 48 } },
+      swim:       { east:  { x: 26, y: 28, w: 40, h: 36 }, west: { x: 26, y: 28, w: 40, h: 36 } },
+      space_run:  { east:  { x: 31, y: 25, w: 28, h: 45 }, west: { x: 34, y: 24, w: 24, h: 46 } },
+      space_jump: { east:  { x: 33, y: 26, w: 28, h: 45 }, west: { x: 30, y: 26, w: 29, h: 45 } },
+      space_hurt: { east:  { x: 30, y: 26, w: 28, h: 43 }, west: { x: 34, y: 26, w: 28, h: 43 } },
+      space_die:  { east:  { x: 29, y: 25, w: 36, h: 44 }, west: { x: 28, y: 26, w: 33, h: 42 } },
+      jet:        { east:  { x: 33, y: 26, w: 30, h: 45 }, west: { x: 30, y: 26, w: 30, h: 45 } }
     }
   };
 
@@ -1897,12 +1953,22 @@ window.SDD = window.SDD || {};
       Object.keys(m.anims).forEach(function (anim) {
         var a = m.anims[anim];
         pixelLab.frames[size][anim] = {};
-        var dirs = a.south ? ['south'] : ['east', 'west'];
+        // dir set: per-anim override (south for celebrate, north for
+        // climb), else default east+west pair.
+        var dirs = a.south ? ['south'] : a.north ? ['north'] : ['east', 'west'];
+        // per-anim base path override (costume folders sit OUTSIDE
+        // the main "superdude dany big/animations" tree).
+        var animBase = a.base || m.base;
         dirs.forEach(function (dir) {
           pixelLab.frames[size][anim][dir] = [];
           for (var f = 0; f < a.frames; f++) {
             var fn = 'frame_' + (f < 10 ? '00' + f : f < 100 ? '0' + f : '' + f) + '.png';
-            var url = encodeURI(m.base + '/' + a.folder + '/' + dir + '/' + fn);
+            // flat=true means the dir folder lives at base/dir/...
+            // (no nested anim folder, used by Climb + Swim).
+            var path = a.flat
+              ? (animBase + '/' + dir + '/' + fn)
+              : (animBase + '/' + a.folder + '/' + dir + '/' + fn);
+            var url = encodeURI(path);
             var img = new Image();
             pixelLab.pending++; pixelLab.total++;
             img.onload  = done;
