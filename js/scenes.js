@@ -1592,24 +1592,29 @@ window.SDD = window.SDD || {};
       if (skyFn) skyFn(g, cam.x, cam.y, prog, this.timeSteps);
       else drawSky(g, cam.x, cam.y, prog, this.timeSteps);
 
-      // Visible-lava pit layer (Day 3-1 / rocky): paint a bright red
-      // flowing lava strip across the bottom of the playable area
-      // BEFORE tiles draw. Solid X tiles cover it where ground exists;
-      // pits leave the red showing. Sells "falling = fatal" visually.
+      // Visible-lava pit layer (Day 3-1 / rocky): bright red still
+      // liquid across the bottom of the playable area BEFORE tiles
+      // draw. Solid X tiles cover it where ground exists; pits leave
+      // the red showing. Mark: "doesn't need to be flowy, it just
+      // needs to be like, almost like water, but down."
       if (this.theme === 'rocky') {
         var groundPx = (this.map.h - 3) * 16;             // top of solid ground row
         var lavaY = groundPx + 4 - cam.y;
-        // Wavy lava strip - alternates two reds for a flowing look
-        var ph = (this.timeSteps * 0.18);
-        for (var lx = 0; lx < 320; lx += 4) {
-          var off = Math.sin((lx + cam.x) * 0.06 + ph) * 1.2;
-          g.fillStyle = '#7a1a08';                        // dark base
-          g.fillRect(lx, Math.round(lavaY + off + 6), 4, 18);
-          g.fillStyle = '#ff3018';                        // bright lava
-          g.fillRect(lx, Math.round(lavaY + off), 4, 6);
-          g.fillStyle = '#ffd048';                        // hot spots
-          if ((lx + Math.floor(ph * 4)) % 16 === 0)
-            g.fillRect(lx, Math.round(lavaY + off + 1), 2, 1);
+        var ph = (this.timeSteps * 0.06);
+        // Solid red body
+        g.fillStyle = '#7a1a08';
+        g.fillRect(0, Math.round(lavaY + 6), 320, 24);
+        g.fillStyle = '#c83214';
+        g.fillRect(0, Math.round(lavaY + 2), 320, 6);
+        g.fillStyle = '#ff4020';
+        g.fillRect(0, Math.round(lavaY), 320, 3);
+        // Sparse calm shimmer dots that pulse slowly instead of waving
+        for (var lx = 0; lx < 320; lx += 16) {
+          var pulse = (Math.sin(lx * 0.08 + ph) + 1) * 0.5;
+          if (pulse > 0.7) {
+            g.fillStyle = '#ffc060';
+            g.fillRect(lx + 4, Math.round(lavaY + 1), 2, 1);
+          }
         }
       }
 

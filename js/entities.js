@@ -712,23 +712,71 @@ window.SDD = window.SDD || {};
   };
 
   // ===================== LAVA PLUME (Day 3-1) =====================
-  // Rises from a ground anchor, peaks, then falls back. Damages player
-  // on contact. Sister-class to SolarFlare but inverted.
+  // Anchored at the ground. Grows upward as a tall slim column over 1
+  // sec, holds at full height ~0.4 sec, retracts over 1 sec. Total
+  // cycle ~2.4 sec - "tiny and enjoyable" per Mark. Damages player on
+  // contact with the visible column rectangle.
   function LavaPlume(x, y) {
-    this.x = x; this.y = y; this.w = 10; this.h = 14;
-    this.vx = 0; this.vy = -3.2;     // rises fast
-    this.life = 110; this.remove = false;
-    this.startY = y;
+    // Spawner sits one row above ground (row 10). Anchor the column
+    // bottom at the ground surface (one tile lower) so the plume reads
+    // as erupting from a crack in the floor.
+    this.ax = x + 5;                 // column horizontal center
+    this.ay = y + 16;                // anchor at ground top
+    this.maxH = 36;                  // ~2.25 tiles tall
+    this.colW = 12;                  // slim column
+    this.t = 0;
+    this.rise = 50; this.hold = 24; this.fall = 50;   // frames
+    this.remove = false;
+    this.curH = 0;
+    // Bbox - kept narrow so the player isn't damaged for grazing past.
+    this.w = this.colW; this.h = 0;
+    this.x = this.ax - this.colW / 2; this.y = this.ay;
   }
   LavaPlume.prototype.update = function (level) {
-    this.vy += 0.10;                  // gravity pulls back down
-    this.y += this.vy;
-    this.life--;
-    if (this.life <= 0 || this.y > this.startY + 4) this.remove = true;
+    this.t++;
+    var h;
+    if (this.t <= this.rise) h = this.maxH * (this.t / this.rise);
+    else if (this.t <= this.rise + this.hold) h = this.maxH;
+    else if (this.t <= this.rise + this.hold + this.fall)
+      h = this.maxH * (1 - (this.t - this.rise - this.hold) / this.fall);
+    else { this.remove = true; return; }
+    this.curH = h;
+    this.h = h;
+    this.y = this.ay - h;
+    this.x = this.ax - this.colW / 2;
   };
   LavaPlume.prototype.draw = function (ctx, cam) {
-    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 14, '#ff7430', 0.75);
-    drawBC(ctx, 'lavaplume', this, cam);
+    if (this.curH < 1) return;
+    var cx = Math.round(this.ax - cam.x);
+    var by = Math.round(this.ay - cam.y);
+    var h = Math.round(this.curH);
+    // Heat glow around the column (soft)
+    glow(ctx, cx, by - h / 2, 16, '#ff6028', 0.4);
+    // Column body: outer (darker), inner (bright), core (white-hot)
+    ctx.fillStyle = '#9a2a10';
+    ctx.fillRect(cx - 6, by - h, 12, h);
+    ctx.fillStyle = '#ff5018';
+    ctx.fillRect(cx - 4, by - h, 8, h);
+    ctx.fillStyle = '#ffa030';
+    ctx.fillRect(cx - 2, by - h, 4, h);
+    // White-hot core wavers slightly
+    var jitter = (this.t % 4 < 2) ? 0 : 1;
+    ctx.fillStyle = '#ffe890';
+    ctx.fillRect(cx - 1 + jitter, by - h + 2, 1, Math.max(0, h - 4));
+    // Crown of fire at the top (3 flickering tongues)
+    var t = this.t;
+    var c1 = Math.sin(t * 0.5) * 1.4;
+    var c2 = Math.cos(t * 0.6) * 1.2;
+    ctx.fillStyle = '#ffe070';
+    ctx.fillRect(cx - 4 + Math.round(c1), by - h - 2, 2, 2);
+    ctx.fillRect(cx - 1, by - h - 3, 2, 3);
+    ctx.fillRect(cx + 2 + Math.round(c2), by - h - 2, 2, 2);
+    ctx.fillStyle = '#fff8c0';
+    ctx.fillRect(cx, by - h - 4, 1, 2);
+    // Embers rising above the crown
+    var ex = (t * 7) % 12 - 6;
+    ctx.fillStyle = '#ff9050';
+    ctx.fillRect(cx + Math.round(ex), by - h - 6 - (t % 6), 1, 1);
   };
 
   // ===================== SKY HAZARDS (Day 4) =====================

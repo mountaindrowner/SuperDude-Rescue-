@@ -74,7 +74,9 @@ window.SDD = window.SDD || {};
   oneway(111, 113, 8);
   oneway(117, 119, 8);
   oneway(123, 125, 8);
-  lava(102, 110);
+  // Plume in the open path BETWEEN the rising walls (was at col 102
+  // which spawned the column inside the solid rock at 102-104).
+  lava(112, 130);
   sp('wisp', 113, 4); sp('wisp', 121, 4);
   sp('core', 106, 7); sp('core', 112, 7); sp('core', 118, 7); sp('core', 124, 7);
   qb(110, 8, 'B');                                          // blast power-up between zigs
