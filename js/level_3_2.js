@@ -19,6 +19,26 @@ window.SDD = window.SDD || {};
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
+  // Helper: ledge from (x0,y0) to (x1,y1) with vines passing through it.
+  // At vine columns the ledge tiles become one-way (=) so the player
+  // can walk across the ledge from above but pass through them while
+  // climbing up. Vine itself extends from one row ABOVE the ledge top
+  // down to ground row 10, with the ledge rows in between kept as = so
+  // the ledge stays walkable.
+  function canopy(x0, y0, x1, y1, vineCols) {
+    for (var x = x0; x <= x1; x++) {
+      var isVine = vineCols.indexOf(x) >= 0;
+      for (var y = y0; y <= y1; y++) {
+        setT(x, y, isVine ? '=' : 'X');
+      }
+    }
+    for (var i = 0; i < vineCols.length; i++) {
+      var vc = vineCols[i];
+      setT(vc, y0 - 1, 'V');                     // vine above ledge
+      for (var vy = y1 + 1; vy <= 10; vy++) setT(vc, vy, 'V');   // below ledge
+    }
+  }
+
   // ============== TEACH (0-50): introduce the vine ==============
   ground(0, 30);
   sp('player', 3, 10);
@@ -27,9 +47,10 @@ window.SDD = window.SDD || {};
   sp('walker', 18, 10);
   sp('core', 16, 9); sp('core', 22, 9);
 
-  // First single vine - hanging from a high ledge with cores at top
-  box(28, 4, 32, 5, 'X');                                  // ledge with cores on top
-  vine(30, 6, 10);
+  // First single vine - hanging from a high ledge with cores on top.
+  // Vine extends through the ledge as a one-way (solid from above when
+  // walking, pass-through when climbing up).
+  canopy(28, 4, 32, 5, [30]);
   sp('core', 30, 3); sp('core', 31, 3); sp('core', 29, 3);
 
   ground(33, 60);
@@ -39,20 +60,14 @@ window.SDD = window.SDD || {};
 
   // ============== TEST (60-130): two vines, pick one ==============
   ground(61, 110);
-  box(64, 4, 80, 5, 'X');                                  // canopy ledge
-  vine(66, 6, 10);                                          // left vine
-  vine(78, 6, 10);                                          // right vine
+  canopy(64, 4, 80, 5, [66, 78]);                          // canopy w/ 2 vines
   sp('core', 66, 7); sp('core', 78, 7);
   sp('core', 70, 3); sp('core', 72, 3); sp('core', 74, 3); sp('core', 76, 3);
   qb(75, 3, '?');                                          // bonus
   sp('thrower', 72, 10);                                   // threat at ground level
   // gap and another canopy section
   ground(82, 110);
-  box(85, 3, 105, 4, 'X');
-  vine(88, 5, 10);
-  vine(93, 5, 10);
-  vine(98, 5, 10);
-  vine(102, 5, 10);
+  canopy(85, 3, 105, 4, [88, 93, 98, 102]);                // canopy w/ 4 vines
   sp('core', 90, 2); sp('core', 95, 2); sp('core', 100, 2);
   sp('wisp', 96, 6);
   qb(102, 1, 'B');                                         // blast tucked at top
@@ -64,20 +79,25 @@ window.SDD = window.SDD || {};
   sp('core', 114, 9); sp('core', 122, 9); sp('core', 128, 9);
 
   // PIT with multiple vines hanging from the ceiling (climb or swing
-  // across). Vines extend all the way up to row 1 so they look rooted
-  // to the canopy / sky instead of floating in mid-air.
+  // across). Gaps tightened to 5 cols so the swing-jump is actually
+  // reachable - the old 6/7-col gaps were beyond small Danny's jump
+  // arc (max ~5 tiles). Vines extend to row 1 so they look rooted
+  // to the canopy. Player auto-grabs the next vine on the way down.
   box(131, 0, 131, 4, 'X');                                // anchor for vines
   box(180, 0, 180, 4, 'X');
   vine(135, 1, 10);
-  vine(141, 1, 9);
-  vine(147, 1, 11);
-  vine(154, 1, 8);
-  vine(161, 1, 10);
-  vine(168, 1, 9);
-  vine(175, 1, 11);
-  sp('core', 135, 6); sp('core', 141, 6); sp('core', 147, 6);
-  sp('core', 154, 6); sp('core', 161, 6); sp('core', 168, 6); sp('core', 175, 6);
-  sp('wisp', 140, 4); sp('wisp', 152, 3); sp('wisp', 165, 4);
+  vine(140, 1, 9);
+  vine(145, 1, 11);
+  vine(150, 1, 8);
+  vine(155, 1, 10);
+  vine(160, 1, 9);
+  vine(165, 1, 11);
+  vine(170, 1, 9);
+  vine(175, 1, 10);
+  sp('core', 135, 6); sp('core', 140, 6); sp('core', 145, 6);
+  sp('core', 150, 6); sp('core', 155, 6); sp('core', 160, 6);
+  sp('core', 165, 6); sp('core', 170, 6); sp('core', 175, 6);
+  sp('wisp', 142, 4); sp('wisp', 157, 3); sp('wisp', 172, 4);
 
   ground(181, 215);
   box(188, 9, 192, 13, 'X');
@@ -85,18 +105,14 @@ window.SDD = window.SDD || {};
   sp('core', 184, 9); sp('core', 190, 7); sp('core', 200, 9); sp('core', 208, 9);
 
   // ============== REWARD (215-259): vine climb to a canopy ==============
-  // Open ground at the base - walk in from the left. Four vines
-  // run from the canopy ledge down to ground level so any climb works
-  // (the original "maze" had a ceiling that sealed the gate). Goal is
-  // the time-machine part further along, after dropping off the canopy.
+  // Open ground at the base - walk in from the left. Vines pass through
+  // the canopy as one-way tiles so any climb path reaches the top.
   ground(215, 232);
-  // Canopy ledge - tall enough that you must climb to reach it.
-  box(220, 4, 232, 5, 'X');
-  // Four vines, all reaching from canopy down to ground.
-  vine(218, 6, 10);
-  vine(222, 6, 10);
-  vine(225, 6, 10);
-  vine(229, 6, 10);
+  canopy(220, 4, 232, 5, [222, 225, 229]);                 // canopy w/ 3 vines
+  // A free-hanging vine outside the canopy on the left for variety
+  // (extends from row 4 to ground - top at row 4 is at canopy top level
+  // so the player can step right onto the canopy from its top).
+  for (var rv = 4; rv <= 10; rv++) setT(218, rv, 'V');
   // Cores on each vine to encourage exploration.
   sp('core', 218, 7); sp('core', 222, 7); sp('core', 225, 7);
   sp('core', 229, 7); sp('core', 226, 3);

@@ -49,7 +49,7 @@ window.SDD = window.SDD || {};
     this.invuln = 0;
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
-    this.climbing = false; this.inWater = false;
+    this.climbing = false; this.vineCooldown = 0; this.inWater = false;
     this.prevOnGround = false; this.landT = 0;
     this.dead = false; this.deadT = 0; this.deadDone = false; this.pitDeath = false;
     this.win = false; this.winT = 0;
@@ -126,25 +126,64 @@ window.SDD = window.SDD || {};
     var T = C.TILE;
 
     // ----- vine climb detection (Day 3+) -----
-    var atVine = false;
+    // Three grab conditions:
+    //   1. Standing under a vine and press UP  (intentional grab).
+    //   2. Falling through a vine (vy > 0.5)   (auto-grab so vines act
+    //      as a safety net, not something you fall straight past).
+    //   3. Already climbing                    (sticky - stay on the
+    //      vine when you release up/down, like Mario's vines / DK ropes).
+    // Drop off by pressing JUMP (handled below).
+    var atVine = false, grabCol = -1;
     var midCol = Math.floor((this.x + this.w / 2) / T);
     var topRow = Math.floor((this.y + 2) / T);
     var botRow = Math.floor((this.y + this.h - 2) / T);
     for (var vy_ = topRow; vy_ <= botRow; vy_++) {
-      if (level.map.get(midCol, vy_) === 'V') { atVine = true; break; }
+      if (level.map.get(midCol, vy_) === 'V') { atVine = true; grabCol = midCol; break; }
     }
-    if (atVine && (In.held('up') || In.held('down') || this.climbing)) this.climbing = true;
-    else this.climbing = false;
+    if (this.vineCooldown > 0) this.vineCooldown--;
+    if (atVine) {
+      // Sticky: stay on if already climbing. Auto-grab on fall (unless
+      // we *just* jumped off a vine - then the cooldown prevents the
+      // auto-grab from yanking the player right back). Manual grab via
+      // up/down always works.
+      var autoGrab = this.vy > 0.5 && this.vineCooldown === 0;
+      if (this.climbing || autoGrab ||
+          In.held('up') || In.held('down')) {
+        if (!this.climbing && autoGrab) {
+          this.vy = 0;                        // catch the fall
+        }
+        this.climbing = true;
+        // Snap horizontally toward the vine column so player doesn't
+        // sit half-off and slip back to gravity next frame.
+        if (grabCol >= 0) {
+          var targetX = grabCol * T + (T - this.w) / 2;
+          this.x += (targetX - this.x) * 0.4;
+        }
+      }
+    } else {
+      this.climbing = false;
+    }
 
     if (this.climbing) {
       this.vx = 0; this.vy = 0;
+      // Pass through one-way tiles in BOTH directions while climbing
+      // (otherwise climbing down through a canopy one-way-tile would
+      // get blocked at the canopy level).
+      this.dropThrough = 2;
       if (In.held('up')) this.vy = -1.3;
       else if (In.held('down')) this.vy = 1.4;
       if (In.held('left')) { this.vx = -0.7; this.facing = -1; }
       else if (In.held('right')) { this.vx = 0.7; this.facing = 1; }
       if (In.pressed('jump')) {
         this.climbing = false;
-        this.vy = C.JUMP_SMALL * 0.7;
+        // Full jump impulse off the vine so the player can actually
+        // reach the ledge that the vine reaches up to. (0.7x impulse
+        // wasn't enough to clear the ledge top.)
+        this.vy = C.JUMP_SMALL;
+        // Cooldown so the auto-grab on the way down doesn't yank the
+        // player straight back onto this vine before they can drift
+        // onto the adjacent ledge.
+        this.vineCooldown = 24;
         SDD.audio.sfx('jump');
       }
       if (this.blastCD > 0) this.blastCD--;
