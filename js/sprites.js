@@ -1407,6 +1407,172 @@ window.SDD = window.SDD || {};
     px(g, 32, 5, 2, 3, '#5a8de0');
   }
 
+  // Cloud platform (Day 2-1 sky / 5-1 bird-sky if it ever uses movers).
+  // White puffy cloud with darker undercarriage shadow.
+  function paintMovPlat_cloud(g) {
+    var clA = '#e8ecf5', clL = '#ffffff', clB = '#9aa6c2';
+    // Body
+    px(g, 2, 2, 32, 8, clA);
+    // Soft round corners (notch the edges)
+    px(g, 0, 4, 2, 4, clA);
+    px(g, 34, 4, 2, 4, clA);
+    px(g, 4, 1, 28, 1, clA);
+    px(g, 6, 0, 24, 1, clA);
+    // Top puff highlights
+    px(g, 5, 1, 26, 1, clL);
+    px(g, 7, 0, 22, 1, clL);
+    px(g, 4, 2, 28, 1, clL);
+    // Bottom shadow / curve
+    px(g, 1, 9, 34, 2, clB);
+    px(g, 2, 10, 32, 1, '#7080a0');
+    // Soft underglow
+    px(g, 3, 11, 30, 1, 'rgba(232,236,245,0.4)');
+  }
+
+  // Wooden raft (Day 2-2 sea-surface). Brown planks with rope wraps.
+  function paintMovPlat_raft(g) {
+    var wA = '#8b5a2a', wL = '#c89858', wB = '#5a3a18', rope = '#d4b070';
+    // Plank body
+    px(g, 0, 1, 36, 11, wB);
+    px(g, 1, 2, 34, 8, wA);
+    px(g, 1, 2, 34, 1, wL);                        // top sun stripe
+    px(g, 1, 9, 34, 1, '#6a4218');                 // shadow
+    // Plank seams (4 planks)
+    for (var i = 8; i < 33; i += 8) { px(g, i, 2, 1, 8, wB); }
+    // Grain marks
+    px(g, 4, 5, 3, 1, wB);
+    px(g, 13, 6, 3, 1, wB);
+    px(g, 22, 5, 3, 1, wB);
+    px(g, 28, 7, 3, 1, wB);
+    // Rope wraps at the ends
+    px(g, 1, 3, 2, 6, rope);
+    px(g, 33, 3, 2, 6, rope);
+    px(g, 1, 4, 2, 1, '#8a6028'); px(g, 33, 4, 2, 1, '#8a6028');
+    px(g, 1, 7, 2, 1, '#8a6028'); px(g, 33, 7, 2, 1, '#8a6028');
+    px(g, 0, 12, 36, 1, '#3a2010');
+  }
+
+  // Stone slab (Day 3-1 rocky). Gray chiseled stone with cracks + moss.
+  function paintMovPlat_stone(g) {
+    var sA = '#7e7268', sL = '#a89c8e', sB = '#4a4038', moss = '#5fb046';
+    // Slab body
+    px(g, 0, 1, 36, 11, sB);
+    px(g, 1, 2, 34, 9, sA);
+    px(g, 1, 2, 34, 2, sL);                        // top light
+    px(g, 1, 4, 34, 1, '#988672');
+    px(g, 1, 10, 34, 1, '#3a302a');
+    // Cracks
+    px(g, 6, 5, 1, 4, sB);
+    px(g, 16, 6, 1, 3, sB);
+    px(g, 24, 5, 1, 5, sB);
+    px(g, 30, 7, 1, 2, sB);
+    // Moss tufts on top
+    px(g, 4, 1, 4, 1, moss);
+    px(g, 14, 1, 5, 1, moss);
+    px(g, 24, 1, 3, 1, moss);
+    px(g, 4, 0, 2, 1, '#86d860');
+    px(g, 16, 0, 2, 1, '#86d860');
+    px(g, 0, 12, 36, 1, '#2a221c');
+  }
+
+  // Sunbeam platform (Day 4-1). Glowing horizontal bar of light.
+  function paintMovPlat_sunbeam(g) {
+    // Outer warm glow
+    px(g, 0, 1, 36, 11, 'rgba(255,200,80,0.22)');
+    // Core beam (golden orange gradient top to dark base)
+    px(g, 1, 2, 34, 9, '#ff9020');
+    px(g, 1, 2, 34, 2, '#ffe070');                 // bright top
+    px(g, 2, 3, 32, 1, '#fff7c4');
+    px(g, 1, 4, 34, 1, '#ffd048');
+    px(g, 1, 10, 34, 1, '#c83214');
+    // Sun-shine striations along the length
+    for (var i = 4; i < 33; i += 6) {
+      px(g, i, 5, 2, 1, '#ffffff');
+      px(g, i + 2, 7, 1, 1, '#ffe070');
+    }
+    // Endpoint sun-burst dots
+    px(g, 1, 5, 1, 3, '#fff7c4');
+    px(g, 34, 5, 1, 3, '#fff7c4');
+    px(g, 0, 6, 1, 1, '#ffffff'); px(g, 35, 6, 1, 1, '#ffffff');
+  }
+
+  // Bone / tribal plank (Day 6-1 savanna). Ivory bone-textured plank
+  // with tribal stripe markings + rope wraps at the ends.
+  function paintMovPlat_bone(g) {
+    var bA = '#e8d4b4', bL = '#fff4d8', bB = '#a08868', stripe = '#7a4218';
+    // Body
+    px(g, 0, 1, 36, 11, bB);
+    px(g, 1, 2, 34, 8, bA);
+    px(g, 1, 2, 34, 1, bL);                        // top highlight
+    px(g, 1, 9, 34, 1, '#806848');                 // bottom shadow
+    // Tribal stripes
+    px(g, 6, 4, 2, 5, stripe);
+    px(g, 13, 4, 1, 5, stripe);
+    px(g, 18, 5, 2, 3, stripe);
+    px(g, 23, 4, 1, 5, stripe);
+    px(g, 28, 4, 2, 5, stripe);
+    // Knobs at the ends (the "joint" feel of a bone)
+    px(g, 0, 3, 3, 7, '#d8c098');
+    px(g, 33, 3, 3, 7, '#d8c098');
+    px(g, 0, 2, 3, 1, bL); px(g, 33, 2, 3, 1, bL);
+    px(g, 0, 12, 36, 1, '#4a3820');
+  }
+
+  // Village cart (Day 6-2). Wooden cart bed with iron banding.
+  function paintMovPlat_cart(g) {
+    var wA = '#9a6a3a', wL = '#c89858', wB = '#5a3a18', iron = '#3a3a44';
+    // Body
+    px(g, 0, 1, 36, 11, wB);
+    px(g, 1, 2, 34, 8, wA);
+    px(g, 1, 2, 34, 1, wL);                        // sun stripe
+    px(g, 1, 9, 34, 1, '#5a3818');
+    // Plank seams
+    for (var i = 6; i < 33; i += 6) { px(g, i, 2, 1, 8, wB); }
+    // Iron banding (two bands across)
+    px(g, 0, 3, 36, 1, iron);
+    px(g, 0, 8, 36, 1, iron);
+    px(g, 1, 3, 34, 1, '#5a5a64');                 // band highlight
+    // Iron rivets
+    for (var r = 2; r < 34; r += 8) {
+      px(g, r, 3, 1, 1, '#cccccc');
+      px(g, r, 8, 1, 1, '#cccccc');
+    }
+    // Iron endcaps
+    px(g, 0, 2, 2, 9, iron);
+    px(g, 34, 2, 2, 9, iron);
+    px(g, 0, 2, 2, 1, '#5a5a64'); px(g, 34, 2, 2, 1, '#5a5a64');
+    px(g, 0, 12, 36, 1, '#2a1a0e');
+  }
+
+  // Eden glow leaf-platform (Day 7). Bright green leafy slab with
+  // golden-light edges + sparkle dots.
+  function paintMovPlat_eden(g) {
+    var lA = '#5fb046', lL = '#86d860', lB = '#3b7a2a', gold = '#ffd23a';
+    // Outer warm glow
+    px(g, 0, 1, 36, 11, 'rgba(255,232,140,0.20)');
+    // Leafy body
+    px(g, 1, 2, 34, 9, lA);
+    px(g, 1, 2, 34, 1, lL);                        // top light
+    px(g, 2, 3, 32, 1, '#a8e890');
+    px(g, 1, 9, 34, 1, lB);
+    px(g, 1, 10, 34, 1, '#2a5a1a');
+    // Leaf vein lines
+    px(g, 18, 3, 1, 7, lB);                        // central vein
+    for (var i = 4; i < 33; i += 6) {
+      px(g, i, 5, 4, 1, lB);
+      px(g, i, 7, 4, 1, lB);
+    }
+    // Golden sparkles
+    px(g, 6, 4, 1, 1, gold);
+    px(g, 15, 6, 1, 1, gold);
+    px(g, 25, 5, 1, 1, gold);
+    px(g, 31, 7, 1, 1, gold);
+    px(g, 6, 3, 1, 1, '#ffffff');
+    px(g, 25, 4, 1, 1, '#ffffff');
+    // Bottom shadow
+    px(g, 0, 12, 36, 1, '#1a3a0e');
+  }
+
   // ================= items =================
   function paintCore(g, frame) {
     var p = frame === 1 ? 1 : 0;
@@ -1592,7 +1758,14 @@ window.SDD = window.SDD || {};
     sprites['playerblast_r'] = bl;
     sprites['playerblast_l'] = flip(bl);
     sprites['movplat'] = spriteO(36, 13, paintMovPlat);
-    sprites['movplat_cosmic'] = spriteO(36, 13, paintMovPlat_cosmic);
+    sprites['movplat_cosmic']  = spriteO(36, 13, paintMovPlat_cosmic);
+    sprites['movplat_cloud']   = spriteO(36, 13, paintMovPlat_cloud);
+    sprites['movplat_raft']    = spriteO(36, 13, paintMovPlat_raft);
+    sprites['movplat_stone']   = spriteO(36, 13, paintMovPlat_stone);
+    sprites['movplat_sunbeam'] = spriteO(36, 13, paintMovPlat_sunbeam);
+    sprites['movplat_bone']    = spriteO(36, 13, paintMovPlat_bone);
+    sprites['movplat_cart']    = spriteO(36, 13, paintMovPlat_cart);
+    sprites['movplat_eden']    = spriteO(36, 13, paintMovPlat_eden);
     sprites['timepart'] = spriteO(16, 16, paintTimePart);
 
     sprites['tile_ground'] = spritePlain(16, 16, paintGround);

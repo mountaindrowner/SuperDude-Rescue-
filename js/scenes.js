@@ -1129,9 +1129,25 @@ window.SDD = window.SDD || {};
           this.enemies.push(e);
         }
       }
-      // Per-theme platform skin (e.g. cosmic-night gets constellation
-      // beams instead of wooden planks).
-      var platVariant = (this.theme === 'cosmic-night') ? 'cosmic' : null;
+      // Per-theme platform skin so movers don't all look like the
+      // same brass plank everywhere (Mark: "all the platforms looking
+      // the same on every level is a little strange"). Unknown
+      // themes (or themes with no variant) fall back to the default.
+      var PLAT_VARS = {
+        'galactic':     null,            // keep brass plank - matches Day 1's machine
+        'sky':          'cloud',
+        'sea-surface':  'raft',
+        'rocky':        'stone',
+        'forest':       null,            // 3-2 has no movers; safe fallback
+        'sunlit':       'sunbeam',
+        'cosmic-night': 'cosmic',
+        'bird-sky':     'cloud',
+        'seaside':      'raft',
+        'savanna':      'bone',
+        'village-dusk': 'cart',
+        'eden':         'eden'
+      };
+      var platVariant = PLAT_VARS[this.theme] || null;
       for (var m = 0; m < L.movers.length; m++) {
         var mv = L.movers[m];
         var plat = new SDD.ent.MovPlat(mv.tx * T, mv.ty * T,
