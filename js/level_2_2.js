@@ -87,10 +87,15 @@ window.SDD = window.SDD || {};
 
   ground(176, 195);
   box(180, 8, 182, 13, 'X');
-  qb(186, 4, 'B');                                         // blast power-up high up
+  // Block raised to row 2 - was row 4 directly above the row-5
+  // one-way, which left no clearance for Big Danny's head to fit
+  // between the platform and the block. Mark Pass 9: "another
+  // treasure block that I cannot get because it's flat against
+  // one of the platforms."
+  qb(186, 2, 'B');                                         // blast power-up high up
   oneway(184, 188, 5);
   sp('crab', 190, 10);
-  sp('core', 178, 9); sp('core', 181, 6); sp('core', 186, 3); sp('core', 192, 9);
+  sp('core', 178, 9); sp('core', 181, 6); sp('core', 186, 1); sp('core', 192, 9);
 
   // ============== REWARD (195-239): big flying-leap finale ==============
   water(196, 218);
