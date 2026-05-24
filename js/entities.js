@@ -1153,15 +1153,37 @@ window.SDD = window.SDD || {};
   };
 
   // ===================== NPC (Day 6 Stage 2: Mankind) =====================
+  // NPC kinds and metadata. Animal kinds are 'decorative' - they
+  // never speak and never award cores; they just stand / bob in place
+  // for atmosphere. Custom dialogue per character so Eve has her own
+  // line vs Adam's generic "BLESSINGS!".
+  var NPC_META = {
+    adam: { decorative: false, line: 'BLESSINGS!' },
+    eve:  { decorative: false, line: 'WELCOME, DANNY!' },
+    deer: { decorative: true },
+    lion: { decorative: true },
+    dove: { decorative: true }
+  };
   function NPC(x, y, kind) {
     this.x = x; this.y = y; this.w = 12; this.h = 26;
     this.kind = kind || 'adam';
-    this.gave = false; this.bubbleT = 0; this.t = 0;
+    var meta = NPC_META[this.kind] || NPC_META.adam;
+    this.decorative = !!meta.decorative;
+    this.line = meta.line || 'HELLO!';
+    // Animals never trigger the "give cores" branch in scenes -
+    // marking them already-gave at spawn is the simplest gate.
+    this.gave = this.decorative;
+    this.bubbleT = 0; this.t = 0;
     this.remove = false;
+    // Subtle vertical bob for decorative animals so they read as alive
+    this.baseY = y; this.bobPhase = Math.random() * 6.28;
   }
   NPC.prototype.update = function () {
     this.t++;
     if (this.bubbleT > 0) this.bubbleT--;
+    if (this.decorative) {
+      this.y = this.baseY + Math.sin(this.t * 0.06 + this.bobPhase) * 1;
+    }
   };
   NPC.prototype.draw = function (ctx, cam) {
     drawBC(ctx, 'npc_' + this.kind, this, cam);
@@ -1169,10 +1191,12 @@ window.SDD = window.SDD || {};
       var bx = Math.round(this.x + this.w / 2 - cam.x);
       var by = Math.round(this.y - cam.y - 4);
       ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.fillRect(bx - 22, by - 10, 44, 10);
+      // Width derived from the dialogue string so longer lines fit.
+      var lineW = Math.max(44, this.line.length * 6 + 8);
+      ctx.fillRect(bx - lineW / 2, by - 10, lineW, 10);
       ctx.strokeStyle = '#1a1a2a'; ctx.lineWidth = 1;
-      ctx.strokeRect(bx - 22 + 0.5, by - 10 + 0.5, 43, 9);
-      SDD.sprites.text(ctx, 'BLESSINGS!', bx, by - 8, '#1a1a2a', 1, 'center');
+      ctx.strokeRect(bx - lineW / 2 + 0.5, by - 10 + 0.5, lineW - 1, 9);
+      SDD.sprites.text(ctx, this.line, bx, by - 8, '#1a1a2a', 1, 'center');
     }
   };
 

@@ -1215,6 +1215,160 @@ window.SDD = window.SDD || {};
     // sandals
     px(g, 5, 30, 5, 1, '#6e4a26'); px(g, 10, 30, 5, 1, '#6e4a26');
   }
+
+  // Eve - long flowing red-brown hair, soft green tunic, no beard,
+  // smaller frame than Adam. 20x31 same canvas as Adam.
+  function paintNPC_eve(g) {
+    // Long hair that drapes past the shoulders
+    px(g, 4, 0, 12, 3, '#a83020');
+    px(g, 5, 0, 10, 1, '#d04030');
+    px(g, 3, 3, 1, 8, '#8a2418');             // left hair fall
+    px(g, 16, 3, 1, 8, '#8a2418');            // right hair fall
+    px(g, 4, 3, 1, 9, '#a83020');
+    px(g, 15, 3, 1, 9, '#a83020');
+    // Face
+    px(g, 5, 4, 10, 6, C.skin);
+    px(g, 5, 4, 10, 1, C.skinL);
+    px(g, 6, 6, 1, 4, C.skinD);                // left cheek shading
+    // Soft eyes with lashes
+    px(g, 7, 7, 1, 1, C.out); px(g, 12, 7, 1, 1, C.out);
+    px(g, 7, 6, 1, 1, '#3a1810'); px(g, 12, 6, 1, 1, '#3a1810');
+    // Small mouth + cheek blush
+    px(g, 9, 9, 2, 1, '#a83020');
+    px(g, 6, 8, 1, 1, '#e88080'); px(g, 13, 8, 1, 1, '#e88080');
+    // Neck
+    px(g, 9, 10, 4, 2, C.skinD);
+    // Tunic - soft sage green with leaf-pattern collar
+    px(g, 4, 12, 12, 14, '#8ab564');
+    px(g, 4, 12, 2, 14, '#a8d088');            // left highlight
+    px(g, 14, 12, 2, 14, '#6a9248');           // right shadow
+    px(g, 9, 12, 2, 2, '#456a28');             // collar V
+    px(g, 8, 14, 4, 1, '#cae09a');             // floral accent
+    // Belt of woven flowers
+    px(g, 4, 20, 12, 1, '#456a28');
+    px(g, 7, 20, 1, 1, '#ffd040');
+    px(g, 11, 20, 1, 1, '#ffd040');
+    // Arms - slimmer than Adam's
+    px(g, 3, 13, 1, 9, C.skin);
+    px(g, 16, 13, 1, 9, C.skin);
+    px(g, 3, 22, 1, 2, C.skin);
+    px(g, 16, 22, 1, 2, C.skin);
+    // Bare legs
+    px(g, 6, 26, 3, 4, C.skin);
+    px(g, 11, 26, 3, 4, C.skin);
+    // Sandals
+    px(g, 5, 30, 5, 1, '#6e4a26');
+    px(g, 10, 30, 5, 1, '#6e4a26');
+  }
+
+  // Eden decorative animals - small bobbing silhouettes that don't
+  // harm Danny. Painted at NPC scale (20x31 canvas) so they slot
+  // straight into the same draw path.
+  function paintAnimal_deer(g) {
+    var col = '#9a6a3a', dark = '#6a4828', white = '#e8d8c0';
+    // Body (rows 14-22)
+    px(g, 4, 14, 12, 6, col);
+    px(g, 4, 14, 12, 1, white);                 // back highlight
+    px(g, 4, 19, 12, 1, dark);                  // belly shadow
+    // White rump dot
+    px(g, 13, 16, 2, 2, white);
+    // Long neck rising up and forward
+    px(g, 12, 8, 3, 6, col);
+    px(g, 12, 8, 3, 1, white);
+    // Head
+    px(g, 13, 5, 4, 3, col);
+    px(g, 14, 4, 2, 1, col);                    // forehead
+    // Antlers (forking up)
+    px(g, 13, 2, 1, 3, dark);
+    px(g, 12, 1, 1, 1, dark);
+    px(g, 14, 1, 1, 1, dark);
+    px(g, 16, 2, 1, 3, dark);
+    px(g, 15, 1, 1, 1, dark);
+    px(g, 17, 1, 1, 1, dark);
+    // Eye
+    px(g, 15, 6, 1, 1, C.out);
+    // Legs (4 slim, slightly staggered)
+    px(g, 5, 20, 1, 8, col);
+    px(g, 8, 20, 1, 8, col);
+    px(g, 11, 20, 1, 8, col);
+    px(g, 14, 20, 1, 8, col);
+    // Hooves
+    px(g, 5, 28, 1, 2, dark);
+    px(g, 8, 28, 1, 2, dark);
+    px(g, 11, 28, 1, 2, dark);
+    px(g, 14, 28, 1, 2, dark);
+    // Tail
+    px(g, 3, 14, 1, 3, col);
+    px(g, 3, 14, 1, 1, white);
+  }
+
+  function paintAnimal_lion(g) {
+    var mane = '#a8642a', body = '#d8a062', dark = '#6a4020', face = '#e8c890';
+    // Body - wider, lower than deer (Eden lion is peaceful + lazy)
+    px(g, 4, 18, 12, 8, body);
+    px(g, 4, 18, 12, 1, face);                  // back highlight
+    px(g, 4, 25, 12, 1, dark);                  // belly shadow
+    // Mane - shaggy halo around the head
+    px(g, 11, 11, 7, 7, mane);
+    px(g, 12, 10, 5, 1, mane);
+    px(g, 12, 18, 5, 1, mane);
+    px(g, 10, 12, 1, 5, mane);
+    px(g, 18, 12, 1, 5, mane);
+    px(g, 11, 11, 7, 1, '#c0834a');             // mane top highlight
+    // Face inside the mane
+    px(g, 12, 13, 5, 4, face);
+    // Eyes + nose
+    px(g, 13, 14, 1, 1, C.out);
+    px(g, 16, 14, 1, 1, C.out);
+    px(g, 14, 15, 2, 1, dark);                  // muzzle
+    px(g, 14, 16, 2, 1, '#3a1810');             // mouth line
+    // Ears (poking through mane)
+    px(g, 12, 11, 1, 1, mane);
+    px(g, 17, 11, 1, 1, mane);
+    // Legs (stubby, lounging)
+    px(g, 5, 26, 2, 4, body);
+    px(g, 8, 26, 2, 4, body);
+    px(g, 11, 26, 2, 4, body);
+    px(g, 14, 26, 2, 4, body);
+    px(g, 5, 29, 2, 1, dark);                   // paw shadows
+    px(g, 8, 29, 2, 1, dark);
+    px(g, 11, 29, 2, 1, dark);
+    px(g, 14, 29, 2, 1, dark);
+    // Tail with tuft
+    px(g, 2, 22, 2, 1, body);
+    px(g, 1, 23, 2, 1, body);
+    px(g, 0, 24, 2, 2, mane);                   // tail tuft
+  }
+
+  function paintAnimal_dove(g) {
+    var body = '#ffffff', shade = '#c0c8d8', beak = '#ffa830';
+    // Dove silhouette - smaller / higher on the canvas (it perches
+    // on bushes / hovers). 20x31 canvas, character roughly in rows 8-18.
+    // Body
+    px(g, 6, 12, 8, 4, body);
+    px(g, 7, 11, 6, 1, body);
+    px(g, 6, 15, 8, 1, shade);                  // belly shadow
+    // Head
+    px(g, 11, 9, 4, 3, body);
+    px(g, 12, 8, 2, 1, body);
+    px(g, 11, 9, 1, 1, shade);                  // head shadow
+    // Beak
+    px(g, 15, 10, 1, 1, beak);
+    px(g, 16, 10, 1, 1, beak);
+    // Eye
+    px(g, 13, 9, 1, 1, C.out);
+    // Wings spread (always extended - reads as flying)
+    px(g, 3, 11, 4, 1, body);
+    px(g, 2, 12, 5, 1, body);
+    px(g, 3, 13, 4, 1, shade);
+    // Tail
+    px(g, 4, 14, 3, 1, body);
+    px(g, 4, 15, 3, 1, shade);
+    // A second wing tip on the right (mid-flap silhouette)
+    px(g, 14, 11, 4, 1, body);
+    px(g, 14, 12, 5, 1, body);
+    px(g, 14, 13, 4, 1, shade);
+  }
   // glowing white platform for Day 1's "let there be light" theme
   function paintGroundGalactic(g) {
     // Glassy / semi-polished obsidian look per Mark - body is a
@@ -1954,6 +2108,10 @@ window.SDD = window.SDD || {};
     sprites['tile_dirt_galactic']   = sprites['tile_dirt_galactic'];
     sprites['tile_vine'] = spritePlain(16, 16, paintVine);
     sprites['npc_adam'] = spriteO(20, 31, paintNPC);
+    sprites['npc_eve']  = spriteO(20, 31, paintNPC_eve);
+    sprites['npc_deer'] = spriteO(20, 31, paintAnimal_deer);
+    sprites['npc_lion'] = spriteO(20, 31, paintAnimal_lion);
+    sprites['npc_dove'] = spriteO(20, 31, paintAnimal_dove);
     sprites['tile_water'] = spritePlain(16, 16, paintWater);
     sprites['tile_water_top'] = spritePlain(16, 16, paintWaterTop);
     sprites['tile_qcore'] = spritePlain(16, 16, function (g) { paintQ(g, 'core'); });

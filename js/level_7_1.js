@@ -32,27 +32,41 @@ window.SDD = window.SDD || {};
   box(152, 10, 154, 13, 'X');
   box(168, 9, 171, 13, 'X');
 
-  // NPCs scattered through the garden
-  sp('npc', 10, 10, 'adam');
-  sp('npc', 24, 10, 'adam');
-  sp('npc', 40, 10, 'adam');
-  sp('npc', 56, 10, 'adam');
-  sp('npc', 70, 10, 'adam');
-  sp('npc', 86, 10, 'adam');
-  sp('npc', 100, 10, 'adam');
-  sp('npc', 118, 10, 'adam');
-  sp('npc', 132, 10, 'adam');
+  // Roaming Eden animals - decorative, no harm, no cores. Doves
+  // perch higher in the air; deer and lions stand at ground level.
+  sp('npc', 12, 10, 'deer');
+  sp('npc', 26, 10, 'lion');
+  sp('npc', 38,  5, 'dove');                  // dove perched mid-air
+  sp('npc', 48, 10, 'deer');
+  sp('npc', 64, 10, 'lion');
+  sp('npc', 76,  4, 'dove');
+  sp('npc', 92, 10, 'deer');
+  sp('npc', 110, 10, 'lion');
+  sp('npc', 128,  5, 'dove');
+  sp('npc', 142, 10, 'deer');
+  sp('npc', 158, 10, 'lion');
+  sp('npc', 174,  4, 'dove');
+
+  // A few Adam + Eve NPCs scattered along the way that DO give cores
+  // for greeting them - rewards exploration.
+  sp('npc', 20, 10, 'adam');
+  sp('npc', 56, 10, 'eve');
+  sp('npc', 84, 10, 'adam');
+  sp('npc', 118, 10, 'eve');
   sp('npc', 150, 10, 'adam');
-  sp('npc', 166, 10, 'adam');
 
   // Generous trail of power cores - celebratory final harvest
   for (var x = 6; x <= 180; x += 3) sp('core', x, 6 + (x % 5));
 
-  // Pedestal with the final time-machine part - Adam stands beside
+  // Pedestal with the final time-machine part - Adam AND Eve both
+  // greet Danny at the end (Mark Pass 9: 'Adam + Eve at the goal').
   box(184, 8, 190, 13, 'X');
   box(199, 0, 199, 13, 'X');
   sp('timepart', 187, 7);
-  sp('npc', 192, 10, 'adam');
+  sp('npc', 191, 10, 'adam');
+  sp('npc', 195, 10, 'eve');
+  // Dove perched above the time-part as a final blessing
+  sp('npc', 187, 3, 'dove');
   sp('core', 184, 6); sp('core', 187, 5); sp('core', 190, 6);
   sp('core', 194, 9); sp('core', 196, 9);
 
