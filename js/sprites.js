@@ -525,6 +525,34 @@ window.SDD = window.SDD || {};
 
   // ----- themed Walker variants (16w x 14h, frame 0=normal, 1=squish) -----
 
+  // Clam walker (Day 2-2 sea-surface only) - pink/cream shell with a
+  // visible hinge + soft mantle peeking out + cute eyes. Frame 0
+  // shell closed, frame 1 slightly open.
+  function paintWalker_clam(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    var sh = '#f4c0c4', shL = '#ffe0d8', shD = '#a85a60', mn = '#fff4d0', eye = '#1a1640';
+    // Lower shell (flat clam bottom)
+    px(g, 1, 8, 14, 3, sh);
+    px(g, 0, 9, 16, 2, sh);
+    px(g, 1, 10, 14, 1, shD);                         // shadow line
+    // Upper shell (dome)
+    px(g, 2, 4, 12, 4, sh);
+    px(g, 1, 5, 14, 3, sh);
+    px(g, 3, 3, 10, 1, sh);
+    // Highlight along the top
+    px(g, 3, 4, 8, 1, shL);
+    px(g, 4, 3, 6, 1, shL);
+    // Hinge / shell ribs (subtle vertical lines)
+    px(g, 4, 5, 1, 3, shD);
+    px(g, 8, 5, 1, 3, shD);
+    px(g, 11, 5, 1, 3, shD);
+    // Slight gap between upper + lower shell (the "mouth")
+    px(g, 2, 8 - b, 12, 1, mn);
+    // Tiny eyes peeking
+    px(g, 5, 6, 1, 1, eye);
+    px(g, 10, 6, 1, 1, eye);
+  }
+
   // Cloud-puff walker - white blobby cloud with eyes (sky / sea / seaside).
   function paintWalker_cloud(g, frame) {
     var sq = frame === 1 ? 1 : 0, t = 4 + sq;
@@ -1502,6 +1530,7 @@ window.SDD = window.SDD || {};
       // Walker re-skins keyed by variant suffix
       var WALK_VARS = {
         cloud: paintWalker_cloud,
+        clam:  paintWalker_clam,
         rock:  paintWalker_rock,
         leaf:  paintWalker_leaf,
         flame: paintWalker_flame

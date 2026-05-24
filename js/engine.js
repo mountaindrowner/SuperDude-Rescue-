@@ -6,7 +6,7 @@ window.SDD = window.SDD || {};
 
   SDD.C = {
     VIEW_W: 320, VIEW_H: 180, TILE: 16,
-    GRAVITY: 0.36, MAX_FALL: 6.5,
+    GRAVITY: 0.36, MAX_FALL: 5.8,
     MOVE_ACCEL: 0.36, FRICTION: 0.30,
     MOVE_MAX_SMALL: 1.85, MOVE_MAX_BIG: 2.05,
     JUMP_SMALL: -6.5, JUMP_BIG: -7.0, JUMP_CUT: 0.42,

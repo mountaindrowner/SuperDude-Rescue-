@@ -203,7 +203,11 @@ window.SDD = window.SDD || {};
       if (this.blastCD > 0) this.blastCD--;
       if (this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
         var bx_ = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
-        var by_ = this.y + (this.big ? 9 : 4);
+        // Blast at lower-body height so it actually hits ground-walking
+        // enemies (Mark: "I have a lot of enemies that I can't hit
+        // because I'm too tall"). Old offset put the blast at chest
+        // level which flew over walkers.
+        var by_ = this.y + this.h - (this.big ? 16 : 12);
         level.spawnBlast(bx_, by_, this.facing);
         this.blastCD = 20; this.blastAnim = 11;
         SDD.audio.sfx('blast');
@@ -339,11 +343,11 @@ window.SDD = window.SDD || {};
       if (!In.held('jump') && this.vy < capV) this.vy = capV;
     }
 
-    // blast
+    // blast (lower-body height so it hits ground-walkers)
     if (this.blastCD > 0) this.blastCD--;
     if (this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
       var bx = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
-      var by = this.y + (this.big ? 9 : 4);
+      var by = this.y + this.h - (this.big ? 16 : 12);
       level.spawnBlast(bx, by, this.facing);
       this.blastCD = 20; this.blastAnim = 11;
       SDD.audio.sfx('blast');
@@ -757,7 +761,33 @@ window.SDD = window.SDD || {};
       }
     }
   };
-  HazardSpawner.prototype.draw = function () {};
+  HazardSpawner.prototype.draw = function (ctx, cam) {
+    // Lava plumes get a visible "nozzle" / crater marker on the
+    // ground tile so the player can see where the next eruption will
+    // come from (Mark: "obvious spots that have a little crater or
+    // nozzle, that's obviously a spout where lava shoots out").
+    if (this.kind !== 'lavaPlume') return;
+    var T = 16;
+    var gx = Math.round(this.x - cam.x);
+    var gy = Math.round((this.ty + 1) * T - cam.y);     // top of solid ground
+    // Dark crater rim
+    ctx.fillStyle = '#3a2010';
+    ctx.fillRect(gx - 8, gy - 4, 16, 4);
+    ctx.fillStyle = '#2a1408';
+    ctx.fillRect(gx - 7, gy - 3, 14, 1);
+    // Glowing inner ring
+    ctx.fillStyle = '#7a1c0a';
+    ctx.fillRect(gx - 6, gy - 3, 12, 2);
+    // Hot core - pulse near the next spawn (last 30% of the period
+    // brightens to yellow so the player can read "about to erupt").
+    var remain = Math.max(0, this.period - this.t);
+    var ratio = remain / Math.max(1, this.period);
+    var hot = ratio < 0.3 ? '#ffd048' : '#ff5418';
+    ctx.fillStyle = hot;
+    ctx.fillRect(gx - 5, gy - 2, 10, 1);
+    ctx.fillStyle = '#ff8030';
+    ctx.fillRect(gx - 4, gy - 1, 8, 1);
+  };
   HazardSpawner.prototype.zap = function () {};      // blast can't kill the sky
 
   // ===================== PLAYER BLAST =====================
