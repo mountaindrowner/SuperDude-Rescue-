@@ -1714,6 +1714,10 @@ window.SDD = window.SDD || {};
       if (bonuses > 0) {
         this.lives += bonuses;
         A.sfx('1up');
+        // Reuse the godToast pattern for a visible "1UP!" banner so
+        // the player actually notices the reward (Mark Pass 9: cores
+        // -> life mechanic existed but had no visual feedback).
+        SDD.godToast = { msg: '1UP!  EXTRA LIFE', t: 110 };
       }
     },
     burst: function (x, y, color, n) {

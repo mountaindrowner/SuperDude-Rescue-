@@ -534,7 +534,28 @@ window.SDD = window.SDD || {};
       }
       var cx = Math.round(this.x + this.w / 2 - cam.x);
       var baselineY = Math.round(this.y + this.h - cam.y);
-      if (SDD.sprites.pixDraw(ctx, size, anim, dirPL, idx, cx, baselineY)) return;
+      var ok = SDD.sprites.pixDraw(ctx, size, anim, dirPL, idx, cx, baselineY);
+      // Day 4-1 "sweating" overlay: tiny animated water drops on
+      // Danny's head + cheeks while in the sunlit theme. Sells the
+      // "African heat" feel of the Sun stage (Mark Pass 9: "subtle
+      // sweating overlay on Big/Small Danny while in this level").
+      if (ok && theme === 'sunlit' && !this.dead && !this.win) {
+        var t = this.animT;
+        var headY = baselineY - (this.big ? 32 : 22);
+        var leftX = cx - 5, rightX = cx + 4;
+        ctx.fillStyle = '#a8e0ff';
+        // Drop 1 - left temple, falls + resets
+        var d1 = (t * 0.6) % 28;
+        if (d1 < 14) ctx.fillRect(leftX, (headY + d1) | 0, 1, 2);
+        // Drop 2 - right cheek, offset phase
+        var d2 = ((t * 0.6) + 14) % 32;
+        if (d2 < 14) ctx.fillRect(rightX, (headY + 2 + d2) | 0, 1, 2);
+        // Tiny shine on each active drop
+        ctx.fillStyle = '#ffffff';
+        if (d1 < 14) ctx.fillRect(leftX, (headY + d1) | 0, 1, 1);
+        if (d2 < 14) ctx.fillRect(rightX, (headY + 2 + d2) | 0, 1, 1);
+      }
+      if (ok) return;
     }
     // Fallback: code-drawn Danny (used during loading and if the PNGs are missing)
     var fr = this.dead ? 'die' : this.frame;

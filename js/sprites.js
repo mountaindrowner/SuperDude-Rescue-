@@ -699,41 +699,71 @@ window.SDD = window.SDD || {};
   // ----- themed Wisp variants (14w x 14h flying) -----
 
   // Small bird (sky / sea / bird-sky / seaside / savanna).
-  // Hawk silhouette - wider than tall, outstretched wings, pointy beak.
-  // Frame 0: wings gliding flat, Frame 1: wings raised (mid-flap).
+  // Hawk silhouette - bigger, chunkier body, big spread wings that
+  // flap dramatically. Frame 0: wings DOWN (full glide spread),
+  // Frame 1: wings UP (sharp upstroke). Mark Pass 9 redraw: "bigger,
+  // more obviously bird, animated flap." The 14x14 sprite is now
+  // packed - body fills the centre, wings reach the full width.
   function paintWisp_bird(g, frame) {
     var flap = frame === 1 ? 1 : 0;
-    // Body (narrow, centered)
-    px(g, 6, 5, 4, 4, C.bdA);
-    px(g, 5, 6, 6, 2, C.bdL);                    // lighter belly
-    px(g, 6, 5, 4, 1, C.bdB);                    // top of body shadow
-    // Tail (back, fanned)
-    px(g, 0, 6, 5, 1, C.bdA);
-    px(g, 1, 7, 4, 1, C.bdB);
-    px(g, 0, 5, 3, 1, C.bdA);                    // small upper-tail tuft
-    // Wings - the dramatic part. Outstretched flat (frame 0) or raised (frame 1).
+
+    // Body - chunky teardrop centered around (6,7)
+    px(g, 5, 5, 5, 4, C.bdA);                    // main body block
+    px(g, 6, 4, 3, 1, C.bdA);                    // shoulder hump
+    px(g, 4, 6, 1, 2, C.bdA);                    // breast curve left
+    px(g, 10, 6, 1, 2, C.bdA);                   // breast curve right
+    // Lighter belly
+    px(g, 5, 7, 5, 2, C.bdL);
+    px(g, 4, 7, 1, 1, C.bdL);
+    // Body top shadow (definition between body + wings)
+    px(g, 5, 4, 3, 1, C.bdB);
+
+    // Head - distinct round head on top of body
+    px(g, 6, 3, 3, 1, C.bdA);
+    px(g, 6, 4, 2, 1, C.bdA);
+    // Eye - one bright dot on the head
+    px(g, 7, 3, 1, 1, C.out);
+
+    // Beak - hooked triangular point, pointing forward (right)
+    px(g, 9, 4, 1, 1, C.bdBeak);
+    px(g, 10, 4, 1, 1, C.bdBeak);
+    px(g, 9, 5, 1, 1, C.bdB);                    // beak underside shadow
+
+    // Tail - fanned, sweeping back
+    px(g, 2, 7, 3, 1, C.bdA);
+    px(g, 1, 8, 4, 1, C.bdA);
+    px(g, 2, 9, 3, 1, C.bdB);
+
+    // Wings - dramatic full-width on either frame
     if (flap) {
-      // raised wings - swept up + forward, angular
-      px(g, 7, 1, 4, 1, C.bdA);
-      px(g, 8, 2, 3, 1, C.bdL);
-      px(g, 9, 3, 3, 1, C.bdA);
-      px(g, 10, 4, 2, 1, C.bdB);
+      // Wings UPSTROKE - swept up + slightly forward, dramatic V shape
+      // Left wing climbing up
+      px(g, 1, 3, 1, 1, C.bdB);
+      px(g, 2, 2, 2, 1, C.bdA);
+      px(g, 3, 1, 2, 1, C.bdL);
+      px(g, 4, 2, 2, 1, C.bdA);
+      px(g, 5, 3, 1, 1, C.bdB);
+      // Right wing climbing up
+      px(g, 7, 3, 1, 1, C.bdB);
+      px(g, 8, 2, 2, 1, C.bdA);
+      px(g, 9, 1, 2, 1, C.bdL);
+      px(g, 11, 2, 2, 1, C.bdA);
+      px(g, 13, 3, 1, 1, C.bdB);
     } else {
-      // glide wings - flat, full span
-      px(g, 7, 4, 6, 1, C.bdA);
-      px(g, 9, 5, 5, 1, C.bdL);
-      px(g, 10, 6, 4, 1, C.bdB);
-      px(g, 12, 7, 2, 1, C.bdB);                 // wingtip droop
+      // Wings DOWNSTROKE / GLIDE - fully spread horizontal
+      // Left wing
+      px(g, 0, 6, 2, 1, C.bdA);
+      px(g, 1, 5, 3, 1, C.bdA);
+      px(g, 2, 6, 3, 1, C.bdL);
+      px(g, 3, 7, 1, 1, C.bdB);
+      px(g, 0, 7, 1, 1, C.bdB);                  // wing-tip droop
+      // Right wing
+      px(g, 12, 6, 2, 1, C.bdA);
+      px(g, 10, 5, 3, 1, C.bdA);
+      px(g, 9, 6, 3, 1, C.bdL);
+      px(g, 10, 7, 1, 1, C.bdB);
+      px(g, 13, 7, 1, 1, C.bdB);                 // wing-tip droop
     }
-    // Sharp triangular beak
-    px(g, 4, 6, 1, 1, C.bdBeak);
-    px(g, 3, 6, 1, 1, C.bdBeak);
-    // Hawk eye (dark intense)
-    px(g, 7, 6, 1, 1, C.bdBeak);
-    px(g, 7, 6, 1, 1, C.out);
-    // Tail spread silhouette underneath
-    px(g, 2, 8, 4, 1, C.bdB);
-    px(g, 3, 9, 2, 1, C.bdB);
   }
 
   // Falling leaf flyer (forest / eden).
@@ -1674,27 +1704,49 @@ window.SDD = window.SDD || {};
   }
   function paintGrow(g, frame) {
     var p = frame === 1 ? 1 : 0;
-    // Dark outer ring for definition
-    px(g, 2, 3, 12, 10, C.out);
-    px(g, 3, 2, 10, 12, C.out);
-    // Warm base + bright inner gradient
-    px(g, 3, 3, 10, 10, C.growA);
-    px(g, 4, 4,  8,  8, C.growL);
-    // Glossy top highlight strip
-    px(g, 4, 3,  8,  1, C.growW);
-    px(g, 5, 4,  6,  1, C.growW);
-    // Bottom shadow
-    px(g, 3, 12, 10, 1, C.growB);
-    px(g, 4, 11,  8, 1, C.growB);
-    // Cross - 2 px wide bar centred on the 16x16 sprite's mid-seam
-    // (cols 7-8 / rows 7-8). 8 px long each arm so the whole cross
-    // fits inside the inner gradient box without sticking out.
-    px(g, 7, 4, 2, 8, C.growW);                  // vertical bar
-    px(g, 4, 7, 8, 2, C.growW);                  // horizontal bar
-    // Bright pulse highlight on the cross during frame 1
+    // Mushroom-style "grow" power-up - classic, kid-readable. Red
+    // domed cap with white spots, cream stem, friendly cartoon eyes.
+    // Replaces the previous abstract orange capsule + cross marker
+    // (Mark Pass 9: "growth power-up sprite can still be improved").
+
+    // Cap silhouette (dome from row 2 to row 8)
+    px(g, 4, 2, 8, 1, C.growA);                  // top crown
+    px(g, 3, 3, 10, 1, C.growA);
+    px(g, 2, 4, 12, 4, C.growA);                 // wide cap body
+    px(g, 3, 8, 10, 1, C.growA);                 // cap bottom rim shadow
+    // Cap top highlight (curved gloss along the upper edge)
+    px(g, 5, 3, 3, 1, C.growW);
+    px(g, 4, 4, 2, 1, C.growW);
+    px(g, 5, 4, 1, 1, '#ffffff');                // hot spot
+    // Cap underside shading
+    px(g, 3, 7, 10, 1, C.growB);
+    // White spots scattered on the cap (the classic mushroom look)
+    px(g, 9,  3, 2, 2, C.growW);                 // big spot right
+    px(g, 8,  4, 1, 1, C.growW);                 // tail of big spot
+    px(g, 11, 5, 2, 2, C.growW);                 // small spot far right
+    px(g, 3,  6, 2, 1, C.growW);                 // spot left
+    px(g, 6,  6, 1, 1, C.growW);                 // tiny center spot
+    // Cap pulse on frame 1 (brighter spot rim)
     if (p) {
-      px(g, 6, 5, 4, 6, C.growW);
-      px(g, 5, 6, 6, 4, C.growW);
+      px(g, 10, 3, 1, 1, '#ffffff');
+      px(g, 4,  6, 1, 1, '#ffffff');
+    }
+
+    // Stem (rows 9-13, narrower than cap, cream/beige)
+    px(g, 5, 9,  6, 1, C.growL);                 // collar
+    px(g, 4, 10, 8, 3, C.growL);                 // stem body
+    px(g, 5, 13, 6, 1, C.growB);                 // stem bottom shadow
+    // Stem highlight (left edge)
+    px(g, 4, 10, 1, 2, C.growW);
+    // Stem shadow (right edge)
+    px(g, 11, 10, 1, 3, C.growB);
+    // Friendly eyes - little ovals on the stem near the collar
+    px(g, 6, 11, 1, 1, C.out);
+    px(g, 9, 11, 1, 1, C.out);
+    // Eye gleam on frame 1
+    if (p) {
+      px(g, 6, 10, 1, 1, C.out);
+      px(g, 9, 10, 1, 1, C.out);
     }
   }
   function paintBlastItem(g, frame) {
