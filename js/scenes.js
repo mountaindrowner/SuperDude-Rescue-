@@ -1281,7 +1281,7 @@ window.SDD = window.SDD || {};
         'cosmic-night': { walker: null,    wisp: 'star', thrower: null   },
         'bird-sky':     { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
         'seaside':      { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
-        'savanna':      { walker: 'rock',  wisp: 'bird', thrower: 'rock' },
+        'savanna':      { walker: 'lion',  wisp: 'bird', thrower: 'rock' },
         'village-dusk': { walker: 'leaf',  wisp: 'bat',  thrower: 'fruit'},
         'eden':         { walker: 'leaf',  wisp: 'leaf', thrower: 'fruit'}
       };
@@ -1295,7 +1295,9 @@ window.SDD = window.SDD || {};
         } else if (s.type === 'walker') {
           e = new SDD.ent.Walker(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
-          e.variant = variants.walker;
+          // Per-spawn variant override (Mark: lions + porcupines side
+          // by side in savanna), else default to the theme variant.
+          e.variant = s.variant || variants.walker;
           this.enemies.push(e);
         } else if (s.type === 'thrower') {
           e = new SDD.ent.Thrower(0, 0);

@@ -13,7 +13,7 @@ window.SDD = window.SDD || {};
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
   function oneway(x0, x1, y) { for (var x = x0; x <= x1; x++) setT(x, y, '='); }
   function qb(x, y, ch) { setT(x, y, ch); }
-  var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
+  var spawns = []; function sp(t_, x, y, variant) { spawns.push({ type: t_, tx: x, ty: y, variant: variant }); }
   var movers = []; function mover(tx, ty, tx1, ty1, spd, ph) {
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
@@ -23,26 +23,26 @@ window.SDD = window.SDD || {};
   sp('player', 3, 10);
   sp('core', 6, 9); sp('core', 9, 9);
   qb(13, 7, 'G');                                          // grow early - need it
-  sp('walker', 18, 10);                                    // one rock-crab walker
+  sp('walker', 18, 10, 'porcupine');                       // first porcupine
   sp('core', 16, 9); sp('core', 22, 9); sp('core', 26, 9);
 
   ground(31, 60);
   // open arena with one wisp
   sp('wisp', 38, 7);
   qb(42, 7, '?');
-  sp('walker', 48, 10);
+  sp('walker', 48, 10, 'lion');                            // first prowling lion
   sp('core', 33, 9); sp('core', 38, 5); sp('core', 44, 9); sp('core', 54, 9);
 
   // ============== TEST (60-130): pairs of enemies ==============
-  // First pair
+  // First pair - one of each
   ground(61, 100);
-  sp('walker', 68, 10); sp('walker', 75, 10);
+  sp('walker', 68, 10, 'porcupine'); sp('walker', 75, 10, 'lion');
   sp('wisp', 72, 5);
   sp('core', 65, 9); sp('core', 72, 4); sp('core', 78, 9); sp('core', 88, 9);
 
   // pair + thrower
   sp('thrower', 92, 10);
-  sp('walker', 84, 10);
+  sp('walker', 84, 10, 'porcupine');
   sp('wisp', 96, 4);
   sp('core', 92, 7); sp('core', 96, 2);
 
@@ -60,14 +60,14 @@ window.SDD = window.SDD || {};
   sp('wisp', 116, 4);
   sp('core', 113, 4); sp('core', 120, 1); sp('core', 130, 9); sp('core', 138, 9);
 
-  // wave 1: enemies clustered (now blast-clearable)
-  sp('walker', 132, 10); sp('walker', 138, 10); sp('walker', 144, 10);
+  // wave 1: pride of lions clustered (blast-clearable)
+  sp('walker', 132, 10, 'lion'); sp('walker', 138, 10, 'lion'); sp('walker', 144, 10, 'porcupine');
 
   // ============== TWIST 2 (145-200): bigger waves ==============
   ground(147, 200);
-  // dense walker line
-  sp('walker', 152, 10); sp('walker', 158, 10); sp('walker', 164, 10);
-  sp('walker', 170, 10);
+  // mixed savanna dense line - lions on the hunt + a few porcupines
+  sp('walker', 152, 10, 'lion');     sp('walker', 158, 10, 'porcupine');
+  sp('walker', 164, 10, 'lion');     sp('walker', 170, 10, 'porcupine');
   sp('thrower', 176, 10);
   // platform up for safety/cores
   box(155, 8, 168, 9, 'X');
@@ -88,7 +88,7 @@ window.SDD = window.SDD || {};
   box(220, 8, 224, 13, 'X');                               // goal pedestal
   box(239, 0, 239, 13, 'X');
   sp('timepart', 222, 7);
-  sp('walker', 211, 10);                                   // last lone enemy
+  sp('walker', 211, 10, 'lion');                           // last lone lion
   sp('core', 209, 9); sp('core', 215, 7); sp('core', 222, 6);
   sp('core', 230, 9); sp('core', 236, 9);
 

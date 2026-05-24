@@ -595,6 +595,58 @@ window.SDD = window.SDD || {};
     px(g, 6, t + 3, 1, 1, C.rkEye); px(g, 11, t + 3, 1, 1, C.rkEye);
   }
 
+  // Lion (Day 6-1 savanna). Golden-tan body, fluffy mane around head,
+  // small paws, tufted tail. Frame 1 stretches forward (prowl crouch).
+  function paintWalker_lion(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
+    var body = '#d89860', mane = '#a86028', dk = '#5a3a1c', light = '#ffd890', eye = '#1a1640';
+    // Body
+    px(g, 4, t + 1, 9, 5 - sq, body);
+    px(g, 3, t + 3, 11, 3 - sq, body);
+    px(g, 5, t, 6, 1, body);
+    px(g, 5, t + 1, 5, 1, light);                          // top highlight
+    // Head + mane (front-right)
+    px(g, 11, t - 1, 4, 5, mane);                          // mane
+    px(g, 12, t,     3, 3, body);                          // face inside mane
+    px(g, 13, t + 1, 1, 1, eye);                           // eye
+    px(g, 14, t + 2, 1, 1, dk);                            // nose
+    // Tail tuft (back-left)
+    px(g, 1, t,     1, 2, body);
+    px(g, 0, t + 1, 1, 1, mane);
+    // Paws
+    px(g, 4, t + 6 - sq, 2, 1, dk);
+    px(g, 7, t + 6 - sq, 2, 1, dk);
+    px(g, 11, t + 6 - sq, 2, 1, dk);
+    // Belly shadow
+    px(g, 4, t + 5 - sq, 7, 1, '#a87648');
+  }
+
+  // Porcupine (Day 6-1 savanna). Brown body with spike row on top,
+  // small face on the right, short legs.
+  function paintWalker_porcupine(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
+    var body = '#7a5230', face = '#3a1f10', spk = '#2a1a08', spkL = '#9a7050', eye = '#fff8d0';
+    // Body
+    px(g, 3, t + 2, 9, 4 - sq, body);
+    px(g, 2, t + 4, 11, 2 - sq, body);
+    px(g, 4, t + 1, 7, 1, body);
+    // Spikes along the top (alternating heights)
+    px(g, 3, t - 1, 1, 2, spk); px(g, 4, t,     1, 1, spk);
+    px(g, 5, t - 2, 1, 3, spk); px(g, 6, t,     1, 1, spk);
+    px(g, 7, t - 1, 1, 2, spk); px(g, 8, t - 2, 1, 3, spk);
+    px(g, 9, t,     1, 1, spk); px(g, 10, t - 1, 1, 2, spk);
+    // Spike highlights
+    px(g, 5, t - 2, 1, 1, spkL); px(g, 8, t - 2, 1, 1, spkL);
+    // Face (right side - dark snout)
+    px(g, 11, t + 2, 3, 3, face);
+    px(g, 13, t + 2, 1, 1, eye);                           // eye
+    px(g, 13, t + 4, 1, 1, '#000');                        // nose
+    // Legs (4 short stubs)
+    px(g, 3, t + 6 - sq, 2, 1, face);
+    px(g, 6, t + 6 - sq, 2, 1, face);
+    px(g, 9, t + 6 - sq, 2, 1, face);
+  }
+
   // Leaf/seed walker - green critter with leaves sprouting (forest / eden / village).
   function paintWalker_leaf(g, frame) {
     var sq = frame === 1 ? 1 : 0, t = 4 + sq;
@@ -1701,11 +1753,13 @@ window.SDD = window.SDD || {};
       // ---- themed enemy variants ----
       // Walker re-skins keyed by variant suffix
       var WALK_VARS = {
-        cloud: paintWalker_cloud,
-        clam:  paintWalker_clam,
-        rock:  paintWalker_rock,
-        leaf:  paintWalker_leaf,
-        flame: paintWalker_flame
+        cloud:     paintWalker_cloud,
+        clam:      paintWalker_clam,
+        rock:      paintWalker_rock,
+        leaf:      paintWalker_leaf,
+        flame:     paintWalker_flame,
+        lion:      paintWalker_lion,
+        porcupine: paintWalker_porcupine
       };
       Object.keys(WALK_VARS).forEach(function (k) {
         var painter = WALK_VARS[k];
