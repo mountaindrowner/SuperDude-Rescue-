@@ -1541,7 +1541,8 @@ window.SDD = window.SDD || {};
   // hitting a pillar.
   function Twister(x, y) {
     this.x = x; this.y = y;
-    this.w = 14; this.h = 30;
+    // Pass 10 round 2 (Mark): bigger, more dramatic twister.
+    this.w = 18; this.h = 40;
     this.vx = 1.6;
     this.dead = false; this.remove = false;
     this.stompable = false;
@@ -1550,10 +1551,12 @@ window.SDD = window.SDD || {};
   Twister.prototype.update = function (level) {
     this.t++;
     this.x += this.vx;
-    // Wrap across the visible camera area
+    // Wrap across the visible camera area in either direction
     var cam = level.camera;
-    if (cam && this.x > cam.x + 340) this.x = cam.x - 30;
-    if (this.x < -40) this.x = level.map.pxW + 20;
+    if (cam) {
+      if (this.vx > 0 && this.x > cam.x + 360) this.x = cam.x - 40;
+      if (this.vx < 0 && this.x < cam.x - 40)  this.x = cam.x + 360;
+    }
     var pl = level.player;
     if (!pl || pl.dead || pl.invuln > 0) return;
     if (overlap(pl, this)) {
@@ -1566,22 +1569,54 @@ window.SDD = window.SDD || {};
   Twister.prototype.draw = function (ctx, cam) {
     var cx = Math.round(this.x + this.w / 2 - cam.x);
     var cy = Math.round(this.y - cam.y);
-    var sway = Math.sin(this.t * 0.15) * 2;
-    // Dark cone w/ spiral hint
-    ctx.fillStyle = 'rgba(80,90,120,0.85)';
+    var sway1 = Math.sin(this.t * 0.18) * 3;
+    var sway2 = Math.sin(this.t * 0.22 + 1.5) * 3;
+    var sway3 = Math.sin(this.t * 0.26 + 3.0) * 2;
+    // Pass 10 round 2 (Mark): "increase the quality of those tornadoes."
+    // Now a multi-band funnel with three sway-offset cone layers + a
+    // visible debris swirl rotating around the body.
+    // Outer dark funnel
+    ctx.fillStyle = 'rgba(50,55,80,0.65)';
     ctx.beginPath();
-    ctx.moveTo(cx - 8 + sway,     cy);
-    ctx.lineTo(cx + 8 + sway,     cy);
-    ctx.lineTo(cx + 4 + sway / 2, cy + 18);
-    ctx.lineTo(cx + 2,            cy + 28);
-    ctx.lineTo(cx + 1,            cy + 28);
-    ctx.lineTo(cx - 2 + sway / 2, cy + 18);
+    ctx.moveTo(cx - 12 + sway1, cy);
+    ctx.lineTo(cx + 12 + sway1, cy);
+    ctx.lineTo(cx + 6 + sway2, cy + 24);
+    ctx.lineTo(cx + 2 + sway3, cy + 38);
+    ctx.lineTo(cx - 2 + sway3, cy + 38);
+    ctx.lineTo(cx - 6 + sway2, cy + 24);
     ctx.closePath(); ctx.fill();
-    // Spiral lines
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
-    ctx.fillRect((cx - 6 + sway) | 0,     cy + 3, 12, 1);
-    ctx.fillRect((cx - 4 + sway) | 0,     cy + 8, 8,  1);
-    ctx.fillRect((cx - 2 + sway / 2) | 0, cy + 14, 5, 1);
+    // Mid swirl
+    ctx.fillStyle = 'rgba(110,120,150,0.75)';
+    ctx.beginPath();
+    ctx.moveTo(cx - 9 + sway1, cy + 2);
+    ctx.lineTo(cx + 9 + sway1, cy + 2);
+    ctx.lineTo(cx + 4 + sway2, cy + 22);
+    ctx.lineTo(cx + 1 + sway3, cy + 34);
+    ctx.lineTo(cx - 1 + sway3, cy + 34);
+    ctx.lineTo(cx - 4 + sway2, cy + 22);
+    ctx.closePath(); ctx.fill();
+    // Brighter spiral lines (3 bands at different heights)
+    ctx.fillStyle = 'rgba(220,230,255,0.85)';
+    ctx.fillRect((cx - 9 + sway1) | 0, cy + 4, 18, 1);
+    ctx.fillStyle = 'rgba(200,215,245,0.75)';
+    ctx.fillRect((cx - 7 + sway2) | 0, cy + 10, 14, 1);
+    ctx.fillStyle = 'rgba(180,200,240,0.7)';
+    ctx.fillRect((cx - 5 + sway1) | 0, cy + 16, 10, 1);
+    ctx.fillStyle = 'rgba(160,185,235,0.65)';
+    ctx.fillRect((cx - 3 + sway2) | 0, cy + 22, 6, 1);
+    ctx.fillStyle = 'rgba(140,170,230,0.6)';
+    ctx.fillRect((cx - 2 + sway3) | 0, cy + 28, 4, 1);
+    // Debris specks orbiting the body
+    for (var d = 0; d < 5; d++) {
+      var a = this.t * 0.2 + d * 1.25;
+      var dx = Math.cos(a) * (10 - d);
+      var dy = 5 + d * 6 + Math.sin(a * 1.3) * 1.5;
+      ctx.fillStyle = (d % 2) ? '#dfe6ff' : '#9aa0c4';
+      ctx.fillRect((cx + dx) | 0, (cy + dy) | 0, 2, 1);
+    }
+    // Lifted dust at the bottom
+    ctx.fillStyle = 'rgba(120,130,160,0.7)';
+    ctx.fillRect((cx - 6 + sway3) | 0, cy + 36, 12, 2);
   };
   Twister.prototype.zap = function () {};
   Twister.prototype.stomped = function () {};

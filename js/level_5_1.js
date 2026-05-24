@@ -1,8 +1,8 @@
-// level_5_1.js - Day 5-1 "THE SKIES" (Pass 9 trim, ~200 tiles).
-// Flappy mode: Danny auto-flies forward, tap A to flap. Hit a pillar
-// or the ground = lose a life. Mark's feedback: previous ~360-tile
-// length was too punishing to retry; gaps were one block too tight.
-// Now ~half length + every gap is +1 block taller.
+// level_5_1.js - Day 5-1 "THE SKIES" (Pass 10 round 2 rework).
+// Flappy mode: Danny auto-flies forward, tap A to flap. Pass 10 r2
+// (Mark): "Let's completely remove the obstacles - the walls. Replace
+// with trails of cores and improve the tornadoes. Make them come from
+// both sides at different rows so it's not a giant wave."
 window.SDD = window.SDD || {};
 
 (function () {
@@ -14,59 +14,56 @@ window.SDD = window.SDD || {};
   function box(x0, y0, x1, y1, ch) { ch = ch || 'X'; for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) setT(x, y, ch); }
   var spawns = []; function sp(t_, x, y) { spawns.push({ type: t_, tx: x, ty: y }); }
 
+  // Visual-only ground band so Danny has terrain to read against, even
+  // though pits below the floor still kill the same as before. No more
+  // pillars/walls along the way - the sky is open.
   ground(0, W - 1);
-  // Spawn at row 5 so Danny starts at the upper edge of the first
-  // gate's gap (gap is rows 5-9), giving time to flap and find the
-  // rhythm before reaching the pillar. Was row 8 - gravity pulled
-  // Danny straight into the lower pillar before he could react.
+  // Spawn at row 5 - upper-middle of the play space.
   sp('player', 4, 5);
 
-  // Each gate: pillar from top to gapTop-1, then gap (gapH tall),
-  // then pillar from gapTop+gapH down to row 12.
-  function gate(col, gapTop, gapH) {
-    gapH = gapH || 4;
-    for (var y = 0; y < gapTop; y++) setT(col, y, '#');
-    for (var y = gapTop + gapH; y <= 12; y++) setT(col, y, '#');
+  // ============== CORE TRAILS (cols 0-W) ==============
+  // Pass 10 r2 (Mark): "trails of cores that allow the players to try
+  // to get those, and also to dodge the tornadoes." Each "ridge" is a
+  // shallow curve of cores that subtly guides the player's altitude.
+  // Curves alternate up + down so the kid is flapping rhythmically.
+  function coreRow(x0, x1, baseY, amp, phase) {
+    for (var x = x0; x <= x1; x += 2) {
+      var y = Math.round(baseY + Math.sin((x - x0) * 0.16 + phase) * amp);
+      if (y < 1) y = 1; if (y > 11) y = 11;
+      sp('core', x, y);
+    }
   }
+  // 3 swooping core ribbons spread across the level
+  coreRow(8,  64, 6, 3, 0);
+  coreRow(70, 130, 5, 4, 1.5);
+  coreRow(136, 188, 7, 3, 0.5);
 
-  // ============== TEACH (cols 0-70): wide easy gates ==============
-  var teachGates = [[18, 3, 8], [36, 4, 6], [54, 5, 6]];
-  for (var i = 0; i < teachGates.length; i++) gate(teachGates[i][0], teachGates[i][1], teachGates[i][2]);
-  for (var i = 0; i < teachGates.length; i++) {
-    var gc = teachGates[i][0], gt = teachGates[i][1];
-    sp('core', gc, gt + 1); sp('core', gc, gt + 2);
-  }
+  // Bonus high-altitude clusters tempting risky climbs
+  sp('core', 30,  2); sp('core', 32, 2); sp('core', 34, 2);
+  sp('core', 80,  1); sp('core', 82, 1); sp('core', 84, 1);
+  sp('core', 140, 2); sp('core', 142, 2); sp('core', 144, 2);
 
-  // ============== TEST (cols 70-140): standard gates ==============
-  var testGates = [[72, 4, 5], [90, 6, 5], [108, 3, 5], [126, 5, 5]];
-  for (var i = 0; i < testGates.length; i++) gate(testGates[i][0], testGates[i][1], testGates[i][2]);
-  for (var i = 0; i < testGates.length; i++) {
-    var gc = testGates[i][0], gt = testGates[i][1];
-    sp('core', gc, gt + 1); sp('core', gc, gt + 2);
-  }
-  sp('wisp', 82, 6); sp('wisp', 100, 4); sp('wisp', 118, 7);
+  // ============== TORNADOES (one at a time, alternating sides) ==============
+  // Pass 10 r2 (Mark): "make sure that the tornadoes - it's only one
+  // at a time, and maybe one's coming from the left, the other one's
+  // coming from the right. Different rows. Not a giant wave."
+  // Each twister covers a different stretch of the level. Spawn x is
+  // placed at the START of their stretch and they wrap, so the player
+  // encounters one moving twister per phase.
+  // Direction convention: spd > 0 = moves right, spd < 0 = moves left.
+  // The wrap logic in Twister.update brings them back around so each
+  // tornado patrols its band continuously.
+  spawns.push({ type: 'twister', tx: 50,  ty: 3,  spd:  1.6 });   // L->R, upper band
+  spawns.push({ type: 'twister', tx: 90,  ty: 6,  spd: -1.6 });   // R->L, mid band
+  spawns.push({ type: 'twister', tx: 130, ty: 9,  spd:  1.4 });   // L->R, lower band
+  spawns.push({ type: 'twister', tx: 170, ty: 4,  spd: -1.5 });   // R->L, upper-mid
 
-  // ============== REWARD (cols 140-199): final stretch ==============
-  var rewardGates = [[144, 5, 5], [162, 4, 5], [180, 6, 5]];
-  for (var i = 0; i < rewardGates.length; i++) gate(rewardGates[i][0], rewardGates[i][1], rewardGates[i][2]);
-  for (var i = 0; i < rewardGates.length; i++) {
-    var gc = rewardGates[i][0], gt = rewardGates[i][1];
-    sp('core', gc, gt + 1); sp('core', gc, gt + 2);
-  }
-  sp('wisp', 154, 7); sp('wisp', 172, 4);
+  // Storm wisps for atmosphere (slow background flyers, no shooting)
+  sp('wisp', 60, 2); sp('wisp', 110, 10); sp('wisp', 150, 3);
 
-  // Drifting twisters - pass left-to-right through the mid-altitude
-  // band. Contact triggers the same bounce-stun as a wall hit (not
-  // an instant death). One per section so the difficulty bump is
-  // gentle per Mark's "nothing too complicated since that's already
-  // a hard stage."
-  sp('twister', 64, 6);
-  sp('twister', 110, 4);
-  sp('twister', 170, 7);
-
+  // Goal pedestal at the far right
   box(W - 4, 0, W - 4, 12, 'X');
   sp('timepart', W - 7, 8);
-  sp('core', W - 10, 4); sp('core', W - 10, 7);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['5-1'] = {
