@@ -1401,7 +1401,10 @@ window.SDD = window.SDD || {};
           e.x = s.tx * T + 8 - e.w / 2; e.y = s.ty * T + 8 - e.h / 2; e.baseY = e.y;
           this.items.push(e);
         } else if (s.type === 'timepart') {
-          e = new SDD.ent.TimePart(0, 0);
+          // Each stage drops a different piece of the time machine.
+          // Variant key = day-stage so each part can render with a
+          // unique palette/shape.
+          e = new SDD.ent.TimePart(0, 0, this.day + '-' + this.stage);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h; e.baseY = e.y;
           this.items.push(e);
         } else if (s.type === 'npc') {

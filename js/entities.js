@@ -982,15 +982,137 @@ window.SDD = window.SDD || {};
   };
 
   // ===================== TIME MACHINE PART (goal) =====================
-  function TimePart(x, y) {
+  // Per-stage variant (Pass 9 Mark: "each one could be really uniquely
+  // different, like a bit of a different color and stuff. different
+  // parts of the time machine that fell off"). Painted procedurally
+  // so we don't need 12 sprite assets.
+  var TIME_PART_VARIANTS = {
+    '1-1': { name: 'Power core',   glow: '#9bf0ff', a: '#3a78a8', b: '#a8f0ff', c: '#ffffff' },
+    '2-1': { name: 'Cloud-vane',   glow: '#dbeefc', a: '#7a9ec8', b: '#d6e4f4', c: '#ffffff' },
+    '2-2': { name: 'Hull plate',   glow: '#80e0d8', a: '#1a6c70', b: '#4ec0b8', c: '#a8f0e8' },
+    '3-1': { name: 'Gear bolt',    glow: '#f0c878', a: '#704028', b: '#c08858', c: '#f0c890' },
+    '3-2': { name: 'Vine coil',    glow: '#a8f070', a: '#2a4818', b: '#5a9038', c: '#b0e870' },
+    '4-1': { name: 'Sun cell',     glow: '#ffe070', a: '#a06028', b: '#f0a838', c: '#ffe890' },
+    '4-2': { name: 'Star chip',    glow: '#c8b0ff', a: '#5040a0', b: '#9080d0', c: '#e0d8ff' },
+    '5-1': { name: 'Feather fin',  glow: '#a0d8ff', a: '#406890', b: '#80b0d8', c: '#d8eaff' },
+    '5-2': { name: 'Coral gem',    glow: '#a0ffe0', a: '#1a7060', b: '#50c0a0', c: '#a8f8d0' },
+    '6-1': { name: 'Ivory chunk',  glow: '#fff0c8', a: '#a08858', b: '#dcc090', c: '#fff0c0' },
+    '6-2': { name: 'Wood wheel',   glow: '#f0c068', a: '#603018', b: '#a06838', c: '#d8a070' },
+    '7-1': { name: 'Halo crown',   glow: '#ffe890', a: '#a07820', b: '#f0d040', c: '#ffffff' }
+  };
+  function TimePart(x, y, variantKey) {
     this.x = x; this.y = y; this.w = 14; this.h = 14;
     this.baseY = y; this.t = 0; this.remove = false;
+    this.variantKey = variantKey || '1-1';
+    this.variant = TIME_PART_VARIANTS[this.variantKey] || TIME_PART_VARIANTS['1-1'];
   }
   TimePart.prototype.update = function () { this.t += 0.08; this.y = this.baseY + Math.sin(this.t) * 3; };
   TimePart.prototype.draw = function (ctx, cam) {
-    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y,
-      19, '#9bf0ff', 0.4 + Math.sin(this.t * 2) * 0.16);
-    drawBC(ctx, 'timepart', this, cam);
+    var v = this.variant;
+    var cx = Math.round(this.x + this.w / 2 - cam.x);
+    var cy = Math.round(this.y + this.h / 2 - cam.y);
+    glow(ctx, cx, cy, 19, v.glow, 0.45 + Math.sin(this.t * 2) * 0.16);
+    var x = Math.round(this.x - cam.x), y = Math.round(this.y - cam.y);
+    // Common base: chunky rounded gear/plate shape, then per-variant ornament.
+    ctx.fillStyle = v.a;
+    ctx.fillRect(x + 2, y + 2, 10, 10);
+    ctx.fillStyle = v.b;
+    ctx.fillRect(x + 3, y + 3, 8, 8);
+    // Variant-specific shape painted on top
+    switch (this.variantKey) {
+      case '1-1':                                          // Power core
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 5, y + 5, 4, 4);
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 1, y + 6, 12, 2);
+        ctx.fillRect(x + 6, y + 1, 2, 12);
+        break;
+      case '2-1':                                          // Vane (4 fan blades)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 6, y + 1, 2, 12);
+        ctx.fillRect(x + 1, y + 6, 12, 2);
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '2-2':                                          // Hull plate (rivets)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 4, y + 4, 1, 1);
+        ctx.fillRect(x + 9, y + 4, 1, 1);
+        ctx.fillRect(x + 4, y + 9, 1, 1);
+        ctx.fillRect(x + 9, y + 9, 1, 1);
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '3-1':                                          // Gear with teeth
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 5, y, 4, 2);
+        ctx.fillRect(x + 5, y + 12, 4, 2);
+        ctx.fillRect(x, y + 5, 2, 4);
+        ctx.fillRect(x + 12, y + 5, 2, 4);
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '3-2':                                          // Vine coil (curl)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 4, y + 3, 2, 2);
+        ctx.fillRect(x + 8, y + 4, 2, 2);
+        ctx.fillRect(x + 3, y + 7, 2, 2);
+        ctx.fillRect(x + 9, y + 8, 2, 2);
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '4-1':                                          // Sun cell (rays)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 5, y + 5, 4, 4);
+        ctx.fillRect(x + 6, y + 1, 2, 2);
+        ctx.fillRect(x + 6, y + 11, 2, 2);
+        ctx.fillRect(x + 1, y + 6, 2, 2);
+        ctx.fillRect(x + 11, y + 6, 2, 2);
+        break;
+      case '4-2':                                          // Star chip
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 6, y + 2, 2, 2);
+        ctx.fillRect(x + 4, y + 6, 2, 2);
+        ctx.fillRect(x + 8, y + 6, 2, 2);
+        ctx.fillRect(x + 6, y + 10, 2, 2);
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '5-1':                                          // Feather fin (curved blade)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 3, y + 4, 1, 6);
+        ctx.fillRect(x + 4, y + 3, 2, 8);
+        ctx.fillRect(x + 6, y + 2, 2, 10);
+        ctx.fillRect(x + 8, y + 3, 2, 8);
+        ctx.fillRect(x + 10, y + 4, 1, 6);
+        break;
+      case '5-2':                                          // Coral gem
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 5, y + 4, 4, 6);
+        ctx.fillRect(x + 4, y + 5, 6, 4);
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '6-1':                                          // Ivory chunk (irregular)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 4, y + 3, 5, 2);
+        ctx.fillRect(x + 3, y + 5, 8, 5);
+        ctx.fillRect(x + 5, y + 10, 5, 2);
+        break;
+      case '6-2':                                          // Wood wheel (spokes)
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 2, y + 6, 10, 2);
+        ctx.fillRect(x + 6, y + 2, 2, 10);
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 5, y + 5, 4, 4);
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '7-1':                                          // Halo crown
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 2, y + 5, 10, 2);
+        ctx.fillRect(x + 2, y + 8, 10, 2);
+        ctx.fillRect(x + 1, y + 6, 12, 1);
+        ctx.fillRect(x + 1, y + 9, 12, 1);
+        break;
+    }
   };
 
   // ===================== NPC (Day 6 Stage 2: Mankind) =====================
