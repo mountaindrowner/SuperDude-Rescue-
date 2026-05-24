@@ -947,44 +947,249 @@ window.SDD = window.SDD || {};
     g.moveTo(50, 30); g.lineTo(80, 50); g.lineTo(110, 35); g.lineTo(130, 60);
     g.stroke();
   }
+  // Open skies (Day 5-1 Flappy). Multi-layer cloud parallax (the
+  // existing puff variants give 3 cloud shapes) + distant twister
+  // silhouettes drifting left-to-right in the back. Background-only
+  // twisters here; the actual Twister enemy entity lives in
+  // entities.js + level_5_1.js.
   function drawSky_bird_sky(g, camx, camy, prog, t) {
-    vGradient(g, '#70bce0', '#bce0f0');
-    driftClouds(g, camx, camy, 0.5);
-    for (var i = 0; i < 8; i++) {
-      var bx = ((i * 53 - camx * 0.15 + t * 0.2) % 320 + 320) % 320;
-      var by = 30 + (i * 13) % 60;
-      g.strokeStyle = '#26486a'; g.lineWidth = 1;
+    vGradient(g, '#5fa8d8', '#a8d8f0', '#dcefff');
+    // Distant high-altitude wispy clouds (very slow parallax)
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    for (var w = 0; w < 6; w++) {
+      var wx = ((w * 70 - camx * 0.04) % 380 + 380) % 380 - 30;
+      var wy = 22 + (w * 11) % 32;
+      g.fillRect(wx | 0, wy | 0, 20, 1);
+      g.fillRect((wx | 0) + 4, wy + 1, 14, 1);
+    }
+    // Far layer puffy clouds (slow parallax)
+    g.save();
+    g.globalAlpha = 0.7;
+    for (var fc = 0; fc < 8; fc++) {
+      var fcx = ((fc * 90 - camx * 0.08) % 420 + 420) % 420 - 50;
+      var fcy = 36 + (fc * 19) % 50;
+      g.fillStyle = '#ffffff';
+      g.beginPath();
+      g.arc(fcx,      fcy,        6, 0, 6.28);
+      g.arc(fcx + 7,  fcy - 2,    7, 0, 6.28);
+      g.arc(fcx + 14, fcy,        6, 0, 6.28);
+      g.arc(fcx + 8,  fcy + 3,    5, 0, 6.28);
+      g.fill();
+    }
+    g.restore();
+    // Mid layer (existing variety - puffy / wispy / layered)
+    driftClouds(g, camx, camy, 0.85);
+    // Distant twister silhouettes - SLOW left-to-right drift across
+    // the upper-mid sky. These are decorative only; the actual
+    // gameplay twister is a separate entity.
+    for (var ti = 0; ti < 3; ti++) {
+      var tx = ((ti * 130 + t * 0.15 - camx * 0.18) % 420 + 420) % 420 - 60;
+      var ty = 65 + ti * 14;
+      g.fillStyle = 'rgba(70,90,120,0.55)';
+      // Twister cone: wide at top, narrow at bottom, swaying
+      var sway = Math.sin(t * 0.04 + ti) * 2;
+      g.beginPath();
+      g.moveTo(tx - 8 + sway,    ty);
+      g.lineTo(tx + 8 + sway,    ty);
+      g.lineTo(tx + 4 + sway/2,  ty + 14);
+      g.lineTo(tx + 2,           ty + 22);
+      g.lineTo(tx + 1,           ty + 22);
+      g.lineTo(tx - 1 + sway/2,  ty + 14);
+      g.closePath(); g.fill();
+      // Spiral hint lines
+      g.fillStyle = 'rgba(70,90,120,0.7)';
+      g.fillRect((tx - 6 + sway) | 0, ty + 3, 12, 1);
+      g.fillRect((tx - 4 + sway) | 0, ty + 7, 8, 1);
+    }
+    // Distant birds (existing chevrons but slower / less prominent)
+    g.strokeStyle = 'rgba(38,72,106,0.6)'; g.lineWidth = 1;
+    for (var i = 0; i < 6; i++) {
+      var bx = ((i * 73 - camx * 0.12 + t * 0.15) % 360 + 360) % 360 - 20;
+      var by = 30 + (i * 17) % 40;
       g.beginPath();
       g.moveTo(bx - 3, by + 2); g.lineTo(bx, by); g.lineTo(bx + 3, by + 2);
       g.stroke();
     }
   }
+  // Underwater (Day 5-2). Multi-layer reef parallax per Mark's pass-9
+  // brief: distant coral mountain silhouettes -> mid coral spires ->
+  // drifting big-fish silhouettes -> near coral fronds + bubbles
+  // streaming up -> light shafts from the surface. Sand seabed at the
+  // bottom. Tinted slightly green so it reads as deep ocean.
   function drawSky_seaside(g, camx, camy, prog, t) {
-    vGradient(g, '#5fa0e6', '#1a5080');
-    for (var i = 0; i < 320; i += 18) {
-      g.fillStyle = 'rgba(255,255,255,0.16)';
-      g.fillRect((((i + t * 0.4) % 320) | 0), 90 + (i % 50), 9, 1);
-    }
-    g.fillStyle = '#3a2860';
-    for (var c = 0; c < 4; c++) {
-      var cX = c * 80 + 20;
+    // Depth gradient
+    vGradient(g, '#3da0c4', '#0e3a5e');
+    // Surface light shafts (vertical streaks, drift slowly)
+    for (var s = 0; s < 7; s++) {
+      var sx = 30 + s * 48 + Math.sin(t * 0.012 + s * 0.6) * 6;
+      sx = (((sx - camx * 0.25) % 380) + 380) % 380 - 30;
+      g.fillStyle = 'rgba(180,230,255,0.07)';
       g.beginPath();
-      g.moveTo(cX, 178);
-      g.lineTo(cX + 4, 150); g.lineTo(cX + 10, 160); g.lineTo(cX + 14, 145);
-      g.lineTo(cX + 20, 155); g.lineTo(cX + 26, 178);
+      g.moveTo(sx, 0); g.lineTo(sx + 18, 0);
+      g.lineTo(sx + 28, 180); g.lineTo(sx - 10, 180);
+      g.closePath(); g.fill();
+    }
+    // Far coral mountain ridge silhouette
+    mountainRidge(g, camx, 0.06, 160, '#1a4a6e', 70);
+    // Mid coral mountain (taller, more saturated)
+    mountainRidge(g, camx, 0.12, 168, '#2a6088', 50);
+    // Drifting big fish (4 silhouettes at far-back parallax)
+    g.fillStyle = '#1a4070';
+    var fish = [[60, 80, 1], [180, 120, -1], [240, 60, 1], [110, 95, -1]];
+    for (var fi = 0; fi < fish.length; fi++) {
+      var fx = ((fish[fi][0] + t * 0.3 * fish[fi][2] - camx * 0.08) % 380 + 380) % 380 - 30;
+      var fy = fish[fi][1] + Math.sin(t * 0.04 + fi) * 2;
+      // Simple fish silhouette: body ellipse + tail triangle
+      g.beginPath();
+      g.ellipse(fx, fy, 7, 3, 0, 0, 6.28); g.fill();
+      g.beginPath();
+      var tailX = fish[fi][2] > 0 ? fx - 7 : fx + 7;
+      var tailSign = fish[fi][2] > 0 ? -1 : 1;
+      g.moveTo(tailX, fy);
+      g.lineTo(tailX + tailSign * 5, fy - 3);
+      g.lineTo(tailX + tailSign * 5, fy + 3);
+      g.closePath(); g.fill();
+    }
+    // Mid coral spires - tall, slightly pink
+    var midSpan = 80;
+    var midOff = -(((camx * 0.22) % midSpan) + midSpan) % midSpan;
+    for (var x = midOff - midSpan; x < 360; x += midSpan) {
+      g.fillStyle = '#8a4068';
+      g.beginPath();
+      g.moveTo(x + 10, 178);
+      g.lineTo(x + 14, 145); g.lineTo(x + 20, 158); g.lineTo(x + 26, 138);
+      g.lineTo(x + 32, 152); g.lineTo(x + 38, 178);
       g.fill();
+      // bright highlights
+      g.fillStyle = '#c068a0';
+      g.fillRect(x + 13, 148, 2, 6);
+      g.fillRect(x + 25, 142, 2, 4);
+    }
+    // Near coral fronds - vibrant orange/yellow, larger parallax
+    var nearSpan = 60;
+    var nearOff = -(((camx * 0.45) % nearSpan) + nearSpan) % nearSpan;
+    for (var nx = nearOff - nearSpan; nx < 360; nx += nearSpan) {
+      g.fillStyle = '#ff8030';
+      for (var b = 0; b < 4; b++) {
+        var bx = nx + 6 + b * 11 + Math.sin(t * 0.05 + b) * 1;
+        var bh = 14 + (b * 5) % 12;
+        g.fillRect(bx | 0, 178 - bh, 3, bh);
+        g.fillRect((bx | 0) + 1, 178 - bh - 2, 1, 2);
+      }
+      g.fillStyle = '#ffd048';
+      g.fillRect(nx + 6, 174, 1, 1); g.fillRect(nx + 28, 172, 1, 1);
+    }
+    // Sand seabed strip
+    g.fillStyle = '#c4a070'; g.fillRect(0, 176, 320, 4);
+    g.fillStyle = '#8a6840'; g.fillRect(0, 178, 320, 2);
+    // Bubble streams from the seabed drifting up
+    for (var b2 = 0; b2 < 10; b2++) {
+      var bx2 = ((b2 * 32 - camx * 0.5) % 320 + 320) % 320;
+      var bphase = ((t * 0.6 + b2 * 30) % 220);
+      var by2 = 178 - bphase * 0.8;
+      if (by2 > 30) {
+        g.fillStyle = 'rgba(255,255,255,0.32)';
+        g.beginPath(); g.arc(bx2 + Math.sin(bphase * 0.05) * 3, by2 | 0, 2, 0, 6.28); g.fill();
+      }
     }
   }
+  // African savanna (Day 6-1). Sunset gradient, big setting sun, Mount
+  // Kilimanjaro silhouette with snow cap in the mid-distance, layered
+  // acacia trees + animal silhouettes (giraffe / elephant) wandering
+  // in the back, dry grass at the horizon. Per Mark's pass-9 ask for
+  // "African savanna flair."
   function drawSky_savanna(g, camx, camy, prog, t) {
-    vGradient(g, '#f8a648', '#ffd58a');
-    simpleSun(g, 240, 60, 22, '#ffe080', false);
-    for (var i = 0; i < 6; i++) {
-      var tx = ((i * 70 - camx * 0.18) % 320 + 320) % 320;
+    // Golden-hour gradient
+    vGradient(g, '#f08040', '#ffb060', '#ffd890');
+    // Big setting sun (lower-right)
+    g.fillStyle = '#fff0a0';
+    g.beginPath(); g.arc(250 - camx * 0.04, 88, 24, 0, 6.28); g.fill();
+    g.fillStyle = 'rgba(255,180,90,0.45)';
+    g.beginPath(); g.arc(250 - camx * 0.04, 88, 32, 0, 6.28); g.fill();
+    // Distant haze band on the horizon
+    g.fillStyle = 'rgba(255,200,140,0.35)';
+    g.fillRect(0, 118, 320, 14);
+    // Kilimanjaro silhouette (far parallax, dominant centre-left)
+    var kx = 70 - camx * 0.06;
+    g.fillStyle = '#7a4a40';
+    g.beginPath();
+    g.moveTo(kx,        140);
+    g.lineTo(kx + 28,   90);
+    g.lineTo(kx + 38,   78);                          // peak
+    g.lineTo(kx + 52,   92);
+    g.lineTo(kx + 82,   140);
+    g.closePath(); g.fill();
+    // Snow cap
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(kx + 32,   88);
+    g.lineTo(kx + 38,   78);
+    g.lineTo(kx + 46,   90);
+    g.lineTo(kx + 42,   94); g.lineTo(kx + 36,   92);
+    g.closePath(); g.fill();
+    // Far rolling hills
+    mountainRidge(g, camx, 0.10, 138, '#a06640', 22);
+    // Distant animal silhouettes wandering (giraffes + elephants)
+    g.fillStyle = '#5a3a28';
+    // Giraffe shape (long neck) at varied positions
+    for (var ai = 0; ai < 3; ai++) {
+      var ax = ((ai * 120 + t * 0.05 - camx * 0.18) % 380 + 380) % 380 - 30;
+      var ay = 130;
+      // Body
+      g.fillRect(ax, ay + 4, 9, 4);
+      // Legs
+      g.fillRect(ax + 1, ay + 8, 1, 4);
+      g.fillRect(ax + 4, ay + 8, 1, 4);
+      g.fillRect(ax + 7, ay + 8, 1, 4);
+      // Long neck
+      g.fillRect(ax + 7, ay - 6, 1, 10);
+      // Head
+      g.fillRect(ax + 7, ay - 8, 3, 2);
+    }
+    // Elephant shape
+    for (var ei = 0; ei < 2; ei++) {
+      var ex = ((140 + ei * 160 + t * 0.04 - camx * 0.22) % 380 + 380) % 380 - 30;
+      var ey = 132;
       g.fillStyle = '#3a2818';
-      g.fillRect(tx + 5, 128, 2, 22);
+      g.fillRect(ex, ey, 14, 6);                      // body
+      g.fillRect(ex + 1, ey + 6, 2, 4);               // leg 1
+      g.fillRect(ex + 5, ey + 6, 2, 4);               // leg 2
+      g.fillRect(ex + 8, ey + 6, 2, 4);               // leg 3
+      g.fillRect(ex + 11, ey + 6, 2, 4);              // leg 4
+      g.fillRect(ex + 13, ey + 1, 3, 3);              // head
+      g.fillRect(ex + 16, ey + 2, 1, 5);              // trunk
+    }
+    // Mid-distance acacia trees (umbrella canopy)
+    for (var ti = 0; ti < 5; ti++) {
+      var tx = ((ti * 70 - camx * 0.28) % 380 + 380) % 380 - 30;
+      g.fillStyle = '#2a1c10';
+      g.fillRect(tx + 12, 124, 2, 18);                // trunk
+      // umbrella canopy
+      g.fillStyle = '#1a4a2a';
       g.beginPath();
-      g.ellipse(tx + 6, 126, 12, 4, 0, 0, 6.28);
-      g.fill();
+      g.ellipse(tx + 13, 122, 16, 5, 0, 0, 6.28); g.fill();
+      g.fillStyle = '#2a6038';
+      g.beginPath();
+      g.ellipse(tx + 13, 121, 12, 3, 0, 0, 6.28); g.fill();
+    }
+    // Dry grass tufts at the horizon
+    g.fillStyle = '#6a4a20';
+    for (var gi = 0; gi < 40; gi++) {
+      var gx = ((gi * 10 - camx * 0.5) % 320 + 320) % 320;
+      g.fillRect(gx | 0, 144, 1, 3);
+    }
+    // Vulture silhouettes circling slowly in the sky
+    g.strokeStyle = '#3a2010'; g.lineWidth = 1;
+    for (var vi = 0; vi < 3; vi++) {
+      var vx = ((40 + vi * 100 + Math.sin(t * 0.015 + vi) * 30 - camx * 0.04) % 320 + 320) % 320;
+      var vy = 30 + vi * 12 + Math.sin(t * 0.04 + vi) * 4;
+      g.beginPath();
+      g.moveTo(vx - 4, vy + 2);
+      g.lineTo(vx - 1, vy);
+      g.lineTo(vx,     vy + 1);
+      g.lineTo(vx + 1, vy);
+      g.lineTo(vx + 4, vy + 2);
+      g.stroke();
     }
   }
   function drawSky_village_dusk(g, camx, camy, prog, t) {

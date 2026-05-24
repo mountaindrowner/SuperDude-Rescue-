@@ -1311,15 +1311,21 @@ window.SDD = window.SDD || {};
     px(g, 11, 13, 3, 2, '#4c8d3d'); px(g, 12, 14, 2, 1, '#74b65a');
   }
   function paintWater(g) {
-    px(g, 0, 0, 16, 16, '#2a6cb8');
-    px(g, 0, 0, 16, 1, '#3a86d6');
-    px(g, 0, 8, 16, 1, '#3a7ac6');
-    px(g, 2, 4, 3, 1, '#5fa0e6'); px(g, 9, 11, 3, 1, '#5fa0e6');
-    px(g, 11, 3, 2, 1, '#5fa0e6'); px(g, 3, 13, 2, 1, '#5fa0e6');
+    // Semi-transparent water tint so the multi-layer reef parallax
+    // behind (drawSky_seaside) shows through. Pass-9 underwater
+    // polish - solid blue tiles were hiding all the coral / fish /
+    // bubbles / light shafts.
+    px(g, 0, 0, 16, 16, 'rgba(42,108,184,0.42)');
+    px(g, 0, 0, 16, 1, 'rgba(58,134,214,0.55)');
+    px(g, 0, 8, 16, 1, 'rgba(58,122,198,0.40)');
+    px(g, 2, 4, 3, 1, 'rgba(170,220,255,0.55)');
+    px(g, 9, 11, 3, 1, 'rgba(170,220,255,0.55)');
+    px(g, 11, 3, 2, 1, 'rgba(170,220,255,0.55)');
+    px(g, 3, 13, 2, 1, 'rgba(170,220,255,0.55)');
   }
   function paintWaterTop(g) {
-    px(g, 0, 0, 16, 16, '#2a6cb8');
-    // wavy surface stripe at top
+    // Water surface row - keep the wavy top opaque, rest translucent.
+    px(g, 0, 4, 16, 12, 'rgba(42,108,184,0.42)');
     px(g, 0, 0, 16, 3, '#74c2ff');
     px(g, 0, 3, 16, 1, '#3a86d6');
     px(g, 2, 1, 3, 1, '#ffffff'); px(g, 8, 0, 3, 1, '#ffffff'); px(g, 13, 1, 2, 1, '#ffffff');
