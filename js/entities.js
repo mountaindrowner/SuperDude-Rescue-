@@ -46,7 +46,7 @@ window.SDD = window.SDD || {};
     this.big = false; this.hasBlast = false;
     this.onGround = false; this.coyote = 0; this.jumpBuf = 0;
     this.dropThrough = 0;
-    this.invuln = 0; this.shrinkAnim = 0;
+    this.invuln = 0; this.shrinkAnim = 0; this.flappyStunT = 0;
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
     this.climbing = false; this.vineCooldown = 0; this.inWater = false;
@@ -234,14 +234,23 @@ window.SDD = window.SDD || {};
 
     // ----- Flappy mode (Day 5.1) -----
     // Danny auto-flies forward; tap A to flap up. Left/right ignored.
-    // Touching the ground OR ceiling = death.
+    // Hitting the GROUND = death. Hitting a pillar WALL = bounce off
+    // (lose forward momentum + fall) per Mark's "you shouldn't die
+    // if he hits the wall - he should just fall down."
     if (level.flappy) {
       this.facing = 1;
-      this.vx = level.flappySpeed || 1.4;
+      // Default forward speed - dropped to 0 when we just hit a wall
+      // so we don't immediately re-collide on the next frame.
+      if (this.flappyStunT > 0) {
+        this.flappyStunT--;
+        this.vx = -0.3;                    // tiny backward nudge while stunned
+      } else {
+        this.vx = level.flappySpeed || 1.4;
+      }
       this.vy += C.GRAVITY * (level.flappyGravity || 0.85) * gs;
       var maxFall = level.flappyMaxFall || 4.5;
       if (this.vy > maxFall) this.vy = maxFall;
-      if (In.pressed('jump')) {
+      if (In.pressed('jump') && this.flappyStunT <= 0) {
         this.vy = -(level.flappyFlap || 3.4);
         SDD.audio.sfx('jump');
       }
@@ -251,17 +260,20 @@ window.SDD = window.SDD || {};
       this.onHeadBump = function () {};
       this.hitWall = 0;
       mc(this, level.map);
-      // Hitting the ground OR a pillar wall is death in flappy mode -
-      // there is no "ground" to land on and pillars are impassable.
-      if ((this.onGround || this.hitWall) && !SDD.save.data.options.god) {
+      // Floor hit = death (no ground to land on in flappy mode).
+      if (this.onGround && !SDD.save.data.options.god) {
         this.diedInFlappy = true;
         this.die(false);
-      } else if ((this.onGround || this.hitWall) && SDD.save.data.options.god) {
-        // God mode: skip the pillar instead of teleporting to y=32
-        // (which is inside the top-pillar of every gate). Bump past
-        // the offending tile so we don't oscillate on it.
+      } else if (this.onGround && SDD.save.data.options.god) {
         this.x += 32; this.y = 90; this.vy = 0;
-        this.onGround = false; this.hitWall = 0;
+        this.onGround = false;
+      } else if (this.hitWall) {
+        // Wall hit = bounce. Stun for ~24 frames so the auto-vx
+        // doesn't immediately re-push into the wall; player falls
+        // (gravity), can flap to recover. SFX cue so it reads.
+        this.flappyStunT = 24;
+        this.vy = Math.max(this.vy, 1.2);              // small downward kick
+        SDD.audio.sfx('bump');
       }
       this.animT++;
       if (this.invuln > 0) this.invuln--;
