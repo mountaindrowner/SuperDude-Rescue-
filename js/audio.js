@@ -148,7 +148,7 @@ window.SDD = window.SDD || {};
 
   // A track key may resolve to several variants (e.g. 'level_2_2'
   // has _a, _b, _c) - on play we pick one at random.
-  var FILE_TRACKS = {};      // id  -> { el, loop }
+  var FILE_TRACKS = {};      // id  -> { id, el, loop, routed, source, gain }
   var VARIANT_POOLS = {};    // key -> [id, id, id]
   var currentFileTrack = null;
   function loadFileTrack(id, path, loop) {
@@ -157,9 +157,31 @@ window.SDD = window.SDD || {};
     a.loop = loop !== false;
     a.volume = muted ? 0 : volume * mixFor(id);
     a.src = path;
-    FILE_TRACKS[id] = { el: a, loop: loop !== false };
+    FILE_TRACKS[id] = { id: id, el: a, loop: loop !== false, routed: false };
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
+  // Route an HTMLAudioElement through a Web Audio gain node so iOS
+  // honors volume changes. iOS Safari ignores HTMLMediaElement.volume
+  // (it stays at 1.0) but WebAudio GainNode IS respected. Without
+  // this, the volume slider has no audible effect on iPhone / iPad.
+  // Each Audio element can have only ONE MediaElementSource; do this
+  // lazily on first play AFTER the audio context exists.
+  function routeTrack(tr) {
+    if (!ctx || tr.routed) return;
+    try {
+      tr.source = ctx.createMediaElementSource(tr.el);
+      tr.gain = ctx.createGain();
+      tr.gain.gain.value = mixFor(tr.id);    // per-track mix is static
+      tr.source.connect(tr.gain);
+      tr.gain.connect(master);                // master controls overall volume
+      tr.el.volume = 1.0;                     // WebAudio chain takes over
+      tr.routed = true;
+    } catch (e) {
+      // createMediaElementSource can fail if the source was already
+      // attached (shouldn't happen in our flow). Leave routed = false
+      // and the .el.volume fallback continues to work on desktop.
+    }
+  }
   function tryFileTrack(name) {
     var ids = VARIANT_POOLS[name] || (FILE_TRACKS[name] ? [name] : null);
     if (!ids) return false;
@@ -167,8 +189,13 @@ window.SDD = window.SDD || {};
     var tr = FILE_TRACKS[id]; if (!tr) return false;
     stopMusic();
     try {
+      routeTrack(tr);                          // attach to WebAudio if possible
       tr.el.currentTime = 0;
-      tr.el.volume = muted ? 0 : volume * mixFor(id);
+      if (tr.routed) {
+        tr.el.volume = 1.0;                    // master gain handles attenuation
+      } else {
+        tr.el.volume = muted ? 0 : volume * mixFor(id);
+      }
       var p = tr.el.play();
       if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
       currentFileTrack = tr;
@@ -252,12 +279,22 @@ window.SDD = window.SDD || {};
 
   function applyGain() {
     if (master) master.gain.value = muted ? 0 : volume;
-    // MP3 tracks have their own volume controls (independent of Web
-    // Audio master) - keep them in sync with the user's mix and
-    // apply the per-track gain multiplier (title at full, in-game
-    // tracks dialled back).
+    // For ROUTED tracks (Web Audio path - iOS works here): master gain
+    // already handles overall volume. The per-track gain stays at its
+    // mix value. .el.volume is left at 1.0.
+    // For UNROUTED tracks (fallback - no audio ctx yet, or routing
+    // failed): the HTMLAudioElement.volume is the only attenuation,
+    // so apply volume*mix here.
     for (var id in FILE_TRACKS) {
-      try { FILE_TRACKS[id].el.volume = muted ? 0 : volume * mixFor(id); } catch (e) {}
+      var tr = FILE_TRACKS[id];
+      try {
+        if (tr.routed) {
+          tr.gain.gain.value = mixFor(id);
+          tr.el.volume = 1.0;
+        } else {
+          tr.el.volume = muted ? 0 : volume * mixFor(id);
+        }
+      } catch (e) {}
     }
   }
 
@@ -276,6 +313,32 @@ window.SDD = window.SDD || {};
       muted = !!o.muted;
       volume = (typeof o.volume === 'number') ? o.volume : 0.7;
       applyGain();
+    },
+    // Debug accessor: returns a snapshot of every file track's
+    // current Audio.element.volume so we can verify slider changes
+    // are propagating to the actual playing track.
+    _debugTracks: function () {
+      var out = {};
+      for (var id in FILE_TRACKS) {
+        var tr = FILE_TRACKS[id];
+        var gainV = tr.gain ? tr.gain.gain.value : null;
+        var masterV = master ? master.gain.value : null;
+        // For routed tracks, effective = master * per-track gain.
+        // For unrouted, effective = HTMLAudioElement.volume.
+        var effective = tr.routed
+          ? (masterV != null && gainV != null ? masterV * gainV : null)
+          : tr.el.volume;
+        out[id] = {
+          vol: tr.el.volume,
+          paused: tr.el.paused,
+          routed: !!tr.routed,
+          gainValue: gainV,
+          effective: effective,
+          src: tr.el.src.split('/').pop()
+        };
+      }
+      return { currentFileTrack: currentFileTrack ? currentFileTrack.el.src.split('/').pop() : null,
+               masterVol: volume, masterMuted: muted, tracks: out };
     }
   };
 })();

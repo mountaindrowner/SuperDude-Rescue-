@@ -102,31 +102,47 @@ window.SDD = window.SDD || {};
     enter: function () {
       this.t = 0; this.phase = 'in'; this.alpha = 0; this.chirped = false;
       this.waited = 0;
-      // Title song bridges the logo card AND the main menu so the
-      // boot reads as one continuous intro instead of silent-card -> sudden-menu-music.
-      A.startMusic('title');
+      this.pressT = 0;                            // pulses the "PRESS A" hint
+      // Music is NOT started here; it starts on the first button press
+      // (Mark Pass 9: "The title card should stay up until you press a
+      // button, and then the music starts.") That also keeps us aligned
+      // with browser autoplay policies which require a user gesture.
     },
     update: function () {
-      // Wait up to ~30 frames (0.5 sec) for title.png to decode. If it
-      // hasn't loaded by then, skip straight to the menu - no
-      // placeholder card.
+      // If the title PNG isn't loaded yet, give it ~0.5 sec and then
+      // skip straight to the menu (the painted card is mandatory; no
+      // placeholder card to show).
       if (!ART_TITLE.ok) {
         this.waited++;
-        if (this.waited > 30) { go('menu'); return; }
+        if (this.waited > 30) {
+          A.startMusic('title');
+          go('menu');
+          return;
+        }
         return;
       }
       this.t++;
+      this.pressT++;
       if (!this.chirped && this.t > 6) { A.sfx('chirp'); this.chirped = true; }
       if (this.phase === 'in') {
-        this.alpha += 1 / 60;            // 1 sec to full alpha
+        this.alpha += 1 / 60;                     // 1 sec to full alpha
         if (this.alpha >= 1) { this.alpha = 1; this.phase = 'hold'; this.t = 0; }
       } else if (this.phase === 'hold') {
-        if (this.t > 180) this.phase = 'out';   // 3 sec hold
+        // HOLD INDEFINITELY until any button press. Used to auto-fade
+        // after 3 sec; Mark wants it player-driven.
       } else {
-        this.alpha -= 1 / 60;            // 1 sec fade-out
+        this.alpha -= 1 / 60;                     // 1 sec fade-out
         if (this.alpha <= 0) { this.alpha = 0; go('menu'); return; }
       }
-      if (In.confirm() && this.phase !== 'out') { this.phase = 'out'; }
+      // Any "go" press (jump/confirm/blast/pause) starts the music
+      // and begins the fade-out. We accept several keys so any first
+      // tap on mobile/desktop satisfies the gesture requirement.
+      var advance = In.pressed('jump') || In.pressed('confirm') ||
+                    In.pressed('blast') || In.pressed('pause');
+      if (advance && this.phase !== 'out') {
+        A.startMusic('title');                    // begins on the gesture
+        this.phase = 'out';
+      }
     },
     render: function (g) {
       g.fillStyle = '#05050d'; g.fillRect(0, 0, 320, 180);
@@ -137,6 +153,11 @@ window.SDD = window.SDD || {};
       g.drawImage(ART_TITLE.img, 0, 0, 320, 180);
       g.restore();
       g.globalAlpha = 1;
+      // Pulsing "PRESS ANY KEY" hint, only after the fade-in is done
+      // and before the user starts the fade-out.
+      if (this.phase === 'hold' && this.pressT % 50 < 32) {
+        tsh(g, 'PRESS ANY KEY', 160, 162, '#ffffff', '#000000', 1, 'center');
+      }
     }
   };
 
@@ -347,8 +368,9 @@ window.SDD = window.SDD || {};
         if (!o.muted) A.sfx('confirm');
       }
       if (this.idx === 1) {
-        if (In.pressed('left')) { o.volume = Math.max(0, o.volume - 0.1); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
-        if (In.pressed('right')) { o.volume = Math.min(1, o.volume + 0.1); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
+        // Bigger 0.2 step so each press is a clearly audible change.
+        if (In.pressed('left'))  { o.volume = Math.max(0, Math.round((o.volume - 0.2) * 10) / 10); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
+        if (In.pressed('right')) { o.volume = Math.min(1, Math.round((o.volume + 0.2) * 10) / 10); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
       }
       if (this.idx === 2 && In.confirm()) {
         o.god = !o.god; SDD.save.save(); A.sfx('confirm');
@@ -1995,9 +2017,16 @@ window.SDD = window.SDD || {};
       tsh(g, 'PAUSED', 160, 32, '#ffd23a', '#a8631a', 3, 'center');
       var opts = ['RESUME', 'RESTART LEVEL', 'OPTIONS', 'QUIT TO MAP'];
       for (var i = 0; i < opts.length; i++) {
-        var y = 76 + i * 18, sel = i === this.pauseIdx;
-        if (sel) text(g, '>', 96, y, '#ffd23a', 1, 'left');
-        text(g, opts[i], 160, y, sel ? '#ffffff' : '#9aa0c4', sel ? 2 : 1, 'center');
+        var y = 78 + i * 16, sel = i === this.pauseIdx;
+        // Keep both at size:1 (size 2 was too big per Mark). Selected
+        // pops via the yellow arrow + a yellow tinted text-shadow that
+        // gives it weight without enlarging.
+        if (sel) {
+          text(g, '>', 110, y, '#ffd23a', 1, 'left');
+          tsh(g, opts[i], 160, y, '#ffffff', '#806020', 1, 'center');
+        } else {
+          text(g, opts[i], 160, y, '#9aa0c4', 1, 'center');
+        }
       }
     }
   };
