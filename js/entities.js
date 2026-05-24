@@ -47,6 +47,7 @@ window.SDD = window.SDD || {};
     this.onGround = false; this.coyote = 0; this.jumpBuf = 0;
     this.dropThrough = 0;
     this.invuln = 0; this.shrinkAnim = 0; this.flappyStunT = 0;
+    this.swimStrokeT = 0; this.swimStrokeIdx = 0;
     this.frame = 'idle'; this.animT = 0; this.blastAnim = 0; this.blastCD = 0;
     this.ridePlat = null;
     this.climbing = false; this.vineCooldown = 0; this.inWater = false;
@@ -305,7 +306,15 @@ window.SDD = window.SDD || {};
       this.vy *= 0.92; this.vx *= 0.92;
       this.vy += C.GRAVITY * 0.18 * gs;
       if (this.vy > 2.2) this.vy = 2.2;
-      if (In.pressed('jump')) { this.vy = -2.7; SDD.audio.sfx('jump'); }
+      if (In.pressed('jump')) {
+        this.vy = -2.7; SDD.audio.sfx('jump');
+        // Each spacebar press triggers a fresh stroke animation cycle.
+        // Mark Pass 9: "should change every time I press the spacebar
+        // to swim. It's just like cycling too fast" - so we now gate
+        // the animation on input instead of free-running on time.
+        this.swimStrokeT = 24;
+      }
+      if (this.swimStrokeT > 0) this.swimStrokeT--;
       this.coyote = 0; this.jumpBuf = 0;
     } else {
       // god mode: lighter gravity + extra-high jumps for fast testing
@@ -477,10 +486,15 @@ window.SDD = window.SDD || {};
         anim = 'blast';                                 // no spacesuit blast variant
         idx = Math.floor((11 - this.blastAnim) / 4);
       } else if (isUnder) {
-        // Underwater swim anim - flap on flap input, gentle paddle
-        // otherwise.
+        // Underwater swim anim - frame index ramps through the stroke
+        // on each spacebar press, then rests at frame 0 between strokes.
         anim = 'swim';
-        idx = Math.floor(this.animT / 5) % 9;
+        if (this.swimStrokeT > 0) {
+          // Map remaining stroke time (24 -> 0) onto frames 0 -> 8.
+          idx = Math.min(8, Math.floor((24 - this.swimStrokeT) / 3));
+        } else {
+          idx = 0;                                   // rest pose
+        }
       } else if (this.landT > 0) {
         anim = costume ? 'space_jump' : 'jump'; idx = 8;
       } else if (!this.onGround) {

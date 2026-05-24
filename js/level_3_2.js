@@ -19,31 +19,12 @@ window.SDD = window.SDD || {};
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // Helper: ledge from (x0,y0) to (x1,y1) with vines passing through.
-  // For each vine column, that col PLUS its left and right neighbours
-  // are one-way (=) instead of solid (X). The 3-col-wide one-way band
-  // is needed because the player body (18 px wide) always overlaps
-  // adjacent tile columns - a single one-way col would still have the
-  // body running into the solid X next door and getting blocked from
-  // climbing through. From above the ledge still reads as walkable
-  // (one-way is solid from the top).
-  function canopy(x0, y0, x1, y1, vineCols) {
-    var oneCols = {};
-    for (var i = 0; i < vineCols.length; i++) {
-      var vc = vineCols[i];
-      oneCols[vc - 1] = true; oneCols[vc] = true; oneCols[vc + 1] = true;
-    }
-    for (var x = x0; x <= x1; x++) {
-      for (var y = y0; y <= y1; y++) {
-        setT(x, y, oneCols[x] ? '=' : 'X');
-      }
-    }
-    for (var i2 = 0; i2 < vineCols.length; i2++) {
-      var vc2 = vineCols[i2];
-      setT(vc2, y0 - 1, 'V');                    // vine above ledge
-      for (var vy = y1 + 1; vy <= 10; vy++) setT(vc2, vy, 'V');   // below
-    }
-  }
+  // Helper: a free-hanging vine column reaching from the top of the
+  // canvas down to one tile above the ground. Replaces the old
+  // canopy() helper which dragged in wooden one-way ledges that Mark
+  // didn't like ("those platform things, I don't totally understand
+  // their function. Maybe they can go up and there's stuff up there.")
+  function vineFull(x) { for (var y = 0; y <= 10; y++) setT(x, y, 'V'); }
 
   // ============== TEACH (0-50): introduce the vine ==============
   ground(0, 30);
@@ -53,11 +34,10 @@ window.SDD = window.SDD || {};
   sp('walker', 18, 10);
   sp('core', 16, 9); sp('core', 22, 9);
 
-  // First single vine - hanging from a high ledge with cores on top.
-  // Vine extends through the ledge as a one-way (solid from above when
-  // walking, pass-through when climbing up).
-  canopy(28, 4, 32, 5, [30]);
-  sp('core', 30, 3); sp('core', 31, 3); sp('core', 29, 3);
+  // First single vine - hangs free from above the canvas; climb up
+  // to a small ring of cores in mid-air. No wooden ledge.
+  vineFull(30);
+  sp('core', 30, 3); sp('core', 30, 2); sp('core', 30, 1);
 
   ground(33, 60);
   sp('walker', 38, 10);
@@ -66,17 +46,17 @@ window.SDD = window.SDD || {};
 
   // ============== TEST (60-130): two vines, pick one ==============
   ground(61, 110);
-  canopy(64, 4, 80, 5, [66, 78]);                          // canopy w/ 2 vines
+  vineFull(66); vineFull(78);
   sp('core', 66, 7); sp('core', 78, 7);
-  sp('core', 70, 3); sp('core', 72, 3); sp('core', 74, 3); sp('core', 76, 3);
-  qb(75, 3, '?');                                          // bonus
+  sp('core', 66, 3); sp('core', 66, 2); sp('core', 78, 3); sp('core', 78, 2);
+  qb(72, 3, '?');                                          // bonus floats in the air between
   sp('thrower', 72, 10);                                   // threat at ground level
-  // gap and another canopy section
+  // Four-vine cluster - dense climb section
   ground(82, 110);
-  canopy(85, 3, 105, 4, [88, 93, 98, 102]);                // canopy w/ 4 vines
-  sp('core', 90, 2); sp('core', 95, 2); sp('core', 100, 2);
+  vineFull(88); vineFull(93); vineFull(98); vineFull(102);
+  sp('core', 88, 3); sp('core', 93, 2); sp('core', 98, 3); sp('core', 102, 2);
   sp('wisp', 96, 6);
-  qb(102, 1, 'B');                                         // blast tucked at top
+  qb(102, 1, 'B');                                         // blast tucked at top of its vine
   sp('walker', 107, 10);
 
   // ============== TWIST (115-185): vertical vines over pits ==============
@@ -108,18 +88,13 @@ window.SDD = window.SDD || {};
   sp('walker', 197, 10);
   sp('core', 184, 9); sp('core', 190, 7); sp('core', 200, 9); sp('core', 208, 9);
 
-  // ============== REWARD (215-259): vine climb to a canopy ==============
-  // Open ground at the base - walk in from the left. Vines pass through
-  // the canopy as one-way tiles so any climb path reaches the top.
+  // ============== REWARD (215-259): free-hanging vine grove ==============
+  // Optional climb for bonus cores - the path to the goal stays at
+  // ground level, the vines just reward exploration.
   ground(215, 232);
-  canopy(220, 4, 232, 5, [222, 225, 229]);                 // canopy w/ 3 vines
-  // A free-hanging vine outside the canopy on the left for variety
-  // (extends from row 4 to ground - top at row 4 is at canopy top level
-  // so the player can step right onto the canopy from its top).
-  for (var rv = 4; rv <= 10; rv++) setT(218, rv, 'V');
-  // Cores on each vine to encourage exploration.
+  vineFull(218); vineFull(222); vineFull(225); vineFull(229);
   sp('core', 218, 7); sp('core', 222, 7); sp('core', 225, 7);
-  sp('core', 229, 7); sp('core', 226, 3);
+  sp('core', 229, 7); sp('core', 222, 3); sp('core', 225, 2); sp('core', 229, 3);
 
   // After the canopy, the ground resumes for the run to the goal.
   ground(233, 259);

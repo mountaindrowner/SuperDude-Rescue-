@@ -1956,6 +1956,15 @@ window.SDD = window.SDD || {};
   // bounding box and scales the crop to this height. Big > small gives
   // the "I just took a hit" health-bar feedback.
   var PL_DISPLAY_H = { big: 36, small: 26 };
+  // Per-anim display-height overrides. Swim is a horizontal pose, so
+  // sizing it to the standing height makes the sprite huge and
+  // out-of-scale (Mark Pass 9: "avatar is way too big, we need to
+  // shrink it so it fits within the balance"). Cap swim shorter so
+  // the proportional width also shrinks.
+  var PL_DISPLAY_OVERRIDE = {
+    big:   { swim: 26 },
+    small: { swim: 18 }
+  };
 
   // Precomputed per-animation union bounding boxes (non-transparent
   // pixels) for every PixelLab frame. The PNGs have huge transparent
@@ -1974,7 +1983,10 @@ window.SDD = window.SDD || {};
       // Costume bboxes (Pass 9 sprite drop). Hand-tuned to roughly
       // match the analogous base-anim bbox - approximations only;
       // can be re-measured if any look noticeably off.
-      climb:      { north: { x: 36, y: 22, w: 24, h: 50 } },
+      // Climb bbox padded 4 px L/R + 3 px bottom (Pass 9 feedback:
+      // "edges to the left and right are being cut off by like maybe
+      // three pixels on each side").
+      climb:      { north: { x: 32, y: 22, w: 32, h: 53 } },
       swim:       { east:  { x: 28, y: 30, w: 40, h: 36 }, west: { x: 28, y: 30, w: 40, h: 36 } },
       space_run:  { east:  { x: 35, y: 25, w: 26, h: 48 }, west: { x: 35, y: 25, w: 26, h: 48 } },
       space_jump: { east:  { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } },
@@ -1993,7 +2005,8 @@ window.SDD = window.SDD || {};
       celebrate: { south: { x: 24, y: 22, w: 44, h: 47 } },
       // Costume bboxes for small Danny (92x92 PNGs - slightly tighter
       // than the 96x96 big ones).
-      climb:      { north: { x: 34, y: 20, w: 24, h: 48 } },
+      // Climb padded 4 L/R + 3 bottom (same Pass 9 fix as big).
+      climb:      { north: { x: 30, y: 20, w: 32, h: 51 } },
       swim:       { east:  { x: 26, y: 28, w: 40, h: 36 }, west: { x: 26, y: 28, w: 40, h: 36 } },
       space_run:  { east:  { x: 31, y: 25, w: 28, h: 45 }, west: { x: 34, y: 24, w: 24, h: 46 } },
       space_jump: { east:  { x: 33, y: 26, w: 28, h: 45 }, west: { x: 30, y: 26, w: 29, h: 45 } },
@@ -2061,7 +2074,8 @@ window.SDD = window.SDD || {};
     if (!img || !img.complete || !img.naturalWidth) return false;
     var bb = pixBBox(size, anim, dir);
     if (!bb) return false;
-    var dispH = PL_DISPLAY_H[size];
+    var override = PL_DISPLAY_OVERRIDE[size] && PL_DISPLAY_OVERRIDE[size][anim];
+    var dispH = override || PL_DISPLAY_H[size];
     var scale = dispH / bb.h;
     var dispW = Math.round(bb.w * scale);
     var dH = Math.round(bb.h * scale);

@@ -80,12 +80,16 @@ window.SDD = window.SDD || {};
   sp('walker', 142, 10); sp('walker', 158, 10);
   sp('thrower', 165, 10);
   sp('wisp', 150, 4); sp('wisp', 167, 5);
-  // The light-blast power-up tucked above a one-way platform. Block
-  // is at row 0 (top of map) so the player has clearance to stand on
-  // the platform and bump the block from below (was row 2 - too close
-  // to the platform to fit Danny in between).
+  // The light-blast power-up tucked above a two-step stair of
+  // one-way platforms. Mark Pass 9: "There's one platform about
+  // halfway through that is almost inaccessible. Make sure that
+  // both platforms have a way to get up to them without using God
+  // mode." A row-4 platform was unreachable from the row-10 floor
+  // (6-tile rise > Danny's max). Added a row-7 stepping ledge so
+  // any small Danny can chain: floor -> row 7 -> row 4 -> bump block.
+  oneway(143, 145, 7);
   oneway(146, 149, 4);
-  qb(147, 0, 'B');
+  qb(147, 1, 'B');
   sp('core', 142, 9); sp('core', 147, 1); sp('core', 154, 9);
   sp('core', 161, 9); sp('core', 169, 9); sp('core', 173, 9);
 

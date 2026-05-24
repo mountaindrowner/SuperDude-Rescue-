@@ -891,38 +891,115 @@ window.SDD = window.SDD || {};
       g.fill();
     }
   }
+  // Palm-tree row - curved trunk, splayed fronds at top.
+  function palmRow(g, camx, factor, baseY, trunkColor, frondColor, scale, span) {
+    scale = scale || 1; span = span || 56;
+    var off = -(((camx * factor) % span) + span) % span;
+    var trunkH = Math.floor(46 * scale);
+    for (var x = off - span; x < 340 + span; x += span) {
+      var cx = x + Math.floor(span / 2);
+      // Curved trunk - 3 segments leaning slightly
+      g.fillStyle = trunkColor;
+      for (var s = 0; s < trunkH; s += 2) {
+        var bend = Math.sin(s * 0.07) * 2;
+        g.fillRect(cx + Math.round(bend) - 1, baseY - trunkH + s, 2, 2);
+      }
+      var topX = cx + Math.round(Math.sin((trunkH) * 0.07) * 2);
+      var topY = baseY - trunkH;
+      // Fronds: 7 curved strokes splayed around the trunk top
+      g.fillStyle = frondColor;
+      var fronds = [
+        [-14, 4], [-10, -6], [-4, -10], [4, -10], [10, -6], [14, 4], [0, -12]
+      ];
+      for (var f = 0; f < fronds.length; f++) {
+        var dx = fronds[f][0], dy = fronds[f][1];
+        // draw fan-shaped frond using a few short lines
+        for (var step = 0; step <= 8; step++) {
+          var fx = topX + Math.round(dx * step / 8);
+          var fy = topY + Math.round(dy * step / 8 + step * 0.6);
+          g.fillRect(fx - 1, fy, 2, 1);
+        }
+      }
+      // Coconut cluster (small dark dots near trunk top)
+      g.fillStyle = '#3a2810';
+      g.fillRect(topX - 2, topY + 2, 1, 1);
+      g.fillRect(topX + 1, topY + 2, 1, 1);
+    }
+  }
+
+  // Tropical birds - small parrot silhouettes that flap and drift.
+  function tropicalBirds(g, camx, t) {
+    // 4 birds at staggered heights, flapping with sin wave
+    var positions = [
+      { x: 40, y: 38, c: '#e84a30' },     // red
+      { x: 140, y: 60, c: '#f0c020' },    // yellow
+      { x: 200, y: 28, c: '#30b0e8' },    // blue
+      { x: 270, y: 72, c: '#e84a30' }
+    ];
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      // Slow horizontal drift (loop wraparound)
+      var bx = ((p.x + Math.floor(t * (0.4 + i * 0.1))) % 380 + 380) % 380 - 30;
+      var bob = Math.sin(t * 0.08 + i) * 3;
+      var by = p.y + bob;
+      var flap = Math.floor(t / 6 + i) % 2;
+      // Body
+      g.fillStyle = p.c;
+      g.fillRect(bx | 0, by | 0, 4, 2);
+      // Wings (flap up/down)
+      if (flap) {
+        g.fillRect((bx | 0) + 1, (by | 0) - 1, 2, 1);
+        g.fillRect((bx | 0) + 1, (by | 0) + 2, 2, 1);
+      } else {
+        g.fillRect((bx | 0) + 1, (by | 0) - 2, 2, 1);
+        g.fillRect((bx | 0) + 1, (by | 0) + 3, 2, 1);
+      }
+      // Beak hint
+      g.fillStyle = '#202020';
+      g.fillRect((bx | 0) + 4, (by | 0), 1, 1);
+    }
+  }
+
   function drawSky_forest(g, camx, camy, prog, t) {
-    // Layered jungle (per Mark's Day 3-2 re-skin request): hazy sky ->
-    // distant mountains -> mist band -> mid canopy -> dense near
-    // canopy -> hanging vines silhouette -> dark undergrowth. More
-    // saturated greens + lower-contrast atmosphere reads as deep
-    // jungle vs the dry pine forest the old version conveyed.
-    vGradient(g, '#7eb89e', '#c9e5c4');                  // hazy green sky
-    // Far mountains
-    mountainRidge(g, camx, 0.08, 170, '#506a4e', 84);
-    mountainRidge(g, camx, 0.14, 174, '#3a5238', 64);
+    // Deep tropical jungle (Pass 9 re-skin per Mark: "more jungle-esque,
+    // palms and tall canopy and tropical birds"). Hazy turquoise sky,
+    // distant blue-green mountains, sun shafts through humid air, two
+    // rows of palms at different parallax depths, dangling vines, and
+    // tropical birds drifting across.
+    vGradient(g, '#5a9888', '#b6dcc0');                  // hazy turquoise-green
+    // Far mountains (jungle-shrouded blue)
+    mountainRidge(g, camx, 0.06, 168, '#4a6c66', 90);
+    mountainRidge(g, camx, 0.11, 172, '#365048', 70);
     // Atmospheric mist band
-    g.fillStyle = 'rgba(220,255,220,0.18)';
-    g.fillRect(0, 96, 320, 22);
-    // Diagonal sun shafts (softer, greener)
+    g.fillStyle = 'rgba(220,255,220,0.20)';
+    g.fillRect(0, 86, 320, 28);
+    // Diagonal sun shafts (humid, warm)
     for (var s = 0; s < 5; s++) {
-      var sx = 40 + s * 70 + Math.sin(t * 0.013 + s) * 8 - (camx * 0.32) % 320;
+      var sx = 40 + s * 70 + Math.sin(t * 0.012 + s) * 8 - (camx * 0.3) % 320;
       sx = ((sx % 380) + 380) % 380 - 30;
-      g.fillStyle = 'rgba(255,250,210,0.09)';
+      g.fillStyle = 'rgba(255,250,200,0.10)';
       g.beginPath();
       g.moveTo(sx, 0); g.lineTo(sx + 26, 0);
-      g.lineTo(sx + 38, 180); g.lineTo(sx - 12, 180);
+      g.lineTo(sx + 40, 180); g.lineTo(sx - 14, 180);
       g.closePath(); g.fill();
     }
-    // Mid canopy (broader tree silhouettes)
-    pineRow(g, camx, 0.22, 168, '#2f6e35', 1.2);
-    // Near canopy - dense + darker
-    pineRow(g, camx, 0.45, 178, '#143818', 1.5);
+    // Mid palms (slim, distant)
+    palmRow(g, camx, 0.22, 168, '#3a6448', '#2f7e3a', 0.85, 64);
+    // Tropical birds drift between mid and near palm layers
+    tropicalBirds(g, camx, t);
+    // Near palms (chunky, dark)
+    palmRow(g, camx, 0.46, 178, '#1f3220', '#143818', 1.1, 50);
     // Hanging-vine strands drifting in the near canopy
-    for (var v = 0; v < 7; v++) {
-      var vx = ((40 + v * 48 - (camx * 0.5)) % 360 + 360) % 360 - 20;
+    for (var v = 0; v < 9; v++) {
+      var vx = ((30 + v * 42 - (camx * 0.5)) % 380 + 380) % 380 - 20;
       g.fillStyle = 'rgba(15,52,18,0.55)';
-      g.fillRect(vx | 0, 0, 1, 60 + (v % 3) * 18);
+      g.fillRect(vx | 0, 0, 1, 50 + (v % 3) * 16);
+      // small leaves on some
+      if (v % 2 === 0) {
+        g.fillStyle = 'rgba(20,72,28,0.6)';
+        g.fillRect((vx | 0) - 1, 18, 3, 2);
+        g.fillRect((vx | 0) - 1, 38, 3, 2);
+      }
     }
     // Dark undergrowth at the bottom
     g.fillStyle = '#0e2810';
