@@ -697,7 +697,7 @@ window.SDD = window.SDD || {};
         if (!SDD.levels || !SDD.levels[st.d + '-' + st.s]) {
           this.msg = st.name + ' - COMING SOON!'; this.msgT = 130; A.sfx('bump');
         } else {
-          A.sfx('enter'); go('level', { day: st.d, stage: st.s });
+          A.sfx('enter'); go('stageintro', { day: st.d, stage: st.s });
         }
       }
       if (In.pressed('pause')) { A.sfx('confirm'); go('menu'); }
@@ -1966,6 +1966,75 @@ window.SDD = window.SDD || {};
     'bugscale': drawSky_bugscale
   };
 
+  // =====================================================================
+  // STAGE INTRO - swipe-in card shown briefly between overworld + level.
+  // Pass 10 round 2 (Mark): "whenever a stage is selected, maybe there
+  // should be a small little transition between the overworld and the
+  // stage, maybe a transition card or something that swipes."
+  // =====================================================================
+  SDD.scenes.stageintro = {
+    enter: function (d) {
+      d = d || {};
+      this.day = d.day || 1;
+      this.stage = d.stage || 1;
+      this.t = 0;
+      var lvl = SDD.levels[this.day + '-' + this.stage];
+      this.title = (SDD.save.stagesForDay(this.day) > 1)
+        ? ('DAY ' + this.day + '-' + this.stage)
+        : ('DAY ' + this.day);
+      this.subtitle = (lvl && lvl.name) || '';
+    },
+    update: function () {
+      this.t++;
+      // 30f slide-in + 60f hold + 30f slide-out, then jump into level.
+      if (this.t >= 120 || In.confirm()) {
+        go('level', { day: this.day, stage: this.stage });
+      }
+    },
+    render: function (g) {
+      // Black background with a soft starfield so the transition reads
+      // as "leaving the overworld for somewhere new."
+      g.fillStyle = '#0a0a18';
+      g.fillRect(0, 0, 320, 180);
+      drawStarfield(g, this.t * 2);
+
+      // Card slide animation: x offset goes from +320 (off-screen right)
+      // to 0 (centered) over t=0..30, holds at 0 for 30-90, then to -320
+      // for 90-120.
+      var offX = 0;
+      if (this.t < 30) {
+        // ease-out cubic from 320 to 0
+        var u = this.t / 30;
+        offX = Math.round(320 * Math.pow(1 - u, 3));
+      } else if (this.t > 90) {
+        var u2 = (this.t - 90) / 30;
+        offX = -Math.round(320 * Math.pow(u2, 3));
+      }
+
+      // Banner ribbon
+      var ribbonY = 78;
+      g.fillStyle = 'rgba(8,8,20,0.7)';
+      g.fillRect(0 + offX, ribbonY, 320, 36);
+      g.fillStyle = '#ffd23a';
+      g.fillRect(0 + offX, ribbonY,      320, 1);
+      g.fillRect(0 + offX, ribbonY + 35, 320, 1);
+
+      tsh(g, this.title, 160 + offX, ribbonY + 6, '#ffd23a', '#a8631a', 2, 'center');
+      if (this.subtitle) {
+        text(g, this.subtitle, 160 + offX, ribbonY + 24, '#dfe6ff', 1, 'center');
+      }
+
+      // Streaks behind the card during slide-in for motion sense
+      if (this.t < 30 && (this.t % 2) === 0) {
+        g.fillStyle = '#46f0ff';
+        for (var s = 0; s < 6; s++) {
+          var sx = (offX + 80 + s * 50) % 320;
+          g.fillRect(sx, 90 + s * 2, 16, 1);
+        }
+      }
+    }
+  };
+
   SDD.scenes.level = {
     enter: function (d) {
       this.day = (d && d.day) || 1;
@@ -2114,7 +2183,10 @@ window.SDD = window.SDD || {};
       // the same on every level is a little strange"). Unknown
       // themes (or themes with no variant) fall back to the default.
       var PLAT_VARS = {
-        'galactic':     null,            // keep brass plank - matches Day 1's machine
+        // Pass 10 round 2 (Mark): Day 1 wooden planks felt out-of-world.
+        // Switch to the cosmic constellation-band plate variant that
+        // already exists for the 'cosmic-night' theme.
+        'galactic':     'cosmic',
         'sky':          'cloud',
         'sea-surface':  'raft',
         'rocky':        'stone',

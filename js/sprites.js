@@ -1182,6 +1182,45 @@ window.SDD = window.SDD || {};
     px(g, 0, 6, 16, 1, C.brickD);
     px(g, 4, 3, 3, 1, C.brickD); px(g, 10, 3, 3, 1, C.brickD);
   }
+  // Pass 10 round 2 (Mark): Day 1 (galactic) needs a one-way platform
+  // that reads as "cosmic band" instead of wooden plank. Glowing edge
+  // with constellation pinpoints.
+  function paintPlatform_galactic(g) {
+    // Outer glow band
+    px(g, 0, 0, 16, 7, 'rgba(120,180,255,0.18)');
+    // Dark core slab
+    px(g, 0, 1, 16, 5, '#1a1d40');
+    // Bright top light beam (the visible "you can stand here" cue)
+    px(g, 0, 1, 16, 2, '#7adfff');
+    px(g, 1, 1, 14, 1, '#ffffff');
+    // Bottom shadow
+    px(g, 0, 5, 16, 1, '#0e1028');
+    // Star pinpoints
+    px(g, 3,  4, 1, 1, '#ffffff');
+    px(g, 8,  4, 1, 1, '#e0e8ff');
+    px(g, 13, 4, 1, 1, '#ffffff');
+    // Edge nodes
+    px(g, 0, 3, 1, 2, '#5a8de0');
+    px(g, 15, 3, 1, 2, '#5a8de0');
+  }
+  // Pass 10 round 2: eden-themed canopy - tinted leaf-green plank
+  // with a curl of foliage along the top edge instead of plain wood.
+  function paintPlatform_eden(g) {
+    // Mid plank
+    px(g, 0, 0, 16, 7, '#7a5a32');
+    px(g, 0, 0, 16, 1, '#9a7642');
+    px(g, 0, 6, 16, 1, '#5a3e22');
+    // Leaf canopy ridge along the top
+    px(g, 0, 0, 16, 2, '#5fa848');
+    px(g, 0, 0, 16, 1, '#a8e070');
+    px(g, 2, 1, 2, 1, '#7fc858');
+    px(g, 6, 1, 2, 1, '#7fc858');
+    px(g, 10, 1, 2, 1, '#7fc858');
+    px(g, 14, 1, 2, 1, '#7fc858');
+    // Wood grain hint
+    px(g, 4, 4, 4, 1, '#5a3e22');
+    px(g, 10, 4, 4, 1, '#5a3e22');
+  }
   function paintNPC(g) {
     // long brown hair (no cap)
     px(g, 5, 0, 10, 4, '#6e4a26');
@@ -2084,6 +2123,8 @@ window.SDD = window.SDD || {};
     sprites['tile_dirt'] = spritePlain(16, 16, paintDirt);
     sprites['tile_brick'] = spritePlain(16, 16, paintBrick);
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
+    sprites['tile_platform_galactic'] = spritePlain(16, 16, paintPlatform_galactic);
+    sprites['tile_platform_eden']     = spritePlain(16, 16, paintPlatform_eden);
 
     // ---- Themed tile variants per family ----
     // Family painters
