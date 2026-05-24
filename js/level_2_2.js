@@ -68,6 +68,8 @@ window.SDD = window.SDD || {};
 
   // ============== TWIST (130-185): rising AND moving combined ==============
   ground(131, 150);
+  // Mid-stage checkpoint flag - easy/medium respawn here after death.
+  sp('checkpoint', 138, 10);
   box(135, 9, 137, 13, 'X');
   oneway(140, 143, 7);
   sp('walker', 146, 10);

@@ -109,6 +109,10 @@ window.SDD = window.SDD || {};
   // Removed the thrower here per Mark - already plenty of meteor +
   // wisp hazards in this stretch, no need for the purple launcher too.
   sp('core', 134, 7); sp('core', 136, 7);
+  // Mid-stage checkpoint flag (stands on the small island after the
+  // climbing tower). ty=8 so the flag base sits on top of the row-9
+  // island tile.
+  sp('checkpoint', 134, 8);
 
   // Wide meteor field - 3 drifting platforms + 3 meteors crossing
   mover(140, 8, 144, 8, 0.022, 0);

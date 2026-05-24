@@ -85,6 +85,9 @@ window.SDD = window.SDD || {};
   sp('walker', 188, 10);
   sp('core', 168, 7); sp('core', 175, 5); sp('core', 182, 9); sp('core', 192, 9);
 
+  // Mid-stage checkpoint flag - easy/medium respawn here after death.
+  sp('checkpoint', 190, 10);
+
   // ============================================================
   // ACT 3: TWIST (cols 195-300) - the LIGHT BLAST power-up arc.
   // High route with one-ways guarded by a thrower; getting the blast

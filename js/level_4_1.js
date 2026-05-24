@@ -65,6 +65,9 @@ window.SDD = window.SDD || {};
   sp('wisp', 116, 5);
   sp('core', 98, 9); sp('core', 106, 9); sp('core', 114, 9); sp('core', 122, 9);
 
+  // Mid-stage checkpoint flag - between the test flare zones and twist.
+  sp('checkpoint', 124, 10);
+
   // ============== TWIST (130-185): flares + ground enemies combined ==============
   // gap with platform UNDER a flare zone
   mover(132, 9, 137, 9, 0.022, 0);

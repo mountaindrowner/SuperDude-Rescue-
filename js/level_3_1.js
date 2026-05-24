@@ -81,6 +81,9 @@ window.SDD = window.SDD || {};
   sp('core', 106, 7); sp('core', 112, 7); sp('core', 118, 7); sp('core', 124, 7);
   qb(110, 8, 'B');                                          // blast power-up between zigs
 
+  // Mid-stage checkpoint flag - past the zig-zag, easy/medium respawn here.
+  sp('checkpoint', 132, 10);
+
   // gap with moving platform (relief after the climb)
   mover(141, 9, 145, 9, 0.022, 0);
   sp('core', 143, 7);

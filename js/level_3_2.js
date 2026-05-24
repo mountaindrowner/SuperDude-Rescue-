@@ -63,6 +63,9 @@ window.SDD = window.SDD || {};
   ground(112, 130);
   sp('thrower', 118, 10);
   sp('core', 114, 9); sp('core', 122, 9); sp('core', 128, 9);
+  // Mid-stage checkpoint flag - placed before the vine pit so dying
+  // in the pit puts the kid back at the safe edge.
+  sp('checkpoint', 125, 10);
 
   // PIT with multiple vines hanging from the ceiling (climb or swing
   // across). Vines extend to row 0 (top of canvas) per Mark - reads

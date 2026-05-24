@@ -47,6 +47,10 @@ window.SDD = window.SDD || {};
   sp('npc', 158, 10, 'lion');
   sp('npc', 174,  4, 'dove');
 
+  // Mid-stage checkpoint flag - peaceful stage, still gets one for
+  // visual consistency with the other days.
+  sp('checkpoint', 100, 10);
+
   // A few Adam + Eve NPCs scattered along the way that DO give cores
   // for greeting them - rewards exploration.
   sp('npc', 20, 10, 'adam');

@@ -64,6 +64,8 @@ window.SDD = window.SDD || {};
   sp('npc', 94, 10, 'adam');                               // NPC in front of house 2
   sp('walker', 117, 10);                                   // mild challenge
   sp('wisp', 105, 5);
+  // Mid-stage checkpoint flag - between the houses in the village square.
+  sp('checkpoint', 120, 10);
   sp('core', 84, 9); sp('core', 90, 8); sp('core', 100, 5);
   sp('core', 110, 8); sp('core', 115, 9); sp('core', 122, 9);
   sp('core', 127, 9);

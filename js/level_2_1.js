@@ -68,6 +68,9 @@ window.SDD = window.SDD || {};
   sp('walker', 116, 10);
   sp('core', 103, 7); sp('core', 109, 5); sp('core', 115, 3);
 
+  // Mid-stage checkpoint flag - easy/medium respawn here after death.
+  sp('checkpoint', 121, 10);
+
   // ============== TWIST (115-160): narrow vertical column ==============
   ground(120, 160);
   // wall splits the path - climb a column of one-ways on either side.

@@ -62,6 +62,8 @@ window.SDD = window.SDD || {};
   sp('core', 103, 4); sp('core', 110, 1); sp('core', 116, 9); sp('core', 124, 9);
 
   ground(111, 145);
+  // Mid-stage checkpoint flag - between the blast arc and the jungle pack.
+  sp('checkpoint', 118, 10);
   // Pride / jungle pack (wave of mixed enemies)
   sp('walker', 122, 10, 'leaf'); sp('walker', 130, 10, 'porcupine');
   sp('walker', 138, 10, 'leaf');

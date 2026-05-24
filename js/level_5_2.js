@@ -60,6 +60,11 @@ window.SDD = window.SDD || {};
   qb(95, 9, 'B');
   qb(140, 4, '?');
 
+  // Mid-stage checkpoint flag - sits on the sea floor near col 156.
+  // Underwater Danny isn't bound to the floor, but enough kids dive
+  // low to catch it; respawn lands them at the floor and they swim up.
+  sp('checkpoint', 156, 12);
+
   // ============== TWIST (cols 180-260): tight gaps + thicker walls ==============
   var twist = [[190, 5, 3], [200, 7, 3], [210, 3, 3], [220, 6, 3],
                [230, 4, 3], [240, 7, 3], [250, 3, 3]];
