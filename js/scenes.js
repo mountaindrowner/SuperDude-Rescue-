@@ -102,6 +102,9 @@ window.SDD = window.SDD || {};
     enter: function () {
       this.t = 0; this.phase = 'in'; this.alpha = 0; this.chirped = false;
       this.waited = 0;
+      // Title song bridges the logo card AND the main menu so the
+      // boot reads as one continuous intro instead of silent-card -> sudden-menu-music.
+      A.startMusic('title');
     },
     update: function () {
       // Wait up to ~30 frames (0.5 sec) for title.png to decode. If it
@@ -281,7 +284,10 @@ window.SDD = window.SDD || {};
   SDD.scenes.menu = {
     enter: function () {
       this.t = 0;
-      A.startMusic('menu');
+      // Continue the title song that started on the logo card. The
+      // startMusic guard skips a re-start if 'title' is already
+      // playing - the music flows seamlessly through the scene change.
+      A.startMusic('title');
       this.items = [{ label: 'NEW GAME', act: 'new' }];
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
