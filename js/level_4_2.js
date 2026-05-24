@@ -93,10 +93,11 @@ window.SDD = window.SDD || {};
   sp('core', 101, 7); sp('core', 107, 4); sp('core', 112, 2); sp('core', 117, 0);
   qb(117, 0, 'B');                                         // blast at the top
 
-  // Meteors sweep through the climbing zone
-  // Meteor count thinned per Mark - 7 meteors total was too much. Keep
-  // the climbing zone hazard at the top, drop the second pass.
-  meteor(100, 2, 130, 1);
+  // Pass 9 Mark: "Maybe in this one, no meteors. It's pretty tough
+  // on day four two. Maybe this one should have these clouds. Maybe
+  // this one shouldn't have any barriers at all. Just scattered
+  // parkour." All meteor spawners removed - the challenge here is
+  // pure platform-hopping in low gravity.
 
   // Descending chain back to a small island
   mover(122, 2, 125, 5, 0.024, 0);
@@ -113,7 +114,6 @@ window.SDD = window.SDD || {};
   mover(140, 8, 144, 8, 0.022, 0);
   mover(147, 6, 151, 6, 0.022, 1.5);
   mover(154, 8, 158, 8, 0.022, 0.5);
-  meteor(150, 3, 120, 1);                                  // one wide-field meteor
   sp('core', 142, 6); sp('core', 149, 4); sp('core', 156, 6);
   sp('wisp', 145, 3); sp('wisp', 153, 4);
 
@@ -124,9 +124,6 @@ window.SDD = window.SDD || {};
   mover(183, 7, 188, 7, 0.020, 3.0);
   mover(192, 4, 197, 4, 0.020, 0);
   sp('core', 167, 5); sp('core', 176, 3); sp('core', 185, 5); sp('core', 194, 2);
-
-  // Meteor finale
-  meteor(183, 1, 110, 1);                                  // one finale meteor
 
   // Goal island at altitude - last island in the void.
   box(200, 5, 207, 6, 'X');
@@ -147,6 +144,10 @@ window.SDD = window.SDD || {};
   SDD.levels['4-2'] = {
     width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers,
     gravityScale: 0.32, jumpScale: 0.75,
+    // Open void: floating too far above the top of the map kills the
+    // player same as falling off the bottom. Mark Pass 9: "no barriers
+    // on the top or bottom. If you go too high or too low, you die."
+    topDeath: true,
     name: 'MOON & STARS', theme: 'cosmic-night'
   };
 })();

@@ -441,6 +441,12 @@ window.SDD = window.SDD || {};
       if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
       else this.die(true);
     }
+    // Open-void levels (Day 4-2 cosmic-night): rising too high above
+    // the top of the map kills the same as falling off the bottom.
+    if (level.topDeath && this.y < -48) {
+      if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
+      else this.die(true);
+    }
   };
 
   Player.prototype.draw = function (ctx, cam) {

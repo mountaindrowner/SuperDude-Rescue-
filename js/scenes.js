@@ -1339,6 +1339,7 @@ window.SDD = window.SDD || {};
       this.flappyGravity = L.flappyGravity;
       this.flappyMaxFall = L.flappyMaxFall;
       this.underwater = !!L.underwater;
+      this.topDeath = !!L.topDeath;
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
       this.cores = 0; this.score = 0; this.timeSteps = 0;
