@@ -54,6 +54,12 @@ window.SDD = window.SDD || {};
     this.prevOnGround = false; this.landT = 0;
     this.dead = false; this.deadT = 0; this.deadDone = false; this.pitDeath = false;
     this.win = false; this.winT = 0;
+    // Per-stage signature power-up state. Each stage drops ONE themed
+    // pickup that activates a kind-specific effect for a few seconds.
+    // signatureKind = a string identifier; signatureT counts down to 0.
+    this.signatureKind = null;
+    this.signatureT = 0;
+    this.signatureJumpsUsed = 0;
   }
 
   Player.prototype.grow = function () {
@@ -64,6 +70,30 @@ window.SDD = window.SDD || {};
   };
   Player.prototype.giveBlast = function () {
     this.hasBlast = true;
+    SDD.audio.sfx('power');
+  };
+  // Per-stage signature power-up. Each stage drops a unique themed
+  // pickup; consuming it activates `kind` for SIGNATURE_DURATIONS[kind]
+  // frames, after which signatureKind clears. Effects are queried
+  // throughout the engine via player.signatureKind / signatureT checks.
+  Player.prototype.giveSignature = function (kind) {
+    var DURATIONS = {
+      sunburst:        8 * 60,
+      cloudglide:     10 * 60,
+      pearl:           8 * 60,
+      coolingwater:    8 * 60,
+      vinegrapple:    10 * 60,
+      sunshield:       8 * 60,
+      starjump:       10 * 60,
+      wingburst:       6 * 60,
+      airbubble:       8 * 60,
+      callinghorn:     4 * 60,
+      friendshiptoken: 999 * 60,    // lasts the rest of the stage
+      doveblessing:   10 * 60
+    };
+    this.signatureKind = kind;
+    this.signatureT = DURATIONS[kind] || 6 * 60;
+    this.signatureJumpsUsed = 0;
     SDD.audio.sfx('power');
   };
   Player.prototype.shrink = function () {
@@ -79,6 +109,8 @@ window.SDD = window.SDD || {};
   Player.prototype.hurt = function () {
     if (SDD.save && SDD.save.data && SDD.save.data.options && SDD.save.data.options.god) return false;
     if (this.invuln > 0 || this.dead || this.win) return false;
+    // Sun-burst signature: brief invincibility halo on Day 1.
+    if (this.signatureKind === 'sunburst') return false;
     if (this.big) {
       this.shrink();
       this.invuln = C.INVULN_STEPS;
@@ -318,8 +350,10 @@ window.SDD = window.SDD || {};
     }
 
     if (this.inWater) {
-      // swim physics: heavy drag, mild gravity, paddle on jump press
-      this.vy *= 0.92; this.vx *= 0.92;
+      // swim physics: heavy drag, mild gravity, paddle on jump press.
+      // Pearl signature (Day 2-2): lighter drag for snappier swims.
+      var drag = (this.signatureKind === 'pearl') ? 0.97 : 0.92;
+      this.vy *= drag; this.vx *= drag;
       this.vy += C.GRAVITY * 0.18 * gs;
       if (this.vy > 2.2) this.vy = 2.2;
       if (In.pressed('jump')) {
@@ -337,6 +371,11 @@ window.SDD = window.SDD || {};
       var godMul = SDD.save.data.options.god ? 0.6 : 1.0;
       var godJumpMul = SDD.save.data.options.god ? 1.4 : 1.0;
       this.vy += C.GRAVITY * gs * godMul;
+      // Cloud-glide signature: hold A while falling to descend slowly.
+      // Applies only during the descent so jumping still has full launch.
+      if (this.signatureKind === 'cloudglide' && !this.onGround && this.vy > 0 && In.held('jump')) {
+        this.vy *= 0.55;
+      }
       if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
 
       if (this.onGround) this.coyote = C.COYOTE; else if (this.coyote > 0) this.coyote--;
@@ -374,7 +413,16 @@ window.SDD = window.SDD || {};
         this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul * js;
         this.jumpBuf = 0; this.coyote = 0;
         SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
+        if (this.onGround) this.signatureJumpsUsed = 0;
+      } else if (this.signatureKind === 'starjump' && !this.onGround && this.jumpBuf > 0 && this.signatureJumpsUsed < 2) {
+        // Star-jump signature: two extra mid-air jumps in low gravity.
+        var js2 = level.jumpScale || 1.0;
+        this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul * js2 * 0.85;
+        this.jumpBuf = 0;
+        this.signatureJumpsUsed++;
+        SDD.audio.sfx('jump');
       }
+      if (this.onGround) this.signatureJumpsUsed = 0;
       // variable jump height: releasing A caps upward speed (looser in god)
       var capV = SDD.save.data.options.god ? -3.6 : -2.6;
       if (!In.held('jump') && this.vy < capV) this.vy = capV;
@@ -451,6 +499,13 @@ window.SDD = window.SDD || {};
 
     if (this.invuln > 0) this.invuln--;
     if (this.shrinkAnim > 0) this.shrinkAnim--;
+    if (this.signatureT > 0) {
+      this.signatureT--;
+      if (this.signatureT === 0) {
+        this.signatureKind = null;
+        this.signatureJumpsUsed = 0;
+      }
+    }
 
     // fell into a pit (skipped in fully-underwater levels - water IS the level)
     if (!level.underwater && this.y > level.map.pxH + 28) {
@@ -1022,6 +1077,45 @@ window.SDD = window.SDD || {};
     drawBC(ctx, (this.kind === 'grow' ? 'grow_' : 'blastitem_') + f, this, cam);
   };
 
+  // ===================== SIGNATURE POWER-UP =====================
+  // One unique pickup per stage. Hovers in place with a per-stage tint
+  // pulled from TIME_PART_VARIANTS so it visually echoes the stage's
+  // time-machine part. On overlap, triggers Player.giveSignature(kind)
+  // where kind is sub-specific (e.g. 'sunburst', 'cloudglide', ...).
+  function Signature(x, y, kind, stageKey) {
+    this.x = x; this.y = y; this.baseY = y;
+    this.w = 14; this.h = 14;
+    this.kind = kind;
+    this.stageKey = stageKey || '1-1';
+    this.t = 0;
+    this.remove = false;
+  }
+  Signature.prototype.update = function () {
+    this.t++;
+    this.y = this.baseY + Math.sin(this.t * 0.10) * 1.5;
+  };
+  Signature.prototype.draw = function (ctx, cam) {
+    var v = (typeof TIME_PART_VARIANTS !== 'undefined' && TIME_PART_VARIANTS[this.stageKey]) ||
+      { glow: '#fff09a', a: '#a8631a', b: '#ffd23a', c: '#ffffff' };
+    var cx = this.x + this.w / 2 - cam.x;
+    var cy = this.y + this.h / 2 - cam.y;
+    glow(ctx, cx, cy, 14, v.glow, 0.65);
+    // Tinted diamond emblem - simple painted shape, no sprite needed.
+    var f = (Math.floor(this.t / 8) % 2);
+    var off = f === 0 ? 0 : 1;
+    ctx.fillStyle = v.a;
+    ctx.fillRect(Math.round(cx) - 5, Math.round(cy) - 3 + off, 10, 6);
+    ctx.fillStyle = v.b;
+    ctx.fillRect(Math.round(cx) - 4, Math.round(cy) - 2 + off, 8, 4);
+    ctx.fillStyle = v.c;
+    ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2 + off, 4, 1);
+    // Sparkle ring
+    var sx = Math.round(cx + Math.cos(this.t * 0.15) * 10);
+    var sy = Math.round(cy + Math.sin(this.t * 0.15) * 10);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(sx, sy, 1, 1);
+  };
+
   // ===================== TIME MACHINE PART (goal) =====================
   // Per-stage variant (Pass 9 Mark: "each one could be really uniquely
   // different, like a bit of a different color and stuff. different
@@ -1433,7 +1527,7 @@ window.SDD = window.SDD || {};
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
     ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC,
-    Checkpoint: Checkpoint,
+    Checkpoint: Checkpoint, Signature: Signature,
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
     Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
     BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister

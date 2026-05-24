@@ -2101,6 +2101,12 @@ window.SDD = window.SDD || {};
             e.triggered = true; e.raiseT = 20;
           }
           this.items.push(e);
+        } else if (s.type === 'signature') {
+          // Per-stage themed power-up. `kind` selects the effect logic
+          // (e.g. 'sunburst' for Day 1). Stage key tints the pickup with
+          // the same palette as that stage's time-machine part.
+          e = new SDD.ent.Signature(s.tx * T + 1, s.ty * T, s.kind, this.day + '-' + this.stage);
+          this.items.push(e);
         }
       }
       // Per-theme platform skin so movers don't all look like the
@@ -2233,7 +2239,22 @@ window.SDD = window.SDD || {};
       if (this.livesPulseT > 0) this.livesPulseT--;
       for (i = 0; i < this.platforms.length; i++) this.platforms[i].update();
       this.player.update(this);
-      for (i = 0; i < this.enemies.length; i++) this.enemies[i].update(this);
+      // Calling-horn signature (Day 6-1): freezes every enemy in their
+      // tracks for the duration. Projectiles + items still tick.
+      var horned = this.player && this.player.signatureKind === 'callinghorn';
+      if (!horned) {
+        for (i = 0; i < this.enemies.length; i++) this.enemies[i].update(this);
+      }
+      // Dove-blessing signature (Day 7-1): power cores rain down from
+      // the canopy as Danny walks - a celebratory final-day reward.
+      if (this.player && this.player.signatureKind === 'doveblessing' &&
+          (this.player.signatureT % 22) === 0) {
+        var px = this.player.x + (this.player.facing > 0 ? 18 : -8) + Math.round((Math.random() - 0.5) * 32);
+        var py = this.player.y - 32 + Math.round((Math.random() - 0.5) * 8);
+        var newCore = new SDD.ent.Core(0, 0);
+        newCore.x = px; newCore.y = py; newCore.baseY = py;
+        this.items.push(newCore);
+      }
       for (i = 0; i < this.items.length; i++) this.items[i].update(this);
       for (i = 0; i < this.projectiles.length; i++) this.projectiles[i].update(this);
       for (i = 0; i < this.particles.length; i++) {
@@ -2256,6 +2277,9 @@ window.SDD = window.SDD || {};
         for (i = 0; i < this.enemies.length; i++) {
           e = this.enemies[i];
           if (e.dead || !E.overlap(pl, e)) continue;
+          // Air-bubble signature (Day 5-2): jellyfish + sea creatures
+          // (Wisp) skip the player while the bubble is active.
+          if (pl.signatureKind === 'airbubble' && e instanceof SDD.ent.Wisp) continue;
           var stomp = e.stompable && pl.vy > 1 && (pl.y + pl.h - e.y) < 13;
           if (stomp) {
             e.stomped();
@@ -2289,10 +2313,20 @@ window.SDD = window.SDD || {};
           }
         } else if (e instanceof Ent.TimePart) {
           if (E.overlap(pl, e) && !pl.dead) this.completeLevel();
+        } else if (e instanceof Ent.Signature) {
+          if (E.overlap(pl, e) && !pl.dead && !pl.win) {
+            e.remove = true;
+            pl.giveSignature(e.kind);
+            this.score += 200;
+            this.burst(e.x + e.w / 2, e.y + e.h / 2, '#ffe890', 10);
+          }
         } else if (e instanceof Ent.NPC) {
           if (E.overlap(pl, e) && !pl.dead && !e.gave) {
             e.gave = true; e.bubbleT = 140;
-            this.gainCores(3); this.score += 150;
+            // Friendship-token signature (Day 6-2): NPCs gift 5 cores
+            // instead of the default 3 for the rest of the stage.
+            var npcGift = (pl.signatureKind === 'friendshiptoken') ? 5 : 3;
+            this.gainCores(npcGift); this.score += 150;
             A.sfx('core');
             this.burst(e.x + e.w / 2, e.y + 4, '#9bf0ff', 6);
           }
@@ -2322,9 +2356,15 @@ window.SDD = window.SDD || {};
                    pr instanceof SDD.ent.Meteor ||
                    pr instanceof SDD.ent.WaterJet ||
                    pr instanceof SDD.ent.LavaPlume) {
+          // Signature immunities: cooling-water blocks lava plumes (3-1),
+          // sun-shield blocks solar flares + meteors (4-1).
+          var isLava = pr instanceof SDD.ent.LavaPlume;
+          var isFlareLike = pr instanceof SDD.ent.SolarFlare || pr instanceof SDD.ent.Meteor;
+          if (pl.signatureKind === 'coolingwater' && isLava) continue;
+          if (pl.signatureKind === 'sunshield' && isFlareLike) continue;
           if (!pl.dead && !pl.win && pl.invuln <= 0 && E.overlap(pl, pr)) {
             // LavaPlume persists (it's a vertical column, not a single hit)
-            if (!(pr instanceof SDD.ent.LavaPlume)) pr.remove = true;
+            if (!isLava) pr.remove = true;
             if (pl.hurt()) this.burst(pl.x + pl.w / 2, pl.y + pl.h / 2, '#ff8a6a', 6);
           }
         }
@@ -2545,6 +2585,15 @@ window.SDD = window.SDD || {};
         g.restore();
       }
       text(g, 'CORES ' + this.cores, 86, 4, '#46f0ff', 1, 'left');
+      // Signature power-up indicator: lit when a per-stage pickup is
+      // active. Shows seconds remaining (capped at 99). The
+      // friendship-token has a 999s timer = "lasts whole stage" - we
+      // render the badge without a countdown for it.
+      if (this.player && this.player.signatureKind && this.player.signatureT > 0) {
+        var secLeft = Math.ceil(this.player.signatureT / 60);
+        var label = secLeft > 99 ? 'BLESSED' : ('POWER ' + secLeft + 's');
+        text(g, label, 86, 14, '#ffe890', 1, 'left');
+      }
       var sv = SDD.save;
       var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
       text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');

@@ -64,6 +64,10 @@ window.SDD = window.SDD || {};
   ground(111, 145);
   // Mid-stage checkpoint flag - between the blast arc and the jungle pack.
   sp('checkpoint', 118, 10);
+  // Day 6-1 signature: CALLING HORN freezes every enemy on the level
+  // for the duration. Placed before the jungle pack so the kid can
+  // walk straight through the pride if they time it right.
+  spawns.push({ type: 'signature', tx: 50, ty: 10, kind: 'callinghorn' });
   // Pride / jungle pack (wave of mixed enemies)
   sp('walker', 122, 10, 'leaf'); sp('walker', 130, 10, 'porcupine');
   sp('walker', 138, 10, 'leaf');

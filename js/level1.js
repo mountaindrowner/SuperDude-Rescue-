@@ -87,6 +87,9 @@ window.SDD = window.SDD || {};
 
   // Mid-stage checkpoint flag - easy/medium respawn here after death.
   sp('checkpoint', 190, 10);
+  // Day 1 signature: SUN-BURST gives Danny brief invincibility +
+  // a glowing halo. Placed early so kids can experiment in Act 1.
+  spawns.push({ type: 'signature', tx: 50, ty: 10, kind: 'sunburst' });
 
   // ============================================================
   // ACT 3: TWIST (cols 195-300) - the LIGHT BLAST power-up arc.

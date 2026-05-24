@@ -50,6 +50,9 @@ window.SDD = window.SDD || {};
   // Mid-stage checkpoint flag - peaceful stage, still gets one for
   // visual consistency with the other days.
   sp('checkpoint', 100, 10);
+  // Day 7-1 signature: DOVE BLESSING - bonus power cores rain from
+  // the canopy as Danny walks. A celebratory final-day reward.
+  spawns.push({ type: 'signature', tx: 60, ty: 10, kind: 'doveblessing' });
 
   // A few Adam + Eve NPCs scattered along the way that DO give cores
   // for greeting them - rewards exploration.

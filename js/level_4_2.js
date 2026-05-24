@@ -113,6 +113,10 @@ window.SDD = window.SDD || {};
   // climbing tower). ty=8 so the flag base sits on top of the row-9
   // island tile.
   sp('checkpoint', 134, 8);
+  // Day 4-2 signature: STAR-JUMP grants two extra mid-air jumps in
+  // low gravity. Placed on the small landing moonlet so the kid grabs
+  // it before the cosmic-platform climbs.
+  spawns.push({ type: 'signature', tx: 30, ty: 9, kind: 'starjump' });
 
   // Wide meteor field - 3 drifting platforms + 3 meteors crossing
   mover(140, 8, 144, 8, 0.022, 0);

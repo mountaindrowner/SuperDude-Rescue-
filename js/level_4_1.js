@@ -67,6 +67,9 @@ window.SDD = window.SDD || {};
 
   // Mid-stage checkpoint flag - between the test flare zones and twist.
   sp('checkpoint', 124, 10);
+  // Day 4-1 signature: SUN-SHIELD bounces incoming solar flares + meteors
+  // for a few seconds. Pickup sits before the heaviest flare wall.
+  spawns.push({ type: 'signature', tx: 95, ty: 10, kind: 'sunshield' });
 
   // ============== TWIST (130-185): flares + ground enemies combined ==============
   // gap with platform UNDER a flare zone

@@ -64,6 +64,9 @@ window.SDD = window.SDD || {};
   // Underwater Danny isn't bound to the floor, but enough kids dive
   // low to catch it; respawn lands them at the floor and they swim up.
   sp('checkpoint', 156, 12);
+  // Day 5-2 signature: AIR-BUBBLE makes jellyfish + sea creatures pass
+  // straight through Danny for a few seconds. Floats in open water.
+  spawns.push({ type: 'signature', tx: 78, ty: 7, kind: 'airbubble' });
 
   // ============== TWIST (cols 180-260): tight gaps + thicker walls ==============
   var twist = [[190, 5, 3], [200, 7, 3], [210, 3, 3], [220, 6, 3],

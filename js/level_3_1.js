@@ -83,6 +83,9 @@ window.SDD = window.SDD || {};
 
   // Mid-stage checkpoint flag - past the zig-zag, easy/medium respawn here.
   sp('checkpoint', 132, 10);
+  // Day 3-1 signature: COOLING WATER makes lava plumes harmless for
+  // a few seconds - critical right before the zig-zag plume gauntlet.
+  spawns.push({ type: 'signature', tx: 70, ty: 10, kind: 'coolingwater' });
 
   // gap with moving platform (relief after the climb)
   mover(141, 9, 145, 9, 0.022, 0);

@@ -66,6 +66,10 @@ window.SDD = window.SDD || {};
   mover(122, 7, 125, 11, 0.026, 3.0);                      // vertical bob 3
   sp('core', 113, 5); sp('core', 119, 5); sp('core', 124, 5);
 
+  // Day 2-2 signature: PEARL lightens the underwater drag so swimming
+  // feels snappier across the long water-platform chains.
+  spawns.push({ type: 'signature', tx: 50, ty: 10, kind: 'pearl' });
+
   // ============== TWIST (130-185): rising AND moving combined ==============
   ground(131, 150);
   // Mid-stage checkpoint flag - easy/medium respawn here after death.

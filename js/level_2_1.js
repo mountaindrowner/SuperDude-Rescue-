@@ -70,6 +70,9 @@ window.SDD = window.SDD || {};
 
   // Mid-stage checkpoint flag - easy/medium respawn here after death.
   sp('checkpoint', 121, 10);
+  // Day 2-1 signature: CLOUD-GLIDE lets the kid hold A to fall slowly,
+  // ideal for landing the upcoming sky one-way platforms.
+  spawns.push({ type: 'signature', tx: 28, ty: 10, kind: 'cloudglide' });
 
   // ============== TWIST (115-160): narrow vertical column ==============
   ground(120, 160);
