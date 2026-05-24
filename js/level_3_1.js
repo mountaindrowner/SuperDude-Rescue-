@@ -105,7 +105,10 @@ window.SDD = window.SDD || {};
   box(199, 8, 202, 13, 'X');
   box(206, 7, 209, 13, 'X');                               // staircase to summit
   box(213, 6, 216, 13, 'X');                               // summit plateau
-  sp('walker', 220, 10);
+  // Descending victory staircase from summit -> goal pedestal per
+  // Mark ("you should have stairs to congratulate the player almost").
+  box(218, 7, 220, 13, 'X');                               // step 1
+  box(222, 7, 225, 13, 'X');                               // step 2 (flat with pedestal)
   sp('wisp', 225, 5);
   box(228, 7, 233, 13, 'X');                               // goal pedestal at altitude
   box(239, 0, 239, 13, 'X');

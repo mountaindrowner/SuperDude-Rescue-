@@ -1067,7 +1067,7 @@ window.SDD = window.SDD || {};
         'galactic':     { walker: null,    wisp: null,   thrower: null   }, // current shadow set
         'sky':          { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
         'sea-surface':  { walker: 'cloud', wisp: 'bird', thrower: 'rain' },
-        'rocky':        { walker: 'rock',  wisp: 'leaf', thrower: 'rock' },
+        'rocky':        { walker: 'rock',  wisp: 'smoke', thrower: 'rock' },
         'forest':       { walker: 'leaf',  wisp: 'leaf', thrower: 'seed' },
         'sunlit':       { walker: 'flame', wisp: 'star', thrower: 'sun'  },
         'cosmic-night': { walker: null,    wisp: 'star', thrower: null   },
@@ -1388,6 +1388,19 @@ window.SDD = window.SDD || {};
       for (i = 0; i < this.items.length; i++) this.items[i].draw(g, cam);
       for (i = 0; i < this.enemies.length; i++) this.enemies[i].draw(g, cam);
       this.player.draw(g, cam);
+      // Sunlit-level cosmetic: sweat drop animating above Danny's head
+      // so the player feels the heat (Day 4-1 The Sun).
+      if (this.theme === 'sunlit' && !this.player.dead) {
+        var pl = this.player;
+        var sx = Math.round(pl.x + pl.w / 2 - 2 - cam.x);
+        var sy = Math.round(pl.y - 4 - cam.y);
+        var dropPhase = (this.timeSteps % 90);
+        if (dropPhase < 60) {
+          var dripY = sy + Math.floor(dropPhase / 4);
+          g.fillStyle = '#6cd0ff'; g.fillRect(sx, dripY, 2, 3);
+          g.fillStyle = '#bce8ff'; g.fillRect(sx, dripY, 2, 1);
+        }
+      }
       for (i = 0; i < this.projectiles.length; i++) this.projectiles[i].draw(g, cam);
       for (i = 0; i < this.particles.length; i++) {
         var p = this.particles[i];

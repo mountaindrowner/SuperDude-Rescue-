@@ -359,14 +359,20 @@ window.SDD = window.SDD || {};
     this.hitWall = 0;
     mc(this, level.map);
 
-    // moving platforms (one-way: land on top)
+    // Moving platforms (one-way: land on top). Per Mark: Danny floats
+    // visually a couple px above movers - sink him down so he reads
+    // as actually standing on them. Small Danny: +2 px deeper, Big
+    // Danny: +3 px deeper. Also widened horizontal overlap by 2 px on
+    // each side so small Danny doesn't slip off edges that he isn't
+    // really at.
     this.ridePlat = null;
+    var sink = this.big ? 3 : 2;
     for (var i = 0; i < level.platforms.length; i++) {
       var p = level.platforms[i];
       var feet = this.y + this.h;
-      var horiz = this.x + this.w > p.x + 2 && this.x < p.x + p.w - 2;
+      var horiz = this.x + this.w > p.x && this.x < p.x + p.w;
       if (this.vy >= 0 && horiz && prevFeet <= p.y + 3 && feet >= p.y && feet <= p.y + 10) {
-        this.y = p.y - this.h; this.vy = 0; this.onGround = true; this.ridePlat = p;
+        this.y = p.y - this.h + sink; this.vy = 0; this.onGround = true; this.ridePlat = p;
       }
     }
 
@@ -528,7 +534,22 @@ window.SDD = window.SDD || {};
   Wisp.prototype.draw = function (ctx, cam) {
     var f = this.dead ? 1 : (Math.floor(this.animT / 14) % 2);
     var base = 'wisp_' + f;
-    drawBC(ctx, (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base, this, cam);
+    var name = (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base;
+    var s = spr(name); if (!s) return;
+    var dx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
+    var dy = Math.round(this.y - cam.y + this.h - s.height);
+    // Bird/leaf/smoke wisps face their movement direction. dir < 0
+    // means moving left -> mirror the sprite horizontally so the
+    // bird actually points the way it's flying (per Mark on Day 2-1).
+    if (this.dir < 0) {
+      ctx.save();
+      ctx.translate(dx + s.width, dy);
+      ctx.scale(-1, 1);
+      ctx.drawImage(s, 0, 0);
+      ctx.restore();
+    } else {
+      ctx.drawImage(s, dx, dy);
+    }
   };
 
   // ===================== THROWER =====================

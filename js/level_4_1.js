@@ -72,10 +72,11 @@ window.SDD = window.SDD || {};
   sp('core', 134, 7); sp('core', 137, 7);
 
   ground(139, 175);
-  flare(145, 70);
-  flare(153, 70);
-  flare(161, 70);
-  flare(169, 70);
+  // Thinned flare wall from 4 to 2 per Mark's pass-9 audit ("This
+  // one's tough"). Two flares still keep the rhythm without burying
+  // the player.
+  flare(149, 80);
+  flare(165, 80);
   sp('walker', 142, 10); sp('walker', 158, 10);
   sp('thrower', 165, 10);
   sp('wisp', 150, 4); sp('wisp', 167, 5);
@@ -92,9 +93,8 @@ window.SDD = window.SDD || {};
   mover(176, 9, 180, 9, 0.024, 0);
 
   ground(182, 215);
-  // dense flare storm + horizontal solar gusts cross the path
-  flare(184, 60); flare(190, 60); flare(196, 60);
-  flare(202, 60); flare(208, 60);
+  // Thinned flare storm from 5 to 3 (Mark's pass-9 audit).
+  flare(186, 70); flare(196, 70); flare(206, 70);
   meteorH(-2, 4, 130, 1);                                  // sweeps in from the left
   meteorH(-2, 7, 160, 1);
   meteorH(W + 2, 5, 150, -1);                              // and right

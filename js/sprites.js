@@ -65,8 +65,10 @@ window.SDD = window.SDD || {};
     lfA:  '#5fb046', lfL:  '#86d860', lfB:  '#3b7a2a', lfStem: '#6a4528',
     // flame (sunlit)
     flA:  '#ff7430', flL:  '#ffd24a', flB:  '#c53a14', flEye: '#fff5d0',
-    // bird (sky / sea-surface / bird-sky / seaside / savanna)
-    bdA:  '#f7c84a', bdL:  '#ffe890', bdB:  '#b88a18', bdBeak: '#ff7a2a',
+    // bird (sky / sea-surface / bird-sky / seaside / savanna) - warm
+    // peach / coral palette so the birds don't read as the same yellow
+    // as the sun + cores.
+    bdA:  '#f08850', bdL:  '#ffc090', bdB:  '#a04420', bdBeak: '#3a1410',
     // star (sunlit / cosmic-night / galactic)
     stA:  '#ffe680', stL:  '#ffffff', stB:  '#c69a30',
     // bat (village-dusk)
@@ -701,6 +703,32 @@ window.SDD = window.SDD || {};
       px(g, 7, 11, 1, 2, C.rnDrop);
     }
   }
+  // Smoke wisp (Day 3-1 rocky / mountain). Dark gray puff with
+  // glowing ember eyes - reads as a smoke spirit rising off the
+  // mountain.
+  function paintWisp_smoke(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    var dk = '#3a3340', md = '#5a525e', lt = '#867d8c', emb = '#ff8030';
+    // Outer puff
+    px(g, 3, 2,  8, 2, dk);
+    px(g, 2, 3, 10, 3, dk);
+    px(g, 1, 4,  2, 2, dk); px(g, 11, 4, 2, 2, dk);
+    px(g, 3, 6,  8, 2, dk);
+    // Mid layer
+    px(g, 4, 3,  6, 1, md);
+    px(g, 3, 4,  8, 2, md);
+    px(g, 4, 6,  6, 1, md);
+    // Top highlight
+    px(g, 5, 3,  4, 1, lt);
+    px(g, 4, 4,  3, 1, lt);
+    // Trailing wisps below
+    px(g, 4, 8 + b, 1, 2, dk);
+    px(g, 7, 9 - b, 1, 2, dk);
+    px(g, 10, 8 + b, 1, 2, dk);
+    // Ember eyes
+    px(g, 5, 5, 1, 1, emb);
+    px(g, 9, 5, 1, 1, emb);
+  }
   // Star flyer (sunlit / cosmic-night).
   function paintWisp_star(g, frame) {
     var b = frame === 1 ? 1 : 0;
@@ -878,15 +906,21 @@ window.SDD = window.SDD || {};
   }
 
   // Solar flare - bright yellow teardrop falling from sky
+  // Sun-ray "flare" - bright vertical light shaft + warm halo. Reads
+  // as a beam of sunlight falling from the sky (Day 4-1) per Mark's
+  // "Maybe just rays of sun?" comment, instead of a generic fireball.
   function paintFlare(g) {
+    // Soft outer halo
+    px(g, 2, 0, 4, 10, 'rgba(255,232,140,0.5)');
+    // Mid-bright beam
+    px(g, 3, 0, 2, 10, '#ffe070');
+    // Hot white core
+    px(g, 3, 1, 2, 7, '#fff7c4');
     px(g, 3, 0, 2, 1, '#ffffff');
-    px(g, 2, 1, 4, 2, '#fff4a0');
-    px(g, 1, 3, 6, 4, '#ffd048');
-    px(g, 1, 7, 6, 2, '#ff9020');
-    px(g, 2, 9, 4, 1, '#ff5a18');
-    // bright core
-    px(g, 3, 3, 2, 3, '#ffffff');
-    px(g, 3, 6, 2, 1, '#fff48a');
+    // Small sparkle spurs along the beam
+    px(g, 1, 4, 1, 1, '#ffd048');
+    px(g, 6, 6, 1, 1, '#ffd048');
+    px(g, 1, 8, 1, 1, '#ffd048');
   }
 
   // Water jet - small blue droplet stream (Day 2-2 crab)
@@ -915,21 +949,30 @@ window.SDD = window.SDD || {};
     px(g, 9, 4, 1, 2, '#ff7430');
   }
 
-  // Meteor - gray/brown rock with a flaming trail
+  // Meteor - chunkier irregular rock with a longer flaming trail.
+  // Reads as a meteor instead of the old bullet-shape per Mark's
+  // "I would like to work on the meteors looking more like meteors
+  // and less, like, bullets" feedback.
   function paintMeteor(g) {
-    // rock body (right half)
-    px(g, 3, 2, 6, 4, '#5a4a40');
-    px(g, 3, 2, 6, 1, '#8a7a6e');           // top highlight
-    px(g, 4, 3, 4, 2, '#7a6a5e');           // lit face
-    px(g, 3, 5, 6, 1, '#3a2e24');           // shadow
-    // craters
-    px(g, 5, 3, 1, 1, '#3a2e24'); px(g, 7, 4, 1, 1, '#3a2e24');
-    // flaming trail (left side)
-    px(g, 0, 2, 2, 1, '#ff8030');
-    px(g, 0, 3, 3, 2, '#ffd048');
+    // Rock body (right side) - irregular silhouette
+    px(g, 4, 1, 4, 1, '#5a4a40');
+    px(g, 3, 2, 6, 1, '#7a6a5e');
+    px(g, 3, 3, 6, 2, '#5a4a40');
+    px(g, 4, 5, 5, 1, '#3a2e24');
+    px(g, 5, 6, 3, 1, '#2a1e14');
+    // Lit face (upper-right since meteor flies leftward)
+    px(g, 6, 2, 2, 1, '#8a7a6e');
+    px(g, 7, 3, 1, 1, '#a89886');
+    // Cratered shadow
+    px(g, 4, 4, 1, 1, '#2a1e14');
+    px(g, 7, 4, 1, 1, '#2a1e14');
+    // Long flaming trail (left side, multi-coloured)
+    px(g, 0, 3, 4, 2, '#ffe070');
+    px(g, 0, 2, 3, 1, '#ff8030');
     px(g, 0, 5, 2, 1, '#ff5018');
-    px(g, 1, 2, 1, 1, '#fff4a0');
-    px(g, 1, 5, 1, 1, '#ffffff');
+    // White-hot spurs at the head of the trail
+    px(g, 2, 3, 1, 1, '#ffffff');
+    px(g, 1, 4, 1, 1, '#ffffff');
   }
 
   // ================= tiles (16x16, no outline - they tile) =================
@@ -1476,6 +1519,7 @@ window.SDD = window.SDD || {};
         leaf:       paintWisp_leaf,
         star:       paintWisp_star,
         bat:        paintWisp_bat,
+        smoke:      paintWisp_smoke,
         stormcloud: paintWisp_stormcloud
       };
       Object.keys(WISP_VARS).forEach(function (k) {
