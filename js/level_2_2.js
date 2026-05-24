@@ -74,12 +74,15 @@ window.SDD = window.SDD || {};
   sp('crab', 132, 10);
   sp('core', 136, 7); sp('core', 142, 5); sp('core', 148, 9);
 
-  // 2 moving platforms diagonally arranged
+  // 3 moving platforms diagonally arranged. Softened per Mark's
+  // pass-9 audit ("the third triple moving platform area is pretty
+  // tough"). Slowed (0.022 -> 0.018) and tightened travel ranges so
+  // the rhythm window is more generous.
   water(151, 175);
-  mover(152, 10, 158, 6, 0.022, 0);                        // moves up-right
-  mover(160, 6, 166, 10, 0.022, 1.6);                      // moves down-right
-  mover(168, 10, 173, 6, 0.022, 0.8);
-  sp('core', 154, 8); sp('core', 162, 5); sp('core', 170, 6);
+  mover(152, 10, 156, 7, 0.018, 0);                        // moves up-right
+  mover(159, 7, 163, 10, 0.018, 1.6);                      // moves down-right
+  mover(166, 10, 170, 7, 0.018, 0.8);
+  sp('core', 154, 8); sp('core', 161, 5); sp('core', 168, 6);
   sp('wisp', 156, 3); sp('wisp', 165, 2);
 
   ground(176, 195);

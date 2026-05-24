@@ -39,6 +39,9 @@ window.SDD = window.SDD || {};
   }
   // a few open-water cores
   sp('core', 8, 6); sp('core', 24, 4); sp('core', 40, 9); sp('core', 56, 5); sp('core', 72, 8);
+  // Early growth power-up tucked at the TOP of the second coral
+  // wall's gap (col 32, row 5) - player has to swim up to reach.
+  qb(32, 5, 'G');
   // first jellyfish
   sp('wisp', 12, 5); sp('wisp', 28, 8); sp('wisp', 44, 4); sp('wisp', 60, 9);
 

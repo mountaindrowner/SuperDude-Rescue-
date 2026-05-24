@@ -715,9 +715,12 @@ window.SDD = window.SDD || {};
   };
 
   // Meteor - drifts diagonally across the screen.
+  // Slowed from vx=1.5 (Pass 9 difficulty audit: "the meteor should
+  // be a little bit slower"). Lower horizontal speed gives Mark more
+  // reaction time to dodge.
   function Meteor(x, y, dir) {
     this.x = x; this.y = y; this.w = 10; this.h = 8;
-    this.vx = (dir || 1) * 1.5; this.vy = 0.9;
+    this.vx = (dir || 1) * 1.0; this.vy = 0.7;
     this.life = 320; this.remove = false;
   }
   Meteor.prototype.update = function (level) {

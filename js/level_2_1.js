@@ -26,9 +26,12 @@ window.SDD = window.SDD || {};
   sp('player', 3, 10);
   sp('core', 6, 9); sp('core', 9, 9); sp('core', 12, 9);
   qb(15, 7, '?');
-  // First single one-way "cloud" floating above
+  // First single one-way "cloud" floating above. Growth block
+  // tucked above the cloud as the level's "early reward behind a
+  // hard-access spot" - have to climb up to bonk it.
   oneway(18, 21, 8);
-  sp('core', 19, 6); sp('core', 20, 6);
+  qb(20, 5, 'G');                                          // early growth power-up
+  sp('core', 19, 6); sp('core', 21, 6);
   sp('walker', 24, 10);
   sp('core', 27, 9);
 

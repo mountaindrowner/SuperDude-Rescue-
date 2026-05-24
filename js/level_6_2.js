@@ -26,6 +26,12 @@ window.SDD = window.SDD || {};
   // FIRST NPC right on the path
   sp('npc', 14, 10, 'adam');
   sp('core', 12, 7); sp('core', 16, 7); sp('core', 19, 9);
+  // Early growth power-up on a small village rooftop - have to
+  // jump onto the roof box first to bonk it. Mark's "at least one
+  // power-up early, behind a hard-access spot."
+  box(24, 8, 27, 10, 'X');                                 // small house roof
+  qb(25, 6, 'G');
+  sp('core', 25, 7);
 
   // a single mild walker
   sp('walker', 24, 10);

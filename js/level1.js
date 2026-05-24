@@ -133,9 +133,12 @@ window.SDD = window.SDD || {};
   // final run-up. Wider pits, more enemies, then a clear path to
   // the time-machine part on the pedestal.
   // ============================================================
-  // wide pit with two slow platforms in series
-  mover(295, 9, 299, 9, 0.018, 0);
-  mover(301, 9, 305, 9, 0.018, 1.5);
+  // Wide pit with two slow platforms in series. Mark called this
+  // the "especially hard" twin-platform near the end - tightened the
+  // travel range so the platforms swing closer to the main path,
+  // narrowing the worst jump from ~4 tiles to ~3.
+  mover(296, 9, 299, 9, 0.018, 0);
+  mover(301, 9, 304, 9, 0.018, 1.5);
   sp('core', 297, 7); sp('core', 303, 7);
 
   ground(307, 340);
