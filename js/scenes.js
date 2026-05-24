@@ -2129,6 +2129,22 @@ window.SDD = window.SDD || {};
         if (platVariant) plat.variant = platVariant;
         this.platforms.push(plat);
       }
+      // Easy mode tuning: slow every moving platform to 60% speed and
+      // widen them by ~30% so landing is more forgiving. Wider sprite
+      // stretches via 5-arg drawImage; collisions follow the new plat.w.
+      // Med + Hard keep the authored values.
+      if (this.difficulty === 'easy') {
+        for (var ep = 0; ep < this.platforms.length; ep++) {
+          var pe = this.platforms[ep];
+          pe.spd *= 0.6;
+          var extra = Math.round(pe.w * 0.3);
+          pe.w += extra;
+          // Recenter horizontally so the new width grows symmetrically
+          // and the platform's mid-line stays where the kid expects.
+          var shift = Math.round(extra / 2);
+          pe.x -= shift; pe.x0 -= shift; pe.x1 -= shift;
+        }
+      }
       this.camera = new E.Camera();
       // If we're respawning into this level from a death AND we have
       // a checkpoint AND the difficulty respects checkpoints, teleport

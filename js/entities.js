@@ -972,10 +972,14 @@ window.SDD = window.SDD || {};
   };
   MovPlat.prototype.draw = function (ctx, cam) {
     // Per-platform variant set by the level scene from the theme.
-    // Defaults to the brass wood plank.
+    // Defaults to the brass wood plank. 5-arg drawImage so the sprite
+    // can be stretched horizontally - easy mode widens the platforms
+    // for a more forgiving landing rhythm.
     var s = spr((this.variant && SDD.sprites.get('movplat_' + this.variant))
       ? 'movplat_' + this.variant : 'movplat');
-    ctx.drawImage(s, Math.round(this.x - cam.x), Math.round(this.y - cam.y));
+    var dw = Math.round(this.w);
+    var dh = Math.round(this.h);
+    ctx.drawImage(s, Math.round(this.x - cam.x), Math.round(this.y - cam.y), dw, dh);
   };
 
   // ===================== POWER CORE =====================
