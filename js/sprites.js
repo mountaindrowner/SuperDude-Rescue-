@@ -1956,14 +1956,15 @@ window.SDD = window.SDD || {};
   // bounding box and scales the crop to this height. Big > small gives
   // the "I just took a hit" health-bar feedback.
   var PL_DISPLAY_H = { big: 36, small: 26 };
-  // Per-anim display-height overrides. Swim is a horizontal pose, so
-  // sizing it to the standing height makes the sprite huge and
-  // out-of-scale (Mark Pass 9: "avatar is way too big, we need to
-  // shrink it so it fits within the balance"). Cap swim shorter so
-  // the proportional width also shrinks.
+  // Per-anim display-height overrides. Swim renders at full standing
+  // height for both sizes - the corrected bbox is naturally wide
+  // (aspect ~1.5) so the sprite reads as a horizontal swim pose
+  // even without shrinking the height. Mark Pass 9 round 2: "Column 1
+  // from each row is the only one even close" - col 1 = h-driven at
+  // original height (36 big, 36 small for swim).
   var PL_DISPLAY_OVERRIDE = {
-    big:   { swim: 26 },
-    small: { swim: 18 }
+    big:   {},
+    small: { swim: 36 }
   };
 
   // Precomputed per-animation union bounding boxes (non-transparent
@@ -1987,7 +1988,12 @@ window.SDD = window.SDD || {};
       // "edges to the left and right are being cut off by like maybe
       // three pixels on each side").
       climb:      { north: { x: 32, y: 22, w: 32, h: 53 } },
-      swim:       { east:  { x: 28, y: 30, w: 40, h: 36 }, west: { x: 28, y: 30, w: 40, h: 36 } },
+      // Swim bbox MEASURED from the PNG via /tmp/measure_swim.js. The
+      // old hand-tuned 40x36 was clipping ~half the character (the
+      // outstretched arm in the swim pose). True union across 9 frames
+      // is 78x48 - much wider than tall, which now reads as a proper
+      // horizontal swimming pose.
+      swim:       { east:  { x: 8,  y: 23, w: 78, h: 48 }, west: { x: 8,  y: 23, w: 78, h: 48 } },
       space_run:  { east:  { x: 35, y: 25, w: 26, h: 48 }, west: { x: 35, y: 25, w: 26, h: 48 } },
       space_jump: { east:  { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } },
       space_hurt: { east:  { x: 33, y: 26, w: 30, h: 47 }, west: { x: 33, y: 26, w: 30, h: 47 } },
@@ -2007,7 +2013,8 @@ window.SDD = window.SDD || {};
       // than the 96x96 big ones).
       // Climb padded 4 L/R + 3 bottom (same Pass 9 fix as big).
       climb:      { north: { x: 30, y: 20, w: 32, h: 51 } },
-      swim:       { east:  { x: 26, y: 28, w: 40, h: 36 }, west: { x: 26, y: 28, w: 40, h: 36 } },
+      // Swim bbox MEASURED from PNG (72x51, aspect 1.41) - same fix as big.
+      swim:       { east:  { x: 10, y: 21, w: 72, h: 51 }, west: { x: 10, y: 21, w: 72, h: 51 } },
       space_run:  { east:  { x: 31, y: 25, w: 28, h: 45 }, west: { x: 34, y: 24, w: 24, h: 46 } },
       space_jump: { east:  { x: 33, y: 26, w: 28, h: 45 }, west: { x: 30, y: 26, w: 29, h: 45 } },
       space_hurt: { east:  { x: 30, y: 26, w: 28, h: 43 }, west: { x: 34, y: 26, w: 28, h: 43 } },
