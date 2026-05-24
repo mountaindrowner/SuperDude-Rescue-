@@ -88,23 +88,46 @@ window.SDD = window.SDD || {};
   sp('walker', 197, 10);
   sp('core', 184, 9); sp('core', 190, 7); sp('core', 200, 9); sp('core', 208, 9);
 
-  // ============== REWARD (215-259): free-hanging vine grove ==============
-  // Optional climb for bonus cores - the path to the goal stays at
-  // ground level, the vines just reward exploration.
-  ground(215, 232);
-  vineFull(218); vineFull(222); vineFull(225); vineFull(229);
-  sp('core', 218, 7); sp('core', 222, 7); sp('core', 225, 7);
-  sp('core', 229, 7); sp('core', 222, 3); sp('core', 225, 2); sp('core', 229, 3);
-
-  // After the canopy, the ground resumes for the run to the goal.
-  ground(233, 259);
-  box(240, 8, 244, 13, 'X');
-  box(248, 7, 252, 13, 'X');                               // goal pedestal
+  // ============== REWARD (215-259): VINE-MAZE GATE before the goal ==
+  // Mark Pass 2 / Pass 9: "a vine-maze gate right before the goal,
+  // reusing the existing climb mechanic. Only one vine path leads up
+  // correctly." Implementation: a solid wall blocks forward progress
+  // and the path up. 5 vines hang in front of the wall. Four are
+  // dead-ends - the wall stays solid above them so climbing bumps the
+  // head. ONE vine has a gap cut in the wall above it and continues
+  // up to the canopy line - that's the only way through.
+  ground(215, 259);
+  // Solid wall blocking the air-route at rows 2-3 across the section
+  box(217, 2, 233, 3, 'X');
+  // Decorative hints above the wall - canopy silhouette
+  // (just paint via tiles? No - parallax handles it. Leave clear.)
+  // Five hanging vines from row 4 down to ground (row 10). Four are
+  // "wrong" - they end at row 4 (wall blocks the climb). The CORRECT
+  // vine (the centre one, col 225) extends all the way to row 0
+  // because the wall has a gap cut above it.
+  vine(219, 4, 10);                              // wrong
+  vine(222, 4, 10);                              // wrong
+  vine(225, 0, 10);                              // CORRECT
+  setT(225, 2, 'V'); setT(225, 3, 'V');          // continue through the gap
+  vine(228, 4, 10);                              // wrong
+  vine(231, 4, 10);                              // wrong
+  // Small "BLESSING" platform above the wall, just to the right of
+  // the correct vine - this is where Danny lands after climbing
+  // through and finds the time-machine part.
+  box(226, 1, 232, 1, '=');                      // one-way platform at row 1
+  sp('timepart', 229, 0);
+  // Cores per vine - reward exploration, hint where to try
+  sp('core', 219, 6); sp('core', 219, 5);
+  sp('core', 222, 6); sp('core', 222, 5);
+  sp('core', 225, 6); sp('core', 225, 5);
+  sp('core', 225, 4); sp('core', 225, 1);        // bonus cores along the winning path
+  sp('core', 228, 6); sp('core', 228, 5);
+  sp('core', 231, 6); sp('core', 231, 5);
+  sp('core', 227, 0); sp('core', 231, 0);        // goal-area cores
+  // Right-wall closer
   box(259, 0, 259, 13, 'X');
-  sp('timepart', 250, 6);
-  sp('walker', 237, 10); sp('wisp', 246, 4);
-  sp('core', 235, 9); sp('core', 241, 7); sp('core', 248, 6);
-  sp('core', 250, 5); sp('core', 254, 9); sp('core', 257, 9);
+  sp('walker', 237, 10);
+  sp('core', 240, 9); sp('core', 245, 9); sp('core', 251, 9); sp('core', 256, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['3-2'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'VEGETATION', theme: 'forest' };
