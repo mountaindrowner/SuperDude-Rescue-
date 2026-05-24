@@ -475,6 +475,23 @@ window.SDD = window.SDD || {};
     px(g, 0, 3, 1, 3, C.orbA); px(g, 8, 3, 1, 3, C.orbA);
   }
 
+  // Thunderbolt - jagged yellow lightning bolt with white core.
+  // Used by storm-cloud shooter wisps (Day 2-1) instead of purple orbs.
+  function paintBolt(g) {
+    var Y = '#ffd23a', W = '#ffffff', O = '#1a1640';
+    // Black outline first so the bolt reads on any background.
+    px(g, 5, 0, 2, 1, O); px(g, 4, 1, 3, 1, O); px(g, 3, 2, 3, 1, O);
+    px(g, 2, 3, 3, 1, O); px(g, 3, 4, 4, 1, O); px(g, 2, 5, 3, 1, O);
+    px(g, 1, 6, 4, 1, O); px(g, 2, 7, 2, 1, O);
+    // Yellow body
+    px(g, 5, 1, 1, 1, Y); px(g, 4, 2, 2, 1, Y);
+    px(g, 3, 3, 2, 1, Y); px(g, 4, 4, 2, 1, Y);
+    px(g, 3, 5, 1, 1, Y); px(g, 2, 6, 2, 1, Y);
+    // Bright white spine
+    px(g, 4, 3, 1, 1, W); px(g, 4, 5, 1, 1, W);
+    px(g, 3, 6, 1, 1, W);
+  }
+
   // Sea crab (Day 2-2) - red shell with claws + eyestalks. Frame 0
   // walks, frame 1 has claws raised (about to spit a water jet).
   function paintCrab(g, frame) {
@@ -1015,22 +1032,31 @@ window.SDD = window.SDD || {};
   }
   // glowing white platform for Day 1's "let there be light" theme
   function paintGroundGalactic(g) {
-    // body: pale blue holy glow
-    px(g, 0, 0, 16, 16, '#a8c4e8');
-    // bright cap on top
-    px(g, 0, 0, 16, 3, '#ffffff');
-    px(g, 0, 3, 16, 1, '#dfe8ff');
-    px(g, 0, 4, 16, 1, '#7e9cd4');
-    // glassy specular highlight + diagonal reflection
-    px(g, 2, 1, 4, 1, '#ffffff'); px(g, 9, 1, 5, 1, '#ffffff');
-    px(g, 3, 6, 1, 1, '#ffffff'); px(g, 6, 8, 1, 1, '#ffffff');
-    px(g, 9, 10, 1, 1, '#ffffff'); px(g, 12, 12, 1, 1, '#ffffff');
-    // subtle sparkles
-    px(g, 4, 5, 1, 1, '#cdebff'); px(g, 11, 6, 1, 1, '#cdebff');
-    px(g, 7, 11, 1, 1, '#cdebff'); px(g, 14, 9, 1, 1, '#cdebff');
-    // darker base
-    px(g, 0, 14, 16, 2, '#5070a0');
-    px(g, 0, 15, 16, 1, '#374a78');
+    // Glassy / semi-polished obsidian look per Mark - body is a
+    // deeper pale-blue with a strong glossy top cap, a diagonal
+    // reflection stripe, scattered specular sparkles, and a darker
+    // base shadow. Reads as polished obsidian / ice instead of
+    // matte stone.
+    px(g, 0, 0, 16, 16, '#92b0d8');
+    // Bright top cap (the "polish")
+    px(g, 0, 0, 16, 2, '#ffffff');
+    px(g, 0, 2, 16, 1, '#e8f0ff');
+    px(g, 0, 3, 16, 1, '#b7cce8');
+    // Single diagonal reflection stripe sweeping top-left -> bot-right
+    px(g, 2, 5, 2, 1, '#ffffff');
+    px(g, 4, 6, 2, 1, '#ffffff');
+    px(g, 6, 7, 2, 1, '#e8f0ff');
+    px(g, 8, 8, 2, 1, '#dfe8ff');
+    px(g, 10, 9, 2, 1, '#cdd9f0');
+    px(g, 12, 10, 2, 1, '#b7cce8');
+    // Sparkle dots
+    px(g, 13, 4, 1, 1, '#ffffff');
+    px(g, 4, 11, 1, 1, '#cdebff');
+    px(g, 11, 13, 1, 1, '#cdebff');
+    // Darker base shadow
+    px(g, 0, 13, 16, 1, '#6985b0');
+    px(g, 0, 14, 16, 2, '#475c84');
+    px(g, 0, 15, 16, 1, '#2f3e5e');
   }
   function paintDirtGalactic(g) {
     // deep glowing pale blue interior
@@ -1450,6 +1476,7 @@ window.SDD = window.SDD || {};
     });
 
     sprites['orb'] = spriteO(9, 8, paintOrb);
+    sprites['bolt'] = spriteO(9, 8, paintBolt);
     sprites['flare'] = spriteO(8, 10, paintFlare);
     sprites['lavaplume'] = spriteO(10, 13, paintLavaPlume);
     var mtr = spriteO(10, 8, paintMeteor);

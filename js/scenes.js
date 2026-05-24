@@ -835,29 +835,41 @@ window.SDD = window.SDD || {};
     }
   }
   function drawSky_forest(g, camx, camy, prog, t) {
-    // Layered forest: bright sky -> distant mountains -> mid pines ->
-    // near pines -> dense undergrowth, with sun shafts cutting through.
-    vGradient(g, '#88c4f0', '#cdf0e6');                 // pale sky
-    // Far mountains (very low parallax)
-    mountainRidge(g, camx, 0.08, 168, '#5f7a5e', 80);
-    mountainRidge(g, camx, 0.14, 172, '#4a6248', 60);
-    // Sun shafts through the canopy
-    for (var s = 0; s < 4; s++) {
-      var sx = 50 + s * 80 + Math.sin(t * 0.015 + s) * 6 - (camx * 0.3) % 320;
+    // Layered jungle (per Mark's Day 3-2 re-skin request): hazy sky ->
+    // distant mountains -> mist band -> mid canopy -> dense near
+    // canopy -> hanging vines silhouette -> dark undergrowth. More
+    // saturated greens + lower-contrast atmosphere reads as deep
+    // jungle vs the dry pine forest the old version conveyed.
+    vGradient(g, '#7eb89e', '#c9e5c4');                  // hazy green sky
+    // Far mountains
+    mountainRidge(g, camx, 0.08, 170, '#506a4e', 84);
+    mountainRidge(g, camx, 0.14, 174, '#3a5238', 64);
+    // Atmospheric mist band
+    g.fillStyle = 'rgba(220,255,220,0.18)';
+    g.fillRect(0, 96, 320, 22);
+    // Diagonal sun shafts (softer, greener)
+    for (var s = 0; s < 5; s++) {
+      var sx = 40 + s * 70 + Math.sin(t * 0.013 + s) * 8 - (camx * 0.32) % 320;
       sx = ((sx % 380) + 380) % 380 - 30;
-      g.fillStyle = 'rgba(255,250,200,0.10)';
+      g.fillStyle = 'rgba(255,250,210,0.09)';
       g.beginPath();
-      g.moveTo(sx, 0); g.lineTo(sx + 22, 0);
-      g.lineTo(sx + 34, 180); g.lineTo(sx - 8, 180);
+      g.moveTo(sx, 0); g.lineTo(sx + 26, 0);
+      g.lineTo(sx + 38, 180); g.lineTo(sx - 12, 180);
       g.closePath(); g.fill();
     }
-    // Mid pine layer
-    pineRow(g, camx, 0.22, 174, '#2a5a26', 1.0);
-    // Near pine layer - bigger + darker
-    pineRow(g, camx, 0.45, 180, '#143818', 1.3);
-    // Dense underbrush at the very bottom
+    // Mid canopy (broader tree silhouettes)
+    pineRow(g, camx, 0.22, 168, '#2f6e35', 1.2);
+    // Near canopy - dense + darker
+    pineRow(g, camx, 0.45, 178, '#143818', 1.5);
+    // Hanging-vine strands drifting in the near canopy
+    for (var v = 0; v < 7; v++) {
+      var vx = ((40 + v * 48 - (camx * 0.5)) % 360 + 360) % 360 - 20;
+      g.fillStyle = 'rgba(15,52,18,0.55)';
+      g.fillRect(vx | 0, 0, 1, 60 + (v % 3) * 18);
+    }
+    // Dark undergrowth at the bottom
     g.fillStyle = '#0e2810';
-    g.fillRect(0, 176, 320, 4);
+    g.fillRect(0, 175, 320, 5);
   }
   function drawSky_sunlit(g, camx, camy, prog, t) {
     vGradient(g, '#ffcc60', '#fff0a0');

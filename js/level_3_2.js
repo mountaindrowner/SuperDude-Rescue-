@@ -85,21 +85,19 @@ window.SDD = window.SDD || {};
   sp('core', 114, 9); sp('core', 122, 9); sp('core', 128, 9);
 
   // PIT with multiple vines hanging from the ceiling (climb or swing
-  // across). Gaps tightened to 5 cols so the swing-jump is actually
-  // reachable - the old 6/7-col gaps were beyond small Danny's jump
-  // arc (max ~5 tiles). Vines extend to row 1 so they look rooted
-  // to the canopy. Player auto-grabs the next vine on the way down.
-  box(131, 0, 131, 4, 'X');                                // anchor for vines
-  box(180, 0, 180, 4, 'X');
-  vine(135, 1, 10);
-  vine(140, 1, 9);
-  vine(145, 1, 11);
-  vine(150, 1, 8);
-  vine(155, 1, 10);
-  vine(160, 1, 9);
-  vine(165, 1, 11);
-  vine(170, 1, 9);
-  vine(175, 1, 10);
+  // across). Vines extend to row 0 (top of canvas) per Mark - reads
+  // as "the canopy is way up off the screen, vines drop from above."
+  // Mark's other note: drop the tall suspended ground pillars that
+  // bookended the pit - they were difficulty for the sake of it.
+  vine(135, 0, 10);
+  vine(140, 0, 9);
+  vine(145, 0, 11);
+  vine(150, 0, 8);
+  vine(155, 0, 10);
+  vine(160, 0, 9);
+  vine(165, 0, 11);
+  vine(170, 0, 9);
+  vine(175, 0, 10);
   sp('core', 135, 6); sp('core', 140, 6); sp('core', 145, 6);
   sp('core', 150, 6); sp('core', 155, 6); sp('core', 160, 6);
   sp('core', 165, 6); sp('core', 170, 6); sp('core', 175, 6);

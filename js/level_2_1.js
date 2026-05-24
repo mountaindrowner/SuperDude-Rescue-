@@ -50,7 +50,9 @@ window.SDD = window.SDD || {};
   qb(73, 1, '?');
 
   ground(76, 100);
-  sp('thrower', 84, 10);
+  // Dropped the ground-level thrower per Mark - airborne storm
+  // shooters carry the offence on the Firmament, no need for a
+  // cloud-on-the-ground.
   sp('wisp', 80, 6); shooter(92, 3);                       // shooting cloud creature high up
   sp('core', 78, 9); sp('core', 88, 9); sp('core', 96, 9);
 
@@ -74,7 +76,7 @@ window.SDD = window.SDD || {};
   oneway(143, 148, 5);
   oneway(143, 148, 7);
   oneway(143, 148, 9);
-  sp('thrower', 137, 10);
+  // ground thrower removed - sky-only hazards per Mark
   sp('wisp', 135, 6); sp('wisp', 145, 4);
   sp('core', 135, 8); sp('core', 135, 6); sp('core', 135, 4);
   sp('core', 145, 4); sp('core', 145, 6); sp('core', 145, 8);
@@ -95,8 +97,9 @@ window.SDD = window.SDD || {};
   oneway(194, 197, 5);
   sp('core', 171, 3); sp('core', 177, 1); sp('core', 183, 3);
   sp('core', 189, 5); sp('core', 195, 3);
-  sp('thrower', 175, 10); sp('thrower', 192, 10);
+  // ground throwers removed - storm shooter + wisp keep the threat sky-side
   shooter(184, 2); sp('wisp', 194, 1);
+  shooter(178, 2);                                         // extra storm shooter to compensate
 
   mover(201, 10, 204, 5, 0.024, 0);
   sp('core', 202, 7); sp('core', 203, 4);

@@ -515,6 +515,9 @@ window.SDD = window.SDD || {};
         this.shootCD = SDD.engine.randInt(140, 220);
         var orb = new Orb(this.x + this.w / 2 - 4, this.y + this.h, 0);
         orb.vx = 0; orb.vy = 0.6;       // drift down
+        // Storm-cloud wisps drop thunderbolts, not orbs. Same damage,
+        // different sprite + no purple glow.
+        orb.variant = 'bolt';
         level.projectiles.push(orb);
         SDD.audio.sfx('bump');
       }
@@ -572,8 +575,14 @@ window.SDD = window.SDD || {};
     if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;
   };
   Orb.prototype.draw = function (ctx, cam) {
-    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 9, '#c061da', 0.5);
-    drawBC(ctx, 'orb', this, cam);
+    if (this.variant === 'bolt') {
+      // Storm-cloud thunderbolt - bright yellow halo instead of purple.
+      glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 10, '#ffd23a', 0.6);
+      drawBC(ctx, 'bolt', this, cam);
+    } else {
+      glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 9, '#c061da', 0.5);
+      drawBC(ctx, 'orb', this, cam);
+    }
   };
 
   // ===================== WATER JET (Day 2-2 crab projectile) =====================
