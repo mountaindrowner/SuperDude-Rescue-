@@ -53,9 +53,10 @@
   <div class="helprow">
     Adjust bbox + display size on the left for Big and right for Small Danny.
     Arrow keys nudge the focused number by 1. Play/pause cycles frames 0-8 at game speed.
-    The green outline shows the player's collision hitbox at the same scale,
-    so you can see how much the sprite extends beyond the player's actual physics.
-    When happy, copy the generated JS at the bottom into <code>js/sprites.js</code>.
+    The green outline = the in-game collision hitbox, which now tracks the
+    displayed sprite dimensions (Pass 9 round 3: "Make the hitbox exactly
+    the same"). When happy, copy the generated JS at the bottom into <code>js/sprites.js</code>
+    and ping me to update the underwater hitbox in <code>js/entities.js</code>.
   </div>
 
   <div class="row">
@@ -174,10 +175,12 @@ var MEASURED_UNION = {
   small: { x: 10, y: 21, w: 72, h: 51 }
 };
 // Player hitbox in game pixels.
-var HITBOX = {
-  big:   { w: 18, h: 36 },
-  small: { w: 13, h: 23 }
-};
+// Mark Pass 9 round 3: "Make the hitbox exactly the same" - the
+// underwater hitbox now tracks the swim sprite display dimensions
+// instead of the standing hitbox. Derived live from state.dispW/dispH.
+function hitboxFor(size) {
+  return { w: state[size].dispW, h: state[size].dispH };
+}
 
 // ===== STATE ===============================================================
 var state = JSON.parse(JSON.stringify(CURRENT_SHIPPED));
@@ -365,7 +368,7 @@ function drawOutput(size) {
   var zoom = 3;
   var img = imgs[size][frameIdx[size]];
   var s = state[size];
-  var hit = HITBOX[size];
+  var hit = hitboxFor(size);
   // Draw hitbox first (so sprite overlays it). Anchor: centre-x, baseline near bottom.
   var cx = canvas.width / 2;
   var baseY = canvas.height - 22;
@@ -411,7 +414,14 @@ function rebuildCode() {
       + (s.w / s.h).toFixed(2) + ' (small).\n';
   out += '// dispW is derived by the engine: dispW = bbox.w * (dispH / bbox.h).\n';
   out += '// Your current dispW = ' + state.big.dispW + ' (big), ' + state.small.dispW + ' (small).\n';
-  out += '// If those values are right, the engine will produce them automatically.\n';
+  out += '\n// ----- entities.js underwater hitbox patch -----\n';
+  out += '// In Player.update, the underwater hitbox block uses:\n';
+  out += 'var swimW = this.big ? ' + state.big.dispW + ' : ' + state.small.dispW + ';\n';
+  out += 'var swimH = ' + state.big.dispH;
+  if (state.big.dispH !== state.small.dispH) {
+    out += '  // big; ' + state.small.dispH + ' for small (NOTE: heights differ - see comment)';
+  }
+  out += ';\n';
   document.getElementById('codeOut').textContent = out;
 }
 

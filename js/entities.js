@@ -301,6 +301,22 @@ window.SDD = window.SDD || {};
       if (wt === 'W' || wt === '~') this.inWater = true;
     }
 
+    // In fully-underwater levels, the collision hitbox matches the
+    // swim sprite outline. Mark Pass 9 round 3: "Make the hitbox
+    // exactly the same" as the swim sprite. Swim sprite renders at
+    // dispH=36 with bbox-derived width: 59 px (big) / 51 px (small).
+    if (level.underwater) {
+      var swimW = this.big ? 59 : 51;
+      var swimH = 36;
+      if (this.w !== swimW || this.h !== swimH) {
+        // Keep center horizontal + bottom edge stable across the swap.
+        this.x += (this.w - swimW) / 2;
+        this.y += (this.h - swimH);
+        this.w = swimW;
+        this.h = swimH;
+      }
+    }
+
     if (this.inWater) {
       // swim physics: heavy drag, mild gravity, paddle on jump press
       this.vy *= 0.92; this.vx *= 0.92;
