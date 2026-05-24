@@ -1064,11 +1064,24 @@ window.SDD = window.SDD || {};
   }
   ItemDrop.prototype.update = function (level) {
     this.t++;
-    if (this.emerge > 0) { this.y -= 1; this.emerge--; return; }
-    // Pass 10 round 2 (Mark): the grow power-up is now a super power
-    // core, not a mushroom - it floats with a soft bob like the blast
-    // item rather than walking left/right on the ground.
-    this.y += Math.sin(this.t * 0.12) * 0.35;
+    if (this.emerge > 0) {
+      this.y -= 1; this.emerge--;
+      if (this.emerge === 0 && this.kind === 'grow') this.vx = 0.55;
+      return;
+    }
+    // Pass 10 r2 (Mark, follow-up): the grow super power core must still
+    // WALK off its block onto the ground so small Danny can chase it
+    // down. The bob-in-place version left it unreachable. Visuals stay
+    // as the new chaotic gold diamond; only the physics revert.
+    if (this.kind === 'grow') {
+      this.vy += C.GRAVITY; if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
+      this.hitWall = 0;
+      mc(this, level.map);
+      if (this.hitWall) this.vx = -this.hitWall * 0.55;
+      if (this.vx === 0) this.vx = 0.55;
+    } else {
+      this.y += Math.sin(this.t * 0.12) * 0.35;
+    }
   };
   ItemDrop.prototype.draw = function (ctx, cam) {
     var col = this.kind === 'grow' ? '#ffb24a' : '#fff0a0';

@@ -2208,14 +2208,15 @@ window.SDD = window.SDD || {};
         this.platforms.push(plat);
       }
       // Easy mode tuning: slow every moving platform to 60% speed and
-      // widen them by ~30% so landing is more forgiving. Wider sprite
+      // widen them by 50% (Pass 10 r2 follow-up - Mark: "in easy mode
+      // increase the size of moving platforms by 1.5"). Wider sprite
       // stretches via 5-arg drawImage; collisions follow the new plat.w.
       // Med + Hard keep the authored values.
       if (this.difficulty === 'easy') {
         for (var ep = 0; ep < this.platforms.length; ep++) {
           var pe = this.platforms[ep];
           pe.spd *= 0.6;
-          var extra = Math.round(pe.w * 0.3);
+          var extra = Math.round(pe.w * 0.5);
           pe.w += extra;
           // Recenter horizontally so the new width grows symmetrically
           // and the platform's mid-line stays where the kid expects.
