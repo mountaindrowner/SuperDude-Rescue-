@@ -1858,49 +1858,62 @@ window.SDD = window.SDD || {};
   }
   function paintGrow(g, frame) {
     var p = frame === 1 ? 1 : 0;
-    // Mushroom-style "grow" power-up - classic, kid-readable. Red
-    // domed cap with white spots, cream stem, friendly cartoon eyes.
-    // Replaces the previous abstract orange capsule + cross marker
-    // (Mark Pass 9: "growth power-up sprite can still be improved").
+    // Pass 10 round 2 (Mark): "definitely not a mushroom" - replaces the
+    // mushroom-style power-up with a SUPER POWER CORE. Reads as the
+    // regular blue power core's overcharged sibling: chaotic gold
+    // diamond with a crackling white-hot center and starburst aura.
+    var goldD = '#a86420';                       // dark gold rim
+    var goldM = '#f0a420';                       // mid gold body
+    var goldL = '#ffd860';                       // bright gold
+    var sun   = '#fff09a';                       // pale yellow inner glow
+    var white = '#ffffff';
 
-    // Cap silhouette (dome from row 2 to row 8)
-    px(g, 4, 2, 8, 1, C.growA);                  // top crown
-    px(g, 3, 3, 10, 1, C.growA);
-    px(g, 2, 4, 12, 4, C.growA);                 // wide cap body
-    px(g, 3, 8, 10, 1, C.growA);                 // cap bottom rim shadow
-    // Cap top highlight (curved gloss along the upper edge)
-    px(g, 5, 3, 3, 1, C.growW);
-    px(g, 4, 4, 2, 1, C.growW);
-    px(g, 5, 4, 1, 1, '#ffffff');                // hot spot
-    // Cap underside shading
-    px(g, 3, 7, 10, 1, C.growB);
-    // White spots scattered on the cap (the classic mushroom look)
-    px(g, 9,  3, 2, 2, C.growW);                 // big spot right
-    px(g, 8,  4, 1, 1, C.growW);                 // tail of big spot
-    px(g, 11, 5, 2, 2, C.growW);                 // small spot far right
-    px(g, 3,  6, 2, 1, C.growW);                 // spot left
-    px(g, 6,  6, 1, 1, C.growW);                 // tiny center spot
-    // Cap pulse on frame 1 (brighter spot rim)
-    if (p) {
-      px(g, 10, 3, 1, 1, '#ffffff');
-      px(g, 4,  6, 1, 1, '#ffffff');
-    }
+    // Starburst aura - 12 sparks around the diamond
+    // Diagonal corner spikes
+    px(g, 1, 1,  1, 1, goldL); px(g, 2, 2,  1, 1, goldM);
+    px(g, 14, 1, 1, 1, goldL); px(g, 13, 2, 1, 1, goldM);
+    px(g, 1, 14, 1, 1, goldL); px(g, 2, 13, 1, 1, goldM);
+    px(g, 14,14, 1, 1, goldL); px(g, 13,13, 1, 1, goldM);
+    // Cardinal spikes (top, bottom, left, right)
+    px(g, 7, 0, 2, 1, goldL); px(g, 7, 1, 2, 1, goldM);
+    px(g, 7,15, 2, 1, goldL); px(g, 7,14, 2, 1, goldM);
+    px(g, 0, 7, 1, 2, goldL); px(g, 1, 7, 1, 2, goldM);
+    px(g,15, 7, 1, 2, goldL); px(g,14, 7, 1, 2, goldM);
 
-    // Stem (rows 9-13, narrower than cap, cream/beige)
-    px(g, 5, 9,  6, 1, C.growL);                 // collar
-    px(g, 4, 10, 8, 3, C.growL);                 // stem body
-    px(g, 5, 13, 6, 1, C.growB);                 // stem bottom shadow
-    // Stem highlight (left edge)
-    px(g, 4, 10, 1, 2, C.growW);
-    // Stem shadow (right edge)
-    px(g, 11, 10, 1, 3, C.growB);
-    // Friendly eyes - little ovals on the stem near the collar
-    px(g, 6, 11, 1, 1, C.out);
-    px(g, 9, 11, 1, 1, C.out);
-    // Eye gleam on frame 1
+    // Diamond body silhouette - dark rim
+    px(g, 7, 3, 2, 1, goldD);
+    px(g, 6, 4, 4, 1, goldD);
+    px(g, 5, 5, 6, 1, goldD);
+    px(g, 4, 6, 8, 4, goldD);                    // wide middle
+    px(g, 5, 10, 6, 1, goldD);
+    px(g, 6, 11, 4, 1, goldD);
+    px(g, 7, 12, 2, 1, goldD);
+
+    // Inner gold (one step in from the dark rim)
+    px(g, 7, 4, 2, 1, goldM);
+    px(g, 6, 5, 4, 1, goldM);
+    px(g, 5, 6, 6, 3, goldM);
+    px(g, 6, 9, 4, 1, goldM);
+    px(g, 7, 10, 2, 1, goldM);
+    px(g, 7, 11, 2, 1, goldM);
+
+    // Bright gold core
+    px(g, 7, 5, 2, 1, goldL);
+    px(g, 6, 6, 4, 2, goldL);
+    px(g, 7, 8, 2, 1, goldL);
+
+    // Hot white center - pulses + crackles on frame 1
+    px(g, 7, 6, 2, 2, sun);
     if (p) {
-      px(g, 6, 10, 1, 1, C.out);
-      px(g, 9, 10, 1, 1, C.out);
+      px(g, 7, 6, 2, 1, white);
+      px(g, 7, 7, 2, 1, white);
+      // chaotic crackle sparks at the diamond corners
+      px(g, 4, 4, 1, 1, white);
+      px(g, 11, 4, 1, 1, white);
+      px(g, 4, 11, 1, 1, white);
+      px(g, 11, 11, 1, 1, white);
+    } else {
+      px(g, 7, 7, 2, 1, white);
     }
   }
   function paintBlastItem(g, frame) {
@@ -2206,8 +2219,12 @@ window.SDD = window.SDD || {};
   // from each row is the only one even close" - col 1 = h-driven at
   // original height (36 big, 36 small for swim).
   var PL_DISPLAY_OVERRIDE = {
-    big:   {},
-    small: { swim: 36 }
+    // Pass 10 round 2 (Mark): "shrink it by 40%" - the underwater Danny
+    // was too big to thread through the tight coral-wall gaps in 5-2.
+    // Down from 36 -> 22 in both sizes. Hitbox in entities.js follows
+    // suit so the visual + collision stay aligned.
+    big:   { swim: 22 },
+    small: { swim: 22 }
   };
 
   // Precomputed per-animation union bounding boxes (non-transparent

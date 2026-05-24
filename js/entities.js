@@ -334,12 +334,12 @@ window.SDD = window.SDD || {};
     }
 
     // In fully-underwater levels, the collision hitbox matches the
-    // swim sprite outline. Mark Pass 9 round 3: "Make the hitbox
-    // exactly the same" as the swim sprite. Swim sprite renders at
-    // dispH=36 with bbox-derived width: 59 px (big) / 51 px (small).
+    // swim sprite outline. Pass 10 round 2 (Mark): "shrink it by 40%"
+    // - the previous 59x36 / 51x36 hitbox couldn't thread the tight
+    // 3-tile coral gaps. New dims hold the same bbox aspect at 22 high.
     if (level.underwater) {
-      var swimW = this.big ? 59 : 51;
-      var swimH = 36;
+      var swimW = this.big ? 36 : 31;
+      var swimH = 22;
       if (this.w !== swimW || this.h !== swimH) {
         // Keep center horizontal + bottom edge stable across the swap.
         this.x += (this.w - swimW) / 2;
@@ -829,15 +829,18 @@ window.SDD = window.SDD || {};
   // cycle ~2.4 sec - "tiny and enjoyable" per Mark. Damages player on
   // contact with the visible column rectangle.
   function LavaPlume(x, y) {
-    // Spawner sits one row above ground (row 10). Anchor the column
-    // bottom at the ground surface (one tile lower) so the plume reads
-    // as erupting from a crack in the floor.
-    this.ax = x + 5;                 // column horizontal center
-    this.ay = y + 16;                // anchor at ground top
-    this.maxH = 36;                  // ~2.25 tiles tall
-    this.colW = 12;                  // slim column
+    // Pass 10 round 2 (Mark): column was sitting 5px right + 6px low
+    // of the visible crater. Recenter (-1 of spawner x for a 1px nudge
+    // left, anchor 6px higher) so the plume reads as erupting cleanly
+    // from the painted nozzle.
+    this.ax = x - 1;                 // column horizontal center (was x+5)
+    this.ay = y + 10;                // anchor at ground top (was y+16)
+    this.maxH = 40;                  // a hair taller now that it's slower
+    this.colW = 14;                  // slightly wider for visibility
     this.t = 0;
-    this.rise = 50; this.hold = 24; this.fall = 50;   // frames
+    // Pass 10 round 2: slower rise + fall so the kid has time to read
+    // the timing before committing. ~2.8 sec full cycle (was 2.0).
+    this.rise = 70; this.hold = 28; this.fall = 70;   // frames
     this.remove = false;
     this.curH = 0;
     // Bbox - kept narrow so the player isn't damaged for grazing past.
@@ -969,23 +972,25 @@ window.SDD = window.SDD || {};
     var T = 16;
     var gx = Math.round(this.x - cam.x);
     var gy = Math.round((this.ty + 1) * T - cam.y);     // top of solid ground
-    // Dark crater rim
+    // Pass 10 round 2 (Mark): widen the port so it visibly reads as
+    // the source of the plume. Bumped 16->22 wide with proportional
+    // inner rings.
     ctx.fillStyle = '#3a2010';
-    ctx.fillRect(gx - 8, gy - 4, 16, 4);
+    ctx.fillRect(gx - 11, gy - 4, 22, 4);
     ctx.fillStyle = '#2a1408';
-    ctx.fillRect(gx - 7, gy - 3, 14, 1);
+    ctx.fillRect(gx - 10, gy - 3, 20, 1);
     // Glowing inner ring
     ctx.fillStyle = '#7a1c0a';
-    ctx.fillRect(gx - 6, gy - 3, 12, 2);
+    ctx.fillRect(gx - 8, gy - 3, 16, 2);
     // Hot core - pulse near the next spawn (last 30% of the period
     // brightens to yellow so the player can read "about to erupt").
     var remain = Math.max(0, this.period - this.t);
     var ratio = remain / Math.max(1, this.period);
     var hot = ratio < 0.3 ? '#ffd048' : '#ff5418';
     ctx.fillStyle = hot;
-    ctx.fillRect(gx - 5, gy - 2, 10, 1);
+    ctx.fillRect(gx - 6, gy - 2, 12, 1);
     ctx.fillStyle = '#ff8030';
-    ctx.fillRect(gx - 4, gy - 1, 8, 1);
+    ctx.fillRect(gx - 5, gy - 1, 10, 1);
   };
   HazardSpawner.prototype.zap = function () {};      // blast can't kill the sky
 
@@ -1059,16 +1064,11 @@ window.SDD = window.SDD || {};
   }
   ItemDrop.prototype.update = function (level) {
     this.t++;
-    if (this.emerge > 0) { this.y -= 1; this.emerge--; if (this.emerge === 0 && this.kind === 'grow') this.vx = 0.55; return; }
-    if (this.kind === 'grow') {
-      this.vy += C.GRAVITY; if (this.vy > C.MAX_FALL) this.vy = C.MAX_FALL;
-      this.hitWall = 0;
-      mc(this, level.map);
-      if (this.hitWall) this.vx = -this.hitWall * 0.55;
-      if (this.vx === 0) this.vx = 0.55;
-    } else {
-      this.y += Math.sin(this.t * 0.12) * 0.35;
-    }
+    if (this.emerge > 0) { this.y -= 1; this.emerge--; return; }
+    // Pass 10 round 2 (Mark): the grow power-up is now a super power
+    // core, not a mushroom - it floats with a soft bob like the blast
+    // item rather than walking left/right on the ground.
+    this.y += Math.sin(this.t * 0.12) * 0.35;
   };
   ItemDrop.prototype.draw = function (ctx, cam) {
     var col = this.kind === 'grow' ? '#ffb24a' : '#fff0a0';

@@ -152,10 +152,9 @@ window.SDD = window.SDD || {};
   SDD.levels['4-2'] = {
     width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers,
     gravityScale: 0.32, jumpScale: 0.75,
-    // Open void: floating too far above the top of the map kills the
-    // player same as falling off the bottom. Mark Pass 9: "no barriers
-    // on the top or bottom. If you go too high or too low, you die."
-    topDeath: true,
+    // Pass 10 round 2 (Mark): removed topDeath. "I don't want the character
+    // dying if he goes too high." The bottom-pit death is still on; the
+    // open sky above is now safe to drift through.
     name: 'MOON & STARS', theme: 'cosmic-night'
   };
 })();
