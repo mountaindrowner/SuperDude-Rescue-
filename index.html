@@ -8,6 +8,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Super Dude Danny</title>
+<!-- Hint the browser to prefetch the first-played tracks at top
+     priority so they're buffered the moment the user presses a
+     key on the title card (Mark Pass 9: 'music started really
+     late'). Without this, the browser deprioritized title.mp3
+     behind all the PNG sprite assets and the user-gesture play()
+     had to wait for the buffer. -->
+<link rel="preload" as="audio" href="assets/music/title.mp3" type="audio/mpeg">
+<link rel="preload" as="audio" href="assets/music/intro.mp3" type="audio/mpeg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>

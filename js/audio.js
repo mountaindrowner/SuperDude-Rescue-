@@ -157,6 +157,11 @@ window.SDD = window.SDD || {};
     a.loop = loop !== false;
     a.volume = muted ? 0 : volume * mixFor(id);
     a.src = path;
+    // Explicit load() nudges the browser to actually start downloading
+    // - 'auto' is a HINT and many browsers defer audio until first
+    // play(). For title/intro tracks especially we want the bytes
+    // in memory by the time the user taps the title card.
+    try { a.load(); } catch (e) {}
     FILE_TRACKS[id] = { el: a, loop: loop !== false };
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }

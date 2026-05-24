@@ -103,10 +103,16 @@ window.SDD = window.SDD || {};
       this.t = 0; this.phase = 'in'; this.alpha = 0; this.chirped = false;
       this.waited = 0;
       this.pressT = 0;                            // pulses the "PRESS A" hint
-      // Music is NOT started here; it starts on the first button press
+      // Music is NOT started here; it starts on the first user gesture
       // (Mark Pass 9: "The title card should stay up until you press a
-      // button, and then the music starts.") That also keeps us aligned
-      // with browser autoplay policies which require a user gesture.
+      // button, and then the music starts.") We hook it onto
+      // onFirstGesture so the play() call runs INSIDE the gesture's
+      // event-handler tick - this saves ~16ms vs waiting for the next
+      // animation frame and keeps us firmly inside the autoplay
+      // gesture window, which avoids the "music starts really late"
+      // delay Mark reported. The audio.init callback was registered
+      // first in main.js, so ctx is ready by the time startMusic runs.
+      In.onFirstGesture(function () { A.startMusic('title'); });
     },
     update: function () {
       // If the title PNG isn't loaded yet, give it ~0.5 sec and then
@@ -135,12 +141,13 @@ window.SDD = window.SDD || {};
         if (this.alpha <= 0) { this.alpha = 0; go('menu'); return; }
       }
       // Any "go" press (jump/confirm/blast/pause) starts the music
-      // and begins the fade-out. We accept several keys so any first
-      // tap on mobile/desktop satisfies the gesture requirement.
+      // Music already started via the onFirstGesture hook in enter().
+      // This block just begins the fade-out on any press (the
+      // startMusic call here is harmless thanks to the in-flight guard).
       var advance = In.pressed('jump') || In.pressed('confirm') ||
                     In.pressed('blast') || In.pressed('pause');
       if (advance && this.phase !== 'out') {
-        A.startMusic('title');                    // begins on the gesture
+        A.startMusic('title');
         this.phase = 'out';
       }
     },
