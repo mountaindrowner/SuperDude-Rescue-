@@ -121,8 +121,9 @@ window.SDD = window.SDD || {};
   box(239, 0, 239, 13, 'X');
   sp('timepart', 230, 7);
   sp('walker', 210, 10); shooter(220, 3);
+  // Pass 10 round 2 (Mark): no cores stacked with the time-part.
   sp('core', 208, 9); sp('core', 213, 7); sp('core', 218, 6);
-  sp('core', 223, 5); sp('core', 230, 5); sp('core', 234, 9);
+  sp('core', 223, 5); sp('core', 234, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['2-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE FIRMAMENT', theme: 'sky' };

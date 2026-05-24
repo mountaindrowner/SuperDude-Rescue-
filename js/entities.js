@@ -1146,106 +1146,248 @@ window.SDD = window.SDD || {};
     var v = this.variant;
     var cx = Math.round(this.x + this.w / 2 - cam.x);
     var cy = Math.round(this.y + this.h / 2 - cam.y);
-    glow(ctx, cx, cy, 19, v.glow, 0.45 + Math.sin(this.t * 2) * 0.16);
+    // Pass 10 round 2 (Mark): time-machine parts should "radiate" - bigger
+    // pulsing aura, rotating ray spokes, and a brighter inner glow.
+    var pulse = 0.55 + Math.sin(this.t * 2) * 0.25;
+    glow(ctx, cx, cy, 30, v.glow, pulse);
+    glow(ctx, cx, cy, 16, v.c, 0.4 + Math.sin(this.t * 3.2) * 0.2);
+    // Rotating ray spokes (4 short lines around the center, rotating
+    // slowly) - readable as "this is special, look here".
+    for (var r = 0; r < 4; r++) {
+      var a = this.t * 0.6 + r * Math.PI / 2;
+      var rx = cx + Math.cos(a) * 13;
+      var ry = cy + Math.sin(a) * 13;
+      ctx.fillStyle = v.glow;
+      ctx.fillRect(rx | 0, ry | 0, 2, 2);
+      var rx2 = cx + Math.cos(a) * 16;
+      var ry2 = cy + Math.sin(a) * 16;
+      ctx.fillStyle = v.c;
+      ctx.fillRect(rx2 | 0, ry2 | 0, 1, 1);
+    }
     var x = Math.round(this.x - cam.x), y = Math.round(this.y - cam.y);
-    // Common base: chunky rounded gear/plate shape, then per-variant ornament.
-    ctx.fillStyle = v.a;
-    ctx.fillRect(x + 2, y + 2, 10, 10);
-    ctx.fillStyle = v.b;
-    ctx.fillRect(x + 3, y + 3, 8, 8);
-    // Variant-specific shape painted on top
+    // Pass 10 round 2: each variant now paints its OWN silhouette from
+    // scratch (no shared 10x10 base square) so parts read as distinctly
+    // different - cell vs vane vs gear vs star vs feather etc.
     switch (this.variantKey) {
-      case '1-1':                                          // Power core
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 5, y + 5, 4, 4);
-        ctx.fillStyle = v.glow;
-        ctx.fillRect(x + 1, y + 6, 12, 2);
-        ctx.fillRect(x + 6, y + 1, 2, 12);
-        break;
-      case '2-1':                                          // Vane (4 fan blades)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 6, y + 1, 2, 12);
-        ctx.fillRect(x + 1, y + 6, 12, 2);
+      case '1-1':                                          // Power core (vertical battery cell)
         ctx.fillStyle = v.a;
-        ctx.fillRect(x + 6, y + 6, 2, 2);
-        break;
-      case '2-2':                                          // Hull plate (rivets)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 4, y + 4, 1, 1);
-        ctx.fillRect(x + 9, y + 4, 1, 1);
-        ctx.fillRect(x + 4, y + 9, 1, 1);
-        ctx.fillRect(x + 9, y + 9, 1, 1);
-        ctx.fillRect(x + 6, y + 6, 2, 2);
-        break;
-      case '3-1':                                          // Gear with teeth
-        ctx.fillStyle = v.a;
-        ctx.fillRect(x + 5, y, 4, 2);
-        ctx.fillRect(x + 5, y + 12, 4, 2);
-        ctx.fillRect(x, y + 5, 2, 4);
-        ctx.fillRect(x + 12, y + 5, 2, 4);
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 6, y + 6, 2, 2);
-        break;
-      case '3-2':                                          // Vine coil (curl)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 4, y + 3, 2, 2);
-        ctx.fillRect(x + 8, y + 4, 2, 2);
-        ctx.fillRect(x + 3, y + 7, 2, 2);
-        ctx.fillRect(x + 9, y + 8, 2, 2);
-        ctx.fillRect(x + 6, y + 6, 2, 2);
-        break;
-      case '4-1':                                          // Sun cell (rays)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 5, y + 5, 4, 4);
-        ctx.fillRect(x + 6, y + 1, 2, 2);
-        ctx.fillRect(x + 6, y + 11, 2, 2);
-        ctx.fillRect(x + 1, y + 6, 2, 2);
-        ctx.fillRect(x + 11, y + 6, 2, 2);
-        break;
-      case '4-2':                                          // Star chip
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 6, y + 2, 2, 2);
-        ctx.fillRect(x + 4, y + 6, 2, 2);
-        ctx.fillRect(x + 8, y + 6, 2, 2);
-        ctx.fillRect(x + 6, y + 10, 2, 2);
-        ctx.fillRect(x + 6, y + 6, 2, 2);
-        break;
-      case '5-1':                                          // Feather fin (curved blade)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 3, y + 4, 1, 6);
-        ctx.fillRect(x + 4, y + 3, 2, 8);
-        ctx.fillRect(x + 6, y + 2, 2, 10);
-        ctx.fillRect(x + 8, y + 3, 2, 8);
-        ctx.fillRect(x + 10, y + 4, 1, 6);
-        break;
-      case '5-2':                                          // Coral gem
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 5, y + 4, 4, 6);
-        ctx.fillRect(x + 4, y + 5, 6, 4);
-        ctx.fillStyle = v.glow;
-        ctx.fillRect(x + 6, y + 6, 2, 2);
-        break;
-      case '6-1':                                          // Ivory chunk (irregular)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 4, y + 3, 5, 2);
-        ctx.fillRect(x + 3, y + 5, 8, 5);
-        ctx.fillRect(x + 5, y + 10, 5, 2);
-        break;
-      case '6-2':                                          // Wood wheel (spokes)
-        ctx.fillStyle = v.c;
-        ctx.fillRect(x + 2, y + 6, 10, 2);
-        ctx.fillRect(x + 6, y + 2, 2, 10);
-        ctx.fillStyle = v.a;
-        ctx.fillRect(x + 5, y + 5, 4, 4);
+        ctx.fillRect(x + 4, y + 2, 6, 10);                 // body
         ctx.fillStyle = v.b;
+        ctx.fillRect(x + 5, y + 3, 4, 8);                  // inner
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 6, y + 4, 2, 6);                  // glowing core
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 5, y + 1, 4, 1);                  // top cap
+        ctx.fillRect(x + 5, y + 12, 4, 1);                 // bottom cap
+        // energy bands
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 4, y + 5, 6, 1);
+        ctx.fillRect(x + 4, y + 9, 6, 1);
+        break;
+      case '2-1':                                          // Cloud-vane (4 curved propeller blades)
+        ctx.fillStyle = v.a;
+        // top blade
+        ctx.fillRect(x + 6, y + 1, 2, 5);
+        ctx.fillRect(x + 5, y + 4, 4, 2);
+        // right blade
+        ctx.fillRect(x + 8, y + 6, 5, 2);
+        ctx.fillRect(x + 8, y + 5, 2, 4);
+        // bottom blade
+        ctx.fillRect(x + 6, y + 8, 2, 5);
+        ctx.fillRect(x + 5, y + 8, 4, 2);
+        // left blade
+        ctx.fillRect(x + 1, y + 6, 5, 2);
+        ctx.fillRect(x + 4, y + 5, 2, 4);
+        // hub
+        ctx.fillStyle = v.c;
         ctx.fillRect(x + 6, y + 6, 2, 2);
         break;
-      case '7-1':                                          // Halo crown
+      case '2-2':                                          // Hull plate (hexagonal)
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 4, y + 2, 6, 2);
+        ctx.fillRect(x + 2, y + 4, 10, 6);
+        ctx.fillRect(x + 4, y + 10, 6, 2);
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 5, y + 3, 4, 1);
+        ctx.fillRect(x + 3, y + 5, 8, 4);
+        ctx.fillRect(x + 5, y + 9, 4, 1);
+        // rivets at the 6 corners
         ctx.fillStyle = v.c;
-        ctx.fillRect(x + 2, y + 5, 10, 2);
-        ctx.fillRect(x + 2, y + 8, 10, 2);
-        ctx.fillRect(x + 1, y + 6, 12, 1);
-        ctx.fillRect(x + 1, y + 9, 12, 1);
+        ctx.fillRect(x + 4, y + 3, 1, 1); ctx.fillRect(x + 9, y + 3, 1, 1);
+        ctx.fillRect(x + 2, y + 6, 1, 1); ctx.fillRect(x + 11, y + 6, 1, 1);
+        ctx.fillRect(x + 4, y + 10, 1, 1); ctx.fillRect(x + 9, y + 10, 1, 1);
+        break;
+      case '3-1':                                          // Gear bolt (cogwheel)
+        ctx.fillStyle = v.a;
+        // 8 outer teeth
+        ctx.fillRect(x + 6, y, 2, 2);
+        ctx.fillRect(x + 6, y + 12, 2, 2);
+        ctx.fillRect(x, y + 6, 2, 2);
+        ctx.fillRect(x + 12, y + 6, 2, 2);
+        ctx.fillRect(x + 2, y + 2, 2, 2);
+        ctx.fillRect(x + 10, y + 2, 2, 2);
+        ctx.fillRect(x + 2, y + 10, 2, 2);
+        ctx.fillRect(x + 10, y + 10, 2, 2);
+        // disc body
+        ctx.fillRect(x + 3, y + 3, 8, 8);
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 4, y + 4, 6, 6);
+        // central hole
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '3-2':                                          // Vine coil (spiral/curl)
+        ctx.fillStyle = v.a;
+        // Outer ring
+        ctx.fillRect(x + 3, y + 2, 8, 1);
+        ctx.fillRect(x + 11, y + 3, 1, 8);
+        ctx.fillRect(x + 3, y + 11, 8, 1);
+        ctx.fillRect(x + 2, y + 3, 1, 8);
+        // Inner curl
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 5, y + 4, 5, 1);
+        ctx.fillRect(x + 9, y + 5, 1, 4);
+        ctx.fillRect(x + 5, y + 8, 5, 1);
+        ctx.fillRect(x + 5, y + 6, 1, 2);
+        // Tip leaf
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 7, y + 6, 2, 1);
+        break;
+      case '4-1':                                          // Sun cell (8-point star)
+        ctx.fillStyle = v.a;
+        // 8 points
+        ctx.fillRect(x + 6, y, 2, 4);                      // N
+        ctx.fillRect(x + 6, y + 10, 2, 4);                 // S
+        ctx.fillRect(x, y + 6, 4, 2);                      // W
+        ctx.fillRect(x + 10, y + 6, 4, 2);                 // E
+        ctx.fillRect(x + 2, y + 2, 2, 2);                  // NW
+        ctx.fillRect(x + 10, y + 2, 2, 2);                 // NE
+        ctx.fillRect(x + 2, y + 10, 2, 2);                 // SW
+        ctx.fillRect(x + 10, y + 10, 2, 2);                // SE
+        // center disc
+        ctx.fillRect(x + 4, y + 4, 6, 6);
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 5, y + 5, 4, 4);
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '4-2':                                          // Star chip (5-point star)
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 6, y + 1, 2, 3);                  // top point
+        ctx.fillRect(x + 3, y + 4, 8, 3);                  // upper arms
+        ctx.fillRect(x + 4, y + 7, 6, 2);                  // body
+        ctx.fillRect(x + 3, y + 9, 3, 4);                  // lower-left point
+        ctx.fillRect(x + 8, y + 9, 3, 4);                  // lower-right point
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 6, y + 3, 2, 1);
+        ctx.fillRect(x + 4, y + 5, 6, 2);
+        ctx.fillRect(x + 5, y + 7, 4, 1);
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 6, y + 5, 2, 2);
+        break;
+      case '5-1':                                          // Feather fin (asymmetric wing)
+        ctx.fillStyle = v.a;
+        // Spine running diagonally
+        ctx.fillRect(x + 3, y + 11, 9, 1);
+        ctx.fillRect(x + 4, y + 10, 8, 1);
+        // Vanes curving up
+        ctx.fillRect(x + 5, y + 8, 7, 2);
+        ctx.fillRect(x + 6, y + 6, 6, 2);
+        ctx.fillRect(x + 7, y + 4, 5, 2);
+        ctx.fillRect(x + 8, y + 2, 4, 2);
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 6, y + 9, 6, 1);
+        ctx.fillRect(x + 7, y + 7, 5, 1);
+        ctx.fillRect(x + 8, y + 5, 4, 1);
+        ctx.fillRect(x + 9, y + 3, 3, 1);
+        // shaft
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 4, y + 11, 8, 1);
+        break;
+      case '5-2':                                          // Coral gem (branching cluster)
+        ctx.fillStyle = v.a;
+        // Trunk
+        ctx.fillRect(x + 6, y + 8, 2, 5);
+        // Left branch
+        ctx.fillRect(x + 3, y + 6, 3, 2);
+        ctx.fillRect(x + 2, y + 4, 2, 3);
+        // Right branch
+        ctx.fillRect(x + 8, y + 5, 3, 2);
+        ctx.fillRect(x + 10, y + 3, 2, 3);
+        // Top tip
+        ctx.fillRect(x + 6, y + 2, 2, 6);
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 6, y + 3, 2, 4);
+        ctx.fillRect(x + 3, y + 6, 2, 1);
+        ctx.fillRect(x + 9, y + 5, 2, 1);
+        // sparkle nodes
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 6, y + 1, 2, 1);
+        ctx.fillRect(x + 2, y + 4, 1, 1);
+        ctx.fillRect(x + 11, y + 3, 1, 1);
+        break;
+      case '6-1':                                          // Ivory chunk (curved tusk fragment)
+        ctx.fillStyle = v.a;
+        // Curved silhouette (broader at bottom, narrowing up-right)
+        ctx.fillRect(x + 2, y + 8, 6, 4);
+        ctx.fillRect(x + 4, y + 5, 6, 4);
+        ctx.fillRect(x + 6, y + 3, 5, 3);
+        ctx.fillRect(x + 8, y + 1, 4, 3);
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 3, y + 9, 4, 2);
+        ctx.fillRect(x + 5, y + 6, 4, 2);
+        ctx.fillRect(x + 7, y + 4, 3, 1);
+        // Cracks for the "weathered fragment" look
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 5, y + 8, 1, 2);
+        ctx.fillRect(x + 8, y + 5, 1, 1);
+        break;
+      case '6-2':                                          // Wood wheel (spoked cart wheel)
+        ctx.fillStyle = v.a;
+        // Outer rim (donut)
+        ctx.fillRect(x + 3, y + 1, 8, 1);
+        ctx.fillRect(x + 1, y + 3, 1, 8);
+        ctx.fillRect(x + 12, y + 3, 1, 8);
+        ctx.fillRect(x + 3, y + 12, 8, 1);
+        ctx.fillRect(x + 2, y + 2, 2, 1);
+        ctx.fillRect(x + 10, y + 2, 2, 1);
+        ctx.fillRect(x + 2, y + 11, 2, 1);
+        ctx.fillRect(x + 10, y + 11, 2, 1);
+        // Inner rim
+        ctx.fillStyle = v.b;
+        ctx.fillRect(x + 3, y + 2, 8, 1);
+        ctx.fillRect(x + 2, y + 3, 1, 8);
+        ctx.fillRect(x + 11, y + 3, 1, 8);
+        ctx.fillRect(x + 3, y + 11, 8, 1);
+        // Spokes (4 going to hub)
+        ctx.fillStyle = v.a;
+        ctx.fillRect(x + 6, y + 3, 2, 3);
+        ctx.fillRect(x + 6, y + 8, 2, 3);
+        ctx.fillRect(x + 3, y + 6, 3, 2);
+        ctx.fillRect(x + 8, y + 6, 3, 2);
+        // Hub
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+        break;
+      case '7-1':                                          // Halo crown (concentric rings + cross)
+        ctx.fillStyle = v.a;
+        // Outer halo ring
+        ctx.fillRect(x + 3, y + 1, 8, 1);
+        ctx.fillRect(x + 1, y + 3, 1, 8);
+        ctx.fillRect(x + 12, y + 3, 1, 8);
+        ctx.fillRect(x + 3, y + 12, 8, 1);
+        ctx.fillRect(x + 2, y + 2, 1, 1); ctx.fillRect(x + 11, y + 2, 1, 1);
+        ctx.fillRect(x + 2, y + 11, 1, 1); ctx.fillRect(x + 11, y + 11, 1, 1);
+        // Inner halo ring
+        ctx.fillStyle = v.glow;
+        ctx.fillRect(x + 4, y + 3, 6, 1);
+        ctx.fillRect(x + 3, y + 4, 1, 6);
+        ctx.fillRect(x + 10, y + 4, 1, 6);
+        ctx.fillRect(x + 4, y + 10, 6, 1);
+        // Cross inside
+        ctx.fillStyle = v.c;
+        ctx.fillRect(x + 6, y + 5, 2, 4);
+        ctx.fillRect(x + 5, y + 6, 4, 2);
         break;
     }
   };

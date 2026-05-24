@@ -119,8 +119,9 @@ window.SDD = window.SDD || {};
   box(231, 7, 235, 13, 'X');                               // goal pedestal
   box(239, 0, 239, 13, 'X');
   sp('timepart', 233, 6);
+  // Pass 10 round 2 (Mark): time-part isolated on the pedestal.
   sp('core', 218, 9); sp('core', 221, 7); sp('core', 226, 6);
-  sp('core', 233, 5); sp('core', 237, 9);
+  sp('core', 237, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['4-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'THE SUN', theme: 'sunlit' };

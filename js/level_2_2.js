@@ -117,7 +117,8 @@ window.SDD = window.SDD || {};
   box(229, 8, 231, 13, 'X');                               // goal pedestal
   box(239, 0, 239, 13, 'X');
   sp('timepart', 230, 7);
-  sp('core', 221, 9); sp('core', 226, 7); sp('core', 230, 5);
+  // Pass 10 round 2 (Mark): time-part stands alone on its pedestal.
+  sp('core', 221, 9); sp('core', 226, 7);
   sp('core', 234, 9); sp('core', 237, 9);
 
   SDD.levels = SDD.levels || {};

@@ -74,7 +74,9 @@ window.SDD = window.SDD || {};
   sp('npc', 195, 10, 'eve');
   // Dove perched above the time-part as a final blessing
   sp('npc', 187, 3, 'dove');
-  sp('core', 184, 6); sp('core', 187, 5); sp('core', 190, 6);
+  // Pass 10 round 2 (Mark): the time-part radiates alone - cores
+  // flank it left/right but nothing directly above.
+  sp('core', 184, 6); sp('core', 190, 6);
   sp('core', 194, 9); sp('core', 196, 9);
 
   SDD.levels = SDD.levels || {};

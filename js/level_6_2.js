@@ -97,8 +97,9 @@ window.SDD = window.SDD || {};
   box(239, 0, 239, 13, 'X');
   sp('timepart', 216, 7);
   sp('wisp', 196, 5);                                      // mild flyer
+  // Pass 10 round 2 (Mark): no core directly above the time-part.
   sp('core', 182, 9); sp('core', 186, 8); sp('core', 194, 6);
-  sp('core', 200, 7); sp('core', 208, 8); sp('core', 216, 6);
+  sp('core', 200, 7); sp('core', 208, 8);
   sp('core', 225, 9); sp('core', 232, 9); sp('core', 237, 9);
 
   SDD.levels = SDD.levels || {};

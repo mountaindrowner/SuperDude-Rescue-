@@ -103,7 +103,8 @@ window.SDD = window.SDD || {};
   // Goal: back wall + time-part
   box(W - 1, 0, W - 1, 13, 'X');
   sp('timepart', W - 5, 8);
-  sp('core', W - 5, 5); sp('core', W - 10, 7);
+  // Pass 10 round 2 (Mark): no core directly above the time-part.
+  sp('core', W - 10, 7);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['5-2'] = {

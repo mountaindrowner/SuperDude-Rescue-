@@ -172,9 +172,11 @@ window.SDD = window.SDD || {};
   box(370, 9, 374, 13, 'X');                               // goal pedestal
   box(379, 0, 379, 13, 'X');                               // end wall
   sp('timepart', 372, 8);
+  // Pass 10 round 2 (Mark): the time-machine part should sit alone
+  // and radiate - no power core directly above/beside it. Cores
+  // trail along the run-up but stop ~4 tiles before the pedestal.
   sp('core', 347, 9); sp('core', 354, 8); sp('core', 359, 7);
-  sp('core', 362, 6); sp('core', 366, 9); sp('core', 372, 6);
-  sp('core', 376, 9);
+  sp('core', 362, 6); sp('core', 366, 9);
 
   SDD.level1 = {
     width: W, height: H, ground: GROUND,

@@ -141,7 +141,8 @@ window.SDD = window.SDD || {};
   sp('timepart', 218, 3);
   sp('walker', 204, 5);
   sp('wisp', 211, 3);
-  sp('core', 202, 3); sp('core', 210, 3); sp('core', 218, 2);
+  // Pass 10 round 2 (Mark): no core directly over the time-part.
+  sp('core', 202, 3); sp('core', 210, 3);
   // Bottom decorative ground removed - the level is fully "space" now.
   // Goal is at col 218 so the player never needs to walk past it; the
   // right-side void (cols 224-258) is just visual breathing room

@@ -116,7 +116,8 @@ window.SDD = window.SDD || {};
   box(239, 0, 239, 13, 'X');
   sp('timepart', 222, 7);
   sp('walker', 230, 10, 'porcupine');                      // last beetle
-  sp('core', 209, 9); sp('core', 215, 7); sp('core', 222, 6);
+  // Pass 10 round 2 (Mark): no core directly above the time-part.
+  sp('core', 209, 9); sp('core', 215, 7);
   sp('core', 230, 9); sp('core', 236, 9);
 
   SDD.levels = SDD.levels || {};

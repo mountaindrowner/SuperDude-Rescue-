@@ -132,9 +132,10 @@ window.SDD = window.SDD || {};
   box(228, 7, 233, 13, 'X');                               // goal pedestal at altitude
   box(239, 0, 239, 13, 'X');
   sp('timepart', 230, 6);
+  // Pass 10 round 2 (Mark): no core stacked over the time-part.
   sp('core', 188, 9); sp('core', 193, 7); sp('core', 200, 6);
   sp('core', 207, 5); sp('core', 214, 4); sp('core', 221, 9);
-  sp('core', 230, 4); sp('core', 235, 9);
+  sp('core', 235, 9);
 
   SDD.levels = SDD.levels || {};
   SDD.levels['3-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'FORMING LAND', theme: 'rocky' };
