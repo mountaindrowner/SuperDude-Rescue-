@@ -60,12 +60,15 @@ window.SDD = window.SDD || {};
 
   // ============== TWIST (110-170): zig-zag wall climbing ==============
   ground(96, 140);
-  // zig-zag wall: alternating left/right stacks player has to weave through
-  box(102, 6, 104, 13, 'X');                               // wall sticks up from ground
-  box(108, 0, 110, 7, 'X');                                // wall hangs from top
-  box(114, 6, 116, 13, 'X');
-  box(120, 0, 122, 7, 'X');
-  box(126, 6, 128, 13, 'X');
+  // Zig-zag wall. Rising walls capped at row 8 (5 tiles tall) so small
+  // Danny can actually jump onto them from ground - row-6 walls (8
+  // tiles tall) needed an 80 px rise and small Danny max rise is 58.
+  // Hanging walls stay as ceilings to duck under.
+  box(102, 8, 104, 13, 'X');                               // rising wall
+  box(108, 0, 110, 6, 'X');                                // hanging ceiling
+  box(114, 8, 116, 13, 'X');
+  box(120, 0, 122, 6, 'X');
+  box(126, 8, 128, 13, 'X');
   // small one-way ledges to make the weave possible
   oneway(105, 107, 8);
   oneway(111, 113, 8);

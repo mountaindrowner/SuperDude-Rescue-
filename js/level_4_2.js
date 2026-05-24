@@ -55,10 +55,13 @@ window.SDD = window.SDD || {};
   sp('core', 40, 5);
 
   // ============== TEST (45-110): rhythm of cosmic platforms =========
-  // Mid-air "starbase" island
+  // Mid-air "starbase" island. qb moved up to row 2 so Big Danny
+  // can actually stand on the starbase under it - row 4 put the
+  // block in Big Danny's body region (head pixel 60 vs block
+  // bottom 80).
   box(46, 6, 50, 7, 'X');
-  qb(48, 4, '?');
-  sp('core', 47, 5); sp('core', 49, 5); sp('core', 48, 3);
+  qb(48, 2, '?');
+  sp('core', 47, 5); sp('core', 49, 5); sp('core', 48, 4);
   sp('wisp', 52, 4);
 
   // Vertical-bobbing platforms (rise + fall, big amplitude under low-g)
@@ -70,7 +73,7 @@ window.SDD = window.SDD || {};
   // Mini moon
   box(73, 5, 78, 6, 'X');
   sp('core', 74, 3); sp('core', 76, 3); sp('core', 78, 3);
-  qb(75, 3, '?');
+  qb(75, 1, '?');                                          // raised to row 1 so Big Danny fits
 
   // Long drifting comet to next island
   mover(81, 6, 88, 6, 0.018, 0);

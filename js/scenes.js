@@ -93,15 +93,25 @@ window.SDD = window.SDD || {};
   // =====================================================================
   // LOGO - Church of the Crossroads intro card (fade in, chirp, fade out)
   // =====================================================================
-  // 5-second title card: 60 frames fade-in -> 180 frames hold ->
-  // 60 frames fade-out. Uses assets/title.png when present; falls
-  // back to the placeholder logo when not so the game still runs
-  // before the art is dropped in.
+  // 5-second painted-title card (assets/title.png). 60 frames fade-in
+  // -> 180 frames hold -> 60 frames fade-out, skippable with A. If the
+  // painted PNG isn't loaded yet we skip straight to the menu instead
+  // of showing the old placeholder card - Mark wanted that placeholder
+  // gone.
   SDD.scenes.logo = {
     enter: function () {
       this.t = 0; this.phase = 'in'; this.alpha = 0; this.chirped = false;
+      this.waited = 0;
     },
     update: function () {
+      // Wait up to ~30 frames (0.5 sec) for title.png to decode. If it
+      // hasn't loaded by then, skip straight to the menu - no
+      // placeholder card.
+      if (!ART_TITLE.ok) {
+        this.waited++;
+        if (this.waited > 30) { go('menu'); return; }
+        return;
+      }
       this.t++;
       if (!this.chirped && this.t > 6) { A.sfx('chirp'); this.chirped = true; }
       if (this.phase === 'in') {
@@ -117,23 +127,11 @@ window.SDD = window.SDD || {};
     },
     render: function (g) {
       g.fillStyle = '#05050d'; g.fillRect(0, 0, 320, 180);
+      if (!ART_TITLE.ok) return;
       g.save();
       g.globalAlpha = this.alpha;
       g.imageSmoothingEnabled = false;
-      if (ART_TITLE.ok) {
-        // Painted card fills the full 16:9 canvas.
-        g.drawImage(ART_TITLE.img, 0, 0, 320, 180);
-      } else {
-        var logo = S.hasRealLogo() ? S.realLogo() : S.get('logoPlaceholder');
-        if (logo) {
-          var maxW = 240, maxH = 120;
-          var sc = Math.min(maxW / logo.width, maxH / logo.height);
-          var w = logo.width * sc, h = logo.height * sc;
-          g.drawImage(logo, (320 - w) / 2, (180 - h) / 2 - 6, w, h);
-        }
-        g.globalAlpha = this.alpha * 0.7;
-        text(g, 'PRESENTS', 160, 158, '#8a93b5', 1, 'center');
-      }
+      g.drawImage(ART_TITLE.img, 0, 0, 320, 180);
       g.restore();
       g.globalAlpha = 1;
     }
@@ -206,12 +204,11 @@ window.SDD = window.SDD || {};
           g.imageSmoothingEnabled = false;
           g.drawImage(artImg, mx, my, mw, mh);
           if (glow) {
-            // Warm dome glow at the top of the machine + soft cyan
-            // halo around the body.
+            // Warm dome glow at the top of the machine only. Removed
+            // the cyan rectangular halo around the machine body (Mark
+            // saw it as "a circle in a big square" in beat 1).
             g.fillStyle = 'rgba(255,232,147,0.50)';
             g.beginPath(); g.arc(cx, my + 12, mw * 0.45, 0, Math.PI * 2); g.fill();
-            g.fillStyle = 'rgba(190,240,255,0.22)';
-            g.fillRect(mx - 6, my - 6, mw + 12, mh + 12);
           }
           return;
         }
@@ -316,13 +313,17 @@ window.SDD = window.SDD || {};
       S.drawDanny(g, 'big', 'idle', 'east', Math.floor(this.t / 18) % 4, 40, 96);
 
       for (var i = 0; i < this.items.length; i++) {
-        var y = 110 + i * 16;
+        var y = 104 + i * 14;
         var sel = i === this.idx;
-        if (sel) text(g, '>', 110, y, '#ffd23a', 1, 'left');
-        text(g, this.items[i].label, 160, y, sel ? '#ffffff' : '#9aa0c4', sel ? 2 : 1, 'center');
+        if (sel) text(g, '>', 108, y, '#ffd23a', 1, 'left');
+        // Mark's request: selection should be brighter but not 2x bigger.
+        // Keep size:1 for both; brighter colour + arrow signals selection.
+        text(g, this.items[i].label, 160, y, sel ? '#ffffff' : '#9aa0c4', 1, 'center');
       }
-      // Shorter tagline so it fits cleanly under the menu items.
-      if (this.t % 50 < 34) text(g, 'A CREATION ADVENTURE', 160, 172, '#aab0d4', 1, 'center');
+      // Tagline reads "CROSSROADS FOUNDATION ADVENTURE" per Mark.
+      // Bumped down to y=164 and the menu items pushed up to y=104 so
+      // they don't collide with the tagline.
+      if (this.t % 50 < 34) text(g, 'CROSSROADS FOUNDATION ADVENTURE', 160, 164, '#aab0d4', 1, 'center');
     }
   };
 
@@ -1245,7 +1246,11 @@ window.SDD = window.SDD || {};
     },
 
     updatePaused: function () {
-      listNav(this, 3);
+      // listNav() writes to state.idx, but the pause scene keys off
+      // pauseIdx (to avoid clobbering the level scene's own .idx).
+      // Inline the nav so up/down actually moves the cursor.
+      if (In.pressed('up'))   { this.pauseIdx = (this.pauseIdx + 2) % 3; A.sfx('select'); }
+      if (In.pressed('down')) { this.pauseIdx = (this.pauseIdx + 1) % 3; A.sfx('select'); }
       if (In.pressed('pause')) { this.state = 'play'; A.sfx('pause'); return; }
       if (In.confirm()) {
         A.sfx('confirm');

@@ -104,7 +104,11 @@ window.SDD = window.SDD || {};
       if (this.deadT > 36) this.deadDone = true;
     } else {
       if (this.deadT > 22) { this.vy += 0.34; this.y += this.vy; }
-      if (this.deadT > 150) this.deadDone = true;
+      // Flappy deaths trigger so often (one wrong flap = die) that
+      // the standard 2.5 sec animation feels punishing. 1 sec is
+      // enough for the knockback + fall to read in flappy mode.
+      var doneT = (this.diedInFlappy) ? 60 : 150;
+      if (this.deadT > doneT) this.deadDone = true;
     }
   };
 
@@ -244,9 +248,14 @@ window.SDD = window.SDD || {};
       // Hitting the ground OR a pillar wall is death in flappy mode -
       // there is no "ground" to land on and pillars are impassable.
       if ((this.onGround || this.hitWall) && !SDD.save.data.options.god) {
+        this.diedInFlappy = true;
         this.die(false);
       } else if ((this.onGround || this.hitWall) && SDD.save.data.options.god) {
-        this.y = 32; this.vy = 0; this.onGround = false;
+        // God mode: skip the pillar instead of teleporting to y=32
+        // (which is inside the top-pillar of every gate). Bump past
+        // the offending tile so we don't oscillate on it.
+        this.x += 32; this.y = 90; this.vy = 0;
+        this.onGround = false; this.hitWall = 0;
       }
       this.animT++;
       if (this.invuln > 0) this.invuln--;

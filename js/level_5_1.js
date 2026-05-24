@@ -1,12 +1,13 @@
-// level_5_1.js - Day 5-1 "THE SKIES" (Pass 3 expansion, ~360 tiles).
+// level_5_1.js - Day 5-1 "THE SKIES" (Pass 9 trim, ~200 tiles).
 // Flappy mode: Danny auto-flies forward, tap A to flap. Hit a pillar
-// or the ground = lose a life. Now twice as long with a difficulty
-// curve - wide gaps early, tighter gates later, wisp dodges between.
+// or the ground = lose a life. Mark's feedback: previous ~360-tile
+// length was too punishing to retry; gaps were one block too tight.
+// Now ~half length + every gap is +1 block taller.
 window.SDD = window.SDD || {};
 
 (function () {
   var SDD = window.SDD;
-  var W = 360, H = 14, GROUND = 13;
+  var W = 200, H = 14, GROUND = 13;
   var t = []; for (var r = 0; r < H; r++) { var row = []; for (var c = 0; c < W; c++) row.push(' '); t.push(row); }
   function setT(x, y, ch) { if (x >= 0 && x < W && y >= 0 && y < H) t[y][x] = ch; }
   function ground(x0, x1) { for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, 'X'); }
@@ -28,54 +29,31 @@ window.SDD = window.SDD || {};
     for (var y = gapTop + gapH; y <= 12; y++) setT(col, y, '#');
   }
 
-  // ============== TEACH (cols 0-90): wide, easy gates ==============
-  // gates spaced 18 tiles apart, gap height 5 (generous).
-  // First gate is gap height 7 - extra forgiving for the very first
-  // flap of the level so the player learns the rhythm.
-  var teachGates = [[18, 4, 7], [36, 4, 5], [54, 6, 5], [72, 4, 5]];
+  // ============== TEACH (cols 0-70): wide easy gates ==============
+  var teachGates = [[18, 3, 8], [36, 4, 6], [54, 5, 6]];
   for (var i = 0; i < teachGates.length; i++) gate(teachGates[i][0], teachGates[i][1], teachGates[i][2]);
   for (var i = 0; i < teachGates.length; i++) {
     var gc = teachGates[i][0], gt = teachGates[i][1];
     sp('core', gc, gt + 1); sp('core', gc, gt + 2);
   }
 
-  // ============== TEST (cols 90-200): standard gates ==============
-  // 15-tile spacing, gap height 4
-  var testGates = [[90, 5, 4], [105, 3, 4], [120, 6, 4], [135, 4, 4],
-                   [150, 7, 4], [165, 2, 4], [180, 5, 4], [195, 6, 4]];
+  // ============== TEST (cols 70-140): standard gates ==============
+  var testGates = [[72, 4, 5], [90, 6, 5], [108, 3, 5], [126, 5, 5]];
   for (var i = 0; i < testGates.length; i++) gate(testGates[i][0], testGates[i][1], testGates[i][2]);
   for (var i = 0; i < testGates.length; i++) {
     var gc = testGates[i][0], gt = testGates[i][1];
     sp('core', gc, gt + 1); sp('core', gc, gt + 2);
   }
-  // wisps between to dodge
-  sp('wisp', 97, 4); sp('wisp', 112, 7); sp('wisp', 127, 3);
-  sp('wisp', 142, 6); sp('wisp', 157, 4); sp('wisp', 172, 7);
-  sp('wisp', 187, 3);
+  sp('wisp', 82, 6); sp('wisp', 100, 4); sp('wisp', 118, 7);
 
-  // ============== TWIST (cols 200-300): tighter gaps, faster ==============
-  // 12-tile spacing, gap height 3
-  var twistGates = [[208, 4, 3], [220, 6, 3], [232, 3, 3], [244, 7, 3],
-                    [256, 4, 3], [268, 6, 3], [280, 3, 3], [292, 5, 3]];
-  for (var i = 0; i < twistGates.length; i++) gate(twistGates[i][0], twistGates[i][1], twistGates[i][2]);
-  for (var i = 0; i < twistGates.length; i++) {
-    var gc = twistGates[i][0], gt = twistGates[i][1];
-    sp('core', gc, gt + 1);
+  // ============== REWARD (cols 140-199): final stretch ==============
+  var rewardGates = [[144, 5, 5], [162, 4, 5], [180, 6, 5]];
+  for (var i = 0; i < rewardGates.length; i++) gate(rewardGates[i][0], rewardGates[i][1], rewardGates[i][2]);
+  for (var i = 0; i < rewardGates.length; i++) {
+    var gc = rewardGates[i][0], gt = rewardGates[i][1];
+    sp('core', gc, gt + 1); sp('core', gc, gt + 2);
   }
-  sp('wisp', 214, 7); sp('wisp', 226, 4); sp('wisp', 238, 7);
-  sp('wisp', 250, 3); sp('wisp', 262, 7); sp('wisp', 274, 4);
-  sp('wisp', 286, 7);
-
-  // ============== REWARD (cols 300-359): final stretch, clear sky ==============
-  // sparse gates, big gaps, then goal
-  gate(308, 4, 5);
-  gate(322, 6, 5);
-  gate(336, 4, 5);
-  for (var i = 0; i < 3; i++) {
-    var cs = [308, 322, 336][i], ts = [4, 6, 4][i];
-    sp('core', cs, ts + 1); sp('core', cs, ts + 2);
-  }
-  sp('wisp', 316, 5); sp('wisp', 330, 7);
+  sp('wisp', 154, 7); sp('wisp', 172, 4);
 
   box(W - 4, 0, W - 4, 12, 'X');
   sp('timepart', W - 7, 8);
