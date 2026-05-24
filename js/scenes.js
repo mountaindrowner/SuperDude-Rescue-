@@ -1051,6 +1051,38 @@ window.SDD = window.SDD || {};
     // Dark undergrowth at the bottom
     g.fillStyle = '#0e2810';
     g.fillRect(0, 175, 320, 5);
+
+    // Green leaf canopy hanging from the TOP of the canvas (Mark
+    // Pass 9: "3-2 should have a green leaf canopy up top"). Reads
+    // as the jungle ceiling visible above where the player is. Two
+    // depth layers so it feels solid + has parallax movement.
+    // Back-layer canopy (lighter green, slower parallax)
+    g.fillStyle = '#2a5a28';
+    var bSpan = 26;
+    var bOff = -(((camx * 0.12) % bSpan) + bSpan) % bSpan;
+    for (var bk = bOff - bSpan; bk < 360 + bSpan; bk += bSpan) {
+      // scalloped lobes hanging down
+      g.beginPath();
+      g.ellipse(bk + 13, 0, 14, 11, 0, 0, 6.28);
+      g.fill();
+    }
+    // Front-layer canopy (darker, denser, faster parallax)
+    g.fillStyle = '#143818';
+    var fSpan = 22;
+    var fOff = -(((camx * 0.32) % fSpan) + fSpan) % fSpan;
+    for (var fr = fOff - fSpan; fr < 360 + fSpan; fr += fSpan) {
+      g.beginPath();
+      g.ellipse(fr + 11, 0, 12, 9, 0, 0, 6.28);
+      g.fill();
+      // Tiny leaf accents dangling
+      g.fillStyle = '#2f6e35';
+      g.fillRect(fr + 6, 9 + (fr % 3), 2, 2);
+      g.fillRect(fr + 16, 11 + (fr % 4), 2, 2);
+      g.fillStyle = '#143818';
+    }
+    // Flat band at the very top so the canopy reads as ceiling
+    g.fillStyle = '#143818';
+    g.fillRect(0, 0, 320, 4);
   }
   function drawSky_sunlit(g, camx, camy, prog, t) {
     vGradient(g, '#ffcc60', '#fff0a0');
@@ -1506,18 +1538,163 @@ window.SDD = window.SDD || {};
     }
   }
   function drawSky_eden(g, camx, camy, prog, t) {
-    vGradient(g, '#a8d860', '#ffd28a');
-    simpleSun(g, 250, 50, 22, '#fff0a0', false);
-    var tX = 160 - camx * 0.08, tY = 150;
-    g.fillStyle = '#3a2818';
-    g.fillRect(tX - 3, tY - 60, 6, 60);
-    g.fillStyle = '#2c5a24';
-    g.beginPath(); g.arc(tX, tY - 70, 40, 0, 6.28); g.fill();
-    g.fillStyle = '#3a7a32';
-    g.beginPath(); g.arc(tX - 10, tY - 80, 25, 0, 6.28); g.fill();
-    g.beginPath(); g.arc(tX + 15, tY - 75, 22, 0, 6.28); g.fill();
+    // Lush garden paradise: golden-hour sky -> distant mountains ->
+    // mist band -> rolling hills -> distant flowering trees -> river
+    // reflecting the sky -> foreground flower meadow + drifting
+    // petals. Mark Pass 9: "really beautiful and lush background
+    // group of layers - garden and paradise esque."
+
+    // 1) SKY - golden-hour gradient with a high warm band
+    vGradient(g, '#ffd28a', '#ffe6b8', '#c8ecb4');
+    // Soft warm halo overhead
+    var warmHalo = g.createRadialGradient(160, 30, 10, 160, 30, 130);
+    warmHalo.addColorStop(0, 'rgba(255, 240, 200, 0.45)');
+    warmHalo.addColorStop(1, 'rgba(255, 240, 200, 0)');
+    g.fillStyle = warmHalo; g.fillRect(0, 0, 320, 110);
+
+    // 2) BIG SUN with radiating rays (centre-right)
+    var sunX = 240 - camx * 0.03, sunY = 52;
+    // Outermost halo
+    g.fillStyle = 'rgba(255, 240, 180, 0.22)';
+    g.beginPath(); g.arc(sunX, sunY, 56, 0, 6.28); g.fill();
+    g.fillStyle = 'rgba(255, 235, 160, 0.40)';
+    g.beginPath(); g.arc(sunX, sunY, 36, 0, 6.28); g.fill();
+    // Subtle rotating rays
+    g.strokeStyle = 'rgba(255, 240, 180, 0.30)';
+    g.lineWidth = 1;
+    var rot = t * 0.002;
+    for (var rr = 0; rr < 10; rr++) {
+      var ang = rot + rr * (Math.PI / 5);
+      g.beginPath();
+      g.moveTo(sunX + Math.cos(ang) * 26, sunY + Math.sin(ang) * 26);
+      g.lineTo(sunX + Math.cos(ang) * 48, sunY + Math.sin(ang) * 48);
+      g.stroke();
+    }
+    // Sun disc
+    g.fillStyle = '#fff8d0';
+    g.beginPath(); g.arc(sunX, sunY, 22, 0, 6.28); g.fill();
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(sunX - 3, sunY - 5, 7, 0, 6.28); g.fill();
+
+    // 3) DISTANT MOUNTAINS - layered, soft blue-green
+    mountainRidge(g, camx, 0.05, 122, '#7898a8', 50);
+    mountainRidge(g, camx, 0.09, 128, '#5a8088', 38);
+    // Mist band hiding the mountain base
+    g.fillStyle = 'rgba(240, 245, 220, 0.45)';
+    g.fillRect(0, 118, 320, 12);
+
+    // 4) FAR FLOWERING TREES - silhouettes with pink/white blossom dots
+    var farSpan = 60;
+    var farOff = -(((camx * 0.18) % farSpan) + farSpan) % farSpan;
+    for (var ft = farOff - farSpan; ft < 360 + farSpan; ft += farSpan) {
+      // trunk
+      g.fillStyle = '#5a3a1c';
+      g.fillRect(ft + 14, 124, 2, 16);
+      // canopy
+      g.fillStyle = '#3a7a40';
+      g.beginPath(); g.ellipse(ft + 15, 122, 18, 9, 0, 0, 6.28); g.fill();
+      g.fillStyle = '#5aa05c';
+      g.beginPath(); g.ellipse(ft + 15, 119, 14, 6, 0, 0, 6.28); g.fill();
+      // pink blossom dots
+      g.fillStyle = '#ffc0d8';
+      g.fillRect(ft + 10, 116, 1, 1); g.fillRect(ft + 18, 118, 1, 1);
+      g.fillRect(ft + 14, 113, 1, 1); g.fillRect(ft + 22, 122, 1, 1);
+      g.fillStyle = '#ffffff';
+      g.fillRect(ft + 12, 120, 1, 1);
+    }
+
+    // 5) ROLLING HILLS - lush green, two depths
+    mountainRidge(g, camx, 0.22, 152, '#5a9248', 28);
+    mountainRidge(g, camx, 0.32, 158, '#3a7a32', 22);
+
+    // 6) REFLECTIVE WATER STRIP - thin ribbon of sky-reflecting water
+    //    along the horizon, with sparkles. Sells the paradise vibe.
+    g.fillStyle = 'rgba(150, 220, 240, 0.55)';
+    g.fillRect(0, 156, 320, 4);
+    g.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    for (var sp_ = 0; sp_ < 6; sp_++) {
+      var spx = ((sp_ * 56 + Math.sin(t * 0.04 + sp_) * 6 - camx * 0.45) % 340 + 340) % 340;
+      g.fillRect(spx | 0, 157, 2, 1);
+    }
+
+    // 7) GREAT BACKGROUND TREE - the iconic Eden centerpiece, slow
+    //    parallax so it dominates as Danny walks.
+    var tX = 160 - camx * 0.10, tY = 172;
+    // Trunk
+    g.fillStyle = '#3a2010';
+    g.fillRect(tX - 4, tY - 64, 8, 64);
+    // Trunk highlight
+    g.fillStyle = '#5a3018';
+    g.fillRect(tX - 4, tY - 64, 2, 64);
+    // Canopy - layered ellipses for a lush, full crown
+    g.fillStyle = '#1a4818';                         // deepest shadow
+    g.beginPath(); g.arc(tX, tY - 74, 46, 0, 6.28); g.fill();
+    g.fillStyle = '#2c5a24';                         // mid layer
+    g.beginPath(); g.arc(tX - 12, tY - 80, 28, 0, 6.28); g.fill();
+    g.beginPath(); g.arc(tX + 14, tY - 78, 26, 0, 6.28); g.fill();
+    g.beginPath(); g.arc(tX - 4, tY - 92, 22, 0, 6.28); g.fill();
+    g.fillStyle = '#4a8c38';                         // bright highlights
+    g.beginPath(); g.arc(tX - 8, tY - 86, 14, 0, 6.28); g.fill();
+    g.beginPath(); g.arc(tX + 12, tY - 84, 13, 0, 6.28); g.fill();
+    g.beginPath(); g.arc(tX + 2, tY - 100, 10, 0, 6.28); g.fill();
+    // Fruit dots (warm orange / red glimmers)
     g.fillStyle = '#ff8a5a';
-    for (var k = 0; k < 5; k++) g.fillRect(tX - 20 + k * 9, tY - 50 - (k % 2) * 8, 2, 2);
+    for (var k = 0; k < 8; k++) {
+      var fdx = (k * 11) % 60 - 30;
+      var fdy = ((k * 7) % 30) - 15;
+      g.fillRect(tX + fdx, tY - 74 + fdy, 2, 2);
+    }
+    g.fillStyle = '#ffd040';
+    g.fillRect(tX - 6, tY - 86, 1, 1);
+    g.fillRect(tX + 10, tY - 76, 1, 1);
+    g.fillRect(tX - 18, tY - 80, 1, 1);
+
+    // 8) DRIFTING WHITE DOVES in the back
+    for (var di = 0; di < 3; di++) {
+      var dvx = ((40 + di * 100 + t * 0.4 - camx * 0.10) % 360 + 360) % 360 - 30;
+      var dvy = 70 + di * 14 + Math.sin(t * 0.05 + di) * 4;
+      g.fillStyle = '#ffffff';
+      // body
+      g.fillRect(dvx | 0, dvy | 0, 3, 2);
+      // wings flap on t
+      var wf = (Math.floor(t / 8) + di) % 2;
+      if (wf) {
+        g.fillRect((dvx | 0) - 2, (dvy | 0) - 1, 2, 1);
+        g.fillRect((dvx | 0) + 3, (dvy | 0) - 1, 2, 1);
+      } else {
+        g.fillRect((dvx | 0) - 2, (dvy | 0) + 1, 2, 1);
+        g.fillRect((dvx | 0) + 3, (dvy | 0) + 1, 2, 1);
+      }
+    }
+
+    // 9) FOREGROUND FLOWER MEADOW + tufts at the play area horizon
+    //    Lush rolling grass with bright flowers (red, yellow, white).
+    var mSpan = 18;
+    var mOff = -(((camx * 0.55) % mSpan) + mSpan) % mSpan;
+    for (var mt = mOff - mSpan; mt < 360 + mSpan; mt += mSpan) {
+      var tuftH = 4 + (mt % 5);
+      g.fillStyle = '#3a7a32';
+      g.fillRect(mt | 0,     176 - tuftH, 1, tuftH);
+      g.fillRect((mt | 0) + 1, 175 - tuftH, 1, tuftH + 1);
+      g.fillRect((mt | 0) + 2, 176 - tuftH, 1, tuftH);
+      // flower head colours cycle
+      var flowerSeed = (mt | 0) % 7;
+      var flowerColor = ['#ff5050', '#ffd040', '#ffffff', '#ff90c0', '#a850ff'][flowerSeed % 5];
+      if (flowerSeed < 4) {
+        g.fillStyle = flowerColor;
+        g.fillRect((mt | 0) + 1, 175 - tuftH - 1, 1, 1);
+      }
+    }
+
+    // 10) DRIFTING PETALS / pollen across the playing field
+    for (var pt = 0; pt < 10; pt++) {
+      var ptx = ((pt * 33 + t * 0.5 - camx * 0.25) % 340 + 340) % 340 - 10;
+      var pty = 80 + (pt * 11) + Math.sin(t * 0.06 + pt) * 6;
+      pty = pty % 100 + 40;
+      var col = ['#ffc0d8', '#ffe070', '#ffffff'][pt % 3];
+      g.fillStyle = col;
+      g.fillRect(ptx | 0, pty | 0, 1, 1);
+    }
   }
 
   // Bug-scale parallax (Day 6-1 final zone). Danny has shrunk to ant
@@ -1667,6 +1844,7 @@ window.SDD = window.SDD || {};
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
       this.cores = 0; this.score = 0; this.timeSteps = 0;
+      this.livesPulseT = 0;
       this.state = 'play'; this.deathHandled = false;
       this.winTimer = 0; this.goTimer = 0;
       this.pauseIdx = 0;
@@ -1815,10 +1993,11 @@ window.SDD = window.SDD || {};
       if (bonuses > 0) {
         this.lives += bonuses;
         A.sfx('1up');
-        // Reuse the godToast pattern for a visible "1UP!" banner so
-        // the player actually notices the reward (Mark Pass 9: cores
-        // -> life mechanic existed but had no visual feedback).
-        SDD.godToast = { msg: '1UP!  EXTRA LIFE', t: 110 };
+        // Small inline animation at the lives counter (Mark Pass 9:
+        // "no need to have such a giant 1up sign - just a little
+        // animation at the life counter"). drawHUD reads livesPulseT
+        // and draws a floating '+1' next to the LIVES number.
+        this.livesPulseT = 70;
       }
     },
     burst: function (x, y, color, n) {
@@ -1855,6 +2034,7 @@ window.SDD = window.SDD || {};
     stepWorld: function () {
       var i;
       if (this.state === 'play' && !this.player.dead) this.timeSteps++;
+      if (this.livesPulseT > 0) this.livesPulseT--;
       for (i = 0; i < this.platforms.length; i++) this.platforms[i].update();
       this.player.update(this);
       for (i = 0; i < this.enemies.length; i++) this.enemies[i].update(this);
@@ -2134,7 +2314,25 @@ window.SDD = window.SDD || {};
     drawHUD: function (g) {
       // taller bar so we can fit a theme-name subtitle without crowding the play area
       g.fillStyle = 'rgba(8,8,20,0.7)'; g.fillRect(0, 0, 320, 22);
-      text(g, 'LIVES ' + this.lives, 6, 4, '#ffffff', 1, 'left');
+      // Lives counter pulses yellow on the first ~16 frames of a 1up
+      // award, then back to white. A small "+1" floats up from the
+      // number and fades over the full 70-frame pulse.
+      var livesColor = '#ffffff';
+      if (this.livesPulseT > 54) {
+        // bright flash on the digit during the first 16 frames
+        livesColor = (this.livesPulseT % 4 < 2) ? '#ffe070' : '#ffffff';
+      }
+      text(g, 'LIVES ' + this.lives, 6, 4, livesColor, 1, 'left');
+      if (this.livesPulseT > 0) {
+        // "+1" rises 12 px above the LIVES label as it fades out.
+        var t1 = (70 - this.livesPulseT) / 70;       // 0 -> 1
+        var rise = Math.round(t1 * 12);
+        var alpha = 1 - t1;
+        g.save();
+        g.globalAlpha = alpha;
+        tsh(g, '+1', 60, 4 - rise, '#ffe070', '#7a4a10', 1, 'left');
+        g.restore();
+      }
       text(g, 'CORES ' + this.cores, 86, 4, '#46f0ff', 1, 'left');
       var sv = SDD.save;
       var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
