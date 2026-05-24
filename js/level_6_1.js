@@ -1,7 +1,9 @@
-// level_6_1.js - Day 6-1 "WILD ANIMALS" (Pass 3 redesign, ~240 tiles).
-// Signature mechanic: ENEMY GAUNTLET. Teach: 1 enemy -> Test: a pair
-// -> Twist: small wave + blast power-up acquired -> Reward: cleared
-// path through a big wave.
+// level_6_1.js - Day 6-1 "WILD ANIMALS" (Pass 9 multi-biome redesign).
+// Three connected biomes within one level: plains -> forest ->
+// bug-scale. Same gameplay arc (enemy gauntlet) but the world
+// transforms around Danny: lions roam the open savanna, leaf-flyers
+// haunt the jungle, and then Danny "shrinks" into the grass for the
+// final bug-scale gauntlet where giant blades sway around him.
 window.SDD = window.SDD || {};
 
 (function () {
@@ -18,80 +20,113 @@ window.SDD = window.SDD || {};
     movers.push({ tx: tx, ty: ty, tx1: tx1, ty1: ty1, spd: spd || 0.018, phase: ph || 0 });
   }
 
-  // ============== TEACH (0-50): 1 enemy at a time ==============
+  // ============== ZONE 1 - PLAINS (cols 0-80) ==============
+  // Open savanna with lions + porcupines. Same as the Pass 3 teach
+  // section but tightened to fit zone width.
   ground(0, 30);
   sp('player', 3, 10);
   sp('core', 6, 9); sp('core', 9, 9);
-  qb(13, 7, 'G');                                          // grow early - need it
-  sp('walker', 18, 10, 'porcupine');                       // first porcupine
+  qb(13, 7, 'G');                                          // grow early
+  sp('walker', 18, 10, 'lion');                            // first lion
   sp('core', 16, 9); sp('core', 22, 9); sp('core', 26, 9);
 
   ground(31, 60);
-  // open arena with one wisp
-  sp('wisp', 38, 7);
+  sp('wisp', 38, 7);                                       // savanna bird
   qb(42, 7, '?');
-  sp('walker', 48, 10, 'lion');                            // first prowling lion
+  sp('walker', 48, 10, 'porcupine');                       // pair: lion + porcupine
+  sp('walker', 52, 10, 'lion');
   sp('core', 33, 9); sp('core', 38, 5); sp('core', 44, 9); sp('core', 54, 9);
 
-  // ============== TEST (60-130): pairs of enemies ==============
-  // First pair - one of each
-  ground(61, 100);
-  sp('walker', 68, 10, 'porcupine'); sp('walker', 75, 10, 'lion');
-  sp('wisp', 72, 5);
-  sp('core', 65, 9); sp('core', 72, 4); sp('core', 78, 9); sp('core', 88, 9);
+  // Plains-to-jungle transition - a few acacia stumps as the savanna
+  // begins to give way to denser trees.
+  ground(61, 80);
+  box(64, 9, 66, 13, 'X');                                 // small log
+  box(72, 9, 74, 13, 'X');
+  sp('walker', 70, 10, 'lion');                            // last plains lion
+  sp('core', 65, 8); sp('core', 73, 8); sp('core', 78, 9);
 
-  // pair + thrower
-  sp('thrower', 92, 10);
-  sp('walker', 84, 10, 'porcupine');
-  sp('wisp', 96, 4);
-  sp('core', 92, 7); sp('core', 96, 2);
+  // ============== ZONE 2 - JUNGLE (cols 80-160) ==============
+  // Leaf-themed enemies, hanging vines, denser obstacles. Forest
+  // wisps replace the savanna birds.
+  ground(81, 110);
+  sp('walker', 86, 10, 'leaf');                            // leaf-walker (jungle creature)
+  sp('wisp', 92, 6, 'leaf');                               // falling leaf flyer
+  sp('core', 82, 9); sp('core', 86, 7); sp('core', 92, 4); sp('core', 98, 9);
 
-  // ============== TWIST (100-180): BLAST acquired, small wave ==============
-  // gap with platform
-  mover(101, 9, 105, 9, 0.022, 0);
-  sp('core', 103, 7);
+  // Mid-jungle: vine + blast power-up arc
+  box(102, 6, 105, 7, 'X');                                // log perch
+  oneway(108, 112, 4);                                     // high one-way
+  qb(110, 2, 'B');                                         // blast tucked up high
+  sp('thrower', 115, 10, 'seed');                          // seed-spitter
+  sp('wisp', 106, 4, 'leaf');
+  sp('core', 103, 4); sp('core', 110, 1); sp('core', 116, 9); sp('core', 124, 9);
 
-  ground(107, 145);
-  // Blast power-up arc: tower with the blast at top
-  box(112, 6, 115, 7, 'X');
-  oneway(118, 122, 4);
-  qb(120, 2, 'B');                                         // blast block - REWARD for climbing
-  sp('thrower', 125, 10);                                  // hide a thrower below
-  sp('wisp', 116, 4);
-  sp('core', 113, 4); sp('core', 120, 1); sp('core', 130, 9); sp('core', 138, 9);
+  ground(111, 145);
+  // Pride / jungle pack (wave of mixed enemies)
+  sp('walker', 122, 10, 'leaf'); sp('walker', 130, 10, 'porcupine');
+  sp('walker', 138, 10, 'leaf');
+  sp('wisp', 134, 5, 'leaf');
+  sp('core', 122, 9); sp('core', 130, 9); sp('core', 138, 9); sp('core', 144, 9);
 
-  // wave 1: pride of lions clustered (blast-clearable)
-  sp('walker', 132, 10, 'lion'); sp('walker', 138, 10, 'lion'); sp('walker', 144, 10, 'porcupine');
+  // ============== ZONE 3 - BUG-SCALE (cols 160-239) ==============
+  // Danny has "shrunk" - giant grass blades fill the parallax. The
+  // gameplay is the densest enemy gauntlet of the level. Porcupines
+  // re-skin as beetles (small, armoured, ground-walkers), leaf wisps
+  // as butterflies. Smaller tiles + tighter terrain to sell the
+  // tiny scale.
+  ground(147, 165);
+  // Quick bridge into the bug zone - a row of small mushroom-like
+  // bumps that read as fungi at ant scale.
+  box(150, 10, 151, 13, 'X');
+  box(155, 10, 156, 13, 'X');
+  box(160, 10, 161, 13, 'X');
+  sp('walker', 152, 9, 'porcupine');                       // "beetle"
+  sp('wisp', 158, 7, 'leaf');                              // "butterfly"
+  sp('core', 150, 8); sp('core', 155, 8); sp('core', 160, 8);
 
-  // ============== TWIST 2 (145-200): bigger waves ==============
-  ground(147, 200);
-  // mixed savanna dense line - lions on the hunt + a few porcupines
-  sp('walker', 152, 10, 'lion');     sp('walker', 158, 10, 'porcupine');
-  sp('walker', 164, 10, 'lion');     sp('walker', 170, 10, 'porcupine');
-  sp('thrower', 176, 10);
-  // platform up for safety/cores
-  box(155, 8, 168, 9, 'X');
-  oneway(172, 178, 6);
-  sp('wisp', 168, 6); sp('wisp', 184, 4);
-  qb(180, 7, '?'); qb(182, 7, '?');
-  sp('core', 150, 9); sp('core', 160, 7); sp('core', 167, 7);
-  sp('core', 175, 5); sp('core', 181, 5); sp('core', 188, 9);
-  sp('core', 194, 9);
+  // Bug gauntlet: tight terrain + bouncing platforms + dense enemies
+  ground(167, 200);
+  mover(168, 9, 172, 9, 0.024, 0);
+  mover(175, 8, 179, 8, 0.024, 1.2);
+  sp('walker', 170, 10, 'porcupine');                      // beetle pack
+  sp('walker', 176, 10, 'porcupine');
+  sp('walker', 184, 10, 'porcupine');
+  sp('wisp', 180, 5, 'leaf');                              // butterflies
+  sp('wisp', 192, 4, 'leaf');
+  sp('thrower', 198, 10, 'seed');                          // big ant-thrower
+  sp('core', 169, 7); sp('core', 176, 6); sp('core', 184, 9);
+  sp('core', 190, 5); sp('core', 195, 5);
+  qb(186, 6, '?');
 
   // ============== REWARD (200-239): cleared path to goal ==============
-  // smaller pit, easier
-  mover(201, 9, 205, 9, 0.022, 0);
-  sp('core', 203, 7);
-
+  // Final stretch back to a peaceful section as Danny "grows" again.
+  // Goal pedestal looks like an over-sized dewdrop on a leaf.
   ground(207, 239);
-  box(213, 9, 216, 13, 'X');
+  // small lily-pad style stepping platforms (one-ways)
+  oneway(202, 205, 9);
+  sp('core', 203, 7);
+  box(213, 9, 216, 13, 'X');                               // green ledge
   box(220, 8, 224, 13, 'X');                               // goal pedestal
   box(239, 0, 239, 13, 'X');
   sp('timepart', 222, 7);
-  sp('walker', 211, 10, 'lion');                           // last lone lion
+  sp('walker', 230, 10, 'porcupine');                      // last beetle
   sp('core', 209, 9); sp('core', 215, 7); sp('core', 222, 6);
   sp('core', 230, 9); sp('core', 236, 9);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['6-1'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'WILD ANIMALS', theme: 'savanna' };
+  SDD.levels['6-1'] = {
+    width: W, height: H, ground: GROUND,
+    tiles: t, spawns: spawns, movers: movers,
+    name: 'WILD ANIMALS',
+    theme: 'savanna',                                      // base / fallback
+    // Multi-biome arc: parallax + enemy variants shift as Danny
+    // walks right. Each entry: startCol where this biome takes over.
+    // The scene renderer crossfades between adjacent zones over a
+    // 24-col band so transitions don't snap.
+    themeZones: [
+      { startCol: 0,   theme: 'savanna'  },
+      { startCol: 84,  theme: 'forest'   },
+      { startCol: 162, theme: 'bugscale' }
+    ]
+  };
 })();

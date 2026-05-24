@@ -1520,6 +1520,105 @@ window.SDD = window.SDD || {};
     for (var k = 0; k < 5; k++) g.fillRect(tX - 20 + k * 9, tY - 50 - (k % 2) * 8, 2, 2);
   }
 
+  // Bug-scale parallax (Day 6-1 final zone). Danny has shrunk to ant
+  // size; everything in the background is now MASSIVE. Giant grass
+  // blades sweeping across the foreground, huge dew drops twinkling
+  // in the back, a single enormous dandelion / pollen mote drifting,
+  // warm under-canopy lighting (the world is "down in the weeds").
+  function drawSky_bugscale(g, camx, camy, prog, t) {
+    // Warm under-canopy gradient - filtered green-gold light
+    vGradient(g, '#cad068', '#7ea84a', '#3a6028');
+    // Sun-pierced light pool overhead
+    var sunPool = g.createRadialGradient(160 - camx * 0.03, 30, 10, 160 - camx * 0.03, 30, 90);
+    sunPool.addColorStop(0, 'rgba(255, 245, 180, 0.45)');
+    sunPool.addColorStop(1, 'rgba(255, 245, 180, 0)');
+    g.fillStyle = sunPool;
+    g.fillRect(0, 0, 320, 120);
+
+    // Far background: HUGE silhouettes of grass blades + leaves
+    // (parallax 0.06 - very slow, reads as "way back there").
+    var farSpan = 90;
+    var farOff = -(((camx * 0.06) % farSpan) + farSpan) % farSpan;
+    for (var fb = farOff - farSpan; fb < 360 + farSpan; fb += farSpan) {
+      // tall grass blade silhouette
+      g.fillStyle = '#3a5a24';
+      g.beginPath();
+      g.moveTo(fb + 12, 180);
+      g.bezierCurveTo(fb + 14, 130, fb + 18, 80, fb + 28, 30);
+      g.lineTo(fb + 30, 28);
+      g.bezierCurveTo(fb + 22, 80, fb + 18, 130, fb + 16, 180);
+      g.closePath(); g.fill();
+      // small leaf at the top
+      g.fillStyle = '#2a4818';
+      g.beginPath();
+      g.ellipse(fb + 28, 28, 6, 3, -0.4, 0, 6.28); g.fill();
+    }
+
+    // Big dew drops in mid-parallax (catch light, slowly bob)
+    for (var dw = 0; dw < 4; dw++) {
+      var dwx = ((dw * 90 + Math.sin(t * 0.02 + dw) * 4 - camx * 0.18) % 380 + 380) % 380 - 30;
+      var dwy = 60 + dw * 12 + Math.sin(t * 0.04 + dw) * 2;
+      // Drop body (translucent blue-green)
+      g.fillStyle = 'rgba(180, 230, 255, 0.55)';
+      g.beginPath(); g.arc(dwx, dwy, 9, 0, 6.28); g.fill();
+      g.fillStyle = 'rgba(220, 245, 255, 0.7)';
+      g.beginPath(); g.arc(dwx, dwy, 6, 0, 6.28); g.fill();
+      // Hot specular highlight on top-left
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(dwx - 2, dwy - 3, 2, 0, 6.28); g.fill();
+    }
+
+    // Drifting pollen / spore motes (small white dots floating up)
+    for (var pm = 0; pm < 14; pm++) {
+      var px2 = ((pm * 28 + t * 0.4 - camx * 0.25) % 340 + 340) % 340 - 10;
+      var py2 = (130 + pm * 9 - (t * 0.3 + pm * 18) % 180) % 180;
+      var alpha = 0.5 + Math.sin(t * 0.06 + pm) * 0.2;
+      g.fillStyle = 'rgba(255, 250, 200, ' + alpha.toFixed(2) + ')';
+      g.fillRect(px2 | 0, py2 | 0, 1, 1);
+      g.fillRect((px2 | 0) + 1, py2 | 0, 1, 1);
+    }
+
+    // Mid: giant blade clusters (faster parallax)
+    var midSpan = 56;
+    var midOff = -(((camx * 0.32) % midSpan) + midSpan) % midSpan;
+    for (var mb = midOff - midSpan; mb < 360 + midSpan; mb += midSpan) {
+      g.fillStyle = '#244618';
+      // tall arched blade
+      g.beginPath();
+      g.moveTo(mb + 4, 180);
+      g.bezierCurveTo(mb + 6, 140, mb + 12, 100, mb + 26, 60);
+      g.lineTo(mb + 28, 58);
+      g.bezierCurveTo(mb + 14, 100, mb + 8, 140, mb + 8, 180);
+      g.closePath(); g.fill();
+    }
+
+    // Foreground: HUGE blade silhouettes that sweep up off-screen
+    // (parallax 0.7 - moves fast as the player walks).
+    var nearSpan = 44;
+    var nearOff = -(((camx * 0.7) % nearSpan) + nearSpan) % nearSpan;
+    for (var nb = nearOff - nearSpan; nb < 360 + nearSpan; nb += nearSpan) {
+      var sway = Math.sin(t * 0.04 + nb * 0.03) * 2;
+      g.fillStyle = '#142e10';
+      g.beginPath();
+      g.moveTo(nb + 4, 180);
+      g.bezierCurveTo(nb + 6 + sway, 130, nb + 14 + sway, 70, nb + 18 + sway, 10);
+      g.lineTo(nb + 22 + sway, 10);
+      g.bezierCurveTo(nb + 16 + sway, 70, nb + 12 + sway, 130, nb + 10, 180);
+      g.closePath(); g.fill();
+      // vein highlight
+      g.strokeStyle = 'rgba(80, 140, 60, 0.55)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(nb + 8, 180);
+      g.bezierCurveTo(nb + 10 + sway, 130, nb + 16 + sway, 70, nb + 20 + sway, 12);
+      g.stroke();
+    }
+
+    // Dark moss strip on the ground horizon
+    g.fillStyle = '#102810';
+    g.fillRect(0, 175, 320, 5);
+  }
+
   var THEMES = {
     'galactic': function (g, x, y, p, t) { drawSkyGalactic(g, x, y, t); },
     'sky': drawSky_sky,
@@ -1532,7 +1631,8 @@ window.SDD = window.SDD || {};
     'seaside': drawSky_seaside,
     'savanna': drawSky_savanna,
     'village-dusk': drawSky_village_dusk,
-    'eden': drawSky_eden
+    'eden': drawSky_eden,
+    'bugscale': drawSky_bugscale
   };
 
   SDD.scenes.level = {
@@ -1563,6 +1663,7 @@ window.SDD = window.SDD || {};
       this.flappyMaxFall = L.flappyMaxFall;
       this.underwater = !!L.underwater;
       this.topDeath = !!L.topDeath;
+      this.themeZones = L.themeZones || null;
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
       this.cores = 0; this.score = 0; this.timeSteps = 0;
@@ -1902,10 +2003,41 @@ window.SDD = window.SDD || {};
       var cam = { x: Math.round(this.camera.x), y: Math.round(this.camera.y) };
       var prog = E.clamp(this.camera.x / Math.max(1, this.map.pxW - C.VIEW_W), 0, 1);
 
-      // per-day signature sky (falls back to the original drawSky when no theme)
-      var skyFn = THEMES[this.theme];
-      if (skyFn) skyFn(g, cam.x, cam.y, prog, this.timeSteps);
-      else drawSky(g, cam.x, cam.y, prog, this.timeSteps);
+      // Multi-zone parallax: levels can declare themeZones (Day 6-1
+      // does the plains->forest->bug-scale arc). Each zone has a
+      // startCol; the active zone is the last one whose startCol is
+      // <= the camera position. A 32-px crossfade band between zones
+      // smoothly blends the two parallax drawers so the transition
+      // doesn't snap. Falls back to the level's single theme if no
+      // zones declared.
+      if (this.themeZones && this.themeZones.length) {
+        var camCol = cam.x / 16;
+        var activeIdx = 0;
+        for (var zi = 0; zi < this.themeZones.length; zi++) {
+          if (camCol + 10 >= this.themeZones[zi].startCol) activeIdx = zi;
+        }
+        var zone = this.themeZones[activeIdx];
+        var nextZone = this.themeZones[activeIdx + 1];
+        var activeFn = THEMES[zone.theme] || drawSky;
+        activeFn(g, cam.x, cam.y, prog, this.timeSteps);
+        // Crossfade INTO the next zone over the last 24 columns
+        // before its startCol (the camera approaching the transition).
+        if (nextZone) {
+          var distToNext = nextZone.startCol - (camCol + 10);
+          if (distToNext > 0 && distToNext < 24) {
+            var alpha = 1 - (distToNext / 24);    // 0 -> 1 as we approach
+            var nextFn = THEMES[nextZone.theme] || drawSky;
+            g.save();
+            g.globalAlpha = alpha;
+            nextFn(g, cam.x, cam.y, prog, this.timeSteps);
+            g.restore();
+          }
+        }
+      } else {
+        var skyFn = THEMES[this.theme];
+        if (skyFn) skyFn(g, cam.x, cam.y, prog, this.timeSteps);
+        else drawSky(g, cam.x, cam.y, prog, this.timeSteps);
+      }
 
       // Visible-lava pit layer (Day 3-1 / rocky): bright red still
       // liquid across the bottom of the playable area BEFORE tiles
