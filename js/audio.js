@@ -134,6 +134,18 @@ window.SDD = window.SDD || {};
   // ===================== MP3 music loader =====================
   // Real composed tracks (Mark's compositions) live in assets/music/
   // and take precedence over the procedural SONGS chiptune above.
+  // Per-track gain multiplier applied on top of the user's master
+  // volume. Mark Pass 9: "title music had a good volume, but have
+  // the music for the rest of the game just a little bit lower."
+  // title plays at full mix; everything else is dialled back to 0.7.
+  var MUSIC_MIX = {
+    title: 1.0
+  };
+  var MUSIC_MIX_DEFAULT = 0.7;
+  function mixFor(id) {
+    return MUSIC_MIX[id] != null ? MUSIC_MIX[id] : MUSIC_MIX_DEFAULT;
+  }
+
   // A track key may resolve to several variants (e.g. 'level_2_2'
   // has _a, _b, _c) - on play we pick one at random.
   var FILE_TRACKS = {};      // id  -> { el, loop }
@@ -143,7 +155,7 @@ window.SDD = window.SDD || {};
     var a = new Audio();
     a.preload = 'auto';
     a.loop = loop !== false;
-    a.volume = muted ? 0 : volume;
+    a.volume = muted ? 0 : volume * mixFor(id);
     a.src = path;
     FILE_TRACKS[id] = { el: a, loop: loop !== false };
   }
@@ -156,7 +168,7 @@ window.SDD = window.SDD || {};
     stopMusic();
     try {
       tr.el.currentTime = 0;
-      tr.el.volume = muted ? 0 : volume;
+      tr.el.volume = muted ? 0 : volume * mixFor(id);
       var p = tr.el.play();
       if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
       currentFileTrack = tr;
@@ -241,9 +253,11 @@ window.SDD = window.SDD || {};
   function applyGain() {
     if (master) master.gain.value = muted ? 0 : volume;
     // MP3 tracks have their own volume controls (independent of Web
-    // Audio master) - keep them in sync with the user's mix.
+    // Audio master) - keep them in sync with the user's mix and
+    // apply the per-track gain multiplier (title at full, in-game
+    // tracks dialled back).
     for (var id in FILE_TRACKS) {
-      try { FILE_TRACKS[id].el.volume = muted ? 0 : volume; } catch (e) {}
+      try { FILE_TRACKS[id].el.volume = muted ? 0 : volume * mixFor(id); } catch (e) {}
     }
   }
 

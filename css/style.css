@@ -83,3 +83,11 @@ body.touch #touch-controls { display: block; }
 #action-pad { position: absolute; right: 3vmin; bottom: 3vmin; width: 42vmin; height: 26vmin; }
 .tc-a { right: 0;      bottom: 0;     width: 18vmin; height: 18vmin; border-radius: 50%; background: rgba(120, 220, 255, 0.25); }
 .tc-b { right: 17vmin; bottom: 7vmin; width: 18vmin; height: 18vmin; border-radius: 50%; background: rgba(255, 180, 120, 0.25); }
+
+/* START / PAUSE button, top-right corner. Small + circular so it
+   doesn't compete with the gameplay buttons - intended for mobile
+   users who can't press Esc/P to open the pause menu. */
+.tc-pause { right: 3vmin; top: 3vmin; width: 11vmin; height: 11vmin;
+            border-radius: 50%; font-size: 5vmin; line-height: 1;
+            background: rgba(255, 255, 255, 0.20);
+            border: 2px solid rgba(255, 255, 255, 0.40); }

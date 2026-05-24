@@ -353,8 +353,20 @@ window.SDD = window.SDD || {};
       if (this.idx === 2 && In.confirm()) {
         o.god = !o.god; SDD.save.save(); A.sfx('confirm');
       }
-      if (this.idx === 3 && In.confirm()) { A.sfx('confirm'); go(this.from); }
-      if (In.pressed('pause')) { A.sfx('confirm'); go(this.from); }
+      if (this.idx === 3 && In.confirm()) { A.sfx('confirm'); this.exitTo(); }
+      if (In.pressed('pause')) { A.sfx('confirm'); this.exitTo(); }
+    },
+    exitTo: function () {
+      // From the in-game pause menu: don't re-enter the level (that
+      // would reset lives/progress); just put it back in its paused
+      // state and switch the scene reference directly.
+      if (this.from === 'pause') {
+        SDD.scene = SDD.scenes.level;
+        SDD.scenes.level.state = 'paused';
+        SDD.scenes.level.pauseIdx = 0;
+        return;
+      }
+      go(this.from);
     },
     render: function (g) {
       g.fillStyle = '#1a1640'; g.fillRect(0, 0, 320, 180);
@@ -1835,13 +1847,20 @@ window.SDD = window.SDD || {};
       // listNav() writes to state.idx, but the pause scene keys off
       // pauseIdx (to avoid clobbering the level scene's own .idx).
       // Inline the nav so up/down actually moves the cursor.
-      if (In.pressed('up'))   { this.pauseIdx = (this.pauseIdx + 2) % 3; A.sfx('select'); }
-      if (In.pressed('down')) { this.pauseIdx = (this.pauseIdx + 1) % 3; A.sfx('select'); }
+      var N = 4;                                       // RESUME / RESTART / OPTIONS / QUIT
+      if (In.pressed('up'))   { this.pauseIdx = (this.pauseIdx + N - 1) % N; A.sfx('select'); }
+      if (In.pressed('down')) { this.pauseIdx = (this.pauseIdx + 1) % N; A.sfx('select'); }
       if (In.pressed('pause')) { this.state = 'play'; A.sfx('pause'); return; }
       if (In.confirm()) {
         A.sfx('confirm');
         if (this.pauseIdx === 0) { this.state = 'play'; }
         else if (this.pauseIdx === 1) { this.loadLevel(); }
+        else if (this.pauseIdx === 2) {
+          // OPTIONS - jump to the options scene with from='pause' so
+          // it returns to this paused state (not re-entering the level
+          // which would reset progress/lives).
+          go('options', { from: 'pause' });
+        }
         else { A.stopMusic(); go('overworld'); }
       }
     },
@@ -1973,10 +1992,10 @@ window.SDD = window.SDD || {};
 
     drawPause: function (g) {
       g.fillStyle = 'rgba(6,6,16,0.78)'; g.fillRect(0, 0, 320, 180);
-      tsh(g, 'PAUSED', 160, 40, '#ffd23a', '#a8631a', 3, 'center');
-      var opts = ['RESUME', 'RESTART LEVEL', 'QUIT TO MAP'];
+      tsh(g, 'PAUSED', 160, 32, '#ffd23a', '#a8631a', 3, 'center');
+      var opts = ['RESUME', 'RESTART LEVEL', 'OPTIONS', 'QUIT TO MAP'];
       for (var i = 0; i < opts.length; i++) {
-        var y = 86 + i * 18, sel = i === this.pauseIdx;
+        var y = 76 + i * 18, sel = i === this.pauseIdx;
         if (sel) text(g, '>', 96, y, '#ffd23a', 1, 'left');
         text(g, opts[i], 160, y, sel ? '#ffffff' : '#9aa0c4', sel ? 2 : 1, 'center');
       }
