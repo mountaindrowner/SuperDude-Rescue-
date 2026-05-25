@@ -55,25 +55,6 @@ window.SDD = window.SDD || {};
     if (SDD.scene && SDD.scene.render) {
       ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
       SDD.scene.render(ctx);
-      // god-mode toggle toast - drawn on top of everything
-      if (SDD.godToast && SDD.godToast.t > 0) {
-        var a = SDD.godToast.t > 60 ? 1 : SDD.godToast.t / 60;
-        ctx.save();
-        ctx.globalAlpha = 0.85 * a;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(100, 70, 120, 22);
-        ctx.globalAlpha = a;
-        ctx.fillStyle = SDD.save.data.options.god ? '#ffd23a' : '#ff6f6f';
-        ctx.fillRect(100, 70, 120, 2);
-        ctx.fillRect(100, 90, 120, 2);
-        if (SDD.sprites && SDD.sprites.textShadow) {
-          SDD.sprites.textShadow(ctx, SDD.godToast.msg, 160, 78, '#ffffff', '#000', 1, 'center');
-        } else if (SDD.sprites && SDD.sprites.text) {
-          SDD.sprites.text(ctx, SDD.godToast.msg, 160, 78, '#ffffff', 1, 'center');
-        }
-        ctx.restore();
-        SDD.godToast.t--;
-      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
     requestAnimationFrame(frame);
@@ -101,35 +82,9 @@ window.SDD = window.SDD || {};
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', resize);
 
-    // God mode hotkeys (work anywhere):
-    //   G          - toggle god mode on/off
-    //   N          - skip the current level (god + level scene only)
-    //   1-7        - jump to a day            (god + any scene)
-    window.addEventListener('keydown', function (e) {
-      if (e.code === 'KeyG') {
-        e.preventDefault();
-        SDD.save.data.options.god = !SDD.save.data.options.god;
-        SDD.save.save();
-        SDD.godToast = { msg: 'GOD MODE: ' + (SDD.save.data.options.god ? 'ON' : 'OFF'), t: 90 };
-        return;
-      }
-      if (!SDD.save.data.options.god) return;
-      if (e.code === 'KeyN' && SDD.scene && SDD.scene._name === 'level' &&
-          SDD.scene.completeLevel && SDD.scene.state === 'play') {
-        e.preventDefault();
-        SDD.scene.completeLevel();
-        return;
-      }
-      var m = e.code.match(/^Digit([1-7])$/);
-      if (m) {
-        e.preventDefault();
-        var day = parseInt(m[1], 10);
-        if (SDD.levels[day + '-1']) {
-          SDD.save.data.unlockedDay = Math.max(SDD.save.data.unlockedDay, day);
-          SDD.setScene('level', { day: day, stage: 1 });
-        }
-      }
-    });
+    // (God-mode keyboard shortcuts removed in Pass 11. God mode is
+    // still toggleable in the in-game OPTIONS menu; the dev shortcuts
+    // were public-release noise that the editor now replaces.)
 
     SDD.setScene('logo');
     requestAnimationFrame(frame);

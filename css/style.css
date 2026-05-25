@@ -91,3 +91,96 @@ body.touch #touch-controls { display: block; }
             border-radius: 50%; font-size: 5vmin; line-height: 1;
             background: rgba(255, 255, 255, 0.20);
             border: 2px solid rgba(255, 255, 255, 0.40); }
+
+/* ---- Level editor (dev tool) ---- */
+/* All editor UI lives under #editor-ui so removing the editor is one
+   selector to delete. Editor is desktop-only by design (mouse + keyboard). */
+#editor-ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  color: #dfe6ff;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-size: 12px;
+}
+#editor-ui .ed-bar {
+  position: absolute;
+  pointer-events: auto;
+  background: rgba(10, 12, 24, 0.92);
+  border: 1px solid #2a3050;
+  border-radius: 4px;
+}
+#editor-ui .ed-top {
+  top: 8px; left: 8px; right: 8px;
+  display: flex; gap: 10px; align-items: center;
+  padding: 6px 10px;
+}
+#editor-ui .ed-tools { display: flex; gap: 4px; }
+#editor-ui .ed-actions { margin-left: auto; display: flex; gap: 4px; }
+#editor-ui button, #editor-ui select {
+  background: #1a2040;
+  color: #dfe6ff;
+  border: 1px solid #2a3050;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+}
+#editor-ui button:hover { background: #2a3060; }
+#editor-ui button.active { background: #46f0ff; color: #0a0a18; }
+#editor-ui label { display: inline-flex; align-items: center; gap: 4px; }
+
+#editor-ui .ed-left {
+  left: 8px; top: 50px; bottom: 38px;
+  width: 200px;
+  padding: 8px;
+  overflow-y: auto;
+}
+#editor-ui .ed-right {
+  right: 8px; top: 50px; bottom: 38px;
+  width: 220px;
+  padding: 8px;
+  overflow-y: auto;
+}
+#editor-ui .ed-right label {
+  display: block; margin-bottom: 4px;
+}
+#editor-ui .ed-right input {
+  background: #0d1024;
+  color: #dfe6ff;
+  border: 1px solid #2a3050;
+  padding: 3px 6px;
+  width: 100%;
+  border-radius: 3px;
+  font: inherit;
+}
+#editor-ui .ed-section h4 {
+  font-size: 11px; letter-spacing: 0.1em;
+  color: #8a90b4; margin: 8px 0 4px;
+}
+#editor-ui .ed-palette {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+#editor-ui .ed-tile-btn, #editor-ui .ed-spawn-btn {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 2px; font-size: 10px; line-height: 1.1;
+}
+#editor-ui .ed-tile-glyph {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 14px; font-weight: bold;
+}
+#editor-ui .ed-tile-label { font-size: 9px; color: #8a90b4; }
+#editor-ui .ed-brush { margin-top: 6px; display: block; font-size: 11px; }
+#editor-ui .ed-bottom {
+  left: 8px; right: 8px; bottom: 8px;
+  display: flex; gap: 20px;
+  padding: 4px 10px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+#editor-ui .ed-hint { color: #8a90b4; font-style: italic; }
+#editor-ui #ed-dirty { color: #ffd23a; }
+#editor-ui #ed-toast { color: #46f0ff; margin-left: auto; }

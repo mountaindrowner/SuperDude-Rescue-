@@ -338,6 +338,9 @@ window.SDD = window.SDD || {};
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
+      // Dev: in-game level editor. Remove this line + js/editor.js
+      // load + the 'editor' branch below to ship without the editor.
+      if (SDD.scenes.editor) this.items.push({ label: 'LEVEL EDITOR', act: 'editor' });
       this.idx = SDD.save.hasSave() ? 1 : 0;
     },
     update: function () {
@@ -350,6 +353,7 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
+        else if (act === 'editor') { go('editor'); }
       }
     },
     render: function (g) {
