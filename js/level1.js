@@ -74,8 +74,12 @@ window.SDD = window.SDD || {};
   oneway(154, 156, 6);
   sp('core', 153, 7); sp('core', 156, 4);
 
-  // gap with vertical moving platform (rises)
-  mover(159, 10, 161, 6, 0.024, 0);
+  // Pass 10 r2 (Mark): vertical mover's old y-range (rows 10..6) put
+  // its high point 2 rows above the plateau top (row 8) and its low
+  // point 2 rows below - so neither extreme touched the plateau edge.
+  // Tightened to rows 9..7 so the kid can step on/off without a
+  // perfect-timing window.
+  mover(159, 9, 161, 7, 0.024, 0);
   sp('core', 160, 8);
 
   ground(163, 195);
