@@ -66,6 +66,10 @@ window.SDD = window.SDD || {};
   // Mid-stage checkpoint flag - placed before the vine pit so dying
   // in the pit puts the kid back at the safe edge.
   sp('checkpoint', 125, 10);
+  // Pass 10 r2 (Mark): Day 3-2 finally gets its signature - VINE GRAPPLE.
+  // Mid-air B snaps Danny to the nearest vine; perfect right before the
+  // big vine-pit + the vine maze.
+  spawns.push({ type: 'signature', tx: 113, ty: 10, kind: 'vinegrapple' });
 
   // PIT with multiple vines hanging from the ceiling (climb or swing
   // across). Vines extend to row 0 (top of canvas) per Mark - reads

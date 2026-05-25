@@ -428,9 +428,44 @@ window.SDD = window.SDD || {};
       if (!In.held('jump') && this.vy < capV) this.vy = capV;
     }
 
+    // Vine-grapple signature (Day 3-2): mid-air B snaps Danny to the
+    // nearest vine column within a 7-tile horizontal / 2-tile vertical
+    // search radius. Consumes the B press so the blast doesn't also
+    // fire on the same frame. Latches climbing immediately so the kid
+    // can swing through the vine maze without precise jumps.
+    var grappled = false;
+    if (this.signatureKind === 'vinegrapple' && In.pressed('blast') &&
+        !this.onGround && !this.climbing) {
+      var T2 = C.TILE;
+      var pcx = Math.floor((this.x + this.w / 2) / T2);
+      var pcy = Math.floor((this.y + this.h / 2) / T2);
+      var best = null, bestDist = 999;
+      for (var dr = -2; dr <= 2; dr++) {
+        for (var dc = -7; dc <= 7; dc++) {
+          var col = pcx + dc, row = pcy + dr;
+          if (level.map.get(col, row) === 'V') {
+            var dist = Math.abs(dc) + Math.abs(dr);
+            if (dist < bestDist) {
+              bestDist = dist;
+              best = { col: col, row: row };
+            }
+          }
+        }
+      }
+      if (best) {
+        this.x = best.col * T2 + (T2 - this.w) / 2;
+        this.y = best.row * T2;
+        this.vx = 0; this.vy = 0;
+        this.climbing = true;
+        this.vineCooldown = 0;
+        SDD.audio.sfx('power');
+        grappled = true;
+      }
+    }
+
     // blast (lower-body height so it hits ground-walkers)
     if (this.blastCD > 0) this.blastCD--;
-    if (this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
+    if (!grappled && this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
       var bx = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
       var by = this.y + this.h - (this.big ? 16 : 12);
       level.spawnBlast(bx, by, this.facing);
