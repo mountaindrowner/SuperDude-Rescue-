@@ -2159,6 +2159,15 @@ window.SDD = window.SDD || {};
           e = new SDD.ent.Twister(s.tx * T, (s.ty || 4) * T);
           if (s.spd) e.vx = s.spd;
           this.enemies.push(e);
+        } else if (s.type === 'eel') {
+          // Day 5-2 electric eel - sits in a socket on the sea floor
+          // and rises periodically. s.ty = floor row (its socket top).
+          e = new SDD.ent.ElectricEel(s.tx * T, s.ty * T, {
+            maxH:   s.maxH,
+            period: s.period,
+            phase:  s.phase
+          });
+          this.enemies.push(e);
         } else if (s.type === 'checkpoint') {
           // Designer-placed flag near each stage's midpoint. Easy +
           // medium difficulty respawn here on death; hard ignores it.

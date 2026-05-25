@@ -94,6 +94,16 @@ window.SDD = window.SDD || {};
   sp('bubble', 130, 4);
   sp('bubble', 200, 4);
   sp('bubble', 280, 4);
+
+  // Pass 10 r2 (Mark): electric eels rooted on the sea floor that rise,
+  // electrify, and retract on a timed cycle. Four spaced across the
+  // level with offset phases so the kid encounters them at different
+  // points in their swim. Heights ramp through the level so the early
+  // ones leave room to swim over and the later ones force closer cuts.
+  spawns.push({ type: 'eel', tx: 76,  ty: 13, period: 220, phase: 0,   maxH:  80 });
+  spawns.push({ type: 'eel', tx: 132, ty: 13, period: 220, phase: 80,  maxH:  96 });
+  spawns.push({ type: 'eel', tx: 200, ty: 13, period: 220, phase: 160, maxH: 112 });
+  spawns.push({ type: 'eel', tx: 262, ty: 13, period: 220, phase: 40,  maxH:  96 });
   // Sprawled octopus - body damages on contact, just go around. One
   // each per third of the level, in clear water so the player has
   // room to navigate.

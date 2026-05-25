@@ -1565,6 +1565,142 @@ window.SDD = window.SDD || {};
   Octopus.prototype.zap = function () {};
   Octopus.prototype.stomped = function () {};
 
+  // -----------------------------------------------------------------
+  // Electric eel - fixed underwater hazard. Sits dormant in a socket on
+  // the sea floor; periodically rises as a tall electrified pillar,
+  // crackles briefly, then retracts. Touching the extended body kills.
+  // Used on Day 5-2 (Mark Pass 10 r2: "electric eels that are fixed in
+  // place and they go up, coming out of a hole, they electrify, you
+  // can't touch them, and they're like at a timed thing").
+  //
+  // Cycle (default 220 frames ~ 3.7 sec):
+  //   idle    [0..40)   socket pulses warning glow
+  //   rise    [40..80)  pillar grows to maxH, body live
+  //   hold    [80..140) full height, lethal
+  //   fall    [140..180)pillar shrinks
+  //   dormant [180..end) socket dim
+  // The pillar bbox tracks the visible body so brushes hit at the
+  // expected edge.
+  // -----------------------------------------------------------------
+  function ElectricEel(x, y, opt) {
+    // x, y is the socket position (top-left of the 16x16 floor tile
+    // the eel emerges from). The pillar grows UP from socket top.
+    this.ax = x + 8;                              // pillar center x
+    this.ay = y;                                  // socket top y (pillar base)
+    this.maxH = (opt && opt.maxH) || 9 * 16;      // 9 tiles tall when full
+    this.colW = 10;                               // collision width
+    this.period = (opt && opt.period) || 220;
+    this.phase = (opt && opt.phase) || 0;
+    this.t = this.phase % this.period;
+    this.curH = 0;
+    this.dead = false; this.remove = false;
+    this.stompable = false;
+    // Bbox - resized each frame so collision matches the visible body
+    this.x = this.ax - this.colW / 2;
+    this.y = this.ay;
+    this.w = this.colW; this.h = 0;
+    // Phase boundaries (in frames within the period)
+    this.tIdle = 40;
+    this.tRise = 80;
+    this.tHold = 140;
+    this.tFall = 180;
+  }
+  ElectricEel.prototype.update = function (level) {
+    this.t = (this.t + 1) % this.period;
+    var t = this.t;
+    var h = 0;
+    if (t < this.tIdle) {
+      h = 0;
+    } else if (t < this.tRise) {
+      h = this.maxH * ((t - this.tIdle) / (this.tRise - this.tIdle));
+    } else if (t < this.tHold) {
+      h = this.maxH;
+    } else if (t < this.tFall) {
+      h = this.maxH * (1 - (t - this.tHold) / (this.tFall - this.tHold));
+    } else {
+      h = 0;
+    }
+    this.curH = h;
+    this.h = h;
+    this.y = this.ay - h;
+    this.x = this.ax - this.colW / 2;
+    // Lethal only while the pillar is visible at any height. Use the
+    // same hurt path as other enemies so easy/medium just respawn.
+    if (h < 2) return;
+    var pl = level.player;
+    if (!pl || pl.dead || pl.invuln > 0) return;
+    if (overlap(pl, this)) pl.hurt();
+  };
+  ElectricEel.prototype.draw = function (ctx, cam) {
+    var sx = Math.round(this.ax - cam.x);
+    var sy = Math.round(this.ay - cam.y);
+    // Socket on the sea floor - dim metallic ring, brightens during
+    // the warning/idle phase so the kid sees where the next zap is.
+    var warn = this.t < this.tIdle ? (this.t / this.tIdle) : 0;
+    ctx.fillStyle = '#1a2030';
+    ctx.fillRect(sx - 7, sy - 4, 14, 4);              // dark crater rim
+    ctx.fillStyle = '#0c1018';
+    ctx.fillRect(sx - 6, sy - 3, 12, 1);
+    var glowCol = warn > 0
+      ? 'rgba(120,220,255,' + (0.25 + 0.5 * warn).toFixed(2) + ')'
+      : 'rgba(60,90,140,0.3)';
+    ctx.fillStyle = glowCol;
+    ctx.fillRect(sx - 5, sy - 3, 10, 2);              // inner glow
+    // If pillar is up, paint the eel body.
+    if (this.curH >= 2) {
+      var h = Math.round(this.curH);
+      var bx = sx - 5;                                 // pillar 10 wide
+      var by = sy - h;
+      // Outer dark body
+      ctx.fillStyle = '#1a4030';
+      ctx.fillRect(bx, by, 10, h);
+      // Lighter inner body w/ vertical segments
+      ctx.fillStyle = '#3a8a4a';
+      ctx.fillRect(bx + 1, by, 8, h);
+      // Segment rings - alternating darker bands every 6px
+      ctx.fillStyle = '#2a5a38';
+      for (var sy0 = by + 3; sy0 < by + h; sy0 += 6) {
+        ctx.fillRect(bx + 1, sy0, 8, 1);
+      }
+      // Highlight stripe down the left edge
+      ctx.fillStyle = '#7adfa0';
+      ctx.fillRect(bx + 1, by, 1, h);
+      // Eyes at the top of the pillar - glowing cyan, look forward
+      ctx.fillStyle = '#dffaff';
+      ctx.fillRect(bx + 2, by + 1, 2, 2);
+      ctx.fillRect(bx + 6, by + 1, 2, 2);
+      ctx.fillStyle = '#003a4a';
+      ctx.fillRect(bx + 3, by + 2, 1, 1);
+      ctx.fillRect(bx + 7, by + 2, 1, 1);
+      // Tiny fanged maw under the eyes
+      ctx.fillStyle = '#1a1828';
+      ctx.fillRect(bx + 3, by + 4, 4, 1);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bx + 3, by + 5, 1, 1);
+      ctx.fillRect(bx + 6, by + 5, 1, 1);
+      // Electric crackle arcs along the body during the lethal hold
+      // phase (and during rise/fall so the threat reads). Random-ish
+      // by hashing the frame.
+      var crackle = (this.t > this.tIdle && this.t < this.tFall);
+      if (crackle) {
+        ctx.fillStyle = '#aef0ff';
+        for (var a = 0; a < 5; a++) {
+          var ay0 = by + 6 + ((this.t * 7 + a * 31) % Math.max(1, h - 6));
+          var dir = ((this.t + a) % 2) ? -1 : 1;
+          ctx.fillRect(bx + (dir > 0 ? 9 : -2), ay0, 3, 1);
+          ctx.fillRect(bx + (dir > 0 ? 11 : -4), ay0 + 1, 2, 1);
+        }
+        // Bright top halo crowning the eel
+        ctx.fillStyle = 'rgba(180,240,255,0.55)';
+        ctx.fillRect(bx - 3, by - 2, 16, 3);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(bx + 4, by - 2, 2, 1);
+      }
+    }
+  };
+  ElectricEel.prototype.zap = function () {};        // immune to blast
+  ElectricEel.prototype.stomped = function () {};   // never stompable
+
   // ===================== TWISTER (Day 5-1 background-drift hazard) ===
   // Drifts left-to-right across the screen at the player's altitude
   // band. Contact triggers the same flappy wall-hit behaviour as
@@ -1737,6 +1873,7 @@ window.SDD = window.SDD || {};
     Checkpoint: Checkpoint, Signature: Signature,
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
     Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
-    BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister
+    BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister,
+    ElectricEel: ElectricEel
   };
 })();
