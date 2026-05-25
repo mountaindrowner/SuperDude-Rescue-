@@ -1221,6 +1221,150 @@ window.SDD = window.SDD || {};
     px(g, 4, 4, 4, 1, '#5a3e22');
     px(g, 10, 4, 4, 1, '#5a3e22');
   }
+  // Pass 10 round 2 (Mark): themed one-way platforms for the remaining
+  // 9 biomes so canopies match the world the kid is in.
+  function paintPlatform_sky(g) {
+    // Fluffy cloud strip - white puffs with a soft shadow underside.
+    px(g, 0, 1, 16, 5, '#e8ecf5');
+    px(g, 0, 0, 16, 2, '#ffffff');
+    px(g, 1, 5, 14, 1, '#9aa6c2');                   // shadow lip
+    // Cloud lump bumps along the top
+    px(g, 2, 0, 2, 1, '#ffffff');
+    px(g, 6, 0, 3, 1, '#ffffff');
+    px(g, 12, 0, 2, 1, '#ffffff');
+    // Side puffs
+    px(g, 0, 2, 1, 2, '#dfe3ed');
+    px(g, 15, 2, 1, 2, '#dfe3ed');
+  }
+  function paintPlatform_bird_sky(g) {
+    // Slightly warmer cloud - more golden hour
+    px(g, 0, 1, 16, 5, '#f4e8cc');
+    px(g, 0, 0, 16, 2, '#fff4d6');
+    px(g, 1, 5, 14, 1, '#c0a878');
+    px(g, 2, 0, 2, 1, '#ffffff');
+    px(g, 6, 0, 3, 1, '#ffffff');
+    px(g, 12, 0, 2, 1, '#ffffff');
+    px(g, 0, 2, 1, 2, '#e0d098');
+    px(g, 15, 2, 1, 2, '#e0d098');
+  }
+  function paintPlatform_sea(g) {
+    // Floating wood raft slat over water - brass-trimmed plank.
+    px(g, 0, 0, 16, 7, '#6e4a26');
+    px(g, 0, 0, 16, 1, '#a07842');
+    px(g, 0, 6, 16, 1, '#4a3018');
+    // Diagonal wood grain
+    px(g, 2, 2, 12, 1, '#7e5a36');
+    px(g, 2, 4, 12, 1, '#5e3e1e');
+    // Brass-trim ends
+    px(g, 0, 0, 1, 7, '#c4a070');
+    px(g, 15, 0, 1, 7, '#c4a070');
+    // Water-shimmer hint underneath
+    px(g, 2, 6, 12, 1, '#3c7aa8');
+  }
+  function paintPlatform_rocky(g) {
+    // Stone ledge with moss specks
+    px(g, 0, 0, 16, 7, '#6e6260');
+    px(g, 0, 0, 16, 1, '#8a8078');
+    px(g, 0, 6, 16, 1, '#3a3230');
+    // Cracks
+    px(g, 4, 3, 1, 2, '#52464a');
+    px(g, 11, 2, 1, 2, '#52464a');
+    // Moss tufts
+    px(g, 2, 0, 2, 1, '#7da848');
+    px(g, 8, 0, 2, 1, '#7da848');
+    px(g, 13, 0, 2, 1, '#7da848');
+  }
+  function paintPlatform_forest(g) {
+    // Wood plank with leafy moss running along the top
+    px(g, 0, 0, 16, 7, '#6a4a28');
+    px(g, 0, 0, 16, 1, '#8a6438');
+    px(g, 0, 6, 16, 1, '#4a3018');
+    // Wood grain
+    px(g, 3, 3, 10, 1, '#3a2410');
+    // Top moss with leaf specks
+    px(g, 0, 0, 16, 1, '#4a8a3a');
+    px(g, 2, 0, 1, 1, '#7fbe5a');
+    px(g, 7, 0, 1, 1, '#7fbe5a');
+    px(g, 12, 0, 1, 1, '#7fbe5a');
+  }
+  function paintPlatform_sunlit(g) {
+    // Warm sandstone slab
+    px(g, 0, 0, 16, 7, '#d8a262');
+    px(g, 0, 0, 16, 1, '#f0c884');
+    px(g, 0, 6, 16, 1, '#9a6238');
+    // Bedding lines (sandstone layers)
+    px(g, 0, 3, 16, 1, '#b88248');
+    // Embedded specks
+    px(g, 4, 2, 1, 1, '#fff0c0');
+    px(g, 11, 4, 1, 1, '#fff0c0');
+  }
+  function paintPlatform_cosmic_night(g) {
+    // Dark purple version of the galactic platform - night vs day
+    px(g, 0, 0, 16, 7, 'rgba(160,140,220,0.22)');
+    px(g, 0, 1, 16, 5, '#241a3a');
+    px(g, 0, 1, 16, 2, '#a08adc');
+    px(g, 1, 1, 14, 1, '#dfd0ff');
+    px(g, 0, 5, 16, 1, '#100a1e');
+    px(g, 3, 4, 1, 1, '#ffffff');
+    px(g, 8, 4, 1, 1, '#dcd0ff');
+    px(g, 13, 4, 1, 1, '#ffffff');
+    px(g, 0, 3, 1, 2, '#7060b8');
+    px(g, 15, 3, 1, 2, '#7060b8');
+  }
+  function paintPlatform_seaside(g) {
+    // Underwater plank - mossy + barnacle-encrusted
+    px(g, 0, 0, 16, 7, '#3a6a5a');
+    px(g, 0, 0, 16, 1, '#5a9a82');
+    px(g, 0, 6, 16, 1, '#1a4030');
+    // Barnacles
+    px(g, 3, 2, 1, 2, '#dfe4d8');
+    px(g, 9, 2, 2, 2, '#dfe4d8');
+    px(g, 13, 3, 1, 1, '#dfe4d8');
+    // Algae fringe
+    px(g, 0, 0, 16, 1, '#7fc868');
+    px(g, 2, 0, 1, 1, '#a8e088');
+    px(g, 6, 0, 1, 1, '#a8e088');
+    px(g, 11, 0, 1, 1, '#a8e088');
+  }
+  function paintPlatform_savanna(g) {
+    // Bone-pale plank with dry grass tufts
+    px(g, 0, 0, 16, 7, '#c8b48e');
+    px(g, 0, 0, 16, 1, '#e8d8a8');
+    px(g, 0, 6, 16, 1, '#8a724a');
+    // Bone-segment seams
+    px(g, 5, 1, 1, 6, '#8a724a');
+    px(g, 10, 1, 1, 6, '#8a724a');
+    // Dry grass tufts on top
+    px(g, 1, 0, 1, 1, '#b8a058');
+    px(g, 6, 0, 1, 1, '#b8a058');
+    px(g, 12, 0, 1, 1, '#b8a058');
+  }
+  function paintPlatform_village_dusk(g) {
+    // Dark wooden cart-board with iron banding
+    px(g, 0, 0, 16, 7, '#4a3018');
+    px(g, 0, 0, 16, 1, '#684628');
+    px(g, 0, 6, 16, 1, '#2a1a08');
+    // Iron rivets
+    px(g, 1, 2, 2, 2, '#9aa0b0');
+    px(g, 13, 2, 2, 2, '#9aa0b0');
+    px(g, 1, 2, 1, 1, '#dfe4ec');
+    px(g, 13, 2, 1, 1, '#dfe4ec');
+    // Wood grain
+    px(g, 4, 4, 8, 1, '#3a2410');
+  }
+  function paintPlatform_bugscale(g) {
+    // Giant leaf fragment - reads as "you're tiny in the grass"
+    px(g, 0, 1, 16, 5, '#4a9a3a');
+    px(g, 0, 0, 16, 2, '#7fc858');
+    px(g, 0, 5, 16, 1, '#2a6a1a');
+    // Central vein
+    px(g, 0, 3, 16, 1, '#a8e070');
+    // Side ribs
+    px(g, 4, 2, 1, 1, '#a8e070');
+    px(g, 11, 2, 1, 1, '#a8e070');
+    px(g, 4, 4, 1, 1, '#2a6a1a');
+    px(g, 11, 4, 1, 1, '#2a6a1a');
+  }
   function paintNPC(g) {
     // long brown hair (no cap)
     px(g, 5, 0, 10, 4, '#6e4a26');
@@ -2152,8 +2296,19 @@ window.SDD = window.SDD || {};
     sprites['tile_dirt'] = spritePlain(16, 16, paintDirt);
     sprites['tile_brick'] = spritePlain(16, 16, paintBrick);
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
-    sprites['tile_platform_galactic'] = spritePlain(16, 16, paintPlatform_galactic);
-    sprites['tile_platform_eden']     = spritePlain(16, 16, paintPlatform_eden);
+    sprites['tile_platform_galactic']     = spritePlain(16, 16, paintPlatform_galactic);
+    sprites['tile_platform_eden']         = spritePlain(16, 16, paintPlatform_eden);
+    sprites['tile_platform_sky']          = spritePlain(16, 16, paintPlatform_sky);
+    sprites['tile_platform_bird-sky']     = spritePlain(16, 16, paintPlatform_bird_sky);
+    sprites['tile_platform_sea-surface']  = spritePlain(16, 16, paintPlatform_sea);
+    sprites['tile_platform_rocky']        = spritePlain(16, 16, paintPlatform_rocky);
+    sprites['tile_platform_forest']       = spritePlain(16, 16, paintPlatform_forest);
+    sprites['tile_platform_sunlit']       = spritePlain(16, 16, paintPlatform_sunlit);
+    sprites['tile_platform_cosmic-night'] = spritePlain(16, 16, paintPlatform_cosmic_night);
+    sprites['tile_platform_seaside']      = spritePlain(16, 16, paintPlatform_seaside);
+    sprites['tile_platform_savanna']      = spritePlain(16, 16, paintPlatform_savanna);
+    sprites['tile_platform_village-dusk'] = spritePlain(16, 16, paintPlatform_village_dusk);
+    sprites['tile_platform_bugscale']     = spritePlain(16, 16, paintPlatform_bugscale);
     sprites['tile_lava'] = spritePlain(16, 16, paintLava);
 
     // ---- Themed tile variants per family ----
