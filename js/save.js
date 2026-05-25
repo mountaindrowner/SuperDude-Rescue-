@@ -115,21 +115,41 @@ window.SDD = window.SDD || {};
     try {
       var rawStr = localStorage.getItem(KEY);
       if (rawStr) {
-        raw = reconstruct(JSON.parse(rawStr) || {});
+        try {
+          raw = reconstruct(JSON.parse(rawStr) || {});
+        } catch (parseErr) {
+          // Corrupt save - rather than wiping silently, log a warning
+          // so a player who suddenly lost progress can tell something
+          // went wrong (and we can spot it in console).
+          if (typeof console !== 'undefined') {
+            console.warn('superDudeDanny: corrupt save, resetting to defaults', parseErr);
+          }
+          raw = defaults();
+        }
       } else {
         var v2raw = localStorage.getItem(KEY_V2);
         if (v2raw) {
           raw = migrateV2(JSON.parse(v2raw) || {});
           save();
+          // Migration to v3 succeeded - the old v2 blob is now dead
+          // weight, remove it so localStorage doesn't keep two copies
+          // of the same progress.
+          try { localStorage.removeItem(KEY_V2); } catch (e) {}
         } else {
           var v1raw = localStorage.getItem(OLD_KEY);
           if (v1raw) {
             raw = migrateV1(JSON.parse(v1raw) || {});
             save();
+            try { localStorage.removeItem(OLD_KEY); } catch (e) {}
           }
         }
       }
-    } catch (e) { raw = defaults(); }
+    } catch (e) {
+      if (typeof console !== 'undefined') {
+        console.warn('superDudeDanny: save load failed, using defaults', e);
+      }
+      raw = defaults();
+    }
     return data;
   }
 

@@ -90,6 +90,24 @@ window.SDD = window.SDD || {};
     if (In.pressed('down')) { state.idx = (state.idx + 1) % count; A.sfx('select'); }
   }
 
+  // In-place array compaction. Walks the array once with a write-pointer
+  // and only shifts elements that pass the predicate. Avoids the
+  // allocation + closure cost of Array.prototype.filter inside the
+  // 60 fps stepWorld cull. Shared predicates below are reused so we
+  // don't allocate them either.
+  function compactInPlace(arr, keep) {
+    var w = 0;
+    for (var i = 0; i < arr.length; i++) {
+      if (keep(arr[i])) {
+        if (w !== i) arr[w] = arr[i];
+        w++;
+      }
+    }
+    if (w !== arr.length) arr.length = w;
+  }
+  function keepNotRemoved(e) { return !e.remove; }
+  function keepAlive(e) { return e.life > 0; }
+
   // =====================================================================
   // LOGO - Church of the Crossroads intro card (fade in, chirp, fade out)
   // =====================================================================
@@ -2344,11 +2362,13 @@ window.SDD = window.SDD || {};
         p.vy += 0.13; p.x += p.vx; p.y += p.vy; p.life--;
       }
       this.collisions();
-      // cull
-      this.enemies = this.enemies.filter(function (e) { return !e.remove; });
-      this.items = this.items.filter(function (e) { return !e.remove; });
-      this.projectiles = this.projectiles.filter(function (e) { return !e.remove; });
-      this.particles = this.particles.filter(function (e) { return e.life > 0; });
+      // cull - in-place two-pointer compaction so we don't allocate a
+      // fresh array (+ closure) every frame for each list. The
+      // entity/projectile/particle lists run at 60 fps each.
+      compactInPlace(this.enemies,     keepNotRemoved);
+      compactInPlace(this.items,       keepNotRemoved);
+      compactInPlace(this.projectiles, keepNotRemoved);
+      compactInPlace(this.particles,   keepAlive);
       this.camera.follow(this.player, this.map);
     },
 
@@ -2505,8 +2525,12 @@ window.SDD = window.SDD || {};
       }
     },
 
+    // Reused per render so we don't allocate a fresh {x,y} every frame.
+    _camView: { x: 0, y: 0 },
     render: function (g) {
-      var cam = { x: Math.round(this.camera.x), y: Math.round(this.camera.y) };
+      var cam = this._camView;
+      cam.x = Math.round(this.camera.x);
+      cam.y = Math.round(this.camera.y);
       var prog = E.clamp(this.camera.x / Math.max(1, this.map.pxW - C.VIEW_W), 0, 1);
 
       // Multi-zone parallax: levels can declare themeZones (Day 6-1
