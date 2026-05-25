@@ -2582,6 +2582,7 @@ window.SDD = window.SDD || {};
           else if (code === 'V') name = 'tile_vine';
           else if (code === 'W') name = 'tile_water';
           else if (code === '~') name = 'tile_water_top';
+          else if (code === 'L') name = 'tile_lava';
           else if (code === '?') name = 'tile_qcore';
           else if (code === 'G') name = 'tile_qgrow';
           else if (code === 'B') name = 'tile_qblast';

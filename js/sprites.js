@@ -1656,18 +1656,26 @@ window.SDD = window.SDD || {};
     px(g, 2, 2, 1, 1, shellD); px(g, 13, 2, 1, 1, shellD);
     px(g, 2, 13, 1, 1, shellD); px(g, 13, 13, 1, 1, shellD);
 
-    // dark inset window in centre
-    var winDark = used ? '#1d1814' : '#0f1422';
-    var winLit  = used ? '#3a322a' : '#5fcfff';
-    var spark   = used ? '#5a4e3c' : '#bff0ff';
+    // Pass 10 round 2 (Mark images): the inner window now hints at
+    // what's inside - gold for the super power core (grow), white-hot
+    // for the blast core, cyan for the bonus power core (?). Spent
+    // blocks stay grey.
+    var winDark, winLit, spark, trace;
+    if (used) {
+      winDark = '#1d1814'; winLit = '#3a322a'; spark = '#5a4e3c'; trace = null;
+    } else if (kind === 'grow') {
+      winDark = '#2a1808'; winLit = '#f0a420'; spark = '#fff09a'; trace = '#a86420';
+    } else if (kind === 'blast') {
+      winDark = '#221a08'; winLit = '#fff09a'; spark = '#ffffff'; trace = '#f0c068';
+    } else {
+      winDark = '#0f1422'; winLit = '#5fcfff'; spark = '#bff0ff'; trace = '#2c8cb0';
+    }
     px(g, 4, 4, 8, 8, winDark);
-    // glowing core
     px(g, 6, 6, 4, 4, winLit);
     px(g, 7, 7, 2, 2, spark);
-    if (!used) {
-      // tiny circuit traces
-      px(g, 4, 7, 1, 1, '#2c8cb0'); px(g, 11, 7, 1, 1, '#2c8cb0');
-      px(g, 7, 4, 1, 1, '#2c8cb0'); px(g, 8, 11, 1, 1, '#2c8cb0');
+    if (trace) {
+      px(g, 4, 7, 1, 1, trace); px(g, 11, 7, 1, 1, trace);
+      px(g, 7, 4, 1, 1, trace); px(g, 8, 11, 1, 1, trace);
     }
     // cogs at corners (3x3 each)
     function cog(cx, cy) {
@@ -1678,6 +1686,27 @@ window.SDD = window.SDD || {};
       px(g, cx, cy, 1, 1, lite);
     }
     cog(3, 3); cog(12, 3); cog(3, 12); cog(12, 12);
+  }
+  // Pass 10 r2 (Mark, image 5): pit gaps in 3-1 need visible lava at
+  // the bottom so the kid reads them as deadly hot pools. Animated
+  // wave bands + bubble specks. Non-solid; player dies on contact via
+  // the hazard-tile check in Player.update.
+  function paintLava(g) {
+    // Molten base
+    px(g, 0, 0, 16, 16, '#7a1c0a');
+    px(g, 0, 1, 16, 4, '#c83018');
+    px(g, 0, 2, 16, 2, '#ff5418');
+    px(g, 0, 3, 16, 1, '#ffd048');
+    px(g, 0, 0, 16, 1, '#ff8030');
+    // Bright bubble specks
+    px(g, 2, 6, 2, 1, '#ff8030');
+    px(g, 7, 8, 1, 1, '#ffd048');
+    px(g, 11, 5, 1, 1, '#ff8030');
+    px(g, 13, 9, 2, 1, '#ffd048');
+    px(g, 4, 11, 1, 1, '#ff8030');
+    px(g, 9, 13, 2, 1, '#ffd048');
+    // bottom shadow
+    px(g, 0, 14, 16, 2, '#3a0a04');
   }
   function paintMovPlat(g) {
     // warm brass / dark wood hover plank instead of cold blue metal
@@ -2125,6 +2154,7 @@ window.SDD = window.SDD || {};
     sprites['tile_platform'] = spritePlain(16, 16, paintPlatform);
     sprites['tile_platform_galactic'] = spritePlain(16, 16, paintPlatform_galactic);
     sprites['tile_platform_eden']     = spritePlain(16, 16, paintPlatform_eden);
+    sprites['tile_lava'] = spritePlain(16, 16, paintLava);
 
     // ---- Themed tile variants per family ----
     // Family painters

@@ -512,6 +512,23 @@ window.SDD = window.SDD || {};
       if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
       else this.die(true);
     }
+    // Lava floor hazard (Day 3-1 pit gaps): touching the 'L' tile kills
+    // the same as a pit-fall. Checked at the player's feet row so a
+    // brush at full speed registers cleanly.
+    if (!this.dead && level && level.map) {
+      var lvT = 16;
+      var lTx0 = Math.floor((this.x + 2) / lvT);
+      var lTx1 = Math.floor((this.x + this.w - 2) / lvT);
+      var lTyBot = Math.floor((this.y + this.h - 1) / lvT);
+      for (var ltx = lTx0; ltx <= lTx1; ltx++) {
+        if (level.map.get(ltx, lTyBot) === 'L') {
+          if (SDD.save.data.options.god) { this.y = 32; this.vy = 0; }
+          else this.die(true);
+          break;
+        }
+      }
+    }
+
     // Open-void levels (Day 4-2 cosmic-night): rising too high above
     // the top of the map kills the same as falling off the bottom.
     if (level.topDeath && this.y < -48) {

@@ -76,15 +76,19 @@ window.SDD = window.SDD || {};
   oneway(123, 125, 8);
   // Pass 10 round 2 (Mark): "The gaps between the ascending pillars
   // need to lead straight to the death of the character because if
-  // not, they get stuck." Carve the floor out under each gap so a
-  // miss = pit death rather than getting marooned between walls.
-  function pitClear(x0, x1) {
-    for (var x = x0; x <= x1; x++) for (var y = GROUND; y < H; y++) setT(x, y, ' ');
+  // not, they get stuck." Carve the floor out under each gap and pour
+  // visible lava at the bottom (Mark, follow-up image 5: drew waves at
+  // the pit floor asking for lava there).
+  function lavaPit(x0, x1) {
+    for (var x = x0; x <= x1; x++) {
+      for (var y = GROUND; y < H; y++) setT(x, y, ' ');
+      setT(x, 12, 'L'); setT(x, 13, 'L');
+    }
   }
-  pitClear(105, 107);
-  pitClear(111, 113);
-  pitClear(117, 119);
-  pitClear(123, 125);
+  lavaPit(105, 107);
+  lavaPit(111, 113);
+  lavaPit(117, 119);
+  lavaPit(123, 125);
   // Plume in the open path BETWEEN the rising walls (was at col 102
   // which spawned the column inside the solid rock at 102-104).
   lava(112, 130);
