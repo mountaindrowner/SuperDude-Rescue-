@@ -70,6 +70,12 @@ window.SDD = window.SDD || {};
     SDD.save.load();
     SDD.sprites.build();
     SDD.input.init();
+    // Dev: replace any stage flagged "MAIN" in the editor's variant
+    // library with that variant before any scene reads SDD.levels.
+    // No-op if editor.js isn't loaded.
+    if (SDD.editorLib && SDD.editorLib.applyMainVariants) {
+      SDD.editorLib.applyMainVariants(SDD.levels);
+    }
 
     // Audio can only start after a user gesture (browser autoplay policy).
     SDD.input.onFirstGesture(function () {

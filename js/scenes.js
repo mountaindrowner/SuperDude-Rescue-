@@ -2077,7 +2077,10 @@ window.SDD = window.SDD || {};
 
     loadLevel: function () {
       var L = SDD.levels[this.day + '-' + this.stage] || SDD.level1, T = C.TILE;
-      var grid = L.tiles.map(function (r) { return r.slice(); });
+      // Tile rows can be either arrays of chars (hand-authored levels)
+      // or strings (editor-serialised levels). Normalise to arrays so
+      // TileMap.set mutations (e.g. ? -> U on hit) actually persist.
+      var grid = L.tiles.map(function (r) { return typeof r === 'string' ? r.split('') : r.slice(); });
       this.map = new E.TileMap(grid);
       this.gravityScale = L.gravityScale || 1;
       this.skyTheme = L.skyTheme || null;

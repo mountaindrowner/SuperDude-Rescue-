@@ -184,3 +184,113 @@ body.touch #touch-controls { display: block; }
 #editor-ui .ed-hint { color: #8a90b4; font-style: italic; }
 #editor-ui #ed-dirty { color: #ffd23a; }
 #editor-ui #ed-toast { color: #46f0ff; margin-left: auto; }
+
+/* Tool-description bar (one-liner under the toolbar) */
+#editor-ui .ed-desc {
+  top: 50px; left: 8px; right: 8px;
+  padding: 4px 10px;
+  font-style: italic;
+  color: #b0b6d8;
+  font-size: 11px;
+  pointer-events: auto;
+}
+#editor-ui .ed-left   { top: 84px; }
+#editor-ui .ed-right  { top: 84px; }
+
+/* Tool tab keyboard-shortcut hint */
+#editor-ui .ed-key {
+  font-size: 9px;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+/* Help "?" pip next to section headers */
+#editor-ui .ed-help {
+  display: inline-block;
+  width: 14px; height: 14px;
+  background: #2a3050;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 10px;
+  line-height: 14px;
+  margin-left: 4px;
+  cursor: help;
+  color: #8a90b4;
+}
+#editor-ui .ed-help:hover { background: #46f0ff; color: #0a0a18; }
+
+/* Grouped spawn palette */
+#editor-ui .ed-spawn-group { margin-bottom: 10px; }
+#editor-ui .ed-spawn-group h5 {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #ffd23a;
+  margin: 6px 0 3px;
+  border-bottom: 1px solid #2a3050;
+  padding-bottom: 2px;
+}
+#editor-ui .ed-spawn-btn {
+  position: relative;
+  padding: 5px 4px;
+}
+#editor-ui .ed-spawn-name {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+/* Usage badge in palette: "● 3" overlay on a button */
+#editor-ui .ed-badge {
+  position: absolute;
+  top: 1px; right: 2px;
+  font-size: 8px;
+  color: #46f0ff;
+  pointer-events: none;
+}
+
+/* Right panel: tab row + tab bodies */
+#editor-ui .ed-tab-row {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+#editor-ui .ed-tab-row button {
+  flex: 1;
+  font-size: 10px;
+  padding: 4px 6px;
+}
+#editor-ui .ed-tab-body {
+  font-size: 11px;
+}
+
+/* Variant rows */
+#editor-ui .ed-variant-row {
+  background: #0d1024;
+  border: 1px solid #2a3050;
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+#editor-ui .ed-variant-row-default {
+  border-color: #4a5078;
+  background: #131a32;
+}
+#editor-ui .ed-variant-name { flex: 1; line-height: 1.2; }
+#editor-ui .ed-variant-sub  { font-size: 9px; color: #8a90b4; }
+#editor-ui .ed-variant-acts { display: flex; gap: 2px; flex-wrap: wrap; }
+#editor-ui .ed-variant-acts button { font-size: 9px; padding: 2px 5px; }
+#editor-ui .ed-active {
+  background: #ffd23a;
+  color: #0a0a18;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: bold;
+  font-size: 9px;
+}
+#editor-ui .ed-danger { background: #4a1822; }
+#editor-ui .ed-danger:hover { background: #6a2832; }

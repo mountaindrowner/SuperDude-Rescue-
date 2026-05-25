@@ -762,7 +762,7 @@ window.SDD = window.SDD || {};
     this.vx = 0; this.vy = 0; this.onGround = false;
     this.facing = -1; this.cd = SDD.engine.randInt(70, 130);
     this.throwAnim = 0; this.dead = false; this.deadT = 0; this.remove = false;
-    this.stompable = false;
+    this.stompable = true;
   }
   Thrower.prototype.update = function (level) {
     if (this.dead) { this.deadT++; if (this.deadT > 24) this.remove = true; return; }
@@ -780,6 +780,7 @@ window.SDD = window.SDD || {};
     }
     if (this.throwAnim > 0) this.throwAnim--;
   };
+  Thrower.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
   Thrower.prototype.zap = function () { this.dead = true; this.deadT = 0; };
   Thrower.prototype.draw = function (ctx, cam) {
     var f = this.dead ? 1 : (this.throwAnim > 8 ? 1 : 0);

@@ -20,118 +20,231 @@ window.SDD = window.SDD || {};
 
   var STAGE_KEYS = ['1-1', '2-1', '2-2', '3-1', '3-2', '4-1', '4-2',
                     '5-1', '5-2', '6-1', '6-2', '7-1'];
+  var STAGE_NAMES = {
+    '1-1': 'Light & Darkness',
+    '2-1': 'Sky Above', '2-2': 'Sea Below',
+    '3-1': 'Mountain Rise', '3-2': 'Garden Path',
+    '4-1': 'Solar Climb',   '4-2': 'Moonlit Run',
+    '5-1': 'Wings of Day',  '5-2': 'Deep Currents',
+    '6-1': 'Plains to Forest', '6-2': 'Eden Trail',
+    '7-1': 'Sabbath Finale'
+  };
+
+  // -----------------------------------------------------------------
+  // Palette definitions. Tools / tile codes / spawn types each get a
+  // one-line "what is this" description so designers (and Mark) don't
+  // have to read the engine to know what a button does.
+  // -----------------------------------------------------------------
+  var TOOL_DEFS = [
+    { id: 'tile',   key: '1', label: 'TILE',
+      desc: 'Paint solid blocks, water, lava, and power-up bricks. Brush size 1/3/5. Right-click to erase.' },
+    { id: 'spawn',  key: '2', label: 'SPAWN',
+      desc: 'Place enemies, cores, NPCs, checkpoints, etc. Right-click an existing spawn to delete.' },
+    { id: 'mover',  key: '3', label: 'MOVER',
+      desc: 'Click-and-drag from a START tile to an END tile to define a moving platform. Click an existing mover to edit.' },
+    { id: 'select', key: '4', label: 'SELECT',
+      desc: 'Click any spawn or mover to inspect / edit / delete its properties.' }
+  ];
+
+  var TILE_DEFS = [
+    { c: ' ', label: 'erase',  desc: 'Empty space - paints over any tile.' },
+    { c: 'X', label: 'ground', desc: 'Solid ground / dirt. Theme-aware visuals.' },
+    { c: '#', label: 'brick',  desc: 'Solid brick. Theme-aware.' },
+    { c: '=', label: 'oneway', desc: 'One-way platform - jump up through, land on top.' },
+    { c: 'V', label: 'vine',   desc: 'Climbable vine. Player grabs to climb up/down.' },
+    { c: 'W', label: 'water',  desc: 'Submerged water - slow swim physics.' },
+    { c: '~', label: 'w.surf', desc: 'Water surface tile (top row of water).' },
+    { c: 'L', label: 'lava',   desc: 'Damaging lava. Touch = lose a life.' },
+    { c: '?', label: 'q-core', desc: 'Mystery brick - hit from below to release a power core.' },
+    { c: 'G', label: 'q-grow', desc: 'Mystery brick - hit from below for a Grow powerup.' },
+    { c: 'B', label: 'q-blast',desc: 'Mystery brick - hit from below for a Blast powerup.' },
+    { c: 'U', label: 'q-used', desc: 'Already-spent mystery brick (solid).' }
+  ];
+
+  // Grouped spawn palette. Each entry: id, label, desc. Mark wants
+  // every spawn type from any stage available everywhere - groups
+  // are for navigability, not restriction.
+  var SPAWN_GROUPS = [
+    { title: 'PLAYER & FLOW', items: [
+      { id: 'player',     desc: 'The player start position. Each stage needs exactly one.' },
+      { id: 'checkpoint', desc: 'Mid-level checkpoint - reset point on death.' }
+    ]},
+    { title: 'COLLECTIBLES', items: [
+      { id: 'core',     desc: 'Power core - collect to power the time machine. 100 pts.' },
+      { id: 'timepart', desc: 'Time-machine part. One per stage finishes the run.' }
+    ]},
+    { title: 'GROUND ENEMIES', items: [
+      { id: 'walker',  desc: 'Walks back and forth. Stompable. Theme-skinned (lion, leaf, rock...).' },
+      { id: 'thrower', desc: 'Stationary thrower - lobs projectiles. NOW stompable.' },
+      { id: 'crab',    desc: 'Crab - sideways scuttle on the floor.' }
+    ]},
+    { title: 'FLYING / WATER', items: [
+      { id: 'wisp',    desc: 'Floating wisp. Stompable. Set "shoots:true" for storm-cloud shooter.' },
+      { id: 'octopus', desc: 'Underwater octopus - eight-arm hazard. NOT stompable.' },
+      { id: 'eel',     desc: 'Electric eel - vertical patrol with shock. NOT stompable.' }
+    ]},
+    { title: 'HAZARDS', items: [
+      { id: 'skyhazard', desc: 'Sky hazard (sun flare, etc). Periodic descend. NOT stompable.' },
+      { id: 'twister',   desc: 'Tornado - sweeping ground hazard. NOT stompable.' },
+      { id: 'bubble',    desc: 'Bubble-up vertical hazard (water levels).' }
+    ]},
+    { title: 'NPC & SIGNATURE', items: [
+      { id: 'npc',       desc: 'NPC - kind: adam, eve, etc. Talks on overlap.' },
+      { id: 'signature', desc: 'Day-signature power (sunburst, cloudglide, pearl, airbubble, ...).' }
+    ]}
+  ];
+
+  // Friendly default field values per spawn type (used by placeSpawn).
+  function spawnDefaults(type) {
+    switch (type) {
+      case 'signature':  return { kind: 'sunburst' };
+      case 'skyhazard':  return { kind: 'flare', period: 110 };
+      case 'npc':        return { kind: 'adam' };
+      case 'twister':    return { spd: 1.6 };
+      case 'eel':        return { maxH: 96, period: 220, phase: 0 };
+      default:           return {};
+    }
+  }
 
   // -----------------------------------------------------------------
   // DOM overlay - built on enter(), torn down on exit().
+  //
+  // Layout (LDtk / Tiled-inspired):
+  //   top bar   = stage picker + tool tabs + action buttons
+  //   tool-desc = one-line "what this tool does"
+  //   left      = palette section for the active tool (tile | spawn | ...)
+  //   right     = a tabbed inspector: PROPERTIES | VARIANTS
+  //   bottom    = hover coords + counts + dirty + toast
   // -----------------------------------------------------------------
   function buildUI(scene) {
     var ui = document.createElement('div');
     ui.id = 'editor-ui';
+
+    var stageOpts = STAGE_KEYS.map(function (k) {
+      return '<option value="' + k + '">DAY ' + k + ' - ' + (STAGE_NAMES[k] || '') + '</option>';
+    }).join('');
+    var toolBtns = TOOL_DEFS.map(function (t) {
+      return '<button data-tool="' + t.id + '" title="' + escapeHtml(t.desc) + ' (' + t.key + ')">' +
+             t.label + ' <span class="ed-key">[' + t.key + ']</span></button>';
+    }).join('');
+
     ui.innerHTML = [
       '<div class="ed-bar ed-top">',
-      '  <label>STAGE',
-      '    <select id="ed-stage">',
-      STAGE_KEYS.map(function (k) { return '<option value="' + k + '">DAY ' + k + '</option>'; }).join(''),
-      '    </select>',
+      '  <label title="Switch which stage to edit">STAGE',
+      '    <select id="ed-stage">', stageOpts, '</select>',
       '  </label>',
-      '  <div class="ed-tools">',
-      '    <button data-tool="tile">TILE [1]</button>',
-      '    <button data-tool="spawn">SPAWN [2]</button>',
-      '    <button data-tool="mover">MOVER [3]</button>',
-      '    <button data-tool="select">SELECT [4]</button>',
-      '  </div>',
+      '  <div class="ed-tools">', toolBtns, '</div>',
       '  <div class="ed-actions">',
-      '    <button id="ed-save" title="Save (Ctrl+S)">SAVE</button>',
-      '    <button id="ed-saveas" title="Save As...">SAVE AS</button>',
-      '    <button id="ed-test" title="Test (T)">TEST</button>',
-      '    <button id="ed-exit" title="Exit (Esc)">EXIT</button>',
+      '    <button id="ed-test" title="Test the current edits live (T) - jumps into the level scene with the in-memory edits.">▶ TEST</button>',
+      '    <button id="ed-save-variant" title="Save the current edits as a named variant in your browser library (no disk write).">SAVE VARIANT</button>',
+      '    <button id="ed-save" title="Write the current edits to disk as js/level_X_Y.js (Ctrl+S). Picks a file once, then writes directly.">EXPORT .js</button>',
+      '    <button id="ed-saveas" title="Pick a different target file and write the level there.">EXPORT AS</button>',
+      '    <button id="ed-exit" title="Exit back to the title menu (Esc)">EXIT</button>',
       '  </div>',
       '</div>',
+
+      '<div class="ed-bar ed-desc" id="ed-tool-desc"></div>',
 
       '<div class="ed-bar ed-left">',
       '  <div class="ed-section" id="ed-tile-pal">',
-      '    <h4>TILES</h4>',
+      '    <h4>TILES <span class="ed-help" title="Click a tile, then paint on the canvas. Right-click to erase. Brush size below.">?</span></h4>',
       '    <div class="ed-palette" id="ed-tile-buttons"></div>',
-      '    <label class="ed-brush">BRUSH <select id="ed-brush-size"><option>1</option><option>3</option><option>5</option></select></label>',
+      '    <label class="ed-brush" title="Brush radius - 1 paints one cell, 3 paints a 3x3, 5 paints a 5x5.">BRUSH ',
+      '      <select id="ed-brush-size"><option>1</option><option>3</option><option>5</option></select>',
+      '    </label>',
       '  </div>',
       '  <div class="ed-section" id="ed-spawn-pal" hidden>',
-      '    <h4>SPAWNS</h4>',
-      '    <div class="ed-palette" id="ed-spawn-buttons"></div>',
+      '    <h4>SPAWNS <span class="ed-help" title="Click a spawn type, then click on the canvas to place. Right-click an existing spawn to delete.">?</span></h4>',
+      '    <div id="ed-spawn-groups"></div>',
       '  </div>',
       '  <div class="ed-section" id="ed-mover-pal" hidden>',
-      '    <h4>MOVER</h4>',
-      '    <p>Click + drag from start to end tile to define a new mover. Click an existing mover to select.</p>',
+      '    <h4>MOVER PLATFORMS</h4>',
+      '    <p class="ed-hint">Click-and-drag on the canvas from a <b>START</b> tile (yellow dot) to an <b>END</b> tile (orange dot) to define a new moving platform.</p>',
+      '    <p class="ed-hint">Click an existing mover to select it and edit its speed / phase / endpoints in the right panel.</p>',
       '  </div>',
       '  <div class="ed-section" id="ed-select-pal" hidden>',
       '    <h4>SELECT</h4>',
-      '    <p>Click any spawn / mover to inspect. Arrows nudge; Delete removes.</p>',
+      '    <p class="ed-hint">Click any spawn or mover on the canvas to select it. Its fields appear on the right.</p>',
+      '    <p class="ed-hint">Arrow keys nudge tile-by-tile, <b>Delete</b> removes.</p>',
       '  </div>',
       '</div>',
 
-      '<div class="ed-bar ed-right" id="ed-props">',
-      '  <h4>PROPERTIES</h4>',
-      '  <div id="ed-props-body"><p class="ed-hint">Nothing selected.</p></div>',
+      '<div class="ed-bar ed-right">',
+      '  <div class="ed-tab-row">',
+      '    <button data-rtab="props"    class="active" title="Inspect & edit the currently selected spawn / mover">PROPERTIES</button>',
+      '    <button data-rtab="variants" title="Library of saved variants of this stage. Load, rename, delete, or mark one as the main version used by the game.">VARIANTS</button>',
+      '  </div>',
+      '  <div id="ed-tab-props" class="ed-tab-body">',
+      '    <div id="ed-props-body"><p class="ed-hint">Nothing selected. Switch to SELECT tool and click any spawn or mover.</p></div>',
+      '  </div>',
+      '  <div id="ed-tab-variants" class="ed-tab-body" hidden>',
+      '    <p class="ed-hint">Each variant is a renamable saved copy of this stage stored in your browser. Marking one as <b>MAIN</b> tells the game to use it at boot instead of the on-disk file.</p>',
+      '    <div id="ed-variant-list"></div>',
+      '  </div>',
       '</div>',
 
       '<div class="ed-bar ed-bottom" id="ed-status">',
-      '  <span id="ed-coords">--, --</span>',
-      '  <span id="ed-counts"></span>',
-      '  <span id="ed-dirty"></span>',
+      '  <span id="ed-coords" title="Hovered tile column, row">--, --</span>',
+      '  <span id="ed-counts" title="Live counts for the current stage"></span>',
+      '  <span id="ed-dirty" title="Unsaved changes indicator"></span>',
       '  <span id="ed-toast"></span>',
       '</div>'
     ].join('');
     document.body.appendChild(ui);
 
-    // Populate tile palette buttons
-    var TILE_DEFS = [
-      { c: ' ', label: 'erase' },
-      { c: 'X', label: 'ground' },
-      { c: '#', label: 'brick' },
-      { c: '=', label: 'oneway' },
-      { c: 'V', label: 'vine' },
-      { c: 'W', label: 'water' },
-      { c: '~', label: 'wsurf' },
-      { c: '?', label: '? core' },
-      { c: 'G', label: 'G grow' },
-      { c: 'B', label: 'B blast' },
-      { c: 'U', label: 'used' },
-      { c: 'L', label: 'lava' }
-    ];
+    // ---- Tile palette ----
     var tbox = ui.querySelector('#ed-tile-buttons');
     TILE_DEFS.forEach(function (t) {
       var b = document.createElement('button');
       b.className = 'ed-tile-btn';
       b.setAttribute('data-tile', t.c);
-      b.innerHTML = '<span class="ed-tile-glyph">' + (t.c === ' ' ? '·' : t.c) + '</span><span class="ed-tile-label">' + t.label + '</span>';
+      b.title = t.label.toUpperCase() + ' - ' + t.desc;
+      b.innerHTML = '<span class="ed-tile-glyph">' + (t.c === ' ' ? '·' : t.c) +
+        '</span><span class="ed-tile-label">' + t.label + '</span>' +
+        '<span class="ed-badge" data-usage="' + t.c + '" hidden></span>';
       tbox.appendChild(b);
     });
 
-    var SPAWN_DEFS = [
-      'player', 'walker', 'thrower', 'wisp', 'crab',
-      'core', 'timepart', 'npc', 'checkpoint', 'signature',
-      'skyhazard', 'bubble', 'octopus', 'twister', 'eel'
-    ];
-    var sbox = ui.querySelector('#ed-spawn-buttons');
-    SPAWN_DEFS.forEach(function (s) {
-      var b = document.createElement('button');
-      b.className = 'ed-spawn-btn';
-      b.setAttribute('data-spawn', s);
-      b.textContent = s;
-      sbox.appendChild(b);
+    // ---- Spawn palette (grouped) ----
+    var sgroupBox = ui.querySelector('#ed-spawn-groups');
+    SPAWN_GROUPS.forEach(function (g) {
+      var section = document.createElement('div');
+      section.className = 'ed-spawn-group';
+      section.innerHTML = '<h5>' + g.title + '</h5><div class="ed-palette"></div>';
+      var pal = section.querySelector('.ed-palette');
+      g.items.forEach(function (s) {
+        var b = document.createElement('button');
+        b.className = 'ed-spawn-btn';
+        b.setAttribute('data-spawn', s.id);
+        b.title = s.id.toUpperCase() + ' - ' + s.desc;
+        b.innerHTML = '<span class="ed-spawn-name">' + s.id + '</span>' +
+          '<span class="ed-badge" data-usage-spawn="' + s.id + '" hidden></span>';
+        pal.appendChild(b);
+      });
+      sgroupBox.appendChild(section);
     });
 
-    // Initial highlight
+    // ---- Tool-description bar updates with tool ----
+    function refreshToolDesc() {
+      var d = TOOL_DEFS.filter(function (t) { return t.id === scene.tool; })[0];
+      ui.querySelector('#ed-tool-desc').textContent = d ? d.label + ': ' + d.desc : '';
+    }
+    ui._refreshToolDesc = refreshToolDesc;
+
+    // ---- Initial state ----
     refreshToolHighlight(ui, scene);
     refreshTileHighlight(ui, scene);
     refreshSpawnHighlight(ui, scene);
     refreshStatus(ui, scene);
+    refreshToolDesc();
+    refreshUsageBadges(ui, scene);
+    refreshVariantList(ui, scene);
+    ui.querySelector('#ed-stage').value = scene.day + '-' + scene.stage;
 
     // ---- Event wiring ----
-    ui.querySelector('#ed-stage').value = scene.day + '-' + scene.stage;
     ui.querySelector('#ed-stage').addEventListener('change', function (e) {
       var parts = e.target.value.split('-');
       scene.switchStage(parseInt(parts[0], 10), parseInt(parts[1], 10));
-      refreshStatus(ui, scene);
     });
     ui.querySelectorAll('[data-tool]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -144,6 +257,7 @@ window.SDD = window.SDD || {};
         scene.tool = 'tile';
         refreshToolHighlight(ui, scene);
         refreshTileHighlight(ui, scene);
+        refreshToolDesc();
       });
     });
     ui.querySelectorAll('.ed-spawn-btn').forEach(function (b) {
@@ -152,6 +266,7 @@ window.SDD = window.SDD || {};
         scene.tool = 'spawn';
         refreshToolHighlight(ui, scene);
         refreshSpawnHighlight(ui, scene);
+        refreshToolDesc();
       });
     });
     ui.querySelector('#ed-brush-size').addEventListener('change', function (e) {
@@ -159,8 +274,22 @@ window.SDD = window.SDD || {};
     });
     ui.querySelector('#ed-save').addEventListener('click', function () { scene.save(false); });
     ui.querySelector('#ed-saveas').addEventListener('click', function () { scene.save(true); });
+    ui.querySelector('#ed-save-variant').addEventListener('click', function () { scene.saveVariant(); });
     ui.querySelector('#ed-test').addEventListener('click', function () { scene.test(); });
     ui.querySelector('#ed-exit').addEventListener('click', function () { scene.exitToMenu(); });
+
+    // Right-panel tab switching
+    ui.querySelectorAll('[data-rtab]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var name = b.getAttribute('data-rtab');
+        ui.querySelectorAll('[data-rtab]').forEach(function (x) {
+          x.classList.toggle('active', x === b);
+        });
+        ui.querySelector('#ed-tab-props').hidden = name !== 'props';
+        ui.querySelector('#ed-tab-variants').hidden = name !== 'variants';
+        if (name === 'variants') refreshVariantList(ui, scene);
+      });
+    });
 
     return ui;
   }
@@ -174,6 +303,83 @@ window.SDD = window.SDD || {};
     ui.querySelector('#ed-spawn-pal').hidden = scene.tool !== 'spawn';
     ui.querySelector('#ed-mover-pal').hidden = scene.tool !== 'mover';
     ui.querySelector('#ed-select-pal').hidden = scene.tool !== 'select';
+    if (ui._refreshToolDesc) ui._refreshToolDesc();
+  }
+  // "● 12" badges next to each palette entry showing how many of that
+  // tile / spawn type exist in the current stage. Helps a designer
+  // see at a glance what's actually used in the level they're editing.
+  function refreshUsageBadges(ui, scene) {
+    var lvl = scene.lvl;
+    if (!lvl) return;
+    var tileCounts = {};
+    for (var r = 0; r < lvl.height; r++) {
+      var row = lvl.tiles[r];
+      for (var c = 0; c < row.length; c++) {
+        var ch = row[c];
+        tileCounts[ch] = (tileCounts[ch] || 0) + 1;
+      }
+    }
+    ui.querySelectorAll('[data-usage]').forEach(function (b) {
+      var ch = b.getAttribute('data-usage');
+      var n = tileCounts[ch] || 0;
+      if (n > 0) { b.textContent = '● ' + n; b.hidden = false; }
+      else { b.hidden = true; }
+    });
+    var spawnCounts = {};
+    lvl.spawns.forEach(function (sp) {
+      spawnCounts[sp.type] = (spawnCounts[sp.type] || 0) + 1;
+    });
+    ui.querySelectorAll('[data-usage-spawn]').forEach(function (b) {
+      var k = b.getAttribute('data-usage-spawn');
+      var n = spawnCounts[k] || 0;
+      if (n > 0) { b.textContent = '● ' + n; b.hidden = false; }
+      else { b.hidden = true; }
+    });
+  }
+  // Variant library list UI - reads from localStorage via SDD.editorLib.
+  function refreshVariantList(ui, scene) {
+    var box = ui.querySelector('#ed-variant-list');
+    if (!box) return;
+    var key = scene.day + '-' + scene.stage;
+    var entry = SDD.editorLib.get(key);
+    var html = [];
+    html.push('<div class="ed-variant-row ed-variant-row-default">');
+    html.push('  <div class="ed-variant-name"><b>On-disk file</b><div class="ed-variant-sub">js/level_' + scene.day + '_' + scene.stage + '.js</div></div>');
+    if (entry.active === -1) html.push('  <span class="ed-active">MAIN</span>');
+    else html.push('  <button data-vact="-1" title="Use the on-disk level instead of any saved variant.">SET MAIN</button>');
+    html.push('</div>');
+    if (!entry.variants.length) {
+      html.push('<p class="ed-hint">No saved variants yet. Use SAVE VARIANT to create one.</p>');
+    } else {
+      entry.variants.forEach(function (v, i) {
+        html.push('<div class="ed-variant-row">');
+        html.push('  <div class="ed-variant-name"><b>' + escapeHtml(v.name) + '</b>' +
+                  '<div class="ed-variant-sub">' + new Date(v.savedAt).toLocaleString() + '</div></div>');
+        html.push('  <div class="ed-variant-acts">');
+        html.push('    <button data-vload="' + i + '" title="Load this variant into the editor (replaces current edits).">LOAD</button>');
+        html.push('    <button data-vren="' + i + '" title="Rename this variant.">REN</button>');
+        if (entry.active === i)
+          html.push('    <span class="ed-active">MAIN</span>');
+        else
+          html.push('    <button data-vact="' + i + '" title="Mark this variant as the main version - the game will use it at boot.">SET MAIN</button>');
+        html.push('    <button data-vdel="' + i + '" title="Delete this variant." class="ed-danger">DEL</button>');
+        html.push('  </div>');
+        html.push('</div>');
+      });
+    }
+    box.innerHTML = html.join('');
+    box.querySelectorAll('[data-vload]').forEach(function (b) {
+      b.addEventListener('click', function () { scene.loadVariant(parseInt(b.getAttribute('data-vload'), 10)); });
+    });
+    box.querySelectorAll('[data-vren]').forEach(function (b) {
+      b.addEventListener('click', function () { scene.renameVariant(parseInt(b.getAttribute('data-vren'), 10)); });
+    });
+    box.querySelectorAll('[data-vdel]').forEach(function (b) {
+      b.addEventListener('click', function () { scene.deleteVariant(parseInt(b.getAttribute('data-vdel'), 10)); });
+    });
+    box.querySelectorAll('[data-vact]').forEach(function (b) {
+      b.addEventListener('click', function () { scene.setActiveVariant(parseInt(b.getAttribute('data-vact'), 10)); });
+    });
   }
   function refreshTileHighlight(ui, scene) {
     ui.querySelectorAll('.ed-tile-btn').forEach(function (b) {
@@ -290,6 +496,13 @@ window.SDD = window.SDD || {};
     loadStage: function () {
       var key = this.day + '-' + this.stage;
       this.lvl = SDD.levels[key];
+      // Normalise tile rows to char arrays so paint can mutate cells
+      // in place. Serialiser-emitted levels arrive as string rows.
+      if (this.lvl && this.lvl.tiles) {
+        this.lvl.tiles = this.lvl.tiles.map(function (r) {
+          return typeof r === 'string' ? r.split('') : r;
+        });
+      }
       this.cam.x = 0; this.cam.y = 0;
       this.selection = null;
       this.history = []; this.future = [];
@@ -305,6 +518,9 @@ window.SDD = window.SDD || {};
       this.day = day; this.stage = stage;
       this.loadStage();
       refreshProps(this.ui, this);
+      refreshStatus(this.ui, this);
+      refreshUsageBadges(this.ui, this);
+      refreshVariantList(this.ui, this);
     },
     setTool: function (t) {
       this.tool = t;
@@ -465,6 +681,7 @@ window.SDD = window.SDD || {};
     markDirty: function () {
       this.dirty = true;
       refreshStatus(this.ui, this);
+      refreshUsageBadges(this.ui, this);
     },
     paintAt: function (col, row, code) {
       var lvl = this.lvl;
@@ -487,12 +704,8 @@ window.SDD = window.SDD || {};
     },
     placeSpawn: function (col, row) {
       var sp = { type: this.brushSpawn, tx: col, ty: row };
-      // Default optional fields where useful
-      if (sp.type === 'signature') sp.kind = 'sunburst';
-      if (sp.type === 'skyhazard') { sp.kind = 'flare'; sp.period = 110; }
-      if (sp.type === 'npc') sp.kind = 'adam';
-      if (sp.type === 'twister') sp.spd = 1.6;
-      if (sp.type === 'eel') { sp.maxH = 96; sp.period = 220; sp.phase = 0; }
+      var defs = spawnDefaults(this.brushSpawn);
+      for (var k in defs) if (defs.hasOwnProperty(k)) sp[k] = defs[k];
       this.lvl.spawns.push(sp);
       this.pushHistory({ kind: 'spawn-add', ref: sp });
       this.selection = { kind: 'spawn', ref: sp };
@@ -681,6 +894,65 @@ window.SDD = window.SDD || {};
         if (!confirm('Unsaved changes. Exit anyway?')) return;
       }
       SDD.setScene('menu');
+    },
+
+    // --- variant library (localStorage-backed) ---
+    saveVariant: function () {
+      var key = this.day + '-' + this.stage;
+      var defaultName = 'Variant ' + (SDD.editorLib.get(key).variants.length + 1);
+      var name = prompt('Variant name:', defaultName);
+      if (!name) return;
+      SDD.editorLib.save(key, name, this.lvl);
+      this.dirty = false;
+      refreshStatus(this.ui, this);
+      refreshVariantList(this.ui, this);
+      toast(this.ui, 'Saved variant "' + name + '"');
+    },
+    loadVariant: function (idx) {
+      var key = this.day + '-' + this.stage;
+      var v = SDD.editorLib.get(key).variants[idx];
+      if (!v) return;
+      if (this.dirty && !confirm('Discard current edits and load "' + v.name + '"?')) return;
+      // Deep-copy the variant data into the live SDD.levels[key] so
+      // editor + game both see the loaded copy.
+      var clone = JSON.parse(JSON.stringify(v.data));
+      SDD.levels[key] = clone;
+      this.lvl = clone;
+      this.history = []; this.future = [];
+      this.dirty = false;
+      this.selection = null;
+      refreshProps(this.ui, this);
+      refreshStatus(this.ui, this);
+      refreshUsageBadges(this.ui, this);
+      toast(this.ui, 'Loaded "' + v.name + '"');
+    },
+    renameVariant: function (idx) {
+      var key = this.day + '-' + this.stage;
+      var v = SDD.editorLib.get(key).variants[idx];
+      if (!v) return;
+      var name = prompt('Rename variant:', v.name);
+      if (!name) return;
+      SDD.editorLib.rename(key, idx, name);
+      refreshVariantList(this.ui, this);
+    },
+    deleteVariant: function (idx) {
+      var key = this.day + '-' + this.stage;
+      var v = SDD.editorLib.get(key).variants[idx];
+      if (!v) return;
+      if (!confirm('Delete variant "' + v.name + '"? This cannot be undone.')) return;
+      SDD.editorLib.del(key, idx);
+      refreshVariantList(this.ui, this);
+      toast(this.ui, 'Deleted "' + v.name + '"');
+    },
+    setActiveVariant: function (idx) {
+      var key = this.day + '-' + this.stage;
+      SDD.editorLib.setActive(key, idx);
+      refreshVariantList(this.ui, this);
+      if (idx === -1) toast(this.ui, 'Main: on-disk file');
+      else {
+        var v = SDD.editorLib.get(key).variants[idx];
+        toast(this.ui, 'Main: "' + (v ? v.name : '?') + '"');
+      }
     },
 
     // --- per-frame ---
@@ -904,4 +1176,69 @@ window.SDD = window.SDD || {};
 
   // Expose for tests / external use
   SDD.editor = { serializeLevel: serializeLevel };
+
+  // -----------------------------------------------------------------
+  // Variant library - localStorage-backed per-stage saved files.
+  //
+  // Each stage gets:
+  //   { active: number | -1, variants: [{ name, savedAt, data }, ...] }
+  //   active = -1  -> game uses the on-disk SDD.levels[key]
+  //   active >= 0  -> game uses variants[active].data, applied at boot
+  //
+  // applyMainVariants() is called from main.js after the level
+  // scripts have populated SDD.levels but before any scene reads it.
+  // -----------------------------------------------------------------
+  var LIB_KEY = 'sdd.editorLibrary.v1';
+  function load() {
+    try { return JSON.parse(localStorage.getItem(LIB_KEY) || '{}') || {}; }
+    catch (e) { console.warn('editorLib parse fail:', e); return {}; }
+  }
+  function persist(lib) {
+    try { localStorage.setItem(LIB_KEY, JSON.stringify(lib)); }
+    catch (e) { console.warn('editorLib persist fail:', e); }
+  }
+  function entryOf(lib, key) {
+    if (!lib[key]) lib[key] = { active: -1, variants: [] };
+    return lib[key];
+  }
+  SDD.editorLib = {
+    get: function (key) { var lib = load(); return entryOf(lib, key); },
+    save: function (key, name, data) {
+      var lib = load();
+      var e = entryOf(lib, key);
+      e.variants.push({ name: name, savedAt: Date.now(), data: JSON.parse(JSON.stringify(data)) });
+      persist(lib);
+    },
+    rename: function (key, idx, name) {
+      var lib = load();
+      var e = entryOf(lib, key);
+      if (e.variants[idx]) { e.variants[idx].name = name; persist(lib); }
+    },
+    del: function (key, idx) {
+      var lib = load();
+      var e = entryOf(lib, key);
+      if (idx < 0 || idx >= e.variants.length) return;
+      e.variants.splice(idx, 1);
+      if (e.active === idx) e.active = -1;
+      else if (e.active > idx) e.active = e.active - 1;
+      persist(lib);
+    },
+    setActive: function (key, idx) {
+      var lib = load();
+      var e = entryOf(lib, key);
+      e.active = idx;
+      persist(lib);
+    },
+    // Boot hook: replace SDD.levels[key] with the active variant data
+    // for any stage that has one. Run after level files load.
+    applyMainVariants: function (levels) {
+      var lib = load();
+      for (var key in lib) {
+        if (!lib.hasOwnProperty(key)) continue;
+        var e = lib[key];
+        if (e.active < 0 || !e.variants[e.active]) continue;
+        levels[key] = JSON.parse(JSON.stringify(e.variants[e.active].data));
+      }
+    }
+  };
 })();
