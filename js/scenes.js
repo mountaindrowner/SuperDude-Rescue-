@@ -2145,7 +2145,8 @@ window.SDD = window.SDD || {};
         'seaside':      { walker: 'clam',  wisp: 'jellyfish', thrower: 'rain' },
         'savanna':      { walker: 'lion',  wisp: 'bird', thrower: 'rock' },
         'village-dusk': { walker: 'leaf',  wisp: 'bat',  thrower: 'fruit'},
-        'eden':         { walker: 'leaf',  wisp: 'leaf', thrower: 'fruit'}
+        'eden':         { walker: 'leaf',  wisp: 'leaf', thrower: 'fruit'},
+        'bugscale':     { walker: 'leaf',  wisp: 'bee',  thrower: 'seed' }
       };
       var variants = THEME_VARIANTS[this.theme] || {};
       for (var i = 0; i < L.spawns.length; i++) {

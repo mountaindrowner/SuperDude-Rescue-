@@ -26,7 +26,7 @@ window.SDD = window.SDD || {};
     '3-1': 'Mountain Rise', '3-2': 'Garden Path',
     '4-1': 'Solar Climb',   '4-2': 'Moonlit Run',
     '5-1': 'Wings of Day',  '5-2': 'Deep Currents',
-    '6-1': 'Plains to Forest', '6-2': 'Eden Trail',
+    '6-1': 'Plains to Forest', '6-2': 'Bug World',
     '7-1': 'Sabbath Finale'
   };
 
@@ -130,7 +130,7 @@ window.SDD = window.SDD || {};
     'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove'],
     // spawn.variant values (theme default = empty)
     'walker.variant':  ['', 'lion', 'porcupine', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
-    'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud'],
+    'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud', 'bee'],
     'thrower.variant': ['', 'rain', 'rock', 'seed', 'sun', 'fruit'],
     // Boolean-ish flag
     'wisp.shoots': ['false', 'true']

@@ -957,6 +957,46 @@ window.SDD = window.SDD || {};
     px(g, 5, 5, 1, 1, C.btEye); px(g, 8, 5, 1, 1, C.btEye);
   }
 
+  // Bee wisp (Day 6-2 bug world). Yellow + black striped body, two
+  // wings that flap between frames. Stinger pointed back-left.
+  function paintWisp_bee(g, frame) {
+    var b = frame === 1 ? 1 : 0;
+    var yel = '#ffce28', dk = '#1a1208', wing = 'rgba(220,240,255,0.8)',
+        wingD = 'rgba(180,200,220,0.6)', eye = '#0a0604';
+    // Body (oval, striped)
+    px(g, 3, 4, 7, 4, yel);
+    px(g, 4, 3, 5, 1, yel);
+    px(g, 4, 8, 5, 1, yel);
+    // Black stripes (3 bands)
+    px(g, 4, 4, 1, 4, dk);
+    px(g, 6, 4, 1, 4, dk);
+    px(g, 8, 4, 1, 4, dk);
+    // Head (right side, slightly bigger)
+    px(g, 9, 4, 3, 4, dk);
+    px(g, 10, 5, 1, 1, eye);                       // eye dot (white-of-eye)
+    px(g, 11, 5, 1, 1, yel);                       // tiny yellow accent
+    // Antennae (two short forward-curling)
+    px(g, 11, 3, 1, 1, dk);
+    px(g, 12, 2, 1, 1, dk);
+    px(g, 12, 4, 1, 1, dk);
+    px(g, 13, 3, 1, 1, dk);
+    // Stinger (left rear)
+    px(g, 2, 5, 1, 2, dk);
+    px(g, 1, 6, 1, 1, dk);
+    // Wings - large flapping above the body. Frame 1 = wings raised.
+    if (b) {
+      px(g, 5, 0, 4, 2, wing);
+      px(g, 5, 0, 2, 1, wingD);
+      px(g, 9, 0, 4, 2, wing);
+      px(g, 9, 0, 2, 1, wingD);
+    } else {
+      px(g, 5, 1, 4, 2, wing);
+      px(g, 7, 1, 2, 1, wingD);
+      px(g, 9, 1, 4, 2, wing);
+      px(g, 11, 1, 2, 1, wingD);
+    }
+  }
+
   // Jellyfish flyer (seaside / underwater) - translucent magenta bell
   // with hanging tentacles that sway between frames. Properly aquatic
   // (was rendering as a hawk before because seaside used wisp:'bird').
@@ -2354,7 +2394,8 @@ window.SDD = window.SDD || {};
         bat:        paintWisp_bat,
         smoke:      paintWisp_smoke,
         stormcloud: paintWisp_stormcloud,
-        jellyfish:  paintWisp_jellyfish
+        jellyfish:  paintWisp_jellyfish,
+        bee:        paintWisp_bee
       };
       Object.keys(WISP_VARS).forEach(function (k) {
         var painter = WISP_VARS[k];
