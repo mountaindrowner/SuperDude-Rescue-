@@ -1879,97 +1879,81 @@ window.SDD = window.SDD || {};
   // in the back, a single enormous dandelion / pollen mote drifting,
   // warm under-canopy lighting (the world is "down in the weeds").
   function drawSky_bugscale(g, camx, camy, prog, t) {
-    // Warm under-canopy gradient - filtered green-gold light
-    vGradient(g, '#cad068', '#7ea84a', '#3a6028');
-    // Sun-pierced light pool overhead
-    var sunPool = g.createRadialGradient(160 - camx * 0.03, 30, 10, 160 - camx * 0.03, 30, 90);
-    sunPool.addColorStop(0, 'rgba(255, 245, 180, 0.45)');
+    // Filtered canopy light - warm gold at the top, deepens to forest
+    // green at the bottom. No grass blades - this stage is up in the
+    // tree itself, looking through the branches.
+    vGradient(g, '#cfc870', '#86a85a', '#2f5028');
+
+    // Sun-pierced light pool slipping through the leaves overhead.
+    var sunPool = g.createRadialGradient(140 - camx * 0.03, 28, 12, 140 - camx * 0.03, 28, 110);
+    sunPool.addColorStop(0, 'rgba(255, 245, 180, 0.55)');
     sunPool.addColorStop(1, 'rgba(255, 245, 180, 0)');
     g.fillStyle = sunPool;
     g.fillRect(0, 0, 320, 120);
 
-    // Far background: HUGE silhouettes of grass blades + leaves
-    // (parallax 0.06 - very slow, reads as "way back there").
-    var farSpan = 90;
-    var farOff = -(((camx * 0.06) % farSpan) + farSpan) % farSpan;
+    // Helper: draw a horizontal branch silhouette with a couple of
+    // knot-bumps and a leaf cluster on the far end. The branch axis
+    // tilts slightly so the parallax layers look organic.
+    function branch(cx, cy, len, thick, tilt, color, leafColor) {
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(tilt);
+      // Main branch body (rounded ends)
+      g.fillStyle = color;
+      g.fillRect(0, -thick * 0.5, len, thick);
+      g.beginPath(); g.arc(0,    0, thick * 0.5, 0, 6.28); g.fill();
+      g.beginPath(); g.arc(len,  0, thick * 0.5, 0, 6.28); g.fill();
+      // Knot / spur bumps (the "branch with bumps" from Mark's photo)
+      g.beginPath(); g.arc(len * 0.30, -thick * 0.4, thick * 0.45, 0, 6.28); g.fill();
+      g.beginPath(); g.arc(len * 0.55,  thick * 0.4, thick * 0.40, 0, 6.28); g.fill();
+      g.beginPath(); g.arc(len * 0.78, -thick * 0.35, thick * 0.35, 0, 6.28); g.fill();
+      // Small offshoot twig at the far end
+      g.fillRect(len - 2, -thick * 0.4, 4, thick * 0.3);
+      // Leaf cluster at the far tip
+      g.fillStyle = leafColor;
+      g.beginPath(); g.ellipse(len + 8, -3, 7, 4, -0.3, 0, 6.28); g.fill();
+      g.beginPath(); g.ellipse(len + 5,  3, 6, 3,  0.2, 0, 6.28); g.fill();
+      g.restore();
+    }
+
+    // Far branches - very slow parallax, hazy dark green. They cross
+    // the upper half of the screen at shallow angles.
+    var farSpan = 220, farPx = 0.06;
+    var farOff = -(((camx * farPx) % farSpan) + farSpan) % farSpan;
     for (var fb = farOff - farSpan; fb < 360 + farSpan; fb += farSpan) {
-      // tall grass blade silhouette
-      g.fillStyle = '#3a5a24';
-      g.beginPath();
-      g.moveTo(fb + 12, 180);
-      g.bezierCurveTo(fb + 14, 130, fb + 18, 80, fb + 28, 30);
-      g.lineTo(fb + 30, 28);
-      g.bezierCurveTo(fb + 22, 80, fb + 18, 130, fb + 16, 180);
-      g.closePath(); g.fill();
-      // small leaf at the top
-      g.fillStyle = '#2a4818';
-      g.beginPath();
-      g.ellipse(fb + 28, 28, 6, 3, -0.4, 0, 6.28); g.fill();
+      branch(fb,       28, 140, 6, -0.18, '#2c4626', '#3a6028');
+      branch(fb + 110, 70, 130, 7,  0.12, '#2a4424', '#386024');
     }
 
-    // Big dew drops in mid-parallax (catch light, slowly bob)
-    for (var dw = 0; dw < 4; dw++) {
-      var dwx = ((dw * 90 + Math.sin(t * 0.02 + dw) * 4 - camx * 0.18) % 380 + 380) % 380 - 30;
-      var dwy = 60 + dw * 12 + Math.sin(t * 0.04 + dw) * 2;
-      // Drop body (translucent blue-green)
-      g.fillStyle = 'rgba(180, 230, 255, 0.55)';
-      g.beginPath(); g.arc(dwx, dwy, 9, 0, 6.28); g.fill();
-      g.fillStyle = 'rgba(220, 245, 255, 0.7)';
-      g.beginPath(); g.arc(dwx, dwy, 6, 0, 6.28); g.fill();
-      // Hot specular highlight on top-left
-      g.fillStyle = '#ffffff';
-      g.beginPath(); g.arc(dwx - 2, dwy - 3, 2, 0, 6.28); g.fill();
+    // Mid-layer branches - bigger, browner, crossing the lower-middle.
+    var midSpan = 180, midPx = 0.22;
+    var midOff = -(((camx * midPx) % midSpan) + midSpan) % midSpan;
+    for (var mb = midOff - midSpan; mb < 360 + midSpan; mb += midSpan) {
+      branch(mb,       50,  150, 9, -0.08, '#4a2e16', '#5c8a3e');
+      branch(mb + 80, 110, 170, 11,  0.10, '#3c2410', '#4e7a36');
     }
 
-    // Drifting pollen / spore motes (small white dots floating up)
-    for (var pm = 0; pm < 14; pm++) {
-      var px2 = ((pm * 28 + t * 0.4 - camx * 0.25) % 340 + 340) % 340 - 10;
-      var py2 = (130 + pm * 9 - (t * 0.3 + pm * 18) % 180) % 180;
+    // Drifting pollen motes (kept from the previous theme - they help
+    // the canopy read as "alive").
+    for (var pm = 0; pm < 18; pm++) {
+      var px2 = ((pm * 22 + t * 0.4 - camx * 0.25) % 340 + 340) % 340 - 10;
+      var py2 = (130 + pm * 7 - (t * 0.3 + pm * 18) % 180) % 180;
       var alpha = 0.5 + Math.sin(t * 0.06 + pm) * 0.2;
       g.fillStyle = 'rgba(255, 250, 200, ' + alpha.toFixed(2) + ')';
       g.fillRect(px2 | 0, py2 | 0, 1, 1);
       g.fillRect((px2 | 0) + 1, py2 | 0, 1, 1);
     }
 
-    // Mid: giant blade clusters (faster parallax)
-    var midSpan = 56;
-    var midOff = -(((camx * 0.32) % midSpan) + midSpan) % midSpan;
-    for (var mb = midOff - midSpan; mb < 360 + midSpan; mb += midSpan) {
-      g.fillStyle = '#244618';
-      // tall arched blade
-      g.beginPath();
-      g.moveTo(mb + 4, 180);
-      g.bezierCurveTo(mb + 6, 140, mb + 12, 100, mb + 26, 60);
-      g.lineTo(mb + 28, 58);
-      g.bezierCurveTo(mb + 14, 100, mb + 8, 140, mb + 8, 180);
-      g.closePath(); g.fill();
-    }
-
-    // Foreground: HUGE blade silhouettes that sweep up off-screen
-    // (parallax 0.7 - moves fast as the player walks).
-    var nearSpan = 44;
-    var nearOff = -(((camx * 0.7) % nearSpan) + nearSpan) % nearSpan;
+    // Foreground branch - fast parallax, swings in and out at the
+    // edges so the player feels like they're walking past nearby
+    // limbs. Sways slowly with time. Darker than the mid layer.
+    var nearSpan = 260, nearPx = 0.6;
+    var nearOff = -(((camx * nearPx) % nearSpan) + nearSpan) % nearSpan;
     for (var nb = nearOff - nearSpan; nb < 360 + nearSpan; nb += nearSpan) {
-      var sway = Math.sin(t * 0.04 + nb * 0.03) * 2;
-      g.fillStyle = '#142e10';
-      g.beginPath();
-      g.moveTo(nb + 4, 180);
-      g.bezierCurveTo(nb + 6 + sway, 130, nb + 14 + sway, 70, nb + 18 + sway, 10);
-      g.lineTo(nb + 22 + sway, 10);
-      g.bezierCurveTo(nb + 16 + sway, 70, nb + 12 + sway, 130, nb + 10, 180);
-      g.closePath(); g.fill();
-      // vein highlight
-      g.strokeStyle = 'rgba(80, 140, 60, 0.55)';
-      g.lineWidth = 1;
-      g.beginPath();
-      g.moveTo(nb + 8, 180);
-      g.bezierCurveTo(nb + 10 + sway, 130, nb + 16 + sway, 70, nb + 20 + sway, 12);
-      g.stroke();
+      var sway = Math.sin(t * 0.03 + nb * 0.02) * 3;
+      branch(nb,       150 + sway, 200, 14, -0.05, '#1e1208', '#2e5018');
+      branch(nb + 160, 165 - sway, 180, 12,  0.07, '#1a1006', '#28461a');
     }
-
-    // Dark moss strip on the ground horizon
-    g.fillStyle = '#102810';
-    g.fillRect(0, 175, 320, 5);
   }
 
   var THEMES = {
@@ -2146,7 +2130,7 @@ window.SDD = window.SDD || {};
         'savanna':      { walker: 'lion',  wisp: 'bird', thrower: 'rock' },
         'village-dusk': { walker: 'leaf',  wisp: 'bat',  thrower: 'fruit'},
         'eden':         { walker: 'leaf',  wisp: 'leaf', thrower: 'fruit'},
-        'bugscale':     { walker: 'leaf',  wisp: 'bee',  thrower: 'seed' }
+        'bugscale':     { walker: 'beetle', wisp: 'bee', thrower: 'seed' }
       };
       var variants = THEME_VARIANTS[this.theme] || {};
       for (var i = 0; i < L.spawns.length; i++) {

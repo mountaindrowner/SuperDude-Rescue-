@@ -655,6 +655,47 @@ window.SDD = window.SDD || {};
     px(g, 13, t + 7 - sq, 1, 2, dk);                      // paw
   }
 
+  // Goliath beetle walker (Day 6-2 bug world). Dark chitin elytra
+  // with cream chevrons, broad pronotum, short jut-jaws, six legs
+  // tucked under the shell. Frame 1 lifts a leg pair for the walk.
+  function paintWalker_beetle(g, frame) {
+    var sq = frame === 1 ? 1 : 0, t = 5 + sq;
+    var body  = '#1a1208', shell = '#241a10', cream = '#e8d8a8',
+        creamD = '#9c8650', leg = '#0a0604', light = '#3a2814';
+    // Pronotum (head shield, front-right, slightly raised)
+    px(g, 11, t,     3, 3, body);
+    px(g, 11, t,     3, 1, light);                    // top sheen on the shield
+    px(g, 14, t + 1, 1, 1, body);                     // small horn nub
+    // Eye / mandible specks
+    px(g, 13, t + 2, 1, 1, cream);
+    px(g, 14, t + 3, 1, 1, body);
+    // Elytra (back shell) - main mass
+    px(g, 2, t,     9, 7 - sq, shell);
+    px(g, 2, t,     9, 1, body);                      // top edge dark
+    px(g, 2, t + 1, 9, 1, light);                     // sheen band
+    // Center split between the two wing covers
+    px(g, 6, t,     1, 7 - sq, body);
+    // Goliath chevrons (cream pattern across the elytra)
+    px(g, 3, t + 2, 2, 1, cream);
+    px(g, 7, t + 2, 3, 1, cream);
+    px(g, 3, t + 3, 3, 1, creamD);
+    px(g, 7, t + 3, 2, 1, creamD);
+    px(g, 4, t + 4, 1, 1, cream);
+    px(g, 8, t + 4, 1, 1, cream);
+    // Belly shadow
+    px(g, 2, t + 6 - sq, 9, 1, body);
+    // Six legs (three per side, tucked under the shell)
+    px(g, 2, t + 6 - sq, 1, 2, leg);
+    px(g, 5, t + 6 - sq, 1, 2, leg);
+    px(g, 9, t + 6 - sq, 1, 2, leg);
+    // Lifted leg pair for the walk frame
+    px(g, 3, t + 7 - sq, 2, 1, leg);
+    px(g, 7, t + 7 - sq, 2, 1, leg);
+    px(g, 10, t + 7 - sq, 1, 1, leg);
+    // Tail-end taper
+    px(g, 1, t + 2, 1, 3, shell);
+  }
+
   // Wildebeest (Day 6-1 stampede mob, tiled 8x across the herd). Dark
   // muscular silhouette with curving horns, shoulder hump, beard
   // under chin, and four legs blurred by running. Drawn 16x16 and
@@ -1467,6 +1508,53 @@ window.SDD = window.SDD || {};
     // Wood grain
     px(g, 4, 4, 8, 1, '#3a2410');
   }
+  // Tree-bark ground tile (Day 6-2 BUG WORLD). Top edge catches a
+  // bit of canopy light, body is rough furrowed bark with two darker
+  // knot bumps for the bumpy-branch look Mark referenced.
+  function paintGroundWood(g) {
+    var dk = '#3a2410', body = '#6a4222', mid = '#8a5a30',
+        light = '#a8723c', shade = '#241608', knot = '#1c0e04';
+    px(g, 0, 0, 16, 16, body);
+    // Top-edge highlight (sun catches the curve of the branch)
+    px(g, 0, 0, 16, 1, light);
+    px(g, 0, 1, 16, 1, mid);
+    px(g, 0, 2, 16, 1, body);
+    // Vertical bark furrows
+    px(g, 2, 3, 1, 11, dk);
+    px(g, 5, 4, 1, 11, dk);
+    px(g, 9, 3, 1, 11, dk);
+    px(g, 13, 5, 1, 9, dk);
+    // Furrow shadows beside each
+    px(g, 3, 4, 1, 9, shade);
+    px(g, 6, 5, 1, 9, shade);
+    px(g, 10, 4, 1, 9, shade);
+    px(g, 14, 6, 1, 7, shade);
+    // Knot bumps (the spurs from Mark's bark photo)
+    px(g, 7, 6, 2, 2, knot);
+    px(g, 7, 6, 1, 1, dk);
+    px(g, 11, 10, 2, 2, knot);
+    px(g, 11, 10, 1, 1, dk);
+    // Bottom shadow (separates stacked tiles)
+    px(g, 0, 15, 16, 1, shade);
+  }
+  function paintDirtWood(g) {
+    // Wood core - rings and grain when the tile is buried under more
+    // bark. Slightly redder than the surface.
+    var body = '#542d10', dk = '#2a1608', light = '#7a4220';
+    px(g, 0, 0, 16, 16, body);
+    // Concentric grain arcs
+    px(g, 4, 4, 8, 1, light);
+    px(g, 3, 5, 1, 6, light);
+    px(g, 12, 5, 1, 6, light);
+    px(g, 4, 11, 8, 1, light);
+    px(g, 6, 7, 4, 2, dk);                            // heart of the grain
+    // Faint speckle (worm holes / bark detail)
+    px(g, 1, 2, 1, 1, dk);
+    px(g, 14, 1, 1, 1, dk);
+    px(g, 14, 13, 1, 1, dk);
+    px(g, 2, 14, 1, 1, dk);
+  }
+
   function paintPlatform_bugscale(g) {
     // Giant leaf fragment - reads as "you're tiny in the grass"
     px(g, 0, 1, 16, 5, '#4a9a3a');
@@ -2377,7 +2465,8 @@ window.SDD = window.SDD || {};
         leaf:      paintWalker_leaf,
         flame:     paintWalker_flame,
         lion:      paintWalker_lion,
-        porcupine: paintWalker_porcupine
+        porcupine: paintWalker_porcupine,
+        beetle:    paintWalker_beetle
       };
       Object.keys(WALK_VARS).forEach(function (k) {
         var painter = WALK_VARS[k];
@@ -2484,7 +2573,9 @@ window.SDD = window.SDD || {};
       sea:       { ground: paintGroundSea,      dirt: paintDirtSea,      brick: paintBrickSea },
       rocky:     { ground: paintGroundRocky,    dirt: paintDirtRocky,    brick: paintBrickRocky },
       sunlit:    { ground: paintGroundSunlit,   dirt: paintDirtSunlit,   brick: paintBrickSunlit },
-      lush:      { ground: paintGround,         dirt: paintDirt,         brick: paintBrickLush }
+      lush:      { ground: paintGround,         dirt: paintDirt,         brick: paintBrickLush },
+      // Bug-world: tree-bark ground + wood-core "dirt".
+      wood:      { ground: paintGroundWood,     dirt: paintDirtWood,     brick: paintBrickLush }
     };
     // Theme -> family
     var THEME_FAMILY = {
@@ -2499,7 +2590,8 @@ window.SDD = window.SDD || {};
       'sunlit':       'sunlit',
       'forest':       'lush',
       'eden':         'lush',
-      'village-dusk': 'lush'
+      'village-dusk': 'lush',
+      'bugscale':     'wood'
     };
     Object.keys(THEME_FAMILY).forEach(function (theme) {
       var fam = FAM_PAINTERS[THEME_FAMILY[theme]];

@@ -129,7 +129,7 @@ window.SDD = window.SDD || {};
     'skyhazard.kind': ['flare', 'meteor', 'meteorH', 'lavaPlume'],
     'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove'],
     // spawn.variant values (theme default = empty)
-    'walker.variant':  ['', 'lion', 'porcupine', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
+    'walker.variant':  ['', 'lion', 'porcupine', 'beetle', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
     'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud', 'bee'],
     'thrower.variant': ['', 'rain', 'rock', 'seed', 'sun', 'fruit'],
     // Boolean-ish flag
