@@ -1852,6 +1852,46 @@ window.SDD = window.SDD || {};
     // bottom shadow
     px(g, 0, 14, 16, 2, '#3a0a04');
   }
+  // Deep / base lava - molten body without the bright wave band, so
+  // it tiles cleanly below the surface frame.
+  function paintLavaBase(g) {
+    px(g, 0, 0, 16, 16, '#5a1208');
+    px(g, 0, 0, 16, 4, '#7a1c0a');
+    px(g, 0, 4, 16, 4, '#a82414');
+    px(g, 0, 8, 16, 4, '#7a1c0a');
+    px(g, 0, 12, 16, 4, '#3a0a04');
+    // scattered bright cells - phase-shifted per row so adjacent
+    // tiles don't form an obvious grid
+    px(g, 3, 2, 1, 1, '#ff5418');
+    px(g, 9, 3, 2, 1, '#ff8030');
+    px(g, 5, 6, 1, 1, '#ffd048');
+    px(g, 11, 7, 1, 1, '#ff5418');
+    px(g, 2, 9, 2, 1, '#ff5418');
+    px(g, 13, 10, 1, 1, '#ff8030');
+    px(g, 7, 12, 1, 1, '#ff5418');
+    px(g, 4, 14, 1, 1, '#ff8030');
+  }
+  // Animated surface ripple - 4 frames advancing the wave crest one
+  // pixel each. Bright yellow band sits on top of an orange melt.
+  function paintLavaTop(g, frame) {
+    // Deep body
+    px(g, 0, 4, 16, 12, '#a82414');
+    px(g, 0, 14, 16, 2, '#5a1208');
+    // Orange melt under the surface
+    px(g, 0, 2, 16, 3, '#ff5418');
+    px(g, 0, 3, 16, 1, '#ff8030');
+    // Bright yellow crest with a wavy lip - phase shifts per frame
+    var phase = (frame || 0) * 4;
+    for (var x = 0; x < 16; x++) {
+      var wave = Math.sin((x + phase) * 0.7) > 0 ? 0 : 1;
+      px(g, x, 0 + wave, 1, 1, '#ffe070');
+      px(g, x, 1 + wave, 1, 1, '#ffd048');
+    }
+    // Scattered crest sparkles - shift with frame so it feels alive
+    var sparkleX = [1, 5, 9, 13][frame % 4];
+    px(g, sparkleX, 0, 1, 1, '#ffffff');
+    px(g, (sparkleX + 8) % 16, 1, 1, 1, '#fff09a');
+  }
   function paintMovPlat(g) {
     // warm brass / dark wood hover plank instead of cold blue metal
     px(g, 0, 0, 36, 13, '#4a3220');
@@ -2310,6 +2350,14 @@ window.SDD = window.SDD || {};
     sprites['tile_platform_village-dusk'] = spritePlain(16, 16, paintPlatform_village_dusk);
     sprites['tile_platform_bugscale']     = spritePlain(16, 16, paintPlatform_bugscale);
     sprites['tile_lava'] = spritePlain(16, 16, paintLava);
+    // Pass 12 (Mark): lava gets a top surface + base distinction
+    // (same idea as ground vs dirt). Surface tile has 4 ripple frames
+    // that the level renderer cycles through for visible motion.
+    sprites['tile_lava_base'] = spritePlain(16, 16, paintLavaBase);
+    sprites['tile_lava_top_0'] = spritePlain(16, 16, function (g) { paintLavaTop(g, 0); });
+    sprites['tile_lava_top_1'] = spritePlain(16, 16, function (g) { paintLavaTop(g, 1); });
+    sprites['tile_lava_top_2'] = spritePlain(16, 16, function (g) { paintLavaTop(g, 2); });
+    sprites['tile_lava_top_3'] = spritePlain(16, 16, function (g) { paintLavaTop(g, 3); });
 
     // ---- Themed tile variants per family ----
     // Family painters

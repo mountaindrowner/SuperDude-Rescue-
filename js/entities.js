@@ -977,15 +977,17 @@ window.SDD = window.SDD || {};
   // sec, holds at full height ~0.4 sec, retracts over 1 sec. Total
   // cycle ~2.4 sec - "tiny and enjoyable" per Mark. Damages player on
   // contact with the visible column rectangle.
-  function LavaPlume(x, y) {
+  function LavaPlume(x, y, scale) {
     // Pass 10 round 2 (Mark): column was sitting 5px right + 6px low
     // of the visible crater. Recenter (-1 of spawner x for a 1px nudge
     // left, anchor 6px higher) so the plume reads as erupting cleanly
     // from the painted nozzle.
+    var sc = scale || 1;
+    this.scale = sc;
     this.ax = x - 1;                 // column horizontal center (was x+5)
     this.ay = y + 10;                // anchor at ground top (was y+16)
-    this.maxH = 40;                  // a hair taller now that it's slower
-    this.colW = 14;                  // slightly wider for visibility
+    this.maxH = Math.round(40 * sc);              // taller plume on scale-up
+    this.colW = Math.round(14 * sc);              // wider plume on scale-up
     this.t = 0;
     // Pass 10 round 2: slower rise + fall so the kid has time to read
     // the timing before committing. ~2.8 sec full cycle (was 2.0).
@@ -1011,32 +1013,34 @@ window.SDD = window.SDD || {};
   };
   LavaPlume.prototype.draw = function (ctx, cam) {
     if (this.curH < 1) return;
+    var sc = this.scale || 1;
+    var R = function (n) { return Math.round(n * sc); };  // scaled pixel
     var cx = Math.round(this.ax - cam.x);
     var by = Math.round(this.ay - cam.y);
     var h = Math.round(this.curH);
     // Heat glow around the column (soft)
-    glow(ctx, cx, by - h / 2, 16, '#ff6028', 0.4);
+    glow(ctx, cx, by - h / 2, Math.round(16 * sc), '#ff6028', 0.4);
     // Column body: outer (darker), inner (bright), core (white-hot)
     ctx.fillStyle = '#9a2a10';
-    ctx.fillRect(cx - 6, by - h, 12, h);
+    ctx.fillRect(cx - R(6), by - h, R(12), h);
     ctx.fillStyle = '#ff5018';
-    ctx.fillRect(cx - 4, by - h, 8, h);
+    ctx.fillRect(cx - R(4), by - h, R(8), h);
     ctx.fillStyle = '#ffa030';
-    ctx.fillRect(cx - 2, by - h, 4, h);
+    ctx.fillRect(cx - R(2), by - h, R(4), h);
     // White-hot core wavers slightly
     var jitter = (this.t % 4 < 2) ? 0 : 1;
     ctx.fillStyle = '#ffe890';
-    ctx.fillRect(cx - 1 + jitter, by - h + 2, 1, Math.max(0, h - 4));
+    ctx.fillRect(cx - R(1) + jitter, by - h + 2, Math.max(1, R(1)), Math.max(0, h - 4));
     // Crown of fire at the top (3 flickering tongues)
     var t = this.t;
     var c1 = Math.sin(t * 0.5) * 1.4;
     var c2 = Math.cos(t * 0.6) * 1.2;
     ctx.fillStyle = '#ffe070';
-    ctx.fillRect(cx - 4 + Math.round(c1), by - h - 2, 2, 2);
-    ctx.fillRect(cx - 1, by - h - 3, 2, 3);
-    ctx.fillRect(cx + 2 + Math.round(c2), by - h - 2, 2, 2);
+    ctx.fillRect(cx - R(4) + Math.round(c1), by - h - 2, R(2), R(2));
+    ctx.fillRect(cx - R(1), by - h - 3, R(2), R(3));
+    ctx.fillRect(cx + R(2) + Math.round(c2), by - h - 2, R(2), R(2));
     ctx.fillStyle = '#fff8c0';
-    ctx.fillRect(cx, by - h - 4, 1, 2);
+    ctx.fillRect(cx, by - h - R(4), Math.max(1, R(1)), R(2));
     // Embers rising above the crown
     var ex = (t * 7) % 12 - 6;
     ctx.fillStyle = '#ff9050';
@@ -1085,12 +1089,13 @@ window.SDD = window.SDD || {};
 
   // HazardSpawner - invisible periodic spawner placed in level data.
   // Lives in the "enemies" list so its update is called every frame.
-  function HazardSpawner(x, y, kind, period, dir) {
+  function HazardSpawner(x, y, kind, period, dir, scale) {
     this.x = x; this.y = y; this.w = 1; this.h = 1;
     this.kind = kind || 'flare';
     this.period = period || 90;
     this.t = Math.floor(Math.random() * this.period);
     this.dir = dir || 1;
+    this.scale = scale || 1;
     this.dead = false; this.deadT = 0; this.remove = false;
     this.stompable = false; this.invisible = true;
   }
@@ -1098,48 +1103,43 @@ window.SDD = window.SDD || {};
     this.t++;
     if (this.t >= this.period) {
       this.t = 0;
+      var sc = this.scale || 1;
       if (this.kind === 'flare') {
         level.projectiles.push(new SolarFlare(this.x, this.y));
       } else if (this.kind === 'meteor') {
         level.projectiles.push(new Meteor(this.x, this.y, this.dir));
       } else if (this.kind === 'meteorH') {
-        // horizontal meteor (Day 4-1) - flat trajectory, no downward drift
         var m = new Meteor(this.x, this.y, this.dir);
-        m.vy = 0;             // override the default downward bias
+        m.vy = 0;
         level.projectiles.push(m);
       } else if (this.kind === 'lavaPlume') {
-        level.projectiles.push(new LavaPlume(this.x, this.y));
+        level.projectiles.push(new LavaPlume(this.x, this.y, sc));
       }
     }
   };
   HazardSpawner.prototype.draw = function (ctx, cam) {
-    // Lava plumes get a visible "nozzle" / crater marker on the
-    // ground tile so the player can see where the next eruption will
-    // come from (Mark: "obvious spots that have a little crater or
-    // nozzle, that's obviously a spout where lava shoots out").
     if (this.kind !== 'lavaPlume') return;
-    var T = 16;
+    var T = 16, sc = this.scale || 1;
     var gx = Math.round(this.x - cam.x);
-    var gy = Math.round((this.ty + 1) * T - cam.y);     // top of solid ground
-    // Pass 10 round 2 (Mark): widen the port so it visibly reads as
-    // the source of the plume. Bumped 16->22 wide with proportional
-    // inner rings.
+    var gy = Math.round((this.ty + 1) * T - cam.y);
+    // Crater dimensions scale with the plume so a 2x lava is
+    // obviously a 2x crater on the ground.
+    var w1 = Math.round(22 * sc), w2 = Math.round(20 * sc),
+        w3 = Math.round(16 * sc), w4 = Math.round(12 * sc),
+        w5 = Math.round(10 * sc);
     ctx.fillStyle = '#3a2010';
-    ctx.fillRect(gx - 11, gy - 4, 22, 4);
+    ctx.fillRect(gx - w1 / 2, gy - 4, w1, 4);
     ctx.fillStyle = '#2a1408';
-    ctx.fillRect(gx - 10, gy - 3, 20, 1);
-    // Glowing inner ring
+    ctx.fillRect(gx - w2 / 2, gy - 3, w2, 1);
     ctx.fillStyle = '#7a1c0a';
-    ctx.fillRect(gx - 8, gy - 3, 16, 2);
-    // Hot core - pulse near the next spawn (last 30% of the period
-    // brightens to yellow so the player can read "about to erupt").
+    ctx.fillRect(gx - w3 / 2, gy - 3, w3, 2);
     var remain = Math.max(0, this.period - this.t);
     var ratio = remain / Math.max(1, this.period);
     var hot = ratio < 0.3 ? '#ffd048' : '#ff5418';
     ctx.fillStyle = hot;
-    ctx.fillRect(gx - 6, gy - 2, 12, 1);
+    ctx.fillRect(gx - w4 / 2, gy - 2, w4, 1);
     ctx.fillStyle = '#ff8030';
-    ctx.fillRect(gx - 5, gy - 1, 10, 1);
+    ctx.fillRect(gx - w5 / 2, gy - 1, w5, 1);
   };
   HazardSpawner.prototype.zap = function () {};      // blast can't kill the sky
 
@@ -1240,16 +1240,6 @@ window.SDD = window.SDD || {};
     glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 13, col, 0.55);
     var f = (Math.floor(this.t / 10) % 2);
     drawBC(ctx, (this.kind === 'grow' ? 'grow_' : 'blastitem_') + f, this, cam);
-    // Pass 12 (Mark): "We have to label these powers. That's essential."
-    // A short pixel banner above each item-drop tells kids what they're
-    // about to grab without having to read a menu.
-    var S = SDD.sprites;
-    if (S && S.textShadow) {
-      var bx = Math.round(this.x + this.w / 2 - cam.x);
-      var by = Math.round(this.y - cam.y) - 8;
-      var label = this.kind === 'grow' ? 'GROW' : 'BLAST';
-      S.textShadow(ctx, label, bx, by, col, '#000', 1, 'center');
-    }
   };
 
   // ===================== SIGNATURE POWER-UP =====================

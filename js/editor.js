@@ -136,7 +136,7 @@ window.SDD = window.SDD || {};
     npc:        [{f:'tx'},{f:'ty'},{f:'kind'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     checkpoint: [{f:'tx'},{f:'ty'}],
     signature:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
-    skyhazard:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'period',opt:true},{f:'dir',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    skyhazard:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'period',opt:true},{f:'dir',opt:true},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     bubble:     [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     octopus:    [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     twister:    [{f:'tx'},{f:'ty'},{f:'spd',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
@@ -981,7 +981,7 @@ window.SDD = window.SDD || {};
       var ref = sel.ref;
       var before = ref[field];
       // Number-ish fields: parse to number
-      var numeric = ['tx', 'ty', 'tx1', 'ty1', 'spd', 'phase', 'period', 'maxH', 'dir', 'offsetX', 'offsetY'];
+      var numeric = ['tx', 'ty', 'tx1', 'ty1', 'spd', 'phase', 'period', 'maxH', 'dir', 'offsetX', 'offsetY', 'scale'];
       var val;
       if (numeric.indexOf(field) >= 0) {
         val = parseFloat(raw);
@@ -1222,7 +1222,14 @@ window.SDD = window.SDD || {};
           } else if (code === 'V') name = 'tile_vine';
           else if (code === 'W') name = 'tile_water';
           else if (code === '~') name = 'tile_water_top';
-          else if (code === 'L') name = 'tile_lava';
+          else if (code === 'L') {
+            var aboveL = ty > 0 ? lvl.tiles[ty - 1][tx] : ' ';
+            if (aboveL === 'L' || aboveL === 'X' || aboveL === '#') {
+              name = 'tile_lava_base';
+            } else {
+              name = 'tile_lava_top_' + (Math.floor(this.t / 7) % 4);
+            }
+          }
           else if (code === '?') name = 'tile_qcore';
           else if (code === 'G') name = 'tile_qgrow';
           else if (code === 'B') name = 'tile_qblast';

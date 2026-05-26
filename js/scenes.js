@@ -2064,6 +2064,23 @@ window.SDD = window.SDD || {};
     starjump: 'STAR', wingburst: 'WINGS', airbubble: 'BUBBLE',
     callinghorn: 'HORN', friendshiptoken: 'FRIEND', doveblessing: 'DOVE'
   };
+  // Pass 12 (Mark): each signature shows a 4-second hint banner on
+  // pickup with its name and a one-line tip on how to use it. Without
+  // this, kids don't know what they just grabbed or how to trigger it.
+  var SIG_HINTS = {
+    sunburst:        { name: 'SUNBURST!',     tip: 'Touch enemies - they get zapped!' },
+    cloudglide:      { name: 'CLOUD GLIDE!',  tip: 'Hold A in mid-air to fall slowly' },
+    pearl:           { name: 'PEARL OF SEA!', tip: 'Swim faster underwater' },
+    coolingwater:    { name: 'COOLING WATER!',tip: 'Walk on lava safely' },
+    vinegrapple:     { name: 'VINE GRAPPLE!', tip: 'Press B near a vine to swing in' },
+    sunshield:       { name: 'SUN SHIELD!',   tip: 'Sun flares cannot hurt you' },
+    starjump:        { name: 'STAR JUMP!',    tip: 'Press A twice more in mid-air' },
+    wingburst:       { name: 'WING BURST!',   tip: 'Hold A to soar upward' },
+    airbubble:       { name: 'AIR BUBBLE!',   tip: 'Sea creatures bounce off you' },
+    callinghorn:     { name: 'CALLING HORN!', tip: 'Enemies freeze in place' },
+    friendshiptoken: { name: 'FRIENDSHIP!',   tip: 'NPCs give 5 cores instead of 3' },
+    doveblessing:    { name: 'DOVE BLESSING!',tip: 'Power cores rain from the sky' }
+  };
 
   SDD.scenes.level = {
     enter: function (d) {
@@ -2109,6 +2126,9 @@ window.SDD = window.SDD || {};
       this.livesPulseT = 0;
       this.state = 'play'; this.deathHandled = false;
       this.winTimer = 0; this.goTimer = 0;
+      // Pass 12 (Mark): hint banner shown for ~4s when a signature
+      // activates, explaining what the power does + how to use it.
+      this.sigHintT = 0; this.sigHintKind = null; this.lastSigKind = null;
       this.pauseIdx = 0;
 
       // Theme -> per-enemy-type visual variant. Lets each biome have
@@ -2179,7 +2199,8 @@ window.SDD = window.SDD || {};
           // periodic projectile spawner placed in the level data
           e = new SDD.ent.HazardSpawner(
             s.tx * T + 8, s.ty * T + 8,
-            s.kind || 'flare', s.period || 90, s.dir || 1);
+            s.kind || 'flare', s.period || 90, s.dir || 1,
+            s.scale || 1);
           e.tx = s.tx; e.ty = s.ty;                        // for nozzle decoration
           this.enemies.push(e);
         } else if (s.type === 'bubble') {
@@ -2226,6 +2247,11 @@ window.SDD = window.SDD || {};
           e.x += s.offsetX || 0;
           e.y += s.offsetY || 0;
         }
+        // Pass 12 (Mark): per-spawn `scale` flows through to the
+        // entity for type-specific draw scaling. Implemented for
+        // skyhazard (lava plume / crater) so far; other types are
+        // pass-through until each entity's draw supports it.
+        if (e && s.scale && s.scale !== 1) e.scale = s.scale;
       }
       // Per-theme platform skin so movers don't all look like the
       // same brass plank everywhere (Mark: "all the platforms looking
@@ -2384,6 +2410,15 @@ window.SDD = window.SDD || {};
         p.vy += 0.13; p.x += p.vx; p.y += p.vy; p.life--;
       }
       this.collisions();
+      // Detect a freshly-activated signature so we can show a hint
+      // banner for the first few seconds (what + how-to-use).
+      var curSig = this.player && this.player.signatureKind;
+      if (curSig && curSig !== this.lastSigKind) {
+        this.sigHintKind = curSig;
+        this.sigHintT = 240;                          // 4 seconds
+      }
+      this.lastSigKind = curSig;
+      if (this.sigHintT > 0) this.sigHintT--;
       // cull - in-place two-pointer compaction so we don't allocate a
       // fresh array (+ closure) every frame for each list. The
       // entity/projectile/particle lists run at 60 fps each.
@@ -2637,7 +2672,17 @@ window.SDD = window.SDD || {};
           else if (code === 'V') name = 'tile_vine';
           else if (code === 'W') name = 'tile_water';
           else if (code === '~') name = 'tile_water_top';
-          else if (code === 'L') name = 'tile_lava';
+          else if (code === 'L') {
+            // Auto-pick lava surface vs base based on what's above:
+            // open space = top (animated ripple); lava / solid = base.
+            var aboveL = ty > 0 ? this.map.get(tx, ty - 1) : ' ';
+            if (aboveL === 'L' || aboveL === 'X' || aboveL === '#') {
+              name = 'tile_lava_base';
+            } else {
+              // 4-frame ripple, ~9 fps cycle
+              name = 'tile_lava_top_' + (Math.floor(this.timeSteps / 7) % 4);
+            }
+          }
           else if (code === '?') name = 'tile_qcore';
           else if (code === 'G') name = 'tile_qgrow';
           else if (code === 'B') name = 'tile_qblast';
@@ -2674,6 +2719,7 @@ window.SDD = window.SDD || {};
       g.globalAlpha = 1;
 
       this.drawHUD(g);
+      this.drawSignatureHint(g);
 
       if (this.state === 'won') {
         var sf = SDD.save.stagesForDay(this.day);
@@ -2755,6 +2801,24 @@ window.SDD = window.SDD || {};
     drawBanner: function (g, msg, col) {
       g.fillStyle = 'rgba(8,8,20,0.55)'; g.fillRect(0, 70, 320, 40);
       tsh(g, msg, 160, 80, col, '#000000', 3, 'center');
+    },
+
+    // Two-line tooltip for a freshly-activated signature: the big
+    // name (e.g. "SUNBURST!") + a short tip on how to use it.
+    // Fades over the last second so it doesn't snap off.
+    drawSignatureHint: function (g) {
+      if (this.sigHintT <= 0 || !this.sigHintKind) return;
+      var info = SIG_HINTS[this.sigHintKind];
+      if (!info) return;
+      var alpha = this.sigHintT > 60 ? 1 : this.sigHintT / 60;
+      g.save(); g.globalAlpha = alpha;
+      g.fillStyle = 'rgba(8,10,22,0.85)';
+      g.fillRect(40, 30, 240, 26);
+      g.fillStyle = '#46f0ff';
+      g.fillRect(40, 30, 240, 1); g.fillRect(40, 55, 240, 1);
+      tsh(g, info.name, 160, 33, '#ffe890', '#000', 1, 'center');
+      tsh(g, info.tip,  160, 45, '#dfe6ff', '#000', 1, 'center');
+      g.restore();
     },
 
     drawPause: function (g) {
