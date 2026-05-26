@@ -757,8 +757,6 @@ window.SDD = window.SDD || {};
       this.zoom = z;
       this.cam.x = centerWx - (320 / z) / 2;
       this.cam.y = centerWy - (180 / z) / 2;
-      if (this.cam.x < 0) this.cam.x = 0;
-      if (this.cam.y < 0) this.cam.y = 0;
       this.clampCam();
       persistZoom(z);
       if (this.ui) refreshZoomLabel(this.ui, this);
@@ -931,9 +929,9 @@ window.SDD = window.SDD || {};
       }
       var dx = e.deltaY;
       if (e.shiftKey) {
-        this.cam.y = Math.max(0, this.cam.y + dx * 0.5);
+        this.cam.y = this.cam.y + dx * 0.5;
       } else {
-        this.cam.x = Math.max(0, this.cam.x + dx * 0.5);
+        this.cam.x = this.cam.x + dx * 0.5;
       }
       this.clampCam();
     },
@@ -980,10 +978,10 @@ window.SDD = window.SDD || {};
         // Scale pan step with the viewport so it feels right at any
         // zoom level (always ~10% of the visible width).
         var panStep = Math.max(16, Math.round(32 / (this.zoom || 1)));
-        if (k === 'ArrowLeft')  { this.cam.x = Math.max(0, this.cam.x - panStep); this.clampCam(); }
-        if (k === 'ArrowRight') { this.cam.x = this.cam.x + panStep; this.clampCam(); }
-        if (k === 'ArrowUp')    { this.cam.y = Math.max(0, this.cam.y - panStep); this.clampCam(); }
-        if (k === 'ArrowDown')  { this.cam.y = this.cam.y + panStep; this.clampCam(); }
+        if (k === 'ArrowLeft')  { this.cam.x -= panStep; this.clampCam(); }
+        if (k === 'ArrowRight') { this.cam.x += panStep; this.clampCam(); }
+        if (k === 'ArrowUp')    { this.cam.y -= panStep; this.clampCam(); }
+        if (k === 'ArrowDown')  { this.cam.y += panStep; this.clampCam(); }
       }
     },
     // Nudge the selected spawn / mover. Plain arrow = 1 tile,
@@ -1017,14 +1015,21 @@ window.SDD = window.SDD || {};
       refreshProps(this.ui, this);
     },
     clampCam: function () {
-      // Viewport size shrinks (in world pixels) as we zoom in and
-      // grows as we zoom out, so clamp using the zoom-aware extent.
+      // Pass 12 (Mark): "I can't put blocks on those corners because
+      // there's an overlay on top of them." Allow the camera to
+      // overscroll past the stage by half a viewport on each side,
+      // so the stage's top / left / right / bottom edge can land in
+      // the middle of the screen - well clear of the UI panels.
       var z = this.zoom || 1;
       var visW = 320 / z, visH = 180 / z;
-      var maxX = Math.max(0, this.lvl.width * 16 - visW);
-      var maxY = Math.max(0, this.lvl.height * 16 - visH);
-      this.cam.x = Math.min(this.cam.x, maxX);
-      this.cam.y = Math.min(this.cam.y, maxY);
+      var minX = -visW / 2;
+      var minY = -visH / 2;
+      var maxX = Math.max(0, this.lvl.width * 16 - visW) + visW / 2;
+      var maxY = Math.max(0, this.lvl.height * 16 - visH) + visH / 2;
+      if (this.cam.x < minX) this.cam.x = minX;
+      if (this.cam.y < minY) this.cam.y = minY;
+      if (this.cam.x > maxX) this.cam.x = maxX;
+      if (this.cam.y > maxY) this.cam.y = maxY;
     },
 
     // --- editing primitives ---
