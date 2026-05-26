@@ -1916,25 +1916,49 @@ window.SDD = window.SDD || {};
       g.restore();
     }
 
-    // Far branches - very slow parallax, hazy dark green. They cross
-    // the upper half of the screen at shallow angles.
+    // Far branches - out-of-focus haze. Heavy blur + low alpha + a
+    // hue close to the background gradient so they read as "way back
+    // there, behind everything". Mark's reference photos: bokeh greens
+    // with no readable detail.
+    g.save();
+    g.filter = 'blur(3px)';
+    g.globalAlpha = 0.55;
     var farSpan = 220, farPx = 0.06;
     var farOff = -(((camx * farPx) % farSpan) + farSpan) % farSpan;
     for (var fb = farOff - farSpan; fb < 360 + farSpan; fb += farSpan) {
-      branch(fb,       28, 140, 6, -0.18, '#2c4626', '#3a6028');
-      branch(fb + 110, 70, 130, 7,  0.12, '#2a4424', '#386024');
+      branch(fb,       28, 140, 7, -0.18, '#5c7a44', '#6c9252');
+      branch(fb + 110, 70, 130, 8,  0.12, '#587648', '#6e8e48');
     }
+    g.restore();
 
-    // Mid-layer branches - bigger, browner, crossing the lower-middle.
+    // Atmospheric haze band - desaturated green wash that sits between
+    // the far and mid layers so depth grades smoothly instead of
+    // popping.
+    var haze = g.createLinearGradient(0, 30, 0, 130);
+    haze.addColorStop(0, 'rgba(180, 195, 130, 0.0)');
+    haze.addColorStop(0.6, 'rgba(170, 190, 130, 0.18)');
+    haze.addColorStop(1, 'rgba(140, 170, 110, 0.0)');
+    g.fillStyle = haze;
+    g.fillRect(0, 30, 320, 110);
+
+    // Mid-layer branches - softer focus. Lighter blur + 70% opacity +
+    // slightly desaturated wood tones so they read closer than the
+    // far layer but not yet sharp.
+    g.save();
+    g.filter = 'blur(1.5px)';
+    g.globalAlpha = 0.78;
     var midSpan = 180, midPx = 0.22;
     var midOff = -(((camx * midPx) % midSpan) + midSpan) % midSpan;
     for (var mb = midOff - midSpan; mb < 360 + midSpan; mb += midSpan) {
-      branch(mb,       50,  150, 9, -0.08, '#4a2e16', '#5c8a3e');
-      branch(mb + 80, 110, 170, 11,  0.10, '#3c2410', '#4e7a36');
+      branch(mb,       50,  150, 9, -0.08, '#5a3a1c', '#6a9648');
+      branch(mb + 80, 110, 170, 11,  0.10, '#4a2e14', '#5e8a40');
     }
+    g.restore();
 
     // Drifting pollen motes (kept from the previous theme - they help
-    // the canopy read as "alive").
+    // the canopy read as "alive"). Drawn between mid and near so they
+    // catch light without floating in front of the sharp foreground
+    // branch.
     for (var pm = 0; pm < 18; pm++) {
       var px2 = ((pm * 22 + t * 0.4 - camx * 0.25) % 340 + 340) % 340 - 10;
       var py2 = (130 + pm * 7 - (t * 0.3 + pm * 18) % 180) % 180;
@@ -1944,9 +1968,9 @@ window.SDD = window.SDD || {};
       g.fillRect((px2 | 0) + 1, py2 | 0, 1, 1);
     }
 
-    // Foreground branch - fast parallax, swings in and out at the
-    // edges so the player feels like they're walking past nearby
-    // limbs. Sways slowly with time. Darker than the mid layer.
+    // Foreground branch - sharp, dark, prominent. Sways with the
+    // breeze. This is the "in-focus" layer matching the photo of the
+    // bumpy branch in sharp detail with everything behind it bokeh'd.
     var nearSpan = 260, nearPx = 0.6;
     var nearOff = -(((camx * nearPx) % nearSpan) + nearSpan) % nearSpan;
     for (var nb = nearOff - nearSpan; nb < 360 + nearSpan; nb += nearSpan) {
