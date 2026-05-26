@@ -134,5 +134,7 @@ SDD.levels['5-1'] = {
   flappySpeed: 1.4,
   flappyFlap: 3.6,
   flappyGravity: 0.85,
-  flappyMaxFall: 4.5
+  flappyMaxFall: 4.5,
+  flappySmallHitbox: { dx: 2, w: 9, h: 19 },
+  flappyBigHitbox: { dx: 0, w: 11, h: 26 }
 };

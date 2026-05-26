@@ -9,6 +9,23 @@ window.SDD = window.SDD || {};
   var clamp = SDD.engine.clamp;
 
   function spr(name) { return SDD.sprites.get(name); }
+
+  // Flappy stages can override Danny's collision box per-size. The
+  // sprite still renders at sprite-natural dimensions; only the hitbox
+  // changes. Feet position (y + h) is preserved across the resize.
+  function applyFlappyHitboxNow(p, isBig) {
+    if (!SDD.scene || !SDD.scene.flappy) return;
+    var L = SDD.levels && SDD.levels[SDD.scene.day + '-' + SDD.scene.stage];
+    if (!L) return;
+    var hb = isBig
+      ? (L.flappyBigHitbox || { dx: 0, w: 11, h: 26 })
+      : (L.flappySmallHitbox || { dx: 2, w: 9, h: 19 });
+    var feet = p.y + p.h;
+    p.w = hb.w; p.h = hb.h;
+    p.y = feet - p.h;
+    p.x += (hb.dx || 0);
+  }
+  SDD.applyFlappyHitboxNow = applyFlappyHitboxNow;
   function drawBC(ctx, name, e, cam) {
     var s = spr(name); if (!s) return;
     var dx = Math.round(e.x - cam.x + e.w / 2 - s.width / 2);
@@ -76,6 +93,7 @@ window.SDD = window.SDD || {};
     if (this.big) return;
     this.big = true;
     this.y -= 8; this.h = 31; this.w = 14; this.x -= 1;
+    applyFlappyHitboxNow(this, true);
     this.hp = maxHP();
     SDD.audio.sfx('grow');
   };
@@ -113,6 +131,7 @@ window.SDD = window.SDD || {};
     if (!this.big) return;
     this.big = false;
     this.y += 8; this.h = 23; this.w = 13; this.x += 1;
+    applyFlappyHitboxNow(this, false);
     // Refill HP for the small form so easy mode gets its second
     // small-hit before death (Pass 12, Mark).
     this.hp = maxHP();

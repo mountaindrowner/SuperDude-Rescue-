@@ -226,10 +226,26 @@ window.SDD = window.SDD || {};
       '<div class="ed-bar ed-right">',
       '  <div class="ed-tab-row">',
       '    <button data-rtab="props"    class="active" title="Inspect & edit the currently selected spawn / mover">PROPERTIES</button>',
+      '    <button data-rtab="stage"    title="Stage-wide settings: flappy hitbox tuning per Danny size, etc.">STAGE</button>',
       '    <button data-rtab="variants" title="Library of saved variants of this stage. Load, rename, delete, or mark one as the main version used by the game.">VARIANTS</button>',
       '  </div>',
       '  <div id="ed-tab-props" class="ed-tab-body">',
       '    <div id="ed-props-body"><p class="ed-hint">Nothing selected. Switch to SELECT tool and click any spawn or mover.</p></div>',
+      '  </div>',
+      '  <div id="ed-tab-stage" class="ed-tab-body" hidden>',
+      '    <h5>FLAPPY HITBOX <span class="ed-help" title="Only used when this stage has flappy: true. Adjust Danny\'s collision box per size. Sprite stays the same; just the box that registers hits changes.">?</span></h5>',
+      '    <p class="ed-hint" id="ed-flappy-warn" hidden>This stage is not flappy. The fields below are still saved but unused until you set flappy: true.</p>',
+      '    <div class="ed-prop-row"><b style="display:inline-block;width:90px">SMALL DANNY</b>',
+      '      <label>dx <input id="ed-fb-sdx" type="number" step="1" style="width:54px"></label>',
+      '      <label>w <input id="ed-fb-sw" type="number" step="1" min="1" max="48" style="width:54px"></label>',
+      '      <label>h <input id="ed-fb-sh" type="number" step="1" min="1" max="64" style="width:54px"></label>',
+      '    </div>',
+      '    <div class="ed-prop-row"><b style="display:inline-block;width:90px">BIG DANNY</b>',
+      '      <label>dx <input id="ed-fb-bdx" type="number" step="1" style="width:54px"></label>',
+      '      <label>w <input id="ed-fb-bw" type="number" step="1" min="1" max="48" style="width:54px"></label>',
+      '      <label>h <input id="ed-fb-bh" type="number" step="1" min="1" max="64" style="width:54px"></label>',
+      '    </div>',
+      '    <p class="ed-hint"><b>dx</b> shifts the box right (+) or left (-) from the sprite center. <b>w</b> / <b>h</b> are the box width / height in pixels. Changes apply immediately to any live player when you TEST, and bake into the file when you EXPORT .js.</p>',
       '  </div>',
       '  <div id="ed-tab-variants" class="ed-tab-body" hidden>',
       '    <p class="ed-hint">Each variant is a renamable saved copy of this stage stored in your browser. Marking one as <b>MAIN</b> tells the game to use it at boot instead of the on-disk file.</p>',
@@ -328,6 +344,50 @@ window.SDD = window.SDD || {};
     }
     ui._refreshToolDesc = refreshToolDesc;
 
+    // ---- Stage tab: flappy hitbox controls ----
+    var FB_FIELDS = [
+      { id: 'ed-fb-sdx', key: 'flappySmallHitbox', sub: 'dx' },
+      { id: 'ed-fb-sw',  key: 'flappySmallHitbox', sub: 'w'  },
+      { id: 'ed-fb-sh',  key: 'flappySmallHitbox', sub: 'h'  },
+      { id: 'ed-fb-bdx', key: 'flappyBigHitbox',   sub: 'dx' },
+      { id: 'ed-fb-bw',  key: 'flappyBigHitbox',   sub: 'w'  },
+      { id: 'ed-fb-bh',  key: 'flappyBigHitbox',   sub: 'h'  }
+    ];
+    FB_FIELDS.forEach(function (f) {
+      ui.querySelector('#' + f.id).addEventListener('input', function (e) {
+        var v = parseInt(e.target.value, 10);
+        if (!isFinite(v)) return;
+        var lvl = scene.lvl;
+        if (!lvl[f.key]) {
+          lvl[f.key] = (f.key === 'flappySmallHitbox')
+            ? { dx: 2, w: 9, h: 19 }
+            : { dx: 0, w: 11, h: 26 };
+        }
+        lvl[f.key][f.sub] = v;
+        scene.dirty = true;
+        // Live-update the player's hitbox if the level scene is
+        // currently running (TEST mode). The next grow/shrink also
+        // re-reads these values via applyFlappyHitboxNow.
+        if (SDD.scene && SDD.scene.player && SDD.scene.flappy &&
+            typeof SDD.applyFlappyHitboxNow === 'function') {
+          SDD.applyFlappyHitboxNow(SDD.scene.player, !!SDD.scene.player.big);
+        }
+        refreshStatus(ui, scene);
+      });
+    });
+    ui._refreshStageTab = function () {
+      var lvl = scene.lvl;
+      ui.querySelector('#ed-flappy-warn').hidden = !!lvl.flappy;
+      var s = lvl.flappySmallHitbox || { dx: 2, w: 9, h: 19 };
+      var b = lvl.flappyBigHitbox   || { dx: 0, w: 11, h: 26 };
+      ui.querySelector('#ed-fb-sdx').value = s.dx;
+      ui.querySelector('#ed-fb-sw').value  = s.w;
+      ui.querySelector('#ed-fb-sh').value  = s.h;
+      ui.querySelector('#ed-fb-bdx').value = b.dx;
+      ui.querySelector('#ed-fb-bw').value  = b.w;
+      ui.querySelector('#ed-fb-bh').value  = b.h;
+    };
+
     // ---- Initial state ----
     refreshToolHighlight(ui, scene);
     refreshTileHighlight(ui, scene);
@@ -336,6 +396,7 @@ window.SDD = window.SDD || {};
     refreshToolDesc();
     refreshUsageBadges(ui, scene);
     refreshVariantList(ui, scene);
+    ui._refreshStageTab();
     ui.querySelector('#ed-stage').value = scene.day + '-' + scene.stage;
 
     // ---- Event wiring ----
@@ -389,6 +450,7 @@ window.SDD = window.SDD || {};
           x.classList.toggle('active', x === b);
         });
         ui.querySelector('#ed-tab-props').hidden = name !== 'props';
+        ui.querySelector('#ed-tab-stage').hidden = name !== 'stage';
         ui.querySelector('#ed-tab-variants').hidden = name !== 'variants';
         if (name === 'variants') refreshVariantList(ui, scene);
       });
@@ -693,6 +755,7 @@ window.SDD = window.SDD || {};
       refreshStatus(this.ui, this);
       refreshUsageBadges(this.ui, this);
       refreshVariantList(this.ui, this);
+      if (this.ui._refreshStageTab) this.ui._refreshStageTab();
     },
     setTool: function (t) {
       this.tool = t;
@@ -1580,7 +1643,8 @@ window.SDD = window.SDD || {};
     // Metadata + optional fields preserved
     var meta = ['name', 'theme', 'gravityScale', 'jumpScale', 'skyTheme',
                 'topDeath', 'underwater', 'flappy', 'flappySpeed',
-                'flappyFlap', 'flappyGravity', 'flappyMaxFall', 'themeZones'];
+                'flappyFlap', 'flappyGravity', 'flappyMaxFall',
+                'flappySmallHitbox', 'flappyBigHitbox', 'themeZones'];
     meta.forEach(function (k) {
       if (lvl[k] !== undefined) {
         lines.push('  ' + k + ': ' + JSON.stringify(lvl[k]) + ',');

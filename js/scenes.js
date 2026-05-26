@@ -2153,13 +2153,12 @@ window.SDD = window.SDD || {};
         if (s.type === 'player') {
           e = new SDD.ent.Player(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
-          // Pass 12 (Mark): "when I'm flying, I get hit easier - my
-          // hitbox is strange." Shrink the collision box in flappy
-          // mode (sides + bottom) so brushes-past don't register as
-          // wall hits. Sprite size unchanged.
+          // Flappy stages override the collision box (sprite unchanged)
+          // so brushes-past don't register as wall hits. Per-size values
+          // live in the level data; editor.js exposes sliders for tuning.
           if (this.flappy) {
-            e.x += 2; e.w = 9;
-            e.h = 19;
+            var hb = L.flappySmallHitbox || { dx: 2, w: 9, h: 19 };
+            e.x += (hb.dx || 0); e.w = hb.w; e.h = hb.h;
           }
           this.player = e;
         } else if (s.type === 'walker') {
