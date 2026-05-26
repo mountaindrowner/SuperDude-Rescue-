@@ -192,6 +192,7 @@ window.SDD = window.SDD || {};
       '    <button id="ed-save-variant" title="Save the current edits as a named variant in your browser library (no disk write).">SAVE VARIANT</button>',
       '    <button id="ed-save" title="Write the current edits to disk as js/level_X_Y.js (Ctrl+S). Picks a file once, then writes directly.">EXPORT .js</button>',
       '    <button id="ed-saveas" title="Pick a different target file and write the level there.">EXPORT AS</button>',
+      '    <button id="ed-copy-mains" title="Copy every stage flagged MAIN as a single JSON blob to your clipboard. Paste it to Claude to commit as the official maps.">COPY MAINS</button>',
       '    <button id="ed-exit" title="Exit back to the title menu (Esc)">EXIT</button>',
       '  </div>',
       '</div>',
@@ -371,6 +372,7 @@ window.SDD = window.SDD || {};
     ui.querySelector('#ed-save').addEventListener('click', function () { scene.save(false); });
     ui.querySelector('#ed-saveas').addEventListener('click', function () { scene.save(true); });
     ui.querySelector('#ed-save-variant').addEventListener('click', function () { scene.saveVariant(); });
+    ui.querySelector('#ed-copy-mains').addEventListener('click', function () { scene.copyMainsToClipboard(); });
     ui.querySelector('#ed-test').addEventListener('click', function () { scene.test(); });
     ui.querySelector('#ed-zoom-in').addEventListener('click', function () { scene.zoomStep(+1); });
     ui.querySelector('#ed-zoom-out').addEventListener('click', function () { scene.zoomStep(-1); });
@@ -1309,6 +1311,47 @@ window.SDD = window.SDD || {};
         var v = SDD.editorLib.get(key).variants[idx];
         toast(this.ui, 'Main: "' + (v ? v.name : '?') + '"');
       }
+    },
+    // Dump every stage whose active variant is a saved one (not the
+    // on-disk file) as a single JSON blob and copy to the clipboard.
+    // Paste it into chat and Claude can write each stage as the
+    // official level_X_Y.js. Skips stages still pointing at the disk.
+    copyMainsToClipboard: function () {
+      var out = {};
+      var count = 0;
+      var lib;
+      try { lib = JSON.parse(localStorage.getItem('sdd.editorLibrary.v1') || '{}'); }
+      catch (e) { toast(this.ui, 'Could not read library: ' + e.message); return; }
+      for (var key in lib) {
+        if (!lib.hasOwnProperty(key)) continue;
+        var entry = lib[key];
+        if (entry.active == null || entry.active < 0) continue;
+        var v = entry.variants[entry.active];
+        if (!v) continue;
+        out[key] = { name: v.name, savedAt: v.savedAt, data: v.data };
+        count++;
+      }
+      if (count === 0) {
+        toast(this.ui, 'No MAIN variants to copy. Mark stages MAIN first.');
+        return;
+      }
+      var blob = JSON.stringify({ kind: 'sdd.mains.v1', stages: out }, null, 2);
+      var scene = this;
+      var done = function () { toast(scene.ui, 'Copied ' + count + ' MAIN stage(s) - paste to Claude.'); };
+      var fail = function () {
+        // Clipboard API may be blocked; fall back to a textarea download
+        var name = 'sdd-mains.json';
+        var b = new Blob([blob], { type: 'application/json' });
+        var url = URL.createObjectURL(b);
+        var a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        toast(scene.ui, 'Downloaded ' + name + ' (' + count + ' stage(s))');
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(blob).then(done).catch(fail);
+      } else { fail(); }
     },
 
     // --- per-frame ---
