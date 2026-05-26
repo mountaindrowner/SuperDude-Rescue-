@@ -47,18 +47,27 @@ window.SDD = window.SDD || {};
   ];
 
   var TILE_DEFS = [
-    { c: ' ', label: 'erase',  desc: 'Empty space - paints over any tile.' },
-    { c: 'X', label: 'ground', desc: 'Solid ground / dirt. Theme-aware visuals.' },
-    { c: '#', label: 'brick',  desc: 'Solid brick. Theme-aware.' },
-    { c: '=', label: 'oneway', desc: 'One-way platform - jump up through, land on top.' },
-    { c: 'V', label: 'vine',   desc: 'Climbable vine. Player grabs to climb up/down.' },
-    { c: 'W', label: 'water',  desc: 'Submerged water - slow swim physics.' },
-    { c: '~', label: 'w.surf', desc: 'Water surface tile (top row of water).' },
-    { c: 'L', label: 'lava',   desc: 'Damaging lava. Touch = lose a life.' },
-    { c: '?', label: 'q-core', desc: 'Mystery brick - hit from below to release a power core.' },
-    { c: 'G', label: 'q-grow', desc: 'Mystery brick - hit from below for a Grow powerup.' },
-    { c: 'B', label: 'q-blast',desc: 'Mystery brick - hit from below for a Blast powerup.' },
-    { c: 'U', label: 'q-used', desc: 'Already-spent mystery brick (solid).' }
+    { c: ' ', label: 'erase',  desc: 'Empty space - paints over any tile.', color: '#3a3a4a' },
+    { c: 'X', label: 'ground', desc: 'Solid ground / dirt. Theme-aware visuals.', color: '#8a6a3c' },
+    { c: '#', label: 'brick',  desc: 'Solid brick. Theme-aware.', color: '#a85030' },
+    { c: '=', label: 'oneway', desc: 'One-way platform - jump up through, land on top.', color: '#c4a070' },
+    { c: 'V', label: 'vine',   desc: 'Climbable vine. Player grabs to climb up/down.', color: '#5a9038' },
+    { c: 'W', label: 'water',  desc: 'Submerged water - slow swim physics.', color: '#3a78a8' },
+    { c: '~', label: 'w.surf', desc: 'Water surface tile (top row of water).', color: '#7ac0e0' },
+    { c: 'L', label: 'lava',   desc: 'Damaging lava. Touch = lose a life.', color: '#ff5418' },
+    { c: '?', label: 'q-core', desc: 'Mystery brick - hit from below to release a power core.', color: '#46f0ff' },
+    { c: 'G', label: 'q-grow', desc: 'Mystery brick - hit from below for a Grow powerup.', color: '#ffb24a' },
+    { c: 'B', label: 'q-blast',desc: 'Mystery brick - hit from below for a Blast powerup.', color: '#fff0a0' },
+    { c: 'U', label: 'q-used', desc: 'Already-spent mystery brick (solid).', color: '#605040' }
+  ];
+  // Grouped tile palette - mirrors the spawn groups for visual consistency.
+  var TILE_GROUPS = [
+    { title: 'SOLID',         codes: ['X', '#'] },
+    { title: 'PLATFORMS',     codes: ['=', 'V'] },
+    { title: 'WATER',         codes: ['~', 'W'] },
+    { title: 'HAZARDS',       codes: ['L'] },
+    { title: 'POWER BLOCKS',  codes: ['?', 'G', 'B', 'U'] },
+    { title: 'TOOLS',         codes: [' '] }
   ];
 
   // Grouped spawn palette. Each entry: id, label, desc. Mark wants
@@ -137,9 +146,9 @@ window.SDD = window.SDD || {};
     checkpoint: [{f:'tx'},{f:'ty'}],
     signature:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     skyhazard:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'period',opt:true},{f:'dir',opt:true},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
-    bubble:     [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    bubble:     [{f:'tx'},{f:'ty'},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     octopus:    [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
-    twister:    [{f:'tx'},{f:'ty'},{f:'spd',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    twister:    [{f:'tx'},{f:'ty'},{f:'spd',opt:true},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     eel:        [{f:'tx'},{f:'ty'},{f:'maxH',opt:true},{f:'period',opt:true},{f:'phase',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}]
   };
 
@@ -185,7 +194,7 @@ window.SDD = window.SDD || {};
       '<div class="ed-bar ed-left">',
       '  <div class="ed-section" id="ed-tile-pal">',
       '    <h4>TILES <span class="ed-help" title="Click a tile, then paint on the canvas. Right-click to erase. Brush size below.">?</span></h4>',
-      '    <div class="ed-palette" id="ed-tile-buttons"></div>',
+      '    <div id="ed-tile-groups"></div>',
       '    <label class="ed-brush" title="Brush radius - 1 paints one cell, 3 paints a 3x3, 5 paints a 5x5.">BRUSH ',
       '      <select id="ed-brush-size"><option>1</option><option>3</option><option>5</option></select>',
       '    </label>',
@@ -233,23 +242,46 @@ window.SDD = window.SDD || {};
     ].join('');
     document.body.appendChild(ui);
 
-    // ---- Tile palette ----
-    var tbox = ui.querySelector('#ed-tile-buttons');
-    TILE_DEFS.forEach(function (t) {
-      var b = document.createElement('button');
-      b.className = 'ed-tile-btn';
-      b.setAttribute('data-tile', t.c);
-      b.title = t.label.toUpperCase() + ' - ' + t.desc;
-      b.innerHTML = '<span class="ed-tile-glyph">' + (t.c === ' ' ? '·' : t.c) +
-        '</span><span class="ed-tile-label">' + t.label + '</span>' +
-        '<span class="ed-badge" data-usage="' + t.c + '" hidden></span>';
-      tbox.appendChild(b);
+    // ---- Tile palette (grouped, collapsible like spawn palette) ----
+    var groupState = loadGroupState();
+    var tgroupBox = ui.querySelector('#ed-tile-groups');
+    TILE_GROUPS.forEach(function (g) {
+      var section = document.createElement('div');
+      section.className = 'ed-tile-group';
+      var open = groupState['tile.' + g.title] !== false;
+      section.classList.toggle('collapsed', !open);
+      section.innerHTML =
+        '<h5 class="ed-group-head" title="Click to collapse / expand">' +
+        '  <span class="ed-group-arrow">' + (open ? '▼' : '▶') + '</span> ' + g.title +
+        '</h5>' +
+        '<div class="ed-palette"></div>';
+      var pal = section.querySelector('.ed-palette');
+      g.codes.forEach(function (code) {
+        var t = TILE_DEFS.filter(function (x) { return x.c === code; })[0];
+        if (!t) return;
+        var b = document.createElement('button');
+        b.className = 'ed-tile-btn';
+        b.setAttribute('data-tile', t.c);
+        b.title = t.label.toUpperCase() + ' - ' + t.desc;
+        b.innerHTML =
+          '<span class="ed-tile-glyph" style="color:' + t.color + '">' +
+          (t.c === ' ' ? '·' : t.c) + '</span>' +
+          '<span class="ed-tile-label">' + t.label + '</span>' +
+          '<span class="ed-badge" data-usage="' + t.c + '" hidden></span>';
+        pal.appendChild(b);
+      });
+      section.querySelector('.ed-group-head').addEventListener('click', function () {
+        var nowOpen = section.classList.toggle('collapsed');
+        groupState['tile.' + g.title] = !nowOpen;
+        section.querySelector('.ed-group-arrow').textContent = nowOpen ? '▶' : '▼';
+        saveGroupState(groupState);
+      });
+      tgroupBox.appendChild(section);
     });
 
     // ---- Spawn palette (grouped, collapsible) ----
     // Collapse state persists in localStorage so a designer's chosen
     // open sections survive scene re-enters / page reloads.
-    var groupState = loadGroupState();
     var sgroupBox = ui.querySelector('#ed-spawn-groups');
     SPAWN_GROUPS.forEach(function (g) {
       var section = document.createElement('div');

@@ -2153,6 +2153,14 @@ window.SDD = window.SDD || {};
         if (s.type === 'player') {
           e = new SDD.ent.Player(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
+          // Pass 12 (Mark): "when I'm flying, I get hit easier - my
+          // hitbox is strange." Shrink the collision box in flappy
+          // mode (sides + bottom) so brushes-past don't register as
+          // wall hits. Sprite size unchanged.
+          if (this.flappy) {
+            e.x += 2; e.w = 9;
+            e.h = 19;
+          }
           this.player = e;
         } else if (s.type === 'walker') {
           e = new SDD.ent.Walker(0, 0);
@@ -2204,13 +2212,13 @@ window.SDD = window.SDD || {};
           e.tx = s.tx; e.ty = s.ty;                        // for nozzle decoration
           this.enemies.push(e);
         } else if (s.type === 'bubble') {
-          e = new SDD.ent.BubbleUp(s.tx * T + 1, (s.ty || 1) * T);
+          e = new SDD.ent.BubbleUp(s.tx * T + 1, (s.ty || 1) * T, s.scale || 1);
           this.enemies.push(e);
         } else if (s.type === 'octopus') {
           e = new SDD.ent.Octopus(s.tx * T, s.ty * T);
           this.enemies.push(e);
         } else if (s.type === 'twister') {
-          e = new SDD.ent.Twister(s.tx * T, (s.ty || 4) * T);
+          e = new SDD.ent.Twister(s.tx * T, (s.ty || 4) * T, s.scale || 1);
           if (s.spd) e.vx = s.spd;
           this.enemies.push(e);
         } else if (s.type === 'eel') {

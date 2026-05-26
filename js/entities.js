@@ -1050,8 +1050,27 @@ window.SDD = window.SDD || {};
   // ===================== SKY HAZARDS (Day 4) =====================
   // Solar flare - drops straight down with increasing speed. Hits player
   // on contact like an Orb.
-  function SolarFlare(x, y) {
-    this.x = x; this.y = y; this.w = 8; this.h = 10;
+  // Wraps a sprite draw with a center-anchored scale so a hazard's
+  // visual size matches its scaled hitbox without authoring multiple
+  // sprite resolutions. Falls back to the raw drawBC at scale=1.
+  function drawScaledSprite(ctx, name, ent, cam) {
+    var sc = ent.scale || 1;
+    if (sc === 1) { drawBC(ctx, name, ent, cam); return; }
+    var cx = ent.x + ent.w / 2 - cam.x;
+    var cy = ent.y + ent.h / 2 - cam.y;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(sc, sc);
+    var s = SDD.sprites.get(name);
+    if (s) ctx.drawImage(s, Math.round(-ent.w / (2 * sc)), Math.round(-ent.h / (2 * sc)));
+    ctx.restore();
+  }
+
+  function SolarFlare(x, y, scale) {
+    var sc = scale || 1;
+    this.scale = sc;
+    this.x = x; this.y = y;
+    this.w = Math.round(8 * sc); this.h = Math.round(10 * sc);
     this.vx = 0; this.vy = 1.0; this.life = 360; this.remove = false;
   }
   SolarFlare.prototype.update = function (level) {
@@ -1062,16 +1081,20 @@ window.SDD = window.SDD || {};
     if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;
   };
   SolarFlare.prototype.draw = function (ctx, cam) {
-    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 12, '#ffe070', 0.65);
-    drawBC(ctx, 'flare', this, cam);
+    var sc = this.scale || 1;
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 12 * sc, '#ffe070', 0.65);
+    drawScaledSprite(ctx, 'flare', this, cam);
   };
 
   // Meteor - drifts diagonally across the screen.
   // Slowed from vx=1.5 (Pass 9 difficulty audit: "the meteor should
   // be a little bit slower"). Lower horizontal speed gives Mark more
   // reaction time to dodge.
-  function Meteor(x, y, dir) {
-    this.x = x; this.y = y; this.w = 10; this.h = 8;
+  function Meteor(x, y, dir, scale) {
+    var sc = scale || 1;
+    this.scale = sc;
+    this.x = x; this.y = y;
+    this.w = Math.round(10 * sc); this.h = Math.round(8 * sc);
     this.vx = (dir || 1) * 1.0; this.vy = 0.7;
     this.life = 320; this.remove = false;
   }
@@ -1083,8 +1106,9 @@ window.SDD = window.SDD || {};
         this.x > level.map.pxW + 60 || this.x < -60) this.remove = true;
   };
   Meteor.prototype.draw = function (ctx, cam) {
-    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 10, '#ff9050', 0.7);
-    drawBC(ctx, this.vx > 0 ? 'meteor_r' : 'meteor_l', this, cam);
+    var sc = this.scale || 1;
+    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 10 * sc, '#ff9050', 0.7);
+    drawScaledSprite(ctx, this.vx > 0 ? 'meteor_r' : 'meteor_l', this, cam);
   };
 
   // HazardSpawner - invisible periodic spawner placed in level data.
@@ -1105,11 +1129,11 @@ window.SDD = window.SDD || {};
       this.t = 0;
       var sc = this.scale || 1;
       if (this.kind === 'flare') {
-        level.projectiles.push(new SolarFlare(this.x, this.y));
+        level.projectiles.push(new SolarFlare(this.x, this.y, sc));
       } else if (this.kind === 'meteor') {
-        level.projectiles.push(new Meteor(this.x, this.y, this.dir));
+        level.projectiles.push(new Meteor(this.x, this.y, this.dir, sc));
       } else if (this.kind === 'meteorH') {
-        var m = new Meteor(this.x, this.y, this.dir);
+        var m = new Meteor(this.x, this.y, this.dir, sc);
         m.vy = 0;
         level.projectiles.push(m);
       } else if (this.kind === 'lavaPlume') {
@@ -1610,9 +1634,11 @@ window.SDD = window.SDD || {};
   // column gets a strong upward push (vy clamped to negative). No
   // damage - just throws the rhythm off as Mark wanted. Bubbles
   // visually rise from the seabed.
-  function BubbleUp(x, y) {
+  function BubbleUp(x, y, scale) {
+    var sc = scale || 1;
+    this.scale = sc;
     this.x = x; this.y = y;
-    this.w = 14; this.h = 100;            // tall vertical zone
+    this.w = Math.round(14 * sc); this.h = Math.round(100 * sc);
     this.dead = false; this.remove = false;
     this.invisible = true; this.stompable = false;
     this.t = 0;
@@ -1840,10 +1866,12 @@ window.SDD = window.SDD || {};
   // Drifts left-to-right across the screen at the player's altitude
   // band. Contact triggers the same flappy wall-hit behaviour as
   // hitting a pillar.
-  function Twister(x, y) {
+  function Twister(x, y, scale) {
+    var sc = scale || 1;
+    this.scale = sc;
     this.x = x; this.y = y;
     // Pass 10 round 2 (Mark): bigger, more dramatic twister.
-    this.w = 18; this.h = 40;
+    this.w = Math.round(18 * sc); this.h = Math.round(40 * sc);
     this.vx = 1.6;
     this.dead = false; this.remove = false;
     this.stompable = false;
@@ -1868,6 +1896,17 @@ window.SDD = window.SDD || {};
     }
   };
   Twister.prototype.draw = function (ctx, cam) {
+    var sc = this.scale || 1;
+    var origW = this.w, origH = this.h;
+    if (sc !== 1) {
+      // Temporarily revert to unscaled size for the procedural draw,
+      // then scale around the visual center.
+      this.w = this.w / sc; this.h = this.h / sc;
+      var cxs = this.x + this.w / 2 - cam.x;
+      var cys = this.y + this.h / 2 - cam.y;
+      ctx.save();
+      ctx.translate(cxs, cys); ctx.scale(sc, sc); ctx.translate(-cxs, -cys);
+    }
     var cx = Math.round(this.x + this.w / 2 - cam.x);
     var cy = Math.round(this.y - cam.y);
     var sway1 = Math.sin(this.t * 0.18) * 3;
@@ -1918,6 +1957,7 @@ window.SDD = window.SDD || {};
     // Lifted dust at the bottom
     ctx.fillStyle = 'rgba(120,130,160,0.7)';
     ctx.fillRect((cx - 6 + sway3) | 0, cy + 36, 12, 2);
+    if (sc !== 1) { ctx.restore(); this.w = origW; this.h = origH; }
   };
   Twister.prototype.zap = function () {};
   Twister.prototype.stomped = function () {};

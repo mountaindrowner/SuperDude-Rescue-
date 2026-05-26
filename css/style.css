@@ -331,6 +331,20 @@ body.touch #touch-controls { display: block; }
   font-size: 9px;
 }
 #editor-ui .ed-spawn-group.collapsed .ed-palette { display: none; }
+#editor-ui .ed-tile-group { margin-bottom: 8px; }
+#editor-ui .ed-tile-group h5 {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #ffd23a;
+  margin: 4px 0 3px;
+  border-bottom: 1px solid #2a3050;
+  padding-bottom: 2px;
+}
+#editor-ui .ed-tile-group.collapsed .ed-palette { display: none; }
+#editor-ui .ed-tile-glyph {
+  font-size: 18px;            /* up from 14 - easier to read at a glance */
+  font-weight: bold;
+}
 
 /* Properties panel polish */
 #editor-ui .ed-prop-title {

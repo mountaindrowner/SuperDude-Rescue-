@@ -137,5 +137,5 @@ window.SDD = window.SDD || {};
   sp('core', 240, 9); sp('core', 245, 9); sp('core', 251, 9); sp('core', 256, 9);
 
   SDD.levels = SDD.levels || {};
-  SDD.levels['3-2'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'VEGETATION', theme: 'forest' };
+  SDD.levels['3-2'] = { width: W, height: H, ground: GROUND, tiles: t, spawns: spawns, movers: movers, name: 'GARDEN PATH', theme: 'forest' };
 })();
