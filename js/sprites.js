@@ -597,30 +597,105 @@ window.SDD = window.SDD || {};
     px(g, 6, t + 3, 1, 1, C.rkEye); px(g, 11, t + 3, 1, 1, C.rkEye);
   }
 
-  // Lion (Day 6-1 savanna). Golden-tan body, fluffy mane around head,
-  // small paws, tufted tail. Frame 1 stretches forward (prowl crouch).
+  // Lion (Day 6-1 savanna). Full-bodied predator silhouette: shaggy
+  // mane wider than the body, tapered haunches, four articulated
+  // legs, prominent tail with tuft. Frame 1 squashes one row for the
+  // prowl crouch. Mark, batch B: "way more definition and body
+  // silhouette - it's a lion."
   function paintWalker_lion(g, frame) {
-    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
-    var body = '#d89860', mane = '#a86028', dk = '#5a3a1c', light = '#ffd890', eye = '#1a1640';
-    // Body
-    px(g, 4, t + 1, 9, 5 - sq, body);
-    px(g, 3, t + 3, 11, 3 - sq, body);
-    px(g, 5, t, 6, 1, body);
-    px(g, 5, t + 1, 5, 1, light);                          // top highlight
-    // Head + mane (front-right)
-    px(g, 11, t - 1, 4, 5, mane);                          // mane
-    px(g, 12, t,     3, 3, body);                          // face inside mane
-    px(g, 13, t + 1, 1, 1, eye);                           // eye
-    px(g, 14, t + 2, 1, 1, dk);                            // nose
+    var sq = frame === 1 ? 1 : 0, t = 3 + sq;             // top row of the silhouette
+    var body = '#d89860', bodyD = '#a8682c', mane = '#7a3c12',
+        maneL = '#b86838', dk = '#3a2008', light = '#ffe098',
+        eye = '#1a1640', tuft = '#5a280c';
+
+    // --- Tail (left side) + tuft ---
+    px(g, 0, t + 3, 1, 1, body);
+    px(g, 1, t + 2, 1, 3, body);
+    px(g, 2, t + 1, 1, 2, body);
+    px(g, 0, t + 4, 1, 1, tuft);                          // dark tuft pixel
+
+    // --- Body (low, tapered) ---
+    // Haunches (back-left) thicker than shoulders.
+    px(g, 2, t + 3, 4, 4 - sq, body);                     // rear chunk
+    px(g, 3, t + 2, 8, 1, bodyD);                         // spine top dark
+    px(g, 4, t + 3, 7, 4 - sq, body);                     // mid body
+    px(g, 4, t + 3, 6, 1, light);                         // back highlight
+    px(g, 3, t + 6 - sq, 8, 1, bodyD);                    // belly shadow
+
+    // --- Mane (right side, bigger than head) ---
+    px(g, 9,  t,     5, 1, mane);                         // top puff
+    px(g, 8,  t + 1, 7, 2, mane);                         // upper mane
+    px(g, 8,  t + 3, 7, 3, mane);                         // mid mane
+    px(g, 9,  t + 5, 6, 1, mane);                         // lower mane
+    // Mane highlights / texture
+    px(g, 10, t,     1, 1, maneL);
+    px(g, 13, t,     1, 1, maneL);
+    px(g, 9,  t + 2, 1, 1, maneL);
+    px(g, 13, t + 3, 1, 1, maneL);
+    px(g, 11, t + 5, 1, 1, maneL);
+    // Stray mane tufts that break the silhouette outline
+    px(g, 8,  t,     1, 1, mane);
+    px(g, 14, t + 2, 1, 1, mane);
+    px(g, 14, t + 4, 1, 1, mane);
+
+    // --- Face (inside mane) ---
+    px(g, 11, t + 2, 3, 3, body);                         // face
+    px(g, 12, t + 3, 1, 1, eye);                          // eye
+    px(g, 13, t + 4, 1, 1, dk);                           // nose
+    px(g, 11, t + 4, 1, 1, dk);                           // mouth corner
+
+    // --- Legs: 4 visible (front pair right of mane, back pair left) ---
+    px(g, 3, t + 7 - sq, 1, 2, body);                     // back-far leg
+    px(g, 4, t + 7 - sq, 1, 2, dk);                       // paw
+    px(g, 6, t + 7 - sq, 1, 2, body);                     // back-near leg
+    px(g, 7, t + 7 - sq, 1, 2, dk);                       // paw
+    px(g, 9, t + 7 - sq, 1, 2, body);                     // front-near leg
+    px(g, 10, t + 7 - sq, 1, 2, dk);                      // paw
+    px(g, 12, t + 7 - sq, 1, 2, body);                    // front-far leg
+    px(g, 13, t + 7 - sq, 1, 2, dk);                      // paw
+  }
+
+  // Wildebeest (Day 6-1 stampede mob, tiled 8x across the herd). Dark
+  // muscular silhouette with curving horns, shoulder hump, beard
+  // under chin, and four legs blurred by running. Drawn 16x16 and
+  // repeated by Stampede.draw with a per-beast bob.
+  function paintWildebeest(g) {
+    var dk = '#100a06', body = '#241810', mid = '#2e2014',
+        horn = '#74532a', hornL = '#a6804a', beard = '#060402';
+    // Shoulder hump (back rises forward).
+    px(g, 4, 2, 6, 1, dk);
+    px(g, 5, 1, 4, 1, dk);
+    // Back / body
+    px(g, 1, 3, 11, 5, body);
+    px(g, 2, 3, 10, 1, dk);                                 // spine top dark
+    px(g, 1, 7, 11, 1, dk);                                 // belly shadow
+    px(g, 3, 4, 7, 1, mid);                                 // back highlight band
+    // Head (front-right, lower than the hump)
+    px(g, 11, 4, 4, 4, body);
+    px(g, 12, 4, 3, 1, dk);
+    px(g, 14, 5, 1, 1, dk);                                 // eye socket
+    // Horns curving up + out
+    px(g, 11, 2, 1, 2, horn);
+    px(g, 10, 1, 1, 1, horn);
+    px(g, 14, 2, 1, 2, horn);
+    px(g, 15, 1, 1, 1, horn);
+    px(g, 10, 1, 1, 1, hornL);                              // horn tip highlight
+    px(g, 15, 1, 1, 1, hornL);
+    // Beard / dewlap below chin
+    px(g, 12, 8, 2, 2, beard);
+    px(g, 11, 9, 1, 1, beard);
     // Tail tuft (back-left)
-    px(g, 1, t,     1, 2, body);
-    px(g, 0, t + 1, 1, 1, mane);
-    // Paws
-    px(g, 4, t + 6 - sq, 2, 1, dk);
-    px(g, 7, t + 6 - sq, 2, 1, dk);
-    px(g, 11, t + 6 - sq, 2, 1, dk);
-    // Belly shadow
-    px(g, 4, t + 5 - sq, 7, 1, '#a87648');
+    px(g, 0, 5, 1, 2, body);
+    px(g, 0, 6, 1, 1, beard);
+    // Legs (running blur - four legs with motion smear at the bottom)
+    px(g, 2, 8, 1, 6, dk);
+    px(g, 5, 8, 1, 6, dk);
+    px(g, 8, 8, 1, 6, dk);
+    px(g, 11, 8, 1, 6, dk);
+    // Hoof-level motion smear
+    px(g, 1, 13, 4, 1, dk);
+    px(g, 6, 13, 4, 1, dk);
+    px(g, 10, 13, 4, 1, dk);
   }
 
   // Porcupine (Day 6-1 savanna). Brown body with spike row on top,
@@ -2302,6 +2377,7 @@ window.SDD = window.SDD || {};
       });
     });
 
+    sprites['wildebeest'] = spriteO(16, 16, paintWildebeest);
     sprites['orb'] = spriteO(9, 8, paintOrb);
     sprites['bolt'] = spriteO(9, 8, paintBolt);
     sprites['flare'] = spriteO(8, 10, paintFlare);

@@ -830,13 +830,42 @@ window.SDD = window.SDD || {};
     }
     this.animT++;
   };
-  Walker.prototype.stomped = function () { this.dead = true; this.deadT = 0; };
-  Walker.prototype.zap = function () { this.dead = true; this.deadT = 0; };
+  Walker.prototype.stomped = function () {
+    if (this.unkillable) return;       // savanna lions / porcupines no-sell stomps
+    this.dead = true; this.deadT = 0;
+  };
+  Walker.prototype.zap = function () {
+    if (this.unkillable) return;       // blast bounces off too
+    this.dead = true; this.deadT = 0;
+  };
   Walker.prototype.draw = function (ctx, cam) {
     var f = this.dead ? 1 : (Math.floor(this.animT / 8) % 2);
     var dir = this.dir > 0 ? 'r' : 'l';
     var base = 'walker_' + f + '_' + dir;
     drawBC(ctx, (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base, this, cam);
+    // Porcupine signature: extra spikes pulse in / out on top of the
+    // baked sprite so the threat reads at a glance (Mark: "give them
+    // their signature spines coming in and out").
+    if (this.variant === 'porcupine' && !this.dead) {
+      var p = (Math.sin(this.animT * 0.08) + 1) * 0.5;          // 0..1
+      var ext = Math.round(p * 4);                              // 0..4 px
+      if (ext > 0) {
+        var s = SDD.sprites.get(base + '_porcupine');
+        if (s) {
+          var dx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
+          var dy = Math.round(this.y - cam.y + this.h - s.height);
+          ctx.fillStyle = '#1a1004';
+          var cols = [3, 5, 7, 9, 10];
+          for (var i = 0; i < cols.length; i++) {
+            ctx.fillRect(dx + cols[i], dy + 3 - ext, 1, ext);
+          }
+          ctx.fillStyle = '#8a6040';
+          for (var j = 0; j < cols.length; j += 2) {
+            ctx.fillRect(dx + cols[j], dy + 3 - ext, 1, 1);
+          }
+        }
+      }
+    }
   };
 
   // ===================== WISP (flyer) =====================
@@ -965,6 +994,62 @@ window.SDD = window.SDD || {};
   WaterJet.prototype.draw = function (ctx, cam) {
     glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 9, '#6cd0ff', 0.55);
     drawBC(ctx, this.vx > 0 ? 'waterjet_r' : 'waterjet_l', this, cam);
+  };
+
+  // ===================== STAMPEDE (Day 6-1 wildebeest herd) =====================
+  // A horizontal "moving wall" hazard 8 tiles wide and 1 tile tall.
+  // Patrols a fixed pixel range, hurts on touch, cannot be stomped or
+  // zapped (it's a mob, not a single creature). Renders as tiled
+  // wildebeest silhouettes with a dust trail behind the herd.
+  function Stampede(x, y, opts) {
+    opts = opts || {};
+    this.x = x; this.y = y;
+    this.w = 8 * C.TILE; this.h = C.TILE;
+    this.dir = opts.dir || -1;
+    this.spd = opts.spd || 2.0;
+    this.minX = (opts.minX != null) ? opts.minX : x - 20 * C.TILE;
+    this.maxX = (opts.maxX != null) ? opts.maxX : x + 20 * C.TILE + this.w;
+    this.dead = false; this.remove = false;
+    this.stompable = false; this.unkillable = true;
+    this.animT = 0;
+  }
+  Stampede.prototype.update = function (/*level*/) {
+    this.x += this.dir * this.spd;
+    if (this.x < this.minX)            { this.x = this.minX; this.dir = 1; }
+    if (this.x + this.w > this.maxX)   { this.x = this.maxX - this.w; this.dir = -1; }
+    this.animT++;
+  };
+  Stampede.prototype.stomped = function () { /* no-op: it's a herd, not a head */ };
+  Stampede.prototype.zap     = function () { /* no-op */ };
+  Stampede.prototype.draw = function (ctx, cam) {
+    var s = SDD.sprites.get('wildebeest');
+    if (!s) return;
+    var dx0 = Math.round(this.x - cam.x);
+    var dy  = Math.round(this.y - cam.y + this.h - s.height);
+    // Dust kicked up behind the herd (opposite of travel direction).
+    ctx.fillStyle = 'rgba(150,110,70,0.55)';
+    for (var d = 0; d < 8; d++) {
+      var sign = this.dir > 0 ? -1 : 1;
+      var dxd = dx0 + (this.dir > 0 ? -1 : this.w) + sign * d * 4;
+      var dyd = dy + s.height - 3 - ((d + Math.floor(this.animT / 4)) % 2);
+      ctx.fillRect(dxd, dyd, 3, 2);
+    }
+    // Tile the wildebeest silhouettes across the herd, with a 1-px
+    // bob phased per beast so the herd reads as galloping animals
+    // rather than a static row.
+    var n = Math.max(1, Math.floor(this.w / s.width));
+    for (var i = 0; i < n; i++) {
+      var bob = ((i + Math.floor(this.animT / 5)) % 2) ? 0 : 1;
+      if (this.dir > 0) {
+        ctx.save();
+        ctx.translate(dx0 + (i + 1) * s.width, dy + bob);
+        ctx.scale(-1, 1);
+        ctx.drawImage(s, 0, 0);
+        ctx.restore();
+      } else {
+        ctx.drawImage(s, dx0 + i * s.width, dy + bob);
+      }
+    }
   };
 
   // ===================== CRAB (Day 2-2 - walker that throws) =====================
@@ -2140,6 +2225,6 @@ window.SDD = window.SDD || {};
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
     Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
     BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister,
-    ElectricEel: ElectricEel
+    ElectricEel: ElectricEel, Stampede: Stampede
   };
 })();

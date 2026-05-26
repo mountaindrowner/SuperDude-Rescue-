@@ -2167,6 +2167,11 @@ window.SDD = window.SDD || {};
           // Per-spawn variant override (Mark: lions + porcupines side
           // by side in savanna), else default to the theme variant.
           e.variant = s.variant || variants.walker;
+          // Savanna predators: too tough to stomp or zap. The player
+          // has to avoid them instead.
+          if (e.variant === 'lion' || e.variant === 'porcupine') {
+            e.stompable = false; e.unkillable = true;
+          }
           this.enemies.push(e);
         } else if (s.type === 'thrower') {
           e = new SDD.ent.Thrower(0, 0);
@@ -2227,6 +2232,18 @@ window.SDD = window.SDD || {};
             maxH:   s.maxH,
             period: s.period,
             phase:  s.phase
+          });
+          this.enemies.push(e);
+        } else if (s.type === 'stampede') {
+          // Day 6-1 wildebeest stampede - 8 tile wide x 1 tile tall
+          // moving wall. Unkillable, hurts on touch. range = patrol
+          // radius in tiles around the spawn column.
+          var range = (s.range != null ? s.range : 24);
+          e = new SDD.ent.Stampede(s.tx * T, s.ty * T, {
+            dir: s.dir || -1,
+            spd: s.spd || 2.0,
+            minX: (s.tx - range) * T,
+            maxX: (s.tx + range) * T + 8 * T
           });
           this.enemies.push(e);
         } else if (s.type === 'checkpoint') {

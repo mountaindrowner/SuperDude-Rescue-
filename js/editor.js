@@ -83,9 +83,10 @@ window.SDD = window.SDD || {};
       { id: 'timepart', desc: 'Time-machine part. One per stage finishes the run.' }
     ]},
     { title: 'GROUND ENEMIES', items: [
-      { id: 'walker',  desc: 'Walks back and forth. Stompable. Theme-skinned (lion, leaf, rock...).' },
+      { id: 'walker',  desc: 'Walks back and forth. Stompable except lion + porcupine variants (unkillable).' },
       { id: 'thrower', desc: 'Stationary thrower - lobs projectiles. NOW stompable.' },
-      { id: 'crab',    desc: 'Crab - sideways scuttle on the floor.' }
+      { id: 'crab',    desc: 'Crab - sideways scuttle on the floor.' },
+      { id: 'stampede', desc: 'Wildebeest stampede - 8 tiles wide, 1 tall, charges back and forth. NOT stompable. range = patrol radius in tiles.' }
     ]},
     { title: 'FLYING / WATER', items: [
       { id: 'wisp',    desc: 'Floating wisp. Stompable. Set "shoots:true" for storm-cloud shooter.' },
@@ -111,6 +112,7 @@ window.SDD = window.SDD || {};
       case 'npc':        return { kind: 'adam' };
       case 'twister':    return { spd: 1.6 };
       case 'eel':        return { maxH: 96, period: 220, phase: 0 };
+      case 'stampede':   return { range: 24, spd: 2.0, dir: -1 };
       default:           return {};
     }
   }
@@ -127,7 +129,7 @@ window.SDD = window.SDD || {};
     'skyhazard.kind': ['flare', 'meteor', 'meteorH', 'lavaPlume'],
     'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove'],
     // spawn.variant values (theme default = empty)
-    'walker.variant':  ['', 'lion', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
+    'walker.variant':  ['', 'lion', 'porcupine', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
     'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud'],
     'thrower.variant': ['', 'rain', 'rock', 'seed', 'sun', 'fruit'],
     // Boolean-ish flag
@@ -149,7 +151,8 @@ window.SDD = window.SDD || {};
     bubble:     [{f:'tx'},{f:'ty'},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     octopus:    [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     twister:    [{f:'tx'},{f:'ty'},{f:'spd',opt:true},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
-    eel:        [{f:'tx'},{f:'ty'},{f:'maxH',opt:true},{f:'period',opt:true},{f:'phase',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}]
+    eel:        [{f:'tx'},{f:'ty'},{f:'maxH',opt:true},{f:'period',opt:true},{f:'phase',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    stampede:   [{f:'tx'},{f:'ty'},{f:'range',opt:true},{f:'spd',opt:true},{f:'dir',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}]
   };
 
   // -----------------------------------------------------------------
