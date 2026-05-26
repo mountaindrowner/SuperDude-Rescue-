@@ -99,6 +99,6 @@ SDD.levels['4-2'] = {
   ],
   name: "MOON & STARS",
   theme: "cosmic-night",
-  gravityScale: 0.32,
+  gravityScale: 0.48,
   jumpScale: 0.75
 };

@@ -2068,18 +2068,18 @@ window.SDD = window.SDD || {};
   // pickup with its name and a one-line tip on how to use it. Without
   // this, kids don't know what they just grabbed or how to trigger it.
   var SIG_HINTS = {
-    sunburst:        { name: 'SUNBURST!',     tip: 'Touch enemies - they get zapped!' },
-    cloudglide:      { name: 'CLOUD GLIDE!',  tip: 'Hold A in mid-air to fall slowly' },
-    pearl:           { name: 'PEARL OF SEA!', tip: 'Swim faster underwater' },
-    coolingwater:    { name: 'COOLING WATER!',tip: 'Walk on lava safely' },
-    vinegrapple:     { name: 'VINE GRAPPLE!', tip: 'Press B near a vine to swing in' },
-    sunshield:       { name: 'SUN SHIELD!',   tip: 'Sun flares cannot hurt you' },
-    starjump:        { name: 'STAR JUMP!',    tip: 'Press A twice more in mid-air' },
-    wingburst:       { name: 'WING BURST!',   tip: 'Hold A to soar upward' },
-    airbubble:       { name: 'AIR BUBBLE!',   tip: 'Sea creatures bounce off you' },
-    callinghorn:     { name: 'CALLING HORN!', tip: 'Enemies freeze in place' },
-    friendshiptoken: { name: 'FRIENDSHIP!',   tip: 'NPCs give 5 cores instead of 3' },
-    doveblessing:    { name: 'DOVE BLESSING!',tip: 'Power cores rain from the sky' }
+    sunburst:        { name: 'SUNBURST!',     tip: 'RUN INTO BAD GUYS TO ZAP THEM!' },
+    cloudglide:      { name: 'CLOUD GLIDE!',  tip: 'JUMP, THEN HOLD A TO FLOAT DOWN!' },
+    pearl:           { name: 'PEARL POWER!',  tip: 'SWIM SUPER FAST UNDER WATER!' },
+    coolingwater:    { name: 'COOL WATER!',   tip: 'WALK RIGHT OVER LAVA - IT WON\'T BURN!' },
+    vinegrapple:     { name: 'VINE GRAPPLE!', tip: 'PRESS B BY A VINE TO SWING ACROSS!' },
+    sunshield:       { name: 'SUN SHIELD!',   tip: 'SUN FLARES BOUNCE RIGHT OFF YOU!' },
+    starjump:        { name: 'STAR JUMP!',    tip: 'JUMP, THEN A AGAIN AND AGAIN IN THE AIR!' },
+    wingburst:       { name: 'WING BURST!',   tip: 'HOLD A TO FLY STRAIGHT UP!' },
+    airbubble:       { name: 'AIR BUBBLE!',   tip: 'SEA CREATURES CAN\'T TOUCH YOU!' },
+    callinghorn:     { name: 'CALLING HORN!', tip: 'ALL ENEMIES FREEZE WHERE THEY STAND!' },
+    friendshiptoken: { name: 'FRIENDSHIP!',   tip: 'FRIENDS GIVE YOU EXTRA POWER CORES!' },
+    doveblessing:    { name: 'DOVE BLESSING!',tip: 'POWER CORES RAIN DOWN FROM THE SKY!' }
   };
 
   SDD.scenes.level = {
