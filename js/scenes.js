@@ -1879,115 +1879,32 @@ window.SDD = window.SDD || {};
   // in the back, a single enormous dandelion / pollen mote drifting,
   // warm under-canopy lighting (the world is "down in the weeds").
   function drawSky_bugscale(g, camx, camy, prog, t) {
-    // Cohesive canopy scene: dense overhead foliage at the top, deep
-    // forest shadow at the bottom, layers of out-of-focus leaf masses
-    // between, and a single in-focus branch up front anchored to the
-    // canopy. No stick-in-midair branches.
-    vGradient(g, '#b8c258', '#74953e', '#1e3a18');
-
-    // Reusable disc helper for soft leaf blobs.
-    function disc(cx, cy, r, color) {
-      g.fillStyle = color;
-      g.beginPath(); g.arc(cx, cy, r, 0, 6.28); g.fill();
-    }
-    // Leaf cluster: a tight cloud of overlapping discs at varied sizes.
-    function leafCluster(cx, cy, r, base, hi, lo) {
-      disc(cx,         cy,         r * 1.05, base);
-      disc(cx - r*0.6, cy + r*0.2, r * 0.85, base);
-      disc(cx + r*0.5, cy - r*0.1, r * 0.90, base);
-      disc(cx + r*0.7, cy + r*0.4, r * 0.70, lo);
-      disc(cx - r*0.4, cy - r*0.5, r * 0.55, hi);
-      disc(cx + r*0.1, cy - r*0.3, r * 0.40, hi);
-    }
-    // Tapered branch with knot bumps + leaf clusters along its length.
-    // Anchored to (cx, cy) and extending `len` px at `tilt` angle.
-    function branchWithLeaves(cx, cy, len, thick, tilt, wood, leafBase, leafHi, leafLo) {
-      g.save();
-      g.translate(cx, cy);
-      g.rotate(tilt);
-      g.fillStyle = wood;
-      g.fillRect(0, -thick * 0.5, len, thick);
-      g.beginPath(); g.arc(0,    0, thick * 0.55, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(len,  0, thick * 0.45, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(len * 0.30, -thick * 0.4, thick * 0.42, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(len * 0.55,  thick * 0.4, thick * 0.38, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(len * 0.78, -thick * 0.35, thick * 0.32, 0, 6.28); g.fill();
-      // Leaf clusters at three points along the branch + a big one
-      // at the tip. The clusters cover the branch break-points so it
-      // doesn't read as a free-floating stick.
-      leafCluster(len * 0.22, -thick * 0.9, thick * 1.4, leafBase, leafHi, leafLo);
-      leafCluster(len * 0.62,  thick * 1.0, thick * 1.3, leafBase, leafHi, leafLo);
-      leafCluster(len + 4,    -thick * 0.4, thick * 1.8, leafBase, leafHi, leafLo);
-      g.restore();
+    // Painted canopy from assets/level 6 bugs background.png, pre-blurred
+    // into a 320x180 offscreen canvas by sprites.js. Drawn tiled with slow
+    // parallax as the cohesive backdrop. The image already includes
+    // foreground branches at the corners and mid-canopy trees fading
+    // into mist, so no procedural foliage on top. Sun pool, drifting
+    // pollen, and the hanging cocoon remain as dynamic overlays.
+    var bg = SDD.sprites && SDD.sprites.bugscaleBg && SDD.sprites.bugscaleBg();
+    if (bg) {
+      var bgSpan = bg.width, bgPx = 0.3;
+      var bgOff = -(((camx * bgPx) % bgSpan) + bgSpan) % bgSpan;
+      for (var b = bgOff - bgSpan; b < 320 + bgSpan; b += bgSpan) {
+        g.drawImage(bg, b, 0);
+      }
+    } else {
+      vGradient(g, '#b8c258', '#74953e', '#1e3a18');
     }
 
-    // ----- FAR: bokeh canopy. Heavy blur. No discernible shapes,
-    // just overlapping soft green / gold blobs that suggest distant
-    // foliage. Tiles slowly with parallax.
-    g.save();
-    g.filter = 'blur(4px)';
-    g.globalAlpha = 0.85;
-    var farSpan = 60, farPx = 0.06;
-    var farOff = -(((camx * farPx) % farSpan) + farSpan) % farSpan;
-    for (var fb = farOff - farSpan; fb < 360 + farSpan; fb += farSpan) {
-      // Two rows of blobs at slightly different y for organic layering
-      disc(fb + 12, 38,  24, '#8aa64a');
-      disc(fb + 40, 46,  22, '#6e8e36');
-      disc(fb + 28, 70,  20, '#a4be58');
-      disc(fb + 50, 82,  26, '#7e9c44');
-      disc(fb + 18, 100, 28, '#5e7e30');
-      disc(fb + 42, 116, 24, '#7c9a40');
-      // Occasional warm sun-spot
-      disc(fb + 30, 24,  16, '#d6cf6a');
-    }
-    g.restore();
-
-    // Sun-pierced light pool - drawn after the far blur so the rays
-    // appear in front of the deep canopy.
+    // Sun-pierced light pool - warm glow over the canopy centre-top.
     var sunPool = g.createRadialGradient(140 - camx * 0.03, 22, 14, 140 - camx * 0.03, 22, 140);
-    sunPool.addColorStop(0, 'rgba(255, 245, 180, 0.65)');
-    sunPool.addColorStop(0.6, 'rgba(255, 245, 180, 0.15)');
+    sunPool.addColorStop(0, 'rgba(255, 245, 180, 0.55)');
+    sunPool.addColorStop(0.6, 'rgba(255, 245, 180, 0.12)');
     sunPool.addColorStop(1, 'rgba(255, 245, 180, 0)');
     g.fillStyle = sunPool;
     g.fillRect(0, 0, 320, 140);
 
-    // ----- MID: bigger leaf clusters with hints of brown branches
-    // weaving through them. Lighter blur, more shape. They tile across
-    // the screen so the canopy reads as continuous foliage, not gaps.
-    g.save();
-    g.filter = 'blur(1.6px)';
-    g.globalAlpha = 0.88;
-    var midSpan = 110, midPx = 0.22;
-    var midOff = -(((camx * midPx) % midSpan) + midSpan) % midSpan;
-    for (var mb = midOff - midSpan; mb < 360 + midSpan; mb += midSpan) {
-      branchWithLeaves(mb + 0,  52, 90, 5, -0.10, '#4a2e14', '#5e8a36', '#9ec85a', '#345020');
-      branchWithLeaves(mb + 30, 96, 80, 6,  0.14, '#3c2410', '#52803a', '#88b04c', '#2c4218');
-    }
-    g.restore();
-
-    // ----- TOP CANOPY: dense overhead foliage. Indicates "you are
-    // looking up into a tree" - the source the foreground branch
-    // hangs from. Mostly the top 24px with leafy tufts dangling down.
-    g.save();
-    g.filter = 'blur(2px)';
-    g.fillStyle = '#1a2e10';
-    g.fillRect(0, 0, 320, 14);
-    for (var tc = -10; tc < 330; tc += 22) {
-      disc(tc + (camx * 0.18) % 22, 14, 14, '#264018');
-    }
-    g.restore();
-
-    // Crisp leaf overhang along the top edge so the canopy reads even
-    // when the player is at the top of the screen.
-    for (var oh = 0; oh < 14; oh++) {
-      var ox = ((oh * 24 - camx * 0.5) % 360 + 360) % 360 - 20;
-      g.fillStyle = oh % 2 ? '#1a3010' : '#22401a';
-      g.beginPath();
-      g.ellipse(ox, 6, 14, 7, 0.1, 0, 6.28); g.fill();
-    }
-
-    // ----- DRIFTING POLLEN MOTES (between mid and near). These light
-    // up the air and tie the depth layers together.
+    // Drifting pollen motes tie the depth layers together.
     for (var pm = 0; pm < 22; pm++) {
       var pmx = ((pm * 18 + t * 0.4 - camx * 0.25) % 340 + 340) % 340 - 10;
       var pmy = (60 + pm * 6 - (t * 0.3 + pm * 18) % 130) % 130 + 20;
@@ -1997,10 +1914,7 @@ window.SDD = window.SDD || {};
       g.fillRect((pmx | 0) + 1, pmy | 0, 1, 1);
     }
 
-    // ----- HANGING VINE / COCOON (the bagworm from Mark's photo).
-    // A single thin vine drops from the canopy with a small cocoon
-    // at the end. Slow sway. Tile occasionally so it shows up but
-    // not on every screen.
+    // Hanging vine + bagworm cocoon kept from the previous canopy pass.
     var vineSpan = 360;
     var vineOff = -(((camx * 0.5) % vineSpan) + vineSpan) % vineSpan;
     for (var vn = vineOff - vineSpan; vn < 360 + vineSpan; vn += vineSpan) {
@@ -2011,29 +1925,11 @@ window.SDD = window.SDD || {};
       g.moveTo(vx, 14);
       g.bezierCurveTo(vx - 2, 30, vx + 2, 50, vx, 64);
       g.stroke();
-      // Bagworm cocoon (textured brown bundle)
       g.fillStyle = '#3a2814';
       g.beginPath(); g.ellipse(vx, 70, 4, 7, 0, 0, 6.28); g.fill();
       g.fillStyle = '#241808';
       g.fillRect(vx - 2, 68, 1, 4);
       g.fillRect(vx + 1, 70, 1, 3);
-    }
-
-    // ----- FOREGROUND BRANCH: sharp, anchored to the top canopy.
-    // A thick limb angles down from off-screen at the upper-left,
-    // covered in leaf clusters at its joints so it doesn't float.
-    // Two of them per tile-span, swaying gently.
-    var nearSpan = 320, nearPx = 0.55;
-    var nearOff = -(((camx * nearPx) % nearSpan) + nearSpan) % nearSpan;
-    for (var nb = nearOff - nearSpan; nb < 360 + nearSpan; nb += nearSpan) {
-      var sway1 = Math.sin(t * 0.03 + nb * 0.02) * 2;
-      var sway2 = Math.sin(t * 0.03 + nb * 0.02 + 1.5) * 2;
-      // Anchor at upper-left, sweep down-right.
-      branchWithLeaves(nb - 10,        4 + sway1, 220, 11, 0.32,
-        '#1e1208', '#2e5018', '#6a9836', '#142a08');
-      // Anchor at upper-right, sweep down-left.
-      branchWithLeaves(nb + nearSpan + 10, 18 + sway2, 200, 10, 2.85,
-        '#1a1006', '#28461a', '#609030', '#102008');
     }
   }
 

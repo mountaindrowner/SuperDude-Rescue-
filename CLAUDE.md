@@ -11,51 +11,45 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Latest commit**: `b6f6149` — added the canopy background PNG and a
-  pre-blur loader in `js/sprites.js`. **No visual change yet.**
+- **Latest commit**: Day 6-2 canopy image wired into `drawSky_bugscale`
+  — painted jungle PNG drawn tiled with 0.3 parallax, procedural
+  far/mid/top/foreground branches dropped, sun pool + pollen motes +
+  hanging cocoon kept as overlays. Service-worker cache bumped to
+  `sdd-shell-v4`. Visual change is live on `origin`.
 - **Full design history** is in `PLAN.md` (Passes 1-11 + music asset
   list, mostly shipped). Read that for the "why" of any feature; this
   section is just the active edge.
 
-### Immediate next step — Bug World canopy image rewire
+### Immediate next step — Screenshot + iterate the canopy
 
-- Rewrite `drawSky_bugscale` in `js/scenes.js` (around line 1881) to
-  use `SDD.sprites.bugscaleBg()` as the parallax base.
-- Drop the procedural far / mid / top / foreground branch layers
-  (image already has them painted in).
-- Keep: `vGradient` fallback (until image loads), sun pool, pollen
-  motes, hanging cocoon.
-- The loader is already in `sprites.js` near the bottom — look for
-  `bugBgCanvas`. It pre-blurs at 1.5 px into a 320×180 offscreen
-  canvas at boot.
-- **Why**: Day 6-2 "Bug World" replaces the original Pass-3 MANKIND
-  stage (NPC village). The procedural canopy from `754e600` reads as
-  sticks; Mark provided a painted jungle canopy PNG
-  (`assets/level 6 bugs background.png`) to replace the painted
-  layers and we agreed: pre-blur it once at load, use as slow-parallax
-  base.
+1. Open the GitHack URL in a fresh tab with the service worker
+   unregistered (Application → Service Workers → Unregister, then
+   Storage → Clear site data).
+2. God-mode in (`G`, then `6`) and walk through 6-2. Confirm: painted
+   canopy fills the sky, parallaxes slowly with player movement, sun
+   glow sits at top-centre, pollen drifts across mid-air, cocoon
+   appears every ~screen-width.
+3. If parallax factor / blur radius / cocoon density needs tuning:
+   `js/scenes.js` `drawSky_bugscale` (around L1881) is now ~50 lines —
+   `bgPx` controls parallax, blur is in `js/sprites.js` (`blur(1.5px)`
+   inside the bugBg onload handler around L2862).
 
-### Pending roadmap (after the canopy lands)
+### Pending roadmap
 
-Polish + content items still live from the plan history:
-
-1. **6-2 Bug World iterate** — once the image base is in, screenshot
-   and iterate: tune parallax factor, blur radius, sun-pool intensity,
-   cocoon position. Then audit 6-2 layout for kid-friendly difficulty
-   (it was generator-built, not editor-tuned).
-2. **Editor pass on 6-2** — open the in-game editor on `6-2`, save
-   the tuned variant back to `js/level_6_2.js`. Mark has done this on
-   all other 11 stages.
-3. **Sprite-popping background audit** (Pass 9 follow-up) — only if
+1. **Editor pass on 6-2 layout** — 6-2 was generator-built, not
+   editor-tuned. Open in-game editor → 6-2 → walk the level for
+   awkward gaps / unfair density / impossible sequences, save the
+   variant back to `js/level_6_2.js` via FSAPI.
+2. **Sprite-popping background audit** (Pass 9 follow-up) — only if
    the issue actually persists with MP3 music swapped in.
-4. **Custom climb animation for vines** — Mark to provide PixelLab
+3. **Custom climb animation for vines** — Mark to provide PixelLab
    frames.
-5. **Animated overlays on painted overworld** (drifting clouds over
+4. **Animated overlays on painted overworld** (drifting clouds over
    Sky island, twinkling stars in Cosmic Void, water shimmer on
    Ocean) — possible polish.
-6. **Capacitor App Store wrap** — PWA shipped; native wrap optional
+5. **Capacitor App Store wrap** — PWA shipped; native wrap optional
    follow-up if Mark wants to publish on iOS / Play.
-7. **Spacesuit + jetpack Danny sprites** — Mark mentioned these
+6. **Spacesuit + jetpack Danny sprites** — Mark mentioned these
    in-flight; some costume sprites already wired (commit `af34470`).
    Confirm with Mark if more are coming.
 
@@ -402,3 +396,8 @@ That single prompt + this file is enough to bootstrap any new session.
   (Passes 1-11 + music asset list). Updated WIP to point at the bug
   world canopy rewire as the active edge. Added a "Pending roadmap"
   list capturing the still-live polish items.
+- **2026-05-26** — Wired Mark's painted canopy PNG into
+  `drawSky_bugscale`. Procedural far/mid/top/foreground branches
+  dropped; sun pool + pollen + cocoon kept as overlays. Service
+  worker cache bumped to `sdd-shell-v4`. WIP section updated to
+  "screenshot + iterate"; editor pass on 6-2 moved up the roadmap.

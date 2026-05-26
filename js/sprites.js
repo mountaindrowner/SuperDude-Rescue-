@@ -2894,6 +2894,7 @@ window.SDD = window.SDD || {};
       if (s) g.drawImage(s, x, y);
     },
     hasRealLogo: function () { return realLogoOk; },
-    realLogo: function () { return realLogo; }
+    realLogo: function () { return realLogo; },
+    bugscaleBg: function () { return bugBgCanvas; }
   };
 })();
