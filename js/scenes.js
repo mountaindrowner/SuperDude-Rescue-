@@ -2057,6 +2057,14 @@ window.SDD = window.SDD || {};
     }
   };
 
+  // Friendly display names for active signatures (HUD).
+  var SIG_LABELS = {
+    sunburst: 'SUN', cloudglide: 'GLIDE', pearl: 'PEARL',
+    coolingwater: 'WATER', vinegrapple: 'VINE', sunshield: 'SHIELD',
+    starjump: 'STAR', wingburst: 'WINGS', airbubble: 'BUBBLE',
+    callinghorn: 'HORN', friendshiptoken: 'FRIEND', doveblessing: 'DOVE'
+  };
+
   SDD.scenes.level = {
     enter: function (d) {
       this.day = (d && d.day) || 1;
@@ -2210,6 +2218,13 @@ window.SDD = window.SDD || {};
           // the same palette as that stage's time-machine part.
           e = new SDD.ent.Signature(s.tx * T + 1, s.ty * T, s.kind, this.day + '-' + this.stage);
           this.items.push(e);
+        }
+        // Optional pixel-level nudge from the editor (offsetX/offsetY).
+        // Lets a designer slide a lava plume or any spawn off-grid by
+        // individual pixels without changing its tile column/row.
+        if (e && (s.offsetX || s.offsetY)) {
+          e.x += s.offsetX || 0;
+          e.y += s.offsetY || 0;
         }
       }
       // Per-theme platform skin so movers don't all look like the
@@ -2703,19 +2718,34 @@ window.SDD = window.SDD || {};
       // active. Shows seconds remaining (capped at 99). The
       // friendship-token has a 999s timer = "lasts whole stage" - we
       // render the badge without a countdown for it.
-      if (this.player && this.player.signatureKind && this.player.signatureT > 0) {
-        var secLeft = Math.ceil(this.player.signatureT / 60);
-        var label = secLeft > 99 ? 'BLESSED' : ('POWER ' + secLeft + 's');
-        text(g, label, 86, 14, '#ffe890', 1, 'left');
-      }
       var sv = SDD.save;
       var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
       text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');
-      // theme name (level.name) as a small subtitle under DAY
+      // Theme name (level.name) as a small subtitle under DAY. Pass 12
+      // (Mark): the subtitle used to share row Y=14 with the POWER
+      // timer and they overlapped on long stage names. Auto-fade the
+      // subtitle out over the first ~6 seconds so the row is clear
+      // once the player is into the level.
       var L = SDD.levels[this.day + '-' + this.stage];
-      if (L && L.name) text(g, L.name, 160, 14, '#dfe6ff', 1, 'center');
+      if (L && L.name) {
+        var subAlpha = this.timeSteps < 240 ? 1 :
+          (this.timeSteps < 360 ? (360 - this.timeSteps) / 120 : 0);
+        if (subAlpha > 0) {
+          g.save(); g.globalAlpha = subAlpha;
+          text(g, L.name, 160, 14, '#dfe6ff', 1, 'center');
+          g.restore();
+        }
+      }
       var sec = Math.floor(this.timeSteps / 60);
       text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
+      // Signature power-up indicator: lives on the right column, just
+      // below TIME, so it never collides with the stage subtitle.
+      if (this.player && this.player.signatureKind && this.player.signatureT > 0) {
+        var secLeft = Math.ceil(this.player.signatureT / 60);
+        var sigName = SIG_LABELS[this.player.signatureKind] || 'POWER';
+        var sigLine = secLeft > 99 ? sigName : (sigName + ' ' + secLeft + 's');
+        text(g, sigLine, 314, 14, '#ffe890', 1, 'right');
+      }
       if (sv.data.options.god) {
         g.fillStyle = 'rgba(255,210,80,0.85)'; g.fillRect(284, 14, 32, 8);
         text(g, 'GOD', 300, 15, '#1a1630', 1, 'center');

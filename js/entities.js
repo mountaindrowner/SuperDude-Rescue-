@@ -77,22 +77,24 @@ window.SDD = window.SDD || {};
   // frames, after which signatureKind clears. Effects are queried
   // throughout the engine via player.signatureKind / signatureT checks.
   Player.prototype.giveSignature = function (kind) {
+    // Mark, Pass 12: doubled across the board so kids actually have
+    // time to use + appreciate the power before it expires.
     var DURATIONS = {
-      sunburst:        8 * 60,
-      cloudglide:     10 * 60,
-      pearl:           8 * 60,
-      coolingwater:    8 * 60,
-      vinegrapple:    10 * 60,
-      sunshield:       8 * 60,
-      starjump:       10 * 60,
-      wingburst:       6 * 60,
-      airbubble:       8 * 60,
-      callinghorn:     4 * 60,
+      sunburst:       16 * 60,
+      cloudglide:     20 * 60,
+      pearl:          16 * 60,
+      coolingwater:   16 * 60,
+      vinegrapple:    20 * 60,
+      sunshield:      16 * 60,
+      starjump:       20 * 60,
+      wingburst:      12 * 60,
+      airbubble:      16 * 60,
+      callinghorn:     8 * 60,
       friendshiptoken: 999 * 60,    // lasts the rest of the stage
-      doveblessing:   10 * 60
+      doveblessing:   20 * 60
     };
     this.signatureKind = kind;
-    this.signatureT = DURATIONS[kind] || 6 * 60;
+    this.signatureT = DURATIONS[kind] || 12 * 60;
     this.signatureJumpsUsed = 0;
     SDD.audio.sfx('power');
   };
@@ -572,11 +574,105 @@ window.SDD = window.SDD || {};
     }
   };
 
+  // Pass 12 (Mark): "if he has the sun power he has a little sun
+  // above his head; wing power, a little wing; etc." A small pixel
+  // glyph floats above Danny's head for the duration of the active
+  // signature so a kid can SEE what power they're holding without
+  // reading the HUD. Each kind gets a 12x12 procedural icon.
+  Player.prototype.drawSignatureSymbol = function (ctx, cam) {
+    if (!this.signatureKind || this.signatureT <= 0) return;
+    var cx = Math.round(this.x + this.w / 2 - cam.x);
+    var bob = Math.round(Math.sin((this.signatureT) * 0.18) * 1);
+    var top = Math.round(this.y - cam.y) - 11 + bob;
+    var kind = this.signatureKind;
+    // Soft glow behind the icon so it pops on dark / busy backgrounds.
+    var col = SIG_ICON_COLOR[kind] || '#ffe890';
+    ctx.save();
+    ctx.globalAlpha = 0.55 + 0.25 * Math.sin(this.signatureT * 0.22);
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(cx, top + 5, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    drawSigIcon(ctx, kind, cx, top, col);
+    ctx.restore();
+  };
+  var SIG_ICON_COLOR = {
+    sunburst: '#ffd84a', cloudglide: '#e8f0ff', pearl: '#a0e0ff',
+    coolingwater: '#6ad4ff', vinegrapple: '#90e060', sunshield: '#ffe890',
+    starjump: '#ffe890', wingburst: '#ffffff', airbubble: '#a8e6ff',
+    callinghorn: '#ffce46', friendshiptoken: '#ff6a8a', doveblessing: '#ffffff'
+  };
+  function drawSigIcon(ctx, kind, cx, top, col) {
+    var y = top;
+    ctx.fillStyle = '#ffffff';
+    if (kind === 'sunburst' || kind === 'sunshield') {
+      // Sun disc + 4 rays
+      ctx.fillStyle = '#ffd84a'; ctx.fillRect(cx - 2, y + 3, 4, 4);
+      ctx.fillStyle = '#ffe890'; ctx.fillRect(cx - 1, y + 4, 2, 2);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 4, y + 4, 1, 2);
+      ctx.fillRect(cx + 3, y + 4, 1, 2); ctx.fillRect(cx - 1, y + 1, 2, 1);
+      ctx.fillRect(cx - 1, y + 8, 2, 1);
+      if (kind === 'sunshield') {                          // halo ring
+        ctx.strokeStyle = '#ffe890'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, y + 5, 6, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (kind === 'cloudglide') {
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 3, y + 4, 7, 3);
+      ctx.fillRect(cx - 2, y + 3, 5, 5); ctx.fillRect(cx - 4, y + 5, 9, 1);
+    } else if (kind === 'pearl') {
+      ctx.fillStyle = '#406890'; ctx.fillRect(cx - 3, y + 3, 6, 6);
+      ctx.fillStyle = '#a0e0ff'; ctx.fillRect(cx - 2, y + 4, 4, 4);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 1, y + 4, 1, 1);
+    } else if (kind === 'coolingwater') {
+      // droplet
+      ctx.fillStyle = '#6ad4ff'; ctx.fillRect(cx - 1, y + 1, 2, 1);
+      ctx.fillRect(cx - 2, y + 2, 4, 2); ctx.fillRect(cx - 3, y + 4, 6, 4);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, y + 5, 1, 1);
+    } else if (kind === 'vinegrapple') {
+      ctx.fillStyle = '#90e060'; ctx.fillRect(cx - 3, y + 2, 1, 2);
+      ctx.fillRect(cx - 2, y + 4, 1, 2); ctx.fillRect(cx - 1, y + 3, 1, 3);
+      ctx.fillRect(cx, y + 4, 1, 3); ctx.fillRect(cx + 1, y + 2, 1, 2);
+      ctx.fillRect(cx + 2, y + 4, 1, 2); ctx.fillRect(cx - 4, y + 6, 9, 1);
+    } else if (kind === 'starjump') {
+      ctx.fillStyle = '#ffe890';
+      ctx.fillRect(cx - 1, y + 1, 2, 8); ctx.fillRect(cx - 4, y + 4, 8, 2);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx, y + 4, 1, 2);
+    } else if (kind === 'wingburst') {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(cx - 5, y + 3, 4, 2); ctx.fillRect(cx + 1, y + 3, 4, 2);
+      ctx.fillRect(cx - 4, y + 5, 2, 2); ctx.fillRect(cx + 2, y + 5, 2, 2);
+      ctx.fillRect(cx - 5, y + 4, 1, 1); ctx.fillRect(cx + 4, y + 4, 1, 1);
+    } else if (kind === 'airbubble') {
+      ctx.strokeStyle = '#a8e6ff'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, y + 5, 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, y + 3, 1, 1);
+    } else if (kind === 'callinghorn') {
+      ctx.fillStyle = '#ffce46';
+      ctx.fillRect(cx - 3, y + 5, 6, 2); ctx.fillRect(cx + 3, y + 4, 2, 4);
+      ctx.fillRect(cx - 4, y + 4, 1, 4); ctx.fillStyle = '#a07820';
+      ctx.fillRect(cx - 3, y + 5, 1, 2);
+    } else if (kind === 'friendshiptoken') {
+      ctx.fillStyle = '#ff6a8a';
+      ctx.fillRect(cx - 3, y + 3, 2, 2); ctx.fillRect(cx + 1, y + 3, 2, 2);
+      ctx.fillRect(cx - 3, y + 4, 7, 2); ctx.fillRect(cx - 2, y + 6, 5, 1);
+      ctx.fillRect(cx - 1, y + 7, 3, 1); ctx.fillRect(cx, y + 8, 1, 1);
+      ctx.fillStyle = '#ffb0c0'; ctx.fillRect(cx - 2, y + 4, 1, 1);
+    } else if (kind === 'doveblessing') {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(cx - 3, y + 4, 6, 2); ctx.fillRect(cx - 4, y + 5, 2, 1);
+      ctx.fillRect(cx + 2, y + 5, 2, 1); ctx.fillRect(cx + 1, y + 3, 2, 2);
+      ctx.fillStyle = '#ffce46'; ctx.fillRect(cx + 3, y + 4, 1, 1);
+    } else {
+      ctx.fillStyle = col;
+      ctx.fillRect(cx - 3, y + 3, 6, 6);
+    }
+  }
+
   Player.prototype.draw = function (ctx, cam) {
     // Heavy "ouch" pose plays for the first ~24 steps of invuln, then we
     // fall back to the classic invincibility flicker.
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
     if (!freshHurt && this.invuln > 0 && (this.invuln % 8) < 4) return;
+    this.drawSignatureSymbol(ctx, cam);
     var size = this.big ? 'big' : 'small';
     // Big->small shrink: flicker between sizes for ~24 frames so the
     // transition reads visually (not just an instant size change).
@@ -1058,7 +1154,10 @@ window.SDD = window.SDD || {};
     var cx = Math.floor((this.x + (this.dir > 0 ? this.w : 0)) / T);
     var cy = Math.floor((this.y + this.h / 2) / T);
     if (level.map.isSolid(cx, cy)) this.remove = true;
-    if (this.traveled > 70) this.remove = true;
+    // Pass 12 (Mark): doubled the blast range. The old 70-px cap
+    // meant a kid had to be right next to an enemy to land a hit;
+    // 140 lets a blast actually clear the screen ahead of them.
+    if (this.traveled > 140) this.remove = true;
   };
   Blast.prototype.draw = function (ctx, cam) {
     glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 12, '#fff0a0', 0.6);
@@ -1141,6 +1240,16 @@ window.SDD = window.SDD || {};
     glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 13, col, 0.55);
     var f = (Math.floor(this.t / 10) % 2);
     drawBC(ctx, (this.kind === 'grow' ? 'grow_' : 'blastitem_') + f, this, cam);
+    // Pass 12 (Mark): "We have to label these powers. That's essential."
+    // A short pixel banner above each item-drop tells kids what they're
+    // about to grab without having to read a menu.
+    var S = SDD.sprites;
+    if (S && S.textShadow) {
+      var bx = Math.round(this.x + this.w / 2 - cam.x);
+      var by = Math.round(this.y - cam.y) - 8;
+      var label = this.kind === 'grow' ? 'GROW' : 'BLAST';
+      S.textShadow(ctx, label, bx, by, col, '#000', 1, 'center');
+    }
   };
 
   // ===================== SIGNATURE POWER-UP =====================

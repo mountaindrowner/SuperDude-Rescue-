@@ -294,3 +294,66 @@ body.touch #touch-controls { display: block; }
 }
 #editor-ui .ed-danger { background: #4a1822; }
 #editor-ui .ed-danger:hover { background: #6a2832; }
+
+/* Floating canvas hover tooltip */
+#ed-hover-tip {
+  position: fixed;
+  z-index: 60;
+  background: rgba(8, 10, 22, 0.96);
+  border: 1px solid #46f0ff;
+  border-radius: 3px;
+  padding: 6px 8px;
+  color: #dfe6ff;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  max-width: 280px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+#ed-hover-tip > div:first-child {
+  color: #46f0ff;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+/* Collapsible group header */
+#editor-ui .ed-group-head {
+  cursor: pointer;
+  user-select: none;
+}
+#editor-ui .ed-group-head:hover { color: #fff; }
+#editor-ui .ed-group-arrow {
+  display: inline-block;
+  width: 10px;
+  color: #46f0ff;
+  font-size: 9px;
+}
+#editor-ui .ed-spawn-group.collapsed .ed-palette { display: none; }
+
+/* Properties panel polish */
+#editor-ui .ed-prop-title {
+  background: #131a32;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 6px;
+}
+#editor-ui .ed-prop-sub {
+  color: #46f0ff;
+  font-size: 10px;
+}
+#editor-ui .ed-field-pair {
+  display: flex;
+  gap: 6px;
+}
+#editor-ui .ed-field-pair label { flex: 1; }
+#editor-ui select[data-field] {
+  background: #0d1024;
+  color: #dfe6ff;
+  border: 1px solid #2a3050;
+  padding: 3px 4px;
+  width: 100%;
+  border-radius: 3px;
+  font: inherit;
+}

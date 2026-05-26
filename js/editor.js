@@ -106,6 +106,43 @@ window.SDD = window.SDD || {};
     }
   }
 
+  // Catalog of valid string values for property dropdowns. Empty entry
+  // means "theme default" so a level designer can leave it auto.
+  var FIELD_ENUMS = {
+    // spawn.kind values
+    'signature.kind': [
+      'sunburst', 'cloudglide', 'pearl', 'coolingwater', 'vinegrapple',
+      'sunshield', 'starjump', 'wingburst', 'airbubble', 'callinghorn',
+      'friendshiptoken', 'doveblessing'
+    ],
+    'skyhazard.kind': ['flare', 'meteor', 'meteorH', 'lavaPlume'],
+    'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove'],
+    // spawn.variant values (theme default = empty)
+    'walker.variant':  ['', 'lion', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
+    'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud'],
+    'thrower.variant': ['', 'rain', 'rock', 'seed', 'sun', 'fruit'],
+    // Boolean-ish flag
+    'wisp.shoots': ['false', 'true']
+  };
+  // Editable property layouts. Each entry: { field, optional? }
+  var SPAWN_FIELDS = {
+    player:     [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    walker:     [{f:'tx'},{f:'ty'},{f:'variant',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    thrower:    [{f:'tx'},{f:'ty'},{f:'variant',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    wisp:       [{f:'tx'},{f:'ty'},{f:'variant',opt:true},{f:'shoots',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    crab:       [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    core:       [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    timepart:   [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    npc:        [{f:'tx'},{f:'ty'},{f:'kind'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    checkpoint: [{f:'tx'},{f:'ty'}],
+    signature:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    skyhazard:  [{f:'tx'},{f:'ty'},{f:'kind'},{f:'period',opt:true},{f:'dir',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    bubble:     [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    octopus:    [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    twister:    [{f:'tx'},{f:'ty'},{f:'spd',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    eel:        [{f:'tx'},{f:'ty'},{f:'maxH',opt:true},{f:'period',opt:true},{f:'phase',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}]
+  };
+
   // -----------------------------------------------------------------
   // DOM overlay - built on enter(), torn down on exit().
   //
@@ -188,7 +225,11 @@ window.SDD = window.SDD || {};
       '  <span id="ed-counts" title="Live counts for the current stage"></span>',
       '  <span id="ed-dirty" title="Unsaved changes indicator"></span>',
       '  <span id="ed-toast"></span>',
-      '</div>'
+      '</div>',
+      // Floating tooltip that follows the mouse over the canvas, showing
+      // whatever spawn/mover/tile is under the cursor. Pure-DOM so it can
+      // render outside the canvas's pixel grid without aliasing.
+      '<div id="ed-hover-tip" hidden></div>'
     ].join('');
     document.body.appendChild(ui);
 
@@ -205,12 +246,21 @@ window.SDD = window.SDD || {};
       tbox.appendChild(b);
     });
 
-    // ---- Spawn palette (grouped) ----
+    // ---- Spawn palette (grouped, collapsible) ----
+    // Collapse state persists in localStorage so a designer's chosen
+    // open sections survive scene re-enters / page reloads.
+    var groupState = loadGroupState();
     var sgroupBox = ui.querySelector('#ed-spawn-groups');
     SPAWN_GROUPS.forEach(function (g) {
       var section = document.createElement('div');
       section.className = 'ed-spawn-group';
-      section.innerHTML = '<h5>' + g.title + '</h5><div class="ed-palette"></div>';
+      var open = groupState[g.title] !== false;
+      section.classList.toggle('collapsed', !open);
+      section.innerHTML =
+        '<h5 class="ed-group-head" title="Click to collapse / expand this group">' +
+        '  <span class="ed-group-arrow">' + (open ? '▼' : '▶') + '</span> ' + g.title +
+        '</h5>' +
+        '<div class="ed-palette"></div>';
       var pal = section.querySelector('.ed-palette');
       g.items.forEach(function (s) {
         var b = document.createElement('button');
@@ -220,6 +270,13 @@ window.SDD = window.SDD || {};
         b.innerHTML = '<span class="ed-spawn-name">' + s.id + '</span>' +
           '<span class="ed-badge" data-usage-spawn="' + s.id + '" hidden></span>';
         pal.appendChild(b);
+      });
+      section.querySelector('.ed-group-head').addEventListener('click', function () {
+        var nowOpen = section.classList.toggle('collapsed');
+        // collapsed class flipped: nowOpen=true means it's NOW collapsed
+        groupState[g.title] = !nowOpen;
+        section.querySelector('.ed-group-arrow').textContent = nowOpen ? '▶' : '▼';
+        saveGroupState(groupState);
       });
       sgroupBox.appendChild(section);
     });
@@ -292,6 +349,31 @@ window.SDD = window.SDD || {};
     });
 
     return ui;
+  }
+
+  // Used by the SELECT/MOVER drag handlers so undo can restore the
+  // pre-drag state regardless of how the drag mutated the entity.
+  function snapshotSpawn(s) {
+    return { tx: s.tx, ty: s.ty, offsetX: s.offsetX, offsetY: s.offsetY };
+  }
+  function snapshotMover(m) {
+    return { tx: m.tx, ty: m.ty, tx1: m.tx1, ty1: m.ty1, spd: m.spd, phase: m.phase };
+  }
+  function restoreSnapshot(ref, snap) {
+    for (var k in snap) {
+      if (!snap.hasOwnProperty(k)) continue;
+      if (snap[k] === undefined) delete ref[k];
+      else ref[k] = snap[k];
+    }
+  }
+
+  var GROUP_STATE_KEY = 'sdd.editorUI.groups.v1';
+  function loadGroupState() {
+    try { return JSON.parse(localStorage.getItem(GROUP_STATE_KEY) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function saveGroupState(s) {
+    try { localStorage.setItem(GROUP_STATE_KEY, JSON.stringify(s)); } catch (e) {}
   }
 
   function refreshToolHighlight(ui, scene) {
@@ -402,38 +484,44 @@ window.SDD = window.SDD || {};
   function refreshProps(ui, scene) {
     var body = ui.querySelector('#ed-props-body');
     var sel = scene.selection;
-    if (!sel) { body.innerHTML = '<p class="ed-hint">Nothing selected.</p>'; return; }
-    // Render simple field editors. Each field's onchange writes back
-    // into the underlying spawn/mover object.
-    var html = '<p><strong>' + sel.kind + '</strong></p>';
+    if (!sel) { body.innerHTML = '<p class="ed-hint">Nothing selected. Switch to SELECT tool [4] and click any spawn or mover.</p>'; return; }
+    var html = '';
     if (sel.kind === 'spawn') {
       var sp = sel.ref;
-      html += fieldRow('type', sp.type, true);
+      html += '<p class="ed-prop-title">SPAWN: <strong>' + sp.type + '</strong>' +
+              (sp.kind ? ' <span class="ed-prop-sub">[' + sp.kind + ']</span>' :
+               sp.variant ? ' <span class="ed-prop-sub">[' + sp.variant + ']</span>' : '') +
+              '</p>';
+      html += fieldRow('type', sp.type, { readonly: true });
+      var fields = SPAWN_FIELDS[sp.type] || [{f:'tx'},{f:'ty'}];
+      fields.forEach(function (fd) {
+        if (fd.f === 'tx' || fd.f === 'ty') return;
+        var val = sp[fd.f] !== undefined ? sp[fd.f] : '';
+        html += fieldRow(fd.f, val, {
+          enum: FIELD_ENUMS[sp.type + '.' + fd.f],
+          optional: fd.opt
+        });
+      });
+      html += '<div class="ed-field-pair">';
       html += fieldRow('tx', sp.tx);
       html += fieldRow('ty', sp.ty);
-      // Optional fields based on type
-      var optional = {
-        wisp: ['variant', 'shoots'],
-        walker: ['variant'],
-        thrower: ['variant'],
-        npc: ['kind'],
-        signature: ['kind'],
-        skyhazard: ['kind', 'period', 'dir'],
-        twister: ['spd'],
-        eel: ['maxH', 'period', 'phase']
-      };
-      var ext = optional[sp.type] || [];
-      ext.forEach(function (k) { html += fieldRow(k, sp[k] !== undefined ? sp[k] : ''); });
-      html += '<button id="ed-del">DELETE</button>';
+      html += '</div>';
+      html += '<p class="ed-hint" style="margin-top:6px">Tip: with SELECT tool active, arrows nudge by 1 tile; <b>Shift+Arrow</b> nudges offsetX/offsetY by 1 pixel; drag to move.</p>';
+      html += '<button id="ed-del" class="ed-danger">DELETE</button>';
     } else if (sel.kind === 'mover') {
       var m = sel.ref;
+      html += '<p class="ed-prop-title">MOVER PLATFORM</p>';
+      html += '<div class="ed-field-pair">';
       html += fieldRow('tx', m.tx);
       html += fieldRow('ty', m.ty);
+      html += '</div>';
+      html += '<div class="ed-field-pair">';
       html += fieldRow('tx1', m.tx1);
       html += fieldRow('ty1', m.ty1);
+      html += '</div>';
       html += fieldRow('spd', m.spd);
       html += fieldRow('phase', m.phase);
-      html += '<button id="ed-del">DELETE</button>';
+      html += '<button id="ed-del" class="ed-danger">DELETE</button>';
     }
     body.innerHTML = html;
     body.querySelectorAll('input,select').forEach(function (inp) {
@@ -444,11 +532,22 @@ window.SDD = window.SDD || {};
     var del = body.querySelector('#ed-del');
     if (del) del.addEventListener('click', function () { scene.deleteSelection(); });
   }
-  function fieldRow(name, val, readonly) {
+  function fieldRow(name, val, opts) {
+    opts = opts || {};
+    // Back-compat: old call sites pass a boolean for "readonly".
+    if (opts === true) opts = { readonly: true };
     var v = val == null ? '' : String(val);
+    if (opts.enum) {
+      var options = opts.enum.map(function (o) {
+        var lbl = o === '' ? '(theme default)' : o;
+        return '<option value="' + escapeHtml(o) + '"' + (o === v ? ' selected' : '') + '>' + escapeHtml(lbl) + '</option>';
+      }).join('');
+      return '<label>' + name +
+        '<select data-field="' + name + '">' + options + '</select></label>';
+    }
     return '<label>' + name +
       '<input type="text" data-field="' + name + '" value="' + escapeHtml(v) + '"' +
-      (readonly ? ' readonly' : '') + '></label>';
+      (opts.readonly ? ' readonly' : '') + '></label>';
   }
   function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -536,10 +635,15 @@ window.SDD = window.SDD || {};
       this._onUp   = function (e) { scene.onPointerUp(e); };
       this._onWheel= function (e) { scene.onWheel(e); };
       this._onCtx  = function (e) { e.preventDefault(); };
+      this._onLeave= function () {
+        var tip = scene.ui && scene.ui.querySelector('#ed-hover-tip');
+        if (tip) tip.hidden = true;
+      };
       canvas.addEventListener('pointerdown', this._onDown);
       canvas.addEventListener('pointermove', this._onMove);
       canvas.addEventListener('pointerup', this._onUp);
       canvas.addEventListener('pointercancel', this._onUp);
+      canvas.addEventListener('pointerleave', this._onLeave);
       canvas.addEventListener('wheel', this._onWheel, { passive: false });
       canvas.addEventListener('contextmenu', this._onCtx);
     },
@@ -550,6 +654,7 @@ window.SDD = window.SDD || {};
       canvas.removeEventListener('pointermove', this._onMove);
       canvas.removeEventListener('pointerup', this._onUp);
       canvas.removeEventListener('pointercancel', this._onUp);
+      canvas.removeEventListener('pointerleave', this._onLeave);
       canvas.removeEventListener('wheel', this._onWheel);
       canvas.removeEventListener('contextmenu', this._onCtx);
     },
@@ -580,6 +685,12 @@ window.SDD = window.SDD || {};
         var mhit = this.hitTestMover(p.col, p.row);
         if (mhit && !rightClick) {
           this.selection = { kind: 'mover', ref: mhit };
+          // Drag-to-move: shift the whole mover, preserving its span.
+          this.moveDrag = { ref: mhit, refKind: 'mover',
+                            startCol: p.col, startRow: p.row,
+                            origTx: mhit.tx, origTy: mhit.ty,
+                            origTx1: mhit.tx1, origTy1: mhit.ty1,
+                            before: snapshotMover(mhit) };
           refreshProps(this.ui, this);
         } else if (rightClick && mhit) {
           this.removeMover(mhit);
@@ -589,9 +700,24 @@ window.SDD = window.SDD || {};
       } else if (this.tool === 'select') {
         var s = this.hitTestSpawn(p.col, p.row);
         var m = this.hitTestMover(p.col, p.row);
-        if (s) { this.selection = { kind: 'spawn', ref: s }; }
-        else if (m) { this.selection = { kind: 'mover', ref: m }; }
-        else { this.selection = null; }
+        // SELECT tool also supports drag-to-move on whatever you hit.
+        if (s) {
+          this.selection = { kind: 'spawn', ref: s };
+          this.moveDrag = { ref: s, refKind: 'spawn',
+                            startCol: p.col, startRow: p.row,
+                            origTx: s.tx, origTy: s.ty,
+                            before: snapshotSpawn(s) };
+        } else if (m) {
+          this.selection = { kind: 'mover', ref: m };
+          this.moveDrag = { ref: m, refKind: 'mover',
+                            startCol: p.col, startRow: p.row,
+                            origTx: m.tx, origTy: m.ty,
+                            origTx1: m.tx1, origTy1: m.ty1,
+                            before: snapshotMover(m) };
+        } else {
+          this.selection = null;
+          this.moveDrag = null;
+        }
         refreshProps(this.ui, this);
       }
     },
@@ -599,11 +725,28 @@ window.SDD = window.SDD || {};
       var p = this.pointerToTile(e);
       this.hoverCol = p.col; this.hoverRow = p.row;
       this.ui.querySelector('#ed-coords').textContent = p.col + ', ' + p.row;
+      this.updateHoverTip(e, p);
       if (!this.pointerDown) return;
       if (this.tool === 'tile') {
         this.paintAt(p.col, p.row, this.pointerDown.right ? ' ' : this.brushTile);
       } else if (this.tool === 'mover' && this.drag) {
         this.drag.curCol = p.col; this.drag.curRow = p.row;
+      } else if (this.moveDrag) {
+        // Drag-to-move: shift the spawn (or whole mover) by tile delta.
+        var d = this.moveDrag;
+        var dx = p.col - d.startCol, dy = p.row - d.startRow;
+        if (d.refKind === 'spawn') {
+          d.ref.tx = d.origTx + dx;
+          d.ref.ty = d.origTy + dy;
+        } else if (d.refKind === 'mover') {
+          d.ref.tx  = d.origTx + dx;
+          d.ref.ty  = d.origTy + dy;
+          d.ref.tx1 = d.origTx1 + dx;
+          d.ref.ty1 = d.origTy1 + dy;
+        }
+        // No history push until pointer-up so a long drag is one undo.
+        this.markDirty();
+        refreshProps(this.ui, this);
       }
     },
     onPointerUp: function (e) {
@@ -614,7 +757,55 @@ window.SDD = window.SDD || {};
         }
         this.drag = null;
       }
+      if (this.moveDrag) {
+        // Commit drag as a single history op if the position actually changed.
+        var md = this.moveDrag;
+        var after = md.refKind === 'spawn' ? snapshotSpawn(md.ref) : snapshotMover(md.ref);
+        var changed = JSON.stringify(after) !== JSON.stringify(md.before);
+        if (changed) {
+          this.pushHistory({ kind: 'move-snapshot', ref: md.ref,
+                             before: md.before, after: after });
+        }
+        this.moveDrag = null;
+      }
       this.pointerDown = null;
+    },
+    // Renders a small floating tooltip next to the mouse showing what's
+    // under the cursor: spawn type + kind/variant, mover endpoints, or
+    // tile code label.
+    updateHoverTip: function (e, p) {
+      var tip = this.ui.querySelector('#ed-hover-tip');
+      if (!tip || !this.lvl) return;
+      var lvl = this.lvl;
+      var sp = this.hitTestSpawn(p.col, p.row);
+      var mv = sp ? null : this.hitTestMover(p.col, p.row);
+      var lines = [];
+      if (sp) {
+        lines.push('SPAWN: ' + sp.type);
+        if (sp.kind)     lines.push('  kind: ' + sp.kind);
+        if (sp.variant)  lines.push('  variant: ' + sp.variant);
+        if (sp.shoots)   lines.push('  shoots: true');
+        if (sp.period)   lines.push('  period: ' + sp.period);
+        if (sp.offsetX || sp.offsetY) lines.push('  offset: ' + (sp.offsetX||0) + ',' + (sp.offsetY||0));
+        lines.push('  at: ' + sp.tx + ',' + sp.ty);
+      } else if (mv) {
+        lines.push('MOVER PLATFORM');
+        lines.push('  from: ' + mv.tx + ',' + mv.ty);
+        lines.push('  to: ' + mv.tx1 + ',' + mv.ty1);
+        lines.push('  spd: ' + mv.spd);
+      } else if (p.col >= 0 && p.col < lvl.width && p.row >= 0 && p.row < lvl.height) {
+        var ch = lvl.tiles[p.row][p.col];
+        var tdef = TILE_DEFS.filter(function (t) { return t.c === ch; })[0];
+        var label = tdef ? (tdef.label.toUpperCase() + ' (' + (ch === ' ' ? 'space' : ch) + ')') :
+                    (ch === ' ' ? 'EMPTY' : 'tile ' + ch);
+        lines.push(label);
+        if (tdef) lines.push('  ' + tdef.desc);
+      }
+      if (!lines.length) { tip.hidden = true; return; }
+      tip.innerHTML = lines.map(function (l) { return '<div>' + escapeHtml(l) + '</div>'; }).join('');
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+      tip.hidden = false;
     },
     onWheel: function (e) {
       e.preventDefault();
@@ -657,12 +848,52 @@ window.SDD = window.SDD || {};
       if (k === 'Delete' || k === 'Backspace') {
         if (this.selection) { e.preventDefault(); this.deleteSelection(); return; }
       }
-      // Camera pan with arrows
-      var panStep = 32;
-      if (k === 'ArrowLeft')  { this.cam.x = Math.max(0, this.cam.x - panStep); this.clampCam(); }
-      if (k === 'ArrowRight') { this.cam.x = this.cam.x + panStep; this.clampCam(); }
-      if (k === 'ArrowUp')    { this.cam.y = Math.max(0, this.cam.y - panStep); this.clampCam(); }
-      if (k === 'ArrowDown')  { this.cam.y = this.cam.y + panStep; this.clampCam(); }
+      // Arrow keys: if SELECT tool with a selection -> nudge the
+      // selection (1 tile, Shift = 1 pixel via offsetX/offsetY).
+      // Otherwise -> pan the camera.
+      var isArrow = (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown');
+      if (isArrow && this.tool === 'select' && this.selection) {
+        e.preventDefault();
+        this.nudgeSelection(k, e.shiftKey);
+        return;
+      }
+      if (isArrow) {
+        var panStep = 32;
+        if (k === 'ArrowLeft')  { this.cam.x = Math.max(0, this.cam.x - panStep); this.clampCam(); }
+        if (k === 'ArrowRight') { this.cam.x = this.cam.x + panStep; this.clampCam(); }
+        if (k === 'ArrowUp')    { this.cam.y = Math.max(0, this.cam.y - panStep); this.clampCam(); }
+        if (k === 'ArrowDown')  { this.cam.y = this.cam.y + panStep; this.clampCam(); }
+      }
+    },
+    // Nudge the selected spawn / mover. Plain arrow = 1 tile,
+    // Shift+arrow = 1 pixel via offsetX/offsetY (spawn only).
+    nudgeSelection: function (key, shift) {
+      var sel = this.selection;
+      if (!sel) return;
+      var dx = 0, dy = 0;
+      if (key === 'ArrowLeft')  dx = -1;
+      if (key === 'ArrowRight') dx =  1;
+      if (key === 'ArrowUp')    dy = -1;
+      if (key === 'ArrowDown')  dy =  1;
+      var ref = sel.ref;
+      var before, after;
+      if (shift && sel.kind === 'spawn') {
+        before = snapshotSpawn(ref);
+        ref.offsetX = (ref.offsetX || 0) + dx;
+        ref.offsetY = (ref.offsetY || 0) + dy;
+        after = snapshotSpawn(ref);
+      } else if (sel.kind === 'spawn') {
+        before = snapshotSpawn(ref);
+        ref.tx = ref.tx + dx; ref.ty = ref.ty + dy;
+        after = snapshotSpawn(ref);
+      } else if (sel.kind === 'mover') {
+        before = snapshotMover(ref);
+        ref.tx = ref.tx + dx; ref.ty = ref.ty + dy;
+        ref.tx1 = ref.tx1 + dx; ref.ty1 = ref.ty1 + dy;
+        after = snapshotMover(ref);
+      }
+      this.pushHistory({ kind: 'move-snapshot', ref: ref, before: before, after: after });
+      refreshProps(this.ui, this);
     },
     clampCam: function () {
       var maxX = Math.max(0, this.lvl.width * 16 - 320);
@@ -750,7 +981,7 @@ window.SDD = window.SDD || {};
       var ref = sel.ref;
       var before = ref[field];
       // Number-ish fields: parse to number
-      var numeric = ['tx', 'ty', 'tx1', 'ty1', 'spd', 'phase', 'period', 'maxH', 'dir'];
+      var numeric = ['tx', 'ty', 'tx1', 'ty1', 'spd', 'phase', 'period', 'maxH', 'dir', 'offsetX', 'offsetY'];
       var val;
       if (numeric.indexOf(field) >= 0) {
         val = parseFloat(raw);
@@ -801,6 +1032,7 @@ window.SDD = window.SDD || {};
         if (op.after === undefined) delete op.ref[op.field];
         else op.ref[op.field] = op.after;
       }
+      else if (op.kind === 'move-snapshot') restoreSnapshot(op.ref, op.after);
       this.dirty = true;
     },
     applyOpInverse: function (op) {
@@ -820,6 +1052,7 @@ window.SDD = window.SDD || {};
         if (op.before === undefined) delete op.ref[op.field];
         else op.ref[op.field] = op.before;
       }
+      else if (op.kind === 'move-snapshot') restoreSnapshot(op.ref, op.before);
       this.dirty = true;
     },
 
@@ -1015,7 +1248,7 @@ window.SDD = window.SDD || {};
       }
       g.stroke();
 
-      // Spawns - simple colored dots with type letter
+      // Spawns - colored dot + readable label tag with type + variant.
       var typeColors = {
         player: '#ffd23a', walker: '#ff8a6a', thrower: '#c050a0',
         wisp: '#a8c8ff', crab: '#ff7050', core: '#46f0ff',
@@ -1023,21 +1256,39 @@ window.SDD = window.SDD || {};
         signature: '#ffe890', skyhazard: '#ff5418', bubble: '#a8e6ff',
         octopus: '#d068a0', twister: '#dfe6ff', eel: '#7adfff'
       };
+      // Short labels so the on-canvas tag doesn't overflow.
+      var typeShort = {
+        player: 'PLR', walker: 'walk', thrower: 'throw', wisp: 'wisp',
+        crab: 'crab', core: 'CORE', timepart: 'PART', npc: 'NPC',
+        checkpoint: 'CHK', signature: 'SIG', skyhazard: 'HZRD',
+        bubble: 'bubl', octopus: 'oct', twister: 'twst', eel: 'eel'
+      };
       var spawns = lvl.spawns;
       for (var i = 0; i < spawns.length; i++) {
         var sp = spawns[i];
-        var sxp = sp.tx * T - camx + 8;
-        var syp = sp.ty * T - camy + 8;
-        if (sxp < -8 || sxp > 328 || syp < -8 || syp > 188) continue;
+        // Apply offsetX/offsetY in editor view so on-screen position
+        // matches what the game will show after pixel-nudging.
+        var sxp = sp.tx * T - camx + 8 + (sp.offsetX || 0);
+        var syp = sp.ty * T - camy + 8 + (sp.offsetY || 0);
+        if (sxp < -16 || sxp > 336 || syp < -16 || syp > 196) continue;
         var col = typeColors[sp.type] || '#fff';
+        // Anchor dot
         g.fillStyle = col;
-        g.fillRect(sxp - 4, syp - 4, 8, 8);
-        g.fillStyle = '#000';
         g.fillRect(sxp - 3, syp - 3, 6, 6);
+        g.fillStyle = '#000';
+        g.fillRect(sxp - 2, syp - 2, 4, 4);
         g.fillStyle = col;
         g.fillRect(sxp - 1, syp - 1, 2, 2);
-        // First letter label
-        if (S && S.text) S.text(g, sp.type.charAt(0).toUpperCase(), sxp, syp + 6, col, 1, 'center');
+        // Type + (kind/variant if any) tag, sits above the anchor.
+        var tag = typeShort[sp.type] || sp.type;
+        var sub = sp.kind || sp.variant || '';
+        if (sp.shoots) sub = 'shoots';
+        var label = sub ? (tag + ':' + sub.substring(0, 6)) : tag;
+        if (S && S.textShadow) {
+          S.textShadow(g, label, sxp, syp - 9, col, '#000', 1, 'center');
+        } else if (S && S.text) {
+          S.text(g, label, sxp, syp - 9, col, 1, 'center');
+        }
       }
 
       // Movers - lines from start to end
