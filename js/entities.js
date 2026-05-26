@@ -60,12 +60,23 @@ window.SDD = window.SDD || {};
     this.signatureKind = null;
     this.signatureT = 0;
     this.signatureJumpsUsed = 0;
+    // Pass 12 (Mark): in easy mode each size (small / big) takes 2
+    // hits before it loses a level (shrink / die). Set on spawn to
+    // the current difficulty's max; refilled on grow + on shrink.
+    this.hp = maxHP();
+  }
+  // Per-difficulty hit-points: easy = 2 (2 hits to shrink, then 2 to
+  // die = 4 hits total from big), medium / hard = 1 (1 hit = level loss).
+  function maxHP() {
+    var diff = SDD && SDD.scene && SDD.scene.difficulty;
+    return diff === 'easy' ? 2 : 1;
   }
 
   Player.prototype.grow = function () {
     if (this.big) return;
     this.big = true;
     this.y -= 8; this.h = 31; this.w = 14; this.x -= 1;
+    this.hp = maxHP();
     SDD.audio.sfx('grow');
   };
   Player.prototype.giveBlast = function () {
@@ -102,6 +113,9 @@ window.SDD = window.SDD || {};
     if (!this.big) return;
     this.big = false;
     this.y += 8; this.h = 23; this.w = 13; this.x += 1;
+    // Refill HP for the small form so easy mode gets its second
+    // small-hit before death (Pass 12, Mark).
+    this.hp = maxHP();
     // Quick size flicker (handled in draw) + audible shrink cue.
     this.shrinkAnim = 24;
     SDD.audio.sfx('shrink');
@@ -113,6 +127,15 @@ window.SDD = window.SDD || {};
     if (this.invuln > 0 || this.dead || this.win) return false;
     // Sun-burst signature: brief invincibility halo on Day 1.
     if (this.signatureKind === 'sunburst') return false;
+    // Pass 12 (Mark): easy mode gives each size 2 hits. HP > 1 means
+    // this hit only burns a level of HP, no shrink / death yet.
+    if (this.hp == null) this.hp = maxHP();
+    this.hp--;
+    if (this.hp > 0) {
+      this.invuln = C.INVULN_STEPS;
+      SDD.audio.sfx('shrink');                     // short cue so the hit reads
+      return true;
+    }
     if (this.big) {
       this.shrink();
       this.invuln = C.INVULN_STEPS;
@@ -1641,6 +1664,10 @@ window.SDD = window.SDD || {};
     this.w = Math.round(14 * sc); this.h = Math.round(100 * sc);
     this.dead = false; this.remove = false;
     this.invisible = true; this.stompable = false;
+    // Pass 12 (Mark): "in the underwater level the bubbles cause
+    // damage - that's no good." Bubble is a push-up zone, never
+    // damages. The collisions loop skips entities with this flag.
+    this.harmless = true;
     this.t = 0;
   }
   BubbleUp.prototype.update = function (level) {
@@ -1875,6 +1902,10 @@ window.SDD = window.SDD || {};
     this.vx = 1.6;
     this.dead = false; this.remove = false;
     this.stompable = false;
+    // Pass 12 (Mark): "tornadoes in the wind level are too destructive
+    // - just have them as visual noise." Harmless = collision loop
+    // skips the damage path. Twister.update applies the soft nudge.
+    this.harmless = true;
     this.t = 0;
   }
   Twister.prototype.update = function (level) {
@@ -1887,12 +1918,16 @@ window.SDD = window.SDD || {};
       if (this.vx < 0 && this.x < cam.x - 40)  this.x = cam.x + 360;
     }
     var pl = level.player;
-    if (!pl || pl.dead || pl.invuln > 0) return;
+    if (!pl || pl.dead) return;
     if (overlap(pl, this)) {
-      // Trigger the same bounce-back as a wall hit in flappy mode.
-      pl.flappyStunT = 24;
-      pl.vy = Math.max(pl.vy, 1.2);
-      SDD.audio.sfx('bump');
+      // Pass 12 (Mark): tornadoes are no longer destructive. They
+      // give a small annoying nudge (slight downdraft + tiny push in
+      // their direction of travel) but never damage / stun the
+      // player. Visual noise + mild interference, that's it.
+      if (pl.vy < 1.8) pl.vy += 0.18;
+      pl.x += this.vx * 0.25;
+      // Rate-limit the bump SFX so a long overlap doesn't spam.
+      if ((this.t % 24) === 0) SDD.audio.sfx('bump');
     }
   };
   Twister.prototype.draw = function (ctx, cam) {
@@ -1912,9 +1947,30 @@ window.SDD = window.SDD || {};
     var sway1 = Math.sin(this.t * 0.18) * 3;
     var sway2 = Math.sin(this.t * 0.22 + 1.5) * 3;
     var sway3 = Math.sin(this.t * 0.26 + 3.0) * 2;
-    // Pass 10 round 2 (Mark): "increase the quality of those tornadoes."
-    // Now a multi-band funnel with three sway-offset cone layers + a
-    // visible debris swirl rotating around the body.
+    var sway4 = Math.sin(this.t * 0.14 + 4.2) * 4;
+    // Pass 12 (Mark): "increase their quality." Adds outer wisp halo,
+    // ground dust ring, brighter inner core, doubled debris, top
+    // turbulence shadow above the funnel. Same multi-band funnel as
+    // before plus the new layers.
+    // Top turbulence halo - faint inrushing air above the cone
+    ctx.fillStyle = 'rgba(180,195,230,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(cx + sway4 * 0.5, cy - 5, 16, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(160,180,220,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(cx + sway4, cy - 9, 22, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Outer wisp halo (soft outline a few pixels wider than the funnel)
+    ctx.fillStyle = 'rgba(70,80,110,0.35)';
+    ctx.beginPath();
+    ctx.moveTo(cx - 16 + sway4, cy);
+    ctx.lineTo(cx + 16 + sway4, cy);
+    ctx.lineTo(cx + 8 + sway2, cy + 26);
+    ctx.lineTo(cx + 4 + sway3, cy + 40);
+    ctx.lineTo(cx - 4 + sway3, cy + 40);
+    ctx.lineTo(cx - 8 + sway2, cy + 26);
+    ctx.closePath(); ctx.fill();
     // Outer dark funnel
     ctx.fillStyle = 'rgba(50,55,80,0.65)';
     ctx.beginPath();
@@ -1946,17 +2002,33 @@ window.SDD = window.SDD || {};
     ctx.fillRect((cx - 3 + sway2) | 0, cy + 22, 6, 1);
     ctx.fillStyle = 'rgba(140,170,230,0.6)';
     ctx.fillRect((cx - 2 + sway3) | 0, cy + 28, 4, 1);
-    // Debris specks orbiting the body
-    for (var d = 0; d < 5; d++) {
-      var a = this.t * 0.2 + d * 1.25;
-      var dx = Math.cos(a) * (10 - d);
-      var dy = 5 + d * 6 + Math.sin(a * 1.3) * 1.5;
-      ctx.fillStyle = (d % 2) ? '#dfe6ff' : '#9aa0c4';
-      ctx.fillRect((cx + dx) | 0, (cy + dy) | 0, 2, 1);
+    // Inner bright core - thin white-blue glow up the spine for life
+    ctx.fillStyle = 'rgba(230,240,255,0.45)';
+    ctx.fillRect((cx - 1 + sway1) | 0, cy + 4, 2, 18);
+    ctx.fillStyle = 'rgba(255,255,255,0.30)';
+    ctx.fillRect((cx + sway2) | 0, cy + 8, 1, 14);
+    // Debris specks orbiting the body (doubled count + varied sizes)
+    for (var d = 0; d < 10; d++) {
+      var a = this.t * 0.2 + d * 0.65;
+      var dx = Math.cos(a) * (11 - (d % 6));
+      var dy = 4 + (d % 6) * 5.5 + Math.sin(a * 1.3) * 1.7;
+      var sz = (d % 3 === 0) ? 2 : 1;
+      var dirAlt = (d & 1);
+      ctx.fillStyle = dirAlt ? '#dfe6ff' : '#9aa0c4';
+      ctx.fillRect((cx + dx) | 0, (cy + dy) | 0, sz, 1);
     }
     // Lifted dust at the bottom
     ctx.fillStyle = 'rgba(120,130,160,0.7)';
     ctx.fillRect((cx - 6 + sway3) | 0, cy + 36, 12, 2);
+    // Ground dust ring - elliptical shadow at the touch-point
+    ctx.fillStyle = 'rgba(140,150,180,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(cx + sway3, cy + 40, 12, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(200,210,235,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx + sway3, cy + 41, 16, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
     if (sc !== 1) { ctx.restore(); this.w = origW; this.h = origH; }
   };
   Twister.prototype.zap = function () {};

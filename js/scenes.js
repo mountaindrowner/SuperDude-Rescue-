@@ -2443,7 +2443,7 @@ window.SDD = window.SDD || {};
       if (!pl.dead && !pl.win) {
         for (i = 0; i < this.enemies.length; i++) {
           e = this.enemies[i];
-          if (e.dead || !E.overlap(pl, e)) continue;
+          if (e.dead || e.harmless || !E.overlap(pl, e)) continue;
           // Air-bubble signature (Day 5-2): jellyfish + sea creatures
           // (Wisp) skip the player while the bubble is active.
           if (pl.signatureKind === 'airbubble' && e instanceof SDD.ent.Wisp) continue;
