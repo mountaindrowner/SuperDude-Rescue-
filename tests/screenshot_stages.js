@@ -2,7 +2,8 @@
 // save PNGs for visual spot-check.
 const p = require('/tmp/node_modules/puppeteer');
 const w = (ms) => new Promise(r => setTimeout(r, ms));
-const STAGES = [[1,1],[2,1],[2,2],[3,1],[3,2]];
+const STAGES = (process.argv[2] || '').split(',').filter(Boolean).map(s => s.split('-').map(Number)) || [];
+if (STAGES.length === 0) STAGES.push([1,1],[2,1],[2,2],[3,1],[3,2]);
 
 (async () => {
   const b = await p.launch({ headless: true, args: ['--no-sandbox','--allow-file-access-from-files','--disable-web-security'] });

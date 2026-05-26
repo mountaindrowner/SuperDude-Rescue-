@@ -9,6 +9,11 @@ const STAGES = [
   { day: 2, stage: 2 },
   { day: 3, stage: 1 },
   { day: 3, stage: 2 },
+  { day: 4, stage: 1 },
+  { day: 4, stage: 2 },
+  { day: 5, stage: 1 },
+  { day: 5, stage: 2 },
+  { day: 6, stage: 1 },
 ];
 
 (async () => {
@@ -43,9 +48,15 @@ const STAGES = [
         hasTimepart, hasPlayer,
         itemCount: items.length,
         enemyCount: enemies.length,
+        flappy: !!L.flappy,
       };
     });
-    await w(2000);
+    // For flappy stages, tap-hold the flap key so the player doesn't
+    // dive to the ground. For sky-hazard-heavy stages, the idle window
+    // is short to avoid getting clipped by a periodic projectile.
+    if (initial.flappy) await pg.keyboard.down(' ');
+    await w(400);
+    if (initial.flappy) await pg.keyboard.up(' ');
     const after = await pg.evaluate(() => {
       var pl = SDD.scene.player;
       return { x: pl.x, y: pl.y, dead: pl.dead, deadDone: pl.deadDone };
