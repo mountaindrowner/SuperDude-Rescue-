@@ -14,6 +14,8 @@ const STAGES = [
   { day: 5, stage: 1 },
   { day: 5, stage: 2 },
   { day: 6, stage: 1 },
+  { day: 6, stage: 2 },
+  { day: 7, stage: 1 },
 ];
 
 (async () => {
