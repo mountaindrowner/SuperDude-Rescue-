@@ -180,6 +180,13 @@ window.SDD = window.SDD || {};
       '    <select id="ed-stage">', stageOpts, '</select>',
       '  </label>',
       '  <div class="ed-tools">', toolBtns, '</div>',
+      '  <div class="ed-zoom">',
+      '    <button id="ed-zoom-out" title="Zoom out (-)">−</button>',
+      '    <span id="ed-zoom-pct" title="Current zoom level">100%</span>',
+      '    <button id="ed-zoom-in" title="Zoom in (+)">+</button>',
+      '    <button id="ed-zoom-fit" title="Fit the entire stage in view">FIT</button>',
+      '    <button id="ed-zoom-100" title="Reset to 100% (1:1 game scale)">1:1</button>',
+      '  </div>',
       '  <div class="ed-actions">',
       '    <button id="ed-test" title="Test the current edits live (T) - jumps into the level scene with the in-memory edits.">▶ TEST</button>',
       '    <button id="ed-save-variant" title="Save the current edits as a named variant in your browser library (no disk write).">SAVE VARIANT</button>',
@@ -365,6 +372,11 @@ window.SDD = window.SDD || {};
     ui.querySelector('#ed-saveas').addEventListener('click', function () { scene.save(true); });
     ui.querySelector('#ed-save-variant').addEventListener('click', function () { scene.saveVariant(); });
     ui.querySelector('#ed-test').addEventListener('click', function () { scene.test(); });
+    ui.querySelector('#ed-zoom-in').addEventListener('click', function () { scene.zoomStep(+1); });
+    ui.querySelector('#ed-zoom-out').addEventListener('click', function () { scene.zoomStep(-1); });
+    ui.querySelector('#ed-zoom-fit').addEventListener('click', function () { scene.zoomFit(); });
+    ui.querySelector('#ed-zoom-100').addEventListener('click', function () { scene.setZoom(1); });
+    refreshZoomLabel(ui, scene);
     ui.querySelector('#ed-exit').addEventListener('click', function () { scene.exitToMenu(); });
 
     // Right-panel tab switching
@@ -397,6 +409,30 @@ window.SDD = window.SDD || {};
       if (snap[k] === undefined) delete ref[k];
       else ref[k] = snap[k];
     }
+  }
+
+  // Discrete zoom stops. Whole-numbers around 1.0 + halves below for
+  // wide overviews. Ctrl+wheel snaps between these levels.
+  var ZOOM_STOPS = [0.20, 0.25, 0.33, 0.5, 0.66, 0.85, 1.0, 1.25, 1.5, 2.0, 3.0];
+  var ZOOM_KEY = 'sdd.editorUI.zoom.v1';
+  function loadZoom() {
+    var v = parseFloat(localStorage.getItem(ZOOM_KEY) || '1');
+    return isFinite(v) && v > 0 ? v : 1;
+  }
+  function persistZoom(z) {
+    try { localStorage.setItem(ZOOM_KEY, String(z)); } catch (e) {}
+  }
+  function nearestStop(z) {
+    var best = ZOOM_STOPS[0], bestD = Infinity;
+    for (var i = 0; i < ZOOM_STOPS.length; i++) {
+      var d = Math.abs(ZOOM_STOPS[i] - z);
+      if (d < bestD) { best = ZOOM_STOPS[i]; bestD = d; }
+    }
+    return best;
+  }
+  function refreshZoomLabel(ui, scene) {
+    var el = ui.querySelector('#ed-zoom-pct');
+    if (el) el.textContent = Math.round(scene.zoom * 100) + '%';
   }
 
   var GROUP_STATE_KEY = 'sdd.editorUI.groups.v1';
@@ -612,6 +648,9 @@ window.SDD = window.SDD || {};
       this.future = [];
       this.fileHandles = this.fileHandles || {};   // per stage, persists across enters
       this.cam = { x: 0, y: 0 };
+      // Persisted across sessions so a designer who likes a zoomed-out
+      // overview keeps it on re-open.
+      this.zoom = loadZoom();
       this.t = 0;
       this.hoverCol = -1; this.hoverRow = -1;
       this.loadStage();
@@ -693,11 +732,52 @@ window.SDD = window.SDD || {};
     pointerToTile: function (e) {
       var canvas = SDD.canvas;
       var r = canvas.getBoundingClientRect();
-      var sx = (e.clientX - r.left) / r.width * 320;       // game-pixel x
-      var sy = (e.clientY - r.top) / r.height * 180;       // game-pixel y
-      var wx = sx + this.cam.x;
-      var wy = sy + this.cam.y;
+      var sx = (e.clientX - r.left) / r.width * 320;       // canvas-game-pixel x
+      var sy = (e.clientY - r.top) / r.height * 180;       // canvas-game-pixel y
+      // With zoom, one canvas pixel covers 1/zoom world pixels, so we
+      // scale the screen offset back up before adding the camera.
+      var z = this.zoom || 1;
+      var wx = sx / z + this.cam.x;
+      var wy = sy / z + this.cam.y;
       return { col: Math.floor(wx / 16), row: Math.floor(wy / 16), wx: wx, wy: wy, sx: sx, sy: sy };
+    },
+    // --- zoom ---
+    setZoom: function (z) {
+      // 0.05 min is small enough that FIT can show even 380-tile-wide
+      // Day 1-1 in a single view (320 / 6080 = 0.053).
+      var minZ = 0.05, maxZ = 4;
+      z = Math.max(minZ, Math.min(maxZ, z));
+      // Keep the world point under the screen center stable across
+      // zoom changes (avoids the level "jumping" away on each click).
+      var oldZ = this.zoom || 1;
+      var centerWx = this.cam.x + (320 / oldZ) / 2;
+      var centerWy = this.cam.y + (180 / oldZ) / 2;
+      this.zoom = z;
+      this.cam.x = centerWx - (320 / z) / 2;
+      this.cam.y = centerWy - (180 / z) / 2;
+      if (this.cam.x < 0) this.cam.x = 0;
+      if (this.cam.y < 0) this.cam.y = 0;
+      this.clampCam();
+      persistZoom(z);
+      if (this.ui) refreshZoomLabel(this.ui, this);
+    },
+    zoomStep: function (dir) {
+      var z = this.zoom || 1;
+      // Snap to current stop, then move by ±1 in the stops array.
+      var idx = ZOOM_STOPS.indexOf(nearestStop(z));
+      idx = Math.max(0, Math.min(ZOOM_STOPS.length - 1, idx + dir));
+      this.setZoom(ZOOM_STOPS[idx]);
+    },
+    // Fit-the-stage: pick the largest zoom that shows the entire level.
+    zoomFit: function () {
+      if (!this.lvl) return;
+      var lvlPxW = this.lvl.width * 16;
+      var lvlPxH = this.lvl.height * 16;
+      var z = Math.min(320 / lvlPxW, 180 / lvlPxH);
+      this.zoom = Math.max(0.05, z);
+      this.cam.x = 0; this.cam.y = 0;
+      persistZoom(this.zoom);
+      if (this.ui) refreshZoomLabel(this.ui, this);
     },
     onPointerDown: function (e) {
       e.preventDefault();
@@ -841,7 +921,12 @@ window.SDD = window.SDD || {};
     },
     onWheel: function (e) {
       e.preventDefault();
-      // Horizontal pan with wheel; shift+wheel = vertical
+      // Ctrl+wheel = zoom (one step per notch). Otherwise horizontal
+      // pan with the wheel; shift+wheel = vertical pan.
+      if (e.ctrlKey || e.metaKey) {
+        this.zoomStep(e.deltaY < 0 ? +1 : -1);
+        return;
+      }
       var dx = e.deltaY;
       if (e.shiftKey) {
         this.cam.y = Math.max(0, this.cam.y + dx * 0.5);
@@ -890,7 +975,9 @@ window.SDD = window.SDD || {};
         return;
       }
       if (isArrow) {
-        var panStep = 32;
+        // Scale pan step with the viewport so it feels right at any
+        // zoom level (always ~10% of the visible width).
+        var panStep = Math.max(16, Math.round(32 / (this.zoom || 1)));
         if (k === 'ArrowLeft')  { this.cam.x = Math.max(0, this.cam.x - panStep); this.clampCam(); }
         if (k === 'ArrowRight') { this.cam.x = this.cam.x + panStep; this.clampCam(); }
         if (k === 'ArrowUp')    { this.cam.y = Math.max(0, this.cam.y - panStep); this.clampCam(); }
@@ -928,8 +1015,12 @@ window.SDD = window.SDD || {};
       refreshProps(this.ui, this);
     },
     clampCam: function () {
-      var maxX = Math.max(0, this.lvl.width * 16 - 320);
-      var maxY = Math.max(0, this.lvl.height * 16 - 180);
+      // Viewport size shrinks (in world pixels) as we zoom in and
+      // grows as we zoom out, so clamp using the zoom-aware extent.
+      var z = this.zoom || 1;
+      var visW = 320 / z, visH = 180 / z;
+      var maxX = Math.max(0, this.lvl.width * 16 - visW);
+      var maxY = Math.max(0, this.lvl.height * 16 - visH);
       this.cam.x = Math.min(this.cam.x, maxX);
       this.cam.y = Math.min(this.cam.y, maxY);
     },
@@ -1225,17 +1316,26 @@ window.SDD = window.SDD || {};
       this.t++;
     },
     render: function (g) {
-      // Flat backdrop so the grid stays readable
+      // Flat backdrop so the grid stays readable - drawn pre-zoom
+      // so the unused area (when zoomed-out level doesn't fill the
+      // canvas) reads as the editor backdrop, not garbage.
       g.fillStyle = '#0e0e1a';
       g.fillRect(0, 0, 320, 180);
       var lvl = this.lvl;
       if (!lvl) return;
       var T = 16;
+      // Zoom transform: every subsequent draw is scaled around (0,0).
+      // World coords stay in pixels; ctx.scale handles the rest.
+      var z = this.zoom || 1;
+      g.save();
+      if (z !== 1) g.scale(z, z);
       var camx = Math.round(this.cam.x), camy = Math.round(this.cam.y);
+      // Visible world extent grows when zoomed out (320/z by 180/z).
+      var visW = 320 / z, visH = 180 / z;
       var t0x = Math.max(0, Math.floor(camx / T));
-      var t1x = Math.min(lvl.width - 1, Math.ceil((camx + 320) / T));
+      var t1x = Math.min(lvl.width - 1, Math.ceil((camx + visW) / T));
       var t0y = Math.max(0, Math.floor(camy / T));
-      var t1y = Math.min(lvl.height - 1, Math.ceil((camy + 180) / T));
+      var t1y = Math.min(lvl.height - 1, Math.ceil((camy + visH) / T));
 
       // Tiles via the existing sprite set (themed where available).
       var S = SDD.sprites, theme = lvl.theme;
@@ -1279,11 +1379,11 @@ window.SDD = window.SDD || {};
       g.beginPath();
       for (var gx = t0x; gx <= t1x + 1; gx++) {
         var px = Math.round(gx * T - camx) + 0.5;
-        g.moveTo(px, 0); g.lineTo(px, 180);
+        g.moveTo(px, 0); g.lineTo(px, visH);
       }
       for (var gy = t0y; gy <= t1y + 1; gy++) {
         var py = Math.round(gy * T - camy) + 0.5;
-        g.moveTo(0, py); g.lineTo(320, py);
+        g.moveTo(0, py); g.lineTo(visW, py);
       }
       g.stroke();
 
@@ -1309,7 +1409,7 @@ window.SDD = window.SDD || {};
         // matches what the game will show after pixel-nudging.
         var sxp = sp.tx * T - camx + 8 + (sp.offsetX || 0);
         var syp = sp.ty * T - camy + 8 + (sp.offsetY || 0);
-        if (sxp < -16 || sxp > 336 || syp < -16 || syp > 196) continue;
+        if (sxp < -16 || sxp > visW + 16 || syp < -16 || syp > visH + 16) continue;
         var col = typeColors[sp.type] || '#fff';
         // Anchor dot
         g.fillStyle = col;
@@ -1381,6 +1481,7 @@ window.SDD = window.SDD || {};
         g.strokeStyle = 'rgba(255,255,255,0.35)';
         g.strokeRect(this.hoverCol * T - camx + 0.5, this.hoverRow * T - camy + 0.5, T - 1, T - 1);
       }
+      g.restore();
     }
   };
 

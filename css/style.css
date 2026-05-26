@@ -117,6 +117,27 @@ body.touch #touch-controls { display: block; }
   padding: 6px 10px;
 }
 #editor-ui .ed-tools { display: flex; gap: 4px; }
+#editor-ui .ed-zoom {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-left: 1px solid #2a3050;
+  border-right: 1px solid #2a3050;
+}
+#editor-ui .ed-zoom button {
+  padding: 3px 7px;
+  min-width: 22px;
+  font-weight: bold;
+}
+#editor-ui #ed-zoom-pct {
+  display: inline-block;
+  width: 44px;
+  text-align: center;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: #46f0ff;
+}
 #editor-ui .ed-actions { margin-left: auto; display: flex; gap: 4px; }
 #editor-ui button, #editor-ui select {
   background: #1a2040;
