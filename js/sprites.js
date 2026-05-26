@@ -2847,6 +2847,27 @@ window.SDD = window.SDD || {};
   realLogo.src = 'assets/logo.png';
   // -----------------------------------------------------------------------
 
+  // ---- BUG-SCALE CANOPY BACKGROUND --------------------------------------
+  // Pre-blurred once into a screen-sized offscreen canvas so drawSky_bugscale
+  // can blit it with a single drawImage per parallax tile. The source PNG is
+  // a painted jungle canopy with foreground branches already baked in, so
+  // the sky function drops the procedural foliage in favour of this image.
+  var bugBg = new Image();
+  var bugBgCanvas = null;
+  bugBg.onload = function () {
+    if (!bugBg.width || !bugBg.height) return;
+    var c = document.createElement('canvas');
+    c.width = 320; c.height = 180;
+    var g = c.getContext('2d');
+    g.filter = 'blur(1.5px)';
+    g.drawImage(bugBg, 0, 0, c.width, c.height);
+    g.filter = 'none';
+    bugBgCanvas = c;
+  };
+  bugBg.onerror = function () { bugBgCanvas = null; };
+  bugBg.src = 'assets/level%206%20bugs%20background.png';
+  // -----------------------------------------------------------------------
+
   SDD.sprites = {
     build: build,
     get: function (name) { return sprites[name]; },
