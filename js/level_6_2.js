@@ -85,6 +85,9 @@ SDD.levels['6-2'] = {
     { type: "walker", tx: 220, ty: 10, variant: "beetle" },
     { type: "walker", tx: 258, ty: 10, variant: "beetle" },
     { type: "walker", tx: 270, ty: 10, variant: "beetle" },
+    { type: "signature", tx: 40, ty: 10, kind: "friendlybugs" },
+    { type: "signature", tx: 145, ty: 10, kind: "pollentrail" },
+    { type: "signature", tx: 215, ty: 10, kind: "beetleride" },
     { type: "checkpoint", tx: 130, ty: 10 },
     { type: "timepart", tx: 270, ty: 8 }
   ],

@@ -118,6 +118,9 @@ window.SDD = window.SDD || {};
       starjump:       20 * 60,
       airbubble:      16 * 60,
       callinghorn:     8 * 60,
+      friendlybugs:   16 * 60,
+      pollentrail:    16 * 60,
+      beetleride:     12 * 60,
       doveblessing:   20 * 60
     };
     this.signatureKind = kind;
@@ -622,7 +625,9 @@ window.SDD = window.SDD || {};
     sunburst: '#ffd84a', cloudglide: '#e8f0ff', pearl: '#a0e0ff',
     coolingwater: '#6ad4ff', leafshot: '#90e060', sunshield: '#ffe890',
     starjump: '#ffe890', airbubble: '#a8e6ff',
-    callinghorn: '#ffce46', doveblessing: '#ffffff'
+    callinghorn: '#ffce46', friendlybugs: '#e8a838',
+    pollentrail: '#fff2a6', beetleride: '#3a8060',
+    doveblessing: '#ffffff'
   };
   function drawSigIcon(ctx, kind, cx, top, col) {
     var y = top;
@@ -675,6 +680,28 @@ window.SDD = window.SDD || {};
       ctx.fillRect(cx - 3, y + 5, 6, 2); ctx.fillRect(cx + 3, y + 4, 2, 4);
       ctx.fillRect(cx - 4, y + 4, 1, 4); ctx.fillStyle = '#a07820';
       ctx.fillRect(cx - 3, y + 5, 1, 2);
+    } else if (kind === 'friendlybugs') {
+      // Bee with stripes + tiny wings.
+      ctx.fillStyle = '#e8a838'; ctx.fillRect(cx - 2, y + 4, 5, 3);
+      ctx.fillStyle = '#1a1208';
+      ctx.fillRect(cx - 2, y + 4, 1, 3); ctx.fillRect(cx, y + 4, 1, 3);
+      ctx.fillRect(cx + 2, y + 4, 1, 3);
+      ctx.fillStyle = '#e8f0ff';
+      ctx.fillRect(cx - 3, y + 3, 2, 1); ctx.fillRect(cx + 2, y + 3, 2, 1);
+    } else if (kind === 'pollentrail') {
+      // Cluster of pollen dots.
+      ctx.fillStyle = '#fff2a6';
+      ctx.fillRect(cx - 3, y + 4, 1, 1); ctx.fillRect(cx - 1, y + 2, 1, 1);
+      ctx.fillRect(cx + 1, y + 5, 1, 1); ctx.fillRect(cx + 3, y + 3, 1, 1);
+      ctx.fillRect(cx + 2, y + 7, 1, 1); ctx.fillRect(cx - 2, y + 6, 1, 1);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx, y + 4, 1, 1);
+    } else if (kind === 'beetleride') {
+      // Beetle silhouette with carapace ridge.
+      ctx.fillStyle = '#1a3a22';
+      ctx.fillRect(cx - 3, y + 3, 7, 4); ctx.fillRect(cx - 2, y + 7, 5, 1);
+      ctx.fillStyle = '#3a8060';
+      ctx.fillRect(cx - 1, y + 3, 1, 4); ctx.fillRect(cx + 1, y + 3, 1, 4);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, y + 4, 1, 1);
     } else if (kind === 'doveblessing') {
       ctx.fillStyle = '#fff';
       ctx.fillRect(cx - 3, y + 4, 6, 2); ctx.fillRect(cx - 4, y + 5, 2, 1);
@@ -692,6 +719,24 @@ window.SDD = window.SDD || {};
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
     if (!freshHurt && this.invuln > 0 && (this.invuln % 8) < 4) return;
     this.drawSignatureSymbol(ctx, cam);
+    // Beetle-ride signature (Day 6-2): a goliath beetle silhouette
+    // under Danny's feet so the mount reads visually. Drawn here so
+    // the player sprite renders on top.
+    if (this.signatureKind === 'beetleride' && this.signatureT > 0) {
+      var bx = Math.round(this.x + this.w / 2 - cam.x);
+      var by = Math.round(this.y + this.h - cam.y) - 2;
+      ctx.fillStyle = '#1a3a22';                       // dark elytra
+      ctx.fillRect(bx - 8, by - 1, 16, 4);             // body
+      ctx.fillRect(bx - 6, by + 3, 12, 1);             // underside
+      ctx.fillStyle = '#3a8060';                       // green ridge
+      ctx.fillRect(bx - 1, by - 1, 2, 4);              // centre seam
+      ctx.fillStyle = '#1a1208';                       // legs (6)
+      ctx.fillRect(bx - 7, by + 4, 1, 2); ctx.fillRect(bx - 3, by + 4, 1, 2);
+      ctx.fillRect(bx + 1, by + 4, 1, 2); ctx.fillRect(bx + 4, by + 4, 1, 2);
+      ctx.fillRect(bx - 5, by + 4, 1, 2); ctx.fillRect(bx + 2, by + 4, 1, 2);
+      ctx.fillStyle = '#c8ee7a';                       // bright highlight
+      ctx.fillRect(bx - 7, by, 1, 1); ctx.fillRect(bx + 6, by, 1, 1);
+    }
     var size = this.big ? 'big' : 'small';
     // Big->small shrink: flicker between sizes for ~24 frames so the
     // transition reads visually (not just an instant size change).
@@ -1353,7 +1398,28 @@ window.SDD = window.SDD || {};
     this.x = x; this.y = y; this.w = 12; this.h = 14;
     this.baseY = y; this.t = Math.random() * 6.28; this.remove = false;
   }
-  Core.prototype.update = function () { this.t += 0.1; this.y = this.baseY + Math.sin(this.t) * 2.5; };
+  Core.prototype.update = function (level) {
+    this.t += 0.1;
+    // Pollen-trail signature (Day 6-2): cores within a 48-px radius
+    // magnet toward the player at a gentle pull so they read as
+    // "drawn in" rather than teleporting.
+    if (level && level.player &&
+        level.player.signatureKind === 'pollentrail' &&
+        !this.remove && !level.player.dead) {
+      var px = level.player.x + level.player.w / 2;
+      var py = level.player.y + level.player.h / 2;
+      var cx = this.x + this.w / 2, cy = this.y + this.h / 2;
+      var dx = px - cx, dy = py - cy;
+      var d2 = dx * dx + dy * dy;
+      if (d2 < 48 * 48) {
+        var d = Math.sqrt(d2) || 1;
+        var pull = 1.4;
+        this.x += (dx / d) * pull;
+        this.baseY += (dy / d) * pull;
+      }
+    }
+    this.y = this.baseY + Math.sin(this.t) * 2.5;
+  };
   Core.prototype.draw = function (ctx, cam) {
     glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y,
       11, '#46f0ff', 0.4 + Math.sin(this.t * 1.5) * 0.18);

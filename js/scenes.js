@@ -2023,7 +2023,9 @@ window.SDD = window.SDD || {};
     sunburst: 'SUN', cloudglide: 'GLIDE', pearl: 'PEARL',
     coolingwater: 'WATER', leafshot: 'LEAF', sunshield: 'SHIELD',
     starjump: 'STAR', airbubble: 'BUBBLE',
-    callinghorn: 'HORN', doveblessing: 'DOVE'
+    callinghorn: 'HORN', friendlybugs: 'FRIENDS',
+    pollentrail: 'POLLEN', beetleride: 'BEETLE',
+    doveblessing: 'DOVE'
   };
   // Pass 12 (Mark): each signature shows a 4-second hint banner on
   // pickup with its name and a one-line tip on how to use it. Without
@@ -2038,6 +2040,9 @@ window.SDD = window.SDD || {};
     starjump:        { name: 'STAR JUMP!',    tip: 'JUMP, THEN A AGAIN AND AGAIN IN THE AIR!' },
     airbubble:       { name: 'AIR BUBBLE!',   tip: 'SEA CREATURES CAN\'T TOUCH YOU!' },
     callinghorn:     { name: 'CALLING HORN!', tip: 'ALL ENEMIES FREEZE WHERE THEY STAND!' },
+    friendlybugs:    { name: 'FRIENDLY BUGS!',tip: 'BEES AND BEETLES WALK RIGHT PAST YOU!' },
+    pollentrail:     { name: 'POLLEN TRAIL!', tip: 'POWER CORES FLY TOWARDS YOU!' },
+    beetleride:      { name: 'BEETLE RIDE!',  tip: 'BUMP INTO ENEMIES TO KNOCK THEM OUT!' },
     doveblessing:    { name: 'DOVE BLESSING!',tip: 'POWER CORES RAIN DOWN FROM THE SKY!' }
   };
 
@@ -2423,6 +2428,18 @@ window.SDD = window.SDD || {};
           // Air-bubble signature (Day 5-2): jellyfish + sea creatures
           // (Wisp) skip the player while the bubble is active.
           if (pl.signatureKind === 'airbubble' && e instanceof SDD.ent.Wisp) continue;
+          // Friendly-bugs signature (Day 6-2): bees + beetles (the
+          // day's enemy roster) phase through harmlessly.
+          if (pl.signatureKind === 'friendlybugs' &&
+              (e instanceof SDD.ent.Wisp || e instanceof SDD.ent.Walker)) continue;
+          // Beetle-ride signature (Day 6-2): walking enemies get bumped
+          // by the mount on contact, no need to land on top of them.
+          if (pl.signatureKind === 'beetleride' && e instanceof SDD.ent.Walker && e.stompable) {
+            e.stomped();
+            this.score += 120; A.sfx('stomp');
+            this.burst(e.x + e.w / 2, e.y + e.h / 2, '#90e060', 6);
+            continue;
+          }
           var stomp = e.stompable && pl.vy > 1 && (pl.y + pl.h - e.y) < 13;
           if (stomp) {
             e.stomped();
