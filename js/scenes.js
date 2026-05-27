@@ -772,6 +772,53 @@ window.SDD = window.SDD || {};
       // scene still reads when the art file hasn't been added yet.
       if (overworldImgOk) {
         g.drawImage(overworldImg, 0, 0, 320, 180);
+        // Subtle animated overlays on a few painted islands so the
+        // map feels alive without redrawing it. Each effect is tight
+        // to its island's tile so the painted art still reads first.
+        var ovT = this.t;
+        // 1) COSMIC VOID - 6 twinkling stars sprinkled around the island.
+        var cv = STAGES[0];
+        for (var cvI = 0; cvI < 6; cvI++) {
+          var cvAng = cvI * 1.05;
+          var cvR = 8 + (cvI % 3) * 3;
+          var cvX = Math.round(cv.x + Math.cos(cvAng) * cvR);
+          var cvY = Math.round(cv.dy + Math.sin(cvAng) * cvR * 0.7) - 4;
+          var cvA = 0.45 + 0.45 * Math.sin(ovT * 0.07 + cvI * 1.7);
+          if (cvA > 0.15) {
+            g.fillStyle = 'rgba(255,255,255,' + cvA.toFixed(2) + ')';
+            g.fillRect(cvX, cvY, 1, 1);
+          }
+        }
+        // 2) DAWN SKY - 3 small drifting clouds gliding right.
+        var ds = STAGES[1];
+        for (var dsI = 0; dsI < 3; dsI++) {
+          var dsPhase = ((ovT + dsI * 80) % 200) / 200;     // 0..1
+          var dsX = Math.round(ds.x - 12 + dsPhase * 24);
+          var dsY = ds.dy - 6 + (dsI - 1) * 3;
+          var dsA = (dsPhase < 0.1) ? dsPhase * 10
+                  : (dsPhase > 0.9) ? (1 - dsPhase) * 10
+                  : 1;
+          g.fillStyle = 'rgba(255,255,255,' + (dsA * 0.7).toFixed(2) + ')';
+          g.fillRect(dsX, dsY, 4, 1);
+          g.fillRect(dsX + 1, dsY - 1, 2, 1);
+          g.fillRect(dsX + 1, dsY + 1, 3, 1);
+        }
+        // 3) OCEAN - 4 cyan shimmer sparkles in the water around the island.
+        var oc = STAGES[2];
+        for (var ocI = 0; ocI < 4; ocI++) {
+          var ocPhase = (ovT + ocI * 18) % 60;
+          var ocAng = ocI * 1.57 + ocI * 0.4;
+          var ocR = 9 + (ocI % 2) * 3;
+          var ocX = Math.round(oc.x + Math.cos(ocAng) * ocR);
+          var ocY = Math.round(oc.dy + Math.sin(ocAng) * ocR * 0.5) + 5;
+          var ocA = Math.sin(ocPhase / 60 * Math.PI);
+          if (ocA > 0) {
+            g.fillStyle = 'rgba(180,240,255,' + (ocA * 0.85).toFixed(2) + ')';
+            g.fillRect(ocX, ocY, 1, 1);
+            g.fillStyle = 'rgba(255,255,255,' + (ocA * 0.6).toFixed(2) + ')';
+            g.fillRect(ocX, ocY - 1, 1, 1);
+          }
+        }
       } else {
         var grd = g.createLinearGradient(0, 0, 0, 180);
         grd.addColorStop(0, '#243a6e'); grd.addColorStop(1, '#6fae8a');
