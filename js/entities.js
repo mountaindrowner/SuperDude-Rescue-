@@ -113,7 +113,7 @@ window.SDD = window.SDD || {};
       cloudglide:     20 * 60,
       pearl:          16 * 60,
       coolingwater:   16 * 60,
-      vinegrapple:    20 * 60,
+      leafshot:       20 * 60,
       sunshield:      16 * 60,
       starjump:       20 * 60,
       airbubble:      16 * 60,
@@ -144,6 +144,17 @@ window.SDD = window.SDD || {};
     if (this.invuln > 0 || this.dead || this.win) return false;
     // Sun-burst signature: brief invincibility halo on Day 1.
     if (this.signatureKind === 'sunburst') return false;
+    // Pearl signature (Day 2-2): protective shell soaks the next hit,
+    // then breaks and the signature ends. Plays a brief invuln window
+    // so a chain of jets / jellyfish / etc. doesn't burn through it on
+    // the same frame.
+    if (this.signatureKind === 'pearl') {
+      this.signatureKind = null;
+      this.signatureT = 0;
+      this.invuln = C.INVULN_STEPS;
+      SDD.audio.sfx('power');
+      return false;
+    }
     // Pass 12 (Mark): easy mode gives each size 2 hits. HP > 1 means
     // this hit only burns a level of HP, no shrink / death yet.
     if (this.hp == null) this.hp = maxHP();
@@ -276,14 +287,15 @@ window.SDD = window.SDD || {};
         SDD.audio.sfx('jump');
       }
       if (this.blastCD > 0) this.blastCD--;
-      if (this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
+      var canLeaf_ = this.signatureKind === 'leafshot';
+      if ((this.hasBlast || canLeaf_) && In.pressed('blast') && this.blastCD <= 0) {
         var bx_ = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
         // Blast at lower-body height so it actually hits ground-walking
         // enemies (Mark: "I have a lot of enemies that I can't hit
         // because I'm too tall"). Old offset put the blast at chest
         // level which flew over walkers.
         var by_ = this.y + this.h - (this.big ? 16 : 12);
-        level.spawnBlast(bx_, by_, this.facing);
+        level.spawnBlast(bx_, by_, this.facing, canLeaf_ ? 'leaf' : 'blast');
         this.blastCD = 20; this.blastAnim = 11;
         SDD.audio.sfx('blast');
       }
@@ -393,9 +405,9 @@ window.SDD = window.SDD || {};
 
     if (this.inWater) {
       // swim physics: heavy drag, mild gravity, paddle on jump press.
-      // Pearl signature (Day 2-2): lighter drag for snappier swims.
-      var drag = (this.signatureKind === 'pearl') ? 0.97 : 0.92;
-      this.vy *= drag; this.vx *= drag;
+      // Underwater drag - constant. Pearl no longer modifies it; pearl
+      // is now a one-hit protective shell (see Player.hurt).
+      this.vy *= 0.92; this.vx *= 0.92;
       this.vy += C.GRAVITY * 0.18 * gs;
       if (this.vy > 2.2) this.vy = 2.2;
       if (In.pressed('jump')) {
@@ -470,47 +482,16 @@ window.SDD = window.SDD || {};
       if (!In.held('jump') && this.vy < capV) this.vy = capV;
     }
 
-    // Vine-grapple signature (Day 3-2): mid-air B snaps Danny to the
-    // nearest vine column within a 7-tile horizontal / 2-tile vertical
-    // search radius. Consumes the B press so the blast doesn't also
-    // fire on the same frame. Latches climbing immediately so the kid
-    // can swing through the vine maze without precise jumps.
-    var grappled = false;
-    if (this.signatureKind === 'vinegrapple' && In.pressed('blast') &&
-        !this.onGround && !this.climbing) {
-      var T2 = C.TILE;
-      var pcx = Math.floor((this.x + this.w / 2) / T2);
-      var pcy = Math.floor((this.y + this.h / 2) / T2);
-      var best = null, bestDist = 999;
-      for (var dr = -2; dr <= 2; dr++) {
-        for (var dc = -7; dc <= 7; dc++) {
-          var col = pcx + dc, row = pcy + dr;
-          if (level.map.get(col, row) === 'V') {
-            var dist = Math.abs(dc) + Math.abs(dr);
-            if (dist < bestDist) {
-              bestDist = dist;
-              best = { col: col, row: row };
-            }
-          }
-        }
-      }
-      if (best) {
-        this.x = best.col * T2 + (T2 - this.w) / 2;
-        this.y = best.row * T2;
-        this.vx = 0; this.vy = 0;
-        this.climbing = true;
-        this.vineCooldown = 0;
-        SDD.audio.sfx('power');
-        grappled = true;
-      }
-    }
-
-    // blast (lower-body height so it hits ground-walkers)
+    // blast / leaf-shot (lower-body height so it hits ground-walkers).
+    // Leaf-shot signature (Day 3-2) lets the player fire green leaf
+    // projectiles even without the blast power-up; while the signature
+    // is active every B press fires a leaf instead of a light blast.
     if (this.blastCD > 0) this.blastCD--;
-    if (!grappled && this.hasBlast && In.pressed('blast') && this.blastCD <= 0) {
+    var canLeaf = this.signatureKind === 'leafshot';
+    if ((this.hasBlast || canLeaf) && In.pressed('blast') && this.blastCD <= 0) {
       var bx = this.facing > 0 ? this.x + this.w - 2 : this.x - 8;
       var by = this.y + this.h - (this.big ? 16 : 12);
-      level.spawnBlast(bx, by, this.facing);
+      level.spawnBlast(bx, by, this.facing, canLeaf ? 'leaf' : 'blast');
       this.blastCD = 20; this.blastAnim = 11;
       SDD.audio.sfx('blast');
     }
@@ -591,8 +572,10 @@ window.SDD = window.SDD || {};
     }
     // Lava floor hazard (Day 3-1 pit gaps): touching the 'L' tile kills
     // the same as a pit-fall. Checked at the player's feet row so a
-    // brush at full speed registers cleanly.
-    if (!this.dead && level && level.map) {
+    // brush at full speed registers cleanly. Cooling-water signature
+    // skips the kill so Danny can briefly walk safely over lava.
+    if (!this.dead && level && level.map &&
+        this.signatureKind !== 'coolingwater') {
       var lvT = 16;
       var lTx0 = Math.floor((this.x + 2) / lvT);
       var lTx1 = Math.floor((this.x + this.w - 2) / lvT);
@@ -637,7 +620,7 @@ window.SDD = window.SDD || {};
   };
   var SIG_ICON_COLOR = {
     sunburst: '#ffd84a', cloudglide: '#e8f0ff', pearl: '#a0e0ff',
-    coolingwater: '#6ad4ff', vinegrapple: '#90e060', sunshield: '#ffe890',
+    coolingwater: '#6ad4ff', leafshot: '#90e060', sunshield: '#ffe890',
     starjump: '#ffe890', airbubble: '#a8e6ff',
     callinghorn: '#ffce46', doveblessing: '#ffffff'
   };
@@ -667,11 +650,18 @@ window.SDD = window.SDD || {};
       ctx.fillStyle = '#6ad4ff'; ctx.fillRect(cx - 1, y + 1, 2, 1);
       ctx.fillRect(cx - 2, y + 2, 4, 2); ctx.fillRect(cx - 3, y + 4, 6, 4);
       ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, y + 5, 1, 1);
-    } else if (kind === 'vinegrapple') {
-      ctx.fillStyle = '#90e060'; ctx.fillRect(cx - 3, y + 2, 1, 2);
-      ctx.fillRect(cx - 2, y + 4, 1, 2); ctx.fillRect(cx - 1, y + 3, 1, 3);
-      ctx.fillRect(cx, y + 4, 1, 3); ctx.fillRect(cx + 1, y + 2, 1, 2);
-      ctx.fillRect(cx + 2, y + 4, 1, 2); ctx.fillRect(cx - 4, y + 6, 9, 1);
+    } else if (kind === 'leafshot') {
+      // Leaf: teardrop / lance shape with a centre vein.
+      ctx.fillStyle = '#345020';
+      ctx.fillRect(cx - 1, y + 2, 3, 1);
+      ctx.fillRect(cx - 2, y + 3, 5, 2);
+      ctx.fillRect(cx - 2, y + 5, 5, 2);
+      ctx.fillRect(cx - 1, y + 7, 3, 1);
+      ctx.fillStyle = '#90e060';
+      ctx.fillRect(cx - 1, y + 3, 3, 1);
+      ctx.fillRect(cx - 1, y + 5, 3, 1);
+      ctx.fillStyle = '#c8ee7a';
+      ctx.fillRect(cx, y + 4, 1, 1);
     } else if (kind === 'starjump') {
       ctx.fillStyle = '#ffe890';
       ctx.fillRect(cx - 1, y + 1, 2, 8); ctx.fillRect(cx - 4, y + 4, 8, 2);
@@ -1282,12 +1272,17 @@ window.SDD = window.SDD || {};
   HazardSpawner.prototype.zap = function () {};      // blast can't kill the sky
 
   // ===================== PLAYER BLAST =====================
-  function Blast(x, y, dir) {
+  function Blast(x, y, dir, kind) {
     this.x = x; this.y = y; this.w = 10; this.h = 6;
     this.dir = dir; this.vx = dir * 3.3; this.traveled = 0; this.remove = false;
+    // 'blast' = light blast (yellow glow). 'leaf' = leafshot signature
+    // projectile (green leaf, slight spin).
+    this.kind = kind || 'blast';
+    this.spinT = 0;
   }
   Blast.prototype.update = function (level) {
     this.x += this.vx; this.traveled += 3.3;
+    this.spinT++;
     var T = C.TILE;
     var cx = Math.floor((this.x + (this.dir > 0 ? this.w : 0)) / T);
     var cy = Math.floor((this.y + this.h / 2) / T);
@@ -1298,7 +1293,28 @@ window.SDD = window.SDD || {};
     if (this.traveled > 140) this.remove = true;
   };
   Blast.prototype.draw = function (ctx, cam) {
-    glow(ctx, this.x + this.w / 2 - cam.x, this.y + this.h / 2 - cam.y, 12, '#fff0a0', 0.6);
+    var dx = Math.round(this.x + this.w / 2 - cam.x);
+    var dy = Math.round(this.y + this.h / 2 - cam.y);
+    if (this.kind === 'leaf') {
+      // Spinning green leaf. Two phases: wide ellipse / narrow ellipse
+      // so it reads as flipping through the air.
+      ctx.save();
+      ctx.translate(dx, dy);
+      var phase = (this.spinT >> 2) & 1;
+      ctx.fillStyle = '#3c6020';
+      if (phase === 0) {
+        ctx.beginPath(); ctx.ellipse(0, 0, 6, 3, 0.2, 0, 6.28); ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.ellipse(0, 0, 3, 4, 0.2, 0, 6.28); ctx.fill();
+      }
+      ctx.fillStyle = '#90e060';
+      ctx.fillRect(-2, -1, 4, 1);
+      ctx.fillStyle = '#c8ee7a';
+      ctx.fillRect(-1, -1, 2, 1);
+      ctx.restore();
+      return;
+    }
+    glow(ctx, dx, dy, 12, '#fff0a0', 0.6);
     drawBC(ctx, this.dir > 0 ? 'playerblast_r' : 'playerblast_l', this, cam);
   };
 

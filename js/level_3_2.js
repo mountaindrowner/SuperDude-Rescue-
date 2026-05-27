@@ -53,7 +53,7 @@ SDD.levels['3-2'] = {
     { type: "core", tx: 122, ty: 9 },
     { type: "core", tx: 127, ty: 8 },
     { type: "checkpoint", tx: 130, ty: 7 },
-    { type: "signature", tx: 113, ty: 10, kind: "vinegrapple" },
+    { type: "signature", tx: 113, ty: 10, kind: "leafshot" },
     { type: "core", tx: 135, ty: 6 },
     { type: "core", tx: 140, ty: 6 },
     { type: "core", tx: 145, ty: 6 },

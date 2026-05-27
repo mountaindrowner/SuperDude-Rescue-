@@ -2021,7 +2021,7 @@ window.SDD = window.SDD || {};
   // Friendly display names for active signatures (HUD).
   var SIG_LABELS = {
     sunburst: 'SUN', cloudglide: 'GLIDE', pearl: 'PEARL',
-    coolingwater: 'WATER', vinegrapple: 'VINE', sunshield: 'SHIELD',
+    coolingwater: 'WATER', leafshot: 'LEAF', sunshield: 'SHIELD',
     starjump: 'STAR', airbubble: 'BUBBLE',
     callinghorn: 'HORN', doveblessing: 'DOVE'
   };
@@ -2031,9 +2031,9 @@ window.SDD = window.SDD || {};
   var SIG_HINTS = {
     sunburst:        { name: 'SUNBURST!',     tip: 'RUN INTO BAD GUYS TO ZAP THEM!' },
     cloudglide:      { name: 'CLOUD GLIDE!',  tip: 'JUMP, THEN HOLD A TO FLOAT DOWN!' },
-    pearl:           { name: 'PEARL POWER!',  tip: 'SWIM SUPER FAST UNDER WATER!' },
+    pearl:           { name: 'PEARL SHELL!',  tip: 'TAKES ONE HIT FOR YOU!' },
     coolingwater:    { name: 'COOL WATER!',   tip: 'WALK RIGHT OVER LAVA - IT WON\'T BURN!' },
-    vinegrapple:     { name: 'VINE GRAPPLE!', tip: 'PRESS B BY A VINE TO SWING ACROSS!' },
+    leafshot:        { name: 'LEAF SHOT!',    tip: 'PRESS B TO THROW LEAVES!' },
     sunshield:       { name: 'SUN SHIELD!',   tip: 'SUN FLARES BOUNCE RIGHT OFF YOU!' },
     starjump:        { name: 'STAR JUMP!',    tip: 'JUMP, THEN A AGAIN AND AGAIN IN THE AIR!' },
     airbubble:       { name: 'AIR BUBBLE!',   tip: 'SEA CREATURES CAN\'T TOUCH YOU!' },
@@ -2302,7 +2302,7 @@ window.SDD = window.SDD || {};
     },
 
     // ---- level callbacks used by entities ----
-    spawnBlast: function (x, y, dir) { this.projectiles.push(new SDD.ent.Blast(x, y, dir)); },
+    spawnBlast: function (x, y, dir, kind) { this.projectiles.push(new SDD.ent.Blast(x, y, dir, kind)); },
     spawnOrb: function (x, y, dir) { this.projectiles.push(new SDD.ent.Orb(x, y, dir)); },
     hitBlock: function (tx, ty, code) {
       if (code === '?') {
