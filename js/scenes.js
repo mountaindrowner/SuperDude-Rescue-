@@ -3257,20 +3257,37 @@ window.SDD = window.SDD || {};
     },
     render: function (g) {
       var b = this.beat, t = this.t;
-      // Backdrop varies per beat. Beats 0, 1, 2, 4 are set in Super
-      // Dude Danny's lab and now use the painted ART_LAB backdrop
-      // when available (matches the intro's lab beats). Beat 3 is
-      // the time-travel swirl with a cycling gradient; beat 5 is
-      // the End-card warm fade.
-      var inLab = (b <= 2 || b === 4);
-      if (inLab && ART_LAB.ok) {
+      // Backdrop varies per beat:
+      //   0, 1, 2 = Garden of Eden (where Day 7 ends - he installs the
+      //             last part, witnesses creation, machine roars to life)
+      //   3       = time-travel swirl (no backdrop)
+      //   4       = Super Dude Danny's lab (painted ART_LAB - he arrives)
+      //   5       = End card warm fade
+      var inEden = (b <= 2);
+      var inLab  = (b === 4);
+      if (inEden) {
+        drawSky_eden(g, 0, 0, 0, t);
+        // Eden ground band so the machine + Danny aren't floating.
+        // Matches the lush-family palette used by 7-1's tiles.
+        g.fillStyle = '#3a7a32'; g.fillRect(0, 160, 320, 20);
+        g.fillStyle = '#2a5e22'; g.fillRect(0, 160, 320, 2);
+        // Sparse flower dots in the grass for life.
+        for (var fl = 0; fl < 18; fl++) {
+          var flx = (fl * 19 + 8) % 320;
+          var fly = 166 + (fl % 3) * 4;
+          var col = (fl % 4 === 0) ? '#ffd6f0'
+                  : (fl % 4 === 1) ? '#ffea88'
+                  : (fl % 4 === 2) ? '#ffffff' : '#ff7e7e';
+          g.fillStyle = col; g.fillRect(flx, fly, 1, 1);
+        }
+        if (b === 2) {
+          // Dim Eden slightly during the charging beat so the arcs
+          // read against the busy background.
+          g.fillStyle = 'rgba(40, 30, 80, 0.22)'; g.fillRect(0, 0, 320, 180);
+        }
+      } else if (inLab && ART_LAB.ok) {
         g.imageSmoothingEnabled = false;
         g.drawImage(ART_LAB.img, 0, 0, 320, 180);
-        if (b === 2) {
-          // Dim the lab slightly during the intense charging beat so
-          // the painted backdrop doesn't fight the electric arcs.
-          g.fillStyle = 'rgba(40, 30, 80, 0.30)'; g.fillRect(0, 0, 320, 180);
-        }
       } else {
         var grd = g.createLinearGradient(0, 0, 0, 180);
         if (b === 3) {
@@ -3317,20 +3334,24 @@ window.SDD = window.SDD || {};
 
       var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
-        paintedMachine(g, 200, 102, false, false);
-        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 90, 156, 2);
-        text(g, "SUPER DUDE DANNY'S LAB", 160, 24, '#cdd6e6', 1, 'center');
+        // Garden of Eden - the machine has come with him; he installs
+        // the last part beside the great Eden tree.
+        paintedMachine(g, 230, 102, false, false);
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 120, 156, 2);
+        text(g, "GARDEN OF EDEN", 160, 24, '#3a2010', 1, 'center');
       } else if (b === 1) {
-        paintedMachine(g, 200, 102, (t % 24 < 12), false);
-        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 90, 156, 2);
+        // Still in Eden - he reflects on having witnessed all 7 days.
+        // Gentle glow on the dome to hint that the machine's awake.
+        paintedMachine(g, 230, 102, (t % 24 < 12), false);
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 120, 156, 2);
       } else if (b === 2) {
-        // Machine charging - intense glow + electric arcs around the dome.
-        paintedMachine(g, 200, 102, true, true);
-        electricArcs(g, 200, 102, t,        6, 78);
-        electricArcs(g, 200, 102, t + 5,    9, 48);
-        electricArcs(g, 200, 102, t + 11,  12, 26);
+        // Machine charging in Eden - intense glow + electric arcs.
+        paintedMachine(g, 230, 102, true, true);
+        electricArcs(g, 230, 102, t,        6, 78);
+        electricArcs(g, 230, 102, t + 5,    9, 48);
+        electricArcs(g, 230, 102, t + 11,  12, 26);
         if (t % 22 < 10) { g.fillStyle = 'rgba(190,240,255,0.14)'; g.fillRect(0, 0, 320, 180); }
-        drawDannyScaled(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 90, 156, 2);
+        drawDannyScaled(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 120, 156, 2);
       } else if (b === 3) {
         // Time-travel swirl - rotating particle field.
         for (var i = 0; i < 28; i++) {
@@ -3343,10 +3364,11 @@ window.SDD = window.SDD || {};
         drawDannyScaled(g, 'big', 'jump', 'east', 3,
           160, 100 + Math.sin(t * 0.2) * 10, 2);
       } else if (b === 4) {
-        // Arrived home in the lab - painted backdrop already drawn above.
+        // Arrived home in the lab.
         paintedMachine(g, 200, 102, false, false);
         drawDannyScaled(g, 'big', 'celebrate', 'south',
           Math.floor(t / 5) % 9, 110, 156, 2);
+        text(g, "SUPER DUDE DANNY'S LAB", 160, 24, '#cdd6e6', 1, 'center');
       } else {
         // The End card.
         tsh(g, 'THE END', 160, 60, '#ffd23a', '#a8631a', 5, 'center');
