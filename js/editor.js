@@ -26,7 +26,7 @@ window.SDD = window.SDD || {};
     '3-1': 'Mountain Rise', '3-2': 'Garden Path',
     '4-1': 'Solar Climb',   '4-2': 'Moonlit Run',
     '5-1': 'Wings of Day',  '5-2': 'Deep Currents',
-    '6-1': 'Plains to Forest', '6-2': 'Bug World',
+    '6-1': 'Plains to Forest', '6-2': 'Creeping Things',
     '7-1': 'Sabbath Finale'
   };
 

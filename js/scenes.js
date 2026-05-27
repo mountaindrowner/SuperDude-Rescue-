@@ -693,7 +693,7 @@ window.SDD = window.SDD || {};
     { d: 5, s: 1, x: 211, dy: 117, name: 'CLOUDS',      nextDir: 'left'  },
     { d: 5, s: 2, x: 151, dy: 118, name: 'UNDERWATER',  nextDir: 'left'  },
     { d: 6, s: 1, x:  96, dy: 119, name: 'SAVANNA',     nextDir: 'left'  },
-    { d: 6, s: 2, x:  40, dy: 120, name: 'VILLAGE',     nextDir: 'down'  },
+    { d: 6, s: 2, x:  40, dy: 120, name: 'CREEPING THINGS', nextDir: 'down'  },
     { d: 7, s: 1, x: 240, dy: 160, name: 'EDEN GARDEN', nextDir: null    }
   ];
   var OPPOSITE = { right: 'left', left: 'right', up: 'down', down: 'up' };
