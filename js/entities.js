@@ -1708,11 +1708,13 @@ window.SDD = window.SDD || {};
     }
   };
 
-  // ===================== NPC (Day 6 Stage 2: Mankind) =====================
+  // ===================== NPC (Day 7-1 + legacy Day 6-2 Mankind) ===========
   // NPC kinds and metadata. Animal kinds are 'decorative' - they
   // never speak and never award cores; they just stand / bob in place
-  // for atmosphere. Custom dialogue per character so Eve has her own
-  // line vs Adam's generic "BLESSINGS!".
+  // for atmosphere. Each named NPC has a default dialogue line, but
+  // individual spawns can override it via `{ ..., line: '...' }` in
+  // level data so multiple Adams / Eves in the same level can say
+  // different things.
   var NPC_META = {
     adam: { decorative: false, line: 'BLESSINGS!' },
     eve:  { decorative: false, line: 'WELCOME, DANNY!' },
@@ -1720,12 +1722,12 @@ window.SDD = window.SDD || {};
     lion: { decorative: true },
     dove: { decorative: true }
   };
-  function NPC(x, y, kind) {
+  function NPC(x, y, kind, line) {
     this.x = x; this.y = y; this.w = 12; this.h = 26;
     this.kind = kind || 'adam';
     var meta = NPC_META[this.kind] || NPC_META.adam;
     this.decorative = !!meta.decorative;
-    this.line = meta.line || 'HELLO!';
+    this.line = line || meta.line || 'HELLO!';
     // Animals never trigger the "give cores" branch in scenes -
     // marking them already-gave at spawn is the simplest gate.
     this.gave = this.decorative;

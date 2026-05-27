@@ -2166,7 +2166,7 @@ window.SDD = window.SDD || {};
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h; e.baseY = e.y;
           this.items.push(e);
         } else if (s.type === 'npc') {
-          e = new SDD.ent.NPC(0, 0, s.kind || 'adam');
+          e = new SDD.ent.NPC(0, 0, s.kind || 'adam', s.line);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
           this.items.push(e);
         } else if (s.type === 'skyhazard') {

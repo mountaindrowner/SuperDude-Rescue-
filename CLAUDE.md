@@ -11,30 +11,32 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Latest commit**: Day 6-2 canopy image wired into `drawSky_bugscale`
-  — painted jungle PNG drawn tiled with 0.3 parallax, procedural
-  far/mid/top/foreground branches dropped, sun pool + pollen motes +
-  hanging cocoon kept as overlays. Service-worker cache bumped to
-  `sdd-shell-v4`. Visual change is live on `origin`.
-- **Full design history** is in `PLAN.md` (Passes 1-11 + music asset
-  list, mostly shipped). Read that for the "why" of any feature; this
-  section is just the active edge.
+- **Latest commit**: Batch D — Day 7-1 Adam/Eve per-spawn dialogue.
+  `NPC` constructor now accepts an optional `line` override; the spawn
+  switch in `scenes.js` passes `s.line` through; `level_7_1.js`
+  gives each Adam/Eve their own line (Genesis / Psalm / fruit-tree
+  foreshadow / serpent foreshadow / `SAFE TRAVELS!` / `GOD BLESS!`
+  at the goal). Service-worker cache bumped to `sdd-shell-v5`.
+- **Batch progression**: A ✅ B ✅ C ✅ (+ canopy iteration) D ✅
+  E ⏳ F ⏳. See `PLAN.md` and the Pending roadmap below.
 
-### Immediate next step — Screenshot + iterate the canopy
+### Batch tracker
 
-1. Open the GitHack URL in a fresh tab with the service worker
-   unregistered (Application → Service Workers → Unregister, then
-   Storage → Clear site data).
-2. God-mode in (`G`, then `6`) and walk through 6-2. Confirm: painted
-   canopy fills the sky, parallaxes slowly with player movement, sun
-   glow sits at top-centre, pollen drifts across mid-air, cocoon
-   appears every ~screen-width.
-3. If parallax factor / blur radius / cocoon density needs tuning:
-   `js/scenes.js` `drawSky_bugscale` (around L1881) is now ~50 lines —
-   `bgPx` controls parallax, blur is in `js/sprites.js` (`blur(1.5px)`
-   inside the bugBg onload handler around L2862).
+| Batch | Status | Notes |
+| --- | --- | --- |
+| A — Editor flappy hitbox sliders | shipped | `e331bf8` |
+| B — 6-1 enemies | shipped | `8058c5b` Batch B |
+| C — 6-2 → Bug World | shipped + extended | `9d01ba7` + 4 follow-ups + canopy PNG (`42a4a5b`) |
+| D — 7-1 Adam/Eve dialogue | shipped | Per-spawn `line` field; 7 NPCs themed |
+| E — Signatures redesign | pending | Pearl → shell that soaks hits; Cooling water → lava walk; Vine grapple → leaf shot; remove Wing-burst; surface what Air-bubble + Calling horn + Friendship token currently do; explicit kid-readable verbiage |
+| F — Per-signature particle indicators | pending | Each signature drop / active effect gets its own particle visual |
 
-### Pending roadmap
+### Standalone tweak (un-batched)
+
+- **Bump Day 4-2 gravity by ~half** so it's still floaty but less
+  ridiculous. Fold in alongside E or as a quick standalone commit.
+
+### Pending roadmap (outside the batch flow)
 
 1. **Editor pass on 6-2 layout** — 6-2 was generator-built, not
    editor-tuned. Open in-game editor → 6-2 → walk the level for
@@ -401,3 +403,8 @@ That single prompt + this file is enough to bootstrap any new session.
   dropped; sun pool + pollen + cocoon kept as overlays. Service
   worker cache bumped to `sdd-shell-v4`. WIP section updated to
   "screenshot + iterate"; editor pass on 6-2 moved up the roadmap.
+- **2026-05-26** — Batch D: per-spawn Adam/Eve dialogue in Day 7-1.
+  NPC constructor now takes an optional `line` override; spawns can
+  set `line: '...'` to differ from the kind default. 7 Adam/Eve
+  NPCs themed across the level. Added a batch tracker table to the
+  WIP section so progression is obvious at a glance.
