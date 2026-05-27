@@ -521,14 +521,19 @@ window.SDD = window.SDD || {};
       var p = level.platforms[i];
       var feet = this.y + this.h;
       var horiz = this.x + this.w > p.x && this.x < p.x + p.w;
-      // Re-latch tolerance must cover (a) the visual "sink" offset
-      // baked into the standing y, and (b) any upward platform motion
-      // this frame. Without (b), platforms moving up faster than ~1
-      // px/frame would carry the player's feet above the new platform
-      // top + sink and the player would fall through. Fixed Pass 9.
-      var upDy = Math.max(0, -(p.dy || 0));
-      var topTol = sink + upDy + 2;
-      if (this.vy >= 0 && horiz && prevFeet <= p.y + topTol && feet >= p.y && feet <= p.y + 10) {
+      // Re-latch threshold must cover (a) the visual "sink" offset
+      // baked into the standing y, AND it has to be measured against
+      // the platform's PREVIOUS-frame top, not its current top.
+      // Otherwise a fast downward-moving platform (a falling LeafFall
+      // in 6-2) whose top dips within sink+2 of a player standing on
+      // the ground in the same frame will yank the player upward onto
+      // it - "squish glitch". Using prevTop = p.y - p.dy keeps the
+      // legitimate Pass-9 upward-platform case working and tightens
+      // the downward case to exactly "feet were above the platform
+      // last frame".
+      var prevTop = p.y - (p.dy || 0);
+      if (this.vy >= 0 && horiz && prevFeet <= prevTop + sink + 2 &&
+          feet >= p.y && feet <= p.y + 10) {
         this.y = p.y - this.h + sink; this.vy = 0; this.onGround = true; this.ridePlat = p;
       }
     }
