@@ -444,3 +444,15 @@ That single prompt + this file is enough to bootstrap any new session.
   engine changes - LeafFall just exposes `x/y/w/h/dx/dy` and the
   player rides it. 3 demo spawners placed across cols 87-113 in 6-2;
   Mark can editor-tune positions / period / fall speed / sway in-game.
+- **2026-05-26** — Cinematic polish: rename DANNY → SUPER DUDE
+  DANNY across intro + finale beat text + game-over caption + lab
+  caption + end-card recap. Intro beat 3 (arrival) now uses a
+  cosmic backdrop (deep navy gradient + starfield + two nebula
+  blobs) instead of the dawn gradient with green ground + yellow
+  sun; busted machine has five rising smoke puffs that drift up
+  and fade. Finale beats 0/1/2/4 now use the painted ART_LAB
+  backdrop + painted ART_MACHINE PNG (instead of the procedural
+  box) so the lab beats match the intro's painted look; charging
+  beat 2 keeps the electric arcs + brief flash but the machine is
+  the painted version with the dome glow overlay. End-card text
+  updated.

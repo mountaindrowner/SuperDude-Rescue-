@@ -190,10 +190,12 @@ window.SDD = window.SDD || {};
   // INTRO - short animated cinematic
   // =====================================================================
   var INTRO_BEATS = [
-    { lines: ['DANNY THE SCIENTIST BUILT', 'A TIME MACHINE...'] },
+    { lines: ['SUPER DUDE DANNY BUILT', 'A TIME MACHINE...'] },
     { lines: ['...TO TRAVEL BACK AND WITNESS', "GOD'S SEVEN DAYS OF CREATION."] },
     { lines: ['BUT THE JUMP WENT WRONG', 'AND THE MACHINE BROKE APART!'] },
-    { lines: ['STRANDED IN TIME, DANNY MUST FIND', 'POWER CORES AND MACHINE PARTS', 'TO REBUILD IT AND GET HOME.'] }
+    { lines: ['STRANDED IN TIME, SUPER DUDE DANNY',
+              'MUST FIND CORES AND MACHINE PARTS',
+              'TO REBUILD IT AND GET HOME!'] }
   ];
   // Helper for drawing Danny at an arbitrary scale (he's fixed-size in
   // the sprite renderer; the canvas transform handles scaling without
@@ -231,9 +233,23 @@ window.SDD = window.SDD || {};
         // (fallback for beat 2 when no lab art)
         g.fillStyle = '#14121f'; g.fillRect(0, 0, 320, 180);
       } else {
+        // Stranded-in-time backdrop: deep cosmic gradient + starfield +
+        // a couple of soft nebula blobs so it reads "out among the
+        // stars" rather than "peaceful dawn on a field of grass".
         var grd = g.createLinearGradient(0, 0, 0, 180);
-        grd.addColorStop(0, '#3a2c66'); grd.addColorStop(1, '#caa6c0');
+        grd.addColorStop(0, '#0a0a1f'); grd.addColorStop(0.6, '#1a1638');
+        grd.addColorStop(1, '#2a1a44');
         g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+        drawStarfield(g, t);
+        // Two large diffuse nebulae - low-alpha radial gradients.
+        var neb1 = g.createRadialGradient(60, 50, 4, 60, 50, 70);
+        neb1.addColorStop(0, 'rgba(180, 120, 220, 0.35)');
+        neb1.addColorStop(1, 'rgba(180, 120, 220, 0)');
+        g.fillStyle = neb1; g.fillRect(0, 0, 320, 180);
+        var neb2 = g.createRadialGradient(240, 80, 4, 240, 80, 80);
+        neb2.addColorStop(0, 'rgba(110, 180, 220, 0.30)');
+        neb2.addColorStop(1, 'rgba(110, 180, 220, 0)');
+        g.fillStyle = neb2; g.fillRect(0, 0, 320, 180);
       }
 
       // Time-machine drawer. Uses the painted PNGs when available
@@ -302,12 +318,38 @@ window.SDD = window.SDD || {};
           Math.min(5, Math.floor(t / 4) % 6),
           230, 140 + Math.sin(t * 0.2) * 10, 2);
       } else {
+        // Stranded scene: subtle cratered cosmic surface (no green
+        // dawn field, no yellow sun) so the focus stays on the
+        // broken machine + Super Dude Danny.
+        g.fillStyle = '#0e0a1e'; g.fillRect(0, 150, 320, 30);
+        g.fillStyle = '#1a1430';
+        g.fillRect(0, 148, 320, 2);
+        for (var cr = 0; cr < 6; cr++) {
+          var crx = (cr * 53 + 18) % 320;
+          var crr = 4 + (cr % 3) * 2;
+          g.fillStyle = '#221830';
+          g.beginPath(); g.ellipse(crx, 162, crr, crr * 0.45, 0, 0, 6.28); g.fill();
+        }
+        // Smoke puffs rising off the broken machine. Five staggered
+        // puffs, each on its own ascending + fading cycle so the
+        // column reads as a continuous billow rather than a single
+        // pulse.
+        for (var sm = 0; sm < 5; sm++) {
+          var smPhase = ((t + sm * 36) % 180);
+          var smY = 100 - Math.round(smPhase * 0.35);
+          var smX = 160 + Math.round(Math.sin((t + sm * 24) * 0.05) * 8)
+                   + (sm % 2 ? 6 : -8);
+          var smR = 5 + Math.round(smPhase * 0.04);
+          var smAlpha = 0.5 - smPhase / 360;
+          if (smAlpha > 0) {
+            g.fillStyle = 'rgba(70, 60, 80, ' + smAlpha.toFixed(2) + ')';
+            g.beginPath(); g.arc(smX, smY, smR, 0, 6.28); g.fill();
+            g.fillStyle = 'rgba(110, 100, 130, ' + (smAlpha * 0.6).toFixed(2) + ')';
+            g.beginPath(); g.arc(smX - 2, smY - 1, smR * 0.55, 0, 6.28); g.fill();
+          }
+        }
         machine(g, 160, 103, false, true);
         drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 70, 150, 2);
-        // dawn ground
-        g.fillStyle = '#86cf45'; g.fillRect(0, 150, 320, 30);
-        g.fillStyle = '#ffd23a';
-        g.beginPath(); g.arc(260, 150, 26, Math.PI, 0); g.fill();
       }
 
       // caption box - pinned to the bottom edge so it stays out of the action above
@@ -3178,7 +3220,7 @@ window.SDD = window.SDD || {};
       drawStarfield(g, this.t);
       tsh(g, 'GAME OVER', 160, 52, '#ff5d4a', '#5a1810', 3, 'center');
       S.drawDanny(g, 'small', 'die', 'east', 6, 152, 92);
-      text(g, "DANNY WILL TRY AGAIN!", 160, 124, '#dfe6ff', 1, 'center');
+      text(g, "SUPER DUDE DANNY WILL TRY AGAIN!", 160, 124, '#dfe6ff', 1, 'center');
       if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 150, '#ffd23a', 1, 'center');
     }
   };
@@ -3187,10 +3229,10 @@ window.SDD = window.SDD || {};
   // FINALE - grand ending cinematic played after Day 7 is completed
   // =====================================================================
   var FINALE_BEATS = [
-    { lines: ['DANNY INSTALLS THE LAST', 'TIME-MACHINE PART...'] },
+    { lines: ['SUPER DUDE DANNY INSTALLS', 'THE LAST TIME-MACHINE PART...'] },
     { lines: ["...HE HAS WITNESSED ALL SEVEN", "DAYS OF GOD'S CREATION."] },
     { lines: ['THE TIME MACHINE ROARS TO LIFE!'] },
-    { lines: ['DANNY HURTLES THROUGH TIME...'] },
+    { lines: ['SUPER DUDE DANNY HURTLES', 'THROUGH TIME...'] },
     { lines: ['...AND ARRIVES SAFELY HOME', 'IN HIS LAB!'] },
     { lines: ['THE END.', 'THANK YOU FOR PLAYING!'] }
   ];
@@ -3215,51 +3257,82 @@ window.SDD = window.SDD || {};
     },
     render: function (g) {
       var b = this.beat, t = this.t;
-      // backdrop varies per beat
-      var grd = g.createLinearGradient(0, 0, 0, 180);
-      if (b <= 1) { grd.addColorStop(0, '#1d2a52'); grd.addColorStop(1, '#7a92c0'); }
-      else if (b === 2) { grd.addColorStop(0, '#322a78'); grd.addColorStop(1, '#caa6c0'); }
-      else if (b === 3) {
-        // swirling time-travel: rapidly shifting bands
-        var k = (t / 4) % 1;
-        grd.addColorStop(0, 'hsl(' + Math.floor(t * 6) + ',70%,40%)');
-        grd.addColorStop(1, 'hsl(' + Math.floor(t * 6 + 120) + ',70%,60%)');
-      } else if (b === 4) { grd.addColorStop(0, '#1a2238'); grd.addColorStop(1, '#3a4870'); }
-      else { grd.addColorStop(0, '#142b40'); grd.addColorStop(1, '#e8c878'); }
-      g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
-      if (b <= 1 || b === 4 || b === 5) drawStarfield(g, this.t);
+      // Backdrop varies per beat. Beats 0, 1, 2, 4 are set in Super
+      // Dude Danny's lab and now use the painted ART_LAB backdrop
+      // when available (matches the intro's lab beats). Beat 3 is
+      // the time-travel swirl with a cycling gradient; beat 5 is
+      // the End-card warm fade.
+      var inLab = (b <= 2 || b === 4);
+      if (inLab && ART_LAB.ok) {
+        g.imageSmoothingEnabled = false;
+        g.drawImage(ART_LAB.img, 0, 0, 320, 180);
+        if (b === 2) {
+          // Dim the lab slightly during the intense charging beat so
+          // the painted backdrop doesn't fight the electric arcs.
+          g.fillStyle = 'rgba(40, 30, 80, 0.30)'; g.fillRect(0, 0, 320, 180);
+        }
+      } else {
+        var grd = g.createLinearGradient(0, 0, 0, 180);
+        if (b === 3) {
+          grd.addColorStop(0, 'hsl(' + Math.floor(t * 6) + ',70%,40%)');
+          grd.addColorStop(1, 'hsl(' + Math.floor(t * 6 + 120) + ',70%,60%)');
+        } else {
+          // End-card warm fade.
+          grd.addColorStop(0, '#142b40'); grd.addColorStop(1, '#e8c878');
+        }
+        g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+        if (b === 5) drawStarfield(g, this.t);
+      }
 
-      // shared time-machine drawing
-      function machine(g, x, y, glow, broken, glowStrong) {
+      // Painted time-machine helper. cx/cy = machine centre. Mirrors
+      // the intro's painted-machine drawer so the cinematics feel
+      // consistent. Falls back to a small procedural box if the PNG
+      // hasn't loaded.
+      function paintedMachine(g, cx, cy, glow, glowStrong) {
+        if (ART_MACHINE.ok) {
+          var mh = 150, mw = Math.round(mh * (1024 / 1536));   // ~100w
+          var mx = cx - mw / 2, my = cy - mh / 2;
+          g.imageSmoothingEnabled = false;
+          g.drawImage(ART_MACHINE.img, mx, my, mw, mh);
+          if (glow) {
+            g.fillStyle = 'rgba(255,232,147,0.50)';
+            g.beginPath(); g.arc(cx, my + 12, mw * 0.45, 0, 6.28); g.fill();
+          }
+          if (glowStrong) {
+            g.fillStyle = 'rgba(255,236,170,0.45)';
+            g.fillRect(cx - 42, my - 12, 84, 6);
+            g.fillRect(cx - 34, my - 22, 68, 4);
+          }
+          return;
+        }
+        // Procedural fallback (centre coords).
+        var x = cx - 28, y = cy - 22;
         g.fillStyle = '#3b4a6a'; g.fillRect(x, y, 56, 44);
         g.fillStyle = '#586a92'; g.fillRect(x + 3, y + 3, 50, 24);
         g.fillStyle = glow ? '#bff0ff' : '#23304a'; g.fillRect(x + 7, y + 7, 42, 16);
         g.fillStyle = '#2a3550'; g.fillRect(x, y + 44, 56, 6);
         g.fillStyle = glow ? '#ffe893' : '#7a8bb0';
         g.beginPath(); g.arc(x + 28, y + 3, 14, Math.PI, 0); g.fill();
-        if (glowStrong) {
-          g.fillStyle = 'rgba(255,236,170,0.45)';
-          g.fillRect(x - 14, y - 12, 84, 6);
-          g.fillRect(x - 6, y - 22, 68, 4);
-        }
       }
 
       var idleIdx = Math.floor(t / 18) % 4;
       if (b === 0) {
-        machine(g, 132, 84, false, false, false);
-        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 100, 102);
-        text(g, "DANNY'S LAB", 160, 24, '#cdd6e6', 1, 'center');
+        paintedMachine(g, 200, 102, false, false);
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 90, 156, 2);
+        text(g, "SUPER DUDE DANNY'S LAB", 160, 24, '#cdd6e6', 1, 'center');
       } else if (b === 1) {
-        machine(g, 132, 84, (t % 24 < 12), false, false);
-        S.drawDanny(g, 'big', 'idle', 'east', idleIdx, 100, 102);
+        paintedMachine(g, 200, 102, (t % 24 < 12), false);
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 90, 156, 2);
       } else if (b === 2) {
-        // machine glowing intensely
-        machine(g, 132, 84, true, false, true);
-        electricArcs(g, 160, 105, t, 6, 48);
+        // Machine charging - intense glow + electric arcs around the dome.
+        paintedMachine(g, 200, 102, true, true);
+        electricArcs(g, 200, 102, t,        6, 78);
+        electricArcs(g, 200, 102, t + 5,    9, 48);
+        electricArcs(g, 200, 102, t + 11,  12, 26);
         if (t % 22 < 10) { g.fillStyle = 'rgba(190,240,255,0.14)'; g.fillRect(0, 0, 320, 180); }
-        S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 100, 102);
+        drawDannyScaled(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 90, 156, 2);
       } else if (b === 3) {
-        // swirl
+        // Time-travel swirl - rotating particle field.
         for (var i = 0; i < 28; i++) {
           var a = (t * 0.04 + i * 0.224) % 6.28;
           var r = 8 + (i * 4 + t * 1.2) % 160;
@@ -3267,19 +3340,18 @@ window.SDD = window.SDD || {};
           g.fillStyle = 'hsl(' + Math.floor(a * 80 + t * 4) + ',80%,75%)';
           g.fillRect(cx, cy, 3, 3);
         }
-        S.drawDanny(g, 'big', 'jump', 'east', 3, 144, 70 + Math.sin(t * 0.2) * 10);
+        drawDannyScaled(g, 'big', 'jump', 'east', 3,
+          160, 100 + Math.sin(t * 0.2) * 10, 2);
       } else if (b === 4) {
-        // arrived in lab
-        machine(g, 132, 84, false, false, false);
-        S.drawDanny(g, 'big', 'celebrate', 'south', Math.floor(t / 5) % 9, 168, 102);
-        // lab floor + door
-        g.fillStyle = '#3a435c'; g.fillRect(0, 146, 320, 34);
-        g.fillStyle = '#2a3350'; g.fillRect(40, 100, 24, 46);
+        // Arrived home in the lab - painted backdrop already drawn above.
+        paintedMachine(g, 200, 102, false, false);
+        drawDannyScaled(g, 'big', 'celebrate', 'south',
+          Math.floor(t / 5) % 9, 110, 156, 2);
       } else {
-        // The End card
+        // The End card.
         tsh(g, 'THE END', 160, 60, '#ffd23a', '#a8631a', 5, 'center');
-        text(g, "DANNY'S CREATION ADVENTURE", 160, 110, '#1a1630', 1, 'center');
-        text(g, "IS COMPLETE", 160, 122, '#1a1630', 1, 'center');
+        text(g, "SUPER DUDE DANNY'S CREATION", 160, 110, '#1a1630', 1, 'center');
+        text(g, "ADVENTURE IS COMPLETE!", 160, 122, '#1a1630', 1, 'center');
       }
 
       // caption box - pinned to bottom edge so it doesn't cover the cinematic art
