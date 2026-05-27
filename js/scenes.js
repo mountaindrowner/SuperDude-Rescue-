@@ -2022,8 +2022,8 @@ window.SDD = window.SDD || {};
   var SIG_LABELS = {
     sunburst: 'SUN', cloudglide: 'GLIDE', pearl: 'PEARL',
     coolingwater: 'WATER', vinegrapple: 'VINE', sunshield: 'SHIELD',
-    starjump: 'STAR', wingburst: 'WINGS', airbubble: 'BUBBLE',
-    callinghorn: 'HORN', friendshiptoken: 'FRIEND', doveblessing: 'DOVE'
+    starjump: 'STAR', airbubble: 'BUBBLE',
+    callinghorn: 'HORN', doveblessing: 'DOVE'
   };
   // Pass 12 (Mark): each signature shows a 4-second hint banner on
   // pickup with its name and a one-line tip on how to use it. Without
@@ -2036,10 +2036,8 @@ window.SDD = window.SDD || {};
     vinegrapple:     { name: 'VINE GRAPPLE!', tip: 'PRESS B BY A VINE TO SWING ACROSS!' },
     sunshield:       { name: 'SUN SHIELD!',   tip: 'SUN FLARES BOUNCE RIGHT OFF YOU!' },
     starjump:        { name: 'STAR JUMP!',    tip: 'JUMP, THEN A AGAIN AND AGAIN IN THE AIR!' },
-    wingburst:       { name: 'WING BURST!',   tip: 'HOLD A TO FLY STRAIGHT UP!' },
     airbubble:       { name: 'AIR BUBBLE!',   tip: 'SEA CREATURES CAN\'T TOUCH YOU!' },
     callinghorn:     { name: 'CALLING HORN!', tip: 'ALL ENEMIES FREEZE WHERE THEY STAND!' },
-    friendshiptoken: { name: 'FRIENDSHIP!',   tip: 'FRIENDS GIVE YOU EXTRA POWER CORES!' },
     doveblessing:    { name: 'DOVE BLESSING!',tip: 'POWER CORES RAIN DOWN FROM THE SKY!' }
   };
 
@@ -2468,10 +2466,7 @@ window.SDD = window.SDD || {};
         } else if (e instanceof Ent.NPC) {
           if (E.overlap(pl, e) && !pl.dead && !e.gave) {
             e.gave = true; e.bubbleT = 140;
-            // Friendship-token signature (Day 6-2): NPCs gift 5 cores
-            // instead of the default 3 for the rest of the stage.
-            var npcGift = (pl.signatureKind === 'friendshiptoken') ? 5 : 3;
-            this.gainCores(npcGift); this.score += 150;
+            this.gainCores(3); this.score += 150;
             A.sfx('core');
             this.burst(e.x + e.w / 2, e.y + 4, '#9bf0ff', 6);
           }

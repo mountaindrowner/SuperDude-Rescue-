@@ -123,8 +123,7 @@ window.SDD = window.SDD || {};
     // spawn.kind values
     'signature.kind': [
       'sunburst', 'cloudglide', 'pearl', 'coolingwater', 'vinegrapple',
-      'sunshield', 'starjump', 'wingburst', 'airbubble', 'callinghorn',
-      'friendshiptoken', 'doveblessing'
+      'sunshield', 'starjump', 'airbubble', 'callinghorn', 'doveblessing'
     ],
     'skyhazard.kind': ['flare', 'meteor', 'meteorH', 'lavaPlume'],
     'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove'],

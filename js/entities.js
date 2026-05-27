@@ -116,10 +116,8 @@ window.SDD = window.SDD || {};
       vinegrapple:    20 * 60,
       sunshield:      16 * 60,
       starjump:       20 * 60,
-      wingburst:      12 * 60,
       airbubble:      16 * 60,
       callinghorn:     8 * 60,
-      friendshiptoken: 999 * 60,    // lasts the rest of the stage
       doveblessing:   20 * 60
     };
     this.signatureKind = kind;
@@ -640,8 +638,8 @@ window.SDD = window.SDD || {};
   var SIG_ICON_COLOR = {
     sunburst: '#ffd84a', cloudglide: '#e8f0ff', pearl: '#a0e0ff',
     coolingwater: '#6ad4ff', vinegrapple: '#90e060', sunshield: '#ffe890',
-    starjump: '#ffe890', wingburst: '#ffffff', airbubble: '#a8e6ff',
-    callinghorn: '#ffce46', friendshiptoken: '#ff6a8a', doveblessing: '#ffffff'
+    starjump: '#ffe890', airbubble: '#a8e6ff',
+    callinghorn: '#ffce46', doveblessing: '#ffffff'
   };
   function drawSigIcon(ctx, kind, cx, top, col) {
     var y = top;
@@ -678,11 +676,6 @@ window.SDD = window.SDD || {};
       ctx.fillStyle = '#ffe890';
       ctx.fillRect(cx - 1, y + 1, 2, 8); ctx.fillRect(cx - 4, y + 4, 8, 2);
       ctx.fillStyle = '#fff'; ctx.fillRect(cx, y + 4, 1, 2);
-    } else if (kind === 'wingburst') {
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(cx - 5, y + 3, 4, 2); ctx.fillRect(cx + 1, y + 3, 4, 2);
-      ctx.fillRect(cx - 4, y + 5, 2, 2); ctx.fillRect(cx + 2, y + 5, 2, 2);
-      ctx.fillRect(cx - 5, y + 4, 1, 1); ctx.fillRect(cx + 4, y + 4, 1, 1);
     } else if (kind === 'airbubble') {
       ctx.strokeStyle = '#a8e6ff'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(cx, y + 5, 4, 0, Math.PI * 2); ctx.stroke();
@@ -692,12 +685,6 @@ window.SDD = window.SDD || {};
       ctx.fillRect(cx - 3, y + 5, 6, 2); ctx.fillRect(cx + 3, y + 4, 2, 4);
       ctx.fillRect(cx - 4, y + 4, 1, 4); ctx.fillStyle = '#a07820';
       ctx.fillRect(cx - 3, y + 5, 1, 2);
-    } else if (kind === 'friendshiptoken') {
-      ctx.fillStyle = '#ff6a8a';
-      ctx.fillRect(cx - 3, y + 3, 2, 2); ctx.fillRect(cx + 1, y + 3, 2, 2);
-      ctx.fillRect(cx - 3, y + 4, 7, 2); ctx.fillRect(cx - 2, y + 6, 5, 1);
-      ctx.fillRect(cx - 1, y + 7, 3, 1); ctx.fillRect(cx, y + 8, 1, 1);
-      ctx.fillStyle = '#ffb0c0'; ctx.fillRect(cx - 2, y + 4, 1, 1);
     } else if (kind === 'doveblessing') {
       ctx.fillStyle = '#fff';
       ctx.fillRect(cx - 3, y + 4, 6, 2); ctx.fillRect(cx - 4, y + 5, 2, 1);
