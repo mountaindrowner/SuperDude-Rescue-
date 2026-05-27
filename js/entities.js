@@ -117,7 +117,7 @@ window.SDD = window.SDD || {};
       sunshield:      16 * 60,
       starjump:       20 * 60,
       airbubble:      16 * 60,
-      callinghorn:     8 * 60,
+      callinghorn:    12 * 60,
       friendlybugs:   16 * 60,
       pollentrail:    16 * 60,
       beetleride:     12 * 60,
@@ -719,6 +719,26 @@ window.SDD = window.SDD || {};
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
     if (!freshHurt && this.invuln > 0 && (this.invuln % 8) < 4) return;
     this.drawSignatureSymbol(ctx, cam);
+    // Air-bubble signature (Day 5-2): visible bubble shell around
+    // Danny so the kid SEES that jellyfish + sea creatures bounce
+    // off (Mark: "not sure what she does" - because it was invisible).
+    if (this.signatureKind === 'airbubble' && this.signatureT > 0) {
+      var abx = Math.round(this.x + this.w / 2 - cam.x);
+      var aby = Math.round(this.y + this.h / 2 - cam.y);
+      var abR = (this.big ? 22 : 17) + Math.round(Math.sin(this.signatureT * 0.18));
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.fillStyle = '#a8e6ff';
+      ctx.beginPath(); ctx.arc(abx, aby, abR, 0, 6.28); ctx.fill();
+      ctx.globalAlpha = 0.7;
+      ctx.strokeStyle = '#e8f6ff';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(abx, aby, abR, 0, 6.28); ctx.stroke();
+      // Sparkle on the upper-left.
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(abx - abR + 4, aby - abR / 2, 2, 2);
+      ctx.restore();
+    }
     // Beetle-ride signature (Day 6-2): a goliath beetle silhouette
     // under Danny's feet so the mount reads visually. Drawn here so
     // the player sprite renders on top.

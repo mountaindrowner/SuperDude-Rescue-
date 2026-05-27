@@ -2692,7 +2692,21 @@ window.SDD = window.SDD || {};
       var i;
       for (i = 0; i < this.platforms.length; i++) this.platforms[i].draw(g, cam);
       for (i = 0; i < this.items.length; i++) this.items[i].draw(g, cam);
+      // Calling-horn signature (Day 6-1): every enemy is frozen, so
+      // render them desaturated + slightly translucent so the player
+      // can SEE they're inert. Wrapped around the enemy draw loop so
+      // every enemy variant gets the tint automatically.
+      var hornFreeze = this.player && this.player.signatureKind === 'callinghorn'
+        && this.player.signatureT > 0;
+      if (hornFreeze) {
+        g.save();
+        g.globalAlpha = 0.65;
+        g.filter = 'saturate(20%)';
+      }
       for (i = 0; i < this.enemies.length; i++) this.enemies[i].draw(g, cam);
+      if (hornFreeze) {
+        g.restore();
+      }
       this.player.draw(g, cam);
       // Sunlit-level cosmetic: sweat drop animating above Danny's head
       // so the player feels the heat (Day 4-1 The Sun).
