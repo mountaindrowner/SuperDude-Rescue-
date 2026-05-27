@@ -88,6 +88,9 @@ SDD.levels['6-2'] = {
     { type: "signature", tx: 40, ty: 10, kind: "friendlybugs" },
     { type: "signature", tx: 145, ty: 10, kind: "pollentrail" },
     { type: "signature", tx: 215, ty: 10, kind: "beetleride" },
+    { type: "leafstream", tx: 92,  ty: 1, period: 80, fallSpeed: 1.0, swayAmp: 2 },
+    { type: "leafstream", tx: 99,  ty: 1, period: 80, fallSpeed: 1.0, swayAmp: 2 },
+    { type: "leafstream", tx: 106, ty: 1, period: 80, fallSpeed: 1.0, swayAmp: 2 },
     { type: "checkpoint", tx: 130, ty: 10 },
     { type: "timepart", tx: 270, ty: 8 }
   ],

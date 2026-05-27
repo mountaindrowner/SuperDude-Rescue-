@@ -94,9 +94,10 @@ window.SDD = window.SDD || {};
       { id: 'eel',     desc: 'Electric eel - vertical patrol with shock. NOT stompable.' }
     ]},
     { title: 'HAZARDS', items: [
-      { id: 'skyhazard', desc: 'Sky hazard (sun flare, etc). Periodic descend. NOT stompable.' },
-      { id: 'twister',   desc: 'Tornado - sweeping ground hazard. NOT stompable.' },
-      { id: 'bubble',    desc: 'Bubble-up vertical hazard (water levels).' }
+      { id: 'skyhazard',  desc: 'Sky hazard (sun flare, etc). Periodic descend. NOT stompable.' },
+      { id: 'twister',    desc: 'Tornado - sweeping ground hazard. NOT stompable.' },
+      { id: 'bubble',     desc: 'Bubble-up vertical hazard (water levels).' },
+      { id: 'leafstream', desc: 'Falling-leaf platform stream. Use to bridge a vertical gap.' }
     ]},
     { title: 'NPC & SIGNATURE', items: [
       { id: 'npc',       desc: 'NPC - kind: adam, eve, etc. Talks on overlap.' },
@@ -113,6 +114,7 @@ window.SDD = window.SDD || {};
       case 'twister':    return { spd: 1.6 };
       case 'eel':        return { maxH: 96, period: 220, phase: 0 };
       case 'stampede':   return { range: 24, spd: 2.0, dir: -1 };
+      case 'leafstream': return { period: 70, fallSpeed: 1.0, swayAmp: 2 };
       default:           return {};
     }
   }

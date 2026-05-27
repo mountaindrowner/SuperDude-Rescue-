@@ -2180,6 +2180,14 @@ window.SDD = window.SDD || {};
             s.scale || 1);
           e.tx = s.tx; e.ty = s.ty;                        // for nozzle decoration
           this.enemies.push(e);
+        } else if (s.type === 'leafstream') {
+          // Day 6-2: invisible spawner that streams falling-leaf
+          // platforms downward through a vertical gap.
+          e = new SDD.ent.LeafSpawner(
+            s.tx * T + 8, s.ty * T + 8,
+            s.period || 70, s.fallSpeed || 1.0,
+            (s.swayAmp != null) ? s.swayAmp : 2);
+          this.enemies.push(e);
         } else if (s.type === 'bubble') {
           e = new SDD.ent.BubbleUp(s.tx * T + 1, (s.ty || 1) * T, s.scale || 1);
           this.enemies.push(e);
@@ -2415,6 +2423,10 @@ window.SDD = window.SDD || {};
       compactInPlace(this.items,       keepNotRemoved);
       compactInPlace(this.projectiles, keepNotRemoved);
       compactInPlace(this.particles,   keepAlive);
+      // Transient platforms (LeafFall etc.) set remove=true once
+      // they fall off the bottom of the level. Static MovPlats never
+      // set remove, so this only culls the streaming ones.
+      compactInPlace(this.platforms,   keepNotRemoved);
       this.camera.follow(this.player, this.map);
     },
 

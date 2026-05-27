@@ -11,16 +11,16 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Latest commit**: Batch F — per-kind particle field around every
-  active signature indicator. `drawSigParticles` switches on kind and
-  emits unique particles (sun rays / drifting wisps / sparkles /
-  droplets / spinning leaves / sound waves / orbiting bees / rising
-  pollen / kicked-up dust / falling feathers) every frame the
-  signature is active. So a kid sees instantly what the power is
-  doing without reading the hint banner.
-- **Batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ F ✅ — all batches
-  Mark queued have shipped. See `PLAN.md` and the Pending roadmap
-  below for the remaining un-batched polish items.
+- **Latest commit**: New mechanic — falling-leaf platform streams.
+  `LeafFall` + `LeafSpawner` entities in `entities.js`, `leafstream`
+  spawn type in `scenes.js`, editor palette + defaults, 3 demo
+  spawners placed across the cols-87→113 gap in 6-2. Leaves drift
+  down with gentle horizontal sway, act as one-way platforms (plug
+  into the existing `level.platforms` array + ride logic), despawn
+  past the bottom. Continuous flow gated by `period` per spawner.
+- **Batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ F ✅ — all Mark-queued
+  batches shipped. Falling-leaves landed on top as a new freeform
+  mechanic he proposed mid-flight.
 
 ### Batch tracker
 
@@ -433,3 +433,14 @@ That single prompt + this file is enough to bootstrap any new session.
   falling feathers). Called from `drawSignatureSymbol` right after
   the icon draw. All effects driven by `signatureT` so no
   per-particle state needs tracking.
+- **2026-05-26** — New mechanic: falling-leaf platform streams.
+  Two new classes in `entities.js`: `LeafFall` (one-way moving
+  platform that drifts vertically + gently sways horizontally,
+  removes itself off-screen) and `LeafSpawner` (invisible periodic
+  spawner that pushes new `LeafFall`s into `level.platforms`).
+  Wired as a `leafstream` spawn type in scenes.js; editor palette +
+  defaults updated. Platform compaction added so dead leaves are
+  culled. Plugs into the existing `MovPlat` ride logic without any
+  engine changes - LeafFall just exposes `x/y/w/h/dx/dy` and the
+  player rides it. 3 demo spawners placed across cols 87-113 in 6-2;
+  Mark can editor-tune positions / period / fall speed / sway in-game.

@@ -1574,6 +1574,84 @@ window.SDD = window.SDD || {};
     ctx.drawImage(s, Math.round(this.x - cam.x), Math.round(this.y - cam.y), dw, dh);
   };
 
+  // ===================== LEAF FALL (Day 6-2 streaming platform) =====
+  // A leaf that drifts downward at a constant speed with a gentle
+  // horizontal sway, then despawns after it falls off the bottom of
+  // the level. Acts as a one-way moving platform Danny can stand on;
+  // plugs into the same level.platforms array as MovPlat so the
+  // existing ride logic carries the player along without any engine
+  // changes. Spawned periodically by a LeafSpawner placed at the top
+  // of a vertical gap.
+  function LeafFall(x, y, opt) {
+    this.x = x; this.y = y; this.baseX = x;
+    this.w = 18; this.h = 6;
+    this.vy = (opt && opt.vy) || 1.0;
+    this.swayAmp = (opt && opt.swayAmp) || 2;
+    this.t = Math.random() * 6.28;     // random phase so adjacent leaves don't sync
+    this.dx = 0; this.dy = 0;
+    this.remove = false;
+  }
+  LeafFall.prototype.update = function (level) {
+    var px = this.x, py = this.y;
+    this.t += 0.08;
+    this.x = this.baseX + Math.sin(this.t) * this.swayAmp;
+    this.y += this.vy;
+    this.dx = this.x - px; this.dy = this.y - py;
+    if (level && level.map && this.y > level.map.pxH + 12) {
+      this.remove = true;
+    }
+  };
+  LeafFall.prototype.draw = function (ctx, cam) {
+    var dx = Math.round(this.x - cam.x);
+    var dy = Math.round(this.y - cam.y);
+    var w = this.w, h = this.h;
+    // Leaf body: dark outline, mid green fill, bright highlight.
+    ctx.fillStyle = '#284018';
+    ctx.fillRect(dx + 1, dy, w - 2, 1);
+    ctx.fillRect(dx + 1, dy + h - 1, w - 2, 1);
+    ctx.fillRect(dx, dy + 1, 1, h - 2);
+    ctx.fillRect(dx + w - 1, dy + 1, 1, h - 2);
+    ctx.fillStyle = '#3c6020';
+    ctx.fillRect(dx + 1, dy + 1, w - 2, h - 2);
+    ctx.fillStyle = '#5e8a3a';
+    ctx.fillRect(dx + 2, dy + 1, w - 4, h - 3);
+    ctx.fillStyle = '#90e060';
+    ctx.fillRect(dx + 4, dy + 2, w - 8, 1);
+    // Centre vein.
+    ctx.fillStyle = '#284018';
+    ctx.fillRect(dx + Math.floor(w / 2), dy + 1, 1, h - 2);
+  };
+
+  // ===================== LEAF SPAWNER (invisible, ticks LeafFall) =====
+  // Placed at the top of a gap. Every `period` frames it pushes a new
+  // LeafFall into level.platforms with the configured fall speed +
+  // horizontal-sway range. Marked invisible + harmless so the
+  // enemy-collision + draw loops skip it; only its update() runs.
+  function LeafSpawner(x, y, period, fallSpeed, swayAmp) {
+    this.x = x; this.y = y; this.w = 4; this.h = 4;
+    this.period = period || 70;
+    this.fallSpeed = fallSpeed || 1.0;
+    this.swayAmp = (swayAmp != null) ? swayAmp : 2;
+    this.t = 0;
+    this.invisible = true;
+    this.harmless = true;
+    this.stompable = false;
+    this.dead = false;
+    this.remove = false;
+  }
+  LeafSpawner.prototype.update = function (level) {
+    this.t++;
+    if (this.t >= this.period) {
+      this.t = 0;
+      var leaf = new LeafFall(this.x - 9, this.y, {
+        vy: this.fallSpeed, swayAmp: this.swayAmp
+      });
+      level.platforms.push(leaf);
+    }
+  };
+  LeafSpawner.prototype.draw = function () {};       // invisible
+  LeafSpawner.prototype.stomped = function () {};    // immune
+
   // ===================== POWER CORE =====================
   function Core(x, y) {
     this.x = x; this.y = y; this.w = 12; this.h = 14;
@@ -2477,6 +2555,7 @@ window.SDD = window.SDD || {};
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
     Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
     BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister,
-    ElectricEel: ElectricEel, Stampede: Stampede
+    ElectricEel: ElectricEel, Stampede: Stampede,
+    LeafFall: LeafFall, LeafSpawner: LeafSpawner
   };
 })();
