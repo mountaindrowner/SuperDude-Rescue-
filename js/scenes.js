@@ -2033,7 +2033,7 @@ window.SDD = window.SDD || {};
   var SIG_HINTS = {
     sunburst:        { name: 'SUNBURST!',     tip: 'RUN INTO BAD GUYS TO ZAP THEM!' },
     cloudglide:      { name: 'CLOUD GLIDE!',  tip: 'JUMP, THEN HOLD A TO FLOAT DOWN!' },
-    pearl:           { name: 'PEARL SHELL!',  tip: 'TAKES ONE HIT FOR YOU!' },
+    pearl:           { name: 'PEARL SHELL!',  tip: 'BAD GUYS HIT THE SHELL, NOT YOU!' },
     coolingwater:    { name: 'COOL WATER!',   tip: 'WALK RIGHT OVER LAVA - IT WON\'T BURN!' },
     leafshot:        { name: 'LEAF SHOT!',    tip: 'PRESS B TO THROW LEAVES!' },
     sunshield:       { name: 'SUN SHIELD!',   tip: 'SUN FLARES BOUNCE RIGHT OFF YOU!' },

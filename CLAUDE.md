@@ -11,14 +11,12 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Latest commit**: Batch D — Day 7-1 Adam/Eve per-spawn dialogue.
-  `NPC` constructor now accepts an optional `line` override; the spawn
-  switch in `scenes.js` passes `s.line` through; `level_7_1.js`
-  gives each Adam/Eve their own line (Genesis / Psalm / fruit-tree
-  foreshadow / serpent foreshadow / `SAFE TRAVELS!` / `GOD BLESS!`
-  at the goal). Service-worker cache bumped to `sdd-shell-v5`.
-- **Batch progression**: A ✅ B ✅ C ✅ (+ canopy iteration) D ✅
-  E ⏳ F ⏳. See `PLAN.md` and the Pending roadmap below.
+- **Latest commit**: Batch E5 — Pearl hint verbiage punch
+  (`BAD GUYS HIT THE SHELL, NOT YOU!`) and the un-batched 4-2 gravity
+  bump (0.48 → 0.72: still floaty but no longer ridiculous). Closes
+  out the full Batch E signature redesign.
+- **Batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ (E1-E5 all shipped)
+  F ⏳. See `PLAN.md` and the Pending roadmap below.
 
 ### Batch tracker
 
@@ -27,14 +25,13 @@
 | A — Editor flappy hitbox sliders | shipped | `e331bf8` |
 | B — 6-1 enemies | shipped | `8058c5b` Batch B |
 | C — 6-2 → Bug World | shipped + extended | `9d01ba7` + 4 follow-ups + canopy PNG (`42a4a5b`) |
-| D — 7-1 Adam/Eve dialogue | shipped | Per-spawn `line` field; 7 NPCs themed |
-| E — Signatures redesign | pending | Pearl → shell that soaks hits; Cooling water → lava walk; Vine grapple → leaf shot; remove Wing-burst; surface what Air-bubble + Calling horn + Friendship token currently do; explicit kid-readable verbiage |
-| F — Per-signature particle indicators | pending | Each signature drop / active effect gets its own particle visual |
-
-### Standalone tweak (un-batched)
-
-- **Bump Day 4-2 gravity by ~half** so it's still floaty but less
-  ridiculous. Fold in alongside E or as a quick standalone commit.
+| D — 7-1 Adam/Eve dialogue | shipped | Per-spawn `line` field; 7 NPCs themed (`c140271`) |
+| E1 — remove wing-burst + friendship-token | shipped | `b5236c4` |
+| E2 — pearl shell / cooling water lava-walk / leaf shot | shipped | `6c252d3` |
+| E3 — three Bug World signatures (friendly-bugs, pollen-trail, beetle-ride) | shipped | `c49f2b8` |
+| E4 — air-bubble visible bubble + calling-horn freeze tint + duration bump | shipped | `2daef0f` |
+| E5 — verbiage polish + 4-2 gravity bump | shipped | this commit |
+| F — Per-signature particle indicators | pending | Each Signature `ItemDrop` currently renders the same stage-themed diamond regardless of kind. Goal: per-kind unique particle bursts on pickup + ongoing emission. |
 
 ### Pending roadmap (outside the batch flow)
 
@@ -408,3 +405,16 @@ That single prompt + this file is enough to bootstrap any new session.
   set `line: '...'` to differ from the kind default. 7 Adam/Eve
   NPCs themed across the level. Added a batch tracker table to the
   WIP section so progression is obvious at a glance.
+- **2026-05-26** — Batch E (E1-E5): signatures redesign. Removed
+  wing-burst + friendship-token (both inert). Pearl became a 1-hit
+  protective shell (replaces the old useless drag tweak). Cooling
+  water now actually lets Danny walk on L lava tiles, not just block
+  lava-plume projectiles. Vine grapple renamed `leafshot` with a
+  new green-leaf projectile fired by B (player doesn't need blast
+  power-up while signature is active). Three new Bug-World
+  signatures placed in 6-2: friendly-bugs (bees + beetles phase
+  through), pollen-trail (cores magnet within 48 px), beetle-ride
+  (visible goliath beetle mount auto-stomps Walkers). Air-bubble
+  now draws a visible bubble around Danny; calling-horn bumped
+  8s → 12s + frozen enemies render desaturated/translucent so the
+  freeze is obvious. 4-2 gravity un-floated 0.48 → 0.72.
