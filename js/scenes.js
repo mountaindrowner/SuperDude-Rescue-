@@ -2144,8 +2144,15 @@ window.SDD = window.SDD || {};
       // Med + Hard keep the classic 3-life budget.
       this.lives = (this.difficulty === 'easy') ? Infinity : 3;
       // Cleared on fresh entry into the stage; preserved across
-      // death respawns inside the same attempt.
+      // death respawns inside the same attempt. Both the recall
+      // position AND the per-checkpoint triggered-key set have to
+      // reset on re-entry - otherwise a game-over + return + re-enter
+      // leaves triggeredCheckpoints populated (so the flag renders
+      // as already-raised) while lastCheckpoint is null (so death
+      // does NOT actually recall the player). That mismatch is the
+      // "flag stays active but doesn't recall" bug.
       this.lastCheckpoint = null;
+      this.triggeredCheckpoints = [];
       this.loadLevel();
       // Per-level music key (e.g. 'level_3_2'). Audio loader picks a
       // variant (a/b/c) at random if multiple exist. Falls back to the
