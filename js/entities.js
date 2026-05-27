@@ -620,6 +620,9 @@ window.SDD = window.SDD || {};
     ctx.globalAlpha = 1;
     drawSigIcon(ctx, kind, cx, top, col);
     ctx.restore();
+    // Per-kind particle emission around the indicator so each
+    // signature visually broadcasts what it's doing (Batch F).
+    drawSigParticles(ctx, kind, cx, top, this.signatureT);
   };
   var SIG_ICON_COLOR = {
     sunburst: '#ffd84a', cloudglide: '#e8f0ff', pearl: '#a0e0ff',
@@ -711,6 +714,164 @@ window.SDD = window.SDD || {};
       ctx.fillStyle = col;
       ctx.fillRect(cx - 3, y + 3, 6, 6);
     }
+  }
+
+  // Per-kind particle field around the signature indicator. Drawn
+  // every frame the signature is active so each effect reads
+  // instantly: pollen drifts up, leaves spiral, bees orbit, water
+  // drips, sound waves ripple, etc. All effects use signatureT as
+  // their phase so they animate without needing per-particle state.
+  function drawSigParticles(ctx, kind, cx, top, t) {
+    var cy = top + 5;                                 // icon centre Y
+    ctx.save();
+    if (kind === 'sunburst') {
+      // 4 rotating golden rays radiating outward.
+      var ang = t * 0.06;
+      ctx.fillStyle = '#ffd84a';
+      for (var sb = 0; sb < 4; sb++) {
+        var a = ang + sb * 1.57;
+        var rx = cx + Math.round(Math.cos(a) * 10);
+        var ry = cy + Math.round(Math.sin(a) * 10);
+        ctx.fillRect(rx, ry, 2, 2);
+      }
+    } else if (kind === 'cloudglide') {
+      // White wisps drifting down below the icon.
+      ctx.fillStyle = '#fff';
+      for (var cg = 0; cg < 3; cg++) {
+        var phase = (t + cg * 20) % 60;
+        var cgy = cy + 6 + Math.round(phase * 0.25);
+        var cgx = cx + Math.round(Math.sin((t + cg * 15) * 0.1) * 4) - 1;
+        ctx.globalAlpha = 1 - phase / 60;
+        ctx.fillRect(cgx, cgy, 3, 1);
+        ctx.fillRect(cgx + 1, cgy - 1, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'pearl') {
+      // Soft blue sparkles cycling around the shell.
+      ctx.fillStyle = '#fff';
+      for (var p = 0; p < 4; p++) {
+        var ap = t * 0.08 + p * 1.57;
+        var px = cx + Math.round(Math.cos(ap) * 8);
+        var py = cy + Math.round(Math.sin(ap) * 8);
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 0.15 + p);
+        ctx.fillRect(px, py, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'coolingwater') {
+      // Blue droplets dripping straight down below the icon.
+      ctx.fillStyle = '#6ad4ff';
+      for (var cw = 0; cw < 3; cw++) {
+        var cwphase = (t + cw * 14) % 36;
+        var cwy = cy + 5 + Math.round(cwphase * 0.6);
+        var cwx = cx + (cw - 1) * 4;
+        ctx.globalAlpha = 1 - cwphase / 36;
+        ctx.fillRect(cwx, cwy, 1, 2);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'leafshot') {
+      // Tiny green leaves spiralling around the icon.
+      ctx.fillStyle = '#90e060';
+      for (var lf = 0; lf < 4; lf++) {
+        var al = t * 0.07 + lf * 1.57;
+        var lr = 9 + Math.sin(t * 0.08 + lf) * 1.5;
+        var lx = cx + Math.round(Math.cos(al) * lr);
+        var ly = cy + Math.round(Math.sin(al) * lr);
+        ctx.fillRect(lx, ly, 2, 1);
+      }
+    } else if (kind === 'sunshield') {
+      // Expanding golden halo rings.
+      ctx.strokeStyle = '#ffe890';
+      ctx.lineWidth = 1;
+      for (var sh = 0; sh < 2; sh++) {
+        var shPhase = ((t + sh * 18) % 36) / 36;
+        ctx.globalAlpha = 1 - shPhase;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6 + shPhase * 10, 0, 6.28);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'starjump') {
+      // Small star sparkles popping around the icon.
+      ctx.fillStyle = '#fff';
+      for (var st = 0; st < 5; st++) {
+        var stPhase = ((t + st * 12) % 30) / 30;
+        ctx.globalAlpha = Math.sin(stPhase * 3.14);
+        var stx = cx + ((st * 7 + (t >> 3) * 3) % 18) - 9;
+        var sty = cy + ((st * 5 + (t >> 2)) % 14) - 7;
+        ctx.fillRect(stx, sty, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'airbubble') {
+      // Tiny bubbles rising up from below.
+      ctx.strokeStyle = '#e8f6ff';
+      ctx.lineWidth = 1;
+      for (var ab = 0; ab < 3; ab++) {
+        var abPhase = (t + ab * 16) % 50;
+        var aby = cy + 6 - Math.round(abPhase * 0.4);
+        var abx = cx + Math.round(Math.sin(abPhase * 0.2) * 3) + (ab - 1) * 3;
+        ctx.globalAlpha = 1 - abPhase / 50;
+        ctx.beginPath(); ctx.arc(abx, aby, 1.5, 0, 6.28); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'callinghorn') {
+      // Concentric sound waves rippling outward.
+      ctx.strokeStyle = '#ffce46';
+      ctx.lineWidth = 1;
+      for (var ch = 0; ch < 3; ch++) {
+        var chPhase = ((t + ch * 12) % 36) / 36;
+        ctx.globalAlpha = 1 - chPhase;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4 + chPhase * 12, -0.5, 0.5);     // forward-facing arc
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'friendlybugs') {
+      // 3 small bee dots orbiting around the icon.
+      for (var fb = 0; fb < 3; fb++) {
+        var afb = t * 0.10 + fb * 2.09;
+        var fbx = cx + Math.round(Math.cos(afb) * 10);
+        var fby = cy + Math.round(Math.sin(afb) * 6);
+        ctx.fillStyle = '#e8a838';
+        ctx.fillRect(fbx, fby, 2, 1);
+        ctx.fillStyle = '#1a1208';
+        ctx.fillRect(fbx + 1, fby, 1, 1);
+      }
+    } else if (kind === 'pollentrail') {
+      // Yellow pollen flecks drifting upward in a slim column.
+      ctx.fillStyle = '#fff2a6';
+      for (var pt = 0; pt < 5; pt++) {
+        var ptPhase = (t + pt * 12) % 40;
+        var pty = cy + 4 - Math.round(ptPhase * 0.3);
+        var ptx = cx + Math.round(Math.sin((t + pt * 10) * 0.18) * 3);
+        ctx.globalAlpha = 1 - ptPhase / 40;
+        ctx.fillRect(ptx, pty, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'beetleride') {
+      // Dust kicked up from beetle's gait.
+      ctx.fillStyle = '#a07840';
+      for (var br = 0; br < 3; br++) {
+        var brPhase = (t + br * 10) % 26;
+        var brx = cx + Math.round(Math.sin(brPhase * 0.3) * 6) + (br - 1) * 3;
+        var bry = cy + 8 + Math.round(brPhase * 0.1);
+        ctx.globalAlpha = (1 - brPhase / 26) * 0.6;
+        ctx.fillRect(brx, bry, 1, 1);
+        ctx.fillRect(brx + 1, bry, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'doveblessing') {
+      // White feathers drifting down with side-to-side sway.
+      ctx.fillStyle = '#fff';
+      for (var db = 0; db < 3; db++) {
+        var dbPhase = (t + db * 18) % 54;
+        var dby = cy + 5 + Math.round(dbPhase * 0.22);
+        var dbx = cx + Math.round(Math.sin((t + db * 14) * 0.13) * 6);
+        ctx.globalAlpha = 1 - dbPhase / 54;
+        ctx.fillRect(dbx, dby, 1, 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
   }
 
   Player.prototype.draw = function (ctx, cam) {

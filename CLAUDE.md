@@ -11,12 +11,16 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Latest commit**: Batch E5 — Pearl hint verbiage punch
-  (`BAD GUYS HIT THE SHELL, NOT YOU!`) and the un-batched 4-2 gravity
-  bump (0.48 → 0.72: still floaty but no longer ridiculous). Closes
-  out the full Batch E signature redesign.
-- **Batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ (E1-E5 all shipped)
-  F ⏳. See `PLAN.md` and the Pending roadmap below.
+- **Latest commit**: Batch F — per-kind particle field around every
+  active signature indicator. `drawSigParticles` switches on kind and
+  emits unique particles (sun rays / drifting wisps / sparkles /
+  droplets / spinning leaves / sound waves / orbiting bees / rising
+  pollen / kicked-up dust / falling feathers) every frame the
+  signature is active. So a kid sees instantly what the power is
+  doing without reading the hint banner.
+- **Batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ F ✅ — all batches
+  Mark queued have shipped. See `PLAN.md` and the Pending roadmap
+  below for the remaining un-batched polish items.
 
 ### Batch tracker
 
@@ -30,8 +34,8 @@
 | E2 — pearl shell / cooling water lava-walk / leaf shot | shipped | `6c252d3` |
 | E3 — three Bug World signatures (friendly-bugs, pollen-trail, beetle-ride) | shipped | `c49f2b8` |
 | E4 — air-bubble visible bubble + calling-horn freeze tint + duration bump | shipped | `2daef0f` |
-| E5 — verbiage polish + 4-2 gravity bump | shipped | this commit |
-| F — Per-signature particle indicators | pending | Each Signature `ItemDrop` currently renders the same stage-themed diamond regardless of kind. Goal: per-kind unique particle bursts on pickup + ongoing emission. |
+| E5 — verbiage polish + 4-2 gravity bump | shipped | `d9f461c` |
+| F — Per-signature particle indicators | shipped | `drawSigParticles` switch on kind, called from `drawSignatureSymbol`. Each kind gets unique emissions around the floating icon. |
 
 ### Pending roadmap (outside the batch flow)
 
@@ -418,3 +422,14 @@ That single prompt + this file is enough to bootstrap any new session.
   now draws a visible bubble around Danny; calling-horn bumped
   8s → 12s + frozen enemies render desaturated/translucent so the
   freeze is obvious. 4-2 gravity un-floated 0.48 → 0.72.
+- **2026-05-26** — Batch F: per-kind particle effects on every
+  active signature's floating indicator. New `drawSigParticles`
+  helper in `entities.js` switches on kind; each emits unique
+  visuals (sunburst rays, cloud-glide wisps, pearl sparkles,
+  cooling-water droplets, leafshot spinning leaves, sunshield
+  expanding halos, starjump pop sparkles, airbubble rising bubbles,
+  callinghorn forward sound waves, friendly-bugs orbiting bees,
+  pollen-trail rising flecks, beetle-ride dust kicks, dove-blessing
+  falling feathers). Called from `drawSignatureSymbol` right after
+  the icon draw. All effects driven by `signatureT` so no
+  per-particle state needs tracking.
