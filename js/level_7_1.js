@@ -110,6 +110,6 @@ SDD.levels['7-1'] = {
   ],
   movers: [
   ],
-  name: "DAY OF REST",
+  name: "THE GARDEN",
   theme: "eden"
 };

@@ -1810,11 +1810,13 @@ window.SDD = window.SDD || {};
     px(g, 8, 20, 1, 8, col);
     px(g, 11, 20, 1, 8, col);
     px(g, 14, 20, 1, 8, col);
-    // Hooves
-    px(g, 5, 28, 1, 2, dark);
-    px(g, 8, 28, 1, 2, dark);
-    px(g, 11, 28, 1, 2, dark);
-    px(g, 14, 28, 1, 2, dark);
+    // Hooves - extend to y=30 (canvas bottom) so feet touch ground;
+    // drawBC anchors sprite bottom at the entity's bbox bottom, and a
+    // gap here renders as a visible 3-px float at 3x scale.
+    px(g, 5, 28, 1, 3, dark);
+    px(g, 8, 28, 1, 3, dark);
+    px(g, 11, 28, 1, 3, dark);
+    px(g, 14, 28, 1, 3, dark);
     // Tail
     px(g, 3, 14, 1, 3, col);
     px(g, 3, 14, 1, 1, white);
@@ -1844,14 +1846,14 @@ window.SDD = window.SDD || {};
     px(g, 12, 11, 1, 1, mane);
     px(g, 17, 11, 1, 1, mane);
     // Legs (stubby, lounging)
-    px(g, 5, 26, 2, 4, body);
-    px(g, 8, 26, 2, 4, body);
-    px(g, 11, 26, 2, 4, body);
-    px(g, 14, 26, 2, 4, body);
-    px(g, 5, 29, 2, 1, dark);                   // paw shadows
-    px(g, 8, 29, 2, 1, dark);
-    px(g, 11, 29, 2, 1, dark);
-    px(g, 14, 29, 2, 1, dark);
+    px(g, 5, 26, 2, 5, body);                   // extend legs to y=30
+    px(g, 8, 26, 2, 5, body);
+    px(g, 11, 26, 2, 5, body);
+    px(g, 14, 26, 2, 5, body);
+    px(g, 5, 29, 2, 2, dark);                   // paw shadows fill y=29..30
+    px(g, 8, 29, 2, 2, dark);
+    px(g, 11, 29, 2, 2, dark);
+    px(g, 14, 29, 2, 2, dark);
     // Tail with tuft
     px(g, 2, 22, 2, 1, body);
     px(g, 1, 23, 2, 1, body);

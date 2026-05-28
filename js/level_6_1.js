@@ -97,5 +97,5 @@ SDD.levels['6-1'] = {
   ],
   name: "WILD ANIMALS",
   theme: "savanna",
-  themeZones: [{"startCol":0,"theme":"savanna"},{"startCol":84,"theme":"forest"},{"startCol":162,"theme":"bugscale"}]
+  themeZones: [{"startCol":0,"theme":"savanna"},{"startCol":84,"theme":"forest"}]
 };
