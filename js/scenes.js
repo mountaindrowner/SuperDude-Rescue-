@@ -84,6 +84,55 @@ window.SDD = window.SDD || {};
     g.restore();
   }
 
+  // Soft, breathing dome-glow with radiating light rays. Replaces the
+  // stark flat-alpha arc Mark called out in the intro/finale cinematics
+  // ("shouldn't be such a stark circle, maybe instead a glowing or
+  // rays"). Layers: a wide diffuse halo + a brighter near core + eight
+  // tapered ray beams that gently sway over t so the corona reads as
+  // alive. `radius` is the visual core size; the halo extends about 2.4x
+  // beyond it. `strength` scales every alpha (1.0 normal, ~1.4 for the
+  // charging-up beats).
+  function domeGlow(g, cx, cy, radius, t, strength) {
+    strength = (strength != null) ? strength : 1;
+    t = t || 0;
+    var pulse = 0.92 + 0.08 * Math.sin(t * 0.07);
+    g.save();
+
+    var farR = radius * 2.4;
+    var far = g.createRadialGradient(cx, cy, 0, cx, cy, farR);
+    far.addColorStop(0,   'rgba(255,232,147,' + (0.22 * strength * pulse).toFixed(3) + ')');
+    far.addColorStop(0.5, 'rgba(255,232,147,' + (0.09 * strength * pulse).toFixed(3) + ')');
+    far.addColorStop(1,   'rgba(255,232,147,0)');
+    g.fillStyle = far;
+    g.fillRect(cx - farR, cy - farR, farR * 2, farR * 2);
+
+    var near = g.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    near.addColorStop(0,   'rgba(255,244,200,' + (0.62 * strength * pulse).toFixed(3) + ')');
+    near.addColorStop(0.5, 'rgba(255,232,147,' + (0.32 * strength * pulse).toFixed(3) + ')');
+    near.addColorStop(1,   'rgba(255,210,80,0)');
+    g.fillStyle = near;
+    g.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+
+    var rayCount = 8;
+    var rayLen = radius * 2.2;
+    var rayBase = 5;
+    g.globalAlpha = 0.42 * strength * pulse;
+    g.fillStyle = '#ffe893';
+    for (var i = 0; i < rayCount; i++) {
+      var a = (i / rayCount) * Math.PI * 2 + t * 0.005;
+      var rl = rayLen * (0.82 + 0.18 * Math.sin(t * 0.04 + i * 1.7));
+      var c = Math.cos(a), s = Math.sin(a);
+      var px = -s * rayBase, py = c * rayBase;
+      g.beginPath();
+      g.moveTo(cx + px, cy + py);
+      g.lineTo(cx - px, cy - py);
+      g.lineTo(cx + c * rl, cy + s * rl);
+      g.closePath();
+      g.fill();
+    }
+    g.restore();
+  }
+
   // simple vertical-list menu helper
   function listNav(state, count) {
     if (In.pressed('up')) { state.idx = (state.idx - 1 + count) % count; A.sfx('select'); }
@@ -269,11 +318,7 @@ window.SDD = window.SDD || {};
           g.imageSmoothingEnabled = false;
           g.drawImage(artImg, mx, my, mw, mh);
           if (glow) {
-            // Warm dome glow at the top of the machine only. Removed
-            // the cyan rectangular halo around the machine body (Mark
-            // saw it as "a circle in a big square" in beat 1).
-            g.fillStyle = 'rgba(255,232,147,0.50)';
-            g.beginPath(); g.arc(cx, my + 12, mw * 0.45, 0, Math.PI * 2); g.fill();
+            domeGlow(g, cx, my + 12, mw * 0.45, t, 1);
           }
           return;
         }
@@ -3365,14 +3410,8 @@ window.SDD = window.SDD || {};
           var mx = cx - mw / 2, my = cy - mh / 2;
           g.imageSmoothingEnabled = false;
           g.drawImage(ART_MACHINE.img, mx, my, mw, mh);
-          if (glow) {
-            g.fillStyle = 'rgba(255,232,147,0.50)';
-            g.beginPath(); g.arc(cx, my + 12, mw * 0.45, 0, 6.28); g.fill();
-          }
-          if (glowStrong) {
-            g.fillStyle = 'rgba(255,236,170,0.45)';
-            g.fillRect(cx - 42, my - 12, 84, 6);
-            g.fillRect(cx - 34, my - 22, 68, 4);
+          if (glow || glowStrong) {
+            domeGlow(g, cx, my + 12, mw * 0.45, t, glowStrong ? 1.5 : 1);
           }
           return;
         }
