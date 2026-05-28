@@ -603,97 +603,124 @@ window.SDD = window.SDD || {};
   // prowl crouch. Mark, batch B: "way more definition and body
   // silhouette - it's a lion."
   function paintWalker_lion(g, frame) {
-    var sq = frame === 1 ? 1 : 0, t = 3 + sq;             // top row of the silhouette
+    // Side-view lion: long lean body left-of-mane, distinct round
+    // mane silhouette on the right, four clearly-spaced legs, tail
+    // curling up behind. Frame 1 swaps the leg pairs for a walk
+    // gait so the silhouette stays alive even at small scale.
+    var sq = frame === 1 ? 1 : 0;
     var body = '#d89860', bodyD = '#a8682c', mane = '#7a3c12',
         maneL = '#b86838', dk = '#3a2008', light = '#ffe098',
-        eye = '#1a1640', tuft = '#5a280c';
+        eye = '#1a1640';
 
-    // --- Tail (left side) + tuft ---
-    px(g, 0, t + 3, 1, 1, body);
-    px(g, 1, t + 2, 1, 3, body);
-    px(g, 2, t + 1, 1, 2, body);
-    px(g, 0, t + 4, 1, 1, tuft);                          // dark tuft pixel
+    // --- Tail: curves up from the back-left, ends in a dark tuft ---
+    px(g, 0, 5, 1, 1, body);                              // tail tip
+    px(g, 0, 4, 1, 1, dk);                                // tuft
+    px(g, 1, 5, 1, 2, body);                              // tail shaft
+    px(g, 2, 6, 1, 1, body);                              // tail base
 
-    // --- Body (low, tapered) ---
-    // Haunches (back-left) thicker than shoulders.
-    px(g, 2, t + 3, 4, 4 - sq, body);                     // rear chunk
-    px(g, 3, t + 2, 8, 1, bodyD);                         // spine top dark
-    px(g, 4, t + 3, 7, 4 - sq, body);                     // mid body
-    px(g, 4, t + 3, 6, 1, light);                         // back highlight
-    px(g, 3, t + 6 - sq, 8, 1, bodyD);                    // belly shadow
+    // --- Body: long horizontal silhouette, narrower than the mane ---
+    px(g, 2, 7, 9, 3, body);                              // main body
+    px(g, 3, 7, 7, 1, bodyD);                             // spine shadow
+    px(g, 3, 8, 7, 1, light);                             // mid highlight
+    px(g, 2, 10, 9, 1, bodyD);                            // belly shadow
 
-    // --- Mane (right side, bigger than head) ---
-    px(g, 9,  t,     5, 1, mane);                         // top puff
-    px(g, 8,  t + 1, 7, 2, mane);                         // upper mane
-    px(g, 8,  t + 3, 7, 3, mane);                         // mid mane
-    px(g, 9,  t + 5, 6, 1, mane);                         // lower mane
-    // Mane highlights / texture
-    px(g, 10, t,     1, 1, maneL);
-    px(g, 13, t,     1, 1, maneL);
-    px(g, 9,  t + 2, 1, 1, maneL);
-    px(g, 13, t + 3, 1, 1, maneL);
-    px(g, 11, t + 5, 1, 1, maneL);
-    // Stray mane tufts that break the silhouette outline
-    px(g, 8,  t,     1, 1, mane);
-    px(g, 14, t + 2, 1, 1, mane);
-    px(g, 14, t + 4, 1, 1, mane);
+    // --- Mane: prominent dark ring that rises above the body line,
+    //   so the lion identity reads even at small render scale. The
+    //   mane should be taller than the body block, with tufts
+    //   sticking out the top + back to break the silhouette outline.
+    px(g, 9,  3, 6, 1, mane);                             // top of mane (above body)
+    px(g, 8,  4, 7, 1, mane);                             // mane widens
+    px(g, 8,  5, 7, 1, mane);
+    px(g, 8,  6, 7, 1, mane);
+    px(g, 8,  7, 7, 1, mane);
+    px(g, 8,  8, 7, 1, mane);
+    px(g, 8,  9, 7, 1, mane);                             // mane reaches body bottom
+    px(g, 9,  10, 6, 1, mane);                            // bottom curl
+    // Stray mane tufts that break the rectangular outline.
+    px(g, 9,  2, 1, 1, mane);
+    px(g, 12, 2, 1, 1, mane);
+    px(g, 14, 3, 1, 1, mane);
+    px(g, 7,  5, 1, 1, mane);                             // tuft hanging over back
+    px(g, 7,  7, 1, 1, mane);
+    // Mane texture - lighter brown highlights
+    px(g, 10, 3, 1, 1, maneL);
+    px(g, 13, 4, 1, 1, maneL);
+    px(g, 9,  6, 1, 1, maneL);
+    px(g, 14, 6, 1, 1, maneL);
+    px(g, 12, 9, 1, 1, maneL);
 
-    // --- Face (inside mane) ---
-    px(g, 11, t + 2, 3, 3, body);                         // face
-    px(g, 12, t + 3, 1, 1, eye);                          // eye
-    px(g, 13, t + 4, 1, 1, dk);                           // nose
-    px(g, 11, t + 4, 1, 1, dk);                           // mouth corner
+    // --- Face: tan oval inside the mane ring ---
+    px(g, 11, 6, 3, 2, body);                             // face
+    px(g, 13, 6, 1, 1, eye);                              // eye
+    px(g, 13, 7, 1, 1, light);                            // cheek
+    px(g, 14, 7, 1, 1, dk);                               // snout tip / mouth
 
-    // --- Legs: 4 visible (front pair right of mane, back pair left) ---
-    px(g, 3, t + 7 - sq, 1, 2, body);                     // back-far leg
-    px(g, 4, t + 7 - sq, 1, 2, dk);                       // paw
-    px(g, 6, t + 7 - sq, 1, 2, body);                     // back-near leg
-    px(g, 7, t + 7 - sq, 1, 2, dk);                       // paw
-    px(g, 9, t + 7 - sq, 1, 2, body);                     // front-near leg
-    px(g, 10, t + 7 - sq, 1, 2, dk);                      // paw
-    px(g, 12, t + 7 - sq, 1, 2, body);                    // front-far leg
-    px(g, 13, t + 7 - sq, 1, 2, dk);                      // paw
+    // --- Legs: 4 distinct stubs. Frame 1 lifts the diagonal pair ---
+    //   Spaced wide enough to read as separate legs at game size.
+    px(g, 3, 11, 1, 2 - sq, dk);                          // back-left leg
+    px(g, 5, 11, 1, 2 - (sq ? 0 : 1), dk);                // back-right (lifts on frame 0)
+    px(g, 8, 11, 1, 2 - sq, dk);                          // front-left leg
+    px(g, 10, 11, 1, 2 - (sq ? 0 : 1), dk);               // front-right (lifts on frame 0)
   }
 
   // Goliath beetle walker (Day 6-2 bug world). Dark chitin elytra
   // with cream chevrons, broad pronotum, short jut-jaws, six legs
   // tucked under the shell. Frame 1 lifts a leg pair for the walk.
   function paintWalker_beetle(g, frame) {
-    var sq = frame === 1 ? 1 : 0, t = 5 + sq;
-    var body  = '#1a1208', shell = '#241a10', cream = '#e8d8a8',
-        creamD = '#9c8650', leg = '#0a0604', light = '#3a2814';
-    // Pronotum (head shield, front-right, slightly raised)
-    px(g, 11, t,     3, 3, body);
-    px(g, 11, t,     3, 1, light);                    // top sheen on the shield
-    px(g, 14, t + 1, 1, 1, body);                     // small horn nub
-    // Eye / mandible specks
-    px(g, 13, t + 2, 1, 1, cream);
-    px(g, 14, t + 3, 1, 1, body);
-    // Elytra (back shell) - main mass
-    px(g, 2, t,     9, 7 - sq, shell);
-    px(g, 2, t,     9, 1, body);                      // top edge dark
-    px(g, 2, t + 1, 9, 1, light);                     // sheen band
+    // Side-view goliath beetle: longer body, distinct head with two
+    // forward-curling antennas, broad elytra with cream chevrons, six
+    // legs splayed out from underneath (instead of tucked into a
+    // featureless block). Frame 1 cycles the legs for the walk.
+    var sq = frame === 1 ? 1 : 0;
+    var body = '#1a1208', shell = '#5a3e22', cream = '#f8e8b8',
+        creamD = '#b09060', leg = '#1a1208', light = '#8a6840',
+        eye = '#fff8d0';
+
+    // --- Antennas: two thin segments curling forward off the head ---
+    px(g, 13, 2, 1, 1, body);                         // upper antenna tip
+    px(g, 13, 3, 1, 1, body);
+    px(g, 14, 4, 1, 1, body);
+    px(g, 14, 5, 1, 1, body);                         // antenna base by head
+    // Lower antenna (offset so they read as two whiskers)
+    px(g, 14, 2, 1, 1, body);                         // upper antenna tip
+    px(g, 14, 3, 1, 1, body);
+
+    // --- Head (pronotum): rounded shield in front of the elytra ---
+    px(g, 11, 5, 3, 3, body);
+    px(g, 11, 5, 3, 1, light);                        // top sheen
+    px(g, 13, 6, 1, 1, eye);                          // tiny eye
+    px(g, 14, 6, 1, 1, body);                         // mandible nub
+
+    // --- Elytra (back shell): wider + longer for a real beetle look ---
+    px(g, 1, 5, 10, 6, shell);                        // main mass
+    px(g, 1, 5, 10, 1, body);                         // top edge dark
+    px(g, 1, 6, 10, 1, light);                        // sheen band
+    px(g, 1, 10, 10, 1, body);                        // belly shadow
     // Center split between the two wing covers
-    px(g, 6, t,     1, 7 - sq, body);
-    // Goliath chevrons (cream pattern across the elytra)
-    px(g, 3, t + 2, 2, 1, cream);
-    px(g, 7, t + 2, 3, 1, cream);
-    px(g, 3, t + 3, 3, 1, creamD);
-    px(g, 7, t + 3, 2, 1, creamD);
-    px(g, 4, t + 4, 1, 1, cream);
-    px(g, 8, t + 4, 1, 1, cream);
-    // Belly shadow
-    px(g, 2, t + 6 - sq, 9, 1, body);
-    // Six legs (three per side, tucked under the shell)
-    px(g, 2, t + 6 - sq, 1, 2, leg);
-    px(g, 5, t + 6 - sq, 1, 2, leg);
-    px(g, 9, t + 6 - sq, 1, 2, leg);
-    // Lifted leg pair for the walk frame
-    px(g, 3, t + 7 - sq, 2, 1, leg);
-    px(g, 7, t + 7 - sq, 2, 1, leg);
-    px(g, 10, t + 7 - sq, 1, 1, leg);
-    // Tail-end taper
-    px(g, 1, t + 2, 1, 3, shell);
+    px(g, 5, 5, 1, 6, body);
+    // Tail taper (rear-left point)
+    px(g, 0, 7, 1, 2, shell);
+    px(g, 1, 9, 1, 1, body);
+
+    // --- Cream chevron pattern across the elytra ---
+    px(g, 2, 7, 2, 1, cream);
+    px(g, 7, 7, 3, 1, cream);
+    px(g, 2, 8, 3, 1, creamD);
+    px(g, 6, 8, 4, 1, creamD);
+    px(g, 3, 9, 1, 1, cream);
+    px(g, 7, 9, 1, 1, cream);
+
+    // --- Six legs: three per side, clearly splayed out below ---
+    //   Frame 1 lifts one pair so the walk reads.
+    px(g, 2,  11, 1, 2 - sq, leg);                    // back leg
+    px(g, 2,  12 - sq, 2, 1, leg);                    //   foot
+    px(g, 5,  11, 1, 2 - (sq ? 0 : 1), leg);          // mid leg (lifts frame 0)
+    px(g, 5,  12 - (sq ? 0 : 1), 2, 1, leg);
+    px(g, 8,  11, 1, 2 - sq, leg);                    // front leg
+    px(g, 8,  12 - sq, 2, 1, leg);
+    // Far-side legs peeking out beyond the elytra
+    px(g, 10, 11, 1, 2 - (sq ? 0 : 1), leg);
+    px(g, 10, 12 - (sq ? 0 : 1), 2, 1, leg);
   }
 
   // Wildebeest (Day 6-1 stampede mob, tiled 8x across the herd). Dark
@@ -742,27 +769,52 @@ window.SDD = window.SDD || {};
   // Porcupine (Day 6-1 savanna). Brown body with spike row on top,
   // small face on the right, short legs.
   function paintWalker_porcupine(g, frame) {
-    var sq = frame === 1 ? 1 : 0, t = 4 + sq;
-    var body = '#7a5230', face = '#3a1f10', spk = '#2a1a08', spkL = '#9a7050', eye = '#fff8d0';
-    // Body
-    px(g, 3, t + 2, 9, 4 - sq, body);
-    px(g, 2, t + 4, 11, 2 - sq, body);
-    px(g, 4, t + 1, 7, 1, body);
-    // Spikes along the top (alternating heights)
-    px(g, 3, t - 1, 1, 2, spk); px(g, 4, t,     1, 1, spk);
-    px(g, 5, t - 2, 1, 3, spk); px(g, 6, t,     1, 1, spk);
-    px(g, 7, t - 1, 1, 2, spk); px(g, 8, t - 2, 1, 3, spk);
-    px(g, 9, t,     1, 1, spk); px(g, 10, t - 1, 1, 2, spk);
-    // Spike highlights
-    px(g, 5, t - 2, 1, 1, spkL); px(g, 8, t - 2, 1, 1, spkL);
-    // Face (right side - dark snout)
-    px(g, 11, t + 2, 3, 3, face);
-    px(g, 13, t + 2, 1, 1, eye);                           // eye
-    px(g, 13, t + 4, 1, 1, '#000');                        // nose
-    // Legs (4 short stubs)
-    px(g, 3, t + 6 - sq, 2, 1, face);
-    px(g, 6, t + 6 - sq, 2, 1, face);
-    px(g, 9, t + 6 - sq, 2, 1, face);
+    // Side-view porcupine: lower elongated body, pointed head with
+    // dark snout + eye on the right, four short legs with clear
+    // separation, prominent alternating quills bristling off the
+    // back. Frame 1 lifts a leg pair for the walk gait.
+    var sq = frame === 1 ? 1 : 0;
+    var body = '#7a5230', bodyD = '#5a3a18', face = '#3a1f10',
+        spk = '#2a1a08', spkL = '#a87850', eye = '#fff8d0',
+        nose = '#000', light = '#9a7048';
+
+    // --- Body: longer than before, with a slight back curve ---
+    px(g, 2, 8, 11, 3, body);                              // main body
+    px(g, 3, 7, 9, 1, body);                               // back ridge
+    px(g, 3, 7, 9, 1, bodyD);                              // shadow under spines
+    px(g, 3, 9, 8, 1, light);                              // mid highlight
+    px(g, 2, 11, 11, 1, bodyD);                            // belly shadow
+
+    // --- Head: distinct from body, slightly raised, pointed snout ---
+    px(g, 11, 7, 3, 1, body);                              // head top
+    px(g, 11, 8, 4, 3, body);                              // head + snout
+    px(g, 13, 9, 1, 1, eye);                               // bright eye
+    px(g, 14, 9, 1, 1, nose);                              // nose tip
+    px(g, 14, 10, 1, 1, face);                             // mouth shadow
+
+    // --- Quills: prominent bristling spikes along the back ---
+    //   Alternating tall + short so the silhouette reads as fur.
+    px(g, 2,  6, 1, 2, spk);                               // tall
+    px(g, 3,  5, 1, 3, spk);                               // taller
+    px(g, 4,  6, 1, 2, spk);
+    px(g, 5,  4, 1, 4, spk);                               // tallest
+    px(g, 6,  5, 1, 3, spk);
+    px(g, 7,  6, 1, 2, spk);
+    px(g, 8,  4, 1, 4, spk);                               // tallest
+    px(g, 9,  5, 1, 3, spk);
+    px(g, 10, 6, 1, 2, spk);
+    // Quill highlights for depth
+    px(g, 3, 5, 1, 1, spkL);
+    px(g, 5, 4, 1, 1, spkL);
+    px(g, 8, 4, 1, 1, spkL);
+    px(g, 9, 5, 1, 1, spkL);
+
+    // --- Legs: 4 short stubs, distinctly spaced. Frame 1 lifts the
+    //   diagonal pair so the walk reads. ---
+    px(g, 3,  12, 1, 2 - sq, face);                        // back-left
+    px(g, 5,  12, 1, 2 - (sq ? 0 : 1), face);              // back-right (lifts frame 0)
+    px(g, 8,  12, 1, 2 - sq, face);                        // front-left
+    px(g, 10, 12, 1, 2 - (sq ? 0 : 1), face);              // front-right (lifts frame 0)
   }
 
   // Leaf/seed walker - green critter with leaves sprouting (forest / eden / village).
@@ -1001,40 +1053,57 @@ window.SDD = window.SDD || {};
   // Bee wisp (Day 6-2 bug world). Yellow + black striped body, two
   // wings that flap between frames. Stinger pointed back-left.
   function paintWisp_bee(g, frame) {
+    // Side-view bee: longer striped abdomen tapering to a stinger
+    // at the back-left, distinct round head with eye + two
+    // forward-curling antennas, wings flapping above. Reads as
+    // "bug shape" rather than "stack of stripes".
     var b = frame === 1 ? 1 : 0;
-    var yel = '#ffce28', dk = '#1a1208', wing = 'rgba(220,240,255,0.8)',
-        wingD = 'rgba(180,200,220,0.6)', eye = '#0a0604';
-    // Body (oval, striped)
-    px(g, 3, 4, 7, 4, yel);
-    px(g, 4, 3, 5, 1, yel);
-    px(g, 4, 8, 5, 1, yel);
-    // Black stripes (3 bands)
-    px(g, 4, 4, 1, 4, dk);
-    px(g, 6, 4, 1, 4, dk);
-    px(g, 8, 4, 1, 4, dk);
-    // Head (right side, slightly bigger)
-    px(g, 9, 4, 3, 4, dk);
-    px(g, 10, 5, 1, 1, eye);                       // eye dot (white-of-eye)
-    px(g, 11, 5, 1, 1, yel);                       // tiny yellow accent
-    // Antennae (two short forward-curling)
-    px(g, 11, 3, 1, 1, dk);
-    px(g, 12, 2, 1, 1, dk);
-    px(g, 12, 4, 1, 1, dk);
-    px(g, 13, 3, 1, 1, dk);
-    // Stinger (left rear)
-    px(g, 2, 5, 1, 2, dk);
+    var yel = '#ffce28', yelL = '#ffe890', dk = '#1a1208',
+        wing = 'rgba(220,240,255,0.85)',
+        wingD = 'rgba(180,200,220,0.65)',
+        eye = '#fff8d0';
+
+    // --- Stinger: thin black point at the back-left ---
+    px(g, 0, 6, 1, 1, dk);                         // stinger tip
     px(g, 1, 6, 1, 1, dk);
-    // Wings - large flapping above the body. Frame 1 = wings raised.
+
+    // --- Abdomen: long oval, 7 wide, with alternating stripes ---
+    px(g, 2, 5, 7, 3, yel);                        // body mass
+    px(g, 3, 4, 5, 1, yel);                        // top curve
+    px(g, 3, 8, 5, 1, yel);                        // bottom curve
+    px(g, 3, 5, 5, 1, yelL);                       // top highlight band
+    // Three black stripes spaced evenly
+    px(g, 3, 4, 1, 5, dk);
+    px(g, 5, 4, 1, 5, dk);
+    px(g, 7, 4, 1, 5, dk);
+
+    // --- Head: round, larger than current, on the right side ---
+    px(g, 9, 4, 3, 5, dk);
+    px(g, 9, 4, 3, 1, dk);                         // head top
+    px(g, 10, 5, 1, 1, eye);                       // bright eye
+    px(g, 11, 6, 1, 1, eye);                       // eye highlight
+    px(g, 12, 6, 1, 1, dk);                        // mandible tip
+
+    // --- Antennas: two clearly-visible, forward-curling ---
+    px(g, 10, 3, 1, 1, dk);                        // antenna base
+    px(g, 11, 2, 1, 1, dk);
+    px(g, 12, 1, 1, 1, dk);                        // upper antenna tip
+    px(g, 11, 4, 1, 1, dk);                        // lower antenna base
+    px(g, 12, 3, 1, 1, dk);
+    px(g, 13, 3, 1, 1, dk);                        // lower antenna tip
+
+    // --- Wings: alternate raised / mid pose. Two wing pair so
+    //   each abdomen segment looks supported. ---
     if (b) {
-      px(g, 5, 0, 4, 2, wing);
-      px(g, 5, 0, 2, 1, wingD);
-      px(g, 9, 0, 4, 2, wing);
-      px(g, 9, 0, 2, 1, wingD);
-    } else {
-      px(g, 5, 1, 4, 2, wing);
+      px(g, 4, 1, 3, 2, wing);                     // back wing raised
+      px(g, 4, 1, 2, 1, wingD);
+      px(g, 7, 1, 3, 2, wing);                     // front wing raised
       px(g, 7, 1, 2, 1, wingD);
-      px(g, 9, 1, 4, 2, wing);
-      px(g, 11, 1, 2, 1, wingD);
+    } else {
+      px(g, 4, 2, 3, 2, wing);                     // back wing mid
+      px(g, 5, 2, 2, 1, wingD);
+      px(g, 7, 2, 3, 2, wing);                     // front wing mid
+      px(g, 8, 2, 2, 1, wingD);
     }
   }
 
