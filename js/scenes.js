@@ -2083,6 +2083,37 @@ window.SDD = window.SDD || {};
     'bugscale': drawSky_bugscale
   };
 
+  // Comedian loading-screen quips - random pick per stageintro card.
+  // Each entry is an array of lines (1 or 2 lines, ~32 chars max per line
+  // so they fit inside the cyan-bordered box without wrapping). Tone is
+  // wholesome-silly: SDD-world references, light scripture nods, retro-game
+  // self-awareness. Swap any line freely - the random pick reads from this
+  // array verbatim.
+  var QUIPS = [
+    ['GRAVITY IS NOT JUST A SUGGESTION.'],
+    ['TIME MACHINES RUN ON FAITH', 'AND DUCT TAPE.'],
+    ['DANNY HAS A PHD IN TIME-PUNCHING.'],
+    ['DAY 1: GOD INVENTED LIGHT.', 'WE STILL USE IT DAILY.'],
+    ['PORCUPINES INVENTED THE NO-HUG ZONE.'],
+    ["ADAM'S FAVORITE SNACK?", 'PROBABLY ALMONDS.'],
+    ['ASTRONAUT ETIQUETTE:', 'DO NOT BLAST THE MOON.'],
+    ['POWER CORES MIGHT TASTE LIKE BLUEBERRIES.'],
+    ['LAVA IS WARM.', 'SCIENTISTS CONFIRM.'],
+    ['DOVES ARE OFF DUTY.', 'PLEASE BE COURTEOUS.'],
+    ['DAY 4: STARS!', 'ALSO POSSIBLY GLITTER.'],
+    ['CHECKPOINT FLAGS ARE 100%', 'RECYCLED PIXELS.'],
+    ['WARNING: SCIENTISTS DO NOT BOUNCE.'],
+    ['IF IT MOVES, GREET IT WITH CAUTION.'],
+    ["EVE THINKS YOUR LAB COAT", 'LOOKS VERY SHARP.'],
+    ['CLOUDS ARE 99% WATER', 'AND 1% MYSTERY.'],
+    ['BUG WORLD HAS NO YELP REVIEWS.', 'STAY ALERT.'],
+    ['BLUEPRINT: JUMP HIGH. LAND SOFT.'],
+    ["DANNY'S MOM SAYS BE HOME BY DINNER."],
+    ['GOD SAW THAT IT WAS GOOD.', 'WE AGREE.'],
+    ['BEES BUZZ BECAUSE THEY FORGOT', 'THE WORDS.'],
+    ['REMINDER: THE TIME MACHINE', 'HATES MONDAYS.']
+  ];
+
   // =====================================================================
   // STAGE INTRO - swipe-in card shown briefly between overworld + level.
   // Pass 10 round 2 (Mark): "whenever a stage is selected, maybe there
@@ -2100,11 +2131,14 @@ window.SDD = window.SDD || {};
         ? ('DAY ' + this.day + '-' + this.stage)
         : ('DAY ' + this.day);
       this.subtitle = (lvl && lvl.name) || '';
+      this.quip = QUIPS[Math.floor(Math.random() * QUIPS.length)];
     },
     update: function () {
       this.t++;
-      // 30f slide-in + 60f hold + 30f slide-out, then jump into level.
-      if (this.t >= 120 || In.confirm()) {
+      // 30f slide-in + 120f hold + 30f slide-out, then jump into level.
+      // Hold bumped from 60 -> 120 frames so the comedian quip has time
+      // to land before the card swipes off. Confirm still skips.
+      if (this.t >= 180 || In.confirm()) {
         go('level', { day: this.day, stage: this.stage });
       }
     },
@@ -2116,20 +2150,20 @@ window.SDD = window.SDD || {};
       drawStarfield(g, this.t * 2);
 
       // Card slide animation: x offset goes from +320 (off-screen right)
-      // to 0 (centered) over t=0..30, holds at 0 for 30-90, then to -320
-      // for 90-120.
+      // to 0 (centered) over t=0..30, holds at 0 for 30-150, then to -320
+      // for 150-180.
       var offX = 0;
       if (this.t < 30) {
         // ease-out cubic from 320 to 0
         var u = this.t / 30;
         offX = Math.round(320 * Math.pow(1 - u, 3));
-      } else if (this.t > 90) {
-        var u2 = (this.t - 90) / 30;
+      } else if (this.t > 150) {
+        var u2 = (this.t - 150) / 30;
         offX = -Math.round(320 * Math.pow(u2, 3));
       }
 
       // Banner ribbon
-      var ribbonY = 78;
+      var ribbonY = 70;
       g.fillStyle = 'rgba(8,8,20,0.7)';
       g.fillRect(0 + offX, ribbonY, 320, 36);
       g.fillStyle = '#ffd23a';
@@ -2139,6 +2173,22 @@ window.SDD = window.SDD || {};
       tsh(g, this.title, 160 + offX, ribbonY + 6, '#ffd23a', '#a8631a', 2, 'center');
       if (this.subtitle) {
         text(g, this.subtitle, 160 + offX, ribbonY + 24, '#dfe6ff', 1, 'center');
+      }
+
+      // Comedian quip card - slim cyan-bordered box below the ribbon
+      // with 1 or 2 lines drawn from QUIPS. Slides with offX so it
+      // tracks the ribbon's swipe-in / swipe-out.
+      if (this.quip) {
+        var lines = this.quip;
+        var qh = 14 + lines.length * 10;
+        var qy = ribbonY + 48;
+        g.fillStyle = 'rgba(8,8,20,0.78)';
+        g.fillRect(28 + offX, qy, 264, qh);
+        g.strokeStyle = '#46f0ff';
+        g.strokeRect(28.5 + offX, qy + 0.5, 263, qh - 1);
+        for (var qi = 0; qi < lines.length; qi++) {
+          text(g, lines[qi], 160 + offX, qy + 5 + qi * 10, '#bff0ff', 1, 'center');
+        }
       }
 
       // Streaks behind the card during slide-in for motion sense
