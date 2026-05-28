@@ -689,82 +689,67 @@ window.SDD = window.SDD || {};
   // with cream chevrons, broad pronotum, short jut-jaws, six legs
   // tucked under the shell. Frame 1 lifts a leg pair for the walk.
   function paintWalker_beetle(g, frame) {
-    // 18x14 canvas. Goliath beetle redesigned to read as an actual
-    // BUG at game scale: longer body, iconic head with a hercules-
-    // style horn jutting up + forward, two prominent antennas, and
-    // six clearly visible legs that splay OUT to the sides + below
-    // (not tucked into a featureless block).
-    //
-    // Frame cycles the leg gait so the bug visibly walks.
+    // 22x16 canvas. Armored teal beetle styled after Mark's reference
+    // art: blue-teal shell with a hexagonal/diamond scale pattern
+    // on the back, separated head section with two long antennas,
+    // four legs ending in brown feet. Looks distinctly insect rather
+    // than "dark block".
     var f = frame === 1 ? 1 : 0;
-    var body = '#1a1208', shell = '#5a3e22', cream = '#f8e8b8',
-        creamD = '#b09060', leg = '#1a1208', light = '#8a6840',
-        eye = '#fff8d0', horn = '#8a6028';
+    var shell = '#6a90b8', shellD = '#3a5878', shellL = '#a8c0d8',
+        scale = '#243648', body = '#1a2438', leg = '#1a2438',
+        foot = '#7a4218', eye = '#fff8d0';
 
-    // --- Iconic head: pronotum + hercules-style horn ---
-    px(g, 12, 4, 4, 4, body);                         // pronotum block
-    px(g, 12, 4, 4, 1, light);                        // top sheen
-    px(g, 14, 6, 1, 1, eye);                          // bright eye
-    px(g, 16, 6, 1, 1, body);                         // mandible nub
-    // The defining HORN - curves up + forward off the head
-    px(g, 13, 3, 1, 1, horn);
-    px(g, 14, 2, 1, 1, horn);
-    px(g, 15, 1, 1, 1, horn);                         // horn tip
-    px(g, 16, 2, 1, 1, body);                         // horn shadow
+    // --- Antennas: two long segmented antennas off the head ---
+    px(g, 18, 3, 1, 1, body);                         // upper antenna tip
+    px(g, 19, 4, 1, 1, body);
+    px(g, 20, 4, 1, 1, body);
+    px(g, 18, 5, 1, 1, body);                         // lower antenna tip
+    px(g, 19, 6, 1, 1, body);
 
-    // --- Antennas: two thin segments curling forward off the head ---
-    px(g, 16, 3, 1, 1, body);                         // upper antenna tip
-    px(g, 16, 4, 1, 1, body);                         //   base
-    px(g, 17, 5, 1, 1, body);                         // lower antenna tip
-    px(g, 16, 5, 1, 1, body);                         //   base
+    // --- Head: clearly separated from the body block ---
+    px(g, 15, 5, 4, 1, shellD);                       // head top edge
+    px(g, 14, 6, 5, 3, shell);                        // head mass
+    px(g, 14, 6, 5, 1, shellL);                       // head highlight
+    px(g, 18, 7, 1, 1, eye);                          // bright eye
+    px(g, 19, 8, 1, 1, body);                         // mandible nub
+    px(g, 14, 8, 1, 1, shellD);                       // neck shadow
 
-    // --- Elytra (back shell): wider + longer for a real beetle ---
-    px(g, 1, 4, 11, 7, shell);                        // main mass
-    px(g, 1, 4, 11, 1, body);                         // top edge dark
-    px(g, 1, 5, 11, 1, light);                        // sheen band
-    px(g, 1, 10, 11, 1, body);                        // belly shadow
-    // Center split between the two wing covers
-    px(g, 6, 4, 1, 7, body);
-    // Tail taper (rear-left point)
-    px(g, 0, 6, 1, 3, shell);
-    px(g, 1, 9, 1, 1, body);
+    // --- Carapace / back shell: large rounded armor plate ---
+    px(g, 2,  5, 13, 1, shellD);                      // top outline
+    px(g, 1,  6, 14, 1, shellD);
+    px(g, 1,  7, 14, 4, shell);                       // main shell mass
+    px(g, 1,  11, 14, 1, shellD);                     // bottom outline
+    // Tail-end taper
+    px(g, 0,  8, 1, 2, shell);
+    px(g, 0,  10, 1, 1, shellD);
 
-    // --- Cream chevron pattern across the elytra ---
-    px(g, 2, 6, 2, 1, cream);
-    px(g, 8, 6, 3, 1, cream);
-    px(g, 2, 7, 3, 1, creamD);
-    px(g, 7, 7, 4, 1, creamD);
-    px(g, 3, 8, 1, 1, cream);
-    px(g, 8, 8, 1, 1, cream);
-    px(g, 4, 9, 1, 1, creamD);
-    px(g, 9, 9, 1, 1, creamD);
+    // --- Diamond / hexagonal scale pattern across the back ---
+    //   Three rows of small diamond pixels, offset between rows so
+    //   the pattern reads as armored plates instead of a stripe.
+    var scales = [
+      [3, 7], [6, 7], [9, 7], [12, 7],
+      [4, 8], [7, 8], [10, 8], [13, 8],
+      [3, 9], [6, 9], [9, 9], [12, 9]
+    ];
+    scales.forEach(function (xy) {
+      px(g, xy[0], xy[1], 1, 1, scale);
+    });
+    // Highlight specks on a couple scales for dimension
+    px(g, 4, 7, 1, 1, shellL);
+    px(g, 10, 7, 1, 1, shellL);
+    px(g, 7, 9, 1, 1, shellL);
 
-    // --- Six LONG legs: three on each side, splayed out clearly ---
-    //   Front three lean forward; back three lean back. Each leg has
-    //   an upper segment (vertical) + a foot tip (angled out) so it
-    //   reads as a jointed insect leg, not a stub.
-    //
-    //   Frame 0: legs 1,3,5 lifted (forward gait phase)
-    //   Frame 1: legs 2,4,6 lifted
-    function bugLeg(x, lean, lifted) {
-      var top = 11;
-      if (lifted) {
-        // Lifted leg - shorter, foot just off the ground.
-        px(g, x, top, 1, 2, leg);
-        px(g, x + lean, top + 2, 1, 1, leg);
-      } else {
-        // Grounded leg - full length, foot splayed out.
-        px(g, x, top, 1, 2, leg);
-        px(g, x + lean, top + 2, 1, 1, leg);
-        px(g, x + lean * 2, top + 3, 1, 1, leg);      // splayed foot tip
-      }
+    // --- Four legs ending in brown feet ---
+    //   Frame 0 lifts the diagonal pair (1 + 3); frame 1 the other.
+    function legFoot(x, lifted) {
+      var lh = lifted ? 2 : 3;
+      px(g, x, 12, 1, lh, leg);                       // upper leg
+      px(g, x - 1, 12 + lh, 3, 1, foot);              // brown foot/paw
     }
-    bugLeg(2,  -1, f === 0);                          // back-back  (leans back)
-    bugLeg(4,  -1, f === 1);                          // back-mid
-    bugLeg(6,   0, f === 0);                          // back-front (straight)
-    bugLeg(8,   0, f === 1);                          // front-back
-    bugLeg(10,  1, f === 0);                          // front-mid (leans forward)
-    bugLeg(11,  1, f === 1);                          // front-front
+    legFoot(3,  f === 0);
+    legFoot(7,  f === 1);
+    legFoot(11, f === 0);
+    legFoot(15, f === 1);
   }
 
   // Wildebeest (Day 6-1 stampede mob, tiled 8x across the herd). Dark
@@ -1107,58 +1092,82 @@ window.SDD = window.SDD || {};
   // Bee wisp (Day 6-2 bug world). Yellow + black striped body, two
   // wings that flap between frames. Stinger pointed back-left.
   function paintWisp_bee(g, frame) {
-    // Side-view bee: longer striped abdomen tapering to a stinger
-    // at the back-left, distinct round head with eye + two
-    // forward-curling antennas, wings flapping above. Reads as
-    // "bug shape" rather than "stack of stripes".
+    // 18x16 canvas. Cartoon bee styled after Mark's reference: BIG
+    // rounded white wings dominating the upper half of the silhouette,
+    // chubby striped body underneath, distinct head with antennas, a
+    // few tiny dangling legs.
     var b = frame === 1 ? 1 : 0;
-    var yel = '#ffce28', yelL = '#ffe890', dk = '#1a1208',
-        wing = 'rgba(220,240,255,0.85)',
-        wingD = 'rgba(180,200,220,0.65)',
+    var yel = '#ffce28', yelL = '#ffe890', yelD = '#c89020',
+        dk = '#1a1208',
+        wing = 'rgba(255,255,255,0.92)',
+        wingD = 'rgba(190,210,230,0.70)',
+        wingOL = '#1a1208',
         eye = '#fff8d0';
 
-    // --- Stinger: thin black point at the back-left ---
-    px(g, 0, 6, 1, 1, dk);                         // stinger tip
-    px(g, 1, 6, 1, 1, dk);
+    // --- Wings: two rounded teardrop wings above the body. The
+    //   front (lead) wing is larger and sits forward; the back wing
+    //   peeks behind it. Each wing has a thick black outline + white
+    //   interior + faint shading band so they read as one cohesive
+    //   shape rather than a checker of pixels. Frame 1 lifts them
+    //   slightly for the flap cycle. ---
+    var wt = b ? 0 : 1;       // wt = top y of the wing block
 
-    // --- Abdomen: long oval, 7 wide, with alternating stripes ---
-    px(g, 2, 5, 7, 3, yel);                        // body mass
-    px(g, 3, 4, 5, 1, yel);                        // top curve
-    px(g, 3, 8, 5, 1, yel);                        // bottom curve
-    px(g, 3, 5, 5, 1, yelL);                       // top highlight band
-    // Three black stripes spaced evenly
-    px(g, 3, 4, 1, 5, dk);
-    px(g, 5, 4, 1, 5, dk);
-    px(g, 7, 4, 1, 5, dk);
+    // Back wing (smaller, behind) - outline first then fill
+    px(g, 11, wt + 1, 1, 1, wingOL);                  // top corner
+    px(g, 12, wt,     3, 1, wingOL);                  // top edge
+    px(g, 15, wt + 1, 1, 3, wingOL);                  // right edge
+    px(g, 12, wt + 4, 3, 1, wingOL);                  // bottom edge
+    px(g, 11, wt + 2, 1, 2, wingOL);                  // left edge
+    px(g, 12, wt + 1, 3, 3, wing);                    // white fill
+    px(g, 12, wt + 1, 3, 1, wingD);                   // top shading band
 
-    // --- Head: round, larger than current, on the right side ---
-    px(g, 9, 4, 3, 5, dk);
-    px(g, 9, 4, 3, 1, dk);                         // head top
-    px(g, 10, 5, 1, 1, eye);                       // bright eye
-    px(g, 11, 6, 1, 1, eye);                       // eye highlight
-    px(g, 12, 6, 1, 1, dk);                        // mandible tip
+    // Front wing (larger teardrop) - outline first then fill
+    px(g, 4,  wt + 1, 1, 1, wingOL);                  // top-left tip
+    px(g, 5,  wt,     6, 1, wingOL);                  // top edge straight
+    px(g, 11, wt + 1, 1, 1, wingOL);                  // top-right corner
+    px(g, 3,  wt + 2, 1, 3, wingOL);                  // left curve
+    px(g, 11, wt + 2, 1, 3, wingOL);                  // right edge
+    px(g, 4,  wt + 5, 1, 1, wingOL);                  // bottom-left tip
+    px(g, 5,  wt + 6, 6, 1, wingOL);                  // bottom edge straight
+    px(g, 11, wt + 5, 1, 1, wingOL);                  // bottom-right corner
+    px(g, 4,  wt + 1, 7, 5, wing);                    // white interior fill
+    px(g, 5,  wt + 1, 5, 1, wingD);                   // top shading band
 
-    // --- Antennas: two clearly-visible, forward-curling ---
-    px(g, 10, 3, 1, 1, dk);                        // antenna base
-    px(g, 11, 2, 1, 1, dk);
-    px(g, 12, 1, 1, 1, dk);                        // upper antenna tip
-    px(g, 11, 4, 1, 1, dk);                        // lower antenna base
-    px(g, 12, 3, 1, 1, dk);
-    px(g, 13, 3, 1, 1, dk);                        // lower antenna tip
+    // --- Body: chubby ovaloid with alternating yellow + dark stripes ---
+    px(g, 4, 8, 9, 5, yel);                        // main mass
+    px(g, 5, 7, 7, 1, yel);                        // top curve
+    px(g, 5, 13, 7, 1, yel);                       // bottom curve
+    px(g, 5, 8, 7, 1, yelL);                       // top highlight band
+    // Three diagonal-feel black stripes
+    px(g, 6,  8, 1, 5, dk);
+    px(g, 8,  7, 1, 6, dk);
+    px(g, 10, 8, 1, 5, dk);
+    // Belly shading band
+    px(g, 5, 12, 7, 1, yelD);
 
-    // --- Wings: alternate raised / mid pose. Two wing pair so
-    //   each abdomen segment looks supported. ---
-    if (b) {
-      px(g, 4, 1, 3, 2, wing);                     // back wing raised
-      px(g, 4, 1, 2, 1, wingD);
-      px(g, 7, 1, 3, 2, wing);                     // front wing raised
-      px(g, 7, 1, 2, 1, wingD);
-    } else {
-      px(g, 4, 2, 3, 2, wing);                     // back wing mid
-      px(g, 5, 2, 2, 1, wingD);
-      px(g, 7, 2, 3, 2, wing);                     // front wing mid
-      px(g, 8, 2, 2, 1, wingD);
-    }
+    // --- Head: round, separated from striped body on the right ---
+    px(g, 12, 7, 3, 5, dk);                        // head mass
+    px(g, 13, 8, 1, 1, eye);                       // bright eye
+    px(g, 14, 8, 1, 1, eye);                       // eye highlight
+    px(g, 15, 10, 1, 1, dk);                       // mandible tip
+    px(g, 12, 12, 2, 1, yel);                      // small yellow chin
+
+    // --- Antennas: two short curling segments off the head ---
+    px(g, 13, 5, 1, 1, dk);                        // upper antenna base
+    px(g, 14, 4, 1, 1, dk);
+    px(g, 14, 3, 1, 1, dk);                        // upper antenna tip
+    px(g, 15, 6, 1, 1, dk);                        // lower antenna base
+    px(g, 16, 5, 1, 1, dk);
+    px(g, 16, 4, 1, 1, dk);                        // lower antenna tip
+
+    // --- Stinger: small black point at the back-left ---
+    px(g, 3, 10, 1, 1, dk);
+    px(g, 2, 10, 1, 1, dk);
+
+    // --- Tiny dangling legs visible underneath the body ---
+    px(g, 6,  14, 1, 1, dk);
+    px(g, 8,  14, 1, 1, dk);
+    px(g, 10, 14, 1, 1, dk);
   }
 
   // Jellyfish flyer (seaside / underwater) - translucent magenta bell
@@ -2598,7 +2607,7 @@ window.SDD = window.SDD || {};
       var WALK_SIZES = {
         lion:      { w: 20, h: 18 },
         porcupine: { w: 20, h: 18 },
-        beetle:    { w: 18, h: 14 }
+        beetle:    { w: 22, h: 16 }
       };
       Object.keys(WALK_VARS).forEach(function (k) {
         var painter = WALK_VARS[k];
@@ -2619,9 +2628,13 @@ window.SDD = window.SDD || {};
         jellyfish:  paintWisp_jellyfish,
         bee:        paintWisp_bee
       };
+      // Bee gets a bigger 18x16 canvas so its iconic over-the-body
+      // wings can dominate the silhouette like the reference art.
+      var WISP_SIZES = { bee: { w: 18, h: 16 } };
       Object.keys(WISP_VARS).forEach(function (k) {
         var painter = WISP_VARS[k];
-        sprites['wisp_' + i + '_' + k] = spriteO(14, 14, function (g) { painter(g, i); });
+        var sz = WISP_SIZES[k] || { w: 14, h: 14 };
+        sprites['wisp_' + i + '_' + k] = spriteO(sz.w, sz.h, function (g) { painter(g, i); });
       });
 
       // Thrower re-skins
