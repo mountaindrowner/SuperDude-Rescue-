@@ -2116,6 +2116,34 @@ window.SDD = window.SDD || {};
     ['SUPER DUDE DANNY TRIED', 'TO WALK ON WATER.', "HE'S WORKING ON IT."],
     ["WHY DON'T TIME MACHINES", 'RUN ON SUNDAYS?', 'EVEN THEY NEED A REST DAY.']
   ];
+  function pickQuip() { return QUIPS[Math.floor(Math.random() * QUIPS.length)]; }
+
+  // Lower-thirds tooltip bar - thin dark band pinned near the bottom of
+  // the 180-tall world canvas, with a cyan accent strip on the left and
+  // a small yellow "TIP" badge. Used by stageintro + gameover so the
+  // quip surface is consistent across loading-style screens. `lines` is
+  // the QUIPS entry (1-3 short lines). `offX` lets the caller slide the
+  // bar in/out alongside other UI (stageintro's card swipe).
+  function drawQuipBar(g, lines, offX) {
+    if (!lines || !lines.length) return;
+    offX = offX || 0;
+    var lh = 8;
+    var pad = 4;
+    var h = pad * 2 + lines.length * lh;
+    var y = 178 - h;
+    var x = 6 + offX, w = 308;
+    g.fillStyle = 'rgba(8,8,20,0.82)';
+    g.fillRect(x, y, w, h);
+    g.fillStyle = '#46f0ff';
+    g.fillRect(x, y, 3, h);
+    g.fillStyle = 'rgba(70,240,255,0.40)';
+    g.fillRect(x + 3, y, w - 3, 1);
+    g.fillRect(x + 3, y + h - 1, w - 3, 1);
+    text(g, 'TIP', x + 10, y + pad, '#ffd23a', 1, 'left');
+    for (var i = 0; i < lines.length; i++) {
+      text(g, lines[i], x + 36, y + pad + i * lh, '#dfe6ff', 1, 'left');
+    }
+  }
 
   // =====================================================================
   // STAGE INTRO - swipe-in card shown briefly between overworld + level.
@@ -2134,7 +2162,7 @@ window.SDD = window.SDD || {};
         ? ('DAY ' + this.day + '-' + this.stage)
         : ('DAY ' + this.day);
       this.subtitle = (lvl && lvl.name) || '';
-      this.quip = QUIPS[Math.floor(Math.random() * QUIPS.length)];
+      this.quip = pickQuip();
     },
     update: function () {
       this.t++;
@@ -2178,21 +2206,9 @@ window.SDD = window.SDD || {};
         text(g, this.subtitle, 160 + offX, ribbonY + 24, '#dfe6ff', 1, 'center');
       }
 
-      // Comedian quip card - slim cyan-bordered box below the ribbon
-      // with 1 or 2 lines drawn from QUIPS. Slides with offX so it
-      // tracks the ribbon's swipe-in / swipe-out.
-      if (this.quip) {
-        var lines = this.quip;
-        var qh = 14 + lines.length * 10;
-        var qy = ribbonY + 48;
-        g.fillStyle = 'rgba(8,8,20,0.78)';
-        g.fillRect(28 + offX, qy, 264, qh);
-        g.strokeStyle = '#46f0ff';
-        g.strokeRect(28.5 + offX, qy + 0.5, 263, qh - 1);
-        for (var qi = 0; qi < lines.length; qi++) {
-          text(g, lines[qi], 160 + offX, qy + 5 + qi * 10, '#bff0ff', 1, 'center');
-        }
-      }
+      // Lower-thirds quip bar - slides with the card so it tracks the
+      // ribbon's swipe-in / swipe-out.
+      drawQuipBar(g, this.quip, offX);
 
       // Streaks behind the card during slide-in for motion sense
       if (this.t < 30 && (this.t % 2) === 0) {
@@ -3362,7 +3378,11 @@ window.SDD = window.SDD || {};
   // GAME OVER
   // =====================================================================
   SDD.scenes.gameover = {
-    enter: function (d) { this.d = d || {}; this.t = 0; A.startMusic('gameover'); },
+    enter: function (d) {
+      this.d = d || {}; this.t = 0;
+      this.quip = pickQuip();
+      A.startMusic('gameover');
+    },
     update: function () {
       this.t++;
       if (this.t > 30 && In.confirm()) { A.sfx('confirm'); go('overworld'); }
@@ -3370,10 +3390,13 @@ window.SDD = window.SDD || {};
     render: function (g) {
       g.fillStyle = '#14101e'; g.fillRect(0, 0, 320, 180);
       drawStarfield(g, this.t);
-      tsh(g, 'GAME OVER', 160, 52, '#ff5d4a', '#5a1810', 3, 'center');
-      S.drawDanny(g, 'small', 'die', 'east', 6, 152, 92);
-      text(g, "SUPER DUDE DANNY WILL TRY AGAIN!", 160, 124, '#dfe6ff', 1, 'center');
-      if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 150, '#ffd23a', 1, 'center');
+      // Stack shifted up so the lower-thirds quip bar (y >= 146) owns
+      // the bottom band without colliding with the PRESS A hint.
+      tsh(g, 'GAME OVER', 160, 36, '#ff5d4a', '#5a1810', 3, 'center');
+      S.drawDanny(g, 'small', 'die', 'east', 6, 152, 78);
+      text(g, "SUPER DUDE DANNY WILL TRY AGAIN!", 160, 110, '#dfe6ff', 1, 'center');
+      if (this.t % 44 < 30) text(g, 'PRESS A TO RETURN TO THE MAP', 160, 126, '#ffd23a', 1, 'center');
+      drawQuipBar(g, this.quip);
     }
   };
 
