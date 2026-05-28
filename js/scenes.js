@@ -2084,34 +2084,37 @@ window.SDD = window.SDD || {};
   };
 
   // Comedian loading-screen quips - random pick per stageintro card.
-  // Each entry is an array of lines (1 or 2 lines, ~32 chars max per line
-  // so they fit inside the cyan-bordered box without wrapping). Tone is
-  // wholesome-silly: SDD-world references, light scripture nods, retro-game
-  // self-awareness. Swap any line freely - the random pick reads from this
+  // Mark-approved set of 22: gameplay advice + Christian encouragement +
+  // corny humor. Each entry is an array of 1 to 3 lines (~32 chars max
+  // per line so they fit inside the cyan-bordered box without wrapping).
+  // Easy to swap any line in place - the random pick reads from this
   // array verbatim.
   var QUIPS = [
-    ['GRAVITY IS NOT JUST A SUGGESTION.'],
-    ['TIME MACHINES RUN ON FAITH', 'AND DUCT TAPE.'],
-    ['DANNY HAS A PHD IN TIME-PUNCHING.'],
-    ['DAY 1: GOD INVENTED LIGHT.', 'WE STILL USE IT DAILY.'],
-    ['PORCUPINES INVENTED THE NO-HUG ZONE.'],
-    ["ADAM'S FAVORITE SNACK?", 'PROBABLY ALMONDS.'],
-    ['ASTRONAUT ETIQUETTE:', 'DO NOT BLAST THE MOON.'],
-    ['POWER CORES MIGHT TASTE LIKE BLUEBERRIES.'],
-    ['LAVA IS WARM.', 'SCIENTISTS CONFIRM.'],
-    ['DOVES ARE OFF DUTY.', 'PLEASE BE COURTEOUS.'],
-    ['DAY 4: STARS!', 'ALSO POSSIBLY GLITTER.'],
-    ['CHECKPOINT FLAGS ARE 100%', 'RECYCLED PIXELS.'],
-    ['WARNING: SCIENTISTS DO NOT BOUNCE.'],
-    ['IF IT MOVES, GREET IT WITH CAUTION.'],
-    ["EVE THINKS YOUR LAB COAT", 'LOOKS VERY SHARP.'],
-    ['CLOUDS ARE 99% WATER', 'AND 1% MYSTERY.'],
-    ['BUG WORLD HAS NO YELP REVIEWS.', 'STAY ALERT.'],
-    ['BLUEPRINT: JUMP HIGH. LAND SOFT.'],
-    ["DANNY'S MOM SAYS BE HOME BY DINNER."],
-    ['GOD SAW THAT IT WAS GOOD.', 'WE AGREE.'],
-    ['BEES BUZZ BECAUSE THEY FORGOT', 'THE WORDS.'],
-    ['REMINDER: THE TIME MACHINE', 'HATES MONDAYS.']
+    // Gameplay advice
+    ['PATIENCE HELPS A LOT.'],
+    ['SOMETIMES THE SAFEST JUMP', 'IS THE ONE YOU WAIT FOR.'],
+    ['TAKE YOUR TIME.', "THE LEVEL ISN'T GOING ANYWHERE."],
+    ['EVEN SUPER DUDE DANNY', 'MISSES JUMPS.'],
+    ['DOWN + A DROPS YOU THROUGH', 'ONE-WAY PLATFORMS.'],
+    ['TOUCH THE FLAG -', 'EVERY CHECKPOINT SAVES YOUR SPOT.'],
+    ["SOME ENEMIES CAN'T BE STOMPED.", 'USE THE BLAST.'],
+    ['BONK YELLOW BLOCKS WITH YOUR HEAD', 'FOR POWER-UPS.'],
+    ['STAR JUMP GIVES YOU', 'EXTRA HOPS MID-AIR.'],
+    ['PEARL SHELL SOAKS ONE HIT.', 'WEAR IT THROUGH THE TOUGH PART.'],
+    ['IF A LEVEL FEELS IMPOSSIBLE,', 'TRY EASY MODE - NO SHAME.'],
+    // Christian encouragement
+    ['GOD CREATED THE WORLD', 'ONE DAY AT A TIME.'],
+    ["YOU DON'T HAVE TO BE PERFECT -", 'GOD ALREADY IS.'],
+    ['BE STILL AND KNOW.', '- PSALM 46:10'],
+    ['HIS MERCIES ARE NEW', 'EVERY MORNING.'],
+    ['GOD MADE YOU ON PURPOSE.'],
+    ['EVEN THE BEES', 'ARE PART OF HIS PLAN.'],
+    ['I CAN DO ALL THINGS THROUGH', 'CHRIST WHO STRENGTHENS ME.'],
+    // Light humor
+    ['WHY WAS ADAM GREAT AT SPORTS?', 'HE WAS FIRST IN THE HUMAN RACE.'],
+    ['NOAH TOOK STOCKS OUT OF A', 'SINKING SHIP AND FLOATED THEM.'],
+    ['SUPER DUDE DANNY TRIED', 'TO WALK ON WATER.', "HE'S WORKING ON IT."],
+    ["WHY DON'T TIME MACHINES", 'RUN ON SUNDAYS?', 'EVEN THEY NEED A REST DAY.']
   ];
 
   // =====================================================================
