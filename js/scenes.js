@@ -2091,53 +2091,50 @@ window.SDD = window.SDD || {};
   // array verbatim.
   var QUIPS = [
     // Gameplay advice
-    ['PATIENCE HELPS A LOT.'],
-    ['SOMETIMES THE SAFEST JUMP', 'IS THE ONE YOU WAIT FOR.'],
-    ['TAKE YOUR TIME.', "THE LEVEL ISN'T GOING ANYWHERE."],
-    ['EVEN SUPER DUDE DANNY', 'MISSES JUMPS.'],
-    ['DOWN + A DROPS YOU THROUGH', 'ONE-WAY PLATFORMS.'],
-    ['TOUCH THE FLAG -', 'EVERY CHECKPOINT SAVES YOUR SPOT.'],
-    ["SOME ENEMIES CAN'T BE STOMPED.", 'USE THE BLAST.'],
-    ['BONK YELLOW BLOCKS WITH YOUR HEAD', 'FOR POWER-UPS.'],
-    ['STAR JUMP GIVES YOU', 'EXTRA HOPS MID-AIR.'],
-    ['PEARL SHELL SOAKS ONE HIT.', 'WEAR IT THROUGH THE TOUGH PART.'],
-    ['IF A LEVEL FEELS IMPOSSIBLE,', 'TRY EASY MODE - NO SHAME.'],
+    'Patience helps a lot.',
+    'Sometimes the safest jump is the one you wait for.',
+    "Take your time. The level isn't going anywhere.",
+    'Even Super Dude Danny misses jumps.',
+    'Down + A drops you through one-way platforms.',
+    'Touch the flag - every checkpoint saves your spot.',
+    "Some enemies can't be stomped. Use the blast.",
+    'Bonk yellow blocks with your head for power-ups.',
+    'Star Jump gives you extra hops mid-air.',
+    'Pearl Shell soaks one hit. Wear it through the tough part.',
+    'If a level feels impossible, try Easy mode - no shame.',
     // Christian encouragement
-    ['GOD CREATED THE WORLD', 'ONE DAY AT A TIME.'],
-    ["YOU DON'T HAVE TO BE PERFECT -", 'GOD ALREADY IS.'],
-    ['BE STILL AND KNOW.', '- PSALM 46:10'],
-    ['HIS MERCIES ARE NEW', 'EVERY MORNING.'],
-    ['GOD MADE YOU ON PURPOSE.'],
-    ['EVEN THE BEES', 'ARE PART OF HIS PLAN.'],
-    ['I CAN DO ALL THINGS THROUGH', 'CHRIST WHO STRENGTHENS ME.'],
+    'God created the world one day at a time.',
+    "You don't have to be perfect - God already is.",
+    'Be still and know. - Psalm 46:10',
+    'His mercies are new every morning.',
+    'God made you on purpose.',
+    'Even the bees are part of His plan.',
+    'I can do all things through Christ who strengthens me.',
     // Light humor
-    ['WHY WAS ADAM GREAT AT SPORTS?', 'HE WAS FIRST IN THE HUMAN RACE.'],
-    ['NOAH TOOK STOCKS OUT OF A', 'SINKING SHIP AND FLOATED THEM.'],
-    ['SUPER DUDE DANNY TRIED', 'TO WALK ON WATER.', "HE'S WORKING ON IT."],
-    ["WHY DON'T TIME MACHINES", 'RUN ON SUNDAYS?', 'EVEN THEY NEED A REST DAY.']
+    'Why was Adam great at sports? He was first in the human race.',
+    'Noah took stocks out of a sinking ship and floated them.',
+    "Super Dude Danny tried to walk on water. He's working on it.",
+    "Why don't time machines run on Sundays? Even they need a rest day."
   ];
   function pickQuip() { return QUIPS[Math.floor(Math.random() * QUIPS.length)]; }
 
   // Lower-thirds tooltip bar - thin dark band pinned near the bottom of
   // the 180-tall world canvas, with a cyan accent strip on the left and
-  // a small yellow "TIP" badge in the pixel font, followed by the quip
-  // in smaller italic vector text. Used by stageintro + gameover so the
-  // quip surface is consistent across loading-style screens. `lines` is
-  // the QUIPS entry (1-3 short lines). `offX` lets the caller slide the
-  // bar in/out alongside other UI (stageintro's card swipe).
+  // the quip centered in italic vector text. Always one line tall - all
+  // 22 quips are flat single-line strings so the bar's visual height is
+  // consistent across picks. `offX` lets the caller slide the bar in/out
+  // alongside other UI (stageintro's card swipe).
   //
   // The quip uses ctx.fillText (italic 8px sans-serif) rather than the
-  // pixel font because the 5x7 glyph table can't render true italic, and
-  // Mark asked for smaller + italic. Text rasterizes crisply under the
-  // 3x world-canvas transform (imageSmoothingEnabled=false only affects
-  // image scaling, not glyph rasterization).
-  function drawQuipBar(g, lines, offX) {
-    if (!lines || !lines.length) return;
+  // 5x7 pixel font because that font can't render true italic, and Mark
+  // asked for smaller + italic + centered. Text rasterizes crisply under
+  // the 3x world-canvas transform because imageSmoothingEnabled=false
+  // only affects image scaling, not glyph rasterization.
+  function drawQuipBar(g, quip, offX) {
+    if (!quip) return;
     offX = offX || 0;
-    var lh = 9;
-    var pad = 4;
-    var h = pad * 2 + lines.length * lh;
-    var y = 178 - h;
+    var h = 16;
+    var y = 178 - h - 2;
     var x = 6 + offX, w = 308;
     g.fillStyle = 'rgba(8,8,20,0.82)';
     g.fillRect(x, y, w, h);
@@ -2146,15 +2143,12 @@ window.SDD = window.SDD || {};
     g.fillStyle = 'rgba(70,240,255,0.40)';
     g.fillRect(x + 3, y, w - 3, 1);
     g.fillRect(x + 3, y + h - 1, w - 3, 1);
-    text(g, 'TIP', x + 10, y + pad + 1, '#ffd23a', 1, 'left');
     g.save();
     g.fillStyle = '#dfe6ff';
     g.font = 'italic 8px sans-serif';
-    g.textBaseline = 'top';
-    g.textAlign = 'left';
-    for (var i = 0; i < lines.length; i++) {
-      g.fillText(lines[i], x + 32, y + pad + i * lh);
-    }
+    g.textBaseline = 'middle';
+    g.textAlign = 'center';
+    g.fillText(quip, x + w / 2, y + h / 2 + 1);
     g.restore();
   }
 
