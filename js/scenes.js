@@ -2120,14 +2120,21 @@ window.SDD = window.SDD || {};
 
   // Lower-thirds tooltip bar - thin dark band pinned near the bottom of
   // the 180-tall world canvas, with a cyan accent strip on the left and
-  // a small yellow "TIP" badge. Used by stageintro + gameover so the
+  // a small yellow "TIP" badge in the pixel font, followed by the quip
+  // in smaller italic vector text. Used by stageintro + gameover so the
   // quip surface is consistent across loading-style screens. `lines` is
   // the QUIPS entry (1-3 short lines). `offX` lets the caller slide the
   // bar in/out alongside other UI (stageintro's card swipe).
+  //
+  // The quip uses ctx.fillText (italic 8px sans-serif) rather than the
+  // pixel font because the 5x7 glyph table can't render true italic, and
+  // Mark asked for smaller + italic. Text rasterizes crisply under the
+  // 3x world-canvas transform (imageSmoothingEnabled=false only affects
+  // image scaling, not glyph rasterization).
   function drawQuipBar(g, lines, offX) {
     if (!lines || !lines.length) return;
     offX = offX || 0;
-    var lh = 8;
+    var lh = 9;
     var pad = 4;
     var h = pad * 2 + lines.length * lh;
     var y = 178 - h;
@@ -2139,10 +2146,16 @@ window.SDD = window.SDD || {};
     g.fillStyle = 'rgba(70,240,255,0.40)';
     g.fillRect(x + 3, y, w - 3, 1);
     g.fillRect(x + 3, y + h - 1, w - 3, 1);
-    text(g, 'TIP', x + 10, y + pad, '#ffd23a', 1, 'left');
+    text(g, 'TIP', x + 10, y + pad + 1, '#ffd23a', 1, 'left');
+    g.save();
+    g.fillStyle = '#dfe6ff';
+    g.font = 'italic 8px sans-serif';
+    g.textBaseline = 'top';
+    g.textAlign = 'left';
     for (var i = 0; i < lines.length; i++) {
-      text(g, lines[i], x + 36, y + pad + i * lh, '#dfe6ff', 1, 'left');
+      g.fillText(lines[i], x + 32, y + pad + i * lh);
     }
+    g.restore();
   }
 
   // =====================================================================
