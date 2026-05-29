@@ -217,10 +217,10 @@ window.SDD = window.SDD || {};
   Player.prototype.victory = function () {
     if (this.win) return;
     this.win = true; this.winT = 0; this.vx = 0;
-    // Mark: "use the funny dancing animation interchangeably with the
-    // celebration animation whenever he beats a level." Coin-flip per
-    // win so both poses get airtime.
-    this.winPose = (Math.random() < 0.5) ? 'dance' : 'celebrate';
+    // celebration / funny-dance coin-flip per win. Only BIG Danny has
+    // a 'dance' anim (no small-Danny dance asset), so small always
+    // celebrates - otherwise pixDraw would miss and fall back.
+    this.winPose = (this.big && Math.random() < 0.5) ? 'dance' : 'celebrate';
   };
 
   Player.prototype.updateDead = function () {
@@ -1011,6 +1011,7 @@ window.SDD = window.SDD || {};
     // Big->small shrink: flicker between sizes for ~24 frames so the
     // transition reads visually (not just an instant size change).
     if (this.shrinkAnim > 0 && (this.shrinkAnim % 6) < 3) size = 'big';
+    var drewSprite = false;
 
     // Prefer the PixelLab PNG sprites once they've finished loading.
     if (SDD.sprites.pixelLab && SDD.sprites.pixelLab.ready &&
@@ -1101,19 +1102,23 @@ window.SDD = window.SDD || {};
         if (d1 < 14) ctx.fillRect(leftX, (headY + d1) | 0, 1, 1);
         if (d2 < 14) ctx.fillRect(rightX, (headY + 2 + d2) | 0, 1, 1);
       }
-      if (ok) return;
+      drewSprite = ok;
     }
-    // Fallback: code-drawn Danny. Only used as a genuine-failure
-    // safety net (PNGs 404 / offline) once pixelLab has finished
-    // settling. While frames are still downloading we skip drawing the
-    // legacy procedural sprite so the old first-iteration look never
-    // flashes on boot (Mark). The player is briefly invisible for that
-    // sub-second load window, which is preferable to the old sprite.
-    var pl = SDD.sprites.pixelLab;
-    if (pl && !pl.ready) return;
-    var fr = this.dead ? 'die' : this.frame;
-    var dir = this.facing > 0 ? 'r' : 'l';
-    drawBC(ctx, 'danny_' + size + '_' + fr + '_' + dir, this, cam);
+    // If the PixelLab path didn't render (still loading, a missing
+    // frame, or a costume/pose with no variant), fall back to the IDLE
+    // frames - which always exist for both sizes - never the old
+    // hand-coded first-iteration sprite (Mark: "remove the old version
+    // completely"). While frames are still downloading, draw nothing
+    // for that sub-second window.
+    if (!drewSprite) {
+      var pl = SDD.sprites.pixelLab;
+      if (!pl || pl.ready) {
+        var fdir = this.facing > 0 ? 'east' : 'west';
+        var fcx = Math.round(this.x + this.w / 2 - cam.x);
+        var fby = Math.round(this.y + this.h - cam.y);
+        SDD.sprites.pixDraw(ctx, size, 'idle', fdir, 0, fcx, fby);
+      }
+    }
 
     // Friendly-Bugs signature: two thin antennas wiggle out the top of
     // Danny's head so the kid sees the buff (Mark: "the friendly buff,

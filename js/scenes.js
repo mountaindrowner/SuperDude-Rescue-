@@ -453,20 +453,11 @@ window.SDD = window.SDD || {};
       var bob = Math.sin(this.t * 0.05) * 2;
       tsh(g, 'SUPER DUDE', 160, 30 + bob, '#ffd23a', '#a8631a', 3, 'center');
       tsh(g, 'DANNY', 160, 56 + bob, '#ff5d4a', '#7a1f16', 5, 'center');
-      // Menu Danny: ~50% bigger (Mark) and rotating through the new
-      // presentation poses so he feels alive while you sit on the
-      // menu. Each pose holds ~3.3s then swaps to the next.
-      var MENU_POSES = [
-        { anim: 'idle',       dir: 'east',  n: 4,  div: 18 },
-        { anim: 'teach',      dir: 'south', n: 17, div: 6 },
-        { anim: 'clipboard',  dir: 'south', n: 16, div: 6 },
-        { anim: 'dance',      dir: 'south', n: 16, div: 5 },
-        { anim: 'funnyteach', dir: 'south', n: 16, div: 6 }
-      ];
-      var mpHold = 200;
-      var mp = MENU_POSES[Math.floor(this.t / mpHold) % MENU_POSES.length];
-      var mpFrame = Math.floor((this.t % mpHold) / mp.div) % mp.n;
-      drawDannyScaled(g, 'big', mp.anim, mp.dir, mpFrame, 54, 138, 1.5);
+      // Menu Danny: ~50% bigger, static idle facing right. Mark found
+      // the rotating-pose version too chaotic - "just have him standing
+      // idle looking right."
+      var mpFrame = Math.floor(this.t / 18) % 4;
+      drawDannyScaled(g, 'big', 'idle', 'east', mpFrame, 54, 138, 1.5);
 
       for (var i = 0; i < this.items.length; i++) {
         var y = 104 + i * 14;

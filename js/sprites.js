@@ -2972,6 +2972,15 @@ window.SDD = window.SDD || {};
     big:   { swim: 22 },
     small: { swim: 22 }
   };
+  // Per-anim horizontal anchor nudge (world px, applied in the facing
+  // direction). Run/jump extend an arm forward, which pushes the crop's
+  // center ahead of the torso so the body drifts ~1px back from where
+  // idle sits. Nudging forward re-centers the torso on idle (Mark: "the
+  // idle sprite is great, run/jump need to match it"). West mirrors.
+  var PL_ANCHOR_DX = {
+    big:   { run: 1, jump: 1 },
+    small: {}
+  };
 
   // Precomputed per-animation union bounding boxes (non-transparent
   // pixels) for every PixelLab frame. The PNGs have huge transparent
@@ -3008,11 +3017,15 @@ window.SDD = window.SDD || {};
       // is 78x48 - much wider than tall, which now reads as a proper
       // horizontal swimming pose.
       swim:       { east:  { x: 8,  y: 23, w: 78, h: 48 }, west: { x: 8,  y: 23, w: 78, h: 48 } },
-      space_run:  { east:  { x: 35, y: 25, w: 26, h: 48 }, west: { x: 35, y: 25, w: 26, h: 48 } },
-      space_jump: { east:  { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } },
-      space_hurt: { east:  { x: 33, y: 26, w: 30, h: 47 }, west: { x: 33, y: 26, w: 30, h: 47 } },
-      space_die:  { east:  { x: 32, y: 26, w: 39, h: 46 }, west: { x: 25, y: 26, w: 39, h: 46 } },
-      jet:        { east:  { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } }
+      // Spacesuit + jetpack bboxes MEASURED from the actual costume PNGs
+      // (were previously copied from the base run/jump, which clipped the
+      // backpack on the sides + the helmet on top - Mark). East/west are
+      // mirror-symmetric in the measured data so no facing jitter.
+      space_run:  { east:  { x: 33, y: 24, w: 28, h: 49 }, west: { x: 35, y: 24, w: 28, h: 49 } },
+      space_jump: { east:  { x: 31, y: 24, w: 37, h: 51 }, west: { x: 28, y: 24, w: 37, h: 51 } },
+      space_hurt: { east:  { x: 31, y: 24, w: 32, h: 49 }, west: { x: 33, y: 24, w: 32, h: 49 } },
+      space_die:  { east:  { x: 30, y: 25, w: 41, h: 47 }, west: { x: 25, y: 25, w: 41, h: 47 } },
+      jet:        { east:  { x: 30, y: 22, w: 33, h: 50 }, west: { x: 33, y: 22, w: 33, h: 50 } }
     },
     small: {
       idle:      { east: { x: 36, y: 24, w: 19, h: 45 }, west: { x: 35, y: 24, w: 20, h: 45 } },
@@ -3029,12 +3042,17 @@ window.SDD = window.SDD || {};
       climb:      { north: { x: 30, y: 20, w: 32, h: 51 } },
       // Swim bbox MEASURED from PNG (72x51, aspect 1.41) - same fix as big.
       swim:       { east:  { x: 10, y: 21, w: 72, h: 51 }, west: { x: 10, y: 21, w: 72, h: 51 } },
+      // Spacesuit run/jump/hurt/die MEASURED from the costume PNGs (fix
+      // the clipped backpack/helmet). Jet keeps a character-tight box
+      // padded +5 left / +5 top per Mark - the full measured union for
+      // the small jet includes a huge ignite-flame burst that would
+      // shrink the character too much if used directly.
       space_idle: { east:  { x: 31, y: 21, w: 24, h: 48 }, west: { x: 37, y: 21, w: 24, h: 48 } },
-      space_run:  { east:  { x: 31, y: 25, w: 28, h: 45 }, west: { x: 34, y: 24, w: 24, h: 46 } },
-      space_jump: { east:  { x: 33, y: 26, w: 28, h: 45 }, west: { x: 30, y: 26, w: 29, h: 45 } },
-      space_hurt: { east:  { x: 30, y: 26, w: 28, h: 43 }, west: { x: 34, y: 26, w: 28, h: 43 } },
-      space_die:  { east:  { x: 29, y: 25, w: 36, h: 44 }, west: { x: 28, y: 26, w: 33, h: 42 } },
-      jet:        { east:  { x: 33, y: 26, w: 30, h: 45 }, west: { x: 30, y: 26, w: 30, h: 45 } }
+      space_run:  { east:  { x: 34, y: 24, w: 24, h: 45 }, west: { x: 35, y: 21, w: 24, h: 48 } },
+      space_jump: { east:  { x: 34, y: 23, w: 23, h: 48 }, west: { x: 34, y: 22, w: 24, h: 50 } },
+      space_hurt: { east:  { x: 30, y: 25, w: 28, h: 43 }, west: { x: 34, y: 25, w: 28, h: 43 } },
+      space_die:  { east:  { x: 29, y: 25, w: 35, h: 43 }, west: { x: 28, y: 25, w: 35, h: 43 } },
+      jet:        { east:  { x: 28, y: 21, w: 35, h: 50 }, west: { x: 25, y: 21, w: 35, h: 50 } }
     }
   };
 
@@ -3102,6 +3120,8 @@ window.SDD = window.SDD || {};
     var dispW = Math.round(bb.w * scale);
     var dH = Math.round(bb.h * scale);
     var dx = Math.round(cx - dispW / 2);
+    var anc = PL_ANCHOR_DX[size] && PL_ANCHOR_DX[size][anim];
+    if (anc) dx += (dir === 'west') ? -anc : anc;
     var dy = Math.round(baselineY - dH);
     ctx.drawImage(img, bb.x, bb.y, bb.w, bb.h, dx, dy, dispW, dH);
     return true;
@@ -3161,17 +3181,14 @@ window.SDD = window.SDD || {};
       var oldH = size === 'big' ? 38 : 24;
       if (pixelLab.ready && pixelLab.failed === 0 &&
           pixDraw(g, size, anim, dir, idx, x + oldW / 2, y + oldH)) return;
-      // While the PNG frames are still downloading (not yet ready),
-      // draw NOTHING rather than the legacy hand-coded procedural
-      // sprite - Mark: "sometimes when I boot up the game it boots up
-      // the old animation from our very first iteration... let's make
-      // sure that one doesn't show up anymore." The procedural sprite
-      // is kept only as a genuine-failure safety net (PNGs 404 /
-      // offline), gated on pixelLab.ready below.
+      // Never the old hand-coded first-iteration sprite (Mark: "remove
+      // the old version completely"). If the requested anim didn't
+      // render and frames are loaded, fall back to the idle frames;
+      // while still downloading, draw nothing for that sub-second
+      // window rather than flashing the legacy art.
       if (!pixelLab.ready) return;
-      var legacy = anim === 'celebrate' ? 'victory' : anim;
-      var s = sprites['danny_' + size + '_' + legacy + '_' + (dir === 'east' ? 'r' : 'l')];
-      if (s) g.drawImage(s, x, y);
+      var fdir = (dir === 'west') ? 'west' : 'east';
+      pixDraw(g, size, 'idle', fdir, 0, x + oldW / 2, y + oldH);
     },
     hasRealLogo: function () { return realLogoOk; },
     realLogo: function () { return realLogo; },
