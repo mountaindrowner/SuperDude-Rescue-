@@ -1061,6 +1061,35 @@ window.SDD = window.SDD || {};
     var fr = this.dead ? 'die' : this.frame;
     var dir = this.facing > 0 ? 'r' : 'l';
     drawBC(ctx, 'danny_' + size + '_' + fr + '_' + dir, this, cam);
+
+    // Friendly-Bugs signature: two thin antennas wiggle out the top of
+    // Danny's head so the kid sees the buff (Mark: "the friendly buff,
+    // it looks like my character gains antennas").
+    if (this.signatureKind === 'friendlybugs' && this.signatureT > 0) {
+      var hcx = Math.round(this.x + this.w / 2 - cam.x);
+      var hty = Math.round(this.y - cam.y) + (this.big ? -2 : 0);
+      var wig = Math.sin(this.signatureT * 0.18) * 1.2;
+      ctx.save();
+      ctx.strokeStyle = '#1a1004';
+      ctx.lineWidth = 1;
+      // Left antenna
+      ctx.beginPath();
+      ctx.moveTo(hcx - 3, hty);
+      ctx.lineTo(hcx - 4 + wig, hty - 4);
+      ctx.lineTo(hcx - 5 + wig, hty - 7);
+      ctx.stroke();
+      // Right antenna
+      ctx.beginPath();
+      ctx.moveTo(hcx + 3, hty);
+      ctx.lineTo(hcx + 4 - wig, hty - 4);
+      ctx.lineTo(hcx + 5 - wig, hty - 7);
+      ctx.stroke();
+      // Antenna tip beads (warm pollen-yellow)
+      ctx.fillStyle = '#ffd23a';
+      ctx.fillRect(hcx - 6 + Math.round(wig), hty - 8, 2, 2);
+      ctx.fillRect(hcx + 4 - Math.round(wig), hty - 8, 2, 2);
+      ctx.restore();
+    }
   };
 
   // ===================== WALKER =====================
