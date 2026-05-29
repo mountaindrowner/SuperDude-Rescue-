@@ -196,7 +196,7 @@ the game is fully shipped to the public**:
   on the menu so we can tell at a glance which build is live.
 - **On every ship/push, bump `SDD.VERSION` (`v0.NN`) in lockstep with the
   service-worker `CACHE_NAME` (`sdd-shell-vNN`)** so the displayed version
-  and the cache generation always match. Current: `v0.39` / `sdd-shell-v39`.
+  and the cache generation always match. Current: `v0.40` / `sdd-shell-v40`.
 
 ## File layout
 

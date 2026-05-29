@@ -10,10 +10,6 @@
 //
 // `text` uses ___ (three underscores) to mark the blank. Quiz scene
 // renders it with a gap and overlays the kid's typed letters.
-//
-// NOTE (Mark to review): the second entry in several pools was added to
-// expand the question bank - all are ESV Genesis 1-2; please vet the
-// wording/answers.
 window.SDD = window.SDD || {};
 
 (function () {
