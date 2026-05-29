@@ -2252,16 +2252,43 @@ window.SDD = window.SDD || {};
     this.remove = false;
     // Subtle vertical bob for decorative animals so they read as alive
     this.baseY = y; this.bobPhase = Math.random() * 6.28;
+    // Gentle bounded horizontal wander for the deer (walking) + dove
+    // (floating) so the Eden garden feels alive (Mark). Lion stays calm.
+    this.baseX = x; this.facing = 1;
+    this.wDir = (Math.random() < 0.5) ? -1 : 1;
+    if (this.kind === 'deer')      { this.wSpeed = 0.18; this.wRange = 22; }
+    else if (this.kind === 'dove') { this.wSpeed = 0.14; this.wRange = 26; }
+    else                           { this.wSpeed = 0;    this.wRange = 0; }
   }
   NPC.prototype.update = function () {
     this.t++;
     if (this.bubbleT > 0) this.bubbleT--;
     if (this.decorative) {
       this.y = this.baseY + Math.sin(this.t * 0.06 + this.bobPhase) * 1;
+      if (this.wSpeed) {
+        this.x += this.wDir * this.wSpeed;
+        if (this.x > this.baseX + this.wRange) { this.x = this.baseX + this.wRange; this.wDir = -1; }
+        else if (this.x < this.baseX - this.wRange) { this.x = this.baseX - this.wRange; this.wDir = 1; }
+        this.facing = this.wDir;
+      }
     }
   };
   NPC.prototype.draw = function (ctx, cam) {
-    drawBC(ctx, 'npc_' + this.kind, this, cam);
+    if (this.decorative && this.facing < 0) {
+      // Mirror the (single-direction) animal sprite when wandering left.
+      var s = SDD.sprites.get('npc_' + this.kind);
+      if (s) {
+        var fdx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
+        var fdy = Math.round(this.y - cam.y + this.h - s.height);
+        ctx.save();
+        ctx.translate(fdx + s.width, fdy);
+        ctx.scale(-1, 1);
+        ctx.drawImage(s, 0, 0);
+        ctx.restore();
+      }
+    } else {
+      drawBC(ctx, 'npc_' + this.kind, this, cam);
+    }
     if (this.bubbleT > 0) {
       var bx = Math.round(this.x + this.w / 2 - cam.x);
       var by = Math.round(this.y - cam.y - 4);
