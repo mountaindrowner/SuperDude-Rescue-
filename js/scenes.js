@@ -3206,7 +3206,7 @@ window.SDD = window.SDD || {};
         tsh(g, '+1', 60, 4 - rise, '#ffe070', '#7a4a10', 1, 'left');
         g.restore();
       }
-      text(g, 'CORES ' + this.cores, 86, 4, '#46f0ff', 1, 'left');
+      text(g, 'CORES ' + this.cores, 6, 14, '#46f0ff', 1, 'left');
       // Signature power-up indicator: lit when a per-stage pickup is
       // active. Shows seconds remaining (capped at 99). The
       // friendship-token has a 999s timer = "lasts whole stage" - we
