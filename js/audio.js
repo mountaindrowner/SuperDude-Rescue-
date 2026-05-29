@@ -193,14 +193,35 @@ window.SDD = window.SDD || {};
     var a = new Audio();
     a.preload = 'auto';
     a.loop = loop !== false;
-    a.volume = muted ? 0 : musicVolume * mixFor(id);
+    a.volume = 1;                 // level is controlled by the WebAudio graph (see wireTrack)
     a.src = path;
     // Explicit load() nudges the browser to actually start downloading
     // - 'auto' is a HINT and many browsers defer audio until first
     // play(). For title/intro tracks especially we want the bytes
     // in memory by the time the user taps the title card.
     try { a.load(); } catch (e) {}
-    FILE_TRACKS[id] = { el: a, loop: loop !== false };
+    FILE_TRACKS[id] = { el: a, loop: loop !== false, id: id, wired: false, noGraph: false, gain: null, src: null };
+  }
+  // Lazily route a track's <audio> through WebAudio:
+  //   element -> per-track mix gain -> musicGain -> master -> output.
+  // This is what makes the MUSIC slider actually work on iOS Safari,
+  // where HTMLAudioElement.volume is ignored (the MP3 otherwise plays
+  // at full system volume and drowns out the SFX - Mark's bug). Falls
+  // back to element.volume on browsers without createMediaElementSource.
+  function wireTrack(tr) {
+    if (!ctx || !tr || tr.wired || tr.noGraph) return tr && tr.wired;
+    try {
+      tr.src = ctx.createMediaElementSource(tr.el);
+      tr.gain = ctx.createGain();
+      tr.gain.gain.value = mixFor(tr.id);
+      tr.src.connect(tr.gain);
+      tr.gain.connect(musicGain);
+      tr.el.volume = 1;
+      tr.wired = true;
+    } catch (e) {
+      tr.noGraph = true;          // legacy browser: keep using element.volume
+    }
+    return tr.wired;
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
   function tryFileTrack(name) {
@@ -304,14 +325,15 @@ window.SDD = window.SDD || {};
 
   function applyGain() {
     if (master)    master.gain.value    = muted ? 0 : 1;     // master = mute switch
-    if (musicGain) musicGain.gain.value = musicVolume;        // chiptune bus
+    if (musicGain) musicGain.gain.value = musicVolume;        // chiptune + wired MP3 bus
     if (sfxGain)   sfxGain.gain.value   = sfxVolume;          // sfx bus
-    // MP3 tracks: HTMLAudioElement.volume direct, scaled by musicVolume.
-    // (WebAudio routing was reverted because createMediaElementSource
-    // silently broke playback on some browsers - notably iOS Safari
-    // before 14.5.)
+    // Wired MP3 tracks are controlled by musicGain above. Only UNWIRED
+    // tracks (legacy browsers) fall back to element.volume here.
     for (var id in FILE_TRACKS) {
-      try { FILE_TRACKS[id].el.volume = muted ? 0 : musicVolume * mixFor(id); } catch (e) {}
+      var tr = FILE_TRACKS[id];
+      if (tr && !tr.wired) {
+        try { tr.el.volume = muted ? 0 : musicVolume * mixFor(id); } catch (e) {}
+      }
     }
   }
 
