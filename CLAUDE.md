@@ -11,16 +11,42 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Latest commit**: New mechanic — falling-leaf platform streams.
-  `LeafFall` + `LeafSpawner` entities in `entities.js`, `leafstream`
-  spawn type in `scenes.js`, editor palette + defaults, 3 demo
-  spawners placed across the cols-87→113 gap in 6-2. Leaves drift
-  down with gentle horizontal sway, act as one-way platforms (plug
-  into the existing `level.platforms` array + ride logic), despawn
-  past the bottom. Continuous flow gated by `period` per spawner.
-- **Batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ F ✅ — all Mark-queued
-  batches shipped. Falling-leaves landed on top as a new freeform
-  mechanic he proposed mid-flight.
+- **Live build**: `v0.39` / `sdd-shell-v39`.
+- **Latest work — Final-round playthrough polish (6 waves, all shipped):**
+  - **W1 sprites**: fixed the old-procedural-sprite-on-victory bug
+    (small Danny had no `dance` anim → pixDraw miss → legacy sprite;
+    now small always celebrates + the fallback is idle frames, never
+    the old art). Menu Danny reverted to static idle (rotation was
+    "too chaotic"). Re-measured spacesuit/jetpack bboxes from the real
+    PNGs (backpack/helmet were clipped). Added `PL_ANCHOR_DX` to align
+    big run/jump with idle.
+  - **W2 signatures/enemies**: cooling-water → **FLAME DASH** (+40%
+    run speed + flame trail; kept lava-plume immunity; dropped the
+    broken lava-walk). Air-bubble tip reworded. Eel head rounded (no
+    square tip). Clam lowered 2px. 4-2 got a 2nd starjump above the
+    checkpoint. Grow "globe" at start of 5-1 + 5-2 (new hovering
+    `item` spawn type). 6-1 water-pits: stronger paddle so spamming
+    jump climbs out (5-2 untouched).
+  - **W3 audio**: separate **MUSIC + SFX** volume buses + OPTIONS
+    sliders (defaults music 0.5 / sfx 0.85); de-click the music stop
+    (fade before pause) to kill the pop on level finish.
+  - **W4 overworld**: 3rd-tile waves/water nudged up; added birds on
+    the clouds tile, bugs on desert, twinkles on night-sky.
+  - **W5 UI**: quip bar + sig icon raised ~6px; F-key blast; level
+    hint banners (3-2 vines, 5-1 fly); 20-cores quip; 3-2 renamed
+    **JUNGLE PATH**; 7-1 Adam line → "I NAMED THAT DEER STEVE!"; quiz
+    question bank expanded to random pools (+~11 ESV Genesis Qs, *Mark
+    to review wording* in `quiz_data.js`); quiz teacher uses one pose
+    + celebrate on pass.
+  - **W6**: 7-1 deer walk / doves float (bounded wander).
+- **Open (Mark's tasks, NOT done here)**: compose music for 6-1 +
+  a new 6-2 track (he dislikes the current 6-2 song); decide on
+  hi-res stage backgrounds (deferred — costs the parallax). Deferred
+  by us: a perf/smoothness code pass; spacesuit blast/celebrate
+  frames (no assets).
+- **Prior batch progression**: A ✅ B ✅ C ✅ D ✅ E ✅ F ✅ + falling-leaf
+  streams + 2nd sprite drop (new jump / spacesuit-on-sun / teaching
+  poses / new overworld) all shipped.
 
 ### Batch tracker
 
@@ -170,7 +196,7 @@ the game is fully shipped to the public**:
   on the menu so we can tell at a glance which build is live.
 - **On every ship/push, bump `SDD.VERSION` (`v0.NN`) in lockstep with the
   service-worker `CACHE_NAME` (`sdd-shell-vNN`)** so the displayed version
-  and the cache generation always match. Current: `v0.38` / `sdd-shell-v38`.
+  and the cache generation always match. Current: `v0.39` / `sdd-shell-v39`.
 
 ## File layout
 
