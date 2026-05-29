@@ -26,6 +26,30 @@ window.SDD = window.SDD || {};
     p.x += (hb.dx || 0);
   }
   SDD.applyFlappyHitboxNow = applyFlappyHitboxNow;
+
+  // Theme -> step / land SFX surface suffix. Used by Player to pick
+  // surface-aware step + landing cues so the kid hears sand crunch
+  // on Day 4-1, cloud pillow on Day 5-1, wood thud on Day 6-2 etc.
+  // SFX names are wired in audio.js as step_<surface> / land_<surface>.
+  var THEME_SURFACE = {
+    'sky':           'grass',
+    'sea-surface':   'wood',
+    'rocky':         'stone',
+    'forest':        'grass',
+    'sunlit':        'sand',
+    'cosmic-night':  'metal',
+    'bird-sky':      'cloud',
+    'seaside':       'sand',
+    'savanna':       'grass',
+    'village-dusk':  'wood',
+    'eden':          'grass',
+    'bugscale':      'wood',
+    'galactic':      'metal'
+  };
+  function surfaceForTheme(theme) {
+    return THEME_SURFACE[theme] || 'grass';
+  }
+
   function drawBC(ctx, name, e, cam) {
     var s = spr(name); if (!s) return;
     var dx = Math.round(e.x - cam.x + e.w / 2 - s.width / 2);
@@ -545,8 +569,13 @@ window.SDD = window.SDD || {};
       }
     }
 
-    // land detection (transition from airborne to onGround)
-    if (!this.prevOnGround && this.onGround) this.landT = 6;
+    // land detection (transition from airborne to onGround). Play a
+    // surface-aware landing thump (Mark: "running and landing cues
+    // consistent with what he's walking on").
+    if (!this.prevOnGround && this.onGround) {
+      this.landT = 6;
+      SDD.audio.sfx('land_' + surfaceForTheme(level.theme));
+    }
     this.prevOnGround = this.onGround;
     if (this.landT > 0) this.landT--;
 
@@ -565,9 +594,13 @@ window.SDD = window.SDD || {};
     }
 
     // Quiet footstep tick while walking on the ground - fires every
-    // ~14 frames so it matches the walk cycle.
+    // ~14 frames so it matches the walk cycle. SFX name picks a
+    // surface variant based on level.theme (grass / sand / stone /
+    // wood / cloud / metal / water).
     if (this.onGround && Math.abs(this.vx) > 0.4) {
-      if ((this.animT % 14) === 0) SDD.audio.sfx('step');
+      if ((this.animT % 14) === 0) {
+        SDD.audio.sfx('step_' + surfaceForTheme(level.theme));
+      }
     }
 
     if (this.invuln > 0) this.invuln--;
@@ -1106,6 +1139,15 @@ window.SDD = window.SDD || {};
     this.hitWall = 0;
     mc(this, level.map);
     if (this.hitWall) this.dir = -this.hitWall;
+    // Quiet ambient cue every ~5-10 sec while the player is nearby.
+    // amb_growl for lion / amb_skitter for everything else.
+    if (level.player && Math.random() < 0.003) {
+      var pl = level.player;
+      var ad = Math.abs((this.x + this.w / 2) - (pl.x + pl.w / 2));
+      if (ad < 220) {
+        SDD.audio.sfx(this.variant === 'lion' ? 'amb_growl' : 'amb_skitter');
+      }
+    }
     if (this.onGround) {
       var T = C.TILE;
       var footX = this.dir > 0 ? this.x + this.w + 1 : this.x - 1;
@@ -1161,13 +1203,21 @@ window.SDD = window.SDD || {};
     this.animT = 0; this.stompable = true;
   }
   Wisp.prototype.update = function (level) {
-    if (this.dead) { this.deadT++; this.y += 2.4; if (this.deadT > 22) this.remove = true; return; }
+    if (this.dead) { this.deadT++; this.y += 2.4; this.t += 0.05; if (this.deadT > 22) this.remove = true; return; }
     this.t += 0.05;
     this.y = this.homeY + Math.sin(this.t) * 28;
     this.x += this.dir * 0.5;
     if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
     if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
     this.animT++;
+    // Quiet ambient cue when player is near (bee buzz / bird chirp).
+    if (level.player && Math.random() < 0.003) {
+      var pl = level.player;
+      var ad = Math.abs((this.x + this.w / 2) - (pl.x + pl.w / 2));
+      if (ad < 220) {
+        SDD.audio.sfx(this.variant === 'bee' ? 'amb_buzz' : 'amb_chirp');
+      }
+    }
     // shoot variant: periodic downward orb (cloud-creature rain drop)
     if (this.shoots) {
       if (this.shootCD == null) this.shootCD = SDD.engine.randInt(80, 140);

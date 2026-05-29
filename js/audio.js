@@ -83,6 +83,33 @@ window.SDD = window.SDD || {};
       case 'bump':     tone(120, t, 0.07, 'square', 0.18, 70); break;
       case 'pause':    tone(520, t, 0.08, 'square', 0.18); break;
       case 'step':     tone(180, t, 0.025, 'square', 0.06, 110); break;
+      // Surface-aware step variants (Mark: "a light walking sound as
+      // Super Dude Danny walks, consistent with what he's walking
+      // on"). All deliberately quiet (0.04-0.08 amp) so they're
+      // texture, not noise. Mix tone + brief noise burst to colour
+      // each surface differently.
+      case 'step_grass':  tone(220, t, 0.02, 'triangle', 0.05, 160); noise(t, 0.02, 0.04); break;
+      case 'step_sand':   noise(t, 0.05, 0.07); tone(160, t, 0.02, 'sine', 0.04, 100); break;
+      case 'step_stone':  tone(320, t, 0.02, 'square', 0.08, 200); break;
+      case 'step_wood':   tone(140, t, 0.05, 'triangle', 0.08, 80); break;
+      case 'step_cloud':  tone(440, t, 0.06, 'sine', 0.04, 280); break;
+      case 'step_water':  noise(t, 0.07, 0.08); tone(280, t, 0.03, 'sine', 0.05, 180); break;
+      case 'step_metal':  tone(520, t, 0.02, 'square', 0.06, 420); break;
+      // Landing thump (heavier than a step). Surface picks colour.
+      case 'land_grass':  tone(150, t, 0.06, 'triangle', 0.12, 80); noise(t, 0.04, 0.07); break;
+      case 'land_sand':   noise(t, 0.10, 0.14); tone(120, t, 0.05, 'sine', 0.08, 60); break;
+      case 'land_stone':  tone(220, t, 0.05, 'square', 0.18, 110); noise(t, 0.03, 0.07); break;
+      case 'land_wood':   tone(110, t, 0.10, 'triangle', 0.18, 60); break;
+      case 'land_cloud':  tone(360, t, 0.10, 'sine', 0.08, 240); break;
+      case 'land_water':  noise(t, 0.14, 0.16); tone(220, t, 0.06, 'sine', 0.10, 150); break;
+      case 'land_metal':  tone(440, t, 0.04, 'square', 0.16, 320); tone(330, t + 0.04, 0.05, 'square', 0.08, 220); break;
+      // Quiet enemy ambient cues (very low amp). Used by enemies on a
+      // rare random tick so passing them feels textured without
+      // becoming noisy.
+      case 'amb_buzz':    tone(380, t, 0.04, 'sawtooth', 0.04, 440); break;
+      case 'amb_chirp':   tone(820, t, 0.03, 'sine', 0.05, 1100); break;
+      case 'amb_growl':   tone(120, t, 0.10, 'triangle', 0.05, 90); break;
+      case 'amb_skitter': noise(t, 0.04, 0.05); break;
       case 'shrink':   tone(660, t, 0.07, 'square', 0.18); tone(440, t + 0.07, 0.09, 'square', 0.16); tone(294, t + 0.16, 0.12, 'square', 0.14); break;
       case 'enter':    tone(330, t, 0.1, 'square', 0.2, 660); break;
       case 'win':      [523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.14, 0.24, 'square', 0.24); }); break;
