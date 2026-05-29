@@ -140,7 +140,7 @@ window.SDD = window.SDD || {};
       sunburst:       16 * 60,
       cloudglide:     20 * 60,
       pearl:          16 * 60,
-      coolingwater:   16 * 60,
+      flamedash:      16 * 60,
       leafshot:       20 * 60,
       sunshield:      16 * 60,
       starjump:       20 * 60,
@@ -355,6 +355,9 @@ window.SDD = window.SDD || {};
     }
 
     var maxV = this.big ? C.MOVE_MAX_BIG : C.MOVE_MAX_SMALL;
+    // FLAME DASH signature: run noticeably faster (flame trail drawn in
+    // Player.draw). Replaces the old broken "walk on lava" cooling-water.
+    if (this.signatureKind === 'flamedash') maxV *= 1.4;
     var left = In.held('left'), right = In.held('right');
 
     // ----- Flappy mode (Day 5.1) -----
@@ -449,7 +452,11 @@ window.SDD = window.SDD || {};
       this.vy += C.GRAVITY * 0.18 * gs;
       if (this.vy > 2.2) this.vy = 2.2;
       if (In.pressed('jump')) {
-        this.vy = -2.7; SDD.audio.sfx('jump');
+        // Stronger paddle in the small escape pools of walking levels
+        // (6-1 water-over-pits) so spamming jump reliably climbs out;
+        // the fully-underwater 5-2 keeps its tuned -2.7 feel.
+        this.vy = level.underwater ? -2.7 : -3.4;
+        SDD.audio.sfx('jump');
         // Each spacebar press triggers a fresh stroke animation cycle.
         // Mark Pass 9: "should change every time I press the spacebar
         // to swim. It's just like cycling too fast" - so we now gate
@@ -625,10 +632,8 @@ window.SDD = window.SDD || {};
     }
     // Lava floor hazard (Day 3-1 pit gaps): touching the 'L' tile kills
     // the same as a pit-fall. Checked at the player's feet row so a
-    // brush at full speed registers cleanly. Cooling-water signature
-    // skips the kill so Danny can briefly walk safely over lava.
-    if (!this.dead && level && level.map &&
-        this.signatureKind !== 'coolingwater') {
+    // brush at full speed registers cleanly.
+    if (!this.dead && level && level.map) {
       var lvT = 16;
       var lTx0 = Math.floor((this.x + 2) / lvT);
       var lTx1 = Math.floor((this.x + this.w - 2) / lvT);
@@ -676,7 +681,7 @@ window.SDD = window.SDD || {};
   };
   var SIG_ICON_COLOR = {
     sunburst: '#ffd84a', cloudglide: '#e8f0ff', pearl: '#a0e0ff',
-    coolingwater: '#6ad4ff', leafshot: '#90e060', sunshield: '#ffe890',
+    flamedash: '#ff7a2a', leafshot: '#90e060', sunshield: '#ffe890',
     starjump: '#ffe890', airbubble: '#a8e6ff',
     callinghorn: '#ffce46', friendlybugs: '#e8a838',
     pollentrail: '#fff2a6',
@@ -703,11 +708,12 @@ window.SDD = window.SDD || {};
       ctx.fillStyle = '#406890'; ctx.fillRect(cx - 3, y + 3, 6, 6);
       ctx.fillStyle = '#a0e0ff'; ctx.fillRect(cx - 2, y + 4, 4, 4);
       ctx.fillStyle = '#fff'; ctx.fillRect(cx - 1, y + 4, 1, 1);
-    } else if (kind === 'coolingwater') {
-      // droplet
-      ctx.fillStyle = '#6ad4ff'; ctx.fillRect(cx - 1, y + 1, 2, 1);
-      ctx.fillRect(cx - 2, y + 2, 4, 2); ctx.fillRect(cx - 3, y + 4, 6, 4);
-      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, y + 5, 1, 1);
+    } else if (kind === 'flamedash') {
+      // flame: orange teardrop with a yellow core
+      ctx.fillStyle = '#ff7a2a'; ctx.fillRect(cx - 1, y + 1, 3, 2);
+      ctx.fillRect(cx - 2, y + 3, 5, 5); ctx.fillRect(cx - 3, y + 6, 7, 2);
+      ctx.fillStyle = '#ffd23a'; ctx.fillRect(cx - 1, y + 4, 2, 3);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 1, y + 5, 1, 1);
     } else if (kind === 'leafshot') {
       // Leaf: teardrop / lance shape with a centre vein.
       ctx.fillStyle = '#345020';
@@ -800,14 +806,14 @@ window.SDD = window.SDD || {};
         ctx.fillRect(px, py, 1, 1);
       }
       ctx.globalAlpha = 1;
-    } else if (kind === 'coolingwater') {
-      // Blue droplets dripping straight down below the icon.
-      ctx.fillStyle = '#6ad4ff';
-      for (var cw = 0; cw < 3; cw++) {
-        var cwphase = (t + cw * 14) % 36;
-        var cwy = cy + 5 + Math.round(cwphase * 0.6);
-        var cwx = cx + (cw - 1) * 4;
-        ctx.globalAlpha = 1 - cwphase / 36;
+    } else if (kind === 'flamedash') {
+      // Flame flecks flickering up off the icon.
+      for (var cw = 0; cw < 4; cw++) {
+        var cwphase = (t + cw * 9) % 30;
+        var cwy = cy + 4 - Math.round(cwphase * 0.4);
+        var cwx = cx + Math.round((cw - 1.5) * 3 + Math.sin((t + cw * 5) * 0.2) * 2);
+        ctx.globalAlpha = 1 - cwphase / 30;
+        ctx.fillStyle = (cw % 2) ? '#ffd23a' : '#ff7a2a';
         ctx.fillRect(cwx, cwy, 1, 2);
       }
       ctx.globalAlpha = 1;
@@ -1147,6 +1153,23 @@ window.SDD = window.SDD || {};
       ctx.fillRect(hcx - 6 + Math.round(wig), hty - 8, 2, 2);
       ctx.fillRect(hcx + 4 - Math.round(wig), hty - 8, 2, 2);
       ctx.restore();
+    }
+
+    // FLAME DASH signature: flames stream off Danny's sneakers while he
+    // dashes along the ground (Mark: "leaves a little trail of fire").
+    if (this.signatureKind === 'flamedash' && this.onGround && Math.abs(this.vx) > 0.3) {
+      var ftX = Math.round(this.x + this.w / 2 - cam.x) - this.facing * 4;
+      var ftY = Math.round(this.y + this.h - cam.y) - 2;
+      for (var ft = 0; ft < 4; ft++) {
+        var ph = (this.animT * 1.5 + ft * 6) % 20;
+        var fxp = ftX - this.facing * Math.round(ph * 0.7 + ft * 2);
+        var fyp = ftY - Math.round(ph * 0.25) + (ft % 2);
+        ctx.globalAlpha = (1 - ph / 20) * 0.85;
+        ctx.fillStyle = (ft % 2) ? '#ffd23a' : '#ff7a2a';
+        var fsz = 2 - Math.floor(ph / 12);
+        if (fsz > 0) ctx.fillRect(fxp, fyp, fsz, fsz);
+      }
+      ctx.globalAlpha = 1;
     }
   };
 
@@ -1847,14 +1870,20 @@ window.SDD = window.SDD || {};
   };
 
   // ===================== ITEM DROP (grow / blast) =====================
-  function ItemDrop(x, y, kind) {
-    this.x = x; this.y = y; this.w = 14; this.h = 14;
+  function ItemDrop(x, y, kind, hover) {
+    this.x = x; this.y = y; this.baseY = y; this.w = 14; this.h = 14;
     this.kind = kind;                 // 'grow' or 'blast'
     this.emerge = 16; this.vx = 0; this.vy = 0; this.t = 0;
+    // hover=true: a level-placed pickup that bobs in place instead of
+    // emerging from a block + falling. Lets a grow item sit reachable
+    // at the start of flappy / underwater levels where there's no
+    // ground for the normal walking grow to rest on.
+    this.hover = !!hover;
     this.remove = false;
   }
   ItemDrop.prototype.update = function (level) {
     this.t++;
+    if (this.hover) { this.y = this.baseY + Math.sin(this.t * 0.1) * 1.5; return; }
     if (this.emerge > 0) {
       this.y -= 1; this.emerge--;
       if (this.emerge === 0 && this.kind === 'grow') this.vx = 0.55;
@@ -2433,20 +2462,27 @@ window.SDD = window.SDD || {};
       var h = Math.round(this.curH);
       var bx = sx - 5;                                 // pillar 10 wide
       var by = sy - h;
-      // Outer dark body
+      // Outer dark body with a ROUNDED crown - the top 2 rows are
+      // inset so the head tapers instead of showing a square tip as
+      // the eel rises/falls (Mark: "square at the very tip when he
+      // goes up and back down").
       ctx.fillStyle = '#1a4030';
-      ctx.fillRect(bx, by, 10, h);
+      ctx.fillRect(bx + 3, by, 4, 1);          // crown row 0 (narrow)
+      ctx.fillRect(bx + 1, by + 1, 8, 1);      // crown row 1
+      ctx.fillRect(bx, by + 2, 10, Math.max(0, h - 2)); // main body
       // Lighter inner body w/ vertical segments
       ctx.fillStyle = '#3a8a4a';
-      ctx.fillRect(bx + 1, by, 8, h);
+      ctx.fillRect(bx + 4, by, 2, 1);
+      ctx.fillRect(bx + 2, by + 1, 6, 1);
+      ctx.fillRect(bx + 1, by + 2, 8, Math.max(0, h - 2));
       // Segment rings - alternating darker bands every 6px
       ctx.fillStyle = '#2a5a38';
       for (var sy0 = by + 3; sy0 < by + h; sy0 += 6) {
         ctx.fillRect(bx + 1, sy0, 8, 1);
       }
-      // Highlight stripe down the left edge
+      // Highlight stripe down the left edge (starts below the crown)
       ctx.fillStyle = '#7adfa0';
-      ctx.fillRect(bx + 1, by, 1, h);
+      ctx.fillRect(bx + 1, by + 2, 1, Math.max(0, h - 2));
       // Eyes at the top of the pillar - glowing cyan, look forward
       ctx.fillStyle = '#dffaff';
       ctx.fillRect(bx + 2, by + 1, 2, 2);

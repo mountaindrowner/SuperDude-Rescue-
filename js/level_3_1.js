@@ -66,7 +66,7 @@ SDD.levels['3-1'] = {
     { type: "core", tx: 220, ty: 7 },
     { type: "core", tx: 235, ty: 9 },
     { type: "walker", tx: 69, ty: 10 },
-    { type: "signature", tx: 71, ty: 10, kind: "coolingwater" },
+    { type: "signature", tx: 71, ty: 10, kind: "flamedash" },
     { type: "timepart", tx: 233, ty: 2 },
     { type: "skyhazard", tx: 49, ty: 10, kind: "lavaPlume", period: 80, offsetX: 0, offsetY: -5 },
     { type: "skyhazard", tx: 174, ty: 10, kind: "lavaPlume", period: 110, offsetX: 0, offsetY: -6 },

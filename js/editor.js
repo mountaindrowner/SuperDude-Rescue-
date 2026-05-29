@@ -124,7 +124,7 @@ window.SDD = window.SDD || {};
   var FIELD_ENUMS = {
     // spawn.kind values
     'signature.kind': [
-      'sunburst', 'cloudglide', 'pearl', 'coolingwater', 'leafshot',
+      'sunburst', 'cloudglide', 'pearl', 'flamedash', 'leafshot',
       'sunshield', 'starjump', 'airbubble', 'callinghorn',
       'friendlybugs', 'pollentrail', 'doveblessing'
     ],

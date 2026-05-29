@@ -2443,7 +2443,7 @@ window.SDD = window.SDD || {};
   // Friendly display names for active signatures (HUD).
   var SIG_LABELS = {
     sunburst: 'SUN', cloudglide: 'GLIDE', pearl: 'PEARL',
-    coolingwater: 'WATER', leafshot: 'LEAF', sunshield: 'SHIELD',
+    flamedash: 'FLAME', leafshot: 'LEAF', sunshield: 'SHIELD',
     starjump: 'STAR', airbubble: 'BUBBLE',
     callinghorn: 'HORN', friendlybugs: 'FRIENDS',
     pollentrail: 'POLLEN',
@@ -2456,11 +2456,11 @@ window.SDD = window.SDD || {};
     sunburst:        { name: 'SUNBURST!',     tip: 'RUN INTO BAD GUYS TO ZAP THEM!' },
     cloudglide:      { name: 'CLOUD GLIDE!',  tip: 'JUMP, THEN HOLD A TO FLOAT DOWN!' },
     pearl:           { name: 'PEARL SHELL!',  tip: 'BAD GUYS HIT THE SHELL, NOT YOU!' },
-    coolingwater:    { name: 'COOL WATER!',   tip: 'WALK RIGHT OVER LAVA - IT WON\'T BURN!' },
+    flamedash:       { name: 'FLAME DASH!',    tip: 'RUN SUPER FAST - MIND THE GAPS!' },
     leafshot:        { name: 'LEAF SHOT!',    tip: 'PRESS B TO THROW LEAVES!' },
     sunshield:       { name: 'SUN SHIELD!',   tip: 'SUN FLARES BOUNCE RIGHT OFF YOU!' },
     starjump:        { name: 'STAR JUMP!',    tip: 'JUMP, THEN A AGAIN AND AGAIN IN THE AIR!' },
-    airbubble:       { name: 'AIR BUBBLE!',   tip: 'SEA CREATURES CAN\'T TOUCH YOU!' },
+    airbubble:       { name: 'AIR BUBBLE!',   tip: 'SMALL SEA CRITTERS CAN\'T TOUCH YOU!' },
     callinghorn:     { name: 'CALLING HORN!', tip: 'ALL ENEMIES FREEZE WHERE THEY STAND!' },
     friendlybugs:    { name: 'FRIENDLY BUGS!',tip: 'BEES AND BEETLES WALK RIGHT PAST YOU!' },
     pollentrail:     { name: 'POLLEN TRAIL!', tip: 'POWER CORES FLY TOWARDS YOU!' },
@@ -2588,6 +2588,13 @@ window.SDD = window.SDD || {};
         } else if (s.type === 'core') {
           e = new SDD.ent.Core(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = s.ty * T + 8 - e.h / 2; e.baseY = e.y;
+          this.items.push(e);
+        } else if (s.type === 'item') {
+          // Level-placed hovering pickup (e.g. a grow "globe" near the
+          // start of a flappy/underwater stage so a small Danny can
+          // grow). kind defaults to 'grow'.
+          e = new SDD.ent.ItemDrop(s.tx * T + 1, s.ty * T, s.kind || 'grow', true);
+          e.emerge = 0;
           this.items.push(e);
         } else if (s.type === 'timepart') {
           // Each stage drops a different piece of the time machine.
@@ -2957,11 +2964,12 @@ window.SDD = window.SDD || {};
                    pr instanceof SDD.ent.Meteor ||
                    pr instanceof SDD.ent.WaterJet ||
                    pr instanceof SDD.ent.LavaPlume) {
-          // Signature immunities: cooling-water blocks lava plumes (3-1),
-          // sun-shield blocks solar flares + meteors (4-1).
+          // Signature immunities: flame-dash blocks lava plumes (3-1)
+          // - you're wreathed in fire - sun-shield blocks solar flares
+          // + meteors (4-1).
           var isLava = pr instanceof SDD.ent.LavaPlume;
           var isFlareLike = pr instanceof SDD.ent.SolarFlare || pr instanceof SDD.ent.Meteor;
-          if (pl.signatureKind === 'coolingwater' && isLava) continue;
+          if (pl.signatureKind === 'flamedash' && isLava) continue;
           if (pl.signatureKind === 'sunshield' && isFlareLike) continue;
           if (!pl.dead && !pl.win && pl.invuln <= 0 && E.overlap(pl, pr)) {
             // LavaPlume persists (it's a vertical column, not a single hit)

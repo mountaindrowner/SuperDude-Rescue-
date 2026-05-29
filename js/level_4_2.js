@@ -50,6 +50,7 @@ SDD.levels['4-2'] = {
     { type: "core", tx: 136, ty: 7 },
     { type: "checkpoint", tx: 134, ty: 8 },
     { type: "signature", tx: 30, ty: 9, kind: "starjump" },
+    { type: "signature", tx: 134, ty: 6, kind: "starjump" },
     { type: "core", tx: 142, ty: 6 },
     { type: "core", tx: 149, ty: 4 },
     { type: "core", tx: 156, ty: 6 },

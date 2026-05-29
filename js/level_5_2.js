@@ -21,6 +21,7 @@ SDD.levels['5-2'] = {
   ],
   spawns: [
     { type: "player", tx: 4, ty: 11 },
+    { type: "item", tx: 9, ty: 10, kind: "grow" },
     { type: "core", tx: 16, ty: 4 },
     { type: "core", tx: 16, ty: 6 },
     { type: "core", tx: 32, ty: 8 },
