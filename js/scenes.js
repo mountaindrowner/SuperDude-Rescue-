@@ -660,7 +660,7 @@ window.SDD = window.SDD || {};
         o.god = !o.god; SDD.save.save(); A.sfx('confirm');
       }
       if (this.idx === 4 && In.confirm()) { A.sfx('confirm'); this.exitTo(); }
-      if (In.pressed('pause')) { A.sfx('confirm'); this.exitTo(); }
+      if (In.back()) { A.sfx('confirm'); this.exitTo(); }
     },
     exitTo: function () {
       // From the in-game pause menu: don't re-enter the level (that

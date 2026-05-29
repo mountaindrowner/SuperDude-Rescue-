@@ -203,12 +203,18 @@ window.SDD = window.SDD || {};
     pollGamepad();
   }
   function confirm() { return pressed('jump') || pressed('confirm'); }
+  // "Back / cancel" in menus = Escape/P OR the B (blast) button. In
+  // gameplay scenes blast still means fire; those scenes simply don't
+  // call back(). Mark: "B button should go back in menus, anywhere
+  // except gameplay."
+  function back() { return pressed('pause') || pressed('blast'); }
 
   SDD.input = {
     init: init,
     pressed: pressed,
     held: held,
     confirm: confirm,
+    back: back,
     endStep: endStep,
     onFirstGesture: function (cb) { firstGesture.push(cb); }
   };
