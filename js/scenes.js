@@ -2388,6 +2388,10 @@ window.SDD = window.SDD || {};
         } else if (s.type === 'npc') {
           e = new SDD.ent.NPC(0, 0, s.kind || 'adam', s.line);
           e.x = s.tx * T + 8 - e.w / 2; e.y = (s.ty + 1) * T - e.h;
+          // Sync baseY with the post-spawn y so decorative animals (deer
+          // / lion / dove) don't snap back to baseY=0 on every update()
+          // tick - the constructor receives (0,0) and locks baseY there.
+          e.baseY = e.y;
           this.items.push(e);
         } else if (s.type === 'skyhazard') {
           // periodic projectile spawner placed in the level data
@@ -3340,8 +3344,11 @@ window.SDD = window.SDD || {};
         }
       }
 
-      // On-screen keyboard
-      var kbTop = 110;
+      // On-screen keyboard. kbTop bumped from 110 -> 100 so row 3 (BACK
+      // + ENTER) bottom edge lands at y=178 instead of y=188 - the
+      // canvas is only 180 tall and the previous value clipped the
+      // bottom 8 px of those wider keys.
+      var kbTop = 100;
       var keySize = 18;
       var keyGap = 2;
       for (var r = 0; r < QUIZ_KEYBOARD_ROWS.length; r++) {

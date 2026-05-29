@@ -1051,26 +1051,25 @@ window.SDD = window.SDD || {};
     var dir = this.dir > 0 ? 'r' : 'l';
     var base = 'walker_' + f + '_' + dir;
     drawBC(ctx, (this.variant && SDD.sprites.get(base + '_' + this.variant)) ? base + '_' + this.variant : base, this, cam);
-    // Porcupine signature: extra spikes pulse in / out on top of the
-    // baked sprite so the threat reads at a glance (Mark: "give them
-    // their signature spines coming in and out").
+    // Porcupine quills: three always-extended spikes along the back.
+    // Cols mirror with facing direction so they stay above the body
+    // instead of sprouting from the head when walking left. The
+    // walker's already unkillable + non-stompable at spawn time (see
+    // scenes.js), so the visible spikes match the actual hit logic.
     if (this.variant === 'porcupine' && !this.dead) {
-      var p = (Math.sin(this.animT * 0.08) + 1) * 0.5;          // 0..1
-      var ext = Math.round(p * 4);                              // 0..4 px
-      if (ext > 0) {
-        var s = SDD.sprites.get(base + '_porcupine');
-        if (s) {
-          var dx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
-          var dy = Math.round(this.y - cam.y + this.h - s.height);
-          ctx.fillStyle = '#1a1004';
-          var cols = [3, 5, 7, 9, 10];
-          for (var i = 0; i < cols.length; i++) {
-            ctx.fillRect(dx + cols[i], dy + 3 - ext, 1, ext);
-          }
-          ctx.fillStyle = '#8a6040';
-          for (var j = 0; j < cols.length; j += 2) {
-            ctx.fillRect(dx + cols[j], dy + 3 - ext, 1, 1);
-          }
+      var s = SDD.sprites.get(base + '_porcupine');
+      if (s) {
+        var dx = Math.round(this.x - cam.x + this.w / 2 - s.width / 2);
+        var dy = Math.round(this.y - cam.y + this.h - s.height);
+        var cols = (this.dir > 0) ? [4, 7, 10] : [10, 13, 16];
+        var quillH = 5;
+        ctx.fillStyle = '#1a1004';
+        for (var i = 0; i < cols.length; i++) {
+          ctx.fillRect(dx + cols[i], dy + 3 - quillH, 1, quillH);
+        }
+        ctx.fillStyle = '#8a6040';
+        for (var j = 0; j < cols.length; j++) {
+          ctx.fillRect(dx + cols[j], dy + 3 - quillH, 1, 1);
         }
       }
     }
@@ -2299,12 +2298,12 @@ window.SDD = window.SDD || {};
       ctx.fillStyle = '#003a4a';
       ctx.fillRect(bx + 3, by + 2, 1, 1);
       ctx.fillRect(bx + 7, by + 2, 1, 1);
-      // Tiny fanged maw under the eyes
+      // Slit mouth under the eyes. The two 1x1 white fang pixels that
+      // used to sit at the mouth corners rendered as stray squares at
+      // 3x scale (Mark: "odd little square at the edge of their
+      // mouth"), so just the dark slit now.
       ctx.fillStyle = '#1a1828';
       ctx.fillRect(bx + 3, by + 4, 4, 1);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(bx + 3, by + 5, 1, 1);
-      ctx.fillRect(bx + 6, by + 5, 1, 1);
       // Electric crackle arcs along the body during the lethal hold
       // phase (and during rise/fall so the threat reads). Random-ish
       // by hashing the frame.

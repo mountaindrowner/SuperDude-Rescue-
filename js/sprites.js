@@ -533,26 +533,29 @@ window.SDD = window.SDD || {};
   function paintWalker_clam(g, frame) {
     var b = frame === 1 ? 1 : 0;
     var sh = '#f4c0c4', shL = '#ffe0d8', shD = '#a85a60', mn = '#fff4d0', eye = '#1a1640';
+    // Every y bumped down by 1 (was bottom-at-y=11 inside a 14-tall
+    // canvas, so the clam visibly floated 2 px above the bbox bottom -
+    // Mark: "the clam enemy needs to be one pixel down lower").
     // Lower shell (flat clam bottom)
-    px(g, 1, 8, 14, 3, sh);
-    px(g, 0, 9, 16, 2, sh);
-    px(g, 1, 10, 14, 1, shD);                         // shadow line
+    px(g, 1, 9, 14, 3, sh);
+    px(g, 0, 10, 16, 2, sh);
+    px(g, 1, 11, 14, 1, shD);                         // shadow line
     // Upper shell (dome)
-    px(g, 2, 4, 12, 4, sh);
-    px(g, 1, 5, 14, 3, sh);
-    px(g, 3, 3, 10, 1, sh);
+    px(g, 2, 5, 12, 4, sh);
+    px(g, 1, 6, 14, 3, sh);
+    px(g, 3, 4, 10, 1, sh);
     // Highlight along the top
-    px(g, 3, 4, 8, 1, shL);
-    px(g, 4, 3, 6, 1, shL);
+    px(g, 3, 5, 8, 1, shL);
+    px(g, 4, 4, 6, 1, shL);
     // Hinge / shell ribs (subtle vertical lines)
-    px(g, 4, 5, 1, 3, shD);
-    px(g, 8, 5, 1, 3, shD);
-    px(g, 11, 5, 1, 3, shD);
+    px(g, 4, 6, 1, 3, shD);
+    px(g, 8, 6, 1, 3, shD);
+    px(g, 11, 6, 1, 3, shD);
     // Slight gap between upper + lower shell (the "mouth")
-    px(g, 2, 8 - b, 12, 1, mn);
+    px(g, 2, 9 - b, 12, 1, mn);
     // Tiny eyes peeking
-    px(g, 5, 6, 1, 1, eye);
-    px(g, 10, 6, 1, 1, eye);
+    px(g, 5, 7, 1, 1, eye);
+    px(g, 10, 7, 1, 1, eye);
   }
 
   // Cloud-puff walker - white blobby cloud with eyes (sky / sea / seaside).
