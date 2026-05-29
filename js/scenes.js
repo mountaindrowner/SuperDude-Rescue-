@@ -864,6 +864,69 @@ window.SDD = window.SDD || {};
             g.fillRect(ocX, ocY - 1, 1, 1);
           }
         }
+        // 3b) OCEAN - thin horizontal wave crests rolling across the
+        // water around the island (Mark: "a little bit more on the
+        // 3rd, make it look like there's waves"). Two crests phased
+        // half a cycle apart, each a 1-px-tall white dash that slides
+        // left across a ~20 px band.
+        for (var owI = 0; owI < 2; owI++) {
+          var owPhase = ((ovT + owI * 60) % 120) / 120;       // 0..1
+          var owX = Math.round(oc.x + 14 - owPhase * 30);
+          var owY = oc.dy + 7 + owI * 2;
+          var owA = (owPhase < 0.15) ? owPhase / 0.15
+                  : (owPhase > 0.85) ? (1 - owPhase) / 0.15
+                  : 1;
+          g.fillStyle = 'rgba(220,240,255,' + (owA * 0.55).toFixed(2) + ')';
+          g.fillRect(owX, owY, 5, 1);
+          g.fillRect(owX + 6, owY, 2, 1);
+        }
+        // 9th tile - DEEP CURRENTS (Day 5-2, STAGES[8]): waves above
+        // + tiny darting fish silhouettes around the island.
+        var uw = STAGES[8];
+        // Wave crests (two phased)
+        for (var uwI = 0; uwI < 2; uwI++) {
+          var uwPhase = ((ovT + uwI * 65) % 130) / 130;
+          var uwX = Math.round(uw.x - 14 + uwPhase * 30);
+          var uwY = uw.dy + 6 + uwI * 2;
+          var uwA = (uwPhase < 0.15) ? uwPhase / 0.15
+                  : (uwPhase > 0.85) ? (1 - uwPhase) / 0.15
+                  : 1;
+          g.fillStyle = 'rgba(220,240,255,' + (uwA * 0.55).toFixed(2) + ')';
+          g.fillRect(uwX, uwY, 5, 1);
+          g.fillRect(uwX + 6, uwY, 2, 1);
+        }
+        // Fish: 3 tiny silhouettes circling the island at varying
+        // radii. Each rendered as a 3x1 body with a 1x1 tail flick.
+        for (var fI = 0; fI < 3; fI++) {
+          var fAng = (ovT * 0.012 + fI * 2.09) % 6.28;
+          var fR = 11 + (fI % 2) * 3;
+          var fX = Math.round(uw.x + Math.cos(fAng) * fR);
+          var fY = Math.round(uw.dy + Math.sin(fAng) * fR * 0.55) + 4;
+          var faceR = Math.cos(fAng) > 0;
+          g.fillStyle = '#102b3a';
+          g.fillRect(fX - 1, fY, 3, 1);
+          // Tail flick on the trailing edge
+          g.fillRect(faceR ? fX - 2 : fX + 2, fY, 1, 1);
+        }
+        // 12th tile - EDEN GARDEN (Day 7, STAGES[11]): 6 warm gold
+        // twinkles sprinkled around the garden island.
+        var ed = STAGES[11];
+        for (var edI = 0; edI < 6; edI++) {
+          var edAng = edI * 1.05 + 0.4;
+          var edR = 9 + (edI % 3) * 3;
+          var edX = Math.round(ed.x + Math.cos(edAng) * edR);
+          var edY = Math.round(ed.dy + Math.sin(edAng) * edR * 0.7) - 2;
+          var edA = 0.4 + 0.5 * Math.sin(ovT * 0.06 + edI * 1.4);
+          if (edA > 0.15) {
+            g.fillStyle = 'rgba(255,232,140,' + edA.toFixed(2) + ')';
+            g.fillRect(edX, edY, 1, 1);
+            // Brighter core on the strongest twinkle frames
+            if (edA > 0.7) {
+              g.fillStyle = 'rgba(255,255,210,' + ((edA - 0.7) * 2).toFixed(2) + ')';
+              g.fillRect(edX, edY, 1, 1);
+            }
+          }
+        }
       } else {
         var grd = g.createLinearGradient(0, 0, 0, 180);
         grd.addColorStop(0, '#243a6e'); grd.addColorStop(1, '#6fae8a');
