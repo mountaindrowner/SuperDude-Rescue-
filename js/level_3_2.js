@@ -93,6 +93,7 @@ SDD.levels['3-2'] = {
     { tx: 228, ty: 7, tx1: 232, ty1: 7, spd: 0.018, phase: 0 },
     { tx: 236, ty: 3, tx1: 241, ty1: 3, spd: 0.018, phase: 0 }
   ],
-  name: "GARDEN PATH",
-  theme: "forest"
+  name: "JUNGLE PATH",
+  theme: "forest",
+  hint: "JUMP AT A VINE TO CLIMB IT"
 };

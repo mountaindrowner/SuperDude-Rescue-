@@ -664,7 +664,7 @@ window.SDD = window.SDD || {};
     if (!this.signatureKind || this.signatureT <= 0) return;
     var cx = Math.round(this.x + this.w / 2 - cam.x);
     var bob = Math.round(Math.sin((this.signatureT) * 0.18) * 1);
-    var top = Math.round(this.y - cam.y) - 11 + bob;
+    var top = Math.round(this.y - cam.y) - 17 + bob;   // raised ~6px (Mark)
     var kind = this.signatureKind;
     // Soft glow behind the icon so it pops on dark / busy backgrounds.
     var col = SIG_ICON_COLOR[kind] || '#ffe890';

@@ -131,6 +131,7 @@ SDD.levels['5-1'] = {
   ],
   name: "THE SKIES",
   theme: "bird-sky",
+  hint: "TAP JUMP TO FLY UP",
   flappy: true,
   flappySpeed: 1.4,
   flappyFlap: 3.6,

@@ -37,7 +37,7 @@ SDD.levels['7-1'] = {
     { type: "signature", tx: 59, ty: 9, kind: "doveblessing" },
     { type: "npc", tx: 20, ty: 10, kind: "adam", line: "GOD SAW IT WAS GOOD!" },
     { type: "npc", tx: 55, ty: 10, kind: "eve", line: "THE LION IS SO FLUFFY!" },
-    { type: "npc", tx: 84, ty: 10, kind: "adam", line: "GOD IS MY SHEPHERD!" },
+    { type: "npc", tx: 84, ty: 10, kind: "adam", line: "I NAMED THAT DEER STEVE!" },
     { type: "npc", tx: 118, ty: 10, kind: "eve", line: "WHAT A LOVELY TREE..." },
     { type: "npc", tx: 150, ty: 10, kind: "adam", line: "DID THAT SNAKE TALK?" },
     { type: "core", tx: 6, ty: 7 },

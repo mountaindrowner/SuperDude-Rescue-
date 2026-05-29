@@ -41,7 +41,7 @@ window.SDD = window.SDD || {};
     ArrowUp: 'up', KeyW: 'up',
     ArrowDown: 'down', KeyS: 'down',
     Space: 'jump', KeyZ: 'jump', KeyK: 'jump',
-    KeyX: 'blast', KeyJ: 'blast', KeyL: 'blast',
+    KeyX: 'blast', KeyJ: 'blast', KeyL: 'blast', KeyF: 'blast',
     Enter: 'confirm',
     Escape: 'pause', KeyP: 'pause'
   };

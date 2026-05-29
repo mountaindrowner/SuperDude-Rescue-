@@ -2369,6 +2369,7 @@ window.SDD = window.SDD || {};
   // array verbatim.
   var QUIPS = [
     // Gameplay advice
+    'Collect 20 power cores for an extra life!',
     'Patience helps a lot.',
     'Sometimes the safest jump is the one you wait for.',
     "Take your time. The level isn't going anywhere.",
@@ -2412,7 +2413,7 @@ window.SDD = window.SDD || {};
     if (!quip) return;
     offX = offX || 0;
     var h = 16;
-    var y = 178 - h - 2;
+    var y = 178 - h - 8;        // raised ~6px off the bottom edge (Mark)
     var x = 6 + offX, w = 308;
     g.fillStyle = 'rgba(8,8,20,0.82)';
     g.fillRect(x, y, w, h);
@@ -2570,6 +2571,9 @@ window.SDD = window.SDD || {};
       this.gravityScale = L.gravityScale || 1;
       this.skyTheme = L.skyTheme || null;
       this.theme = L.theme || null;
+      // Optional control hint shown briefly on level entry (e.g. vines,
+      // flappy). Cleared after ~4s of play so it doesn't linger.
+      this.hint = L.hint || null;
       // Mode flags - Player.update reads these via the level reference
       // it gets each frame.
       this.flappy = !!L.flappy;
@@ -3317,6 +3321,23 @@ window.SDD = window.SDD || {};
           g.restore();
         }
       }
+      // Level-entry control hint (e.g. climb vines / flap) - a small
+      // banner for the first ~4s, then fades out.
+      if (this.hint) {
+        var hintAlpha = this.timeSteps < 240 ? 1 :
+          (this.timeSteps < 360 ? (360 - this.timeSteps) / 120 : 0);
+        if (hintAlpha > 0) {
+          g.save(); g.globalAlpha = hintAlpha;
+          var hw = Math.max(120, this.hint.length * 6 + 16);
+          g.fillStyle = 'rgba(8,8,20,0.80)';
+          g.fillRect(160 - hw / 2, 28, hw, 14);
+          g.fillStyle = '#46f0ff';
+          g.fillRect(160 - hw / 2, 28, hw, 1);
+          g.fillRect(160 - hw / 2, 41, hw, 1);
+          text(g, this.hint, 160, 32, '#ffe890', 1, 'center');
+          g.restore();
+        }
+      }
       var sec = Math.floor(this.timeSteps / 60);
       text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
       // Signature power-up indicator: lives on the right column, just
@@ -3490,6 +3511,9 @@ window.SDD = window.SDD || {};
       this.attempts = 0;
       this.shakeT = 0;
       this.passT = 0;         // >0 = playing the pass animation
+      // Pick ONE teaching pose for this instance (Mark: don't interchange
+      // clipboard/lecture mid-question). Alternates by day so it varies.
+      this.teachAnim = (this.day % 2 === 0) ? 'clipboard' : 'teach';
       this.kbRow = 0;
       this.kbCol = 0;
       this.t = 0;
@@ -3682,11 +3706,13 @@ window.SDD = window.SDD || {};
       // the funny-teaching pose once they've missed it a couple times
       // (Mark: "during the question portion with the kids... if the
       // kids get the questions too wrong, swap off to [funny teaching]").
+      // One pose per instance (this.teachAnim), funny-teaching after a
+      // couple of wrong tries, and CELEBRATE (not dance) on a pass.
       var qAnim, qN, qDiv;
-      if (this.passT > 0)            { qAnim = 'dance';      qN = 16; qDiv = 5; }
-      else if (this.attempts >= 2)   { qAnim = 'funnyteach'; qN = 16; qDiv = 6; }
-      else if ((this.t % 360) < 180) { qAnim = 'clipboard';  qN = 16; qDiv = 7; }
-      else                           { qAnim = 'teach';      qN = 17; qDiv = 6; }
+      if (this.passT > 0)          { qAnim = 'celebrate';  qN = 9;  qDiv = 5; }
+      else if (this.attempts >= 2) { qAnim = 'funnyteach'; qN = 16; qDiv = 6; }
+      else if (this.teachAnim === 'clipboard') { qAnim = 'clipboard'; qN = 16; qDiv = 7; }
+      else                         { qAnim = 'teach';      qN = 17; qDiv = 6; }
       var qFrame = Math.floor(this.t / qDiv) % qN;
       drawDannyScaled(g, 'big', qAnim, 'south', qFrame, 34, 176, 1.1);
     }
