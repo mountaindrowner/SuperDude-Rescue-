@@ -5,7 +5,7 @@
 // to the network. New deploys bump CACHE_NAME to evict the old cache on
 // activation so updates roll out cleanly without leaving stale JS.
 
-const CACHE_NAME = 'sdd-shell-v28';
+const CACHE_NAME = 'sdd-shell-v29';
 
 // Precache list. Includes every game-script + the painted images that
 // scenes.js reaches for. Music files are NOT precached - they're big and
@@ -77,12 +77,18 @@ self.addEventListener('fetch', function (event) {
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function (resp) {
-        // Stash successful responses for next time. Stream-clone before
-        // returning since the response body can only be read once.
+  // Code files (HTML/CSS/JS/JSON/manifest) use network-first: always
+  // try the network so a fresh deploy shows up on the very next
+  // reload, fall back to cache only if offline. Large + rarely-changed
+  // assets (images, audio, fonts) stay cache-first so they don't
+  // re-download every visit.
+  var path = url.pathname;
+  var isCode = /\.(html?|js|mjs|css|json|webmanifest)$/i.test(path)
+            || path === '/' || path.endsWith('/');
+
+  if (isCode) {
+    event.respondWith(
+      fetch(event.request).then(function (resp) {
         if (resp && resp.status === 200 && resp.type === 'basic') {
           var copy = resp.clone();
           caches.open(CACHE_NAME).then(function (cache) {
@@ -91,8 +97,30 @@ self.addEventListener('fetch', function (event) {
         }
         return resp;
       }).catch(function () {
-        // Offline + uncached = serve the shell so navigation requests
-        // still land somewhere useful.
+        return caches.match(event.request).then(function (cached) {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
+        });
+      })
+    );
+    return;
+  }
+
+  // Cache-first for everything else.
+  event.respondWith(
+    caches.match(event.request).then(function (cached) {
+      if (cached) return cached;
+      return fetch(event.request).then(function (resp) {
+        if (resp && resp.status === 200 && resp.type === 'basic') {
+          var copy = resp.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(event.request, copy);
+          });
+        }
+        return resp;
+      }).catch(function () {
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html');
         }

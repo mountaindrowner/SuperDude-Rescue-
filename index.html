@@ -77,9 +77,17 @@
 <script>
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('service-worker.js').catch(function (err) {
-        console.warn('Service worker registration failed:', err);
-      });
+      // updateViaCache:'none' makes the browser bypass its HTTP cache when
+      // fetching service-worker.js, so every page load sees a fresh SW
+      // file. .update() additionally triggers an immediate update check.
+      // Together these guarantee a new deploy reaches users on the very
+      // next reload instead of waiting up to 24h for the SW cache to
+      // expire.
+      navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
+        .then(function (reg) { try { reg.update(); } catch (e) {} })
+        .catch(function (err) {
+          console.warn('Service worker registration failed:', err);
+        });
     });
   }
 </script>
