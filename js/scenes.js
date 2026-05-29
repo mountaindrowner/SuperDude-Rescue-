@@ -638,21 +638,28 @@ window.SDD = window.SDD || {};
     enter: function (d) { this.from = (d && d.from) || 'menu'; this.idx = 0; this.t = 0; },
     update: function () {
       this.t++;
-      listNav(this, 4);
+      listNav(this, 5);
       var o = SDD.save.data.options;
+      if (typeof o.musicVolume !== 'number') o.musicVolume = 0.5;
+      if (typeof o.sfxVolume !== 'number') o.sfxVolume = 0.85;
       if (this.idx === 0 && In.confirm()) {
         o.muted = !o.muted; A.setMuted(o.muted); SDD.save.save();
         if (!o.muted) A.sfx('confirm');
       }
       if (this.idx === 1) {
-        // Bigger 0.2 step so each press is a clearly audible change.
-        if (In.pressed('left'))  { o.volume = Math.max(0, Math.round((o.volume - 0.2) * 10) / 10); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
-        if (In.pressed('right')) { o.volume = Math.min(1, Math.round((o.volume + 0.2) * 10) / 10); A.setVolume(o.volume); A.sfx('select'); SDD.save.save(); }
+        // MUSIC volume - 0.1 steps.
+        if (In.pressed('left'))  { o.musicVolume = Math.max(0, Math.round((o.musicVolume - 0.1) * 10) / 10); A.setMusicVolume(o.musicVolume); A.sfx('select'); SDD.save.save(); }
+        if (In.pressed('right')) { o.musicVolume = Math.min(1, Math.round((o.musicVolume + 0.1) * 10) / 10); A.setMusicVolume(o.musicVolume); A.sfx('select'); SDD.save.save(); }
       }
-      if (this.idx === 2 && In.confirm()) {
+      if (this.idx === 2) {
+        // SFX volume - 0.1 steps; play a tick so the change is audible.
+        if (In.pressed('left'))  { o.sfxVolume = Math.max(0, Math.round((o.sfxVolume - 0.1) * 10) / 10); A.setSfxVolume(o.sfxVolume); A.sfx('select'); SDD.save.save(); }
+        if (In.pressed('right')) { o.sfxVolume = Math.min(1, Math.round((o.sfxVolume + 0.1) * 10) / 10); A.setSfxVolume(o.sfxVolume); A.sfx('select'); SDD.save.save(); }
+      }
+      if (this.idx === 3 && In.confirm()) {
         o.god = !o.god; SDD.save.save(); A.sfx('confirm');
       }
-      if (this.idx === 3 && In.confirm()) { A.sfx('confirm'); this.exitTo(); }
+      if (this.idx === 4 && In.confirm()) { A.sfx('confirm'); this.exitTo(); }
       if (In.pressed('pause')) { A.sfx('confirm'); this.exitTo(); }
     },
     exitTo: function () {
@@ -672,9 +679,15 @@ window.SDD = window.SDD || {};
       drawStarfield(g, this.t);
       tsh(g, 'OPTIONS', 160, 22, '#ffd23a', '#a8631a', 3, 'center');
       var o = SDD.save.data.options;
+      var mv = (typeof o.musicVolume === 'number') ? o.musicVolume : 0.5;
+      var sv = (typeof o.sfxVolume === 'number') ? o.sfxVolume : 0.85;
+      // The pixel font has no '['/'='/']' glyphs, so show a percentage
+      // (digits + '%' both exist) instead of an ASCII bar.
+      function bar(v) { return Math.round(v * 100) + '%'; }
       var rows = [
-        'SOUND:    ' + (o.muted ? 'OFF' : 'ON'),
-        'VOLUME:   ' + ('[' + repeat('=', Math.round(o.volume * 10)) + repeat('.', 10 - Math.round(o.volume * 10)) + ']'),
+        'SOUND:  ' + (o.muted ? 'OFF' : 'ON'),
+        'MUSIC:  ' + bar(mv),
+        'SFX:    ' + bar(sv),
         'GOD MODE: ' + (o.god ? 'ON' : 'OFF'),
         'BACK'
       ];

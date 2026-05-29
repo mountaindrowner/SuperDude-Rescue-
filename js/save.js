@@ -33,7 +33,11 @@ window.SDD = window.SDD || {};
       version: 3,
       difficulty: 'medium',
       slots: { easy: emptySlot(), medium: emptySlot(), hard: emptySlot() },
-      options: { muted: false, volume: 0.7, god: false }
+      // volume kept for back-compat; music + sfx are now independent
+      // buses (Mark wanted to lower music + raise sfx separately).
+      // Defaults: music a touch quiet, sfx a bit louder so the small
+      // footstep/enemy cues are audible over the track.
+      options: { muted: false, volume: 0.7, musicVolume: 0.5, sfxVolume: 0.85, god: false }
     };
   }
 

@@ -4,8 +4,12 @@ window.SDD = window.SDD || {};
 (function () {
   var SDD = window.SDD;
 
-  var ctx = null, master = null;
-  var muted = false, volume = 0.7;
+  var ctx = null, master = null, musicGain = null, sfxGain = null;
+  // `volume` kept as a legacy overall (unused by the new buses). Music
+  // + SFX are now independent (Mark). MP3 tracks read musicVolume
+  // directly via element.volume; chiptune routes through musicGain;
+  // all sfx route through sfxGain.
+  var muted = false, volume = 0.7, musicVolume = 0.5, sfxVolume = 0.85;
   var curSong = null, pendingSong = null;
   var schedTimer = null, songState = null;
 
@@ -26,8 +30,12 @@ window.SDD = window.SDD || {};
       var AC = window.AudioContext || window.webkitAudioContext;
       ctx = new AC();
       master = ctx.createGain();
-      master.gain.value = muted ? 0 : volume;
+      master.gain.value = muted ? 0 : 1;          // master is now the mute switch
       master.connect(ctx.destination);
+      // Independent SFX + chiptune-music buses under master so each can
+      // be mixed separately. (MP3 music is volumed via element.volume.)
+      musicGain = ctx.createGain(); musicGain.gain.value = musicVolume; musicGain.connect(master);
+      sfxGain   = ctx.createGain(); sfxGain.gain.value   = sfxVolume;   sfxGain.connect(master);
     } catch (e) { ctx = null; }
     if (ctx && pendingSong) { var s = pendingSong; pendingSong = null; startMusic(s); }
   }
@@ -36,7 +44,7 @@ window.SDD = window.SDD || {};
     if (ctx && ctx.state === 'suspended') ctx.resume();
   }
 
-  function tone(freq, start, dur, type, vol, freqEnd) {
+  function tone(freq, start, dur, type, vol, freqEnd, bus) {
     if (!ctx) return;
     var o = ctx.createOscillator();
     var g = ctx.createGain();
@@ -46,11 +54,11 @@ window.SDD = window.SDD || {};
     g.gain.setValueAtTime(0.0001, start);
     g.gain.exponentialRampToValueAtTime(vol, start + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-    o.connect(g); g.connect(master);
+    o.connect(g); g.connect(bus || sfxGain);
     o.start(start); o.stop(start + dur + 0.03);
   }
 
-  function noise(start, dur, vol) {
+  function noise(start, dur, vol, bus) {
     if (!ctx) return;
     var n = Math.max(1, Math.floor(ctx.sampleRate * dur));
     var buf = ctx.createBuffer(1, n, ctx.sampleRate);
@@ -58,7 +66,7 @@ window.SDD = window.SDD || {};
     for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
     var s = ctx.createBufferSource(); s.buffer = buf;
     var g = ctx.createGain(); g.gain.value = vol;
-    s.connect(g); g.connect(master);
+    s.connect(g); g.connect(bus || sfxGain);
     s.start(start); s.stop(start + dur);
   }
 
@@ -148,14 +156,14 @@ window.SDD = window.SDD || {};
     while (s.melTime < ahead) {
       var m = s.song.mel[s.melIdx];
       var md = m[1] * s.stepDur;
-      if (m[0] && NOTES[m[0]]) tone(NOTES[m[0]], s.melTime, md * 0.92, s.song.melType, 0.13);
+      if (m[0] && NOTES[m[0]]) tone(NOTES[m[0]], s.melTime, md * 0.92, s.song.melType, 0.13, null, musicGain);
       s.melTime += md;
       s.melIdx = (s.melIdx + 1) % s.song.mel.length;
     }
     while (s.basTime < ahead) {
       var b = s.song.bass[s.basIdx];
       var bd = b[1] * s.stepDur;
-      if (b[0] && NOTES[b[0]]) tone(NOTES[b[0]], s.basTime, bd * 0.9, 'triangle', 0.17);
+      if (b[0] && NOTES[b[0]]) tone(NOTES[b[0]], s.basTime, bd * 0.9, 'triangle', 0.17, null, musicGain);
       s.basTime += bd;
       s.basIdx = (s.basIdx + 1) % s.song.bass.length;
     }
@@ -185,7 +193,7 @@ window.SDD = window.SDD || {};
     var a = new Audio();
     a.preload = 'auto';
     a.loop = loop !== false;
-    a.volume = muted ? 0 : volume * mixFor(id);
+    a.volume = muted ? 0 : musicVolume * mixFor(id);
     a.src = path;
     // Explicit load() nudges the browser to actually start downloading
     // - 'auto' is a HINT and many browsers defer audio until first
@@ -203,18 +211,27 @@ window.SDD = window.SDD || {};
     stopMusic();
     try {
       tr.el.currentTime = 0;
-      tr.el.volume = muted ? 0 : volume * mixFor(id);
+      tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
       var p = tr.el.play();
       if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
       currentFileTrack = tr;
       return true;
     } catch (e) { return false; }
   }
-  function stopFileTrack() {
-    if (currentFileTrack) {
-      try { currentFileTrack.el.pause(); } catch (e) {}
-      currentFileTrack = null;
-    }
+  function stopFileTrack(immediate) {
+    if (!currentFileTrack) return;
+    var el = currentFileTrack.el;
+    currentFileTrack = null;
+    if (immediate) { try { el.pause(); } catch (e) {} return; }
+    // Fade the element volume to 0 over ~120ms before pausing - a hard
+    // pause mid-waveform clicks/pops (Mark heard a pop on level finish
+    // when the time-machine part is grabbed and the music stops).
+    var v0 = el.volume, steps = 6, i = 0;
+    var iv = setInterval(function () {
+      i++;
+      try { el.volume = Math.max(0, v0 * (1 - i / steps)); } catch (e) {}
+      if (i >= steps) { clearInterval(iv); try { el.pause(); } catch (e) {} }
+    }, 20);
   }
   function loadAllFileTracks() {
     // Framing
@@ -286,14 +303,15 @@ window.SDD = window.SDD || {};
   }
 
   function applyGain() {
-    if (master) master.gain.value = muted ? 0 : volume;
-    // MP3 tracks: HTMLAudioElement.volume direct. (WebAudio routing
-    // attempt was reverted because createMediaElementSource silently
-    // broke playback on some browsers - notably iOS Safari before
-    // 14.5. iOS volume slider is a known limitation; revisit with a
-    // platform-gated approach later.)
+    if (master)    master.gain.value    = muted ? 0 : 1;     // master = mute switch
+    if (musicGain) musicGain.gain.value = musicVolume;        // chiptune bus
+    if (sfxGain)   sfxGain.gain.value   = sfxVolume;          // sfx bus
+    // MP3 tracks: HTMLAudioElement.volume direct, scaled by musicVolume.
+    // (WebAudio routing was reverted because createMediaElementSource
+    // silently broke playback on some browsers - notably iOS Safari
+    // before 14.5.)
     for (var id in FILE_TRACKS) {
-      try { FILE_TRACKS[id].el.volume = muted ? 0 : volume * mixFor(id); } catch (e) {}
+      try { FILE_TRACKS[id].el.volume = muted ? 0 : musicVolume * mixFor(id); } catch (e) {}
     }
   }
 
@@ -305,12 +323,18 @@ window.SDD = window.SDD || {};
     stopMusic: stopMusic,
     setMuted: function (m) { muted = !!m; applyGain(); },
     setVolume: function (v) { volume = Math.max(0, Math.min(1, v)); applyGain(); },
+    setMusicVolume: function (v) { musicVolume = Math.max(0, Math.min(1, v)); applyGain(); },
+    setSfxVolume:   function (v) { sfxVolume   = Math.max(0, Math.min(1, v)); applyGain(); },
     isMuted: function () { return muted; },
     getVolume: function () { return volume; },
+    getMusicVolume: function () { return musicVolume; },
+    getSfxVolume: function () { return sfxVolume; },
     syncFromSave: function () {
       var o = SDD.save.data.options;
       muted = !!o.muted;
       volume = (typeof o.volume === 'number') ? o.volume : 0.7;
+      musicVolume = (typeof o.musicVolume === 'number') ? o.musicVolume : 0.5;
+      sfxVolume   = (typeof o.sfxVolume === 'number') ? o.sfxVolume : 0.85;
       applyGain();
     },
     // Debug accessor: returns a snapshot of every file track's
