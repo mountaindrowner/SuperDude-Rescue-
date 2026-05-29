@@ -879,8 +879,9 @@ window.SDD = window.SDD || {};
           var ocPhase = (ovT + ocI * 18) % 60;
           var ocAng = ocI * 1.57 + ocI * 0.4;
           var ocR = 9 + (ocI % 2) * 3;
-          var ocX = Math.round(oc.x + Math.cos(ocAng) * ocR);
-          var ocY = Math.round(oc.dy + Math.sin(ocAng) * ocR * 0.5) + 5;
+          // Nudged up 20 + left 5 to sit on the painted water (Mark).
+          var ocX = Math.round(oc.x - 5 + Math.cos(ocAng) * ocR);
+          var ocY = Math.round(oc.dy + Math.sin(ocAng) * ocR * 0.5) - 15;
           var ocA = Math.sin(ocPhase / 60 * Math.PI);
           if (ocA > 0) {
             g.fillStyle = 'rgba(180,240,255,' + (ocA * 0.85).toFixed(2) + ')';
@@ -897,7 +898,7 @@ window.SDD = window.SDD || {};
         for (var owI = 0; owI < 2; owI++) {
           var owPhase = ((ovT + owI * 60) % 120) / 120;       // 0..1
           var owX = Math.round(oc.x + 14 - owPhase * 30);
-          var owY = oc.dy + 7 + owI * 2;
+          var owY = oc.dy - 13 + owI * 2;        // raised 20 px onto the water
           var owA = (owPhase < 0.15) ? owPhase / 0.15
                   : (owPhase > 0.85) ? (1 - owPhase) / 0.15
                   : 1;
@@ -932,6 +933,60 @@ window.SDD = window.SDD || {};
           g.fillRect(fX - 1, fY, 3, 1);
           // Tail flick on the trailing edge
           g.fillRect(faceR ? fX - 2 : fX + 2, fY, 1, 1);
+        }
+        // 6th tile - DESERT (Day 4-1, STAGES[5]): a few little bugs
+        // scuttling short hops near the island base.
+        var ds2 = STAGES[5];
+        for (var bgI = 0; bgI < 3; bgI++) {
+          var bgCycle = (ovT + bgI * 40) % 120;
+          var bgProg = bgCycle / 120;                         // 0..1 crawl across
+          var bgDir = (bgI % 2) ? 1 : -1;
+          var bgX = Math.round(ds2.x + bgDir * (-8 + bgProg * 16));
+          var bgY = ds2.dy + 8 + bgI * 2;
+          // little scuttle bob every few frames
+          var bgBob = (Math.floor(ovT / 6) % 2) ? 0 : 1;
+          g.fillStyle = '#3a2410';
+          g.fillRect(bgX, bgY - bgBob, 2, 1);
+          g.fillRect(bgX + (bgDir > 0 ? -1 : 2), bgY - bgBob, 1, 1); // head
+        }
+        // 7th tile - NIGHT SKY (Day 4-2, STAGES[6]): twinkling stars +
+        // a soft moon shimmer over the island.
+        var ns = STAGES[6];
+        for (var nsI = 0; nsI < 6; nsI++) {
+          var nsAng = nsI * 1.05 + 0.6;
+          var nsR = 8 + (nsI % 3) * 3;
+          var nsX = Math.round(ns.x + Math.cos(nsAng) * nsR);
+          var nsY = Math.round(ns.dy + Math.sin(nsAng) * nsR * 0.7) - 4;
+          var nsA = 0.4 + 0.5 * Math.sin(ovT * 0.08 + nsI * 1.9);
+          if (nsA > 0.15) {
+            g.fillStyle = 'rgba(200,220,255,' + nsA.toFixed(2) + ')';
+            g.fillRect(nsX, nsY, 1, 1);
+            if (nsA > 0.8) { g.fillStyle = 'rgba(255,255,255,' + ((nsA - 0.8) * 3).toFixed(2) + ')';
+              g.fillRect(nsX, nsY, 1, 1); g.fillRect(nsX, nsY - 1, 1, 1); g.fillRect(nsX - 1, nsY, 1, 1); }
+          }
+        }
+        // 8th tile - CLOUDS (Day 5-1, STAGES[7]): bird chevrons drifting
+        // across + a couple of slowly gliding cloud puffs.
+        var cl = STAGES[7];
+        for (var clB = 0; clB < 3; clB++) {
+          var clPh = ((ovT + clB * 45) % 150) / 150;
+          var clBX = Math.round(cl.x - 13 + clPh * 26);
+          var clBY = cl.dy - 8 + clB * 3 + Math.round(Math.sin(ovT * 0.05 + clB) * 1.5);
+          var clBA = (clPh < 0.12) ? clPh / 0.12 : (clPh > 0.88) ? (1 - clPh) / 0.12 : 1;
+          g.strokeStyle = 'rgba(60,80,110,' + (clBA * 0.7).toFixed(2) + ')';
+          g.lineWidth = 1;
+          g.beginPath();
+          g.moveTo(clBX - 2, clBY + 1); g.lineTo(clBX, clBY); g.lineTo(clBX + 2, clBY + 1);
+          g.stroke();
+        }
+        for (var clC = 0; clC < 2; clC++) {
+          var clcPh = ((ovT + clC * 90) % 180) / 180;
+          var clcX = Math.round(cl.x - 12 + clcPh * 24);
+          var clcY = cl.dy + 5 + clC * 4;
+          var clcA = (clcPh < 0.12) ? clcPh / 0.12 : (clcPh > 0.88) ? (1 - clcPh) / 0.12 : 1;
+          g.fillStyle = 'rgba(255,255,255,' + (clcA * 0.6).toFixed(2) + ')';
+          g.fillRect(clcX, clcY, 5, 1);
+          g.fillRect(clcX + 1, clcY - 1, 3, 1);
         }
         // 12th tile - EDEN GARDEN (Day 7, STAGES[11]): 6 warm gold
         // twinkles sprinkled around the garden island.
