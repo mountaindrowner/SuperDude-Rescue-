@@ -2173,10 +2173,12 @@ window.SDD = window.SDD || {};
     },
     update: function () {
       this.t++;
-      // 30f slide-in + 120f hold + 30f slide-out, then jump into level.
-      // Hold bumped from 60 -> 120 frames so the comedian quip has time
-      // to land before the card swipes off. Confirm still skips.
-      if (this.t >= 180 || In.confirm()) {
+      // 30f slide-in + 180f hold + 30f slide-out, then jump into level.
+      // Hold bumped to 180 frames (~3 sec) so the comedian quip has
+      // plenty of time to land before the card swipes off (Mark:
+      // "leave the title card up for one more second"). Confirm still
+      // skips instantly.
+      if (this.t >= 240 || In.confirm()) {
         go('level', { day: this.day, stage: this.stage });
       }
     },
@@ -2188,15 +2190,15 @@ window.SDD = window.SDD || {};
       drawStarfield(g, this.t * 2);
 
       // Card slide animation: x offset goes from +320 (off-screen right)
-      // to 0 (centered) over t=0..30, holds at 0 for 30-150, then to -320
-      // for 150-180.
+      // to 0 (centered) over t=0..30, holds at 0 for 30-210, then to -320
+      // for 210-240.
       var offX = 0;
       if (this.t < 30) {
         // ease-out cubic from 320 to 0
         var u = this.t / 30;
         offX = Math.round(320 * Math.pow(1 - u, 3));
-      } else if (this.t > 150) {
-        var u2 = (this.t - 150) / 30;
+      } else if (this.t > 210) {
+        var u2 = (this.t - 210) / 30;
         offX = -Math.round(320 * Math.pow(u2, 3));
       }
 
@@ -2234,7 +2236,7 @@ window.SDD = window.SDD || {};
     coolingwater: 'WATER', leafshot: 'LEAF', sunshield: 'SHIELD',
     starjump: 'STAR', airbubble: 'BUBBLE',
     callinghorn: 'HORN', friendlybugs: 'FRIENDS',
-    pollentrail: 'POLLEN', beetleride: 'BEETLE',
+    pollentrail: 'POLLEN',
     doveblessing: 'DOVE'
   };
   // Pass 12 (Mark): each signature shows a 4-second hint banner on
@@ -2252,7 +2254,6 @@ window.SDD = window.SDD || {};
     callinghorn:     { name: 'CALLING HORN!', tip: 'ALL ENEMIES FREEZE WHERE THEY STAND!' },
     friendlybugs:    { name: 'FRIENDLY BUGS!',tip: 'BEES AND BEETLES WALK RIGHT PAST YOU!' },
     pollentrail:     { name: 'POLLEN TRAIL!', tip: 'POWER CORES FLY TOWARDS YOU!' },
-    beetleride:      { name: 'BEETLE RIDE!',  tip: 'BUMP INTO ENEMIES TO KNOCK THEM OUT!' },
     doveblessing:    { name: 'DOVE BLESSING!',tip: 'POWER CORES RAIN DOWN FROM THE SKY!' }
   };
 
@@ -2665,14 +2666,6 @@ window.SDD = window.SDD || {};
           // day's enemy roster) phase through harmlessly.
           if (pl.signatureKind === 'friendlybugs' &&
               (e instanceof SDD.ent.Wisp || e instanceof SDD.ent.Walker)) continue;
-          // Beetle-ride signature (Day 6-2): walking enemies get bumped
-          // by the mount on contact, no need to land on top of them.
-          if (pl.signatureKind === 'beetleride' && e instanceof SDD.ent.Walker && e.stompable) {
-            e.stomped();
-            this.score += 120; A.sfx('stomp');
-            this.burst(e.x + e.w / 2, e.y + e.h / 2, '#90e060', 6);
-            continue;
-          }
           var stomp = e.stompable && pl.vy > 1 && (pl.y + pl.h - e.y) < 13;
           if (stomp) {
             e.stomped();
@@ -2976,8 +2969,11 @@ window.SDD = window.SDD || {};
     },
 
     drawHUD: function (g) {
-      // taller bar so we can fit a theme-name subtitle without crowding the play area
-      g.fillStyle = 'rgba(8,8,20,0.7)'; g.fillRect(0, 0, 320, 22);
+      // No background strip - the HUD text floats directly over the
+      // level art (Mark: "transparent border banner... obscures the
+      // screen, makes the screen feel smaller"). All HUD glyphs use
+      // either bright yellow or coloured text so they read against
+      // any backdrop without needing a dark band underneath.
       // Lives counter pulses yellow on the first ~16 frames of a 1up
       // award, then back to white. A small "+1" floats up from the
       // number and fades over the full 70-frame pulse.

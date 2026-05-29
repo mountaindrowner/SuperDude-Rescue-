@@ -77,7 +77,7 @@ SDD.levels['2-1'] = {
     { type: "wisp", tx: 66, ty: 8 },
     { type: "wisp", tx: 72, ty: 6 },
     { type: "signature", tx: 170, ty: 3, kind: "sunburst" },
-    { type: "signature", tx: 31, ty: 6, kind: "sunburst" },
+    { type: "signature", tx: 31, ty: 6, kind: "cloudglide" },
     { type: "timepart", tx: 230, ty: 6 },
     { type: "checkpoint", tx: 141, ty: 3 }
   ],

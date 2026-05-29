@@ -120,7 +120,6 @@ window.SDD = window.SDD || {};
       callinghorn:    12 * 60,
       friendlybugs:   16 * 60,
       pollentrail:    16 * 60,
-      beetleride:     12 * 60,
       doveblessing:   20 * 60
     };
     this.signatureKind = kind;
@@ -634,7 +633,7 @@ window.SDD = window.SDD || {};
     coolingwater: '#6ad4ff', leafshot: '#90e060', sunshield: '#ffe890',
     starjump: '#ffe890', airbubble: '#a8e6ff',
     callinghorn: '#ffce46', friendlybugs: '#e8a838',
-    pollentrail: '#fff2a6', beetleride: '#3a8060',
+    pollentrail: '#fff2a6',
     doveblessing: '#ffffff'
   };
   function drawSigIcon(ctx, kind, cx, top, col) {
@@ -703,13 +702,6 @@ window.SDD = window.SDD || {};
       ctx.fillRect(cx + 1, y + 5, 1, 1); ctx.fillRect(cx + 3, y + 3, 1, 1);
       ctx.fillRect(cx + 2, y + 7, 1, 1); ctx.fillRect(cx - 2, y + 6, 1, 1);
       ctx.fillStyle = '#fff'; ctx.fillRect(cx, y + 4, 1, 1);
-    } else if (kind === 'beetleride') {
-      // Beetle silhouette with carapace ridge.
-      ctx.fillStyle = '#1a3a22';
-      ctx.fillRect(cx - 3, y + 3, 7, 4); ctx.fillRect(cx - 2, y + 7, 5, 1);
-      ctx.fillStyle = '#3a8060';
-      ctx.fillRect(cx - 1, y + 3, 1, 4); ctx.fillRect(cx + 1, y + 3, 1, 4);
-      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, y + 4, 1, 1);
     } else if (kind === 'doveblessing') {
       ctx.fillStyle = '#fff';
       ctx.fillRect(cx - 3, y + 4, 6, 2); ctx.fillRect(cx - 4, y + 5, 2, 1);
@@ -852,18 +844,6 @@ window.SDD = window.SDD || {};
         ctx.fillRect(ptx, pty, 1, 1);
       }
       ctx.globalAlpha = 1;
-    } else if (kind === 'beetleride') {
-      // Dust kicked up from beetle's gait.
-      ctx.fillStyle = '#a07840';
-      for (var br = 0; br < 3; br++) {
-        var brPhase = (t + br * 10) % 26;
-        var brx = cx + Math.round(Math.sin(brPhase * 0.3) * 6) + (br - 1) * 3;
-        var bry = cy + 8 + Math.round(brPhase * 0.1);
-        ctx.globalAlpha = (1 - brPhase / 26) * 0.6;
-        ctx.fillRect(brx, bry, 1, 1);
-        ctx.fillRect(brx + 1, bry, 1, 1);
-      }
-      ctx.globalAlpha = 1;
     } else if (kind === 'doveblessing') {
       // White feathers drifting down with side-to-side sway.
       ctx.fillStyle = '#fff';
@@ -904,24 +884,6 @@ window.SDD = window.SDD || {};
       ctx.fillStyle = '#fff';
       ctx.fillRect(abx - abR + 4, aby - abR / 2, 2, 2);
       ctx.restore();
-    }
-    // Beetle-ride signature (Day 6-2): a goliath beetle silhouette
-    // under Danny's feet so the mount reads visually. Drawn here so
-    // the player sprite renders on top.
-    if (this.signatureKind === 'beetleride' && this.signatureT > 0) {
-      var bx = Math.round(this.x + this.w / 2 - cam.x);
-      var by = Math.round(this.y + this.h - cam.y) - 2;
-      ctx.fillStyle = '#1a3a22';                       // dark elytra
-      ctx.fillRect(bx - 8, by - 1, 16, 4);             // body
-      ctx.fillRect(bx - 6, by + 3, 12, 1);             // underside
-      ctx.fillStyle = '#3a8060';                       // green ridge
-      ctx.fillRect(bx - 1, by - 1, 2, 4);              // centre seam
-      ctx.fillStyle = '#1a1208';                       // legs (6)
-      ctx.fillRect(bx - 7, by + 4, 1, 2); ctx.fillRect(bx - 3, by + 4, 1, 2);
-      ctx.fillRect(bx + 1, by + 4, 1, 2); ctx.fillRect(bx + 4, by + 4, 1, 2);
-      ctx.fillRect(bx - 5, by + 4, 1, 2); ctx.fillRect(bx + 2, by + 4, 1, 2);
-      ctx.fillStyle = '#c8ee7a';                       // bright highlight
-      ctx.fillRect(bx - 7, by, 1, 1); ctx.fillRect(bx + 6, by, 1, 1);
     }
     var size = this.big ? 'big' : 'small';
     // Big->small shrink: flicker between sizes for ~24 frames so the
@@ -1635,7 +1597,10 @@ window.SDD = window.SDD || {};
   function LeafSpawner(x, y, period, fallSpeed, swayAmp) {
     this.x = x; this.y = y; this.w = 4; this.h = 4;
     this.period = period || 70;
-    this.fallSpeed = fallSpeed || 1.0;
+    // Mark: "slow the descent of the falling leaves by 25%". Whatever
+    // fallSpeed the level data passes gets multiplied by 0.75 here so
+    // we don't have to rewrite every leafstream entry across levels.
+    this.fallSpeed = (fallSpeed || 1.0) * 0.75;
     this.swayAmp = (swayAmp != null) ? swayAmp : 2;
     this.t = 0;
     this.invisible = true;
@@ -1664,9 +1629,10 @@ window.SDD = window.SDD || {};
   }
   Core.prototype.update = function (level) {
     this.t += 0.1;
-    // Pollen-trail signature (Day 6-2): cores within a 48-px radius
+    // Pollen-trail signature (Day 6-2): cores within a 96-px radius
     // magnet toward the player at a gentle pull so they read as
-    // "drawn in" rather than teleporting.
+    // "drawn in" rather than teleporting. Radius doubled from 48 per
+    // Mark: "pollen trail ability has to be doubled, like in space".
     if (level && level.player &&
         level.player.signatureKind === 'pollentrail' &&
         !this.remove && !level.player.dead) {
@@ -1675,7 +1641,7 @@ window.SDD = window.SDD || {};
       var cx = this.x + this.w / 2, cy = this.y + this.h / 2;
       var dx = px - cx, dy = py - cy;
       var d2 = dx * dx + dy * dy;
-      if (d2 < 48 * 48) {
+      if (d2 < 96 * 96) {
         var d = Math.sqrt(d2) || 1;
         var pull = 1.4;
         this.x += (dx / d) * pull;

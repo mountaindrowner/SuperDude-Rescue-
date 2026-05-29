@@ -606,7 +606,13 @@ window.SDD = window.SDD || {};
   // prowl crouch. Mark, batch B: "way more definition and body
   // silhouette - it's a lion."
   function paintWalker_lion(g, frame) {
-    // 20x18 canvas. Big side-view lion with prowling gait: front +
+    // 40x36 canvas, figure drawn at 2x via g.scale (Mark: "the lions
+    // are still too small, increase by double"). All the original
+    // px() coordinates below stay on a 20x18 grid - the surrounding
+    // scale(2,2) wrap doubles every fillRect, so the lion fills the
+    // larger canvas without touching every coordinate by hand.
+    g.save(); g.scale(2, 2);
+    // Big side-view lion with prowling gait: front +
     // back legs swing forward/back in alternation so the walk reads
     // dramatically even at game scale.
     //
@@ -686,6 +692,7 @@ window.SDD = window.SDD || {};
     lionLeg(7,  f === 1);                                 // back-near
     lionLeg(11, f === 0);                                 // front-near
     lionLeg(14, f === 1);                                 // front-far
+    g.restore();
   }
 
   // Goliath beetle walker (Day 6-2 bug world). Dark chitin elytra
@@ -1826,6 +1833,12 @@ window.SDD = window.SDD || {};
   }
 
   function paintAnimal_lion(g) {
+    // Drawn at 2x via scale wrap so the Eden lion reads twice as
+    // large (Mark: "lions are still too small"). All the px() calls
+    // stay on the original 20x31 grid; the scale(2,2) doubles every
+    // fillRect, and the npc_lion sprite canvas below is 40x62 to
+    // match.
+    g.save(); g.scale(2, 2);
     var mane = '#a8642a', body = '#d8a062', dark = '#6a4020', face = '#e8c890';
     // Body - wider, lower than deer (Eden lion is peaceful + lazy)
     px(g, 4, 18, 12, 8, body);
@@ -1861,6 +1874,7 @@ window.SDD = window.SDD || {};
     px(g, 2, 22, 2, 1, body);
     px(g, 1, 23, 2, 1, body);
     px(g, 0, 24, 2, 2, mane);                   // tail tuft
+    g.restore();
   }
 
   function paintAnimal_dove(g) {
@@ -2610,7 +2624,7 @@ window.SDD = window.SDD || {};
       // at game scale (Mark: "make them bigger"). Beetle gets 18x14
       // so its six legs can splay out beyond the elytra.
       var WALK_SIZES = {
-        lion:      { w: 20, h: 18 },
+        lion:      { w: 40, h: 36 },           // 2x for the canopy walker lion
         porcupine: { w: 20, h: 18 },
         beetle:    { w: 22, h: 16 }
       };
@@ -2757,7 +2771,7 @@ window.SDD = window.SDD || {};
     sprites['npc_adam'] = spriteO(20, 31, paintNPC);
     sprites['npc_eve']  = spriteO(20, 31, paintNPC_eve);
     sprites['npc_deer'] = spriteO(20, 31, paintAnimal_deer);
-    sprites['npc_lion'] = spriteO(20, 31, paintAnimal_lion);
+    sprites['npc_lion'] = spriteO(40, 62, paintAnimal_lion);
     sprites['npc_dove'] = spriteO(20, 31, paintAnimal_dove);
     sprites['tile_water'] = spritePlain(16, 16, paintWater);
     sprites['tile_water_top'] = spritePlain(16, 16, paintWaterTop);

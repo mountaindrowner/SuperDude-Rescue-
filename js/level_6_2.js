@@ -76,7 +76,6 @@ SDD.levels['6-2'] = {
     { type: "walker", tx: 268, ty: 10, variant: "beetle" },
     { type: "signature", tx: 41, ty: 5, kind: "friendlybugs" },
     { type: "signature", tx: 145, ty: 1, kind: "pollentrail" },
-    { type: "signature", tx: 210, ty: 6, kind: "beetleride" },
     { type: "timepart", tx: 270, ty: 7 },
     { type: "leafstream", tx: 86, ty: 1, period: 70, fallSpeed: 1, swayAmp: 2 },
     { type: "leafstream", tx: 87, ty: 0, period: 70, fallSpeed: 1, swayAmp: 2 },
@@ -125,6 +124,6 @@ SDD.levels['6-2'] = {
     { tx: 99, ty: 6, tx1: 103, ty1: 6, spd: 0.018, phase: 0 },
     { tx: 114, ty: 7, tx1: 119, ty1: 1, spd: 0.018, phase: 0 }
   ],
-  name: "BUG WORLD",
+  name: "CREEPING THINGS",
   theme: "bugscale"
 };
