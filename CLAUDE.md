@@ -149,6 +149,29 @@ localStorage):
 The **in-game level editor** is reached via main menu →
 "LEVEL EDITOR" (only shown when `js/editor.js` is loaded).
 
+## Dev-kit removal list (strip before public release)
+
+Mark wants these three dev-only things kept for now but **removed when
+the game is fully shipped to the public**:
+
+1. **God mode** — toggle in OPTIONS scene (`scenes.js`, options `idx===2`),
+   the `GOD` HUD badge (`scenes.js` ~`text(g,'GOD',...)`), the
+   "PRESS G…" hint line, and all `SDD.save.data.options.god` branches in
+   `entities.js` / `scenes.js`.
+2. **Level editor** — `js/editor.js` + its `<script>` tag in `index.html`
+   + the menu item (auto-hidden when the script is absent, so removing the
+   script tag is enough).
+3. **On-screen version number** — `SDD.VERSION` display on the menu
+   (`scenes.js` menu render) + the `SDD.VERSION` constant in `js/main.js`.
+
+### Build version (front-page) + ship process
+
+- `SDD.VERSION` lives at the top of `js/main.js` and renders bottom-right
+  on the menu so we can tell at a glance which build is live.
+- **On every ship/push, bump `SDD.VERSION` (`v0.NN`) in lockstep with the
+  service-worker `CACHE_NAME` (`sdd-shell-vNN`)** so the displayed version
+  and the cache generation always match. Current: `v0.38` / `sdd-shell-v38`.
+
 ## File layout
 
 ```

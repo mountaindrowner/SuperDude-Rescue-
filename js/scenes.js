@@ -480,6 +480,9 @@ window.SDD = window.SDD || {};
       // Bumped down to y=164 and the menu items pushed up to y=104 so
       // they don't collide with the tagline.
       if (this.t % 50 < 34) text(g, 'CROSSROADS FOUNDATION ADVENTURE', 160, 164, '#aab0d4', 1, 'center');
+      // Build version (DEV-KIT) - bottom-right, subtle. Lets us tell at
+      // a glance which build is live. Remove before public release.
+      text(g, SDD.VERSION || '', 316, 173, '#6d7398', 1, 'right');
     }
   };
 
