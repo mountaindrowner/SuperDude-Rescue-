@@ -3138,6 +3138,14 @@ window.SDD = window.SDD || {};
       var oldH = size === 'big' ? 38 : 24;
       if (pixelLab.ready && pixelLab.failed === 0 &&
           pixDraw(g, size, anim, dir, idx, x + oldW / 2, y + oldH)) return;
+      // While the PNG frames are still downloading (not yet ready),
+      // draw NOTHING rather than the legacy hand-coded procedural
+      // sprite - Mark: "sometimes when I boot up the game it boots up
+      // the old animation from our very first iteration... let's make
+      // sure that one doesn't show up anymore." The procedural sprite
+      // is kept only as a genuine-failure safety net (PNGs 404 /
+      // offline), gated on pixelLab.ready below.
+      if (!pixelLab.ready) return;
       var legacy = anim === 'celebrate' ? 'victory' : anim;
       var s = sprites['danny_' + size + '_' + legacy + '_' + (dir === 'east' ? 'r' : 'l')];
       if (s) g.drawImage(s, x, y);

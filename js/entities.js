@@ -1090,7 +1090,14 @@ window.SDD = window.SDD || {};
       }
       if (ok) return;
     }
-    // Fallback: code-drawn Danny (used during loading and if the PNGs are missing)
+    // Fallback: code-drawn Danny. Only used as a genuine-failure
+    // safety net (PNGs 404 / offline) once pixelLab has finished
+    // settling. While frames are still downloading we skip drawing the
+    // legacy procedural sprite so the old first-iteration look never
+    // flashes on boot (Mark). The player is briefly invisible for that
+    // sub-second load window, which is preferable to the old sprite.
+    var pl = SDD.sprites.pixelLab;
+    if (pl && !pl.ready) return;
     var fr = this.dead ? 'die' : this.frame;
     var dir = this.facing > 0 ? 'r' : 'l';
     drawBC(ctx, 'danny_' + size + '_' + fr + '_' + dir, this, cam);
