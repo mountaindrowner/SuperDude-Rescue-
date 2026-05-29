@@ -230,9 +230,18 @@ window.SDD = window.SDD || {};
     var id = ids[Math.floor(Math.random() * ids.length)];
     var tr = FILE_TRACKS[id]; if (!tr) return false;
     stopMusic();
+    wireTrack(tr);
     try {
       tr.el.currentTime = 0;
-      tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
+      if (tr.wired) {
+        tr.el.volume = 1;                                  // graph (musicGain) controls level
+        if (tr.gain) {
+          try { tr.gain.gain.cancelScheduledValues(ctx.currentTime); } catch (e) {}
+          tr.gain.gain.value = mixFor(id);                 // reset after any fade-out
+        }
+      } else {
+        tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
+      }
       var p = tr.el.play();
       if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
       currentFileTrack = tr;
@@ -241,18 +250,28 @@ window.SDD = window.SDD || {};
   }
   function stopFileTrack(immediate) {
     if (!currentFileTrack) return;
-    var el = currentFileTrack.el;
+    var tr = currentFileTrack;
     currentFileTrack = null;
+    var el = tr.el;
     if (immediate) { try { el.pause(); } catch (e) {} return; }
-    // Fade the element volume to 0 over ~120ms before pausing - a hard
-    // pause mid-waveform clicks/pops (Mark heard a pop on level finish
-    // when the time-machine part is grabbed and the music stops).
-    var v0 = el.volume, steps = 6, i = 0;
-    var iv = setInterval(function () {
-      i++;
-      try { el.volume = Math.max(0, v0 * (1 - i / steps)); } catch (e) {}
-      if (i >= steps) { clearInterval(iv); try { el.pause(); } catch (e) {} }
-    }, 20);
+    if (tr.wired && tr.gain && ctx) {
+      // De-click via a WebAudio gain ramp, then pause (works on iOS).
+      try {
+        var now = ctx.currentTime;
+        tr.gain.gain.cancelScheduledValues(now);
+        tr.gain.gain.setValueAtTime(tr.gain.gain.value, now);
+        tr.gain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+      } catch (e) {}
+      setTimeout(function () { try { el.pause(); tr.gain.gain.value = mixFor(tr.id); } catch (e) {} }, 150);
+    } else {
+      // Fallback (unwired / legacy): fade element.volume, then pause.
+      var v0 = el.volume, steps = 6, i = 0;
+      var iv = setInterval(function () {
+        i++;
+        try { el.volume = Math.max(0, v0 * (1 - i / steps)); } catch (e) {}
+        if (i >= steps) { clearInterval(iv); try { el.pause(); } catch (e) {} }
+      }, 20);
+    }
   }
   function loadAllFileTracks() {
     // Framing

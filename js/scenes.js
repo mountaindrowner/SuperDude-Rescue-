@@ -531,7 +531,7 @@ window.SDD = window.SDD || {};
       // 5 items: easy, medium, hard, ERASE A SAVE (only if any slot has progress), BACK
       var items = this.buildItems();
       listNav(this, items.length);
-      if (In.pressed('pause')) { A.sfx('confirm'); go('menu'); return; }
+      if (In.back()) { A.sfx('confirm'); go('menu'); return; }
       if (In.confirm()) {
         var it = items[this.idx];
         A.sfx('confirm');
@@ -709,7 +709,7 @@ window.SDD = window.SDD || {};
     enter: function (d) { this.from = (d && d.from) || 'menu'; this.t = 0; },
     update: function () {
       this.t++;
-      if (In.confirm() || In.pressed('pause')) { A.sfx('confirm'); go(this.from); }
+      if (In.confirm() || In.back()) { A.sfx('confirm'); go(this.from); }
     },
     render: function (g) {
       g.fillStyle = '#142036'; g.fillRect(0, 0, 320, 180);
