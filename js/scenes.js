@@ -1482,8 +1482,46 @@ window.SDD = window.SDD || {};
   // twisters here; the actual Twister enemy entity lives in
   // entities.js + level_5_1.js.
   function drawSky_bird_sky(g, camx, camy, prog, t) {
+    // Mark Pass 5-1 overhaul: "give the jungle treatment to the day
+    // 5-1 background, it's just so stale." More layers, more
+    // motion, a sun, beefier birds + tornadoes.
     vGradient(g, '#5fa8d8', '#a8d8f0', '#dcefff');
-    // Distant high-altitude wispy clouds (very slow parallax)
+
+    // ---- SUN: warm glowing disc upper-right, fixed in sky (very
+    // slight parallax so it tracks the world without being glued
+    // to the camera). Two-pass: outer halo + bright disc.
+    var sx = 250 - camx * 0.02;
+    sx = ((sx % 360) + 360) % 360 - 30;
+    var sy = 30;
+    var sunGrd = g.createRadialGradient(sx, sy, 4, sx, sy, 38);
+    sunGrd.addColorStop(0,   'rgba(255,250,210,0.75)');
+    sunGrd.addColorStop(0.4, 'rgba(255,232,140,0.30)');
+    sunGrd.addColorStop(1,   'rgba(255,232,140,0)');
+    g.fillStyle = sunGrd;
+    g.fillRect(sx - 38, sy - 38, 76, 76);
+    g.fillStyle = '#fff4c8';
+    g.beginPath(); g.arc(sx, sy, 12, 0, 6.28); g.fill();
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(sx, sy, 7, 0, 6.28); g.fill();
+
+    // ---- BACK LAYER: very slow huge cumulus, low alpha so they
+    // read as deep background. 4 big puffballs spaced wide.
+    g.save();
+    g.globalAlpha = 0.55;
+    for (var bc = 0; bc < 4; bc++) {
+      var bcx = ((bc * 130 - camx * 0.04) % 480 + 480) % 480 - 60;
+      var bcy = 28 + (bc * 13) % 30;
+      g.fillStyle = '#ffffff';
+      g.beginPath();
+      g.arc(bcx,      bcy,        13, 0, 6.28);
+      g.arc(bcx + 14, bcy - 4,    16, 0, 6.28);
+      g.arc(bcx + 28, bcy,        13, 0, 6.28);
+      g.arc(bcx + 18, bcy + 6,    11, 0, 6.28);
+      g.fill();
+    }
+    g.restore();
+
+    // ---- HIGH WISPY CIRRUS: thin streaks scrolling slowly.
     g.fillStyle = 'rgba(255,255,255,0.55)';
     for (var w = 0; w < 6; w++) {
       var wx = ((w * 70 - camx * 0.04) % 380 + 380) % 380 - 30;
@@ -1491,7 +1529,8 @@ window.SDD = window.SDD || {};
       g.fillRect(wx | 0, wy | 0, 20, 1);
       g.fillRect((wx | 0) + 4, wy + 1, 14, 1);
     }
-    // Far layer puffy clouds (slow parallax)
+
+    // ---- MID-FAR puffy clouds (existing layer, slightly denser).
     g.save();
     g.globalAlpha = 0.7;
     for (var fc = 0; fc < 8; fc++) {
@@ -1506,38 +1545,84 @@ window.SDD = window.SDD || {};
       g.fill();
     }
     g.restore();
-    // Mid layer (existing variety - puffy / wispy / layered)
+
+    // ---- MID layer (existing variety - puffy / wispy / layered)
     driftClouds(g, camx, camy, 0.85);
-    // Distant twister silhouettes - SLOW left-to-right drift across
-    // the upper-mid sky. These are decorative only; the actual
-    // gameplay twister is a separate entity.
-    for (var ti = 0; ti < 3; ti++) {
-      var tx = ((ti * 130 + t * 0.15 - camx * 0.18) % 420 + 420) % 420 - 60;
-      var ty = 65 + ti * 14;
-      g.fillStyle = 'rgba(70,90,120,0.55)';
-      // Twister cone: wide at top, narrow at bottom, swaying
-      var sway = Math.sin(t * 0.04 + ti) * 2;
-      g.beginPath();
-      g.moveTo(tx - 8 + sway,    ty);
-      g.lineTo(tx + 8 + sway,    ty);
-      g.lineTo(tx + 4 + sway/2,  ty + 14);
-      g.lineTo(tx + 2,           ty + 22);
-      g.lineTo(tx + 1,           ty + 22);
-      g.lineTo(tx - 1 + sway/2,  ty + 14);
-      g.closePath(); g.fill();
-      // Spiral hint lines
-      g.fillStyle = 'rgba(70,90,120,0.7)';
-      g.fillRect((tx - 6 + sway) | 0, ty + 3, 12, 1);
-      g.fillRect((tx - 4 + sway) | 0, ty + 7, 8, 1);
-    }
-    // Distant birds (existing chevrons but slower / less prominent)
+
+    // ---- DISTANT BIRDS: V-formation flocks (lead bird + two pairs
+    // trailing) plus a couple of solo wanderers. Each flock at a
+    // different parallax depth so the sky reads in three planes.
     g.strokeStyle = 'rgba(38,72,106,0.6)'; g.lineWidth = 1;
-    for (var i = 0; i < 6; i++) {
-      var bx = ((i * 73 - camx * 0.12 + t * 0.15) % 360 + 360) % 360 - 20;
-      var by = 30 + (i * 17) % 40;
+    function chev(bx, by, sz) {
       g.beginPath();
-      g.moveTo(bx - 3, by + 2); g.lineTo(bx, by); g.lineTo(bx + 3, by + 2);
+      g.moveTo(bx - sz, by + sz * 0.7);
+      g.lineTo(bx, by);
+      g.lineTo(bx + sz, by + sz * 0.7);
       g.stroke();
+    }
+    // Three V-formations at different speeds + sizes
+    var flocks = [
+      { sp: 0.22, par: 0.14, base: 0,  by: 36, sz: 3 },
+      { sp: 0.16, par: 0.10, base: 90, by: 48, sz: 4 },
+      { sp: 0.30, par: 0.20, base: 30, by: 28, sz: 2 }
+    ];
+    for (var fl = 0; fl < flocks.length; fl++) {
+      var f0 = flocks[fl];
+      var lx = ((f0.base + t * f0.sp - camx * f0.par) % 360 + 360) % 360 - 20;
+      var ly = f0.by + Math.sin(t * 0.02 + fl) * 1.5;
+      chev(lx, ly, f0.sz);
+      chev(lx - 6, ly + 2, f0.sz);
+      chev(lx + 6, ly + 2, f0.sz);
+      chev(lx - 12, ly + 4, f0.sz);
+      chev(lx + 12, ly + 4, f0.sz);
+    }
+    // Two solo birds wandering
+    for (var bi = 0; bi < 2; bi++) {
+      var bx = ((bi * 153 + t * 0.18 - camx * 0.12) % 360 + 360) % 360 - 20;
+      var by = 60 + bi * 20 + Math.sin(t * 0.03 + bi * 2) * 2;
+      chev(bx, by, 3);
+    }
+
+    // ---- TORNADOES (decorative back-sky) - polished: spiral arc
+    // strokes, swirling debris specks, slightly darker hue.
+    for (var ti = 0; ti < 3; ti++) {
+      var twX = ((ti * 130 + t * 0.15 - camx * 0.18) % 420 + 420) % 420 - 60;
+      var twY = 65 + ti * 14;
+      var sway = Math.sin(t * 0.04 + ti) * 2;
+      // Body cone
+      g.fillStyle = 'rgba(60,80,110,0.62)';
+      g.beginPath();
+      g.moveTo(twX - 9 + sway,     twY);
+      g.lineTo(twX + 9 + sway,     twY);
+      g.lineTo(twX + 4 + sway/2,   twY + 16);
+      g.lineTo(twX + 2,            twY + 24);
+      g.lineTo(twX + 1,            twY + 24);
+      g.lineTo(twX - 2 + sway/2,   twY + 16);
+      g.closePath(); g.fill();
+      // Spiral arc strokes - three curving bands wrapping the cone
+      g.strokeStyle = 'rgba(38,52,80,0.78)';
+      g.lineWidth = 1;
+      for (var sp = 0; sp < 3; sp++) {
+        var spY = twY + 3 + sp * 5;
+        var spW = 7 - sp * 2;
+        var spOff = Math.sin(t * 0.12 + ti + sp * 1.3) * 1.5;
+        g.beginPath();
+        g.moveTo(twX - spW + sway + spOff, spY);
+        g.quadraticCurveTo(twX + sway + spOff, spY + 2, twX + spW + sway + spOff, spY);
+        g.stroke();
+      }
+      // Debris specks orbiting (small dark pixels at varying radii)
+      g.fillStyle = 'rgba(40,28,18,0.7)';
+      for (var dp = 0; dp < 5; dp++) {
+        var dpAng = (t * 0.18 + dp * 1.25 + ti * 0.7);
+        var dpR = 6 + (dp % 2) * 3;
+        var dpx = twX + sway + Math.cos(dpAng) * dpR;
+        var dpy = twY + 8 + dp * 2 + Math.sin(dpAng) * 1.5;
+        g.fillRect(dpx | 0, dpy | 0, 1, 1);
+      }
+      // Bright top crest (rip in the sky where the funnel meets the cloud)
+      g.fillStyle = 'rgba(255,255,255,0.45)';
+      g.fillRect((twX - 8 + sway) | 0, twY - 1, 16, 1);
     }
   }
   // Underwater (Day 5-2). Multi-layer reef parallax per Mark's pass-9
@@ -2667,6 +2752,14 @@ window.SDD = window.SDD || {};
       var i;
       if (this.state === 'play' && !this.player.dead) this.timeSteps++;
       if (this.livesPulseT > 0) this.livesPulseT--;
+      // Day 5-1 (Wings of Day): ramp gravity from light at the start
+      // toward normal over the first ~30 seconds so the kid eases
+      // into the flappy controls (Mark: "the character falls too
+      // fast at the beginning, gravity should increase").
+      if (this.day === 5 && this.stage === 1) {
+        var rampP = Math.min(1, this.timeSteps / 1800);
+        this.gravityScale = 0.55 + rampP * 0.45;
+      }
       for (i = 0; i < this.platforms.length; i++) this.platforms[i].update();
       this.player.update(this);
       // Calling-horn signature (Day 6-1): freezes every enemy in their
