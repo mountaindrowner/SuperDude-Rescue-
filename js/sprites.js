@@ -2884,6 +2884,11 @@ window.SDD = window.SDD || {};
                                     '/In_a_spacesuit/animations');
   var PL_BIG_JET   = PL_BIG.replace('/superdude dany big/animations',
                                     '/With_a_jet_pack/animations');
+  // Second sprite drop (Mark) - new base-jump + spacesuit idle + the
+  // teaching / dancing / clipboard poses. These live under a separate
+  // "New Assets" tree, so each anim sets its own `base` override.
+  var PL_BIG_NEW = 'assets/New Assets/Big Danny';
+  var PL_SM_NEW  = 'assets/New Assets/Small Danny';
   var PL_MANIFEST = {
     big: {
       base: PL_BIG,
@@ -2891,7 +2896,15 @@ window.SDD = window.SDD || {};
         idle:      { folder: 'Breathing_Idle-d3deb533', frames: 4 },
         walk:      { folder: 'Walk-a2ee175e',           frames: 6 },
         run:       { folder: 'Running-b41545c8',        frames: 4 },
-        jump:      { folder: 'Jumping-74f7c99d',        frames: 9 },
+        // New base-jump replaces the old Jumping anim (Mark: "better").
+        jump:      { base: PL_BIG_NEW, folder: 'New base Jumping-74f7c99d', frames: 9 },
+        // Spacesuit breathing idle (used on 4-2 space + 4-1 sun costume).
+        space_idle: { base: PL_BIG_NEW, folder: 'Space suit Breathing_Idle-896bfe9d', frames: 4 },
+        // Front-facing presentation poses (menu rotation + quiz screen).
+        teach:      { base: PL_BIG_NEW, folder: 'Actively_teaching_and_lecturing_talking_and_waving-dfb619f4', frames: 17, south: true },
+        dance:      { base: PL_BIG_NEW, folder: 'Fun_Dancing-34af66ea', frames: 16, south: true },
+        funnyteach: { base: PL_BIG_NEW, folder: 'Funny_teaching_and_lecturing_talking_and_waving_ha-3fcbd774', frames: 16, south: true },
+        clipboard:  { base: PL_BIG_NEW, folder: 'facing_southward_working_on_a_clipboard-0f54a21d', frames: 16, south: true },
         blast:     { folder: 'Blast-7c8ae1e9',          frames: 3 },
         hurt:      { folder: 'Taking_Punch-a33d4f84',   frames: 6 },
         die:       { folder: 'Falling_Back_Death-e9590e90', frames: 7 },
@@ -2925,6 +2938,7 @@ window.SDD = window.SDD || {};
                      folder: '', frames: 9, north: true, flat: true },
         swim:      { base: 'assets/Super Dude Danny Small Sprites -/Swimming_right_body_horizontal_paddling_with_hands-f8bee37d',
                      folder: '', frames: 9, flat: true },
+        space_idle: { base: PL_SM_NEW, folder: 'space suit Breathing_Idle-486111b8', frames: 4 },
         space_run:  { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
                       folder: 'Running-38414bec',          frames: 6 },
         space_jump: { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
@@ -2968,8 +2982,16 @@ window.SDD = window.SDD || {};
       idle:      { east: { x: 39, y: 26, w: 17, h: 46 }, west: { x: 40, y: 26, w: 17, h: 46 } },
       walk:      { east: { x: 38, y: 25, w: 22, h: 47 }, west: { x: 36, y: 25, w: 22, h: 47 } },
       run:       { east: { x: 35, y: 25, w: 26, h: 48 }, west: { x: 35, y: 25, w: 26, h: 48 } },
-      jump:      { east: { x: 31, y: 25, w: 37, h: 50 }, west: { x: 30, y: 26, w: 35, h: 49 } },
+      // New base-jump (2nd sprite drop) - measured union, near-identical
+      // to the old jump bbox so it renders at the same scale.
+      jump:      { east: { x: 32, y: 24, w: 34, h: 51 }, west: { x: 30, y: 24, w: 34, h: 51 } },
       blast:     { east: { x: 35, y: 26, w: 34, h: 46 }, west: { x: 26, y: 27, w: 33, h: 45 } },
+      // 2nd sprite drop: spacesuit idle + front-facing presentation poses.
+      space_idle: { east: { x: 33, y: 22, w: 26, h: 51 }, west: { x: 37, y: 22, w: 26, h: 51 } },
+      teach:      { south: { x: 22, y: 23, w: 51, h: 49 } },
+      dance:      { south: { x: 25, y: 23, w: 48, h: 49 } },
+      funnyteach: { south: { x: 18, y: 13, w: 62, h: 59 } },
+      clipboard:  { south: { x: 32, y: 22, w: 32, h: 50 } },
       hurt:      { east: { x: 33, y: 26, w: 30, h: 47 }, west: { x: 33, y: 26, w: 30, h: 47 } },
       die:       { east: { x: 32, y: 26, w: 39, h: 46 }, west: { x: 25, y: 26, w: 39, h: 46 } },
       celebrate: { south: { x: 27, y: 23, w: 44, h: 49 } },
@@ -3007,6 +3029,7 @@ window.SDD = window.SDD || {};
       climb:      { north: { x: 30, y: 20, w: 32, h: 51 } },
       // Swim bbox MEASURED from PNG (72x51, aspect 1.41) - same fix as big.
       swim:       { east:  { x: 10, y: 21, w: 72, h: 51 }, west: { x: 10, y: 21, w: 72, h: 51 } },
+      space_idle: { east:  { x: 31, y: 21, w: 24, h: 48 }, west: { x: 37, y: 21, w: 24, h: 48 } },
       space_run:  { east:  { x: 31, y: 25, w: 28, h: 45 }, west: { x: 34, y: 24, w: 24, h: 46 } },
       space_jump: { east:  { x: 33, y: 26, w: 28, h: 45 }, west: { x: 30, y: 26, w: 29, h: 45 } },
       space_hurt: { east:  { x: 30, y: 26, w: 28, h: 43 }, west: { x: 34, y: 26, w: 28, h: 43 } },

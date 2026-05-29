@@ -453,7 +453,20 @@ window.SDD = window.SDD || {};
       var bob = Math.sin(this.t * 0.05) * 2;
       tsh(g, 'SUPER DUDE', 160, 30 + bob, '#ffd23a', '#a8631a', 3, 'center');
       tsh(g, 'DANNY', 160, 56 + bob, '#ff5d4a', '#7a1f16', 5, 'center');
-      S.drawDanny(g, 'big', 'idle', 'east', Math.floor(this.t / 18) % 4, 40, 96);
+      // Menu Danny: ~50% bigger (Mark) and rotating through the new
+      // presentation poses so he feels alive while you sit on the
+      // menu. Each pose holds ~3.3s then swaps to the next.
+      var MENU_POSES = [
+        { anim: 'idle',       dir: 'east',  n: 4,  div: 18 },
+        { anim: 'teach',      dir: 'south', n: 17, div: 6 },
+        { anim: 'clipboard',  dir: 'south', n: 16, div: 6 },
+        { anim: 'dance',      dir: 'south', n: 16, div: 5 },
+        { anim: 'funnyteach', dir: 'south', n: 16, div: 6 }
+      ];
+      var mpHold = 200;
+      var mp = MENU_POSES[Math.floor(this.t / mpHold) % MENU_POSES.length];
+      var mpFrame = Math.floor((this.t % mpHold) / mp.div) % mp.n;
+      drawDannyScaled(g, 'big', mp.anim, mp.dir, mpFrame, 54, 138, 1.5);
 
       for (var i = 0; i < this.items.length; i++) {
         var y = 104 + i * 14;
@@ -748,7 +761,12 @@ window.SDD = window.SDD || {};
   var overworldImgOk = false;
   overworldImg.onload  = function () { overworldImgOk = (overworldImg.width > 0); };
   overworldImg.onerror = function () { overworldImgOk = false; };
-  overworldImg.src = 'assets/overworld.png';
+  // 2nd art drop (Mark): repainted creation map. Same 1672x941 canvas
+  // + identical island positions as the old overworld.png, so the
+  // navigation nodes and the animated overlays (sparkles / fish /
+  // waves) all still line up; the 11th island is now themed for
+  // Creeping Things instead of the old village.
+  overworldImg.src = 'assets/New%20Assets/New%20Overworld.png';
 
   function stageOpen(idx) {
     if (idx === 0) return true;
@@ -3587,6 +3605,20 @@ window.SDD = window.SDD || {};
           text(g, label, kx + kw / 2, y + 6, lblCol, 1, 'center');
         }
       }
+
+      // Teacher Danny in the lower-left margin (clear of the keyboard).
+      // He presents the lesson with the clipboard / actively-teaching
+      // poses, breaks into a dance when the kid passes, and switches to
+      // the funny-teaching pose once they've missed it a couple times
+      // (Mark: "during the question portion with the kids... if the
+      // kids get the questions too wrong, swap off to [funny teaching]").
+      var qAnim, qN, qDiv;
+      if (this.passT > 0)            { qAnim = 'dance';      qN = 16; qDiv = 5; }
+      else if (this.attempts >= 2)   { qAnim = 'funnyteach'; qN = 16; qDiv = 6; }
+      else if ((this.t % 360) < 180) { qAnim = 'clipboard';  qN = 16; qDiv = 7; }
+      else                           { qAnim = 'teach';      qN = 17; qDiv = 6; }
+      var qFrame = Math.floor(this.t / qDiv) % qN;
+      drawDannyScaled(g, 'big', qAnim, 'south', qFrame, 34, 176, 1.1);
     }
   };
 

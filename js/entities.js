@@ -217,6 +217,10 @@ window.SDD = window.SDD || {};
   Player.prototype.victory = function () {
     if (this.win) return;
     this.win = true; this.winT = 0; this.vx = 0;
+    // Mark: "use the funny dancing animation interchangeably with the
+    // celebration animation whenever he beats a level." Coin-flip per
+    // win so both poses get airtime.
+    this.winPose = (Math.random() < 0.5) ? 'dance' : 'celebrate';
   };
 
   Player.prototype.updateDead = function () {
@@ -1019,10 +1023,16 @@ window.SDD = window.SDD || {};
       var theme = scene && scene.theme;
       var isFlappy = scene && scene.flappy;
       var isUnder  = scene && scene.underwater;
-      var costume = (theme === 'cosmic-night') ? 'space' : '';
+      // Spacesuit costume on 4-2 (cosmic-night) AND 4-1 (sun) - Mark
+      // wanted more mileage out of the spacesuit by wearing it near
+      // the sun too. 4-1 keeps its normal gravity; only the costume
+      // (and the dropped sweat overlay below) changes there.
+      var costume = (theme === 'cosmic-night' || theme === 'sunlit') ? 'space' : '';
       if (this.win) {
-        anim = 'celebrate'; dirPL = 'south';
-        idx = Math.floor(this.animT / 5) % 9;
+        // celebrate (9f) or funny dance (16f), chosen at victory().
+        anim = (this.winPose === 'dance') ? 'dance' : 'celebrate';
+        dirPL = 'south';
+        idx = Math.floor(this.animT / 5) % (anim === 'dance' ? 16 : 9);
       } else if (this.climbing) {
         anim = 'climb'; dirPL = 'north';
         idx = Math.floor(this.animT / 5) % 9;
@@ -1062,7 +1072,7 @@ window.SDD = window.SDD || {};
         anim = costume ? 'space_run' : 'run';
         idx = Math.floor(this.animT / 4) % (costume ? 9 : 4);
       } else {
-        anim = 'idle';                                  // no spacesuit idle variant; reuse default
+        anim = costume ? 'space_idle' : 'idle';          // spacesuit breathing idle on 4-1/4-2
         idx = Math.floor(this.animT / 18) % 4;
       }
       var cx = Math.round(this.x + this.w / 2 - cam.x);
@@ -1072,7 +1082,10 @@ window.SDD = window.SDD || {};
       // Danny's head + cheeks while in the sunlit theme. Sells the
       // "African heat" feel of the Sun stage (Mark Pass 9: "subtle
       // sweating overlay on Big/Small Danny while in this level").
-      if (ok && theme === 'sunlit' && !this.dead && !this.win) {
+      // Sweat overlay is suppressed when the spacesuit is on (the
+      // helmet covers his head) - so it no longer shows on 4-1 now
+      // that the sun level uses the spacesuit costume.
+      if (ok && theme === 'sunlit' && !costume && !this.dead && !this.win) {
         var t = this.animT;
         var headY = baselineY - (this.big ? 32 : 22);
         var leftX = cx - 5, rightX = cx + 4;
