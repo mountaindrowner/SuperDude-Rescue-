@@ -77,6 +77,10 @@ window.SDD = window.SDD || {};
     this.signatureKind = null;
     this.signatureT = 0;
     this.signatureJumpsUsed = 0;
+    // Pearl Shell crack-and-fade animation. Set to ~18 frames when the
+    // shell absorbs a hit so the broken shell stays visible for a beat
+    // before disappearing - sells the "the shell took it for you" beat.
+    this.pearlCrackT = 0;
     // Pass 12 (Mark): in easy mode each size (small / big) takes 2
     // hits before it loses a level (shrink / die). Set on spawn to
     // the current difficulty's max; refilled on grow + on shrink.
@@ -154,7 +158,11 @@ window.SDD = window.SDD || {};
       this.signatureKind = null;
       this.signatureT = 0;
       this.invuln = C.INVULN_STEPS;
-      SDD.audio.sfx('power');
+      // Crack-and-fade visual for ~18 frames so the shell visibly
+      // breaks instead of just blinking out (Mark: "you hear a little
+      // crack, and the shell cracks, and it's down one").
+      this.pearlCrackT = 18;
+      SDD.audio.sfx('crack');
       return false;
     }
     // Pass 12 (Mark): easy mode gives each size 2 hits. HP > 1 means
@@ -571,6 +579,7 @@ window.SDD = window.SDD || {};
         this.signatureJumpsUsed = 0;
       }
     }
+    if (this.pearlCrackT > 0) this.pearlCrackT--;
 
     // fell into a pit (skipped in fully-underwater levels - water IS the level)
     if (!level.underwater && this.y > level.map.pxH + 28) {
@@ -865,6 +874,82 @@ window.SDD = window.SDD || {};
     var freshHurt = this.invuln > C.INVULN_STEPS - 24;
     if (!freshHurt && this.invuln > 0 && (this.invuln % 8) < 4) return;
     this.drawSignatureSymbol(ctx, cam);
+    // Pearl Shell signature: large iridescent oval shell around Danny
+    // (Mark: "a bigger effect, like a big white outline above my
+    // character that looks like a pearlescent shell"). Stays during
+    // signature lifetime, plus a brief crack-and-fade overlay for ~18
+    // frames after a hit consumes it.
+    if ((this.signatureKind === 'pearl' && this.signatureT > 0) || this.pearlCrackT > 0) {
+      var psx = Math.round(this.x + this.w / 2 - cam.x);
+      var psy = Math.round(this.y + this.h / 2 - cam.y);
+      // Slightly oval (vertical), larger than the airbubble.
+      var psRX = (this.big ? 30 : 24);
+      var psRY = (this.big ? 36 : 28);
+      var cracking = this.pearlCrackT > 0;
+      // Cracking phase fades + shakes the shell out over its lifetime.
+      var crackProg = cracking ? (1 - this.pearlCrackT / 18) : 0;     // 0 -> 1
+      var shellAlpha = cracking ? (1 - crackProg) : 1;
+      var shake = cracking ? Math.round((Math.random() - 0.5) * 3 * (1 - crackProg)) : 0;
+      ctx.save();
+      ctx.translate(shake, 0);
+      // Outer halo glow (pearl-blue).
+      ctx.globalAlpha = 0.22 * shellAlpha;
+      ctx.fillStyle = '#a0e0ff';
+      ctx.beginPath(); ctx.ellipse(psx, psy, psRX + 4, psRY + 4, 0, 0, 6.28); ctx.fill();
+      // Soft pearl body (white, ~35% alpha so Danny's still visible).
+      ctx.globalAlpha = 0.35 * shellAlpha;
+      ctx.fillStyle = '#f8fbff';
+      ctx.beginPath(); ctx.ellipse(psx, psy, psRX, psRY, 0, 0, 6.28); ctx.fill();
+      // Iridescent shimmer band rotating around the rim - pink + cyan
+      // alternating arcs driven by a slow time index so the shell
+      // reads as pearlescent rather than just white. Drawn as a thin
+      // stroked arc at the equator + slow rotation.
+      var shimmerT = (this.signatureT || 0) * 0.04 + crackProg * 2;
+      ctx.globalAlpha = 0.55 * shellAlpha;
+      ctx.lineWidth = 1;
+      var bandColors = ['#ffd2ee', '#cef4ff', '#fff2c8', '#e2cffd'];
+      for (var ib = 0; ib < 4; ib++) {
+        ctx.strokeStyle = bandColors[ib];
+        var a0 = shimmerT + ib * 1.57;
+        ctx.beginPath();
+        ctx.ellipse(psx, psy, psRX - 1, psRY - 1, 0, a0, a0 + 0.9);
+        ctx.stroke();
+      }
+      // Bright outline + highlight sparkle on the upper-left.
+      ctx.globalAlpha = 0.85 * shellAlpha;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(psx, psy, psRX, psRY, 0, 0, 6.28); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(psx - psRX + 5, psy - psRY / 2, 3, 2);
+      ctx.fillRect(psx - psRX + 7, psy - psRY / 2 + 3, 1, 1);
+      // Crack lines: three jagged fractures branching outward from the
+      // center, growing in length as crackProg goes 0 -> 1.
+      if (cracking) {
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = '#1a1a3a';
+        ctx.lineWidth = 1;
+        var crackAngles = [-0.5, 0.8, 2.1, -2.4];
+        for (var cr = 0; cr < crackAngles.length; cr++) {
+          var caA = crackAngles[cr];
+          var segs = 3 + cr;
+          var rx = 0, ry = 0;
+          var lenMax = Math.min(psRX, psRY) * crackProg;
+          ctx.beginPath();
+          ctx.moveTo(psx, psy);
+          for (var sg = 1; sg <= segs; sg++) {
+            var frac = sg / segs;
+            var jitter = (cr + sg) % 2 ? 3 : -3;
+            rx = Math.cos(caA) * lenMax * frac + Math.cos(caA + 1.57) * jitter * frac;
+            ry = Math.sin(caA) * lenMax * frac + Math.sin(caA + 1.57) * jitter * frac;
+            ctx.lineTo(psx + rx, psy + ry);
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
     // Air-bubble signature (Day 5-2): visible bubble shell around
     // Danny so the kid SEES that jellyfish + sea creatures bounce
     // off (Mark: "not sure what she does" - because it was invisible).

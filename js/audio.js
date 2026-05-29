@@ -88,6 +88,9 @@ window.SDD = window.SDD || {};
       case 'win':      [523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * 0.14, 0.24, 'square', 0.24); }); break;
       case 'gameover': [392, 330, 262].forEach(function (f, i) { tone(f, t + i * 0.24, 0.34, 'triangle', 0.26); }); break;
       case '1up':      [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, t + i * 0.1, 0.18, 'square', 0.2); }); break;
+      // Pearl Shell crack - bright high snap descending into a short
+      // noise burst so it reads as a brittle break.
+      case 'crack':    tone(1400, t, 0.05, 'triangle', 0.22, 320); noise(t, 0.09, 0.14); tone(640, t + 0.05, 0.06, 'square', 0.16, 220); break;
     }
   }
 
