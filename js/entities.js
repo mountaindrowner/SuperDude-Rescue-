@@ -1063,13 +1063,14 @@ window.SDD = window.SDD || {};
         var dy = Math.round(this.y - cam.y + this.h - s.height);
         var cols = (this.dir > 0) ? [4, 7, 10] : [10, 13, 16];
         var quillH = 5;
+        var quillBaseY = dy + 7;  // bumped from dy+3, Mark: "move the porcupine spines down by 4 pixels"
         ctx.fillStyle = '#1a1004';
         for (var i = 0; i < cols.length; i++) {
-          ctx.fillRect(dx + cols[i], dy + 3 - quillH, 1, quillH);
+          ctx.fillRect(dx + cols[i], quillBaseY - quillH, 1, quillH);
         }
         ctx.fillStyle = '#8a6040';
         for (var j = 0; j < cols.length; j++) {
-          ctx.fillRect(dx + cols[j], dy + 3 - quillH, 1, 1);
+          ctx.fillRect(dx + cols[j], quillBaseY - quillH, 1, 1);
         }
       }
     }
