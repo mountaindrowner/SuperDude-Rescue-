@@ -1624,6 +1624,56 @@ window.SDD = window.SDD || {};
       g.fillStyle = 'rgba(255,255,255,0.45)';
       g.fillRect((twX - 8 + sway) | 0, twY - 1, 16, 1);
     }
+
+    // ---- STORM SECTION (Mark optional): dims the sky between
+    // prog 0.42 - 0.62 so the kid flies into a brief overcast band
+    // before breaking back into clear weather. Storm strength
+    // ramps in/out so it doesn't pop. Five large dark cloud
+    // silhouettes layer over the existing sky during the band,
+    // and occasional lightning flashes pulse the whole screen
+    // brighter for ~3 frames.
+    if (prog > 0.42 && prog < 0.62) {
+      var stormBand = (prog - 0.42) / 0.20;            // 0..1 through band
+      var stormStrength = Math.sin(stormBand * Math.PI);  // 0 -> 1 -> 0
+      g.save();
+      // Dim overlay (cool blue-gray)
+      g.fillStyle = 'rgba(28, 38, 70, ' + (stormStrength * 0.45).toFixed(2) + ')';
+      g.fillRect(0, 0, 320, 180);
+      // Dark storm clouds rolling across mid-sky
+      g.globalAlpha = stormStrength * 0.85;
+      for (var sc = 0; sc < 5; sc++) {
+        var scX = ((sc * 80 - camx * 0.18 + t * 0.25) % 420 + 420) % 420 - 60;
+        var scY = 24 + (sc * 13) % 36;
+        g.fillStyle = '#3a4660';
+        g.beginPath();
+        g.arc(scX,       scY,      11, 0, 6.28);
+        g.arc(scX + 13,  scY - 3,  14, 0, 6.28);
+        g.arc(scX + 26,  scY,      11, 0, 6.28);
+        g.arc(scX + 16,  scY + 5,  10, 0, 6.28);
+        g.fill();
+        // Darker shadow under each cloud
+        g.fillStyle = '#1f2840';
+        g.fillRect(scX | 0, (scY + 6) | 0, 28, 1);
+      }
+      // Lightning: at peak storm intensity, fire a 3-frame flash
+      // every ~95 frames. Bright white wash; brief enough that the
+      // kid notices but doesn't get blinded.
+      if (stormStrength > 0.4 && (t % 95) < 3) {
+        g.globalAlpha = 0.7;
+        g.fillStyle = '#fff8d0';
+        g.fillRect(0, 0, 320, 180);
+        // Jagged bolt streaking down from the cloud band
+        g.globalAlpha = 0.95;
+        g.fillStyle = '#fffbe0';
+        var blx = 80 + (t * 13) % 180;
+        var bly = 30;
+        for (var bs = 0; bs < 7; bs++) {
+          var bjit = ((t + bs * 7) % 5) - 2;
+          g.fillRect(blx + bjit, bly + bs * 6, 2, 5);
+        }
+      }
+      g.restore();
+    }
   }
   // Underwater (Day 5-2). Multi-layer reef parallax per Mark's pass-9
   // brief: distant coral mountain silhouettes -> mid coral spires ->

@@ -1988,6 +1988,82 @@ window.SDD = window.SDD || {};
     px(g, 0, 15, 16, 1, '#5d769e');
   }
 
+  // ----- bird-sky (Day 5-1) tiles: aggressive pillowy clouds -----
+  // The bright-sky tiles above read as "flat ground with a cloud
+  // tint" at game scale - Mark wanted 5-1 floors to look like
+  // "much more pillowy cloud textures". These painters round the
+  // top edge into a row of three cloud bumps and add interior puff
+  // highlights so the tile reads as a fluffy cloud at a glance.
+  function paintGroundCloud(g) {
+    // base body
+    px(g, 0, 4, 16, 12, '#dceafa');
+    // soft shadow underneath
+    px(g, 0, 14, 16, 2, '#9cb6d5');
+    // top row: three rounded bumps along the cap (left, middle, right)
+    //   bump 1 (cols 0..5)
+    px(g, 1, 2, 4, 1, '#ffffff');
+    px(g, 0, 3, 6, 1, '#ffffff');
+    px(g, 0, 4, 6, 1, '#f4f8ff');
+    //   bump 2 (cols 5..10) - tallest
+    px(g, 6, 0, 4, 1, '#ffffff');
+    px(g, 5, 1, 6, 1, '#ffffff');
+    px(g, 5, 2, 6, 1, '#f4f8ff');
+    px(g, 5, 3, 6, 1, '#e8f1ff');
+    //   bump 3 (cols 10..15)
+    px(g, 11, 2, 4, 1, '#ffffff');
+    px(g, 10, 3, 6, 1, '#ffffff');
+    px(g, 10, 4, 6, 1, '#f4f8ff');
+    // soft interior puff highlights to sell volume
+    px(g, 3, 7, 2, 2, '#ffffff');
+    px(g, 9, 9, 3, 2, '#ffffff');
+    px(g, 12, 6, 2, 1, '#f4f8ff');
+  }
+  function paintDirtCloud(g) {
+    // "dirt" underneath = deeper / shadowed cloud body
+    px(g, 0, 0, 16, 16, '#b0c8e6');
+    px(g, 0, 0, 16, 1, '#c8dbef');     // soft top highlight
+    px(g, 2, 4, 2, 1, '#dceafa');
+    px(g, 9, 6, 3, 1, '#dceafa');
+    px(g, 4, 10, 2, 2, '#cadbf0');
+    px(g, 11, 11, 2, 2, '#cadbf0');
+    px(g, 0, 15, 16, 1, '#7a96b6');    // base shadow line
+  }
+  function paintBrickCloud(g) {
+    // floating cloud "bricks" - four puffy mounds packed tight
+    px(g, 0, 0, 16, 16, '#7a9bc4');
+    // mound 1 - upper left
+    px(g, 1, 1, 6, 5, '#f4f8ff');
+    px(g, 0, 2, 1, 3, '#dceafa');
+    px(g, 2, 0, 3, 1, '#ffffff');
+    // mound 2 - upper right
+    px(g, 9, 1, 6, 4, '#dceafa');
+    px(g, 11, 0, 3, 1, '#ffffff');
+    px(g, 15, 2, 1, 2, '#b0c8e6');
+    // mound 3 - lower left
+    px(g, 1, 8, 5, 5, '#dceafa');
+    px(g, 2, 7, 3, 1, '#ffffff');
+    // mound 4 - lower right
+    px(g, 8, 7, 7, 6, '#f4f8ff');
+    px(g, 9, 6, 5, 1, '#ffffff');
+    px(g, 15, 9, 1, 3, '#b0c8e6');
+    px(g, 0, 15, 16, 1, '#6a87a8');
+  }
+  function paintPlatform_cloud(g) {
+    // Pillowy cloud platform: three bumps along the top, soft body,
+    // gentle shadow underneath. Replaces the warmer-toned legacy
+    // paintPlatform_bird_sky which read as a flat plank rather than
+    // a cloud.
+    px(g, 0, 3, 16, 3, '#f4f8ff');
+    px(g, 1, 1, 4, 1, '#ffffff');
+    px(g, 0, 2, 6, 1, '#ffffff');
+    px(g, 6, 0, 4, 1, '#ffffff');
+    px(g, 5, 1, 6, 1, '#ffffff');
+    px(g, 11, 1, 4, 1, '#ffffff');
+    px(g, 10, 2, 6, 1, '#ffffff');
+    px(g, 1, 5, 14, 1, '#dceafa');
+    px(g, 0, 6, 16, 1, '#9cb6d5');
+  }
+
   // ---- Sea family (sea-surface / seaside): sandy beach + coral ----
   function paintGroundSea(g) {
     px(g, 0, 0, 16, 16, '#d4b066');                 // sand body
@@ -2764,6 +2840,14 @@ window.SDD = window.SDD || {};
       sprites['tile_dirt_'   + theme] = spritePlain(16, 16, fam.dirt);
       sprites['tile_brick_'  + theme] = spritePlain(16, 16, fam.brick);
     });
+    // bird-sky (Day 5-1) gets dedicated pillowy-cloud tiles that
+    // override the bright-sky family defaults registered above
+    // (Mark: "make the ground tiles into much more pillowy cloud
+    // textures"). Sky (Day 1-1) keeps the original flat-cloud tint.
+    sprites['tile_ground_bird-sky']   = spritePlain(16, 16, paintGroundCloud);
+    sprites['tile_dirt_bird-sky']     = spritePlain(16, 16, paintDirtCloud);
+    sprites['tile_brick_bird-sky']    = spritePlain(16, 16, paintBrickCloud);
+    sprites['tile_platform_bird-sky'] = spritePlain(16, 16, paintPlatform_cloud);
     // legacy galactic-named aliases (some existing code paths use this)
     sprites['tile_ground_galactic'] = sprites['tile_ground_galactic'];
     sprites['tile_dirt_galactic']   = sprites['tile_dirt_galactic'];
