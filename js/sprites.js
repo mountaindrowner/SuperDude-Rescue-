@@ -2889,6 +2889,12 @@ window.SDD = window.SDD || {};
   // "New Assets" tree, so each anim sets its own `base` override.
   var PL_BIG_NEW = 'assets/New Assets/Big Danny';
   var PL_SM_NEW  = 'assets/New Assets/Small Danny';
+  // 3rd sprite drop: Mark's improved spacesuit (replaces every space_*
+  // anim for both sizes). Lives under "<size> New Space Suit/Full_New_
+  // space_suit_but_only/animations" - one extra path layer than the
+  // first spacesuit drop.
+  var PL_BIG_SPACE_NEW = 'assets/New Assets/Big Danny New Space Suit/Full_New_space_suit_but_only/animations';
+  var PL_SM_SPACE_NEW  = 'assets/New Assets/Small Danny New Space Suit/Small_Full_new_Space_suit_but_only/animations';
   var PL_MANIFEST = {
     big: {
       base: PL_BIG,
@@ -2899,7 +2905,10 @@ window.SDD = window.SDD || {};
         // New base-jump replaces the old Jumping anim (Mark: "better").
         jump:      { base: PL_BIG_NEW, folder: 'New base Jumping-74f7c99d', frames: 9 },
         // Spacesuit breathing idle (used on 4-2 space + 4-1 sun costume).
-        space_idle: { base: PL_BIG_NEW, folder: 'Space suit Breathing_Idle-896bfe9d', frames: 4 },
+        // 3rd drop: improved spacesuit replaces idle/run/jump/die. The
+        // hurt anim wasn't in the new drop, so it keeps the previous
+        // PL_BIG_SPACE Taking_Punch frames for now.
+        space_idle: { base: PL_BIG_SPACE_NEW, folder: 'Breathing_Idle-896bfe9d', frames: 4 },
         // Front-facing presentation poses (menu rotation + quiz screen).
         teach:      { base: PL_BIG_NEW, folder: 'Actively_teaching_and_lecturing_talking_and_waving-dfb619f4', frames: 17, south: true },
         dance:      { base: PL_BIG_NEW, folder: 'Fun_Dancing-34af66ea', frames: 16, south: true },
@@ -2914,10 +2923,10 @@ window.SDD = window.SDD || {};
                      folder: '', frames: 9, north: true, flat: true },
         swim:      { base: 'assets/Super Dude Danny Big Sprites/Swimming_right_body_horizontal_paddling_with_hand-820a931e',
                      folder: '', frames: 9, flat: true },
-        space_run:  { base: PL_BIG_SPACE, folder: 'Running-371bd9a3',          frames: 6 },
-        space_jump: { base: PL_BIG_SPACE, folder: 'Jumping-9fc36d7c',          frames: 9 },
-        space_hurt: { base: PL_BIG_SPACE, folder: 'Taking_Punch-19dd094a',     frames: 6 },
-        space_die:  { base: PL_BIG_SPACE, folder: 'Falling_Back_Death-e05d6ecc', frames: 7 },
+        space_run:  { base: PL_BIG_SPACE_NEW, folder: 'Running-2ba00dfb',           frames: 8 },
+        space_jump: { base: PL_BIG_SPACE_NEW, folder: 'Jumping-8e1e14d6',           frames: 9 },
+        space_hurt: { base: PL_BIG_SPACE,     folder: 'Taking_Punch-19dd094a',      frames: 6 },
+        space_die:  { base: PL_BIG_SPACE_NEW, folder: 'Falling_Back_Death-520535c4', frames: 7 },
         jet:        { base: PL_BIG_JET,   folder: 'The_character_remains_in_a_profile_view_as_the_jet-0a9ef652',
                       frames: 9 }
       }
@@ -2938,15 +2947,14 @@ window.SDD = window.SDD || {};
                      folder: '', frames: 9, north: true, flat: true },
         swim:      { base: 'assets/Super Dude Danny Small Sprites -/Swimming_right_body_horizontal_paddling_with_hands-f8bee37d',
                      folder: '', frames: 9, flat: true },
-        space_idle: { base: PL_SM_NEW, folder: 'space suit Breathing_Idle-486111b8', frames: 4 },
-        space_run:  { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
-                      folder: 'Running-38414bec',          frames: 6 },
-        space_jump: { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
-                      folder: 'Two-Footed_Jump-bbb9b56b',  frames: 7 },
+        // 3rd drop: improved small spacesuit (Mark). Hurt keeps the
+        // previous Taking_Punch frames since hurt wasn't redrawn.
+        space_idle: { base: PL_SM_SPACE_NEW, folder: 'Breathing_Idle-486111b8',     frames: 4 },
+        space_run:  { base: PL_SM_SPACE_NEW, folder: 'Running-7999d047',            frames: 8 },
+        space_jump: { base: PL_SM_SPACE_NEW, folder: 'Jumping-a4c0575f',            frames: 9 },
         space_hurt: { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
                       folder: 'Taking_Punch-6f96794c',     frames: 6 },
-        space_die:  { base: 'assets/Super Dude Danny Small Sprites -/In_a_spacesuit/animations',
-                      folder: 'Falling_Back_Death-8c64bce0', frames: 7 },
+        space_die:  { base: PL_SM_SPACE_NEW, folder: 'Falling_Back_Death-ff4c9c9e', frames: 7 },
         jet:        { base: 'assets/Super Dude Danny Small Sprites -/With_a_jetpack/animations',
                       folder: 'The_characters_jetpack_ignites_emitting_a_burst_of-1690deaa',
                       frames: 9 }
@@ -2996,6 +3004,7 @@ window.SDD = window.SDD || {};
       jump:      { east: { x: 32, y: 24, w: 34, h: 51 }, west: { x: 30, y: 24, w: 34, h: 51 } },
       blast:     { east: { x: 35, y: 26, w: 34, h: 46 }, west: { x: 26, y: 27, w: 33, h: 45 } },
       // 2nd sprite drop: spacesuit idle + front-facing presentation poses.
+      // 3rd drop measured bboxes (Mark's improved spacesuit).
       space_idle: { east: { x: 33, y: 22, w: 26, h: 51 }, west: { x: 37, y: 22, w: 26, h: 51 } },
       teach:      { south: { x: 22, y: 23, w: 51, h: 49 } },
       dance:      { south: { x: 25, y: 23, w: 48, h: 49 } },
@@ -3021,10 +3030,10 @@ window.SDD = window.SDD || {};
       // (were previously copied from the base run/jump, which clipped the
       // backpack on the sides + the helmet on top - Mark). East/west are
       // mirror-symmetric in the measured data so no facing jitter.
-      space_run:  { east:  { x: 33, y: 24, w: 28, h: 49 }, west: { x: 35, y: 24, w: 28, h: 49 } },
-      space_jump: { east:  { x: 31, y: 24, w: 37, h: 51 }, west: { x: 28, y: 24, w: 37, h: 51 } },
+      space_run:  { east:  { x: 33, y: 23, w: 28, h: 50 }, west: { x: 34, y: 23, w: 29, h: 51 } },
+      space_jump: { east:  { x: 31, y: 23, w: 35, h: 52 }, west: { x: 30, y: 23, w: 35, h: 52 } },
       space_hurt: { east:  { x: 31, y: 24, w: 32, h: 49 }, west: { x: 33, y: 24, w: 32, h: 49 } },
-      space_die:  { east:  { x: 30, y: 25, w: 41, h: 47 }, west: { x: 25, y: 25, w: 41, h: 47 } },
+      space_die:  { east:  { x: 26, y: 24, w: 44, h: 48 }, west: { x: 28, y: 24, w: 37, h: 48 } },
       jet:        { east:  { x: 30, y: 22, w: 33, h: 50 }, west: { x: 33, y: 22, w: 33, h: 50 } }
     },
     small: {
@@ -3047,11 +3056,12 @@ window.SDD = window.SDD || {};
       // padded +5 left / +5 top per Mark - the full measured union for
       // the small jet includes a huge ignite-flame burst that would
       // shrink the character too much if used directly.
+      // 3rd drop measured bboxes (small spacesuit).
       space_idle: { east:  { x: 31, y: 21, w: 24, h: 48 }, west: { x: 37, y: 21, w: 24, h: 48 } },
-      space_run:  { east:  { x: 34, y: 24, w: 24, h: 45 }, west: { x: 35, y: 21, w: 24, h: 48 } },
-      space_jump: { east:  { x: 34, y: 23, w: 23, h: 48 }, west: { x: 34, y: 22, w: 24, h: 50 } },
+      space_run:  { east:  { x: 31, y: 24, w: 28, h: 45 }, west: { x: 33, y: 24, w: 28, h: 45 } },
+      space_jump: { east:  { x: 32, y: 24, w: 30, h: 47 }, west: { x: 30, y: 24, w: 30, h: 47 } },
       space_hurt: { east:  { x: 30, y: 25, w: 28, h: 43 }, west: { x: 34, y: 25, w: 28, h: 43 } },
-      space_die:  { east:  { x: 29, y: 25, w: 35, h: 43 }, west: { x: 28, y: 25, w: 35, h: 43 } },
+      space_die:  { east:  { x: 29, y: 26, w: 35, h: 42 }, west: { x: 28, y: 26, w: 35, h: 42 } },
       jet:        { east:  { x: 28, y: 21, w: 35, h: 50 }, west: { x: 25, y: 21, w: 35, h: 50 } }
     }
   };
