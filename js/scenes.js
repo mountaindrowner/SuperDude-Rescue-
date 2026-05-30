@@ -2394,10 +2394,9 @@ window.SDD = window.SDD || {};
 
   // Solarpunk palette (anchored to Mark's brief).
   var _CYP = {
-    // v0.60 set a deep sky blue; v0.61 takes 25% off the blue per
-    // Mark - each stop lerped 25% toward white so the saturated
-    // base hue stays but the overall blueness drops a notch.
-    skyTop:    '#6BADE0', skyMid:   '#92CDF0', skyHoriz: '#C8EAF7',
+    // v0.62: pulled 30% back toward the v0.60 deeper blue so the sky
+    // sits between the washed-out v0.61 and the over-saturated v0.60.
+    skyTop:    '#5CA5DE', skyMid:   '#87C9EF', skyHoriz: '#C2E8F6',
     cloudBase: '#F4FFF8', cloudHi:  '#FFFFFF', cloudShadow: '#CDEEF2',
     sunDisc:   '#FFF6C8', sunHalo:  '#FFE890',
     farHaze:   '#A8C9D8', farMid:   '#B5C4D4', farDark: '#8FA3BD', farGreen: '#9CC4A0',
@@ -4766,9 +4765,10 @@ window.SDD = window.SDD || {};
       return c;
     }
     _cyCache = {
-      // Strong atmospheric blur on the far layer - distant towers
-      // should be soft silhouettes, not crisp shapes.
-      far:    mk(960, 180, _cyPaintFar,        2.4),
+      // Atmospheric blur on the far layer - distant towers as soft
+      // silhouettes. v0.62: 2.4 -> 1.68px per Mark "5th layer less
+      // blurred by 30%."
+      far:    mk(960, 180, _cyPaintFar,        1.68),
       mid:    mk(960, 180, _cyPaintMid,        0),
       // v0.57: bridge canvas grew 180→240 so the layer covers the
       // bottom of the screen when the camera scrolls up during a
