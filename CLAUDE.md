@@ -120,6 +120,24 @@
 6. **Spacesuit + jetpack Danny sprites** — Mark mentioned these
    in-flight; some costume sprites already wired (commit `af34470`).
    Confirm with Mark if more are coming.
+7. **Post-stage scripture teaching beat** (idea banked 2026-05-30,
+   not yet designed/built). Stages that are NOT followed by a
+   between-days quiz (the first stage of any 2-stage day, and the
+   Adventure City secret stage) feel a little abrupt at the end —
+   stage clears → straight to results → straight to overworld. Mark
+   wants a brief "Super Dude Danny teaches from scripture" beat
+   inserted between the results screen and the overworld. Concept:
+   a "READ THIS OUT LOUD" card showing a short scripture verse,
+   with Danny in his teaching pose (the lecturer frames in
+   `assets/New Assets/Big Danny/Actively_teaching_...`) reading
+   it aloud / pointing at the text. Confirm-to-advance. Verse
+   chosen by stage (a per-stage lookup in `js/quiz_data.js` style,
+   or a small new file). Should be SHORT (1 verse, ~2 lines) so it
+   doesn't feel like homework. Only triggers on the no-quiz
+   stages — the existing `quiz` scene already carries the
+   teaching beat between days, this fills the gap on intra-day
+   stages. NOT YET implemented; revisit after the Adventure City
+   art passes are done.
 
 ### Most recent session in plain English
 
