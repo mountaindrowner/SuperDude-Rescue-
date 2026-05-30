@@ -2386,95 +2386,97 @@ window.SDD = window.SDD || {};
     px(g, 0, 6, 16, 1, '#9cb6d5');
   }
 
-  // ---- Cyber family (Day 8 Adventure City): asphalt roadway ----
-  // Top tile: asphalt with a painted yellow lane stripe down the
-  // middle + reflective white edge stripe + curb shadow. Reads
-  // unambiguously as a city street when tiled.
+  // ---- Cyber family (Day 8 Adventure City): solarpunk walkway ----
+  // Cozy cream pedestrian walkway tile - terracotta paver bricks with
+  // mossy seams + a planter accent on every few tiles. Reads as a
+  // SOLARPUNK CITY STREET (NOT cyberpunk asphalt).
   function paintRoadTop_cyber(g) {
-    // Body asphalt.
-    px(g, 0, 0, 16, 16, '#3a3e54');
-    px(g, 0, 0, 16, 2, '#4a4e64');                 // sun-bleached top
-    px(g, 0, 2, 16, 1, '#2a2e44');                 // crisp curb shadow
-    // Faint speckled aggregate (5 random dots).
-    px(g, 2, 6,  1, 1, '#5a5e74');
-    px(g, 9, 4,  1, 1, '#2a2e44');
-    px(g, 13, 9, 1, 1, '#5a5e74');
-    px(g, 5, 11, 1, 1, '#2a2e44');
-    px(g, 11, 13,1, 1, '#5a5e74');
-    // Yellow center lane stripe (broken dash - half the tile fills).
-    px(g, 1, 7, 8, 2, '#e8b03a');
-    px(g, 1, 7, 8, 1, '#fff070');
-    // White edge stripe at the very bottom.
-    px(g, 0, 15, 16, 1, '#cfd6e8');
-    // Lighter reflective dot in the lane stripe.
-    px(g, 4, 7, 1, 1, '#ffffff');
+    // Cream paver body with subtle highlight.
+    px(g, 0, 0, 16, 16, '#E8D6B8');
+    px(g, 0, 0, 16, 2, '#F4E6CC');                 // sun-warmed top
+    // Paver block seams (4 bricks per tile, staggered).
+    px(g, 0, 5, 16, 1, '#A08858');
+    px(g, 0, 11, 16, 1, '#A08858');
+    px(g, 7, 0, 1, 5, '#A08858');
+    px(g, 4, 6, 1, 5, '#A08858');
+    px(g, 11, 6, 1, 5, '#A08858');
+    px(g, 7, 12, 1, 4, '#A08858');
+    // Faint moss / weathered specks in the seams.
+    px(g, 2, 5,  1, 1, '#65B95F');
+    px(g, 9, 11, 1, 1, '#65B95F');
+    px(g, 13, 5, 1, 1, '#A08858');
+    // Subtle warm highlight on a few bricks.
+    px(g, 1, 1, 5, 1, '#FFF0D8');
+    px(g, 8, 1, 7, 1, '#FFF0D8');
+    px(g, 1, 7, 2, 1, '#F4E6CC');
+    px(g, 12, 7, 3, 1, '#F4E6CC');
+    // Bottom edge curb shadow.
+    px(g, 0, 15, 16, 1, '#A08858');
   }
   function paintRoadBody_cyber(g) {
-    // Dirt/sub-road body - solid dark asphalt with manhole + grate.
-    px(g, 0, 0, 16, 16, '#2a2e44');
-    px(g, 0, 0, 16, 1, '#3a3e54');
-    // Concrete texture (subtle).
-    px(g, 3, 3, 1, 1, '#1a1e34');
-    px(g, 11, 6, 1, 1, '#1a1e34');
-    px(g, 6, 10, 1, 1, '#3a3e54');
-    px(g, 13, 12, 1, 1, '#1a1e34');
-    // Manhole cover (round-ish in pixel art).
-    px(g, 5, 4, 6, 5, '#0a0e1c');
-    px(g, 6, 3, 4, 1, '#0a0e1c');
-    px(g, 4, 5, 1, 3, '#0a0e1c');
-    px(g, 11, 5, 1, 3, '#0a0e1c');
-    px(g, 6, 9, 4, 1, '#0a0e1c');
-    px(g, 6, 4, 4, 1, '#3a3e54');                  // rim highlight
-    px(g, 6, 4, 1, 1, '#5a5e74');
-    // Faint sewer steam crack.
-    px(g, 6, 6, 4, 1, '#1a1e34');
-    px(g, 6, 7, 4, 1, '#1a1e34');
-    // Grate lines (3 slats).
-    px(g, 2, 12, 3, 1, '#1a1e34');
-    px(g, 12, 13, 3, 1, '#1a1e34');
-    px(g, 0, 15, 16, 1, '#0e1224');
+    // Sub-walkway body - warm tan/brown with a planter or drain
+    // accent. Mostly hidden under solid ground tile above.
+    px(g, 0, 0, 16, 16, '#C9A982');
+    px(g, 0, 0, 16, 1, '#D8B890');
+    // Brick / cobble texture: 3-row stagger.
+    px(g, 0, 5, 16, 1, '#8C7448');
+    px(g, 0, 10, 16, 1, '#8C7448');
+    px(g, 4, 0, 1, 5, '#8C7448');
+    px(g, 11, 0, 1, 5, '#8C7448');
+    px(g, 8, 6, 1, 4, '#8C7448');
+    px(g, 2, 11, 1, 5, '#8C7448');
+    px(g, 13, 11, 1, 5, '#8C7448');
+    // Warm highlight on a few bricks.
+    px(g, 1, 1, 2, 1, '#E0C49A');
+    px(g, 5, 1, 5, 1, '#E0C49A');
+    px(g, 12, 1, 3, 1, '#E0C49A');
+    px(g, 0, 6, 7, 1, '#E0C49A');
+    px(g, 9, 6, 6, 1, '#E0C49A');
+    // Mossy moss bits in some seams (life).
+    px(g, 6, 5, 1, 1, '#65B95F');
+    px(g, 14, 10, 1, 1, '#65B95F');
+    // Bottom seam.
+    px(g, 0, 15, 16, 1, '#6C5430');
   }
   function paintBrick_cyber(g) {
-    // Sci-fi modular metal panel (used for billboards / structural
-    // supports). Three panels with rivet highlights.
-    px(g, 0, 0, 16, 16, '#5a6694');
-    // Panel divisions (cross + horizontal).
-    px(g, 0, 7, 16, 1, '#2a3458');
-    px(g, 7, 0, 1, 16, '#2a3458');
-    // Highlight tops of each quadrant.
-    px(g, 0, 0, 7, 1, '#8a96c4');
-    px(g, 8, 0, 8, 1, '#8a96c4');
-    px(g, 0, 8, 7, 1, '#8a96c4');
-    px(g, 8, 8, 8, 1, '#8a96c4');
-    // Rivets at the corners.
-    px(g, 1, 1, 1, 1, '#ffffff');
-    px(g, 14, 1, 1, 1, '#ffffff');
-    px(g, 1, 9, 1, 1, '#ffffff');
-    px(g, 14, 9, 1, 1, '#ffffff');
-    // Inset shading on each panel.
-    px(g, 5, 5, 1, 1, '#3a4470');
-    px(g, 12, 5, 1, 1, '#3a4470');
-    px(g, 5, 13, 1, 1, '#3a4470');
-    px(g, 12, 13, 1, 1, '#3a4470');
-    px(g, 0, 15, 16, 1, '#1a2240');
+    // Solarpunk architectural panel - warm cream cladding with teal
+    // accent bands + glass section. Used for billboards and walls.
+    px(g, 0, 0, 16, 16, '#E8D6B8');
+    px(g, 0, 0, 16, 1, '#F4E6CC');                 // top warm highlight
+    // Mid teal accent band.
+    px(g, 0, 7, 16, 2, '#8FA7A8');
+    px(g, 0, 7, 16, 1, '#B5CECC');
+    // Cladding seams (vertical only).
+    px(g, 5, 0, 1, 7, '#C9A982');
+    px(g, 10, 0, 1, 7, '#C9A982');
+    px(g, 5, 9, 1, 7, '#C9A982');
+    px(g, 10, 9, 1, 7, '#C9A982');
+    // Small green accent (vine / moss).
+    px(g, 1, 12, 1, 2, '#65B95F');
+    px(g, 1, 12, 1, 1, '#A6E86F');
+    px(g, 14, 13, 1, 2, '#65B95F');
+    // Glass corner highlights.
+    px(g, 1, 1, 1, 1, '#FFFFFF');
+    px(g, 14, 1, 1, 1, '#FFFFFF');
+    // Bottom seam.
+    px(g, 0, 15, 16, 1, '#A08858');
   }
   function paintPlatform_cyber(g) {
-    // Holographic walkway: dark deck with bright cyan edge lighting
-    // along the top + a faint underglow.
-    px(g, 0, 0, 16, 7, '#1a2240');
-    px(g, 0, 0, 16, 1, '#5af0ff');                 // top edge glow
-    px(g, 0, 1, 16, 1, '#3aa4d4');                 // softer fall-off
-    // Hex-grid pattern across the deck.
-    px(g, 2, 3, 2, 1, '#3a4470');
-    px(g, 6, 3, 2, 1, '#3a4470');
-    px(g, 10, 3, 2, 1, '#3a4470');
-    px(g, 14, 3, 2, 1, '#3a4470');
-    px(g, 0, 5, 2, 1, '#3a4470');
-    px(g, 4, 5, 2, 1, '#3a4470');
-    px(g, 8, 5, 2, 1, '#3a4470');
-    px(g, 12, 5, 2, 1, '#3a4470');
-    // Subtle underglow below the plank.
-    px(g, 0, 6, 16, 1, '#0e1224');
+    // Solarpunk garden walkway - wood plank with a solar glass strip
+    // at the top edge + a mossy underside. Hopeful, cozy.
+    px(g, 0, 0, 16, 7, '#9C7448');                 // wood body
+    px(g, 0, 0, 16, 1, '#B5CECC');                 // teal solar-glass top
+    px(g, 0, 1, 16, 1, '#8FA7A8');                 // solar darker pane
+    // Wood grain accents.
+    px(g, 2, 3, 2, 1, '#7C5430');
+    px(g, 8, 3, 3, 1, '#7C5430');
+    px(g, 1, 5, 4, 1, '#B58858');
+    px(g, 9, 5, 5, 1, '#B58858');
+    // Mossy patches along the bottom.
+    px(g, 1, 6, 2, 1, '#65B95F');
+    px(g, 10, 6, 3, 1, '#65B95F');
+    px(g, 1, 6, 1, 1, '#A6E86F');
+    px(g, 10, 6, 1, 1, '#A6E86F');
   }
 
   // ---- Sea family (sea-surface / seaside): sandy beach + coral ----

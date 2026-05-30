@@ -97,15 +97,15 @@ SDD.levels = SDD.levels || {};
       });
     }
   }
-  // Ground lane: cars from both directions alternating.
-  laneRow(10,  1, 4, 240, '#46f0ff');
-  laneRow(10, -1, 4, 240, '#ff5a3a');
+  // Ground lane: warm solarpunk palette - amber + teal alternating.
+  laneRow(10,  1, 4, 240, '#FFB25B');
+  laneRow(10, -1, 4, 240, '#8FA7A8');
   // Low sky lane (flyover above the street).
-  laneRow(7,  -1, 3, 200, '#5af0a8');
-  laneRow(7,   1, 3, 200, '#ffd23a');
+  laneRow(7,  -1, 3, 200, '#FFE46B');
+  laneRow(7,   1, 3, 200, '#F06AB4');
   // High sky lane (drone height) - clear of the HUD ribbon.
-  laneRow(4,  -1, 2, 280, '#ff7adc');
-  laneRow(4,   1, 2, 280, '#9a7aff');
+  laneRow(4,  -1, 2, 280, '#5DE2E7');
+  laneRow(4,   1, 2, 280, '#A6E86F');
 
   // Rescue team near the goal (tx ~340-348). Computer character
   // greets at the very end.
