@@ -2720,8 +2720,49 @@ window.SDD = window.SDD || {};
       _cyDrawWindowGrid(g, x, baseY, w, h, null, 0.55);
       // Rounded corners on the body.
       _cyRoundCorners(g, x, baseY, w, h, shade);
-      // Vines cascading down a few buildings.
-      if (rng() > 0.65) {
+      // Vertical garden building: ~12% of towers get their entire
+      // facade covered in cascading greenery (a living-wall feature).
+      // Reads strongly as solarpunk.
+      var verticalGarden = rng() > 0.88;
+      if (verticalGarden) {
+        // Paint a leaf-textured overlay across the whole face.
+        for (var vgy = baseY + 4; vgy < baseY + h - 4; vgy += 1) {
+          for (var vgx = x + 2; vgx < x + w - 2; vgx += 1) {
+            var n = ((vgx * 31 + vgy * 17) & 0xf);
+            if (n < 11) {
+              g.fillStyle = (n < 3) ? _CYP.leafDkr
+                          : (n < 6) ? _CYP.leafDk
+                          : (n < 9) ? _CYP.leafMid
+                                     : _CYP.leafLt;
+              g.fillRect(vgx, vgy, 1, 1);
+            }
+          }
+        }
+        // Scattered cherry blossoms across the wall.
+        for (var bsl = 0; bsl < 6; bsl++) {
+          var bsx = x + 4 + Math.floor(rng() * (w - 8));
+          var bsy = baseY + 6 + Math.floor(rng() * (h - 12));
+          g.fillStyle = _CYP.blossom;
+          g.fillRect(bsx, bsy, 1, 1);
+          if (rng() > 0.5) {
+            g.fillStyle = _CYP.blossomDk;
+            g.fillRect(bsx + 1, bsy, 1, 1);
+          }
+        }
+        // A few warm windows poking through the foliage.
+        for (var vwn = 0; vwn < 3; vwn++) {
+          var vwy = baseY + 12 + vwn * 18;
+          if (vwy > baseY + h - 6) break;
+          var vwx = x + Math.floor(w / 2) - 2;
+          g.fillStyle = _CYP.outlineD;
+          g.fillRect(vwx, vwy, 4, 5);
+          g.fillStyle = _CYP.warmWin;
+          g.fillRect(vwx + 1, vwy + 1, 2, 3);
+          g.fillStyle = _CYP.warmWinH;
+          g.fillRect(vwx + 1, vwy + 1, 2, 1);
+        }
+      } else if (rng() > 0.65) {
+        // Standard cascading vine on a regular building.
         var vx = x + 3 + Math.floor(rng() * (w - 8));
         var vh = 8 + Math.floor(rng() * 14);
         g.fillStyle = _CYP.leafDk;
@@ -2733,6 +2774,21 @@ window.SDD = window.SDD || {};
             g.fillRect(vx + jitter - 1, baseY + vy + 4, 1, 1);
             g.fillStyle = _CYP.leafDk;
           }
+        }
+      } else if (rng() > 0.55) {
+        // Side-mounted solar array on the facade (5-cell vertical strip).
+        var saSide = (rng() > 0.5);
+        var sax = saSide ? (x + 3) : (x + w - 7);
+        var say = baseY + 16 + Math.floor(rng() * (h - 40));
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(sax - 1, say - 1, 6, 16);
+        g.fillStyle = _CYP.teal;
+        g.fillRect(sax, say, 4, 14);
+        g.fillStyle = _CYP.tealH;
+        g.fillRect(sax, say, 4, 1);
+        g.fillStyle = _CYP.tealD;
+        for (var cell = 0; cell < 4; cell++) {
+          g.fillRect(sax, say + 3 + cell * 3, 4, 1);
         }
       }
       // Rooftop ornament.
@@ -2839,14 +2895,51 @@ window.SDD = window.SDD || {};
       // Shop sign band above the awning.
       var sgW = w - 12, sgX = x + 6;
       g.fillStyle = _CYP.outlineD;
-      g.fillRect(sgX, baseY + 1, sgW, 4);
+      g.fillRect(sgX, baseY + 1, sgW, 5);
       g.fillStyle = aCol;
-      g.fillRect(sgX + 1, baseY + 2, sgW - 2, 2);
-      // Faux text glyphs.
+      g.fillRect(sgX + 1, baseY + 2, sgW - 2, 3);
+      g.fillStyle = aColH;
+      g.fillRect(sgX + 1, baseY + 2, sgW - 2, 1);
+      // Shop icon on the left of the sign (recognizable symbol so it
+      // reads as a real storefront, not a placeholder).
+      var iconX = sgX + 2;
+      var iconY = baseY + 2;
+      var iconColor = '#fff8d8';
+      g.fillStyle = iconColor;
+      var shopType = (k % 5);
+      if (shopType === 0) {
+        // CAFE: coffee cup + handle + steam wisp.
+        g.fillRect(iconX, iconY + 1, 3, 2);
+        g.fillRect(iconX + 3, iconY + 1, 1, 1);             // handle
+        g.fillRect(iconX + 1, iconY,     1, 1);             // steam
+      } else if (shopType === 1) {
+        // PARK / GARDEN: tree (canopy + trunk).
+        g.fillRect(iconX, iconY,     3, 2);
+        g.fillRect(iconX + 1, iconY + 2, 1, 1);             // trunk
+      } else if (shopType === 2) {
+        // MARKET: shopping bag (square + handle).
+        g.fillRect(iconX, iconY + 1, 3, 2);
+        g.fillRect(iconX + 1, iconY,     1, 1);             // handle
+      } else if (shopType === 3) {
+        // BAKERY: croissant / loaf curve.
+        g.fillRect(iconX,     iconY + 1, 4, 1);
+        g.fillRect(iconX + 1, iconY,     2, 1);
+        g.fillRect(iconX,     iconY + 2, 1, 1);
+        g.fillRect(iconX + 3, iconY + 2, 1, 1);
+      } else {
+        // FLORIST: flower (4 petals + center).
+        g.fillRect(iconX + 1, iconY,     1, 1);             // top
+        g.fillRect(iconX,     iconY + 1, 3, 1);             // mid
+        g.fillRect(iconX + 1, iconY + 2, 1, 1);             // bottom
+        g.fillStyle = _CYP.accent;
+        g.fillRect(iconX + 1, iconY + 1, 1, 1);             // center
+      }
+      // "Faux text" name to the right of the icon.
       g.fillStyle = '#fff8d8';
-      for (var ti = sgX + 3; ti < sgX + sgW - 3; ti += 4) {
-        g.fillRect(ti, baseY + 3, 1, 1);
+      for (var ti = sgX + 8; ti < sgX + sgW - 3; ti += 4) {
+        g.fillRect(ti,     baseY + 3, 1, 1);
         g.fillRect(ti + 1, baseY + 3, 1, 1);
+        if ((ti + k) & 1) g.fillRect(ti, baseY + 2, 1, 1);
       }
       // Door (warm-lit interior on one side).
       var doorLeft = (k & 1) === 0;
