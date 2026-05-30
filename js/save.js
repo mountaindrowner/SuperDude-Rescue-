@@ -24,13 +24,23 @@ window.SDD = window.SDD || {};
       completedDays: [],     // [day#, ...]
       bestTimes: {},         // { "d-s": seconds }
       bestCores: {},         // { "d-s": int }
-      quizzesPassed: []      // ["day2", "day3", ...]
+      quizzesPassed: [],     // ["day2", "day3", ...]
+      // v4: gate the secret Adventure City stage. firstClear flips when
+      // the finale completes; the menu uses it to reveal ADVENTURE CITY.
+      // secretCleared flips when the cityArrival cutscene finishes.
+      firstClear: false,
+      secretCleared: false
     };
   }
 
   function defaults() {
     return {
-      version: 3,
+      // v3 → v4 adds firstClear + secretCleared as per-slot flags. The
+      // storage KEY stays at v3 because the change is purely additive:
+      // older v3 payloads load fine through reconstruct() and the new
+      // fields default to false via emptySlot(). Bumping the int is
+      // future-proofing for the next breaking change.
+      version: 4,
       difficulty: 'medium',
       slots: { easy: emptySlot(), medium: emptySlot(), hard: emptySlot() },
       // volume kept for back-compat; music + sfx are now independent
@@ -55,7 +65,8 @@ window.SDD = window.SDD || {};
     get: function () { return raw.options; }, enumerable: true
   });
   ['unlockedDay', 'unlockedStage', 'completedStages', 'completedDays',
-   'bestTimes', 'bestCores', 'quizzesPassed'].forEach(function (k) {
+   'bestTimes', 'bestCores', 'quizzesPassed',
+   'firstClear', 'secretCleared'].forEach(function (k) {
     Object.defineProperty(data, k, {
       get: function () { return raw.slots[raw.difficulty][k]; },
       set: function (v) { raw.slots[raw.difficulty][k] = v; },
@@ -110,6 +121,8 @@ window.SDD = window.SDD || {};
         if (s.bestTimes) t.bestTimes = Object.assign({}, s.bestTimes);
         if (s.bestCores) t.bestCores = Object.assign({}, s.bestCores);
         if (Array.isArray(s.quizzesPassed))      t.quizzesPassed   = s.quizzesPassed.slice();
+        if (typeof s.firstClear === 'boolean')   t.firstClear    = s.firstClear;
+        if (typeof s.secretCleared === 'boolean') t.secretCleared = s.secretCleared;
       });
     }
     return d;

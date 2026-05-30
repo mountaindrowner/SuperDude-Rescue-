@@ -11,7 +11,46 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.39` / `sdd-shell-v39`.
+- **Live build**: `v0.55` / `sdd-shell-v55`.
+- **Latest landed (v0.55) — Day 8-1 Adventure City secret stage:**
+  - **New theme `cyber`** with 4-layer parallax (`drawSky_cyber` for
+    far/mid/bridge + new `drawForeground_cyber` hook that draws AFTER
+    entities for the overlapping-foreground layer). Procedural
+    placeholders for all 4 layers render until Mark drops the painted
+    PNGs into `assets/city/` (`far_skyline.png`, `mid_city.png`,
+    `bridge.png`, `foreground.png`). New `FOREGROUNDS` registry in
+    scenes.js mirrors the THEMES dispatch.
+  - **New `Car` + `CarSpawner` entities** in entities.js: 30-frame
+    telegraph (honk + flashing yellow outline), then deadly
+    contact-kill sweep at ~2.2 px/frame. Unkillable + non-stompable
+    (Stampede pattern). Spawner only emits when its anchor is within
+    400 px of camera; cars self-cull when they sweep past the camera
+    edge so the active count stays bounded on a long stage.
+  - **Save v4**: per-slot `firstClear` + `secretCleared` flags.
+    Storage key kept at v3 (additive change, `reconstruct()` defaults
+    the new fields to false for older payloads). `firstClear` flips
+    when the finale exits; `secretCleared` flips when cityArrival
+    exits.
+  - **Menu**: `ADVENTURE CITY` entry appears between HOW TO PLAY and
+    LEVEL EDITOR once `firstClear` is true on the active slot.
+    Selecting it dispatches `setScene('level', { day: 8, stage: 1 })`
+    — bypasses the overworld so the 7-days-of-creation arc stays
+    clean.
+  - **`level_8_1.js`**: 360-tile street + sparse parkour platforms +
+    3 lanes of cars (ground / low-sky flyover / high-sky drones) +
+    midstage signature pickup + rescue-team NPCs near the goal +
+    Towers `timepart` at column 357 + checkpoint at midpoint.
+  - **New `cityArrival` scene**: 3-beat finale-style cutscene at the
+    end of 8-1 (arrival / rescue greet / hero send-off). Reuses
+    `drawSky_cyber` as backdrop; rescue-team placeholder NPCs +
+    Danny celebrate animation.
+  - **New `NPC_META` entries**: `computer`, `rescue_leader`,
+    `rescue_scientist`, `rescue_engineer`, `rescue_pilot`. Procedural
+    placeholder sprites (`paintNPC_computer`, `paintRescuer`) keep
+    them visible until Mark provides real PNG frames.
+  - **Service worker**: precache adds `level_8_1.js`, the 4 city PNG
+    paths (will 404 + skip until Mark adds the files), and the
+    previously-missing `level 6 bugs background.png`.
 - **Latest work — Final-round playthrough polish (6 waves, all shipped):**
   - **W1 sprites**: fixed the old-procedural-sprite-on-victory bug
     (small Danny had no `dance` anim → pixDraw miss → legacy sprite;

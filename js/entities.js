@@ -2259,7 +2259,17 @@ window.SDD = window.SDD || {};
     eve:  { decorative: false, line: 'WELCOME, DANNY!' },
     deer: { decorative: true },
     lion: { decorative: true },
-    dove: { decorative: true }
+    dove: { decorative: true },
+    // v0.55 Adventure City secret stage: the Computer (presents the
+    // secret stage on the menu) + the rescue team (NPCs near the
+    // Towers who greet Danny at the end of the stage). Mark will
+    // provide real sprites + final dialogue lines; the placeholders
+    // below let the stage be played + tested before art lands.
+    computer:         { decorative: false, line: 'BOOTING UP...' },
+    rescue_leader:    { decorative: false, line: 'YOU MADE IT HOME!' },
+    rescue_scientist: { decorative: false, line: 'OUR HERO!' },
+    rescue_engineer:  { decorative: false, line: 'GREAT FLYING!' },
+    rescue_pilot:     { decorative: false, line: 'WELCOME BACK!' }
   };
   function NPC(x, y, kind, line) {
     this.x = x; this.y = y; this.w = 12; this.h = 26;
@@ -2792,6 +2802,138 @@ window.SDD = window.SDD || {};
   Checkpoint.prototype.zap = function () {};
   Checkpoint.prototype.stomped = function () {};
 
+  // ===================== CAR (Adventure City secret stage) =====================
+  // Futuristic sweeping car. Spawns from a CarSpawner offscreen along
+  // the player's path and zooms across at constant velocity. Telegraphs
+  // with a 30-frame warning window (honk + flashing outline) during
+  // which it's harmless, then becomes a deadly contact-kill obstacle.
+  // Modelled after Stampede (unkillable, non-stompable). Speed range
+  // 2.0-2.6 px/frame so the player has reaction time once they enter
+  // the camera view.
+  function Car(x, y, opts) {
+    opts = opts || {};
+    this.x = x; this.y = y;
+    this.w = opts.w || 22;
+    this.h = opts.h || 10;
+    this.dir = opts.dir || -1;
+    this.spd = opts.spd || 2.2;
+    this.color = opts.color || '#46f0ff';
+    this.warnT = (opts.warnT != null) ? opts.warnT : 30;
+    this.harmless = this.warnT > 0;
+    this.stompable = false; this.unkillable = true;
+    this.dead = false; this.remove = false;
+    this.t = 0; this.honked = false;
+  }
+  Car.prototype.update = function (level) {
+    this.t++;
+    if (this.warnT > 0) {
+      if (!this.honked) {
+        this.honked = true;
+        if (SDD.audio && SDD.audio.sfx) SDD.audio.sfx('select');
+      }
+      this.warnT--;
+      if (this.warnT === 0) this.harmless = false;
+      return;
+    }
+    this.x += this.dir * this.spd;
+    // Camera-relative cull: once the car has swept fully past the
+    // visible viewport (with a small buffer for trail visuals) it's
+    // gone forever - the player can't dodge what they can't see. Keeps
+    // the active-entity count bounded even on a long stage with many
+    // spawners.
+    var camx = (level && level.camera) ? level.camera.x : 0;
+    if (this.x + this.w < camx - 80 || this.x > camx + 320 + 80) {
+      this.remove = true;
+    }
+  };
+  Car.prototype.stomped = function () {};
+  Car.prototype.zap     = function () {};
+  Car.prototype.draw = function (ctx, cam) {
+    var dx = Math.round(this.x - cam.x);
+    var dy = Math.round(this.y - cam.y);
+    // Telegraph: flashing yellow outline + "!" honk indicator above
+    // the car for the first 30 frames after spawn.
+    if (this.warnT > 0) {
+      if ((this.warnT >> 2) & 1) {
+        ctx.fillStyle = '#ffd23a';
+        ctx.fillRect(dx - 2, dy - 2, this.w + 4, 2);
+        ctx.fillRect(dx - 2, dy + this.h, this.w + 4, 2);
+        ctx.fillRect(dx - 2, dy - 2, 2, this.h + 4);
+        ctx.fillRect(dx + this.w, dy - 2, 2, this.h + 4);
+      }
+      ctx.fillStyle = '#ff5a3a';
+      ctx.fillRect(dx + Math.floor(this.w / 2) - 1, dy - 10, 2, 5);
+      ctx.fillRect(dx + Math.floor(this.w / 2) - 1, dy - 4, 2, 2);
+    }
+    // Speed trail behind the car (only after the warn window so a
+    // stationary telegraph isn't already streaking).
+    if (this.warnT === 0) {
+      ctx.fillStyle = 'rgba(70,240,255,0.35)';
+      var trailX = (this.dir > 0) ? dx - 5 : dx + this.w;
+      ctx.fillRect(trailX, dy + 2, 5, this.h - 4);
+      ctx.fillStyle = 'rgba(70,240,255,0.18)';
+      var trailX2 = (this.dir > 0) ? dx - 9 : dx + this.w + 4;
+      ctx.fillRect(trailX2, dy + 3, 4, this.h - 6);
+    }
+    // Car body placeholder: rectangle + roof + headlights + wheels.
+    // Mark will swap in real PNG sprites in a follow-up.
+    ctx.fillStyle = '#0a1020';
+    ctx.fillRect(dx, dy, this.w, this.h);
+    ctx.fillStyle = this.color;
+    ctx.fillRect(dx + 1, dy + 1, this.w - 2, this.h - 4);
+    ctx.fillStyle = '#1a3050';
+    ctx.fillRect(dx + 4, dy - 3, this.w - 8, 3);
+    ctx.fillStyle = '#3a6a90';
+    ctx.fillRect(dx + 5, dy - 2, this.w - 10, 1);
+    ctx.fillStyle = '#fff8a0';
+    var hx = (this.dir > 0) ? (dx + this.w - 2) : dx;
+    ctx.fillRect(hx, dy + 2, 2, 3);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(dx + 3, dy + this.h - 2, 3, 2);
+    ctx.fillRect(dx + this.w - 6, dy + this.h - 2, 3, 2);
+  };
+
+  // ===================== CAR SPAWNER =====================
+  // Invisible periodic spawner placed in level data. Every `period`
+  // frames it pushes a fresh Car into level.enemies at the spawner's
+  // world (x, y) heading in `dir`. Mirrors LeafSpawner's lifecycle so
+  // collisions + draw loops skip it.
+  function CarSpawner(x, y, opts) {
+    opts = opts || {};
+    this.x = x; this.y = y; this.w = 4; this.h = 4;
+    this.dir = opts.dir || -1;
+    this.spd = opts.spd || 2.2;
+    this.period = opts.period || 180;
+    this.t = opts.phase || 0;
+    this.color = opts.color || '#46f0ff';
+    this.invisible = true; this.harmless = true; this.stompable = false;
+    this.dead = false; this.remove = false;
+  }
+  CarSpawner.prototype.update = function (level) {
+    this.t++;
+    if (this.t < this.period) return;
+    // Only emit when the spawner is roughly in the player's reach.
+    // Spawners far offscreen don't tick down their period either, so
+    // when the player wanders into range the next car arrives with
+    // its full telegraph window intact.
+    var camx = (level && level.camera) ? level.camera.x : 0;
+    if (this.x < camx - 400 || this.x > camx + 720) {
+      this.t = this.period - 1;     // hold ready
+      return;
+    }
+    this.t = 0;
+    // Car appears at the on-screen edge it's coming FROM (slightly
+    // inside the viewport so the telegraph flash is visible) and
+    // sweeps across once the warn window expires.
+    var spawnX = (this.dir > 0) ? (camx + 8) : (camx + 320 - 30);
+    var c = new Car(spawnX, this.y, {
+      dir: this.dir, spd: this.spd, color: this.color
+    });
+    level.enemies.push(c);
+  };
+  CarSpawner.prototype.draw = function () {};
+  CarSpawner.prototype.stomped = function () {};
+
   SDD.ent = {
     Player: Player, Walker: Walker, Wisp: Wisp, Thrower: Thrower,
     Orb: Orb, Blast: Blast, MovPlat: MovPlat, Core: Core,
@@ -2801,6 +2943,7 @@ window.SDD = window.SDD || {};
     Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
     BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister,
     ElectricEel: ElectricEel, Stampede: Stampede,
-    LeafFall: LeafFall, LeafSpawner: LeafSpawner
+    LeafFall: LeafFall, LeafSpawner: LeafSpawner,
+    Car: Car, CarSpawner: CarSpawner
   };
 })();

@@ -1747,6 +1747,67 @@ window.SDD = window.SDD || {};
     px(g, 4, 4, 1, 1, '#2a6a1a');
     px(g, 11, 4, 1, 1, '#2a6a1a');
   }
+  // ===== v0.55 Adventure City placeholder NPCs =====
+  // The Computer: a small CRT-screen-on-legs that presents the secret
+  // stage menu entry. Antennae + glowing cyan screen.
+  function paintNPC_computer(g) {
+    var bezel = '#1a2238', screen = '#5af0ff', screenD = '#1a8aa8';
+    var hi = '#aaffff', leg = '#7a8090';
+    // Antennae
+    px(g, 6, 0, 1, 4, leg); px(g, 13, 0, 1, 4, leg);
+    px(g, 5, 0, 1, 1, '#ff5a3a'); px(g, 14, 0, 1, 1, '#3aff60');
+    // CRT bezel
+    px(g, 2, 4, 16, 14, bezel);
+    px(g, 2, 4, 16, 1, '#3a4a78');
+    // Screen
+    px(g, 4, 6, 12, 9, screen);
+    px(g, 4, 6, 12, 1, hi);
+    px(g, 4, 14, 12, 1, screenD);
+    // Scanlines on screen
+    px(g, 4, 8, 12, 1, screenD);
+    px(g, 4, 11, 12, 1, screenD);
+    // Power LED + button
+    px(g, 16, 16, 1, 1, '#3aff60');
+    px(g, 4, 16, 2, 1, '#ffd23a');
+    // Base + legs
+    px(g, 2, 18, 16, 2, '#0e1322');
+    px(g, 4, 20, 2, 8, leg); px(g, 14, 20, 2, 8, leg);
+    px(g, 3, 28, 4, 2, '#3a4050'); px(g, 13, 28, 4, 2, '#3a4050');
+  }
+
+  // The rescue team: shared body shape parameterized by suit / accent
+  // / hat colour so each member reads distinct without a custom
+  // sprite per kind. Mark will replace these with painted frames.
+  function paintRescuer(g, suit, accent, hat) {
+    // Hair shadow under the hat
+    px(g, 5, 3, 10, 1, '#3a2a18');
+    // Hat / helmet
+    px(g, 4, 0, 12, 4, hat);
+    px(g, 4, 0, 12, 1, '#ffffff');
+    px(g, 5, 2, 10, 1, accent);
+    // Face
+    px(g, 5, 4, 10, 6, C.skin);
+    px(g, 5, 4, 10, 1, C.skinL);
+    px(g, 7, 7, 1, 1, C.out); px(g, 12, 7, 1, 1, C.out);
+    px(g, 9, 9, 2, 1, '#c47a3a');
+    // Neck
+    px(g, 8, 10, 4, 2, C.skin);
+    // Body / suit
+    px(g, 4, 12, 12, 12, suit);
+    px(g, 4, 12, 12, 1, '#ffffff');
+    // Accent stripe across the chest
+    px(g, 4, 15, 12, 2, accent);
+    // Belt
+    px(g, 4, 21, 12, 1, '#1a1a2a');
+    px(g, 9, 21, 2, 1, '#ffd23a');
+    // Legs
+    px(g, 5, 24, 4, 6, suit);
+    px(g, 11, 24, 4, 6, suit);
+    // Boots
+    px(g, 5, 28, 4, 2, '#1a1a2a');
+    px(g, 11, 28, 4, 2, '#1a1a2a');
+  }
+
   function paintNPC(g) {
     // long brown hair (no cap)
     px(g, 5, 0, 10, 4, '#6e4a26');
@@ -2895,6 +2956,15 @@ window.SDD = window.SDD || {};
     sprites['npc_deer'] = spriteO(20, 31, paintAnimal_deer);
     sprites['npc_lion'] = spriteO(40, 62, paintAnimal_lion);
     sprites['npc_dove'] = spriteO(20, 31, paintAnimal_dove);
+    // v0.55 Adventure City placeholders. Procedural silhouettes so the
+    // secret stage is playable + testable before Mark's real sprites
+    // land. Once PNG frames arrive, register loaders that override
+    // these entries (same key) and these defaults become dead code.
+    sprites['npc_computer']         = spriteO(20, 31, paintNPC_computer);
+    sprites['npc_rescue_leader']    = spriteO(20, 31, function (g) { paintRescuer(g, '#3a6aff', '#ff5a3a', '#ffd23a'); });
+    sprites['npc_rescue_scientist'] = spriteO(20, 31, function (g) { paintRescuer(g, '#ededed', '#3aff60', '#1a1a2a'); });
+    sprites['npc_rescue_engineer']  = spriteO(20, 31, function (g) { paintRescuer(g, '#ff8a3a', '#ffd23a', '#1a1a2a'); });
+    sprites['npc_rescue_pilot']     = spriteO(20, 31, function (g) { paintRescuer(g, '#3aff60', '#46f0ff', '#1a1a2a'); });
     sprites['tile_water'] = spritePlain(16, 16, paintWater);
     sprites['tile_water_top'] = spritePlain(16, 16, paintWaterTop);
     sprites['tile_qcore'] = spritePlain(16, 16, function (g) { paintQ(g, 'core'); });
@@ -3208,6 +3278,36 @@ window.SDD = window.SDD || {};
   bugBg.src = 'assets/level%206%20bugs%20background.png';
   // -----------------------------------------------------------------------
 
+  // ---- ADVENTURE CITY PARALLAX LAYERS (v0.55 secret stage) --------------
+  // 4 painted PNGs layered at different scroll factors in drawSky_cyber.
+  // Each loads into a 320x180 offscreen canvas; far + mid get a slight
+  // blur for depth-of-field, the bridge + foreground stay sharp so the
+  // pixel art reads crisply on the player plane.
+  // Per-layer null sentinel = "not loaded yet, fall back to procedural
+  // placeholder blocks." Mark drops PNGs into assets/city/ and they go
+  // live on the next page reload.
+  function mkCityLayer(src, blurPx) {
+    var img = new Image(), canvas = null;
+    img.onload = function () {
+      if (!img.width || !img.height) return;
+      var c = document.createElement('canvas');
+      c.width = 320; c.height = 180;
+      var g = c.getContext('2d');
+      if (blurPx) g.filter = 'blur(' + blurPx + 'px)';
+      g.drawImage(img, 0, 0, c.width, c.height);
+      g.filter = 'none';
+      canvas = c;
+    };
+    img.onerror = function () { canvas = null; };
+    img.src = src;
+    return function () { return canvas; };
+  }
+  var cyberFarFn    = mkCityLayer('assets/city/far_skyline.png',  1.5);
+  var cyberMidFn    = mkCityLayer('assets/city/mid_city.png',     0.6);
+  var cyberBridgeFn = mkCityLayer('assets/city/bridge.png',       0);
+  var cyberFgFn     = mkCityLayer('assets/city/foreground.png',   0);
+  // -----------------------------------------------------------------------
+
   SDD.sprites = {
     build: build,
     get: function (name) { return sprites[name]; },
@@ -3240,6 +3340,10 @@ window.SDD = window.SDD || {};
     },
     hasRealLogo: function () { return realLogoOk; },
     realLogo: function () { return realLogo; },
-    bugscaleBg: function () { return bugBgCanvas; }
+    bugscaleBg: function () { return bugBgCanvas; },
+    cyberFar:    function () { return cyberFarFn(); },
+    cyberMid:    function () { return cyberMidFn(); },
+    cyberBridge: function () { return cyberBridgeFn(); },
+    cyberFg:     function () { return cyberFgFn(); }
   };
 })();

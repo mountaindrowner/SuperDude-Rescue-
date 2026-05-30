@@ -430,6 +430,12 @@ window.SDD = window.SDD || {};
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
+      // v0.55 secret stage: once the active slot's firstClear flag is
+      // true (set when the kid finishes the finale), the Computer
+      // character offers the Adventure City stage. Hidden until earned.
+      if (SDD.save.data.firstClear) {
+        this.items.push({ label: 'ADVENTURE CITY', act: 'adventurecity' });
+      }
       // Dev: in-game level editor. Remove this line + js/editor.js
       // load + the 'editor' branch below to ship without the editor.
       if (SDD.scenes.editor) this.items.push({ label: 'LEVEL EDITOR', act: 'editor' });
@@ -445,6 +451,7 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
+        else if (act === 'adventurecity') { go('level', { day: 8, stage: 1 }); }
         else if (act === 'editor') { go('editor'); }
       }
     },
@@ -2351,6 +2358,122 @@ window.SDD = window.SDD || {};
     }
   }
 
+  // ===== ADVENTURE CITY: 4-LAYER CYBERPUNK PARALLAX (v0.55 secret stage) =====
+  // Mirrors the bugscale pattern but with three sky-tier PNG layers (far +
+  // mid + bridge) at increasing scroll factors, plus a procedural sky
+  // gradient + neon haze that's drawn when the PNGs aren't loaded yet.
+  // The foreground building layer that visually OVERLAPS the player is
+  // dispatched separately via FOREGROUNDS (below) so the level scene can
+  // call it AFTER entities draw.
+  function drawSky_cyber(g, camx, camy, prog, t) {
+    var S = SDD.sprites || {};
+    // Base sky gradient - cyan dawn behind every other layer.
+    var sky = g.createLinearGradient(0, 0, 0, 180);
+    sky.addColorStop(0,    '#6cdcf0');
+    sky.addColorStop(0.55, '#9aeaff');
+    sky.addColorStop(1,    '#cfe8ff');
+    g.fillStyle = sky; g.fillRect(0, 0, 320, 180);
+
+    // Procedural cloud band so the placeholder doesn't feel flat.
+    for (var ci = 0; ci < 9; ci++) {
+      var cx = ((ci * 56 - camx * 0.08) % 360 + 360) % 360 - 30;
+      var cy = 24 + (ci % 3) * 8;
+      g.fillStyle = 'rgba(255,255,255,0.78)';
+      g.fillRect(cx, cy, 32, 6);
+      g.fillRect(cx + 4, cy - 2, 24, 4);
+    }
+
+    function tileLayer(img, factor) {
+      if (!img) return;
+      var span = img.width || 320;
+      var off = -(((camx * factor) % span) + span) % span;
+      for (var b = off - span; b < 320 + span; b += span) {
+        g.drawImage(img, b, 0);
+      }
+    }
+
+    // Far skyline at 0.10x - distant, blurred for depth.
+    var far = S.cyberFar && S.cyberFar();
+    tileLayer(far, 0.10);
+    if (!far) {
+      // Procedural placeholder: pale tower silhouettes.
+      g.fillStyle = 'rgba(150,180,210,0.55)';
+      for (var f = 0; f < 14; f++) {
+        var fx = ((f * 26 - camx * 0.10) % 360 + 360) % 360 - 20;
+        var fh = 28 + ((f * 7) % 28);
+        g.fillRect(fx, 100 - fh, 16, fh);
+      }
+    }
+
+    // Mid city + flyovers at 0.25x.
+    var mid = S.cyberMid && S.cyberMid();
+    tileLayer(mid, 0.25);
+    if (!mid) {
+      g.fillStyle = '#6a7aa8';
+      for (var m = 0; m < 11; m++) {
+        var mx = ((m * 36 - camx * 0.25) % 360 + 360) % 360 - 20;
+        var mh = 36 + ((m * 11) % 36);
+        g.fillRect(mx, 120 - mh, 22, mh);
+        // Lit window grid for that neon city pop.
+        g.fillStyle = (m % 2) ? '#ffd23a' : '#5af0ff';
+        for (var wy = 122 - mh + 4; wy < 122 - 4; wy += 6) {
+          for (var wx = mx + 3; wx < mx + 22 - 3; wx += 4) {
+            if ((wx + wy + m) % 7 < 3) g.fillRect(wx, wy, 2, 2);
+          }
+        }
+        g.fillStyle = '#6a7aa8';
+      }
+    }
+
+    // Bridge / overpass at 0.50x - the player-plane road and rails.
+    var br = S.cyberBridge && S.cyberBridge();
+    tileLayer(br, 0.50);
+    if (!br) {
+      g.fillStyle = '#3a4a78';
+      g.fillRect(0, 130, 320, 6);
+      g.fillStyle = '#2a3458';
+      g.fillRect(0, 134, 320, 6);
+      // Pylons every 64 px so the bridge reads as supported.
+      for (var py = 0; py < 9; py++) {
+        var pxw = ((py * 64 - camx * 0.50) % 360 + 360) % 360 - 8;
+        g.fillStyle = '#2a3458';
+        g.fillRect(pxw, 136, 6, 24);
+      }
+    }
+
+    // Neon haze sweep so the dawn light looks Tokyo-ish.
+    g.fillStyle = 'rgba(255,150,200,0.10)';
+    g.fillRect(0, 80, 320, 30);
+    g.fillStyle = 'rgba(120,200,255,0.10)';
+    g.fillRect(0, 110, 320, 24);
+  }
+
+  // Foreground layer that overlaps the player. Called from the level
+  // scene's render AFTER all entities + projectiles draw, BEFORE HUD.
+  // Drawn at the highest scroll factor (0.70x) for strong depth.
+  function drawForeground_cyber(g, camx, camy, prog, t) {
+    var S = SDD.sprites || {};
+    var fg = S.cyberFg && S.cyberFg();
+    if (fg) {
+      var span = fg.width || 320, off = -(((camx * 0.70) % span) + span) % span;
+      for (var b = off - span; b < 320 + span; b += span) {
+        g.drawImage(fg, b, 0);
+      }
+      return;
+    }
+    // Procedural placeholder: dim foreground "buildings" at screen
+    // edges so the player feels the depth even before art lands.
+    g.fillStyle = 'rgba(20,30,50,0.85)';
+    var leftX = -((camx * 0.70) % 60);
+    g.fillRect(leftX, 60, 22, 120);
+    g.fillRect(leftX + 280, 80, 24, 100);
+    g.fillStyle = 'rgba(255,210,80,0.55)';
+    g.fillRect(leftX + 6, 80, 2, 2);
+    g.fillRect(leftX + 6, 110, 2, 2);
+    g.fillRect(leftX + 288, 96, 2, 2);
+    g.fillRect(leftX + 288, 130, 2, 2);
+  }
+
   var THEMES = {
     'galactic': function (g, x, y, p, t) { drawSkyGalactic(g, x, y, t); },
     'sky': drawSky_sky,
@@ -2364,7 +2487,15 @@ window.SDD = window.SDD || {};
     'savanna': drawSky_savanna,
     'village-dusk': drawSky_village_dusk,
     'eden': drawSky_eden,
-    'bugscale': drawSky_bugscale
+    'bugscale': drawSky_bugscale,
+    'cyber': drawSky_cyber
+  };
+
+  // Per-theme foreground layer (drawn AFTER entities, BEFORE HUD). Only
+  // themes that need an overlapping layer for parallax depth register
+  // here; missing entries are no-ops. Mirror of THEMES dispatch.
+  var FOREGROUNDS = {
+    'cyber': drawForeground_cyber
   };
 
   // Comedian loading-screen quips - random pick per stageintro card.
@@ -2767,6 +2898,28 @@ window.SDD = window.SDD || {};
           // the same palette as that stage's time-machine part.
           e = new SDD.ent.Signature(s.tx * T + 1, s.ty * T, s.kind, this.day + '-' + this.stage);
           this.items.push(e);
+        } else if (s.type === 'car') {
+          // Adventure City (Day 8-1) single-shot car. Mostly used for
+          // editor placement / debugging; production runs use carspawner.
+          e = new SDD.ent.Car(s.tx * T, s.ty * T, {
+            dir: s.dir || -1,
+            spd: s.spd,
+            color: s.color,
+            warnT: (s.warnT != null) ? s.warnT : 30
+          });
+          this.enemies.push(e);
+        } else if (s.type === 'carspawner') {
+          // Adventure City: invisible periodic car emitter. Each tick
+          // pushes a fresh Car into level.enemies. Lane Y is the spawn
+          // tile row (8/10/13 for high-sky / low-sky / ground).
+          e = new SDD.ent.CarSpawner(s.tx * T, s.ty * T, {
+            dir: s.dir || -1,
+            spd: s.spd,
+            color: s.color,
+            period: s.period || 180,
+            phase: s.phase || 0
+          });
+          this.enemies.push(e);
         }
         // Optional pixel-level nudge from the editor (offsetX/offsetY).
         // Lets a designer slide a lava plume or any spawn off-grid by
@@ -2899,6 +3052,15 @@ window.SDD = window.SDD || {};
 
     finish: function () {
       var timeSec = Math.floor(this.timeSteps / 60);
+      // Day 8 (Adventure City secret stage) sits OUTSIDE the linear
+      // overworld progression - reaching the Towers fires its own
+      // cityArrival cutscene instead of recordStage + results. The
+      // secretCleared flag is set inside cityArrival's exit.
+      if (this.day === 8) {
+        A.stopMusic();
+        go('cityArrival', { timeSec: timeSec, cores: this.cores, lives: this.lives });
+        return;
+      }
       SDD.save.recordStage(this.day, this.stage, timeSec, this.cores);
       if (this.day === 7) {
         A.stopMusic();
@@ -3297,6 +3459,12 @@ window.SDD = window.SDD || {};
         g.fillRect(Math.round(p.x - cam.x), Math.round(p.y - cam.y), p.size, p.size);
       }
       g.globalAlpha = 1;
+
+      // Per-theme foreground overlay (currently only 'cyber' uses this).
+      // Drawn after entities + projectiles so the painted layer can
+      // visually OVERLAP the player + obstacles for parallax depth.
+      var fgFn = FOREGROUNDS[this.theme];
+      if (fgFn) fgFn(g, cam.x, cam.y, prog, this.timeSteps);
 
       this.drawHUD(g);
       this.drawSignatureHint(g);
@@ -3815,6 +3983,13 @@ window.SDD = window.SDD || {};
         this.beat++; this.t = 0; A.sfx('select');
         if (this.beat >= FINALE_BEATS.length) {
           A.stopMusic();
+          // First time the kid finishes the finale, unlock the secret
+          // Adventure City stage. firstClear is per-slot so each
+          // difficulty earns the unlock independently.
+          if (!SDD.save.data.firstClear) {
+            SDD.save.data.firstClear = true;
+            SDD.save.save();
+          }
           go('menu');
         }
       }
@@ -3936,6 +4111,108 @@ window.SDD = window.SDD || {};
 
       // caption box - pinned to bottom edge so it doesn't cover the cinematic art
       var lines = FINALE_BEATS[b] ? FINALE_BEATS[b].lines : [];
+      var bh = 16 + lines.length * 11;
+      var by_ = 180 - bh;
+      g.fillStyle = 'rgba(8,8,20,0.92)'; g.fillRect(8, by_, 304, bh);
+      g.strokeStyle = '#ffd23a'; g.strokeRect(8.5, by_ + 0.5, 303, bh - 1);
+      for (var li = 0; li < lines.length; li++) {
+        text(g, lines[li], 160, by_ + 6 + li * 11, '#ffffff', 1, 'center');
+      }
+      if (t % 40 < 26) tsh(g, 'PRESS A', 312, by_ - 12, '#ffd23a', '#000000', 1, 'right');
+    }
+  };
+
+  // =====================================================================
+  // CITY ARRIVAL - Adventure City secret stage end-of-stage cutscene.
+  // Modelled after the finale: short beats array, confirm-to-advance,
+  // returns to menu on the last beat and sets secretCleared = true.
+  // Backdrop reuses drawSky_cyber + drawForeground_cyber so the painted
+  // city is the canvas; the rescue team are drawn in the foreground.
+  // =====================================================================
+  var CITY_BEATS = [
+    { lines: ['SUPER DUDE DANNY ARRIVES AT', 'ADVENTURE CITY TOWERS!'] },
+    { lines: ['THE RESCUE TEAM WAS WAITING.', 'WELCOME HOME, HERO!'] },
+    { lines: ['YOUR ADVENTURE NEVER ENDS.', 'KEEP EXPLORING!'] }
+  ];
+  SDD.scenes.cityArrival = {
+    enter: function (d) {
+      this.d = d || {}; this.beat = 0; this.t = 0;
+      // Reuse the finale track for now - Mark may compose a dedicated
+      // Adventure City arrival cue later.
+      A.startMusic('finale');
+    },
+    update: function () {
+      this.t++;
+      if (this.beat === 1 && this.t === 1) A.sfx('win');
+      if (this.beat === 2 && this.t === 1) A.sfx('1up');
+      if (In.confirm() || this.t > 360) {
+        this.beat++; this.t = 0; A.sfx('select');
+        if (this.beat >= CITY_BEATS.length) {
+          A.stopMusic();
+          if (!SDD.save.data.secretCleared) {
+            SDD.save.data.secretCleared = true;
+            SDD.save.save();
+          }
+          go('menu');
+        }
+      }
+    },
+    render: function (g) {
+      var b = this.beat, t = this.t;
+      // Painted city as the backdrop on every beat (the sky + fg
+      // hooks already tile + parallax).
+      drawSky_cyber(g, t * 0.4, 0, 0, t);
+      // A solid road band so the rescue team have a floor to stand on.
+      g.fillStyle = '#1a1f30'; g.fillRect(0, 156, 320, 24);
+      g.fillStyle = '#2a3450'; g.fillRect(0, 156, 320, 1);
+
+      var idleIdx = Math.floor(t / 18) % 4;
+      var bob = Math.sin(t * 0.08) * 1;
+
+      if (b === 0) {
+        // Danny strides toward the Towers (right edge), rescue team
+        // peeking from the right.
+        drawDannyScaled(g, 'big', 'walk', 'east', Math.floor(t / 7) % 4,
+          80, 152, 1.5);
+        // Tower silhouette on the right.
+        g.fillStyle = '#3a4a78';
+        g.fillRect(220, 60, 50, 96);
+        g.fillStyle = '#5af0ff';
+        g.fillRect(232, 68, 6, 6);
+        g.fillRect(246, 78, 6, 6);
+        g.fillRect(232, 92, 6, 6);
+        g.fillRect(246, 102, 6, 6);
+        tsh(g, 'ADVENTURE CITY TOWERS', 160, 28, '#ffd23a', '#1a1630', 1, 'center');
+      } else if (b === 1) {
+        // Rescue team greeting line - draw the placeholder NPC
+        // silhouettes side by side beside a celebrating Danny.
+        var npcSprites = ['npc_rescue_leader', 'npc_rescue_scientist',
+                          'npc_rescue_engineer', 'npc_rescue_pilot'];
+        for (var ri = 0; ri < npcSprites.length; ri++) {
+          var spr = S.get(npcSprites[ri]);
+          if (spr) g.drawImage(spr, 180 + ri * 22, 130 + Math.round(bob));
+        }
+        drawDannyScaled(g, 'big', 'celebrate', 'east', Math.floor(t / 5) % 9,
+          110, 152, 1.5);
+        tsh(g, 'THE RESCUE TEAM', 160, 28, '#ffd23a', '#1a1630', 1, 'center');
+      } else {
+        // Hero send-off: Danny lifted by the team, end-card text.
+        tsh(g, 'SUPER DUDE DANNY', 160, 60, '#ffd23a', '#a8631a', 2, 'center');
+        tsh(g, 'IS HOME!', 160, 90, '#ff5d4a', '#7a1f16', 3, 'center');
+        drawDannyScaled(g, 'big', 'celebrate', 'south',
+          Math.floor(t / 5) % 9, 130, 124, 2);
+        // Confetti.
+        for (var p = 0; p < 24; p++) {
+          var px = ((p * 37 + t * 1.2) % 320);
+          var py = ((p * 23 + t * 1.8) % 180);
+          var col = (p % 3 === 0) ? '#ffd23a' : (p % 3 === 1) ? '#5af0ff' : '#ff5a3a';
+          g.fillStyle = col;
+          g.fillRect(px | 0, py | 0, 2, 2);
+        }
+      }
+
+      // Caption box - same shape as the finale's.
+      var lines = CITY_BEATS[b] ? CITY_BEATS[b].lines : [];
       var bh = 16 + lines.length * 11;
       var by_ = 180 - bh;
       g.fillStyle = 'rgba(8,8,20,0.92)'; g.fillRect(8, by_, 304, bh);
