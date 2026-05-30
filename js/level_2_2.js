@@ -73,7 +73,16 @@ SDD.levels['2-2'] = {
     { type: "core", tx: 226, ty: 7 },
     { type: "core", tx: 234, ty: 9 },
     { type: "core", tx: 237, ty: 9 },
-    { type: "crab", tx: 101, ty: 10 }
+    { type: "crab", tx: 101, ty: 10 },
+    { type: "wisp", tx: 32,  ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 62,  ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 73,  ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 121, ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 130, ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 159, ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 170, ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 202, ty: 12, kind: "piranha" },
+    { type: "wisp", tx: 213, ty: 12, kind: "piranha" }
   ],
   movers: [
     { tx: 30, ty: 9, tx1: 35, ty1: 9, spd: 0.024, phase: 0 },

@@ -1210,6 +1210,43 @@ window.SDD = window.SDD || {};
     px(g, 9 + sway, 11, 1, 2, C.jfL);
   }
 
+  // Piranha (Day 2-2 swimming mob). Side-profile fish with a toothy
+  // maw - 14x14, two frames (mouth closed / open). Painted facing
+  // right; Wisp.draw mirrors when this.dir < 0.
+  function paintWisp_piranha(g, frame) {
+    var body = '#c63a28', bodyL = '#ee5a3a', bodyD = '#8a1818';
+    var fin  = '#7a1810', belly = '#e8c878', eye = '#0a0a18', tooth = '#fff8d8';
+    // Body: oval-ish, head right-ish, tail left
+    px(g, 1, 6, 11, 3, body);
+    px(g, 2, 5, 9, 1, body);
+    px(g, 3, 9, 8, 1, body);
+    px(g, 4, 4, 6, 1, bodyL);                 // top sheen
+    px(g, 2, 8, 9, 1, belly);                 // belly
+    // Tail fin (left)
+    px(g, 0, 5, 1, 5, fin);
+    px(g, 0, 4, 1, 1, fin);
+    px(g, 0, 10, 1, 1, fin);
+    // Dorsal spike (top)
+    px(g, 5, 3, 3, 1, fin);
+    px(g, 6, 2, 1, 1, fin);
+    // Pec fin (mid)
+    px(g, 4, 8, 2, 1, fin);
+    // Eye (slightly toward head)
+    px(g, 9, 6, 1, 1, eye);
+    px(g, 9, 5, 1, 1, bodyL);                 // brow spec
+    // Mouth - frame 0 closed slit, frame 1 open with teeth bared
+    if (frame === 1) {
+      px(g, 10, 7, 3, 2, eye);                // open maw shadow
+      px(g, 10, 7, 1, 1, tooth);              // upper fang
+      px(g, 12, 7, 1, 1, tooth);              // upper fang
+      px(g, 10, 8, 1, 1, tooth);              // lower fang
+      px(g, 12, 8, 1, 1, tooth);              // lower fang
+    } else {
+      px(g, 11, 7, 2, 1, bodyD);              // closed mouth line
+      px(g, 11, 7, 1, 1, tooth);              // single fang tip
+    }
+  }
+
   // ----- themed Thrower variants (16w x 16h stationary) -----
 
   // Rain cloud (sky / sea-surface).
@@ -2721,7 +2758,8 @@ window.SDD = window.SDD || {};
         smoke:      paintWisp_smoke,
         stormcloud: paintWisp_stormcloud,
         jellyfish:  paintWisp_jellyfish,
-        bee:        paintWisp_bee
+        bee:        paintWisp_bee,
+        piranha:    paintWisp_piranha
       };
       // Bee gets a bigger 18x16 canvas so its iconic over-the-body
       // wings can dominate the silhouette like the reference art.

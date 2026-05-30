@@ -1268,13 +1268,18 @@ window.SDD = window.SDD || {};
   Wisp.prototype.update = function (level) {
     if (this.dead) { this.deadT++; this.y += 2.4; this.t += 0.05; if (this.deadT > 22) this.remove = true; return; }
     this.t += 0.05;
-    this.y = this.homeY + Math.sin(this.t) * 28;
-    this.x += this.dir * 0.5;
+    // Piranha (Day 2-2 swim mob) keeps a tight vertical wiggle so it
+    // patrols inside the water band instead of leaping out into air.
+    var amp = (this.variant === 'piranha') ? 6 : 28;
+    this.y = this.homeY + Math.sin(this.t) * amp;
+    var spd = (this.variant === 'piranha') ? 0.7 : 0.5;
+    this.x += this.dir * spd;
     if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
     if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
     this.animT++;
     // Quiet ambient cue when player is near (bee buzz / bird chirp).
-    if (level.player && Math.random() < 0.003) {
+    // Piranhas are underwater - no ambient.
+    if (this.variant !== 'piranha' && level.player && Math.random() < 0.003) {
       var pl = level.player;
       var ad = Math.abs((this.x + this.w / 2) - (pl.x + pl.w / 2));
       if (ad < 220) {

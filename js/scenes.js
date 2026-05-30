@@ -2654,8 +2654,15 @@ window.SDD = window.SDD || {};
         } else if (s.type === 'wisp') {
           e = new SDD.ent.Wisp(0, 0);
           e.x = s.tx * T + 8 - e.w / 2; e.y = s.ty * T + 8 - e.h / 2;
-          e.homeY = e.y; e.minX = e.x - 26; e.maxX = e.x + 26;
-          e.variant = variants.wisp;
+          // Per-spawn `kind` override beats the theme default so a
+          // level can drop a specific creature (e.g. piranha in 2-2)
+          // without changing the biome's theme roster.
+          e.variant = s.kind || s.variant || variants.wisp;
+          // Patrol range: piranhas need a wider beat so they cover a
+          // meaningful stretch of their water section; default for
+          // other wisps stays ±26 px.
+          var wR = s.range || (e.variant === 'piranha' ? 56 : 26);
+          e.homeY = e.y; e.minX = e.x - wR; e.maxX = e.x + wR;
           // Shooter wisps always render as storm clouds so the player
           // can tell at a glance which wisps are dangerous (vs the
           // harmless theme-coloured flyers).
