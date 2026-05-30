@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v0.45';
+  SDD.VERSION = 'v0.46';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -40,7 +40,22 @@ window.SDD = window.SDD || {};
   // still get more detail than the old 320x180 buffer ever could.
   function resize() {
     var vw = window.innerWidth, vh = window.innerHeight;
-    var sc = Math.min(vw / 960, vh / 540);
+    var sFit  = Math.min(vw / 960, vh / 540);   // letterbox (16:9 inside viewport)
+    var sFill = vw / 960;                        // fill width (may overflow vertically)
+    // Mark: "fully wide in mobile to take advantage of 16:9 landscape."
+    // Modern phones in landscape are wider than 16:9 (~19.5:9 / 20:9),
+    // so the letterboxed canvas leaves big dead bars on each side.
+    // On a touch landscape viewport that is wider than 16:9 (=1.778),
+    // we lean toward filling width even though it spills a bit of the
+    // top + bottom outside the viewport. body { overflow: hidden } in
+    // style.css already clips the spill so it never blocks UI.
+    var isTouchLandscape = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && vw > vh;
+    var sc;
+    if (isTouchLandscape && vw / vh > 16 / 9) {
+      sc = sFill;
+    } else {
+      sc = sFit;
+    }
     if (sc <= 0) sc = 0.1;
     canvas.style.width = (960 * sc) + 'px';
     canvas.style.height = (540 * sc) + 'px';

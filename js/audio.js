@@ -193,35 +193,14 @@ window.SDD = window.SDD || {};
     var a = new Audio();
     a.preload = 'auto';
     a.loop = loop !== false;
-    a.volume = 1;                 // level is controlled by the WebAudio graph (see wireTrack)
+    a.volume = muted ? 0 : musicVolume * mixFor(id);
     a.src = path;
     // Explicit load() nudges the browser to actually start downloading
     // - 'auto' is a HINT and many browsers defer audio until first
     // play(). For title/intro tracks especially we want the bytes
     // in memory by the time the user taps the title card.
     try { a.load(); } catch (e) {}
-    FILE_TRACKS[id] = { el: a, loop: loop !== false, id: id, wired: false, noGraph: false, gain: null, src: null };
-  }
-  // Lazily route a track's <audio> through WebAudio:
-  //   element -> per-track mix gain -> musicGain -> master -> output.
-  // This is what makes the MUSIC slider actually work on iOS Safari,
-  // where HTMLAudioElement.volume is ignored (the MP3 otherwise plays
-  // at full system volume and drowns out the SFX - Mark's bug). Falls
-  // back to element.volume on browsers without createMediaElementSource.
-  function wireTrack(tr) {
-    if (!ctx || !tr || tr.wired || tr.noGraph) return tr && tr.wired;
-    try {
-      tr.src = ctx.createMediaElementSource(tr.el);
-      tr.gain = ctx.createGain();
-      tr.gain.gain.value = mixFor(tr.id);
-      tr.src.connect(tr.gain);
-      tr.gain.connect(musicGain);
-      tr.el.volume = 1;
-      tr.wired = true;
-    } catch (e) {
-      tr.noGraph = true;          // legacy browser: keep using element.volume
-    }
-    return tr.wired;
+    FILE_TRACKS[id] = { el: a, loop: loop !== false, id: id };
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
   function tryFileTrack(name) {
@@ -230,18 +209,9 @@ window.SDD = window.SDD || {};
     var id = ids[Math.floor(Math.random() * ids.length)];
     var tr = FILE_TRACKS[id]; if (!tr) return false;
     stopMusic();
-    wireTrack(tr);
     try {
       tr.el.currentTime = 0;
-      if (tr.wired) {
-        tr.el.volume = 1;                                  // graph (musicGain) controls level
-        if (tr.gain) {
-          try { tr.gain.gain.cancelScheduledValues(ctx.currentTime); } catch (e) {}
-          tr.gain.gain.value = mixFor(id);                 // reset after any fade-out
-        }
-      } else {
-        tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
-      }
+      tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
       var p = tr.el.play();
       if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
       currentFileTrack = tr;
@@ -253,25 +223,17 @@ window.SDD = window.SDD || {};
     var tr = currentFileTrack;
     currentFileTrack = null;
     var el = tr.el;
-    if (immediate) { try { el.pause(); } catch (e) {} return; }
-    if (tr.wired && tr.gain && ctx) {
-      // De-click via a WebAudio gain ramp, then pause (works on iOS).
-      try {
-        var now = ctx.currentTime;
-        tr.gain.gain.cancelScheduledValues(now);
-        tr.gain.gain.setValueAtTime(tr.gain.gain.value, now);
-        tr.gain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
-      } catch (e) {}
-      setTimeout(function () { try { el.pause(); tr.gain.gain.value = mixFor(tr.id); } catch (e) {} }, 150);
-    } else {
-      // Fallback (unwired / legacy): fade element.volume, then pause.
-      var v0 = el.volume, steps = 6, i = 0;
-      var iv = setInterval(function () {
-        i++;
-        try { el.volume = Math.max(0, v0 * (1 - i / steps)); } catch (e) {}
-        if (i >= steps) { clearInterval(iv); try { el.pause(); } catch (e) {} }
-      }, 20);
-    }
+    if (immediate) { try { el.pause(); el.volume = muted ? 0 : musicVolume * mixFor(tr.id); } catch (e) {} return; }
+    // Fade element.volume to 0 (de-click), then pause and restore vol.
+    var v0 = el.volume, steps = 6, i = 0;
+    var iv = setInterval(function () {
+      i++;
+      try { el.volume = Math.max(0, v0 * (1 - i / steps)); } catch (e) {}
+      if (i >= steps) {
+        clearInterval(iv);
+        try { el.pause(); el.volume = muted ? 0 : musicVolume * mixFor(tr.id); } catch (e) {}
+      }
+    }, 20);
   }
   function loadAllFileTracks() {
     // Framing
@@ -344,15 +306,15 @@ window.SDD = window.SDD || {};
 
   function applyGain() {
     if (master)    master.gain.value    = muted ? 0 : 1;     // master = mute switch
-    if (musicGain) musicGain.gain.value = musicVolume;        // chiptune + wired MP3 bus
+    if (musicGain) musicGain.gain.value = musicVolume;        // chiptune bus only
     if (sfxGain)   sfxGain.gain.value   = sfxVolume;          // sfx bus
-    // Wired MP3 tracks are controlled by musicGain above. Only UNWIRED
-    // tracks (legacy browsers) fall back to element.volume here.
+    // MP3 tracks use HTMLAudioElement.volume directly (works everywhere
+    // and avoids the createMediaElementSource pitfalls on iOS Safari -
+    // wiring through WebAudio silently disconnected the element from
+    // the speakers on some boots, which broke music entirely).
     for (var id in FILE_TRACKS) {
       var tr = FILE_TRACKS[id];
-      if (tr && !tr.wired) {
-        try { tr.el.volume = muted ? 0 : musicVolume * mixFor(id); } catch (e) {}
-      }
+      if (tr) { try { tr.el.volume = muted ? 0 : musicVolume * mixFor(id); } catch (e) {} }
     }
   }
 

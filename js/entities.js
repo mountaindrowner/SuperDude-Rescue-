@@ -1278,7 +1278,7 @@ window.SDD = window.SDD || {};
         // different sprite + no purple glow.
         orb.variant = 'bolt';
         level.projectiles.push(orb);
-        SDD.audio.sfx('bump');
+        // No SFX on shoot - Mark wants shooter enemies silent.
       }
     }
   };
@@ -1325,7 +1325,7 @@ window.SDD = window.SDD || {};
       this.throwAnim = 20;
       var ox = this.facing > 0 ? this.x + this.w : this.x - 8;
       level.spawnOrb(ox, this.y + 4, this.facing);
-      SDD.audio.sfx('bump');
+      // No SFX on shoot - Mark wants shooter enemies silent.
     }
     if (this.throwAnim > 0) this.throwAnim--;
   };
@@ -1469,7 +1469,7 @@ window.SDD = window.SDD || {};
       var jetDir = (level.player.x + level.player.w / 2 < this.x + this.w / 2) ? -1 : 1;
       var ox = jetDir > 0 ? this.x + this.w : this.x - 6;
       level.projectiles.push(new WaterJet(ox, this.y + 2, jetDir));
-      SDD.audio.sfx('bump');
+      // No SFX on shoot - Mark wants shooter enemies silent.
     }
     if (this.throwAnim > 0) this.throwAnim--;
   };
