@@ -2988,6 +2988,151 @@ window.SDD = window.SDD || {};
       g.fillStyle = _CYP.pathSeam;
       g.fillRect(x + 4, baseY + h + 2, 2, 1);
       g.fillRect(x + 14, baseY + h + 2, 2, 1);
+
+      // STREET-LEVEL LIFE - one decoration in front of every OTHER
+      // shop so individual pieces read as focal points instead of
+      // visual clutter. Picks from cafe table, bench, transit sign,
+      // vending machine, hanging lantern. Quiet shops just get an
+      // extra planter beside the door so the row still feels lived in.
+      var streetX = x + Math.floor(w / 2) - 4;
+      var streetY = baseY + h - 1;
+      if ((k % 2) === 0) {
+        // Quiet block - just an extra planter beside the door.
+        var pX = (doorLeft ? x + w - 7 : x + 2);
+        g.fillStyle = _CYP.bark;
+        g.fillRect(pX, streetY - 3, 4, 4);
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(pX, streetY - 3, 4, 1);
+        g.fillStyle = _CYP.leafDk;
+        g.fillRect(pX,     streetY - 6, 4, 3);
+        g.fillStyle = _CYP.leafMid;
+        g.fillRect(pX + 1, streetY - 6, 2, 1);
+        if ((k & 3) === 0) {
+          g.fillStyle = _CYP.blossom;
+          g.fillRect(pX + 1, streetY - 7, 1, 1);
+        }
+      } else if (shopType === 0) {
+        // CAFE: bigger bistro table + chair pair with steam from cup.
+        // Table top (round, 9 px wide for visibility).
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(streetX - 2, streetY - 4, 9, 1);
+        g.fillRect(streetX - 3, streetY - 3, 11, 1);
+        g.fillStyle = _CYP.bark;
+        g.fillRect(streetX - 2, streetY - 2, 9, 1);
+        // Pedestal + base.
+        g.fillRect(streetX + 1, streetY - 1, 2, 4);
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(streetX - 2, streetY + 3, 9, 1);
+        // Chair (round-backed silhouette beside table).
+        g.fillStyle = _CYP.bark;
+        g.fillRect(streetX + 8,  streetY - 6, 3, 5);        // back
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(streetX + 8,  streetY - 6, 3, 1);
+        g.fillStyle = _CYP.bark;
+        g.fillRect(streetX + 7,  streetY - 1, 5, 1);        // seat
+        g.fillRect(streetX + 7,  streetY,     1, 4);
+        g.fillRect(streetX + 11, streetY,     1, 4);
+        // Steaming coffee cup on the table.
+        g.fillStyle = '#fff5d8';
+        g.fillRect(streetX + 1, streetY - 6, 3, 2);
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX + 4, streetY - 5, 1, 1);          // handle
+        // Steam wisps.
+        g.fillStyle = 'rgba(255,255,255,0.85)';
+        g.fillRect(streetX + 1, streetY - 8, 1, 1);
+        g.fillRect(streetX + 3, streetY - 9, 1, 1);
+      } else if (shopType === 1) {
+        // PARK: wooden bench with backrest + cushion.
+        g.fillStyle = _CYP.bark;
+        g.fillRect(streetX - 4, streetY - 7, 16, 2);        // backrest top
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(streetX - 4, streetY - 7, 16, 1);
+        // Vertical back slats.
+        g.fillStyle = _CYP.bark;
+        for (var bsl = 0; bsl < 5; bsl++) {
+          g.fillRect(streetX - 3 + bsl * 4, streetY - 5, 1, 4);
+        }
+        g.fillStyle = _CYP.bark;
+        g.fillRect(streetX - 4, streetY - 1, 16, 3);        // seat slab
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(streetX - 4, streetY - 1, 16, 1);
+        // Cushion on the seat.
+        g.fillStyle = _CYP.awningC;
+        g.fillRect(streetX - 3, streetY - 2, 14, 1);
+        // Legs.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX - 3, streetY + 2, 2, 3);
+        g.fillRect(streetX + 9, streetY + 2, 2, 3);
+      } else if (shopType === 2) {
+        // MARKET: vending machine kiosk with bright warm display.
+        g.fillStyle = _CYP.tealD;
+        g.fillRect(streetX - 1, streetY - 12, 9, 14);       // body
+        g.fillStyle = _CYP.tealH;
+        g.fillRect(streetX - 1, streetY - 12, 9, 2);
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX,     streetY - 11, 7, 8);
+        g.fillStyle = _CYP.warmWinH;
+        g.fillRect(streetX,     streetY - 11, 7, 8);        // bright window
+        g.fillStyle = _CYP.warmWin;
+        g.fillRect(streetX,     streetY - 4,  7, 1);        // shelf line
+        // Bright items inside (red, yellow, cyan).
+        g.fillStyle = _CYP.awningR;
+        g.fillRect(streetX + 1, streetY - 10, 1, 2);
+        g.fillStyle = _CYP.accent;
+        g.fillRect(streetX + 3, streetY - 10, 1, 2);
+        g.fillStyle = _CYP.awningC;
+        g.fillRect(streetX + 5, streetY - 10, 1, 2);
+        g.fillStyle = _CYP.awningR;
+        g.fillRect(streetX + 2, streetY - 7,  1, 2);
+        g.fillStyle = _CYP.accent;
+        g.fillRect(streetX + 4, streetY - 7,  1, 2);
+        // Slot + button.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX + 1, streetY - 1,  5, 1);
+        g.fillStyle = _CYP.accent;
+        g.fillRect(streetX + 6, streetY - 2,  1, 1);
+      } else if (shopType === 3) {
+        // BAKERY: transit sign post with route badge.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX + 3, streetY - 10, 2, 12);        // post
+        g.fillStyle = _CYP.awningO;
+        g.fillRect(streetX - 1, streetY - 10, 10, 5);        // sign panel
+        g.fillStyle = _CYP.awningOH;
+        g.fillRect(streetX - 1, streetY - 10, 10, 1);
+        // T-shape route letter.
+        g.fillStyle = '#fff5d8';
+        g.fillRect(streetX + 1, streetY - 8, 6, 1);
+        g.fillRect(streetX + 3, streetY - 7, 2, 2);
+        // Stop spot at the base of the post.
+        g.fillStyle = _CYP.accent;
+        g.fillRect(streetX + 2, streetY + 1, 4, 1);
+      } else {
+        // FLORIST: hanging plant lantern from a tall pole.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX + 3, streetY - 12, 2, 8);         // pole
+        g.fillRect(streetX,     streetY - 12, 8, 1);         // arm
+        g.fillStyle = _CYP.bark;
+        g.fillRect(streetX - 1, streetY - 7,  10, 4);        // planter
+        g.fillStyle = _CYP.barkH;
+        g.fillRect(streetX - 1, streetY - 7,  10, 1);
+        // Plants cascading down.
+        g.fillStyle = _CYP.leafDk;
+        g.fillRect(streetX,     streetY - 11, 8, 4);
+        g.fillStyle = _CYP.leafMid;
+        g.fillRect(streetX + 1, streetY - 11, 6, 2);
+        g.fillStyle = _CYP.leafLt;
+        g.fillRect(streetX + 2, streetY - 11, 4, 1);
+        // Flowers.
+        g.fillStyle = _CYP.blossom;
+        g.fillRect(streetX + 1, streetY - 12, 1, 1);
+        g.fillRect(streetX + 6, streetY - 10, 1, 1);
+        g.fillRect(streetX + 3, streetY - 11, 1, 1);
+        g.fillStyle = _CYP.blossomDk;
+        g.fillRect(streetX + 4, streetY - 9,  1, 1);
+        // Standing on the sidewalk - base detail.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(streetX + 2, streetY + 1, 4, 1);
+      }
       // Move to next shop.
       x += w - 2 - Math.floor(rng() * 4);
     }
