@@ -2415,24 +2415,32 @@ window.SDD = window.SDD || {};
   }
   // Modular sci-fi panel divisions: thin shade lines across the face
   // every N rows/cols, plus a few brighter "rivet" pixels at panel
-  // intersections. Reads as prefab cladding on the building.
-  function _cyPanelDetail(g, x, y, w, h, shade, hi) {
-    // Horizontal panel divisions every ~12 px.
+  // intersections. Reads as prefab cladding on the building. Pass
+  // dense=true for an aggressive grid; false (default) skips most
+  // vertical divisions so towers don't read as fence posts.
+  function _cyPanelDetail(g, x, y, w, h, shade, hi, dense) {
+    // Horizontal panel divisions every ~16 px (was 12 - too tight).
     g.fillStyle = shade;
-    for (var py = y + 8; py < y + h - 4; py += 12) {
+    for (var py = y + 12; py < y + h - 4; py += 16) {
       g.fillRect(x + 1, py, w - 2, 1);
     }
-    // Vertical panel divisions every ~14 px.
-    for (var pxv = x + 7; pxv < x + w - 4; pxv += 14) {
-      g.fillRect(pxv, y + 2, 1, h - 4);
-    }
-    // Rivet highlights at panel intersections (1-px dots).
-    g.fillStyle = hi;
-    for (var ry = y + 8; ry < y + h - 4; ry += 12) {
-      for (var rx = x + 7; rx < x + w - 4; rx += 14) {
-        g.fillRect(rx,     ry,     1, 1);
-        g.fillRect(rx - 1, ry,     1, 1);
+    // Vertical divisions ONLY at strong structural lines (1/3 + 2/3
+    // of the building width) so the silhouette doesn't read like a
+    // barcode.
+    if (dense) {
+      for (var pxv = x + 7; pxv < x + w - 4; pxv += 14) {
+        g.fillRect(pxv, y + 2, 1, h - 4);
       }
+    } else {
+      var t1 = x + Math.floor(w / 3),  t2 = x + Math.floor(w * 2 / 3);
+      g.fillRect(t1, y + 8, 1, h - 12);
+      g.fillRect(t2, y + 8, 1, h - 12);
+    }
+    // Rivet highlights at panel intersections (sparse).
+    g.fillStyle = hi;
+    for (var ry = y + 12; ry < y + h - 4; ry += 16) {
+      g.fillRect(x + 5,         ry, 1, 1);
+      g.fillRect(x + w - 6,     ry, 1, 1);
     }
   }
 
@@ -2549,13 +2557,55 @@ window.SDD = window.SDD || {};
       var body  = _cyHex(72 + hueShift, 86, 138);
       var shade = _cyHex(46, 56,  95);
       var hi    = _cyHex(108, 122, 170);
+      // Silhouette variant: 0=rect, 1=rounded top, 2=sloped corner,
+      // 3=tapered (wider at base). Cheap variety on the silhouette.
+      var silh = Math.floor(rng() * 4);
       g.fillStyle = body;  g.fillRect(x, baseY, w, h);
-      g.fillStyle = shade; g.fillRect(x, baseY, 2, h);
+      if (silh === 1) {
+        // Rounded top: chip the top corners more aggressively.
+        g.clearRect(x,           baseY,     2, 1);
+        g.clearRect(x + 1,       baseY,     1, 1);
+        g.clearRect(x + w - 2,   baseY,     2, 1);
+        g.clearRect(x + w - 1,   baseY + 1, 1, 1);
+        g.clearRect(x,           baseY + 1, 1, 1);
+        g.fillStyle = shade;
+        g.fillRect(x + 2,       baseY,     1, 1);
+        g.fillRect(x + w - 3,   baseY,     1, 1);
+        g.fillStyle = body;
+      } else if (silh === 2) {
+        // Sloped corner (cut diagonal off the top-left or top-right).
+        var left = (k & 1) === 0;
+        var slopeH = Math.min(8, Math.floor(h * 0.15));
+        for (var sl = 0; sl < slopeH; sl++) {
+          if (left) g.clearRect(x, baseY + sl, slopeH - sl, 1);
+          else      g.clearRect(x + w - (slopeH - sl), baseY + sl, slopeH - sl, 1);
+        }
+        // Diagonal shading along the cut.
+        g.fillStyle = shade;
+        for (var sl2 = 0; sl2 < slopeH; sl2++) {
+          if (left) g.fillRect(x + (slopeH - sl2) - 1, baseY + sl2, 1, 1);
+          else      g.fillRect(x + w - (slopeH - sl2), baseY + sl2, 1, 1);
+        }
+      } else if (silh === 3) {
+        // Tapered: chip 2-3 px off each side near the top so the
+        // building narrows.
+        var taperH = Math.min(12, Math.floor(h * 0.18));
+        var taperW = 2;
+        for (var tp = 0; tp < taperH; tp++) {
+          // Only narrow gradually.
+          var inset = (tp < taperH / 2) ? taperW : 0;
+          if (inset) {
+            g.clearRect(x, baseY + tp, inset, 1);
+            g.clearRect(x + w - inset, baseY + tp, inset, 1);
+          }
+        }
+      }
+      g.fillStyle = shade; g.fillRect(x, baseY + 2, 2, h - 2);
       g.fillStyle = shade; g.fillRect(x, baseY + h - 2, w, 2);
-      g.fillStyle = hi;    g.fillRect(x + w - 1, baseY, 1, h);
-      g.fillStyle = hi;    g.fillRect(x, baseY, w, 1);
-      // Modular panel cladding on the body.
-      _cyPanelDetail(g, x, baseY, w, h, shade, hi);
+      g.fillStyle = hi;    g.fillRect(x + w - 1, baseY + 2, 1, h - 2);
+      g.fillStyle = hi;    g.fillRect(x + 2, baseY, w - 4, 1);
+      // Modular panel cladding on the body (sparse mode).
+      _cyPanelDetail(g, x, baseY + 4, w, h - 4, shade, hi, false);
       // Setback at ~60% height for some buildings (architectural step).
       var hasSetback = rng() > 0.55;
       if (hasSetback) {
@@ -2624,16 +2674,62 @@ window.SDD = window.SDD || {};
   }
 
   function _cyDrawWindowGrid(g, x, y, w, h, rng) {
-    // Window cells: 2x2 pixels, 4-px spacing → ~6-10 columns wide,
-    // ~10-25 rows tall. Random lit pattern with multiple colors.
-    var palette = ['#ffeab0', '#ffd870', '#cbe6ff', '#5af0ff', '#a0aacc', '#a0aacc'];
-    var seed = (x * 13 + y * 7) & 0xff;
+    // Per-building style flag: 30% are "mostly dark" silhouettes
+    // (very few lit windows) for skyline contrast against the lit
+    // neighbors. 10% are "feature windows" - bigger 3-wide lights
+    // on a couple of floors only.
+    var styleSeed = (x * 13 + y * 7) & 0xff;
+    var dark = (styleSeed & 0x0f) < 5;            // ~31%
+    var feature = !dark && ((styleSeed >> 4) & 0x0f) < 2;  // ~13%
+
+    var palette = ['#ffeab0', '#ffd870', '#cbe6ff', '#5af0ff', '#a0aacc'];
+    if (dark) {
+      // Dark silhouette: only a tiny scattering of lit windows.
+      for (var dy = y + 6; dy < y + h - 4; dy += 6) {
+        for (var dx = x + 3; dx < x + w - 3; dx += 5) {
+          if (((dx * 17 + dy * 23 + styleSeed) & 0x1f) < 2) {
+            g.fillStyle = palette[(dx + dy) % palette.length];
+            g.fillRect(dx, dy, 2, 2);
+          }
+        }
+      }
+      return;
+    }
+    if (feature) {
+      // Feature windows: 2-3 rows of WIDE bright bars (penthouse /
+      // hotel lobby feel).
+      var rows = 2 + (styleSeed & 1);
+      var col = (styleSeed & 1) ? '#ffd270' : '#fff5d8';
+      for (var fr = 0; fr < rows; fr++) {
+        var fy = y + 8 + fr * Math.max(8, Math.floor(h / (rows + 2)));
+        g.fillStyle = '#0a0e22';
+        g.fillRect(x + 3, fy - 1, w - 6, 5);
+        g.fillStyle = col;
+        g.fillRect(x + 4, fy, w - 8, 3);
+        // Center divider.
+        g.fillStyle = '#1a1e3a';
+        g.fillRect(x + Math.floor(w / 2), fy, 1, 3);
+        // Bright accent at the top.
+        g.fillStyle = '#ffffff';
+        g.fillRect(x + 4, fy, w - 8, 1);
+      }
+      // Sparse dim windows above + below the feature bars.
+      for (var ly = y + 4; ly < y + h - 3; ly += 5) {
+        for (var lx = x + 3; lx < x + w - 3; lx += 4) {
+          if (((lx * 11 + ly * 17 + styleSeed) & 0xf) === 0) {
+            g.fillStyle = '#a0aacc';
+            g.fillRect(lx, ly, 2, 2);
+          }
+        }
+      }
+      return;
+    }
+    // Standard lit grid with mixed colors.
     for (var wy = y + 3; wy < y + h - 3; wy += 4) {
       for (var wx = x + 2; wx < x + w - 2; wx += 3) {
-        // Skip windows pseudorandomly so the grid doesn't feel mechanical.
-        var lit = ((wx * 17 + wy * 23 + seed) & 7);
-        if (lit < 5) {
-          g.fillStyle = palette[(wx + wy + seed) % palette.length];
+        var lit = ((wx * 17 + wy * 23 + styleSeed) & 7);
+        if (lit < 4) {
+          g.fillStyle = palette[(wx + wy + styleSeed) % palette.length];
           g.fillRect(wx, wy, 2, 2);
         } else {
           g.fillStyle = '#202850';
@@ -2644,8 +2740,12 @@ window.SDD = window.SDD || {};
   }
 
   function _cyDrawRooftop(g, x, baseY, w, k, rng) {
-    // Roof type variants chosen by building width.
-    if (w < 28) {
+    // Roof type variants chosen by building width + rng. 4 archetypes
+    // (small antenna, water tower + AC, garden + planter, sloped
+    // ridge with skylight) so the skyline silhouette reads as varied.
+    var variant = (k != null) ? (k % 4) : Math.floor(rng() * 4);
+    if (w < 28) variant = 0;
+    if (variant === 0) {
       // Small: just an antenna.
       g.fillStyle = '#1a2240';
       g.fillRect(x + w / 2, baseY - 6, 1, 6);
@@ -2653,7 +2753,58 @@ window.SDD = window.SDD || {};
       g.fillRect(x + w / 2, baseY - 6, 1, 1);
       return;
     }
-    // Water tower (cylindrical pixel shape).
+    if (variant === 2) {
+      // Rooftop garden: planter band + 3-4 tree silhouettes + railing.
+      // Reads as the Tokyo-skyline detail Mark's references emphasise.
+      g.fillStyle = '#2a3458';
+      g.fillRect(x + 2, baseY - 4, w - 4, 4);                 // planter
+      g.fillStyle = '#3a4470';
+      g.fillRect(x + 2, baseY - 4, w - 4, 1);                 // planter rim
+      // Soil strip.
+      g.fillStyle = '#3a2a18';
+      g.fillRect(x + 3, baseY - 3, w - 6, 1);
+      // Trees: rounded canopy with trunk + 1-2 brighter highlights.
+      var tn = Math.max(2, Math.floor((w - 6) / 8));
+      for (var ti = 0; ti < tn; ti++) {
+        var tx = x + 4 + ti * Math.floor((w - 8) / tn);
+        // Canopy (round-ish).
+        g.fillStyle = '#1e4628';
+        g.fillRect(tx,     baseY - 9, 5, 5);
+        g.fillRect(tx - 1, baseY - 8, 7, 3);
+        // Lighter top hits.
+        g.fillStyle = '#3a7a3e';
+        g.fillRect(tx + 1, baseY - 9, 3, 1);
+        g.fillRect(tx + 1, baseY - 8, 1, 2);
+        // Trunk.
+        g.fillStyle = '#3a2a18';
+        g.fillRect(tx + 2, baseY - 4, 1, 1);
+      }
+      return;
+    }
+    if (variant === 3) {
+      // Sloped ridge with skylight + chimney.
+      var ridgeH = 4;
+      g.fillStyle = '#2a3458';
+      // Diagonal slope: stepped pyramid roof.
+      for (var st = 0; st < ridgeH; st++) {
+        g.fillRect(x + st + 2, baseY - st - 1, w - (st * 2) - 4, 1);
+      }
+      // Highlight on the sun-side.
+      g.fillStyle = '#5a6494';
+      for (var st2 = 0; st2 < ridgeH; st2++) {
+        g.fillRect(x + st2 + 2, baseY - st2 - 1, 1, 1);
+      }
+      // Skylight (small lit rectangle).
+      g.fillStyle = '#ffd270';
+      g.fillRect(x + w / 2 - 2, baseY - 3, 4, 2);
+      // Chimney with smoke wisp.
+      g.fillStyle = '#1a2240';
+      g.fillRect(x + w - 8, baseY - 5, 2, 5);
+      g.fillStyle = '#3a4470';
+      g.fillRect(x + w - 8, baseY - 5, 2, 1);
+      return;
+    }
+    // variant === 1: water tower + AC unit row + tall antenna.
     var wtx = x + 4;
     g.fillStyle = '#3a4264';
     g.fillRect(wtx, baseY - 6, 6, 4);
@@ -2670,17 +2821,12 @@ window.SDD = window.SDD || {};
     for (var ac = acx + 1; ac < acx + w - 18; ac += 4) {
       g.fillRect(ac, baseY - 3, 2, 1);
     }
-    // Tall antenna on ~50% of buildings.
-    if ((w + (k || 0)) & 1) {
-      var ax = x + w - 6;
-      g.fillStyle = '#1a2240';
-      g.fillRect(ax, baseY - 12, 1, 12);
-      // Cross arms.
-      g.fillRect(ax - 2, baseY - 10, 5, 1);
-      g.fillRect(ax - 1, baseY - 7, 3, 1);
-      // Red blinking aviation light goes here per-frame (in the
-      // animated overlay), not pre-rendered.
-    }
+    // Tall antenna with cross arms.
+    var ax = x + w - 6;
+    g.fillStyle = '#1a2240';
+    g.fillRect(ax, baseY - 12, 1, 12);
+    g.fillRect(ax - 2, baseY - 10, 5, 1);
+    g.fillRect(ax - 1, baseY - 7, 3, 1);
   }
 
   function _cyDrawCrane(g, x, y) {
@@ -3042,6 +3188,73 @@ window.SDD = window.SDD || {};
     if ((t / 18 | 0) & 1) {
       g.fillStyle = '#ff4040'; g.fillRect(ash + 1,  26, 2, 2);
       g.fillStyle = '#40ff60'; g.fillRect(ash + 29, 26, 2, 2);
+    }
+
+    // 5b. Giant hologram banner floating mid-air between buildings.
+    //     Cyan-tinted "ADVENTURE CITY" letters with scanline flicker.
+    //     Y=58 (well below the HUD ribbon).
+    var holoCamX = camx * 0.20;
+    var holoX = ((((holoCamX) * -1 + 380) % 1100 + 1100) % 1100) - 110;
+    if (holoX > -110 && holoX < 320 + 30) {
+      var holoY = 58 + Math.sin(t * 0.04) * 1;
+      var flicker = (t % 90) < 6;
+      g.save();
+      g.globalAlpha = flicker ? 0.40 : 0.78;
+      // Background plate (slightly translucent).
+      g.fillStyle = 'rgba(20,80,140,0.35)';
+      g.fillRect(holoX - 2, holoY - 2, 96, 18);
+      // Cyan border frame.
+      g.fillStyle = '#5af0ff';
+      g.fillRect(holoX - 2, holoY - 2, 96, 1);
+      g.fillRect(holoX - 2, holoY + 15, 96, 1);
+      g.fillRect(holoX - 2, holoY - 2, 1, 18);
+      g.fillRect(holoX + 93, holoY - 2, 1, 18);
+      // Text glyphs: vertical stripes that read as Japanese-style
+      // kanji from a distance.
+      g.fillStyle = '#aaeaff';
+      for (var hi2 = 0; hi2 < 12; hi2++) {
+        var hgx = holoX + 2 + hi2 * 7;
+        // Glyph body (3-4 vertical strokes with horizontal connectors).
+        g.fillRect(hgx,     holoY + 1, 1, 12);
+        g.fillRect(hgx + 4, holoY + 1, 1, 12);
+        g.fillRect(hgx,     holoY + 3, 5, 1);
+        g.fillRect(hgx,     holoY + 7, 5, 1);
+        g.fillRect(hgx,     holoY + 11, 5, 1);
+      }
+      // Scanline sweep across the hologram.
+      g.fillStyle = 'rgba(255,255,255,0.30)';
+      var scanY = holoY + (t * 0.4) % 16;
+      g.fillRect(holoX - 2, scanY, 96, 1);
+      g.restore();
+      // Projection beam from a tower below (visible only when the
+      // hologram is roughly centered).
+      if (holoX > 60 && holoX < 240) {
+        g.fillStyle = 'rgba(90,240,255,0.10)';
+        g.beginPath();
+        g.moveTo(holoX + 40, holoY + 18);
+        g.lineTo(holoX + 60, holoY + 18);
+        g.lineTo(holoX + 64, 95);
+        g.lineTo(holoX + 36, 95);
+        g.closePath(); g.fill();
+      }
+    }
+
+    // 5c. Distant elevated freeway: a band of moving headlights /
+    //     taillights sweeping at strong parallax above the mid layer.
+    var freewayY = 76;
+    g.fillStyle = 'rgba(40,30,70,0.55)';
+    g.fillRect(0, freewayY - 1, 320, 4);
+    g.fillStyle = 'rgba(60,50,90,0.55)';
+    g.fillRect(0, freewayY + 3, 320, 1);
+    for (var fc = 0; fc < 14; fc++) {
+      var dir = (fc & 1) ? 1 : -1;
+      var fcx = ((fc * 33 + t * 0.9 * dir - camx * 0.18) % 360 + 360) % 360 - 20;
+      var fcy = freewayY + ((fc & 1) ? 1 : 0);
+      g.fillStyle = (dir > 0) ? '#fff48a' : '#ff5a5a';
+      g.fillRect(fcx, fcy, 2, 1);
+      // Light trail.
+      g.fillStyle = (dir > 0) ? 'rgba(255,244,138,0.45)' : 'rgba(255,90,90,0.45)';
+      g.fillRect(fcx - dir * 3, fcy, 3, 1);
     }
 
     function tileLayer(img, factor) {
