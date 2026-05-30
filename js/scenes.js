@@ -433,9 +433,10 @@ window.SDD = window.SDD || {};
       // v0.55 secret stage: once the active slot's firstClear flag is
       // true (set when the kid finishes the finale), the Computer
       // character offers the Adventure City stage. Hidden until earned.
-      if (SDD.save.data.firstClear) {
-        this.items.push({ label: 'ADVENTURE CITY', act: 'adventurecity' });
-      }
+      // TEMP (v0.56): unlock unconditionally + label as TEST so Mark
+      // can jump straight into the secret stage for art iteration.
+      // Restore the `if (SDD.save.data.firstClear)` gate before ship.
+      this.items.push({ label: 'ADVENTURE CITY (TEST)', act: 'adventurecity' });
       // Dev: in-game level editor. Remove this line + js/editor.js
       // load + the 'editor' branch below to ship without the editor.
       if (SDD.scenes.editor) this.items.push({ label: 'LEVEL EDITOR', act: 'editor' });
