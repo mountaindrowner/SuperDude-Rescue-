@@ -1748,64 +1748,288 @@ window.SDD = window.SDD || {};
     px(g, 11, 4, 1, 1, '#2a6a1a');
   }
   // ===== v0.55 Adventure City placeholder NPCs =====
-  // The Computer: a small CRT-screen-on-legs that presents the secret
-  // stage menu entry. Antennae + glowing cyan screen.
+  // The Computer: sci-fi holographic terminal on a tripod base. CRT
+  // monitor up top with scrolling code + power indicators; tripod
+  // legs with hydraulic detail; antenna with red strobe; a small
+  // holographic Danny projecting out the front of the screen.
   function paintNPC_computer(g) {
-    var bezel = '#1a2238', screen = '#5af0ff', screenD = '#1a8aa8';
-    var hi = '#aaffff', leg = '#7a8090';
-    // Antennae
-    px(g, 6, 0, 1, 4, leg); px(g, 13, 0, 1, 4, leg);
-    px(g, 5, 0, 1, 1, '#ff5a3a'); px(g, 14, 0, 1, 1, '#3aff60');
-    // CRT bezel
-    px(g, 2, 4, 16, 14, bezel);
-    px(g, 2, 4, 16, 1, '#3a4a78');
-    // Screen
-    px(g, 4, 6, 12, 9, screen);
-    px(g, 4, 6, 12, 1, hi);
-    px(g, 4, 14, 12, 1, screenD);
-    // Scanlines on screen
-    px(g, 4, 8, 12, 1, screenD);
-    px(g, 4, 11, 12, 1, screenD);
-    // Power LED + button
-    px(g, 16, 16, 1, 1, '#3aff60');
-    px(g, 4, 16, 2, 1, '#ffd23a');
-    // Base + legs
-    px(g, 2, 18, 16, 2, '#0e1322');
-    px(g, 4, 20, 2, 8, leg); px(g, 14, 20, 2, 8, leg);
-    px(g, 3, 28, 4, 2, '#3a4050'); px(g, 13, 28, 4, 2, '#3a4050');
+    var bezel = '#2a3050', bezelD = '#0e1322', bezelH = '#5a6494';
+    var screen = '#0a1230', glow = '#5af0ff', glowD = '#1a8aa8';
+    var hi = '#aaffff', metal = '#7a8090', metalD = '#3a4050';
+    // Curly antenna with red blinker.
+    px(g, 9, 0, 1, 3, metal); px(g, 10, 0, 2, 1, metal);
+    px(g, 12, 1, 1, 2, metal);
+    px(g, 12, 3, 1, 1, '#ff5a3a');
+    // Side dish antenna.
+    px(g, 4, 1, 1, 2, metal);
+    px(g, 3, 3, 3, 1, metal);
+    px(g, 4, 4, 1, 1, '#3aff60');
+    // Monitor bezel - rounded edges.
+    px(g, 3, 4, 14, 13, bezel);
+    px(g, 4, 4, 12, 1, bezelH);                   // top highlight
+    px(g, 3, 5, 1, 11, bezelD);                   // left shadow
+    px(g, 16, 5, 1, 11, bezelH);                  // right highlight
+    px(g, 4, 16, 12, 1, bezelD);                  // bottom shadow
+    // Round the bezel corners.
+    px(g, 3, 4, 1, 1, '#000000'); px(g, 16, 4, 1, 1, '#000000');
+    px(g, 3, 16, 1, 1, '#000000'); px(g, 16, 16, 1, 1, '#000000');
+    px(g, 4, 4, 1, 1, bezelD); px(g, 15, 4, 1, 1, bezelD);
+    px(g, 4, 16, 1, 1, bezelD); px(g, 15, 16, 1, 1, bezelD);
+    // Screen recess (dark with scanning glow).
+    px(g, 5, 6, 10, 9, screen);
+    // Holographic Danny mini-projection on the screen.
+    px(g, 9, 8, 2, 1, '#ffd270');                 // head
+    px(g, 9, 9, 2, 1, glow);                      // labcoat shoulders
+    px(g, 9, 10, 2, 2, '#ffffff');                // labcoat body
+    px(g, 9, 12, 1, 1, glow); px(g, 10, 12, 1, 1, glow); // legs
+    // Scanline glow across the screen (animated feel via offset bands).
+    px(g, 5, 7,  10, 1, glowD);
+    px(g, 5, 13, 10, 1, glowD);
+    // Screen edge glow.
+    px(g, 5, 6, 1, 9, glow);
+    px(g, 14, 6, 1, 9, glow);
+    // Diagnostic LEDs along the bottom of the monitor.
+    px(g, 5, 17, 1, 1, '#3aff60');
+    px(g, 7, 17, 1, 1, '#ffd23a');
+    px(g, 9, 17, 1, 1, '#ff5a3a');
+    px(g, 11, 17, 1, 1, '#5af0ff');
+    px(g, 13, 17, 1, 1, '#3aff60');
+    // Keyboard / control panel below the monitor.
+    px(g, 4, 18, 12, 2, metalD);
+    px(g, 4, 18, 12, 1, metal);
+    // Key cluster (4 tiny keys).
+    px(g, 6, 19, 1, 1, '#000000');
+    px(g, 8, 19, 1, 1, '#000000');
+    px(g, 10, 19, 1, 1, '#000000');
+    px(g, 12, 19, 1, 1, '#000000');
+    // Tripod base.
+    px(g, 9, 20, 2, 4, metalD);                   // central pillar
+    px(g, 9, 24, 2, 1, metal);
+    // Diagonal legs.
+    px(g, 6, 25, 1, 1, metal); px(g, 5, 26, 1, 1, metal);
+    px(g, 4, 27, 1, 1, metalD); px(g, 3, 28, 2, 2, metalD);
+    px(g, 13, 25, 1, 1, metal); px(g, 14, 26, 1, 1, metal);
+    px(g, 15, 27, 1, 1, metalD); px(g, 15, 28, 2, 2, metalD);
+    px(g, 7, 28, 6, 2, metalD);
+    px(g, 7, 28, 6, 1, metal);
+    // Light beam / hover glow under the base.
+    px(g, 5, 30, 10, 1, glowD);
   }
 
-  // The rescue team: shared body shape parameterized by suit / accent
-  // / hat colour so each member reads distinct without a custom
-  // sprite per kind. Mark will replace these with painted frames.
-  function paintRescuer(g, suit, accent, hat) {
-    // Hair shadow under the hat
-    px(g, 5, 3, 10, 1, '#3a2a18');
-    // Hat / helmet
-    px(g, 4, 0, 12, 4, hat);
-    px(g, 4, 0, 12, 1, '#ffffff');
-    px(g, 5, 2, 10, 1, accent);
-    // Face
+  // The rescue team: 4 distinct character silhouettes (no shared body
+  // shape) so each member reads as a unique role - leader, scientist,
+  // engineer, pilot. Mark may swap in painted frames later.
+
+  // LEADER: tall figure in a captain's coat with epaulets, peaked
+  // cap with brim + insignia, navy blue with gold piping.
+  function paintNPC_rescue_leader(g) {
+    var coat = '#1a3a8a', coatD = '#0a1e58', coatH = '#3a5ab8';
+    var gold = '#ffd23a', goldH = '#ffea88';
+    // Peaked cap.
+    px(g, 4, 1, 12, 3, coat);
+    px(g, 4, 1, 12, 1, coatH);
+    px(g, 3, 4, 14, 2, '#000000');                // brim
+    px(g, 3, 4, 14, 1, gold);                     // gold band
+    px(g, 9, 2, 2, 2, gold);                      // cap insignia
+    // Face.
+    px(g, 6, 5, 8, 5, C.skin);
+    px(g, 6, 5, 8, 1, C.skinL);
+    px(g, 8, 7, 1, 1, C.out); px(g, 11, 7, 1, 1, C.out);
+    px(g, 9, 9, 2, 1, '#a87a3a');                 // mustache
+    // Neck + collar.
+    px(g, 8, 10, 4, 1, C.skin);
+    px(g, 6, 11, 8, 1, coatD);
+    px(g, 7, 11, 6, 1, '#ffffff');                // white inner collar
+    // Double-breasted coat.
+    px(g, 4, 12, 12, 11, coat);
+    px(g, 4, 12, 12, 1, coatH);                   // shoulders highlight
+    px(g, 4, 12, 1, 11, coatD);
+    px(g, 15, 12, 1, 11, coatD);
+    // Epaulets (shoulder pieces) - gold.
+    px(g, 4, 12, 2, 2, gold);
+    px(g, 14, 12, 2, 2, gold);
+    px(g, 4, 12, 2, 1, goldH);
+    px(g, 14, 12, 2, 1, goldH);
+    // Coat buttons (2 columns).
+    px(g, 8, 14, 1, 1, gold); px(g, 11, 14, 1, 1, gold);
+    px(g, 8, 16, 1, 1, gold); px(g, 11, 16, 1, 1, gold);
+    px(g, 8, 18, 1, 1, gold); px(g, 11, 18, 1, 1, gold);
+    px(g, 8, 20, 1, 1, gold); px(g, 11, 20, 1, 1, gold);
+    // Gold trim down the center.
+    px(g, 9, 13, 1, 9, gold);
+    px(g, 10, 13, 1, 9, gold);
+    // Belt.
+    px(g, 4, 22, 12, 1, '#000000');
+    px(g, 9, 22, 2, 1, gold);
+    // Trousers + boots.
+    px(g, 5, 23, 4, 5, coatD);
+    px(g, 11, 23, 4, 5, coatD);
+    px(g, 5, 28, 4, 2, '#000000');
+    px(g, 11, 28, 4, 2, '#000000');
+    px(g, 5, 28, 4, 1, '#3a3a3a');                // boot polish hi
+    px(g, 11, 28, 4, 1, '#3a3a3a');
+  }
+
+  // SCIENTIST: white lab coat, oversized glasses, clipboard in hand,
+  // wild hair.
+  function paintNPC_rescue_scientist(g) {
+    var coat = '#ededed', coatD = '#a8a8b8', coatH = '#ffffff';
+    var hair = '#5a5a6a';
+    // Crazy hair (spiky).
+    px(g, 5, 1, 10, 3, hair);
+    px(g, 4, 2, 12, 2, hair);
+    px(g, 5, 0, 1, 1, hair); px(g, 7, 0, 1, 1, hair);
+    px(g, 10, 0, 1, 1, hair); px(g, 13, 0, 1, 1, hair);
+    // Face.
     px(g, 5, 4, 10, 6, C.skin);
     px(g, 5, 4, 10, 1, C.skinL);
+    px(g, 6, 9, 8, 1, C.skinD);                   // jaw shadow
+    // Oversized round glasses (frame + lens).
+    px(g, 6, 6, 4, 4, '#000000');                 // left frame
+    px(g, 10, 6, 4, 4, '#000000');                // right frame
+    px(g, 7, 7, 2, 2, '#a0e8ff');                 // left lens
+    px(g, 11, 7, 2, 2, '#a0e8ff');                // right lens
+    px(g, 7, 7, 2, 1, '#ffffff');                 // glass shine
+    px(g, 11, 7, 2, 1, '#ffffff');
+    px(g, 9, 7, 2, 1, '#000000');                 // bridge of glasses
+    // Lab coat body.
+    px(g, 4, 11, 12, 13, coat);
+    px(g, 4, 11, 12, 1, coatH);                   // shoulders
+    px(g, 4, 11, 1, 13, coatD);
+    px(g, 15, 11, 1, 13, coatD);
+    // Lapel.
+    px(g, 8, 11, 1, 4, coatD); px(g, 11, 11, 1, 4, coatD);
+    // Coat pocket on left.
+    px(g, 5, 16, 3, 3, coatD);
+    px(g, 5, 16, 3, 1, coatH);
+    // Pen in pocket.
+    px(g, 6, 15, 1, 3, '#1a1a3a');
+    // Clipboard in right hand.
+    px(g, 11, 18, 4, 6, '#a87a3a');
+    px(g, 12, 19, 2, 4, '#ffffff');
+    px(g, 12, 19, 2, 1, '#a0a0a0');
+    px(g, 12, 20, 2, 1, '#a0a0a0');
+    px(g, 12, 22, 2, 1, '#a0a0a0');
+    // Clipboard clip (silver).
+    px(g, 12, 18, 2, 1, '#cccccc');
+    // Belt.
+    px(g, 4, 22, 12, 1, coatD);
+    // Trousers + dress shoes.
+    px(g, 5, 23, 4, 5, '#2a2a3a');
+    px(g, 11, 23, 4, 5, '#2a2a3a');
+    px(g, 5, 28, 4, 2, '#000000');
+    px(g, 11, 28, 4, 2, '#000000');
+  }
+
+  // ENGINEER: orange jumpsuit with reflective bands, hard hat with
+  // headlamp, tool belt with hanging wrench.
+  function paintNPC_rescue_engineer(g) {
+    var suit = '#ff8a3a', suitD = '#a85220', suitH = '#ffb070';
+    var refl = '#ffea88', strap = '#2a2a3a';
+    // Hard hat.
+    px(g, 4, 1, 12, 4, '#ffd23a');
+    px(g, 4, 1, 12, 1, '#fff070');                // top highlight
+    px(g, 3, 4, 14, 1, '#a87a20');                // brim shadow
+    px(g, 3, 4, 14, 1, '#ffd23a');                // brim
+    px(g, 9, 2, 2, 1, '#a87a20');                 // hat ridge
+    // Headlamp on the hat.
+    px(g, 7, 3, 2, 2, '#cccccc');
+    px(g, 7, 3, 2, 1, '#ffffff');
+    px(g, 7, 4, 2, 1, '#ffd270');                 // lamp glow
+    // Face.
+    px(g, 5, 5, 10, 5, C.skin);
+    px(g, 5, 5, 10, 1, C.skinL);
     px(g, 7, 7, 1, 1, C.out); px(g, 12, 7, 1, 1, C.out);
-    px(g, 9, 9, 2, 1, '#c47a3a');
-    // Neck
-    px(g, 8, 10, 4, 2, C.skin);
-    // Body / suit
+    px(g, 6, 9, 8, 1, '#a87a3a');                 // chin stubble
+    // Neck + collar.
+    px(g, 8, 10, 4, 1, C.skin);
+    px(g, 5, 11, 10, 1, suitD);
+    // Jumpsuit body with chest zipper.
     px(g, 4, 12, 12, 12, suit);
-    px(g, 4, 12, 12, 1, '#ffffff');
-    // Accent stripe across the chest
-    px(g, 4, 15, 12, 2, accent);
-    // Belt
-    px(g, 4, 21, 12, 1, '#1a1a2a');
+    px(g, 4, 12, 12, 1, suitH);
+    px(g, 4, 12, 1, 12, suitD);
+    px(g, 15, 12, 1, 12, suitD);
+    // Zipper.
+    px(g, 9, 12, 1, 10, '#2a2a3a');
+    px(g, 10, 12, 1, 10, '#5a5a5a');
+    // Reflective stripes (across chest + cuffs).
+    px(g, 4, 16, 12, 1, refl);
+    px(g, 4, 17, 12, 1, '#a87a20');
+    // Tool belt.
+    px(g, 4, 22, 12, 2, strap);
+    px(g, 4, 22, 12, 1, '#3a3a4a');
+    // Belt buckle.
+    px(g, 9, 22, 2, 2, '#cccccc');
+    // Wrench hanging on the belt.
+    px(g, 13, 23, 1, 4, '#cccccc');
+    px(g, 12, 26, 3, 1, '#cccccc');
+    px(g, 12, 26, 3, 1, '#888888');
+    px(g, 12, 27, 1, 1, '#cccccc');
+    px(g, 14, 27, 1, 1, '#cccccc');
+    // Trousers + work boots.
+    px(g, 5, 24, 4, 4, suitD);
+    px(g, 11, 24, 4, 4, suitD);
+    px(g, 5, 28, 4, 2, '#1a1a1a');
+    px(g, 11, 28, 4, 2, '#1a1a1a');
+    px(g, 5, 28, 4, 1, '#5a5a5a');                // boot shine
+    px(g, 11, 28, 4, 1, '#5a5a5a');
+  }
+
+  // PILOT: green flight suit + bomber jacket, aviator helmet with
+  // visor + oxygen mask, gloved hands.
+  function paintNPC_rescue_pilot(g) {
+    var jacket = '#3a6a3a', jacketD = '#1a3a1a', jacketH = '#6aa66a';
+    var helmet = '#5a5a3a', helmetD = '#2a2a1a';
+    var visor = '#3aaadc', visorH = '#aaeaff';
+    // Helmet (matte olive with strap).
+    px(g, 4, 0, 12, 6, helmet);
+    px(g, 4, 0, 12, 1, '#7a7a5a');                // helmet top hi
+    px(g, 3, 5, 14, 1, helmetD);                  // helmet rim
+    // Visor.
+    px(g, 5, 5, 10, 3, visor);
+    px(g, 5, 5, 10, 1, visorH);                   // visor reflection
+    px(g, 6, 7, 8, 1, '#1a4a6a');                 // visor lower edge
+    // Helmet straps down to chin.
+    px(g, 4, 6, 1, 5, helmetD);
+    px(g, 15, 6, 1, 5, helmetD);
+    // Face below visor.
+    px(g, 6, 8, 8, 3, C.skin);
+    px(g, 6, 8, 8, 1, C.skinL);
+    // Oxygen mask covering nose + mouth.
+    px(g, 6, 9, 8, 3, '#1a3a1a');
+    px(g, 6, 9, 8, 1, '#3a5a3a');
+    px(g, 9, 10, 2, 1, '#5a7a5a');                // mask grate
+    // Mask hose.
+    px(g, 5, 11, 2, 2, '#1a1a1a');
+    // Neck + collar.
+    px(g, 8, 11, 4, 1, C.skin);
+    // Bomber jacket body.
+    px(g, 4, 12, 12, 11, jacket);
+    px(g, 4, 12, 12, 1, jacketH);
+    px(g, 4, 12, 1, 11, jacketD);
+    px(g, 15, 12, 1, 11, jacketD);
+    // Fur collar (cream).
+    px(g, 5, 12, 10, 2, '#e8dcb8');
+    px(g, 5, 12, 10, 1, '#fff5d0');
+    // Sheepskin chest texture (dots).
+    px(g, 6, 14, 1, 1, '#a89878'); px(g, 13, 14, 1, 1, '#a89878');
+    // Zipper.
+    px(g, 9, 14, 1, 7, '#cccccc');
+    px(g, 10, 14, 1, 7, '#888888');
+    // Squadron patch.
+    px(g, 5, 17, 3, 3, '#ff5a3a');
+    px(g, 5, 17, 3, 1, '#ff8a6a');
+    px(g, 6, 18, 1, 1, '#ffd23a');                // star on patch
+    // Belt.
+    px(g, 4, 21, 12, 1, '#000000');
     px(g, 9, 21, 2, 1, '#ffd23a');
-    // Legs
-    px(g, 5, 24, 4, 6, suit);
-    px(g, 11, 24, 4, 6, suit);
-    // Boots
-    px(g, 5, 28, 4, 2, '#1a1a2a');
-    px(g, 11, 28, 4, 2, '#1a1a2a');
+    // Flight trousers + tall boots.
+    px(g, 5, 22, 4, 6, '#2a2a1a');
+    px(g, 11, 22, 4, 6, '#2a2a1a');
+    px(g, 5, 26, 4, 4, '#1a1a1a');                // tall boots
+    px(g, 11, 26, 4, 4, '#1a1a1a');
+    px(g, 5, 26, 4, 1, '#3a3a3a');
+    px(g, 11, 26, 4, 1, '#3a3a3a');
   }
 
   function paintNPC(g) {
@@ -3061,10 +3285,10 @@ window.SDD = window.SDD || {};
     // land. Once PNG frames arrive, register loaders that override
     // these entries (same key) and these defaults become dead code.
     sprites['npc_computer']         = spriteO(20, 31, paintNPC_computer);
-    sprites['npc_rescue_leader']    = spriteO(20, 31, function (g) { paintRescuer(g, '#3a6aff', '#ff5a3a', '#ffd23a'); });
-    sprites['npc_rescue_scientist'] = spriteO(20, 31, function (g) { paintRescuer(g, '#ededed', '#3aff60', '#1a1a2a'); });
-    sprites['npc_rescue_engineer']  = spriteO(20, 31, function (g) { paintRescuer(g, '#ff8a3a', '#ffd23a', '#1a1a2a'); });
-    sprites['npc_rescue_pilot']     = spriteO(20, 31, function (g) { paintRescuer(g, '#3aff60', '#46f0ff', '#1a1a2a'); });
+    sprites['npc_rescue_leader']    = spriteO(20, 31, paintNPC_rescue_leader);
+    sprites['npc_rescue_scientist'] = spriteO(20, 31, paintNPC_rescue_scientist);
+    sprites['npc_rescue_engineer']  = spriteO(20, 31, paintNPC_rescue_engineer);
+    sprites['npc_rescue_pilot']     = spriteO(20, 31, paintNPC_rescue_pilot);
     sprites['tile_water'] = spritePlain(16, 16, paintWater);
     sprites['tile_water_top'] = spritePlain(16, 16, paintWaterTop);
     sprites['tile_qcore'] = spritePlain(16, 16, function (g) { paintQ(g, 'core'); });

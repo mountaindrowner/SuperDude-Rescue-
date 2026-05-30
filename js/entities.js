@@ -2865,9 +2865,15 @@ window.SDD = window.SDD || {};
       ctx.fillRect(dx + Math.floor(this.w / 2) - 1, dy - 10, 2, 5);
       ctx.fillRect(dx + Math.floor(this.w / 2) - 1, dy - 4, 2, 2);
     }
-    // Speed trail behind the car (only after the warn window so a
-    // stationary telegraph isn't already streaking).
+    // Pre-body: headlight cone projected forward when at full speed.
     if (this.warnT === 0) {
+      var hxBeam = (this.dir > 0) ? (dx + this.w) : (dx - 16);
+      var beam = ctx.createLinearGradient(hxBeam, dy + this.h / 2, hxBeam + (this.dir > 0 ? 16 : -16), dy + this.h / 2);
+      beam.addColorStop(0, 'rgba(255,250,180,0.55)');
+      beam.addColorStop(1, 'rgba(255,250,180,0)');
+      ctx.fillStyle = beam;
+      ctx.fillRect(hxBeam, dy + 2, 16, this.h - 4);
+      // Speed trail.
       ctx.fillStyle = 'rgba(70,240,255,0.35)';
       var trailX = (this.dir > 0) ? dx - 5 : dx + this.w;
       ctx.fillRect(trailX, dy + 2, 5, this.h - 4);
@@ -2875,22 +2881,88 @@ window.SDD = window.SDD || {};
       var trailX2 = (this.dir > 0) ? dx - 9 : dx + this.w + 4;
       ctx.fillRect(trailX2, dy + 3, 4, this.h - 6);
     }
-    // Car body placeholder: rectangle + roof + headlights + wheels.
-    // Mark will swap in real PNG sprites in a follow-up.
-    ctx.fillStyle = '#0a1020';
-    ctx.fillRect(dx, dy, this.w, this.h);
-    ctx.fillStyle = this.color;
-    ctx.fillRect(dx + 1, dy + 1, this.w - 2, this.h - 4);
-    ctx.fillStyle = '#1a3050';
-    ctx.fillRect(dx + 4, dy - 3, this.w - 8, 3);
-    ctx.fillStyle = '#3a6a90';
-    ctx.fillRect(dx + 5, dy - 2, this.w - 10, 1);
-    ctx.fillStyle = '#fff8a0';
-    var hx = (this.dir > 0) ? (dx + this.w - 2) : dx;
-    ctx.fillRect(hx, dy + 2, 2, 3);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(dx + 3, dy + this.h - 2, 3, 2);
-    ctx.fillRect(dx + this.w - 6, dy + this.h - 2, 3, 2);
+    // Car body. Drone-lane gets a hovercraft variant (oval pod with
+    // thruster); ground + low-sky get a sleek pixel-art coupe with
+    // windshield reflection, fender skirts, and rounded body.
+    var isDrone = this.y < 80;
+    if (isDrone) {
+      // HOVER DRONE: oval pod + glow underside.
+      ctx.fillStyle = '#0a1020';
+      ctx.fillRect(dx + 2, dy, this.w - 4, this.h);
+      ctx.fillRect(dx, dy + 2, this.w, this.h - 4);
+      ctx.fillStyle = this.color;
+      ctx.fillRect(dx + 3, dy + 1, this.w - 6, this.h - 2);
+      ctx.fillRect(dx + 1, dy + 3, this.w - 2, this.h - 6);
+      // Cockpit dome.
+      ctx.fillStyle = '#aaeaff';
+      ctx.fillRect(dx + this.w / 2 - 3, dy + 1, 6, 3);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(dx + this.w / 2 - 2, dy + 1, 2, 1);
+      // Thruster underside glow.
+      ctx.fillStyle = 'rgba(90,240,255,0.7)';
+      ctx.fillRect(dx + 3, dy + this.h, this.w - 6, 1);
+      ctx.fillStyle = 'rgba(90,240,255,0.35)';
+      ctx.fillRect(dx + 1, dy + this.h + 1, this.w - 2, 1);
+      ctx.fillStyle = 'rgba(255,250,200,0.45)';
+      ctx.fillRect(dx + this.w / 2 - 1, dy + this.h, 2, 3);
+      // Side fins.
+      ctx.fillStyle = '#1a3050';
+      ctx.fillRect(dx, dy + 4, 2, 2);
+      ctx.fillRect(dx + this.w - 2, dy + 4, 2, 2);
+    } else {
+      // GROUND/SKY CAR: sleek coupe with windshield + chassis.
+      // Lower chassis (darker).
+      ctx.fillStyle = '#0a1020';
+      ctx.fillRect(dx + 1, dy + 3, this.w - 2, this.h - 3);
+      // Main body (this.color).
+      ctx.fillStyle = this.color;
+      ctx.fillRect(dx + 2, dy + 2, this.w - 4, this.h - 4);
+      // Round front + rear corners.
+      ctx.fillStyle = this.color;
+      ctx.fillRect(dx + 1, dy + 3, 1, this.h - 5);
+      ctx.fillRect(dx + this.w - 2, dy + 3, 1, this.h - 5);
+      // Highlight stripe along the top of the body.
+      var lighter = 'rgba(255,255,255,0.30)';
+      ctx.fillStyle = lighter;
+      ctx.fillRect(dx + 2, dy + 2, this.w - 4, 1);
+      // Roof / windshield.
+      ctx.fillStyle = '#1a3050';
+      var roofX = dx + 5, roofW = this.w - 10;
+      ctx.fillRect(roofX, dy - 2, roofW, 4);
+      // Windshield reflection (lighter blue).
+      ctx.fillStyle = '#5a96d4';
+      ctx.fillRect(roofX + 1, dy - 1, roofW - 2, 1);
+      ctx.fillStyle = '#aaeaff';
+      ctx.fillRect(roofX + 2, dy - 1, 2, 1);
+      // Headlight pair.
+      var hx = (this.dir > 0) ? (dx + this.w - 2) : dx;
+      ctx.fillStyle = '#fff8a0';
+      ctx.fillRect(hx, dy + 3, 2, 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(hx, dy + 3, 1, 1);
+      // Taillight on the OPPOSITE end.
+      var tx = (this.dir > 0) ? dx : (dx + this.w - 1);
+      ctx.fillStyle = '#ff4040';
+      ctx.fillRect(tx, dy + 4, 1, 1);
+      // Side window slit (between roof + body).
+      ctx.fillStyle = '#0a0e20';
+      ctx.fillRect(roofX + 2, dy + 1, roofW - 4, 1);
+      // Wheel arches + wheels.
+      ctx.fillStyle = '#0a0a14';
+      ctx.fillRect(dx + 3, dy + this.h - 1, 4, 1);
+      ctx.fillRect(dx + this.w - 7, dy + this.h - 1, 4, 1);
+      // Wheels (round-ish pixel).
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(dx + 3, dy + this.h - 2, 4, 2);
+      ctx.fillRect(dx + this.w - 7, dy + this.h - 2, 4, 2);
+      // Wheel hub highlight.
+      ctx.fillStyle = '#5a5a5a';
+      ctx.fillRect(dx + 4, dy + this.h - 2, 1, 1);
+      ctx.fillRect(dx + this.w - 6, dy + this.h - 2, 1, 1);
+      // Door seam.
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(dx + this.w / 2, dy + 2, 1, this.h - 4);
+    }
   };
 
   // ===================== CAR SPAWNER =====================
