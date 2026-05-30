@@ -2162,6 +2162,97 @@ window.SDD = window.SDD || {};
     px(g, 0, 6, 16, 1, '#9cb6d5');
   }
 
+  // ---- Cyber family (Day 8 Adventure City): asphalt roadway ----
+  // Top tile: asphalt with a painted yellow lane stripe down the
+  // middle + reflective white edge stripe + curb shadow. Reads
+  // unambiguously as a city street when tiled.
+  function paintRoadTop_cyber(g) {
+    // Body asphalt.
+    px(g, 0, 0, 16, 16, '#3a3e54');
+    px(g, 0, 0, 16, 2, '#4a4e64');                 // sun-bleached top
+    px(g, 0, 2, 16, 1, '#2a2e44');                 // crisp curb shadow
+    // Faint speckled aggregate (5 random dots).
+    px(g, 2, 6,  1, 1, '#5a5e74');
+    px(g, 9, 4,  1, 1, '#2a2e44');
+    px(g, 13, 9, 1, 1, '#5a5e74');
+    px(g, 5, 11, 1, 1, '#2a2e44');
+    px(g, 11, 13,1, 1, '#5a5e74');
+    // Yellow center lane stripe (broken dash - half the tile fills).
+    px(g, 1, 7, 8, 2, '#e8b03a');
+    px(g, 1, 7, 8, 1, '#fff070');
+    // White edge stripe at the very bottom.
+    px(g, 0, 15, 16, 1, '#cfd6e8');
+    // Lighter reflective dot in the lane stripe.
+    px(g, 4, 7, 1, 1, '#ffffff');
+  }
+  function paintRoadBody_cyber(g) {
+    // Dirt/sub-road body - solid dark asphalt with manhole + grate.
+    px(g, 0, 0, 16, 16, '#2a2e44');
+    px(g, 0, 0, 16, 1, '#3a3e54');
+    // Concrete texture (subtle).
+    px(g, 3, 3, 1, 1, '#1a1e34');
+    px(g, 11, 6, 1, 1, '#1a1e34');
+    px(g, 6, 10, 1, 1, '#3a3e54');
+    px(g, 13, 12, 1, 1, '#1a1e34');
+    // Manhole cover (round-ish in pixel art).
+    px(g, 5, 4, 6, 5, '#0a0e1c');
+    px(g, 6, 3, 4, 1, '#0a0e1c');
+    px(g, 4, 5, 1, 3, '#0a0e1c');
+    px(g, 11, 5, 1, 3, '#0a0e1c');
+    px(g, 6, 9, 4, 1, '#0a0e1c');
+    px(g, 6, 4, 4, 1, '#3a3e54');                  // rim highlight
+    px(g, 6, 4, 1, 1, '#5a5e74');
+    // Faint sewer steam crack.
+    px(g, 6, 6, 4, 1, '#1a1e34');
+    px(g, 6, 7, 4, 1, '#1a1e34');
+    // Grate lines (3 slats).
+    px(g, 2, 12, 3, 1, '#1a1e34');
+    px(g, 12, 13, 3, 1, '#1a1e34');
+    px(g, 0, 15, 16, 1, '#0e1224');
+  }
+  function paintBrick_cyber(g) {
+    // Sci-fi modular metal panel (used for billboards / structural
+    // supports). Three panels with rivet highlights.
+    px(g, 0, 0, 16, 16, '#5a6694');
+    // Panel divisions (cross + horizontal).
+    px(g, 0, 7, 16, 1, '#2a3458');
+    px(g, 7, 0, 1, 16, '#2a3458');
+    // Highlight tops of each quadrant.
+    px(g, 0, 0, 7, 1, '#8a96c4');
+    px(g, 8, 0, 8, 1, '#8a96c4');
+    px(g, 0, 8, 7, 1, '#8a96c4');
+    px(g, 8, 8, 8, 1, '#8a96c4');
+    // Rivets at the corners.
+    px(g, 1, 1, 1, 1, '#ffffff');
+    px(g, 14, 1, 1, 1, '#ffffff');
+    px(g, 1, 9, 1, 1, '#ffffff');
+    px(g, 14, 9, 1, 1, '#ffffff');
+    // Inset shading on each panel.
+    px(g, 5, 5, 1, 1, '#3a4470');
+    px(g, 12, 5, 1, 1, '#3a4470');
+    px(g, 5, 13, 1, 1, '#3a4470');
+    px(g, 12, 13, 1, 1, '#3a4470');
+    px(g, 0, 15, 16, 1, '#1a2240');
+  }
+  function paintPlatform_cyber(g) {
+    // Holographic walkway: dark deck with bright cyan edge lighting
+    // along the top + a faint underglow.
+    px(g, 0, 0, 16, 7, '#1a2240');
+    px(g, 0, 0, 16, 1, '#5af0ff');                 // top edge glow
+    px(g, 0, 1, 16, 1, '#3aa4d4');                 // softer fall-off
+    // Hex-grid pattern across the deck.
+    px(g, 2, 3, 2, 1, '#3a4470');
+    px(g, 6, 3, 2, 1, '#3a4470');
+    px(g, 10, 3, 2, 1, '#3a4470');
+    px(g, 14, 3, 2, 1, '#3a4470');
+    px(g, 0, 5, 2, 1, '#3a4470');
+    px(g, 4, 5, 2, 1, '#3a4470');
+    px(g, 8, 5, 2, 1, '#3a4470');
+    px(g, 12, 5, 2, 1, '#3a4470');
+    // Subtle underglow below the plank.
+    px(g, 0, 6, 16, 1, '#0e1224');
+  }
+
   // ---- Sea family (sea-surface / seaside): sandy beach + coral ----
   function paintGroundSea(g) {
     px(g, 0, 0, 16, 16, '#d4b066');                 // sand body
@@ -2947,6 +3038,15 @@ window.SDD = window.SDD || {};
     sprites['tile_dirt_bird-sky']     = spritePlain(16, 16, paintDirtCloud);
     sprites['tile_brick_bird-sky']    = spritePlain(16, 16, paintBrickCloud);
     sprites['tile_platform_bird-sky'] = spritePlain(16, 16, paintPlatform_cloud);
+    // Adventure City (Day 8 secret stage): asphalt roadway tiles.
+    // Top row gets the painted lane stripes + reflective curb edge;
+    // dirt rows are darker asphalt + manhole/grate accents. Brick
+    // doubles as a billboard/wall material; platform is a sci-fi
+    // walkway with edge lighting.
+    sprites['tile_ground_cyber']   = spritePlain(16, 16, paintRoadTop_cyber);
+    sprites['tile_dirt_cyber']     = spritePlain(16, 16, paintRoadBody_cyber);
+    sprites['tile_brick_cyber']    = spritePlain(16, 16, paintBrick_cyber);
+    sprites['tile_platform_cyber'] = spritePlain(16, 16, paintPlatform_cyber);
     // legacy galactic-named aliases (some existing code paths use this)
     sprites['tile_ground_galactic'] = sprites['tile_ground_galactic'];
     sprites['tile_dirt_galactic']   = sprites['tile_dirt_galactic'];

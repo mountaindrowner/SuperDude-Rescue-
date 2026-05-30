@@ -2358,29 +2358,690 @@ window.SDD = window.SDD || {};
     }
   }
 
-  // ===== ADVENTURE CITY: 4-LAYER CYBERPUNK PARALLAX (v0.55 secret stage) =====
-  // Mirrors the bugscale pattern but with three sky-tier PNG layers (far +
-  // mid + bridge) at increasing scroll factors, plus a procedural sky
-  // gradient + neon haze that's drawn when the PNGs aren't loaded yet.
-  // The foreground building layer that visually OVERLAPS the player is
-  // dispatched separately via FOREGROUNDS (below) so the level scene can
-  // call it AFTER entities draw.
+  // ===== ADVENTURE CITY: PROCEDURAL CYBERPUNK SKYLINE (v0.55) =====
+  // Painted-quality city built procedurally so the secret stage looks
+  // rich BEFORE Mark drops in real PNGs. Each parallax layer is
+  // rendered ONCE into a 960x180 offscreen canvas at boot, then
+  // tile-blitted per frame at its own scroll factor - per-frame cost
+  // is one drawImage per layer, not hundreds of fillRects. Animated
+  // overlays (blinking neon, drifting airships, lamp halos, traffic
+  // tail-lights) are drawn on top per-frame for life.
+  //
+  // The PNG getters from sprites.js (cyberFar/Mid/Bridge/Fg) still
+  // override these procedurals when Mark drops painted layers into
+  // assets/city/.
+  // -----------------------------------------------------------------------
+
+  // Deterministic PRNG so the same layer paint reproduces frame-to-frame
+  // (and crucially across renders that recompute the cached canvas).
+  function _cyRng(seed) {
+    var s = (seed | 0) || 1;
+    return function () {
+      s = (s * 1664525 + 1013904223) | 0;
+      return ((s >>> 8) & 0xffffff) / 0x1000000;
+    };
+  }
+  function _cyMix(a, b, t) { return a + (b - a) * t; }
+  function _cyHex(r, g, b) {
+    var to = function (n) { var s = (n & 255).toString(16); return s.length < 2 ? '0' + s : s; };
+    return '#' + to(r | 0) + to(g | 0) + to(b | 0);
+  }
+  function _cyFog(c1, c2, k, alpha, ctx, x, y, w, h) {
+    ctx.fillStyle = 'rgba(' + c1 + ',' + alpha + ')';
+    ctx.fillRect(x, y, w, h);
+  }
+
+  // ---- Shared building paint helpers ------------------------------------
+  // Pixel-art "rounded corners": chip one pixel out of each corner +
+  // round it with the sky-side anti-alias (corner pixels recoloured to
+  // a mid tone so the silhouette reads as bevelled instead of perfectly
+  // square. Cheap visual upgrade across every building.
+  function _cyRoundCorners(g, x, y, w, h, shade) {
+    // Clip out the four absolute corners (turn into background).
+    g.clearRect(x,           y,           1, 1);
+    g.clearRect(x + w - 1,   y,           1, 1);
+    g.clearRect(x,           y + h - 1,   1, 1);
+    g.clearRect(x + w - 1,   y + h - 1,   1, 1);
+    // Soften with diagonal AA pixels in the building's shade tone.
+    g.fillStyle = shade;
+    g.fillRect(x + 1,         y,             1, 1);
+    g.fillRect(x,             y + 1,         1, 1);
+    g.fillRect(x + w - 2,     y,             1, 1);
+    g.fillRect(x + w - 1,     y + 1,         1, 1);
+    g.fillRect(x + 1,         y + h - 1,     1, 1);
+    g.fillRect(x,             y + h - 2,     1, 1);
+    g.fillRect(x + w - 2,     y + h - 1,     1, 1);
+    g.fillRect(x + w - 1,     y + h - 2,     1, 1);
+  }
+  // Modular sci-fi panel divisions: thin shade lines across the face
+  // every N rows/cols, plus a few brighter "rivet" pixels at panel
+  // intersections. Reads as prefab cladding on the building.
+  function _cyPanelDetail(g, x, y, w, h, shade, hi) {
+    // Horizontal panel divisions every ~12 px.
+    g.fillStyle = shade;
+    for (var py = y + 8; py < y + h - 4; py += 12) {
+      g.fillRect(x + 1, py, w - 2, 1);
+    }
+    // Vertical panel divisions every ~14 px.
+    for (var pxv = x + 7; pxv < x + w - 4; pxv += 14) {
+      g.fillRect(pxv, y + 2, 1, h - 4);
+    }
+    // Rivet highlights at panel intersections (1-px dots).
+    g.fillStyle = hi;
+    for (var ry = y + 8; ry < y + h - 4; ry += 12) {
+      for (var rx = x + 7; rx < x + w - 4; rx += 14) {
+        g.fillRect(rx,     ry,     1, 1);
+        g.fillRect(rx - 1, ry,     1, 1);
+      }
+    }
+  }
+
+  // ---- Far skyline painter ----------------------------------------------
+  // Distant towers fading into atmospheric haze. Low saturation, lots
+  // of variation in height + roof type so the silhouette feels organic.
+  function _cyPaintFar(g) {
+    var rng = _cyRng(0xC1FA);
+    var W = 960, H = 180;
+    // Background haze gradient layer (warm dawn behind the towers).
+    var hz = g.createLinearGradient(0, 60, 0, 145);
+    hz.addColorStop(0,    'rgba(255,180,160,0.18)');
+    hz.addColorStop(0.5,  'rgba(220,160,180,0.10)');
+    hz.addColorStop(1,    'rgba(170,180,220,0.06)');
+    g.fillStyle = hz; g.fillRect(0, 60, W, 90);
+
+    // Draw 64 tower silhouettes. The seed-based RNG keeps positions
+    // varied while still 100% deterministic.
+    var towers = [];
+    for (var i = 0; i < 64; i++) {
+      var tw = 8 + Math.floor(rng() * 14);
+      var th = 22 + Math.floor(rng() * 48);
+      // Spread non-uniformly to avoid grid feel.
+      var tx = Math.floor(rng() * (W + 40)) - 20;
+      towers.push({ x: tx, w: tw, h: th, r: rng() });
+    }
+    // Sort by height ascending so taller towers paint LAST (foreground).
+    towers.sort(function (a, b) { return a.h - b.h; });
+
+    for (var k = 0; k < towers.length; k++) {
+      var T = towers[k];
+      var baseY = 135 - T.h;
+      // Depth tint: shorter (more distant) towers fade toward sky color.
+      var depth = Math.max(0, Math.min(1, (T.h - 22) / 48));
+      var tone = Math.floor(_cyMix(140, 80, depth));
+      var rT = Math.floor(_cyMix(170, 95, depth));
+      var gT = Math.floor(_cyMix(175, 105, depth));
+      var bT = Math.floor(_cyMix(200, 145, depth));
+      var col = _cyHex(rT, gT, bT);
+      var shade = _cyHex(rT - 28, gT - 28, bT - 28);
+      var hi = _cyHex(rT + 22, gT + 22, bT + 22);
+      g.fillStyle = col; g.fillRect(T.x, baseY, T.w, T.h);
+      // Vertical shading on the left edge.
+      g.fillStyle = shade; g.fillRect(T.x, baseY, 1, T.h);
+      // Highlight on the right edge.
+      g.fillStyle = hi;    g.fillRect(T.x + T.w - 1, baseY, 1, T.h);
+      // Roof variant: 0=flat slab, 1=pyramid, 2=spire, 3=dome, 4=billboard
+      var roof = Math.floor(T.r * 5);
+      if (roof === 0) {
+        g.fillStyle = shade; g.fillRect(T.x - 1, baseY - 2, T.w + 2, 2);
+      } else if (roof === 1) {
+        // Pyramid.
+        var px2 = T.x + T.w / 2;
+        for (var pry = 0; pry < 5; pry++) {
+          var pw = Math.max(1, T.w - pry * 2);
+          g.fillStyle = (pry < 2) ? hi : col;
+          g.fillRect(Math.round(px2 - pw / 2), baseY - 5 + pry, pw, 1);
+        }
+      } else if (roof === 2) {
+        // Spire / antenna.
+        g.fillStyle = col;
+        g.fillRect(T.x + T.w / 2 - 1, baseY - 8, 2, 8);
+        g.fillStyle = '#ff5a5a';
+        if ((T.x | 0) % 7 === 0) g.fillRect(T.x + T.w / 2 - 1, baseY - 8, 2, 1);
+      } else if (roof === 3) {
+        // Dome.
+        var dr = Math.max(2, Math.floor(T.w / 3));
+        g.fillStyle = col;
+        g.beginPath(); g.arc(T.x + T.w / 2, baseY, dr, Math.PI, 0); g.fill();
+        g.fillStyle = hi;
+        g.fillRect(T.x + T.w / 2 - 1, baseY - dr + 1, 1, dr - 1);
+      } else {
+        // Billboard / panel top.
+        g.fillStyle = shade; g.fillRect(T.x - 1, baseY - 6, T.w + 2, 6);
+        g.fillStyle = (rng() > 0.5) ? '#ff5a8c' : '#5af0c8';
+        g.fillRect(T.x + 1, baseY - 5, T.w - 2, 1);
+      }
+      // Lit windows: random pattern, low saturation for distance.
+      var wc = (rng() > 0.5) ? '#ffeab0' : '#cbe6ff';
+      for (var wy = baseY + 4; wy < baseY + T.h - 4; wy += 5) {
+        for (var wx = T.x + 2; wx < T.x + T.w - 2; wx += 4) {
+          // Sparse: only ~35% lit at distance.
+          if (((wx * 13 + wy * 7 + k) & 7) < 3) {
+            g.fillStyle = wc;
+            g.fillRect(wx, wy, 2, 2);
+          }
+        }
+      }
+    }
+
+    // Cool blue depth-fog overlay across the whole far layer to push
+    // it back into the sky.
+    g.fillStyle = 'rgba(160,180,220,0.22)';
+    g.fillRect(0, 60, W, 90);
+  }
+
+  // ---- Mid city painter -------------------------------------------------
+  // Bigger, sharper buildings with detailed window grids + rooftop
+  // furniture + neon sign bars + occasional cranes.
+  function _cyPaintMid(g) {
+    var rng = _cyRng(0x32FF);
+    var W = 960, H = 180;
+    // Walk from left to right placing buildings, varying x stride to
+    // avoid a uniform grid.
+    var x = -10;
+    var k = 0;
+    while (x < W + 20) {
+      var w = 24 + Math.floor(rng() * 22);
+      var h = 50 + Math.floor(rng() * 60);
+      var baseY = 145 - h;
+      k++;
+      // Building body with a vertical 3-tone shade for depth.
+      var hueShift = Math.floor(rng() * 30);
+      var body  = _cyHex(72 + hueShift, 86, 138);
+      var shade = _cyHex(46, 56,  95);
+      var hi    = _cyHex(108, 122, 170);
+      g.fillStyle = body;  g.fillRect(x, baseY, w, h);
+      g.fillStyle = shade; g.fillRect(x, baseY, 2, h);
+      g.fillStyle = shade; g.fillRect(x, baseY + h - 2, w, 2);
+      g.fillStyle = hi;    g.fillRect(x + w - 1, baseY, 1, h);
+      g.fillStyle = hi;    g.fillRect(x, baseY, w, 1);
+      // Modular panel cladding on the body.
+      _cyPanelDetail(g, x, baseY, w, h, shade, hi);
+      // Setback at ~60% height for some buildings (architectural step).
+      var hasSetback = rng() > 0.55;
+      if (hasSetback) {
+        var stepH = Math.floor(h * 0.4);
+        var stepW = Math.floor(w * 0.65);
+        var sx = x + Math.floor((w - stepW) / 2);
+        var sy = baseY - stepH;
+        g.fillStyle = body; g.fillRect(sx, sy, stepW, stepH);
+        g.fillStyle = shade; g.fillRect(sx, sy, 1, stepH);
+        g.fillStyle = hi;    g.fillRect(sx + stepW - 1, sy, 1, stepH);
+        _cyPanelDetail(g, sx, sy, stepW, stepH, shade, hi);
+        _cyRoundCorners(g, sx, sy, stepW, stepH, shade);
+        // Recurse window grid onto the setback too.
+        _cyDrawWindowGrid(g, sx, sy, stepW, stepH, rng);
+      }
+      // Window grid on the main body.
+      _cyDrawWindowGrid(g, x, baseY, w, h, rng);
+      // Top + visible side corners get the rounded chip.
+      _cyRoundCorners(g, x, baseY, w, h, shade);
+      // Rooftop ornaments.
+      _cyDrawRooftop(g, x, baseY, w, hasSetback ? null : k, rng);
+      // Vertical neon sign on ~15% of buildings.
+      if (rng() < 0.18 && w > 28) {
+        var nsx = x + w - 5;
+        var nsh = Math.min(h - 8, 28 + Math.floor(rng() * 14));
+        var nsy = baseY + 4 + Math.floor(rng() * 6);
+        var col = (rng() > 0.5) ? '#ff5af0' : '#5af0ff';
+        g.fillStyle = '#1a1a3a';
+        g.fillRect(nsx, nsy, 3, nsh);
+        for (var ny = nsy + 1; ny < nsy + nsh - 1; ny += 3) {
+          g.fillStyle = col;
+          g.fillRect(nsx + 1, ny, 1, 2);
+        }
+      }
+      // Horizontal billboard sign on ~10% of buildings (above roofline).
+      if (rng() < 0.10 && w > 30) {
+        var bbw = w - 4;
+        var bbh = 7;
+        var bbx = x + 2, bby = baseY - bbh - 1;
+        g.fillStyle = '#1a1a3a';
+        g.fillRect(bbx, bby, bbw, bbh);
+        g.fillStyle = '#3a3a5a';
+        g.fillRect(bbx, bby + bbh - 1, bbw, 1);
+        // Faux text bars.
+        var sc = (rng() > 0.5) ? '#ffd23a' : '#5af0a8';
+        g.fillStyle = sc;
+        for (var bi = bbx + 2; bi < bbx + bbw - 2; bi += 4) {
+          g.fillRect(bi, bby + 2, 2, 3);
+        }
+        // Support struts down to the roof.
+        g.fillStyle = '#2a2a4a';
+        g.fillRect(bbx + 3, bby + bbh, 1, 2);
+        g.fillRect(bbx + bbw - 4, bby + bbh, 1, 2);
+      }
+      // Move on with a small overlap so silhouettes interlock.
+      x += w - 2 - Math.floor(rng() * 4);
+    }
+
+    // 2-3 construction cranes scattered across the layer for skyline drama.
+    var craneCount = 2 + Math.floor(rng() * 2);
+    for (var c = 0; c < craneCount; c++) {
+      var cx = Math.floor(rng() * (W - 100)) + 50;
+      var cy = 60 + Math.floor(rng() * 14);
+      _cyDrawCrane(g, cx, cy);
+    }
+  }
+
+  function _cyDrawWindowGrid(g, x, y, w, h, rng) {
+    // Window cells: 2x2 pixels, 4-px spacing → ~6-10 columns wide,
+    // ~10-25 rows tall. Random lit pattern with multiple colors.
+    var palette = ['#ffeab0', '#ffd870', '#cbe6ff', '#5af0ff', '#a0aacc', '#a0aacc'];
+    var seed = (x * 13 + y * 7) & 0xff;
+    for (var wy = y + 3; wy < y + h - 3; wy += 4) {
+      for (var wx = x + 2; wx < x + w - 2; wx += 3) {
+        // Skip windows pseudorandomly so the grid doesn't feel mechanical.
+        var lit = ((wx * 17 + wy * 23 + seed) & 7);
+        if (lit < 5) {
+          g.fillStyle = palette[(wx + wy + seed) % palette.length];
+          g.fillRect(wx, wy, 2, 2);
+        } else {
+          g.fillStyle = '#202850';
+          g.fillRect(wx, wy, 2, 2);
+        }
+      }
+    }
+  }
+
+  function _cyDrawRooftop(g, x, baseY, w, k, rng) {
+    // Roof type variants chosen by building width.
+    if (w < 28) {
+      // Small: just an antenna.
+      g.fillStyle = '#1a2240';
+      g.fillRect(x + w / 2, baseY - 6, 1, 6);
+      g.fillStyle = '#ff5a5a';
+      g.fillRect(x + w / 2, baseY - 6, 1, 1);
+      return;
+    }
+    // Water tower (cylindrical pixel shape).
+    var wtx = x + 4;
+    g.fillStyle = '#3a4264';
+    g.fillRect(wtx, baseY - 6, 6, 4);
+    g.fillStyle = '#5a6294';
+    g.fillRect(wtx, baseY - 6, 6, 1);
+    g.fillStyle = '#1a2240';
+    g.fillRect(wtx + 1, baseY - 2, 1, 2);
+    g.fillRect(wtx + 4, baseY - 2, 1, 2);
+    // AC unit row.
+    var acx = x + 12;
+    g.fillStyle = '#2a3050';
+    g.fillRect(acx, baseY - 3, w - 18, 3);
+    g.fillStyle = '#3a4060';
+    for (var ac = acx + 1; ac < acx + w - 18; ac += 4) {
+      g.fillRect(ac, baseY - 3, 2, 1);
+    }
+    // Tall antenna on ~50% of buildings.
+    if ((w + (k || 0)) & 1) {
+      var ax = x + w - 6;
+      g.fillStyle = '#1a2240';
+      g.fillRect(ax, baseY - 12, 1, 12);
+      // Cross arms.
+      g.fillRect(ax - 2, baseY - 10, 5, 1);
+      g.fillRect(ax - 1, baseY - 7, 3, 1);
+      // Red blinking aviation light goes here per-frame (in the
+      // animated overlay), not pre-rendered.
+    }
+  }
+
+  function _cyDrawCrane(g, x, y) {
+    // Vertical mast.
+    g.fillStyle = '#2a3454';
+    g.fillRect(x, y, 2, 60);
+    g.fillStyle = '#3a4470';
+    g.fillRect(x + 1, y, 1, 60);
+    // Horizontal jib.
+    g.fillStyle = '#2a3454';
+    g.fillRect(x - 18, y + 4, 38, 2);
+    g.fillStyle = '#3a4470';
+    g.fillRect(x - 18, y + 4, 38, 1);
+    // Tie bars to the jib (triangular truss).
+    g.fillStyle = '#1a2240';
+    for (var ti = 0; ti < 9; ti++) {
+      var tx = x - 16 + ti * 4;
+      g.fillRect(tx, y + 6, 1, 4);
+    }
+    // Counter-jib.
+    g.fillStyle = '#2a3454';
+    g.fillRect(x - 8, y, 10, 4);
+    // Hook + cable.
+    g.fillStyle = '#1a2240';
+    g.fillRect(x + 12, y + 6, 1, 18);
+    g.fillStyle = '#3a4470';
+    g.fillRect(x + 11, y + 23, 3, 2);
+    // Red strobe at the tip (drawn static; animation handled per-frame).
+    g.fillStyle = '#ff5a5a';
+    g.fillRect(x + 19, y + 4, 1, 1);
+  }
+
+  // ---- Bridge / street-level shopfront layer painter -------------------
+  // The third parallax layer. NOT a road (the tile ground IS the road);
+  // instead a band of street-level shopfronts + awnings + storefront
+  // signs that sit BEHIND the player at roughly y=100-150, giving the
+  // mid-city skyline an inhabited base. Drawn full-width with sparse
+  // gaps for visibility.
+  function _cyPaintBridge(g) {
+    var rng = _cyRng(0xB12D);
+    var W = 960;
+    g.clearRect(0, 0, W, 180);
+    // Walk left-to-right placing shopfronts. Each is 30-60 px wide.
+    var x = -10;
+    var k = 0;
+    while (x < W + 20) {
+      var w = 30 + Math.floor(rng() * 30);
+      var h = 26 + Math.floor(rng() * 14);
+      var baseY = 150 - h;
+      k++;
+      // Shopfront body in mid-blue.
+      var body  = _cyHex(54 + Math.floor(rng() * 18), 62, 100);
+      var shade = _cyHex(28, 34,  60);
+      var hi    = _cyHex(92, 102, 150);
+      g.fillStyle = body;  g.fillRect(x, baseY, w, h);
+      g.fillStyle = shade; g.fillRect(x, baseY, 1, h);
+      g.fillStyle = hi;    g.fillRect(x + w - 1, baseY, 1, h);
+      g.fillStyle = shade; g.fillRect(x, baseY + h - 1, w, 1);
+      g.fillStyle = hi;    g.fillRect(x, baseY, w, 1);
+      _cyRoundCorners(g, x, baseY, w, h, shade);
+      // Big shop window (lit interior).
+      var ww = w - 8, wh = h - 14;
+      var wx = x + 4, wy = baseY + 8;
+      g.fillStyle = '#0a0e1a';
+      g.fillRect(wx, wy, ww, wh);
+      // Lit interior color rotates so adjacent shops differ.
+      var interiors = ['#ffd270', '#9af0ff', '#ff8acc', '#a0f0a0', '#ffea88'];
+      g.fillStyle = interiors[k % interiors.length];
+      g.fillRect(wx + 1, wy + 1, ww - 2, wh - 2);
+      // Silhouettes of merchandise / patrons inside the window.
+      g.fillStyle = '#1a1a3a';
+      var slots = Math.max(2, Math.floor(ww / 8));
+      for (var si = 0; si < slots; si++) {
+        var stx = wx + 2 + si * 7;
+        var sth = 3 + ((si + k) % 3) * 2;
+        g.fillRect(stx, wy + wh - 2 - sth, 3, sth);
+      }
+      // Awning above the window (folded fabric).
+      var aw = w - 6, ax = x + 3;
+      var aCol = (k % 2) ? '#ff4060' : '#ffd23a';
+      var aColD = (k % 2) ? '#a02040' : '#a87020';
+      g.fillStyle = aColD;
+      g.fillRect(ax, baseY + 5, aw, 3);
+      g.fillStyle = aCol;
+      g.fillRect(ax, baseY + 4, aw, 2);
+      // Awning scallops (dripping triangles).
+      g.fillStyle = aColD;
+      for (var sc = ax; sc < ax + aw - 2; sc += 4) {
+        g.fillRect(sc, baseY + 8, 2, 1);
+      }
+      // Shop sign above the awning.
+      var sgW = w - 12, sgX = x + 6;
+      g.fillStyle = '#0a0a1a';
+      g.fillRect(sgX, baseY + 1, sgW, 3);
+      g.fillStyle = (k % 3 === 0) ? '#5af0ff' : (k % 3 === 1) ? '#ff5af0' : '#ffd23a';
+      // Faux text - bars filling the sign.
+      for (var ti = sgX + 2; ti < sgX + sgW - 1; ti += 3) {
+        g.fillRect(ti, baseY + 2, 2, 1);
+      }
+      // Door slot (always on the left or right).
+      var dx = (k & 1) ? x + 2 : x + w - 7;
+      var dy = baseY + h - 10;
+      g.fillStyle = '#0a0e1a';
+      g.fillRect(dx, dy, 5, 10);
+      g.fillStyle = '#3a3a5a';
+      g.fillRect(dx, dy, 5, 1);
+      g.fillStyle = '#ffd270';
+      g.fillRect(dx + (k & 1 ? 4 : 0), dy + 4, 1, 1);    // doorknob
+      // Sidewalk strip below.
+      g.fillStyle = '#3a4470';
+      g.fillRect(x, baseY + h, w, 2);
+      g.fillStyle = '#5a6494';
+      g.fillRect(x, baseY + h, w, 1);
+      // Move to next shop (slight overlap).
+      x += w - 2 - Math.floor(rng() * 4);
+    }
+    // Telephone poles + cables running along the back of the
+    // shopfront row.
+    for (var tp = 30; tp < W; tp += 110) {
+      g.fillStyle = '#1a1e3a';
+      g.fillRect(tp, 80, 1, 38);
+      g.fillRect(tp - 4, 84, 10, 1);
+      g.fillRect(tp - 3, 88, 8, 1);
+    }
+  }
+
+  // ---- Foreground building painter --------------------------------------
+  // Dark dramatic silhouettes placed ONLY at extreme screen edges so the
+  // playable area stays visible. No middle clusters. Heavy detail on
+  // the two edge anchors (balconies, fire escapes, neon).
+  function _cyPaintForeground(g) {
+    var rng = _cyRng(0xF6E8);
+    var W = 960;
+    g.clearRect(0, 0, W, 180);
+
+    // Edge towers: 4 across the 960-wide span, each pinned to either
+    // the LEFT or RIGHT side of a 320-wide "screen slot" so as the
+    // camera scrolls the player always has tower-on-one-side, gap-in-
+    // the-middle visibility.
+    var slots = 3;     // 960 / 320 = 3 screen-widths in the cached canvas
+    for (var s = 0; s < slots; s++) {
+      var screenLeft = s * 320;
+      // LEFT-side tower.
+      var lw = 36 + Math.floor(rng() * 12);
+      var lh = 110 + Math.floor(rng() * 40);
+      _cyPaintFgTower(g, screenLeft - 4, lw, lh, rng);
+      // RIGHT-side tower.
+      var rw = 32 + Math.floor(rng() * 14);
+      var rh = 100 + Math.floor(rng() * 50);
+      _cyPaintFgTower(g, screenLeft + 320 - rw - 2, rw, rh, rng);
+    }
+
+    // Hanging signs across the top of the screen.
+    for (var hs = 0; hs < 14; hs++) {
+      var hx = 30 + Math.floor(rng() * (W - 60));
+      var hy = 6 + Math.floor(rng() * 26);
+      _cyPaintHangingSign(g, hx, hy, rng);
+    }
+
+    // A few cables crossing high (telephone / power lines).
+    g.strokeStyle = '#0a0a18';
+    g.lineWidth = 1;
+    for (var cb = 0; cb < 6; cb++) {
+      var cbx = Math.floor(rng() * W);
+      g.beginPath();
+      g.moveTo(cbx, 14 + cb * 3);
+      g.bezierCurveTo(cbx + 80, 28 + cb * 3, cbx + 160, 18 + cb * 3, cbx + 240, 16 + cb * 3);
+      g.stroke();
+    }
+  }
+
+  function _cyPaintFgTower(g, x, w, h, rng) {
+    var baseY = 180 - h;
+    // Body: very dark with subtle blue highlight to read as "in shadow".
+    g.fillStyle = '#0a0e1a';
+    g.fillRect(x, baseY, w, h);
+    g.fillStyle = '#1a2240';
+    g.fillRect(x, baseY, 1, h);
+    g.fillRect(x + w - 1, baseY, 1, h);
+    g.fillRect(x, baseY, w, 1);
+    // Modular panel cladding (very faint on the dark body) + chip
+    // the corners so the tower silhouette reads as a real structure.
+    _cyPanelDetail(g, x, baseY, w, h, '#0a0e1a', '#3a4470');
+    _cyRoundCorners(g, x, baseY, w, h, '#1a2240');
+    // Lit window grid: every other window is on, varied warm/cool.
+    for (var wy = baseY + 6; wy < 180 - 8; wy += 9) {
+      for (var wx = x + 3; wx < x + w - 3; wx += 6) {
+        if (((wx * 11 + wy * 7) & 3) === 0) continue;     // some unlit
+        var warm = ((wx + wy) % 3 === 0);
+        // Window frame.
+        g.fillStyle = '#0a0a1a';
+        g.fillRect(wx, wy, 4, 5);
+        g.fillStyle = warm ? '#ffd270' : '#9af0ff';
+        g.fillRect(wx + 1, wy + 1, 2, 3);
+        // Sill highlight.
+        g.fillStyle = '#1a2240';
+        g.fillRect(wx, wy + 5, 4, 1);
+      }
+    }
+    // Balconies (every ~30 vertical px on the front).
+    for (var by = baseY + 18; by < 180 - 18; by += 24) {
+      // Railing rail.
+      g.fillStyle = '#2a2e48';
+      g.fillRect(x + 2, by, w - 4, 1);
+      g.fillStyle = '#3a3e58';
+      g.fillRect(x + 2, by - 1, w - 4, 1);
+      // Vertical bars.
+      for (var bi = x + 3; bi < x + w - 3; bi += 3) {
+        g.fillStyle = '#1a1e3a';
+        g.fillRect(bi, by - 4, 1, 4);
+      }
+    }
+    // Vertical neon sign on the right side of the tower.
+    if (rng() > 0.4) {
+      var nsx = x + w - 4;
+      var nsy = baseY + 8;
+      var nsh = Math.min(h - 16, 50);
+      var col = (rng() > 0.5) ? '#ff5af0' : '#5af0ff';
+      g.fillStyle = '#0a0a1a';
+      g.fillRect(nsx, nsy, 3, nsh);
+      for (var ny = nsy + 2; ny < nsy + nsh - 2; ny += 4) {
+        g.fillStyle = col;
+        g.fillRect(nsx + 1, ny, 1, 3);
+      }
+      // Glow halo around the sign.
+      g.fillStyle = (col === '#ff5af0') ? 'rgba(255,90,240,0.18)' : 'rgba(90,240,255,0.18)';
+      g.fillRect(nsx - 3, nsy, 8, nsh);
+    }
+    // Fire escape on the LEFT side of some towers.
+    if (rng() > 0.55) {
+      var fex = x - 3;
+      g.fillStyle = '#1a1e3a';
+      // Vertical rails.
+      g.fillRect(fex,     baseY + 12, 1, h - 20);
+      g.fillRect(fex + 3, baseY + 12, 1, h - 20);
+      // Horizontal landings every 20 px.
+      for (var fy = baseY + 24; fy < 180 - 14; fy += 22) {
+        g.fillRect(fex, fy, 4, 1);
+        // Diagonal stair (4 steps).
+        for (var st = 0; st < 4; st++) {
+          g.fillRect(fex + st, fy - st, 1, 1);
+        }
+      }
+    }
+  }
+
+  function _cyPaintHangingSign(g, x, y, rng) {
+    var w = 12 + Math.floor(rng() * 14);
+    var h = 8 + Math.floor(rng() * 6);
+    var col = (rng() > 0.5) ? '#ff5af0' : ((rng() > 0.5) ? '#5af0ff' : '#ffd23a');
+    var bg  = '#0a0a1a';
+    // Hanger cable from ceiling.
+    g.fillStyle = '#1a1e3a';
+    g.fillRect(x + w / 2, 0, 1, y);
+    g.fillRect(x + 2,     0, 1, y);
+    g.fillRect(x + w - 3, 0, 1, y);
+    // Sign panel.
+    g.fillStyle = bg;
+    g.fillRect(x, y, w, h);
+    g.fillStyle = col;
+    g.fillRect(x + 1, y + 1, w - 2, 1);
+    g.fillRect(x + 1, y + h - 2, w - 2, 1);
+    g.fillRect(x + 1, y + 1, 1, h - 2);
+    g.fillRect(x + w - 2, y + 1, 1, h - 2);
+    // Text bars inside.
+    for (var ti = x + 3; ti < x + w - 3; ti += 3) {
+      g.fillStyle = col;
+      g.fillRect(ti, y + 4, 2, h - 8);
+    }
+    // Glow halo.
+    var glow = (col === '#ff5af0') ? 'rgba(255,90,240,0.22)'
+             : (col === '#5af0ff') ? 'rgba(90,240,255,0.22)'
+                                    : 'rgba(255,210,80,0.22)';
+    g.fillStyle = glow;
+    g.fillRect(x - 2, y - 2, w + 4, h + 4);
+  }
+
+  // ---- Layer cache + accessors ------------------------------------------
+  var _cyCache = null;
+  function _cyBuild() {
+    if (_cyCache) return _cyCache;
+    function mk(w, h, painter) {
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var g = c.getContext('2d');
+      painter(g);
+      return c;
+    }
+    _cyCache = {
+      far:    mk(960, 180, _cyPaintFar),
+      mid:    mk(960, 180, _cyPaintMid),
+      bridge: mk(960, 180, _cyPaintBridge),
+      fg:     mk(960, 180, _cyPaintForeground)
+    };
+    return _cyCache;
+  }
+
+  // ---- Per-frame painters ----------------------------------------------
   function drawSky_cyber(g, camx, camy, prog, t) {
     var S = SDD.sprites || {};
-    // Base sky gradient - cyan dawn behind every other layer.
+    var cache = _cyBuild();
+
+    // 1. Sky gradient: deep cosmic dusk - magenta + violet + warm horizon.
     var sky = g.createLinearGradient(0, 0, 0, 180);
-    sky.addColorStop(0,    '#6cdcf0');
-    sky.addColorStop(0.55, '#9aeaff');
-    sky.addColorStop(1,    '#cfe8ff');
+    sky.addColorStop(0,    '#1a1240');
+    sky.addColorStop(0.3,  '#3a1a5e');
+    sky.addColorStop(0.55, '#7a2c70');
+    sky.addColorStop(0.78, '#c25a5e');
+    sky.addColorStop(0.92, '#ff9a4a');
+    sky.addColorStop(1,    '#ffd070');
     g.fillStyle = sky; g.fillRect(0, 0, 320, 180);
 
-    // Procedural cloud band so the placeholder doesn't feel flat.
-    for (var ci = 0; ci < 9; ci++) {
-      var cx = ((ci * 56 - camx * 0.08) % 360 + 360) % 360 - 30;
-      var cy = 24 + (ci % 3) * 8;
-      g.fillStyle = 'rgba(255,255,255,0.78)';
-      g.fillRect(cx, cy, 32, 6);
-      g.fillRect(cx + 4, cy - 2, 24, 4);
+    // 2. Distant stars (denser at the top, none near the horizon).
+    for (var s = 0; s < 50; s++) {
+      var sx = ((s * 53 + 17) % 320);
+      var sy = (s * 19 + 7) % 70;
+      var twinkle = ((Math.sin(t * 0.04 + s) + 1) * 0.5);
+      if (twinkle > 0.55) {
+        var alpha = 0.4 + twinkle * 0.5;
+        g.fillStyle = 'rgba(255,255,255,' + alpha.toFixed(2) + ')';
+        g.fillRect(sx, sy, 1, 1);
+      }
+    }
+
+    // 3. Distant moon (high up, soft).
+    var moonX = 240 - camx * 0.03, moonY = 32;
+    g.fillStyle = 'rgba(255,240,200,0.15)';
+    g.beginPath(); g.arc(moonX, moonY, 18, 0, 6.28); g.fill();
+    g.fillStyle = 'rgba(255,240,200,0.45)';
+    g.beginPath(); g.arc(moonX, moonY, 10, 0, 6.28); g.fill();
+    g.fillStyle = '#fff6c8';
+    g.beginPath(); g.arc(moonX, moonY, 7, 0, 6.28); g.fill();
+    g.fillStyle = '#e8d2a8';
+    g.fillRect(moonX - 3, moonY - 1, 2, 1);
+    g.fillRect(moonX + 1, moonY + 2, 2, 1);
+
+    // 4. Long horizontal cloud strips drifting at a sub-far-parallax.
+    for (var ci = 0; ci < 7; ci++) {
+      var cx = ((ci * 90 - camx * 0.06 + t * 0.08) % 400 + 400) % 400 - 60;
+      var cy = 38 + (ci % 3) * 11;
+      var cw = 50 + (ci * 13) % 30;
+      g.fillStyle = 'rgba(70,40,90,0.55)';
+      g.fillRect(cx, cy, cw, 4);
+      g.fillStyle = 'rgba(180,110,150,0.45)';
+      g.fillRect(cx + 5, cy - 1, cw - 10, 2);
+      g.fillStyle = 'rgba(255,200,180,0.30)';
+      g.fillRect(cx + 12, cy - 2, cw - 24, 1);
+    }
+
+    // 5. Drifting airships (silhouettes with red/green nav lights).
+    var ash = ((t * 0.18 - camx * 0.05) % 480 + 480) % 480 - 80;
+    g.fillStyle = '#1a1240';
+    g.fillRect(ash, 24, 32, 6);
+    g.fillRect(ash + 4, 22, 24, 2);
+    g.fillRect(ash + 4, 30, 24, 2);
+    g.fillStyle = '#2a1a50';
+    g.fillRect(ash + 12, 30, 8, 3);
+    // Nav lights blink.
+    if ((t / 18 | 0) & 1) {
+      g.fillStyle = '#ff4040'; g.fillRect(ash + 1,  26, 2, 2);
+      g.fillStyle = '#40ff60'; g.fillRect(ash + 29, 26, 2, 2);
     }
 
     function tileLayer(img, factor) {
@@ -2392,86 +3053,134 @@ window.SDD = window.SDD || {};
       }
     }
 
-    // Far skyline at 0.10x - distant, blurred for depth.
-    var far = S.cyberFar && S.cyberFar();
-    tileLayer(far, 0.10);
-    if (!far) {
-      // Procedural placeholder: pale tower silhouettes.
-      g.fillStyle = 'rgba(150,180,210,0.55)';
-      for (var f = 0; f < 14; f++) {
-        var fx = ((f * 26 - camx * 0.10) % 360 + 360) % 360 - 20;
-        var fh = 28 + ((f * 7) % 28);
-        g.fillRect(fx, 100 - fh, 16, fh);
+    // 6. Far skyline (use Mark's PNG when available, else procedural).
+    var farImg = S.cyberFar && S.cyberFar();
+    tileLayer(farImg || cache.far, 0.10);
+
+    // 7. Mid city.
+    var midImg = S.cyberMid && S.cyberMid();
+    tileLayer(midImg || cache.mid, 0.25);
+
+    // 8. Mid-city animated overlays: blinking aviation lights on
+    //    antennae, traffic dots zipping along a distant flyover.
+    var blink = (t % 60) < 8;
+    if (blink) {
+      // Red strobes on top of mid-city antennae - positions matched
+      // to where the painter put antennae.
+      for (var ai = 0; ai < 20; ai++) {
+        var aix = ((ai * 47 - camx * 0.25) % 960 + 960) % 960;
+        // Re-derive antenna y from the painter's heuristic - close
+        // enough for the eye since the strobe is a 1-px dot.
+        g.fillStyle = '#ff5a5a';
+        g.fillRect(aix % 320, 38 + (ai % 5) * 4, 1, 1);
+      }
+    }
+    // Distant flyover traffic (tiny moving dots at a high parallax).
+    for (var tv = 0; tv < 8; tv++) {
+      var tvx = ((tv * 67 + t * 0.7 - camx * 0.30) % 380 + 380) % 380 - 30;
+      var tvy = 102 + (tv % 2) * 3;
+      g.fillStyle = (tv & 1) ? '#ff8080' : '#ffd070';
+      g.fillRect(tvx, tvy, 2, 1);
+      g.fillStyle = 'rgba(255,160,80,0.5)';
+      g.fillRect(tvx - 2, tvy, 2, 1);
+    }
+
+    // 9. Bridge / street.
+    var brImg = S.cyberBridge && S.cyberBridge();
+    tileLayer(brImg || cache.bridge, 0.50);
+
+    // 10. Lamp post halos (warm pools of light under each lamp).
+    var lampSpacing = 80;
+    var lampFactor = 0.50;
+    var lampStart  = -(((camx * lampFactor) % lampSpacing) + lampSpacing) % lampSpacing;
+    for (var lp = lampStart - lampSpacing; lp < 320 + lampSpacing; lp += lampSpacing) {
+      var lpx = lp + 40;
+      var halo = g.createRadialGradient(lpx, 96, 2, lpx, 96, 22);
+      halo.addColorStop(0,   'rgba(255,220,140,0.55)');
+      halo.addColorStop(0.5, 'rgba(255,180,90,0.20)');
+      halo.addColorStop(1,   'rgba(255,180,90,0)');
+      g.fillStyle = halo;
+      g.fillRect(lpx - 24, 92, 48, 32);
+      // Bright lamp bulb.
+      g.fillStyle = '#fff4c0';
+      g.fillRect(lpx - 1, 93, 2, 2);
+    }
+
+    // 11. Steam plumes rising from the road grates (animated).
+    for (var sm = 0; sm < 4; sm++) {
+      var smx = ((sm * 90 + 30 - camx * 0.50) % 320 + 320) % 320;
+      var smPhase = (t * 0.6 + sm * 30) % 60;
+      for (var sk = 0; sk < 5; sk++) {
+        var sy = 132 - sk * 4 - smPhase * 0.4;
+        var swth = 4 + sk * 1;
+        var alpha = 0.32 - sk * 0.05 - smPhase * 0.004;
+        if (alpha < 0.04) continue;
+        g.fillStyle = 'rgba(200,210,230,' + alpha.toFixed(2) + ')';
+        g.fillRect(smx - swth / 2 + Math.sin(sy * 0.2) * 2, sy, swth, 2);
       }
     }
 
-    // Mid city + flyovers at 0.25x.
-    var mid = S.cyberMid && S.cyberMid();
-    tileLayer(mid, 0.25);
-    if (!mid) {
-      g.fillStyle = '#6a7aa8';
-      for (var m = 0; m < 11; m++) {
-        var mx = ((m * 36 - camx * 0.25) % 360 + 360) % 360 - 20;
-        var mh = 36 + ((m * 11) % 36);
-        g.fillRect(mx, 120 - mh, 22, mh);
-        // Lit window grid for that neon city pop.
-        g.fillStyle = (m % 2) ? '#ffd23a' : '#5af0ff';
-        for (var wy = 122 - mh + 4; wy < 122 - 4; wy += 6) {
-          for (var wx = mx + 3; wx < mx + 22 - 3; wx += 4) {
-            if ((wx + wy + m) % 7 < 3) g.fillRect(wx, wy, 2, 2);
-          }
-        }
-        g.fillStyle = '#6a7aa8';
-      }
-    }
-
-    // Bridge / overpass at 0.50x - the player-plane road and rails.
-    var br = S.cyberBridge && S.cyberBridge();
-    tileLayer(br, 0.50);
-    if (!br) {
-      g.fillStyle = '#3a4a78';
-      g.fillRect(0, 130, 320, 6);
-      g.fillStyle = '#2a3458';
-      g.fillRect(0, 134, 320, 6);
-      // Pylons every 64 px so the bridge reads as supported.
-      for (var py = 0; py < 9; py++) {
-        var pxw = ((py * 64 - camx * 0.50) % 360 + 360) % 360 - 8;
-        g.fillStyle = '#2a3458';
-        g.fillRect(pxw, 136, 6, 24);
-      }
-    }
-
-    // Neon haze sweep so the dawn light looks Tokyo-ish.
-    g.fillStyle = 'rgba(255,150,200,0.10)';
-    g.fillRect(0, 80, 320, 30);
-    g.fillStyle = 'rgba(120,200,255,0.10)';
-    g.fillRect(0, 110, 320, 24);
+    // 12. Magenta + cyan neon haze sweep across the mid-frame for that
+    //    Tokyo dawn vibe. Drawn LAST in the sky pass so it tints
+    //    everything beneath.
+    var hazeM = g.createLinearGradient(0, 70, 0, 130);
+    hazeM.addColorStop(0,   'rgba(255,90,200,0.00)');
+    hazeM.addColorStop(0.5, 'rgba(255,90,200,0.10)');
+    hazeM.addColorStop(1,   'rgba(255,90,200,0.00)');
+    g.fillStyle = hazeM; g.fillRect(0, 70, 320, 60);
+    var hazeC = g.createLinearGradient(0, 100, 0, 150);
+    hazeC.addColorStop(0,   'rgba(90,220,255,0.00)');
+    hazeC.addColorStop(0.5, 'rgba(90,220,255,0.12)');
+    hazeC.addColorStop(1,   'rgba(90,220,255,0.00)');
+    g.fillStyle = hazeC; g.fillRect(0, 100, 320, 50);
   }
 
-  // Foreground layer that overlaps the player. Called from the level
-  // scene's render AFTER all entities + projectiles draw, BEFORE HUD.
-  // Drawn at the highest scroll factor (0.70x) for strong depth.
   function drawForeground_cyber(g, camx, camy, prog, t) {
     var S = SDD.sprites || {};
-    var fg = S.cyberFg && S.cyberFg();
-    if (fg) {
-      var span = fg.width || 320, off = -(((camx * 0.70) % span) + span) % span;
-      for (var b = off - span; b < 320 + span; b += span) {
-        g.drawImage(fg, b, 0);
-      }
-      return;
+    var fgImg = S.cyberFg && S.cyberFg();
+    var src = fgImg || _cyBuild().fg;
+    var span = src.width || 320, off = -(((camx * 0.70) % span) + span) % span;
+    for (var b = off - span; b < 320 + span; b += span) {
+      g.drawImage(src, b, 0);
     }
-    // Procedural placeholder: dim foreground "buildings" at screen
-    // edges so the player feels the depth even before art lands.
-    g.fillStyle = 'rgba(20,30,50,0.85)';
-    var leftX = -((camx * 0.70) % 60);
-    g.fillRect(leftX, 60, 22, 120);
-    g.fillRect(leftX + 280, 80, 24, 100);
-    g.fillStyle = 'rgba(255,210,80,0.55)';
-    g.fillRect(leftX + 6, 80, 2, 2);
-    g.fillRect(leftX + 6, 110, 2, 2);
-    g.fillRect(leftX + 288, 96, 2, 2);
-    g.fillRect(leftX + 288, 130, 2, 2);
+    // Animated overlays: blinking neon signs (a few of them flicker),
+    // raindrops dripping past the screen edges, occasional bird/heli
+    // silhouette flying across.
+    // Flicker: re-paint a small white pulse over ~3 randomized sign
+    // positions every few frames.
+    for (var f = 0; f < 3; f++) {
+      var fseed = (t / 20 | 0 + f * 13) & 7;
+      if (fseed > 4) continue;
+      var fxx = ((f * 233 - camx * 0.70 + 60) % 320 + 320) % 320;
+      var fyy = 18 + (f * 7) % 20;
+      g.fillStyle = 'rgba(255,255,255,0.55)';
+      g.fillRect(fxx, fyy, 14, 1);
+    }
+    // Helicopter silhouette occasionally crossing the top.
+    var hi = ((t * 0.5) % 600);
+    if (hi < 320 + 40) {
+      var hx = hi - 40;
+      g.fillStyle = '#0a0a18';
+      g.fillRect(hx, 12, 14, 4);
+      g.fillRect(hx + 4, 11, 6, 2);
+      g.fillRect(hx + 14, 13, 4, 1);              // tail
+      // Spinning rotor (alternating frame).
+      g.fillStyle = '#1a1a28';
+      if ((t / 2 | 0) & 1) g.fillRect(hx - 2, 10, 18, 1);
+      else                 g.fillRect(hx + 7, 9, 1, 4);
+      // Tail rotor blink.
+      g.fillStyle = '#ff4040';
+      if ((t / 8 | 0) & 1) g.fillRect(hx + 17, 13, 1, 1);
+    }
+    // Soft edge vignette for cinematic frame.
+    var vg = g.createLinearGradient(0, 0, 30, 0);
+    vg.addColorStop(0, 'rgba(8,8,20,0.55)');
+    vg.addColorStop(1, 'rgba(8,8,20,0)');
+    g.fillStyle = vg; g.fillRect(0, 0, 30, 180);
+    var vg2 = g.createLinearGradient(290, 0, 320, 0);
+    vg2.addColorStop(0, 'rgba(8,8,20,0)');
+    vg2.addColorStop(1, 'rgba(8,8,20,0.55)');
+    g.fillStyle = vg2; g.fillRect(290, 0, 30, 180);
   }
 
   var THEMES = {
@@ -3516,7 +4225,12 @@ window.SDD = window.SDD || {};
       // friendship-token has a 999s timer = "lasts whole stage" - we
       // render the badge without a countdown for it.
       var sv = SDD.save;
-      var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
+      // Adventure City (Day 8) is set in a futuristic city after Danny's
+      // time machine finally takes him forward instead of back. The HUD
+      // date reflects that - "JULY 2026 AD" instead of "DAY 8".
+      var dlabel = (this.day === 8)
+        ? 'JULY 2026 AD'
+        : ('DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : ''));
       text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');
       // Theme name (level.name) as a small subtitle under DAY. Pass 12
       // (Mark): the subtitle used to share row Y=14 with the POWER
