@@ -2714,13 +2714,10 @@ window.SDD = window.SDD || {};
   function _cyPaintFar(g) {
     var rng = _cyRng(0xC1FA);
     var W = 960;
-    // Light haze background - lighter than before so the towers
-    // behind have more presence (Mark: "see more of the skyline
-    // in the distance").
-    var hz = g.createLinearGradient(0, 50, 0, 140);
-    hz.addColorStop(0, 'rgba(225,238,247,0.55)');
-    hz.addColorStop(1, 'rgba(238,246,251,0.80)');
-    g.fillStyle = hz; g.fillRect(0, 50, W, 95);
+    // v0.57: removed the white haze background per Mark - the towers
+    // already carry the right hue, and the white wash was creating a
+    // stark light band under the blue sky. The global multiply-darken
+    // in the shader pass provides the atmospheric recession.
 
     // 90 towers (up from 60) for a denser skyline. Mix tall + short
     // so the silhouette has rhythm. Each tower has a 3-tone body
@@ -2744,9 +2741,11 @@ window.SDD = window.SDD || {};
       var baseY = 140 - T.h;
       // Depth tint: tallest = palest, shorter = slightly more saturated.
       var depth = 1 - Math.max(0, Math.min(1, (T.h - 30) / 90));
-      var rT = Math.floor(_cyMix(210, 152, depth));
-      var gT = Math.floor(_cyMix(224, 178, depth));
-      var bT = Math.floor(_cyMix(238, 198, depth));
+      // v0.57: shifted bluer per Mark - "blue shift the background
+      // buildings a little." Far towers pull toward sky color.
+      var rT = Math.floor(_cyMix(200, 148, depth));
+      var gT = Math.floor(_cyMix(220, 178, depth));
+      var bT = Math.floor(_cyMix(244, 210, depth));
       var col = _cyHex(rT, gT, bT);
       var shade = _cyHex(rT - 22, gT - 18, bT - 12);
       var hi = _cyHex(Math.min(255, rT + 18), Math.min(255, gT + 14), Math.min(255, bT + 8));
@@ -2847,19 +2846,12 @@ window.SDD = window.SDD || {};
       }
     }
 
-    // Final atmospheric haze pass - LIGHTER than the previous version
-    // so the city detail behind is more visible per Mark's brief.
-    var hzAtm = g.createLinearGradient(0, 50, 0, 145);
-    hzAtm.addColorStop(0,    'rgba(238,247,253,0.25)');
-    hzAtm.addColorStop(0.55, 'rgba(242,250,254,0.38)');
-    hzAtm.addColorStop(1,    'rgba(248,253,255,0.55)');
-    g.fillStyle = hzAtm;
-    g.fillRect(0, 50, W, 95);
-    // Light sky-tint top-down.
-    var skyTint = g.createLinearGradient(0, 50, 0, 145);
-    skyTint.addColorStop(0,    'rgba(180,225,250,0.18)');
-    skyTint.addColorStop(1,    'rgba(216,238,250,0.04)');
-    g.fillStyle = skyTint;
+    // v0.57: replaced the white haze passes with a single SUBTLE
+    // BLUE TINT per Mark - "the background buildings already have the
+    // right hue, they need to be just blue-shifted a little." No
+    // white anywhere; the global multiply darken in the shader pass
+    // provides the depth.
+    g.fillStyle = 'rgba(140,170,220,0.18)';
     g.fillRect(0, 50, W, 95);
   }
 
@@ -3383,6 +3375,18 @@ window.SDD = window.SDD || {};
     var x = -10;
     var k = 0;
     while (x < W + 20) {
+      // v0.57 - 1-in-3 iterations pick a SPECIALTY building (clock
+      // tower, bath house, transit kiosk, library, greenhouse stall,
+      // food cart) instead of the standard shopfront so the layer
+      // reads as varied per Mark's "more variety, more distinct
+      // buildings like layer 4" brief. Each specialty advances x
+      // and continues the loop.
+      if (rng() < 0.36) {
+        var specW = _cyPaintBridgeSpecialty(g, x, rng, k);
+        x += specW;
+        k++;
+        continue;
+      }
       var w = 36 + Math.floor(rng() * 28);
       var h = 30 + Math.floor(rng() * 14);
       var baseY = 152 - h;
@@ -3705,6 +3709,523 @@ window.SDD = window.SDD || {};
       g.fillRect(vk + 1, vy + 1, 1, 1);
       g.fillRect(vk - 1, vy + 3, 1, 1);
     }
+
+    // ===== SUB-LEVEL STRUCTURAL PASS (v0.57) =====
+    // Fills the bottom 88 px of the bridge canvas (y=152-240) with
+    // foundation arches + support pillars so when the camera scrolls
+    // up the layer keeps covering the bottom of the screen instead
+    // of revealing blank space. Reads as a viaduct's understructure
+    // below the shopfront row.
+    _cyPaintBridgeSubLevel(g, W);
+  }
+
+  // Sub-level paint pass for the bridge layer. Foundation slab +
+  // repeating arched cellar openings (lit) + support pillars.
+  function _cyPaintBridgeSubLevel(g, W) {
+    var rng = _cyRng(0xB17E);
+    // Foundation slab y=152-162 - dark cream band on top, deep
+    // shade below for a strong horizontal line.
+    g.fillStyle = '#8C7448';
+    g.fillRect(0, 152, W, 2);
+    g.fillStyle = '#C0A878';
+    g.fillRect(0, 154, W, 4);
+    g.fillStyle = '#A88858';
+    g.fillRect(0, 158, W, 2);
+    g.fillStyle = '#5A4830';
+    g.fillRect(0, 160, W, 2);
+
+    // Arched cellar opening row y=162-186 - rounded arches every
+    // 32px with warm lit interior (small windows under the shops).
+    var archSpacing = 32;
+    for (var ax = 0; ax < W; ax += archSpacing) {
+      // Pillar between arches (cream stone).
+      g.fillStyle = '#E0CDA8';
+      g.fillRect(ax,     162, 6, 24);
+      g.fillStyle = '#F0DFC0';
+      g.fillRect(ax,     162, 6, 1);
+      g.fillStyle = '#A88858';
+      g.fillRect(ax + 5, 162, 1, 24);
+      g.fillStyle = '#8C7448';
+      g.fillRect(ax,     185, 6, 1);
+      // Arched opening (top semicircle of dark interior).
+      var aw = archSpacing - 6;
+      g.fillStyle = '#0E1422';
+      g.fillRect(ax + 6,     166, aw, 20);
+      // Arch curve at the top (3-px tall step pattern).
+      g.fillStyle = '#E0CDA8';
+      g.fillRect(ax + 6,     162, aw, 1);
+      g.fillStyle = '#F0DFC0';
+      g.fillRect(ax + 6,     162, aw, 1);
+      g.fillStyle = '#0E1422';
+      g.fillRect(ax + 6,     163, 1, 3);
+      g.fillRect(ax + 6 + aw - 1, 163, 1, 3);
+      g.fillRect(ax + 7,     164, 1, 2);
+      g.fillRect(ax + 6 + aw - 2, 164, 1, 2);
+      g.fillRect(ax + 8,     165, aw - 4, 1);
+      // Warm lit interior at the back of the arch.
+      g.fillStyle = '#5A3818';
+      g.fillRect(ax + 8,     170, aw - 4, 14);
+      g.fillStyle = '#FFB860';
+      g.fillRect(ax + 10,    172, aw - 8, 4);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(ax + 11,    173, aw - 10, 2);
+      // Glow halo from the lit interior.
+      g.fillStyle = 'rgba(255,180,96,0.25)';
+      g.fillRect(ax + 6,     168, aw, 12);
+      // Faint shadow figure (silhouette of a barrel / crate).
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(ax + 8 + ((ax * 7) % 6),  180, 4, 5);
+      // Vine drape over the arch.
+      if ((ax + (rng() * 100)) % 64 < 32) {
+        g.fillStyle = _CYP.leafDk;
+        g.fillRect(ax + 6, 162, 1, 4);
+        g.fillRect(ax + 6 + aw - 1, 162, 1, 6);
+        g.fillStyle = _CYP.leafMid;
+        g.fillRect(ax + 6 + aw - 1, 163, 1, 2);
+      }
+    }
+
+    // Support pillar band y=186-220 - dark brick texture with regular
+    // mortar lines + 6-px-wide pillars every 32 px (lined up with the
+    // arch pillars above).
+    g.fillStyle = '#4A3826';
+    g.fillRect(0, 186, W, 34);
+    // Brick mortar lines.
+    g.fillStyle = '#5A4830';
+    for (var by = 188; by < 220; by += 4) {
+      g.fillRect(0, by, W, 1);
+    }
+    // Vertical mortar offsets so the bricks stagger.
+    g.fillStyle = '#22120C';
+    for (var bx2 = 0; bx2 < W; bx2 += 8) {
+      for (var bby = 188; bby < 220; bby += 4) {
+        var off2 = ((bby / 4) | 0) % 2 ? 0 : 4;
+        g.fillRect(bx2 + off2, bby, 1, 4);
+      }
+    }
+    // Tall structural pillars at the arch positions.
+    for (var pl = 0; pl < W; pl += 32) {
+      g.fillStyle = '#5A4830';
+      g.fillRect(pl,     186, 6, 34);
+      g.fillStyle = '#7A6440';
+      g.fillRect(pl,     186, 1, 34);
+      g.fillStyle = '#3A2818';
+      g.fillRect(pl + 5, 186, 1, 34);
+      // Pillar cap.
+      g.fillStyle = '#8C7448';
+      g.fillRect(pl - 1, 186, 8, 2);
+    }
+
+    // Continuous base shadow band y=220-240 - deep darkness so when
+    // the camera scrolls up to the max position, the visible bottom
+    // of the layer reads as solid ground / off-screen depth.
+    g.fillStyle = '#1A1208';
+    g.fillRect(0, 220, W, 20);
+    g.fillStyle = '#3A2818';
+    g.fillRect(0, 220, W, 2);
+  }
+
+  // Specialty bridge-layer building. Picks one of 6 variants and
+  // paints it at world-x = x. Returns width consumed so the bridge
+  // walker can advance x. All variants paint at the y=100-152 shop
+  // row baseline but with distinct silhouettes for skyline variety.
+  function _cyPaintBridgeSpecialty(g, x, rng, k) {
+    var variant = Math.floor(rng() * 6);
+    var bot = 152;
+    if (variant === 0) {
+      // CLOCK TOWER - slim 22-wide tower with round clock face + bell.
+      var w = 22, h = 56, baseY = bot - h;
+      g.fillStyle = '#7A5D44';
+      g.fillRect(x, baseY, w, h);
+      g.fillStyle = '#4A3826';
+      g.fillRect(x, baseY, 1, h);
+      g.fillRect(x, bot - 2, w, 2);
+      g.fillStyle = '#A0825E';
+      g.fillRect(x + w - 1, baseY, 1, h);
+      g.fillStyle = '#A0825E';
+      g.fillRect(x, baseY, w, 1);
+      _cyRoundCorners(g, x, baseY, w, h, '#4A3826');
+      // Clock face (cream circle).
+      var cx = x + w / 2, cy = baseY + 12;
+      g.fillStyle = '#0E1422';
+      g.beginPath(); g.arc(cx, cy, 7, 0, 6.28); g.fill();
+      g.fillStyle = '#F0DEB0';
+      g.beginPath(); g.arc(cx, cy, 6, 0, 6.28); g.fill();
+      // Hour ticks (4).
+      g.fillStyle = '#22232C';
+      g.fillRect(cx,         cy - 5, 1, 2);
+      g.fillRect(cx,         cy + 4, 1, 2);
+      g.fillRect(cx - 5,     cy,     2, 1);
+      g.fillRect(cx + 4,     cy,     2, 1);
+      // Hands (one short pointing up, one longer pointing right).
+      g.fillRect(cx,         cy - 4, 1, 4);
+      g.fillRect(cx,         cy,     5, 1);
+      g.fillStyle = '#FF4FA8';
+      g.fillRect(cx,         cy,     1, 1);
+      // Belfry on top (open arches with bell inside).
+      g.fillStyle = '#4A3826';
+      g.fillRect(x + 1,      baseY - 8, w - 2, 8);
+      g.fillStyle = '#7A5D44';
+      g.fillRect(x + 2,      baseY - 7, w - 4, 6);
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 4,      baseY - 5, w - 8, 4);
+      // Bell silhouette inside.
+      g.fillStyle = '#E8A848';
+      g.fillRect(x + w / 2 - 2, baseY - 4, 4, 3);
+      g.fillRect(x + w / 2 - 1, baseY - 5, 2, 1);
+      // Peaked roof on top of belfry.
+      g.fillStyle = '#883030';
+      for (var pr = 0; pr < 6; pr++) {
+        var pw = Math.max(1, w - pr * 4);
+        g.fillRect(x + Math.floor((w - pw) / 2), baseY - 8 - pr, pw, 1);
+      }
+      g.fillStyle = '#22232C';
+      g.fillRect(x + w / 2,  baseY - 18, 1, 4);
+      g.fillStyle = '#FF6464';
+      g.fillRect(x + w / 2,  baseY - 18, 1, 1);
+      // Lit windows below the clock.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 5,      baseY + 30, 4, 6);
+      g.fillRect(x + 13,     baseY + 30, 4, 6);
+      g.fillStyle = '#FFB860';
+      g.fillRect(x + 6,      baseY + 31, 2, 4);
+      g.fillRect(x + 14,     baseY + 31, 2, 4);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + 6,      baseY + 31, 2, 1);
+      g.fillRect(x + 14,     baseY + 31, 2, 1);
+      // Sidewalk.
+      g.fillStyle = _CYP.pathShade;
+      g.fillRect(x, bot, w, 4);
+      g.fillStyle = _CYP.pathWarm;
+      g.fillRect(x, bot, w, 1);
+      return w + 2;
+    } else if (variant === 1) {
+      // BATH HOUSE - wider 56-px structure, stepped tile roof, chimney
+      // with rising steam, warm orange window glow.
+      var w = 56, h = 44, baseY = bot - h;
+      g.fillStyle = '#D6BD8E';
+      g.fillRect(x, baseY + 8, w, h - 8);
+      g.fillStyle = '#8A6D40';
+      g.fillRect(x, baseY + 8, 1, h - 8);
+      g.fillRect(x + w - 1, baseY + 8, 1, h - 8);
+      g.fillStyle = '#F0DEB0';
+      g.fillRect(x, baseY + 8, w, 1);
+      g.fillStyle = '#8A6D40';
+      g.fillRect(x, bot - 2, w, 2);
+      // Stepped tile roof - 3 tiers.
+      g.fillStyle = '#5A3018';
+      g.fillRect(x - 2, baseY + 8, w + 4, 2);
+      g.fillStyle = '#883030';
+      g.fillRect(x,     baseY + 4, w,     4);
+      g.fillStyle = '#A85040';
+      g.fillRect(x,     baseY + 4, w,     1);
+      // Tile pattern on the roof.
+      g.fillStyle = '#5A3018';
+      for (var tl = x + 4; tl < x + w; tl += 4) {
+        g.fillRect(tl, baseY + 4, 1, 4);
+      }
+      // Upper crown.
+      g.fillStyle = '#883030';
+      g.fillRect(x + 8, baseY,     w - 16, 4);
+      g.fillStyle = '#A85040';
+      g.fillRect(x + 8, baseY,     w - 16, 1);
+      // Chimney with steam.
+      g.fillStyle = '#5A3018';
+      g.fillRect(x + w - 14, baseY - 8, 6, 8);
+      g.fillStyle = '#3A1A08';
+      g.fillRect(x + w - 14, baseY - 8, 1, 8);
+      g.fillRect(x + w - 14, baseY - 8, 6, 1);
+      // Steam puffs above.
+      g.fillStyle = 'rgba(255,255,255,0.55)';
+      g.fillRect(x + w - 12, baseY - 14, 4, 3);
+      g.fillStyle = 'rgba(255,255,255,0.40)';
+      g.fillRect(x + w - 14, baseY - 18, 6, 4);
+      g.fillStyle = 'rgba(255,255,255,0.28)';
+      g.fillRect(x + w - 18, baseY - 22, 8, 4);
+      // Big warm glowing window pair (the bath room).
+      var bw = 18, bh = 14;
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 6,      baseY + 16, bw, bh);
+      g.fillRect(x + 32,     baseY + 16, bw, bh);
+      g.fillStyle = '#FFB860';
+      g.fillRect(x + 7,      baseY + 17, bw - 2, bh - 2);
+      g.fillRect(x + 33,     baseY + 17, bw - 2, bh - 2);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + 7,      baseY + 17, bw - 2, 2);
+      g.fillRect(x + 33,     baseY + 17, bw - 2, 2);
+      g.fillStyle = 'rgba(255,180,96,0.30)';
+      g.fillRect(x + 4,      baseY + 14, bw + 4, bh + 4);
+      g.fillRect(x + 30,     baseY + 14, bw + 4, bh + 4);
+      // Steam vent slits between windows.
+      g.fillStyle = 'rgba(255,255,255,0.32)';
+      g.fillRect(x + 26,     baseY + 12, 4, 1);
+      g.fillRect(x + 26,     baseY + 14, 4, 1);
+      // Sign panel (cream, kanji-style faux text).
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 6,      baseY + 10, w - 12, 4);
+      g.fillStyle = '#F0E0C0';
+      for (var tb = x + 8; tb < x + w - 8; tb += 3) {
+        g.fillRect(tb, baseY + 11, 2, 2);
+      }
+      // Sidewalk.
+      g.fillStyle = _CYP.pathShade;
+      g.fillRect(x, bot, w, 4);
+      g.fillStyle = _CYP.pathWarm;
+      g.fillRect(x, bot, w, 1);
+      return w + 2;
+    } else if (variant === 2) {
+      // TRANSIT KIOSK - small 24px booth with scrolling cyan display
+      // and a bench in front.
+      var w = 24, h = 36, baseY = bot - h;
+      g.fillStyle = '#3F5670';
+      g.fillRect(x, baseY, w, h);
+      g.fillStyle = '#243648';
+      g.fillRect(x, baseY, 1, h);
+      g.fillRect(x, bot - 2, w, 2);
+      g.fillStyle = '#5F7894';
+      g.fillRect(x + w - 1, baseY, 1, h);
+      g.fillStyle = '#5F7894';
+      g.fillRect(x, baseY, w, 1);
+      // Slanted roof.
+      g.fillStyle = '#243648';
+      g.fillRect(x - 2, baseY - 3, w + 4, 3);
+      g.fillStyle = '#5F7894';
+      g.fillRect(x - 2, baseY - 3, w + 4, 1);
+      // Big cyan information display.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 2, baseY + 4, w - 4, 14);
+      g.fillStyle = '#5AE8FF';
+      g.fillRect(x + 3, baseY + 5, w - 6, 12);
+      g.fillStyle = '#0E1422';
+      // Scrolling text bars.
+      for (var sd = 0; sd < 4; sd++) {
+        g.fillRect(x + 4, baseY + 7 + sd * 3, w - 8, 1);
+      }
+      g.fillStyle = 'rgba(90,232,255,0.30)';
+      g.fillRect(x + 0, baseY + 2, w, 18);
+      // Map / route diagram dots below.
+      g.fillStyle = '#FF4FA8';
+      g.fillRect(x + 4,  baseY + 22, 2, 2);
+      g.fillRect(x + 10, baseY + 22, 2, 2);
+      g.fillRect(x + 16, baseY + 22, 2, 2);
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 6, baseY + 23, 4, 1);
+      g.fillRect(x + 12, baseY + 23, 4, 1);
+      // Coin / payment slot.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 8, baseY + 28, 8, 4);
+      g.fillStyle = '#FFD23A';
+      g.fillRect(x + 10, baseY + 30, 4, 1);
+      // Bench in front.
+      var bx = x + w + 2;
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bx, bot - 6, 12, 2);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(bx + 1, bot - 4, 2, 4);
+      g.fillRect(bx + 9, bot - 4, 2, 4);
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bx, bot - 12, 12, 1);
+      // Sidewalk under both.
+      g.fillStyle = _CYP.pathShade;
+      g.fillRect(x, bot, w + 16, 4);
+      g.fillStyle = _CYP.pathWarm;
+      g.fillRect(x, bot, w + 16, 1);
+      return w + 16;
+    } else if (variant === 3) {
+      // LIBRARY - wider 44px, gabled roof, arched main window, book
+      // pile silhouettes inside the window.
+      var w = 44, h = 46, baseY = bot - h;
+      g.fillStyle = '#806CA0';
+      g.fillRect(x, baseY + 6, w, h - 6);
+      g.fillStyle = '#4A3868';
+      g.fillRect(x, baseY + 6, 1, h - 6);
+      g.fillRect(x, bot - 2, w, 2);
+      g.fillStyle = '#A892C0';
+      g.fillRect(x + w - 1, baseY + 6, 1, h - 6);
+      g.fillStyle = '#A892C0';
+      g.fillRect(x, baseY + 6, w, 1);
+      // Gabled roof - triangular peak.
+      g.fillStyle = '#4A3868';
+      for (var gr = 0; gr < 6; gr++) {
+        var grw = w - gr * 4;
+        g.fillRect(x + Math.floor((w - grw) / 2), baseY + 6 - gr * 1 - 1, grw, 1);
+      }
+      g.fillStyle = '#806CA0';
+      for (var gr2 = 0; gr2 < 5; gr2++) {
+        var gw2 = w - 2 - gr2 * 4;
+        g.fillRect(x + Math.floor((w - gw2) / 2), baseY + 5 - gr2 * 1, gw2, 1);
+      }
+      // Arched main window in the front.
+      var aw2 = 18, ah2 = 18;
+      var awx = x + Math.floor((w - aw2) / 2);
+      var awy = baseY + 14;
+      g.fillStyle = '#0E1422';
+      g.fillRect(awx, awy, aw2, ah2);
+      // Arch curve.
+      g.fillStyle = '#806CA0';
+      g.fillRect(awx, awy, 1, 3);
+      g.fillRect(awx + aw2 - 1, awy, 1, 3);
+      g.fillRect(awx + 1, awy, 1, 2);
+      g.fillRect(awx + aw2 - 2, awy, 1, 2);
+      // Warm interior.
+      g.fillStyle = '#FFB860';
+      g.fillRect(awx + 1, awy + 3, aw2 - 2, ah2 - 4);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(awx + 1, awy + 3, aw2 - 2, 2);
+      // Book pile silhouettes inside.
+      g.fillStyle = '#4A3868';
+      g.fillRect(awx + 3, awy + 10, 4, 5);
+      g.fillRect(awx + 8, awy + 8,  3, 7);
+      g.fillRect(awx + 12, awy + 11, 4, 4);
+      g.fillStyle = '#883858';
+      g.fillRect(awx + 3, awy + 10, 4, 1);
+      g.fillRect(awx + 12, awy + 11, 4, 1);
+      // Window mullions.
+      g.fillStyle = '#0E1422';
+      g.fillRect(awx + Math.floor(aw2 / 2), awy + 2, 1, ah2 - 2);
+      g.fillRect(awx + 1, awy + Math.floor(ah2 / 2), aw2 - 2, 1);
+      // Glow halo.
+      g.fillStyle = 'rgba(255,180,96,0.30)';
+      g.fillRect(awx - 2, awy - 2, aw2 + 4, ah2 + 4);
+      // Sign band above.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 4, baseY + 8, w - 8, 4);
+      g.fillStyle = '#FFD23A';
+      for (var lt = x + 6; lt < x + w - 6; lt += 3) {
+        g.fillRect(lt, baseY + 9, 2, 2);
+      }
+      // Sidewalk.
+      g.fillStyle = _CYP.pathShade;
+      g.fillRect(x, bot, w, 4);
+      g.fillStyle = _CYP.pathWarm;
+      g.fillRect(x, bot, w, 1);
+      return w + 2;
+    } else if (variant === 4) {
+      // GREENHOUSE STALL - 38-px wide glass dome on a cream base,
+      // plants visible inside, planter shelves on the sides.
+      var w = 38, h = 42, baseY = bot - h;
+      // Base / planter (cream brick).
+      g.fillStyle = '#D6BD8E';
+      g.fillRect(x, baseY + 16, w, h - 16);
+      g.fillStyle = '#8A6D40';
+      g.fillRect(x, baseY + 16, 1, h - 16);
+      g.fillRect(x, bot - 2, w, 2);
+      g.fillStyle = '#F0DEB0';
+      g.fillRect(x + w - 1, baseY + 16, 1, h - 16);
+      g.fillStyle = '#F0DEB0';
+      g.fillRect(x, baseY + 16, w, 1);
+      // Glass dome.
+      var cx = x + w / 2;
+      var dr = Math.floor(w / 2);
+      g.fillStyle = '#243648';
+      g.beginPath(); g.arc(cx, baseY + 16, dr, Math.PI, 0); g.fill();
+      g.fillStyle = '#5A8590';
+      g.beginPath(); g.arc(cx, baseY + 16, dr - 1, Math.PI, 0); g.fill();
+      g.fillStyle = '#88B0B8';
+      g.beginPath(); g.arc(cx, baseY + 16, dr - 3, Math.PI, 0); g.fill();
+      // Glass panes (radial lines).
+      g.fillStyle = '#243648';
+      for (var rl = 0; rl < 7; rl++) {
+        var ang = Math.PI + rl * Math.PI / 6;
+        var px2 = Math.round(cx + Math.cos(ang) * (dr - 1));
+        var py2 = Math.round(baseY + 16 + Math.sin(ang) * (dr - 1));
+        g.fillRect(px2, py2, 1, 1);
+      }
+      // Plants visible through the dome.
+      g.fillStyle = _CYP.leafDk;
+      g.fillRect(x + 6,      baseY + 8, 5, 8);
+      g.fillRect(x + w - 11, baseY + 8, 5, 8);
+      g.fillRect(x + 14,     baseY + 4, 10, 12);
+      g.fillStyle = _CYP.leafMid;
+      g.fillRect(x + 7,      baseY + 8, 3, 4);
+      g.fillRect(x + 15,     baseY + 5, 4, 6);
+      g.fillStyle = _CYP.blossom;
+      g.fillRect(x + 8,      baseY + 7, 1, 1);
+      g.fillRect(x + 16,     baseY + 3, 1, 1);
+      g.fillRect(x + 22,     baseY + 4, 1, 1);
+      // Door + warm window glow.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + Math.floor(w / 2) - 3, baseY + 24, 6, 18);
+      g.fillStyle = '#FFB860';
+      g.fillRect(x + Math.floor(w / 2) - 2, baseY + 26, 4, 14);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + Math.floor(w / 2) - 2, baseY + 26, 4, 1);
+      // Side planter shelves.
+      g.fillStyle = '#8A6D40';
+      g.fillRect(x + 2,      baseY + 30, 8, 2);
+      g.fillRect(x + w - 10, baseY + 30, 8, 2);
+      g.fillStyle = _CYP.leafDk;
+      g.fillRect(x + 3,      baseY + 26, 6, 4);
+      g.fillRect(x + w - 9,  baseY + 26, 6, 4);
+      g.fillStyle = _CYP.leafMid;
+      g.fillRect(x + 4,      baseY + 27, 4, 2);
+      g.fillRect(x + w - 8,  baseY + 27, 4, 2);
+      g.fillStyle = _CYP.blossom;
+      g.fillRect(x + 5,      baseY + 26, 1, 1);
+      g.fillRect(x + w - 7,  baseY + 26, 1, 1);
+      // Sidewalk.
+      g.fillStyle = _CYP.pathShade;
+      g.fillRect(x, bot, w, 4);
+      g.fillStyle = _CYP.pathWarm;
+      g.fillRect(x, bot, w, 1);
+      return w + 2;
+    } else {
+      // FOOD CART - small mobile cart with red+white umbrella, wheels,
+      // steaming pot. Sits on the sidewalk, no big building behind it.
+      var w = 20, baseY = bot - 22;
+      // Cart body.
+      g.fillStyle = '#883030';
+      g.fillRect(x,     baseY + 8, w, 10);
+      g.fillStyle = '#A85040';
+      g.fillRect(x,     baseY + 8, w, 1);
+      g.fillStyle = '#5A1818';
+      g.fillRect(x,     baseY + 17, w, 1);
+      // Front warm-lit serving window.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 2, baseY + 11, w - 4, 5);
+      g.fillStyle = '#FFB860';
+      g.fillRect(x + 3, baseY + 12, w - 6, 3);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + 3, baseY + 12, w - 6, 1);
+      // Wheels.
+      g.fillStyle = '#22232C';
+      g.beginPath(); g.arc(x + 4,     baseY + 20, 3, 0, 6.28); g.fill();
+      g.beginPath(); g.arc(x + w - 4, baseY + 20, 3, 0, 6.28); g.fill();
+      g.fillStyle = '#5E6173';
+      g.fillRect(x + 4 - 1, baseY + 20, 2, 1);
+      g.fillRect(x + w - 5, baseY + 20, 2, 1);
+      // Pole supporting umbrella.
+      g.fillStyle = '#22232C';
+      g.fillRect(x + w / 2, baseY - 2, 1, 10);
+      // Striped umbrella (red/cream alternating).
+      var uw = w + 8;
+      for (var uo = 0; uo < uw; uo++) {
+        g.fillStyle = (uo & 2) ? '#D04848' : '#F0E0C0';
+        g.fillRect(x - 4 + uo, baseY,     1, 2);
+      }
+      // Umbrella scallops.
+      g.fillStyle = '#883030';
+      for (var us = x - 4; us < x + w + 4; us += 4) {
+        g.fillRect(us + 1, baseY + 2, 2, 1);
+      }
+      // Steam from the pot.
+      g.fillStyle = 'rgba(255,255,255,0.55)';
+      g.fillRect(x + 8, baseY - 5, 4, 2);
+      g.fillStyle = 'rgba(255,255,255,0.32)';
+      g.fillRect(x + 6, baseY - 9, 8, 3);
+      // Sign hanging from the umbrella pole.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + w / 2 + 2, baseY + 2, 8, 4);
+      g.fillStyle = '#FFD23A';
+      g.fillRect(x + w / 2 + 3, baseY + 3, 2, 2);
+      g.fillRect(x + w / 2 + 6, baseY + 3, 2, 2);
+      // Sidewalk.
+      g.fillStyle = _CYP.pathShade;
+      g.fillRect(x, bot, w, 4);
+      g.fillStyle = _CYP.pathWarm;
+      g.fillRect(x, bot, w, 1);
+      return w + 4;
+    }
   }
 
   // =================================================================
@@ -3765,6 +4286,191 @@ window.SDD = window.SDD || {};
       var which2 = (sc & 1) ? 'R' : 'L';  // opposite of anchor
       var cafeX = (which2 === 'L') ? slotLeft + 40 : slotLeft + 240;
       _cyPaintFgCafePatio(g, cafeX, rng);
+    }
+
+    // v0.57 - short overlap pieces per Mark "doesn't all have to be so
+    // tall, can be some little pieces and parts of a city that
+    // overlap." Two per slot, between the anchor + cafe positions, so
+    // the foreground silhouette has tall / short / tall / short
+    // rhythm.
+    for (var sk = 0; sk < slots; sk++) {
+      var sl = sk * 320;
+      _cyPaintFgKiosk(g, sl + 110, rng);
+      _cyPaintFgKiosk(g, sl + 190, rng);
+    }
+  }
+
+  // Short overlapping foreground piece (50-72px tall). One of 3
+  // variants: vending kiosk + bench, small storefront with awning,
+  // partial-height utility cabinet with sign. Sits on the foreground
+  // sidewalk (~y=144 baseline) like the anchors but doesn't reach the
+  // top of the frame.
+  function _cyPaintFgKiosk(g, x, rng) {
+    var variant = Math.floor(rng() * 3);
+    var baseY = 110 + Math.floor(rng() * 20);   // 110-130 top
+    var w = 22 + Math.floor(rng() * 14);
+    var bot = 180;
+    var h = bot - baseY;
+    if (variant === 0) {
+      // VENDING KIOSK + BENCH. Tall narrow kiosk with bright lit
+      // panel + a wooden bench beside it.
+      var kCol = '#3F5670', kShade = '#243648', kHi = '#5F7894';
+      // Kiosk body.
+      g.fillStyle = kCol;
+      g.fillRect(x, baseY, 14, h);
+      g.fillStyle = kShade;
+      g.fillRect(x, baseY, 1, h);
+      g.fillRect(x, bot - 2, 14, 2);
+      g.fillStyle = kHi;
+      g.fillRect(x + 13, baseY, 1, h);
+      g.fillRect(x, baseY, 14, 1);
+      // Pitched roof.
+      g.fillStyle = kShade;
+      g.fillRect(x - 1, baseY - 2, 16, 2);
+      g.fillStyle = kHi;
+      g.fillRect(x - 1, baseY - 2, 16, 1);
+      // Bright lit product panel.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 2, baseY + 4, 10, 14);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + 3, baseY + 5, 8, 12);
+      // Product silhouettes inside.
+      g.fillStyle = '#3F5670';
+      g.fillRect(x + 3, baseY + 7,  2, 5);
+      g.fillRect(x + 6, baseY + 7,  2, 5);
+      g.fillRect(x + 9, baseY + 7,  2, 5);
+      g.fillRect(x + 3, baseY + 13, 8, 1);
+      // Glow halo around the panel.
+      g.fillStyle = 'rgba(255,228,160,0.22)';
+      g.fillRect(x + 0, baseY + 2, 14, 18);
+      // Coin slot + payment pad.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 3, baseY + 22, 8, 4);
+      g.fillStyle = '#5AE8FF';
+      g.fillRect(x + 5, baseY + 23, 4, 2);
+      // Brand strip across the top.
+      g.fillStyle = '#FF4FA8';
+      g.fillRect(x + 1, baseY + 1, 12, 2);
+      // Bench beside the kiosk.
+      var bx = x + 16;
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bx, bot - 8, 12, 2);                // seat
+      g.fillStyle = '#5A3818';
+      g.fillRect(bx, bot - 6, 12, 1);
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bx + 1, bot - 5, 2, 5);             // legs
+      g.fillRect(bx + 9, bot - 5, 2, 5);
+      // Backrest.
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bx, bot - 14, 12, 1);
+      g.fillStyle = '#5A3818';
+      g.fillRect(bx + 1, bot - 13, 1, 5);
+      g.fillRect(bx + 10, bot - 13, 1, 5);
+      // Sidewalk shadow.
+      g.fillStyle = 'rgba(20,30,50,0.30)';
+      g.fillRect(x - 2, bot - 1, w + 18, 1);
+    } else if (variant === 1) {
+      // SMALL STOREFRONT with red-and-white striped awning.
+      var sCol = '#7A5D44', sShade = '#4A3826', sHi = '#A0825E';
+      // Body.
+      g.fillStyle = sCol;
+      g.fillRect(x, baseY, w, h);
+      g.fillStyle = sShade;
+      g.fillRect(x, baseY, 1, h);
+      g.fillRect(x, bot - 2, w, 2);
+      g.fillStyle = sHi;
+      g.fillRect(x + w - 1, baseY, 1, h);
+      g.fillStyle = sHi;
+      g.fillRect(x, baseY, w, 1);
+      // Awning (alternating red/cream stripes).
+      var awY = baseY + 6;
+      for (var sw = 0; sw < w; sw++) {
+        g.fillStyle = (sw & 2) ? '#D04848' : '#F0E0C0';
+        g.fillRect(x + sw, awY,     1, 3);
+      }
+      g.fillStyle = '#883030';
+      g.fillRect(x, awY + 3, w, 1);
+      // Big shop window below the awning.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 2, awY + 5, w - 4, 16);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + 3, awY + 6, w - 6, 14);
+      // Mullions.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + Math.floor(w / 2), awY + 5, 1, 16);
+      g.fillRect(x + 2, awY + 12, w - 4, 1);
+      // Glow halo.
+      g.fillStyle = 'rgba(255,228,160,0.20)';
+      g.fillRect(x + 0, awY + 4, w, 18);
+      // Door + step.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + Math.floor(w / 2) - 3, bot - 14, 6, 12);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(x + Math.floor(w / 2) - 1, bot - 8, 1, 1);
+      // Sign above the awning.
+      g.fillStyle = '#0E1422';
+      g.fillRect(x + 2, baseY + 1, w - 4, 4);
+      g.fillStyle = '#5AE8FF';
+      for (var tt = x + 3; tt < x + w - 3; tt += 3) {
+        g.fillRect(tt, baseY + 2, 2, 2);
+      }
+    } else {
+      // UTILITY CABINET with antenna + side sign. Tall narrow, like
+      // a transit relay box.
+      var uCol = '#3D3F4A', uShade = '#22232C', uHi = '#5E6173';
+      g.fillStyle = uCol;
+      g.fillRect(x, baseY, 12, h);
+      g.fillStyle = uShade;
+      g.fillRect(x, baseY, 1, h);
+      g.fillStyle = uHi;
+      g.fillRect(x + 11, baseY, 1, h);
+      g.fillRect(x, baseY, 12, 1);
+      g.fillStyle = uShade;
+      g.fillRect(x, bot - 2, 12, 2);
+      // Panel grille slots.
+      g.fillStyle = uShade;
+      g.fillRect(x + 2, baseY + 4, 8, 1);
+      g.fillRect(x + 2, baseY + 7, 8, 1);
+      g.fillRect(x + 2, baseY + 10, 8, 1);
+      g.fillRect(x + 2, baseY + 13, 8, 1);
+      // Status LEDs.
+      g.fillStyle = '#FF6464';
+      g.fillRect(x + 3, baseY + 16, 1, 1);
+      g.fillStyle = '#5AE8FF';
+      g.fillRect(x + 5, baseY + 16, 1, 1);
+      g.fillStyle = '#A0F060';
+      g.fillRect(x + 7, baseY + 16, 1, 1);
+      // Vertical neon sign panel (lime).
+      g.fillStyle = '#0A0E18';
+      g.fillRect(x + 14, baseY + 6, 4, 36);
+      g.fillStyle = 'rgba(160,240,96,0.30)';
+      g.fillRect(x + 13, baseY + 5, 6, 38);
+      g.fillStyle = '#0A0E18';
+      g.fillRect(x + 15, baseY + 7, 2, 34);
+      var lh = 7;
+      for (var lg = 0; lg < Math.floor(34 / lh); lg++) {
+        g.fillStyle = '#A0F060';
+        g.fillRect(x + 15, baseY + 7 + lg * lh,     2, 1);
+        g.fillRect(x + 15, baseY + 9 + lg * lh,     2, 2);
+        g.fillRect(x + 15, baseY + 12 + lg * lh,    2, 1);
+        g.fillStyle = '#FFFFFF';
+        g.fillRect(x + 15, baseY + 7 + lg * lh,     1, 1);
+      }
+      // Antenna on top.
+      g.fillStyle = uShade;
+      g.fillRect(x + 5, baseY - 8, 1, 8);
+      g.fillStyle = '#FF6464';
+      g.fillRect(x + 5, baseY - 8, 1, 1);
+      // Side ladder.
+      g.fillStyle = uShade;
+      g.fillRect(x - 2, baseY + 6, 1, h - 8);
+      g.fillStyle = uShade;
+      for (var ld = baseY + 8; ld < bot - 4; ld += 4) {
+        g.fillRect(x - 3, ld, 3, 1);
+      }
+      // Sidewalk shadow.
+      g.fillStyle = 'rgba(20,30,50,0.30)';
+      g.fillRect(x - 4, bot - 1, 24, 1);
     }
   }
 
@@ -4061,7 +4767,12 @@ window.SDD = window.SDD || {};
       // should be soft silhouettes, not crisp shapes.
       far:    mk(960, 180, _cyPaintFar,        2.4),
       mid:    mk(960, 180, _cyPaintMid,        0),
-      bridge: mk(960, 180, _cyPaintBridge,     0),
+      // v0.57: bridge canvas grew 180→240 so the layer covers the
+      // bottom of the screen when the camera scrolls up during a
+      // jump (Mark: "when I jump, I can see under the layers").
+      // Sub-level structural content (foundation arches + support
+      // pillars) paints at y=152-240.
+      bridge: mk(960, 240, _cyPaintBridge,     0),
       fg:     mk(960, 180, _cyPaintForeground, 0)
     };
     return _cyCache;
@@ -4082,18 +4793,20 @@ window.SDD = window.SDD || {};
     sky.addColorStop(1,    '#F8F2E0');
     g.fillStyle = sky; g.fillRect(0, 0, 320, 180);
 
-    // 2. Subtle sun glow upper-right.
+    // 2. Subtle sun glow upper-right. v0.57 — Mark "sun is way too
+    // bright" → halo + disc alphas + colors lowered to match
+    // foreground tonal weight.
     var sunX = 248 - camx * 0.02, sunY = 30;
-    var sunHalo = g.createRadialGradient(sunX, sunY, 4, sunX, sunY, 56);
-    sunHalo.addColorStop(0,   'rgba(255,246,200,0.55)');
-    sunHalo.addColorStop(0.5, 'rgba(255,224,160,0.18)');
-    sunHalo.addColorStop(1,   'rgba(255,224,160,0)');
-    g.fillStyle = sunHalo; g.fillRect(sunX - 56, 0, 112, 90);
-    // Sun disc.
-    g.fillStyle = _CYP.sunHalo;
-    g.beginPath(); g.arc(sunX, sunY, 8, 0, 6.28); g.fill();
-    g.fillStyle = _CYP.sunDisc;
-    g.beginPath(); g.arc(sunX, sunY, 5, 0, 6.28); g.fill();
+    var sunHalo = g.createRadialGradient(sunX, sunY, 4, sunX, sunY, 44);
+    sunHalo.addColorStop(0,   'rgba(244,208,104,0.28)');
+    sunHalo.addColorStop(0.5, 'rgba(232,168,72,0.10)');
+    sunHalo.addColorStop(1,   'rgba(232,168,72,0)');
+    g.fillStyle = sunHalo; g.fillRect(sunX - 44, 0, 88, 80);
+    // Sun disc — warm yellow, not white.
+    g.fillStyle = '#F4D068';
+    g.beginPath(); g.arc(sunX, sunY, 7, 0, 6.28); g.fill();
+    g.fillStyle = '#E8A848';
+    g.beginPath(); g.arc(sunX, sunY, 4, 0, 6.28); g.fill();
 
     // 3. Big fluffy cumulus clouds at two parallax tiers. Each cloud
     //    is built from overlapping circular lobes with 4-tone shading
@@ -4201,12 +4914,17 @@ window.SDD = window.SDD || {};
       }
     }
 
-    function tileLayer(img, factor) {
+    // v0.57: tileLayer now also applies vertical parallax. Y-factor
+    // matches X-factor by default so the layer treats vertical camera
+    // movement (player jumps) like world geometry. Mark: "when I
+    // jump, layers should be in sync."
+    function tileLayer(img, factor, yFactor) {
       if (!img) return;
       var span = img.width || 320;
       var off = -(((camx * factor) % span) + span) % span;
+      var yOff = -camy * (yFactor != null ? yFactor : factor);
       for (var b = off - span; b < 320 + span; b += span) {
-        g.drawImage(img, b, 0);
+        g.drawImage(img, b, yOff);
       }
     }
 
@@ -4221,9 +4939,10 @@ window.SDD = window.SDD || {};
     // 5b. MONORAIL TRACK + train (animated, drawn between mid and
     //     bridge so it sits behind the shopfront row). Track scrolls
     //     at the mid-city parallax factor; train rides along it.
-    _cyDrawMonorail(g, camx, t);
+    _cyDrawMonorail(g, camx, camy, t);
 
-    // 6. Bridge / shopfront walkway.
+    // 6. Bridge / shopfront walkway (canvas is 240 tall so the bottom
+    //    sub-level structural pass covers when camera scrolls up).
     var brImg = S.cyberBridge && S.cyberBridge();
     tileLayer(brImg || cache.bridge, 0.50);
 
@@ -4240,8 +4959,11 @@ window.SDD = window.SDD || {};
   // px. One sleek train silhouette rides along, looping every 8s.
   // Parallax factor matches the mid-city layer (0.25) so the rail
   // sits visually with the mid-distance buildings.
-  function _cyDrawMonorail(g, camx, t) {
-    var railY = 95;
+  function _cyDrawMonorail(g, camx, camy, t) {
+    // v0.57: vertical parallax matches the mid-city layer (0.25) so
+    // the monorail moves with the buildings around it when the camera
+    // scrolls vertically (player jump).
+    var railY = 95 - camy * 0.25;
     var pf = 0.25;
     // Concrete pylons every 96 px (in world coords, scrolled).
     var spacing = 96;
@@ -4337,19 +5059,206 @@ window.SDD = window.SDD || {};
   }
 
   // =================================================================
+  // STREET FURNITURE (v0.57) - lamp posts, crosswalks, street signs,
+  // benches. World-coord positioned so they stay glued to the tile
+  // layer as the camera scrolls. Drawn from drawForeground_cyber,
+  // AFTER tiles + entities + foreground silhouettes, so they sit at
+  // the road plane and read as part of Layer 2.
+  // =================================================================
+  function _cyDrawStreetFurniture(g, camx, camy, t) {
+    // The road surface in world coords sits around y=176 (the top of
+    // row 11). Street furniture mounts to the SIDEWALK at y=176 and
+    // extends upward.
+    var roadY = 176 - camy;
+    var sideY = roadY - 4;     // sidewalk top
+    // World X range visible: camx to camx + 320. Compute world-x
+    // start offset so anything we paint at integer world coords gets
+    // translated correctly.
+    var wx0 = camx - 32;
+    var wx1 = camx + 320 + 32;
+
+    // CROSSWALK STRIPES every 200 world-px (5 white bars on the road).
+    var crossSpacing = 200;
+    var crossStart = Math.floor(wx0 / crossSpacing) * crossSpacing;
+    for (var cw = crossStart; cw < wx1; cw += crossSpacing) {
+      var cx = cw - camx;
+      for (var st = 0; st < 5; st++) {
+        g.fillStyle = '#E8DFC8';
+        g.fillRect(cx + st * 6, roadY + 4, 4, 1);
+        g.fillStyle = '#8C7448';
+        g.fillRect(cx + st * 6, roadY + 5, 4, 1);
+      }
+    }
+
+    // LAMP POSTS every 96 world-px on the sidewalk side. Tall iron
+    // post + curved arm + warm glow halo.
+    var lampSpacing = 96;
+    var lampStart = Math.floor(wx0 / lampSpacing) * lampSpacing;
+    for (var lp = lampStart; lp < wx1; lp += lampSpacing) {
+      var lx = lp - camx;
+      // Glow halo behind the lamp first so post + arm paint on top.
+      var halo = g.createRadialGradient(lx + 6, sideY - 18, 2, lx + 6, sideY - 18, 28);
+      halo.addColorStop(0,   'rgba(255,228,160,0.45)');
+      halo.addColorStop(0.5, 'rgba(255,200,120,0.18)');
+      halo.addColorStop(1,   'rgba(255,200,120,0)');
+      g.fillStyle = halo;
+      g.fillRect(lx - 22, sideY - 40, 56, 44);
+      // Iron post (dark).
+      g.fillStyle = '#22232C';
+      g.fillRect(lx,     sideY - 28, 2, 28);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(lx + 1, sideY - 28, 1, 28);
+      // Base flare.
+      g.fillStyle = '#22232C';
+      g.fillRect(lx - 2, sideY - 2,  6, 2);
+      g.fillStyle = '#5E6173';
+      g.fillRect(lx - 2, sideY - 2,  6, 1);
+      // Curved arm reaching toward the road.
+      g.fillStyle = '#22232C';
+      g.fillRect(lx + 2, sideY - 28, 4, 1);
+      g.fillRect(lx + 5, sideY - 27, 2, 1);
+      g.fillRect(lx + 6, sideY - 26, 1, 2);
+      // Lamp housing.
+      g.fillStyle = '#22232C';
+      g.fillRect(lx + 4, sideY - 24, 4, 3);
+      g.fillStyle = '#5E6173';
+      g.fillRect(lx + 4, sideY - 24, 4, 1);
+      // Bright bulb.
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(lx + 5, sideY - 22, 2, 1);
+      g.fillStyle = '#FFFFFF';
+      g.fillRect(lx + 5, sideY - 22, 1, 1);
+    }
+
+    // STREET SIGNS every 140 world-px, alternating 4 types. Rotates
+    // by (sx / 140) so the pattern is deterministic across the level.
+    var signSpacing = 140;
+    var signStart = Math.floor(wx0 / signSpacing) * signSpacing;
+    for (var sg = signStart; sg < wx1; sg += signSpacing) {
+      var sx = sg - camx;
+      var signKind = (sg / signSpacing) % 4;
+      if (signKind < 0) signKind += 4;
+      _cyDrawStreetSign(g, sx, sideY, signKind | 0);
+    }
+
+    // BENCHES every 220 world-px on the sidewalk.
+    var benchSpacing = 220;
+    var benchStart = Math.floor(wx0 / benchSpacing) * benchSpacing + 60;
+    for (var bn = benchStart; bn < wx1; bn += benchSpacing) {
+      var bxw = bn - camx;
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bxw,     sideY - 6, 16, 2);
+      g.fillStyle = '#5A3818';
+      g.fillRect(bxw,     sideY - 4, 16, 1);
+      // Legs.
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(bxw + 1, sideY - 3, 2, 3);
+      g.fillRect(bxw + 13, sideY - 3, 2, 3);
+      // Backrest.
+      g.fillStyle = '#8C5A3A';
+      g.fillRect(bxw,     sideY - 12, 16, 1);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(bxw + 1, sideY - 11, 1, 5);
+      g.fillRect(bxw + 14, sideY - 11, 1, 5);
+    }
+  }
+
+  // One street sign per call. kind picks the variant.
+  function _cyDrawStreetSign(g, sx, sideY, kind) {
+    // Post (always the same).
+    g.fillStyle = '#22232C';
+    g.fillRect(sx,     sideY - 22, 2, 22);
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(sx + 1, sideY - 22, 1, 22);
+    // Base.
+    g.fillStyle = '#22232C';
+    g.fillRect(sx - 1, sideY - 2,  4, 2);
+    // Sign panel varies.
+    if (kind === 0) {
+      // GREEN DIRECTIONAL: "3RD ST →"
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(sx + 2, sideY - 22, 24, 8);
+      g.fillStyle = '#3A8060';
+      g.fillRect(sx + 3, sideY - 21, 22, 6);
+      g.fillStyle = '#5AAA80';
+      g.fillRect(sx + 3, sideY - 21, 22, 1);
+      // Faux text glyphs (white bars).
+      g.fillStyle = '#E8E8E8';
+      g.fillRect(sx + 5,  sideY - 19, 3, 1);
+      g.fillRect(sx + 5,  sideY - 17, 3, 1);
+      g.fillRect(sx + 10, sideY - 19, 2, 3);
+      g.fillRect(sx + 15, sideY - 19, 4, 1);
+      g.fillRect(sx + 15, sideY - 17, 4, 1);
+      // Arrow.
+      g.fillRect(sx + 21, sideY - 18, 3, 1);
+      g.fillRect(sx + 22, sideY - 19, 1, 1);
+      g.fillRect(sx + 22, sideY - 17, 1, 1);
+    } else if (kind === 1) {
+      // CYAN TRANSIT STOP - circular sign with a tiny train.
+      g.fillStyle = '#1A1E2A';
+      g.beginPath(); g.arc(sx + 6, sideY - 18, 6, 0, 6.28); g.fill();
+      g.fillStyle = '#5AE8FF';
+      g.beginPath(); g.arc(sx + 6, sideY - 18, 5, 0, 6.28); g.fill();
+      g.fillStyle = '#9AF0FF';
+      g.beginPath(); g.arc(sx + 6, sideY - 18, 4, 0, 6.28); g.fill();
+      // Tiny train icon.
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(sx + 3, sideY - 19, 6, 3);
+      g.fillRect(sx + 4, sideY - 17, 4, 1);
+      g.fillStyle = '#FFE4A0';
+      g.fillRect(sx + 5, sideY - 18, 1, 1);
+      g.fillRect(sx + 7, sideY - 18, 1, 1);
+    } else if (kind === 2) {
+      // PEDESTRIAN sign - yellow diamond + walking figure.
+      g.fillStyle = '#1A1E2A';
+      // Diamond outline.
+      for (var dy = 0; dy < 8; dy++) {
+        var dw = 8 - Math.abs(dy - 4);
+        g.fillRect(sx + 6 - dw, sideY - 22 + dy, dw * 2 + 1, 1);
+      }
+      g.fillStyle = '#FFD23A';
+      for (var dy2 = 1; dy2 < 7; dy2++) {
+        var dw2 = 7 - Math.abs(dy2 - 4);
+        g.fillRect(sx + 6 - dw2, sideY - 22 + dy2, dw2 * 2 + 1, 1);
+      }
+      // Walking figure silhouette.
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(sx + 5, sideY - 20, 2, 1);  // head
+      g.fillRect(sx + 5, sideY - 18, 2, 2);  // body
+      g.fillRect(sx + 4, sideY - 17, 1, 2);  // leg back
+      g.fillRect(sx + 7, sideY - 16, 1, 1);  // leg fwd
+    } else {
+      // ARROW directional sign (orange).
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(sx + 2, sideY - 20, 16, 6);
+      g.fillStyle = '#FF8A40';
+      g.fillRect(sx + 3, sideY - 19, 14, 4);
+      g.fillStyle = '#FFB070';
+      g.fillRect(sx + 3, sideY - 19, 14, 1);
+      // Arrow.
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(sx + 5, sideY - 17, 8, 1);
+      g.fillRect(sx + 12, sideY - 18, 1, 1);
+      g.fillRect(sx + 12, sideY - 16, 1, 1);
+      g.fillRect(sx + 13, sideY - 19, 1, 1);
+      g.fillRect(sx + 13, sideY - 15, 1, 1);
+    }
+  }
+
+  // =================================================================
   // SHADER PASS - dynamic lighting + contrast grading on the bg
   // =================================================================
   function _cyDrawShaders(g, camx, camy, t) {
     var sunX = 248 - camx * 0.02, sunY = 30;
     // 1. WARM SUN-SIDE GRADE (screen) - brightens the right side
-    //    around the sun for golden-hour glow. The pulse breathes
-    //    slowly so the light feels alive.
+    //    around the sun for golden-hour glow. v0.57: alpha + radius
+    //    reduced per Mark's "way too bright" feedback.
     var pulse = 0.94 + Math.sin(t * 0.018) * 0.08;
     g.save();
     g.globalCompositeOperation = 'screen';
-    var sunSide = g.createRadialGradient(sunX, sunY, 8, sunX, sunY, 240);
-    sunSide.addColorStop(0,    'rgba(255,236,170,' + (0.38 * pulse).toFixed(3) + ')');
-    sunSide.addColorStop(0.45, 'rgba(255,220,140,' + (0.16 * pulse).toFixed(3) + ')');
+    var sunSide = g.createRadialGradient(sunX, sunY, 8, sunX, sunY, 180);
+    sunSide.addColorStop(0,    'rgba(255,236,170,' + (0.18 * pulse).toFixed(3) + ')');
+    sunSide.addColorStop(0.45, 'rgba(255,220,140,' + (0.08 * pulse).toFixed(3) + ')');
     sunSide.addColorStop(1,    'rgba(255,180,120,0)');
     g.fillStyle = sunSide;
     g.fillRect(0, 0, 320, 180);
@@ -4390,18 +5299,20 @@ window.SDD = window.SDD || {};
     g.restore();
 
     // 4. SUN FLARE / DISC HALO - bright additive bloom directly on
-    //    the sun position with a 4-point starburst.
+    //    the sun position with a 4-point starburst. v0.57: alphas +
+    //    burst length pulled down so the sun reads as a warm disc,
+    //    not a blown-out white blob.
     g.save();
     g.globalCompositeOperation = 'screen';
-    var halo = g.createRadialGradient(sunX, sunY, 2, sunX, sunY, 28);
-    halo.addColorStop(0,    'rgba(255,255,232,0.85)');
-    halo.addColorStop(0.4,  'rgba(255,232,160,0.45)');
-    halo.addColorStop(1,    'rgba(255,200,140,0)');
+    var halo = g.createRadialGradient(sunX, sunY, 2, sunX, sunY, 22);
+    halo.addColorStop(0,    'rgba(248,228,160,0.50)');
+    halo.addColorStop(0.4,  'rgba(244,208,128,0.22)');
+    halo.addColorStop(1,    'rgba(240,184,108,0)');
     g.fillStyle = halo;
-    g.fillRect(sunX - 28, sunY - 28, 56, 56);
+    g.fillRect(sunX - 22, sunY - 22, 44, 44);
     // Starburst arms (4-point).
-    var burstLen = 32 + Math.sin(t * 0.04) * 4;
-    g.fillStyle = 'rgba(255,250,200,0.55)';
+    var burstLen = 22 + Math.sin(t * 0.04) * 3;
+    g.fillStyle = 'rgba(248,228,168,0.30)';
     g.fillRect(sunX - 1,        sunY - burstLen, 2, burstLen * 2);
     g.fillRect(sunX - burstLen, sunY - 1,        burstLen * 2, 2);
     // Diagonal arms (shorter).
@@ -4431,9 +5342,9 @@ window.SDD = window.SDD || {};
     g.restore();
 
     // 6. WINDOW LIGHT BREATHE - subtle warm pulse on the mid-city
-    //    band where lit windows are concentrated. Reads as the city
-    //    being alive.
-    var winPulse = 0.04 + Math.sin(t * 0.035) * 0.025;
+    //    band where lit windows are concentrated. v0.57: base pulse
+    //    halved per brightness brief.
+    var winPulse = 0.02 + Math.sin(t * 0.035) * 0.012;
     g.save();
     g.globalCompositeOperation = 'screen';
     g.fillStyle = 'rgba(255,210,140,' + winPulse.toFixed(3) + ')';
@@ -4451,21 +5362,45 @@ window.SDD = window.SDD || {};
     g.fillStyle = vig;
     g.fillRect(0, 0, 320, 180);
     g.restore();
+
+    // 8. GLOBAL MULTIPLY DARKEN (v0.57) - Mark "way too bright, bring
+    //    everything down by half". Deep blue-grey gradient multiplied
+    //    over the whole frame halves brightness while cooling shadows.
+    //    Applied LAST so it grades every preceding pass. Foreground
+    //    draws AFTER (separate function) and keeps full value, so the
+    //    near/far brightness inversion deepens.
+    g.save();
+    g.globalCompositeOperation = 'multiply';
+    var darken = g.createLinearGradient(0, 0, 0, 180);
+    darken.addColorStop(0,    'rgba(110,128,158,1)');
+    darken.addColorStop(0.6,  'rgba(95,110,135,1)');
+    darken.addColorStop(1,    'rgba(78,90,112,1)');
+    g.fillStyle = darken;
+    g.fillRect(0, 0, 320, 180);
+    g.restore();
   }
 
   function drawForeground_cyber(g, camx, camy, prog, t) {
     var S = SDD.sprites || {};
     var fgImg = S.cyberFg && S.cyberFg();
     var src = fgImg || _cyBuild().fg;
+    // v0.57: vertical camera sync per Mark - "when I jump, the first
+    // layer should be in sync with the second layer." Foreground now
+    // renders in world-space (y = -camy) so silhouettes shift down on
+    // screen when the camera scrolls up, matching the player + tiles.
     var span = src.width || 320, off = -(((camx * 0.70) % span) + span) % span;
     for (var b = off - span; b < 320 + span; b += span) {
-      g.drawImage(src, b, 0);
+      g.drawImage(src, b, -camy);
     }
+    // Street furniture overlay - lamp posts, crosswalks, signs, benches
+    // at the road plane. World-coord positioned so it stays glued to
+    // the tile layer as the camera scrolls.
+    _cyDrawStreetFurniture(g, camx, camy, t);
     // Falling flower petals + leaves drifting through the foreground -
     // hopeful, peaceful, no rain.
     for (var pp = 0; pp < 10; pp++) {
       var ppx = ((pp * 41 + (t * 0.7) - camx * 0.75) % 360 + 360) % 360 - 20;
-      var ppy = ((pp * 27 + (t * 0.5)) % 200) - 10;
+      var ppy = ((pp * 27 + (t * 0.5)) % 200) - 10 - camy;
       var ppSw = Math.sin((t + pp * 30) * 0.06) * 2;
       var col = (pp % 3 === 0) ? _CYP.blossom
               : (pp % 3 === 1) ? _CYP.leafLt
