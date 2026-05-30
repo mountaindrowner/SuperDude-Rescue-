@@ -201,8 +201,13 @@ window.SDD = window.SDD || {};
         this.alpha += 1 / 60;                     // 1 sec to full alpha
         if (this.alpha >= 1) { this.alpha = 1; this.phase = 'hold'; this.t = 0; }
       } else if (this.phase === 'hold') {
-        // HOLD INDEFINITELY until any button press. Used to auto-fade
-        // after 3 sec; Mark wants it player-driven.
+        // Auto-advance after ~4 sec so a kid who doesn't know to tap
+        // still gets to the menu without sitting on the logo (Mark:
+        // "music should play automatically, no button touch"). The
+        // first tap on the menu still does the browser audio-unlock
+        // for us; this just removes the extra "tap to dismiss the
+        // logo" step in the middle.
+        if (this.t > 240) this.phase = 'out';
       } else {
         this.alpha -= 1 / 60;                     // 1 sec fade-out
         if (this.alpha <= 0) { this.alpha = 0; go('menu'); return; }
