@@ -4918,23 +4918,30 @@ window.SDD = window.SDD || {};
     // matches X-factor by default so the layer treats vertical camera
     // movement (player jumps) like world geometry. Mark: "when I
     // jump, layers should be in sync."
-    function tileLayer(img, factor, yFactor) {
+    // v0.58: optional `sat` filter applied per draw so each layer can
+    // tune its own saturation. Far stays low (atmospheric perspective);
+    // mid + bridge get a strong boost so the colors pop after the
+    // global multiply darken pulls overall brightness down.
+    function tileLayer(img, factor, yFactor, sat) {
       if (!img) return;
       var span = img.width || 320;
       var off = -(((camx * factor) % span) + span) % span;
       var yOff = -camy * (yFactor != null ? yFactor : factor);
+      if (sat) g.filter = sat;
       for (var b = off - span; b < 320 + span; b += span) {
         g.drawImage(img, b, yOff);
       }
+      if (sat) g.filter = 'none';
     }
 
-    // 4. Far skyline (cached, atmospheric-blurred).
+    // 4. Far skyline (cached, atmospheric-blurred). Mild saturation
+    //    boost only - distance shouldn't pop.
     var farImg = S.cyberFar && S.cyberFar();
-    tileLayer(farImg || cache.far, 0.10);
+    tileLayer(farImg || cache.far, 0.10, null, 'saturate(115%)');
 
-    // 5. Mid city.
+    // 5. Mid city - the gold-standard layer Mark wants colorful.
     var midImg = S.cyberMid && S.cyberMid();
-    tileLayer(midImg || cache.mid, 0.25);
+    tileLayer(midImg || cache.mid, 0.25, null, 'saturate(145%) contrast(106%)');
 
     // 5b. MONORAIL TRACK + train (animated, drawn between mid and
     //     bridge so it sits behind the shopfront row). Track scrolls
@@ -4943,8 +4950,10 @@ window.SDD = window.SDD || {};
 
     // 6. Bridge / shopfront walkway (canvas is 240 tall so the bottom
     //    sub-level structural pass covers when camera scrolls up).
+    //    Strongest saturation boost since the shops carry the warmest
+    //    accent palette.
     var brImg = S.cyberBridge && S.cyberBridge();
-    tileLayer(brImg || cache.bridge, 0.50);
+    tileLayer(brImg || cache.bridge, 0.50, null, 'saturate(155%) contrast(108%)');
 
     // 7. SHADER PASS - applied to background layers. Compositing
     //    blends inject dynamic light + grading on top of the cached
@@ -5389,9 +5398,13 @@ window.SDD = window.SDD || {};
     // renders in world-space (y = -camy) so silhouettes shift down on
     // screen when the camera scrolls up, matching the player + tiles.
     var span = src.width || 320, off = -(((camx * 0.70) % span) + span) % span;
+    // v0.58: saturation boost on Layer 1 so the dark anchor towers +
+    // vivid neon punch even harder against the darkened backdrop.
+    g.filter = 'saturate(140%) contrast(108%)';
     for (var b = off - span; b < 320 + span; b += span) {
       g.drawImage(src, b, -camy);
     }
+    g.filter = 'none';
     // Street furniture overlay - lamp posts, crosswalks, signs, benches
     // at the road plane. World-coord positioned so it stays glued to
     // the tile layer as the camera scrolls.
