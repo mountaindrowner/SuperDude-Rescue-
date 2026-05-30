@@ -2447,27 +2447,151 @@ window.SDD = window.SDD || {};
     palette = palette || [_CYP.warmWin, _CYP.warmWinH, _CYP.coolWin];
     density = (density == null) ? 0.55 : density;
     var seed = (x * 13 + y * 7) & 0xff;
-    // Larger window cells (3w x 4h on a 4x6 grid) so the city doesn't
-    // read as a wall of pixel-dots.
+    // Per-building style picker: ~25% glass curtain wall (continuous
+    // bright glass bands), ~22% feature window (a few wide bright
+    // floors), ~25% mostly dark silhouette for contrast, ~28%
+    // standard grid. This is the big anti-monotony lever.
+    var styleSel = (seed >> 1) & 0xf;
+    var curtain = styleSel < 4;
+    var dark    = !curtain && styleSel < 8;
+    var feature = !curtain && !dark && styleSel < 12;
+    if (curtain) {
+      // GLASS CURTAIN WALL: vertical glass strips bright with horizontal
+      // floor slabs cutting across. Reads as a modern glass tower.
+      var stripeW = 4;
+      var floorH  = 9;
+      // Bright glass background.
+      g.fillStyle = '#A0DCFF';
+      g.fillRect(x + 3, y + 4, w - 6, h - 8);
+      g.fillStyle = '#D0F0FF';
+      g.fillRect(x + 3, y + 4, w - 6, 1);
+      // Vertical mullions.
+      g.fillStyle = _CYP.outlineD;
+      for (var cmx = x + 3; cmx < x + w - 3; cmx += stripeW) {
+        g.fillRect(cmx, y + 4, 1, h - 8);
+      }
+      // Horizontal floor slabs (cream).
+      g.fillStyle = _CYP.creamShade;
+      for (var cmy = y + 4 + floorH; cmy < y + h - 4; cmy += floorH) {
+        g.fillRect(x + 3, cmy, w - 6, 2);
+        g.fillStyle = _CYP.creamHi;
+        g.fillRect(x + 3, cmy, w - 6, 1);
+        g.fillStyle = _CYP.creamShade;
+      }
+      // A few brighter floors with warm windows interspersed.
+      for (var lit = y + 8; lit < y + h - 6; lit += floorH * 2) {
+        g.fillStyle = _CYP.warmWinH;
+        g.fillRect(x + 4, lit, w - 8, 3);
+        g.fillStyle = _CYP.outlineD;
+        for (var lmx = x + 4; lmx < x + w - 4; lmx += stripeW) {
+          g.fillRect(lmx, lit, 1, 3);
+        }
+      }
+      return;
+    }
+    if (dark) {
+      // Mostly-dark silhouette: a tiny scatter of warm windows.
+      for (var dy = y + 8; dy < y + h - 6; dy += 9) {
+        for (var dx = x + 4; dx < x + w - 4; dx += 7) {
+          if (((dx * 17 + dy * 23 + seed) & 0x1f) < 4) {
+            g.fillStyle = (((dx + dy) & 1) ? _CYP.warmWin : _CYP.warmWinH);
+            g.fillRect(dx, dy, 2, 3);
+            g.fillStyle = _CYP.outlineD;
+            g.fillRect(dx, dy + 3, 2, 1);
+          }
+        }
+      }
+      return;
+    }
+    if (feature) {
+      // FEATURE FLOORS: 2-3 rows of wide bright bars - penthouse /
+      // lobby vibes. Mix warm + cool floors so the palette varies.
+      var rows = 2 + (seed & 1);
+      for (var fr = 0; fr < rows; fr++) {
+        var fy = y + 10 + fr * Math.max(10, Math.floor(h / (rows + 2)));
+        if (fy > y + h - 6) break;
+        var col = (fr & 1) ? _CYP.warmWinH : _CYP.coolWinH;
+        // Frame.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(x + 3, fy - 1, w - 6, 6);
+        // Lit pane.
+        g.fillStyle = col;
+        g.fillRect(x + 4, fy, w - 8, 4);
+        // Center divider.
+        g.fillStyle = _CYP.outlineD;
+        g.fillRect(x + Math.floor(w / 2), fy, 1, 4);
+        g.fillRect(x + Math.floor(w / 3), fy, 1, 4);
+        g.fillRect(x + Math.floor(w * 2 / 3), fy, 1, 4);
+        // Bright accent at the top.
+        g.fillStyle = '#FFFFFF';
+        g.fillRect(x + 4, fy, w - 8, 1);
+      }
+      // Sparse dim windows above + below the feature bars.
+      for (var ly = y + 4; ly < y + h - 3; ly += 6) {
+        for (var lx = x + 3; lx < x + w - 3; lx += 5) {
+          if (((lx * 11 + ly * 17 + seed) & 0x1f) === 0) {
+            g.fillStyle = _CYP.coolWin;
+            g.fillRect(lx, ly, 2, 2);
+          }
+        }
+      }
+      return;
+    }
+    // STANDARD GRID (default): larger paned windows with frames + sashes.
     for (var wy = y + 6; wy < y + h - 6; wy += 6) {
       for (var wx = x + 3; wx < x + w - 3; wx += 5) {
         var pick = ((wx * 17 + wy * 23 + seed) & 0xff) / 256;
         if (pick > density) continue;
         var col = palette[(wx + wy + seed) % palette.length];
-        // Frame.
         g.fillStyle = _CYP.outlineD;
         g.fillRect(wx, wy, 3, 4);
-        // Lit pane.
         g.fillStyle = col;
         g.fillRect(wx + 1, wy + 1, 1, 2);
-        // Sash / mullion.
         g.fillStyle = _CYP.outlineD;
         g.fillRect(wx + 2, wy + 1, 1, 2);
-        // Highlight on the top of the frame.
         g.fillStyle = _CYP.creamHi;
         g.fillRect(wx, wy, 3, 1);
       }
     }
+  }
+
+  // ---- Cherry blossom rooftop tree - dramatic pink canopy --------
+  function _cyDrawCherryRoof(g, x, baseY, w, rng) {
+    // Planter band.
+    g.fillStyle = _CYP.creamShade;
+    g.fillRect(x + 2, baseY - 4, w - 4, 4);
+    g.fillStyle = _CYP.creamHi;
+    g.fillRect(x + 2, baseY - 4, w - 4, 1);
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 3, baseY - 3, w - 6, 1);
+    // Single large cherry tree centered.
+    var cx = x + Math.floor(w / 2);
+    var cy = baseY - 10;
+    // Trunk.
+    g.fillStyle = _CYP.bark;
+    g.fillRect(cx - 1, cy + 6, 2, 4);
+    // Layered pink canopy (4 tones for richness).
+    g.fillStyle = _CYP.blossomDk;
+    g.fillRect(cx - 6, cy + 2, 13, 4);
+    g.fillRect(cx - 5, cy + 6, 11, 1);
+    g.fillStyle = _CYP.blossom;
+    g.fillRect(cx - 5, cy + 1, 11, 4);
+    g.fillRect(cx - 4, cy,     9,  1);
+    g.fillStyle = '#FFD0E8';
+    g.fillRect(cx - 4, cy + 1, 9,  3);
+    g.fillRect(cx - 3, cy,     7,  1);
+    g.fillStyle = '#FFFFFF';
+    g.fillRect(cx - 3, cy + 1, 2,  1);
+    g.fillRect(cx + 2, cy + 2, 2,  1);
+    // Scattered bright pink dots for individual blossoms.
+    g.fillStyle = '#FF80C0';
+    g.fillRect(cx - 6, cy + 4, 1,  1);
+    g.fillRect(cx + 6, cy + 3, 1,  1);
+    g.fillRect(cx,     cy - 1, 1,  1);
+    // Falling petals (3 single pixels below canopy for life).
+    g.fillStyle = _CYP.blossom;
+    g.fillRect(cx - 4, cy + 8, 1, 1);
+    g.fillRect(cx + 4, cy + 9, 1, 1);
   }
 
   // ---- Rooftop greenery cluster (a cube planter + 2-3 trees) ---------
@@ -2542,15 +2666,16 @@ window.SDD = window.SDD || {};
   }
 
   // ---- Rooftop dispatcher -------------------------------------------
-  // Picks one of 4 rooftop variants: garden, solar canopy, skybridge
-  // anchor (small dome), or planter + antenna combo.
+  // Picks one of 5 rooftop variants: garden, solar canopy, dome,
+  // cherry blossom, planter + shrubs. Cherry blossom rarer (~15%)
+  // so it reads as a focal feature on the skyline.
   function _cyDrawRooftop(g, x, baseY, w, idx, rng) {
-    var variant = (idx % 4);
-    if (variant === 0) {
+    var v = idx % 7;
+    if (v === 0 || v === 5) {
       _cyDrawRoofGarden(g, x, baseY, w, rng);
-    } else if (variant === 1) {
+    } else if (v === 1) {
       _cyDrawSolarCanopy(g, x, baseY, w);
-    } else if (variant === 2) {
+    } else if (v === 2) {
       // Domed observatory roof.
       var dr = Math.max(3, Math.floor(w / 3));
       var cx = x + Math.floor(w / 2);
@@ -2558,18 +2683,21 @@ window.SDD = window.SDD || {};
       g.beginPath(); g.arc(cx, baseY, dr, Math.PI, 0); g.fill();
       g.fillStyle = _CYP.creamHi;
       g.fillRect(cx - dr + 2, baseY - dr + 1, 2, 2);
-      // Top antenna.
       g.fillStyle = _CYP.outline;
       g.fillRect(cx, baseY - dr - 4, 1, 4);
       g.fillStyle = _CYP.accent;
       g.fillRect(cx, baseY - dr - 4, 1, 1);
+    } else if (v === 3) {
+      // Cherry blossom rooftop tree - signature pink accent.
+      _cyDrawCherryRoof(g, x, baseY, w, rng);
+    } else if (v === 6) {
+      _cyDrawSolarCanopy(g, x, baseY, w);
     } else {
       // Tiered planter step + sky-bridge anchor.
       g.fillStyle = _CYP.creamShade;
       g.fillRect(x + 4, baseY - 3, w - 8, 3);
       g.fillStyle = _CYP.creamHi;
       g.fillRect(x + 4, baseY - 3, w - 8, 1);
-      // Tiny shrubs.
       g.fillStyle = _CYP.leafMid;
       g.fillRect(x + 5,      baseY - 5, 2, 2);
       g.fillRect(x + w - 7,  baseY - 5, 2, 2);
@@ -2647,13 +2775,18 @@ window.SDD = window.SDD || {};
         }
       }
     }
-    // Stronger atmospheric haze overlay - fades the towers further
-    // back into the sky for proper aerial perspective.
+    // Heavy atmospheric haze - distant towers fade most of the way
+    // back into the sky for strong aerial perspective. Stops at
+    // higher opacities than before so the far layer truly recedes.
     var hzAtm = g.createLinearGradient(0, 60, 0, 145);
-    hzAtm.addColorStop(0,    'rgba(210,228,240,0.20)');
-    hzAtm.addColorStop(0.6,  'rgba(220,238,248,0.40)');
-    hzAtm.addColorStop(1,    'rgba(228,244,250,0.55)');
+    hzAtm.addColorStop(0,    'rgba(220,236,246,0.40)');
+    hzAtm.addColorStop(0.55, 'rgba(228,242,250,0.62)');
+    hzAtm.addColorStop(1,    'rgba(236,248,252,0.78)');
     g.fillStyle = hzAtm;
+    g.fillRect(0, 60, W, 90);
+    // Add a second SKY-blue tint overlay so the towers shift hue
+    // toward the sky color (proper color recession).
+    g.fillStyle = 'rgba(126,215,247,0.18)';
     g.fillRect(0, 60, W, 90);
   }
 
@@ -2671,17 +2804,34 @@ window.SDD = window.SDD || {};
       var h = 46 + Math.floor(rng() * 58);
       var baseY = 148 - h;
       k++;
-      // Body palette: cream/tan with subtle variation.
-      var tone = Math.floor(rng() * 4);
+      // Body palette: cream / tan / teal / coral / lavender / peach /
+      // soft pink. ~50% are cream-family, the rest split across the
+      // solarpunk accent colors so the skyline doesn't read as beige.
+      var tone = Math.floor(rng() * 10);
       var body, shade, hi;
-      if (tone === 0) {
+      if (tone < 3) {
+        // Cream (default).
         body = _CYP.creamBody;  shade = _CYP.creamShade; hi = _CYP.creamHi;
-      } else if (tone === 1) {
+      } else if (tone === 3) {
         body = '#D8CCB0';       shade = '#A8966A';       hi = '#F0E4C8';
-      } else if (tone === 2) {
-        body = '#C8B898';       shade = '#A09060';       hi = '#E0D0B0';
+      } else if (tone === 4) {
+        // Pale teal glass tower.
+        body = '#9CBEC2';       shade = '#5F7D8B';       hi = '#C8DEDE';
+      } else if (tone === 5) {
+        // Soft coral / warm pink.
+        body = '#E8A8A0';       shade = '#A86A6A';       hi = '#FFC8C0';
+      } else if (tone === 6) {
+        // Peach.
+        body = '#F0BC90';       shade = '#A8804A';       hi = '#FFD8A8';
+      } else if (tone === 7) {
+        // Lavender.
+        body = '#B8A8C8';       shade = '#7A6A8A';       hi = '#D8C8E0';
+      } else if (tone === 8) {
+        // Mint green.
+        body = '#A8D0B0';       shade = '#6A906A';       hi = '#C8E8C8';
       } else {
-        body = _CYP.teal;       shade = _CYP.tealD;      hi = _CYP.tealH;
+        // Soft pink.
+        body = '#E8B8D0';       shade = '#A87898';       hi = '#FFD8E8';
       }
       // Body.
       g.fillStyle = body;  g.fillRect(x, baseY, w, h);
@@ -2798,21 +2948,48 @@ window.SDD = window.SDD || {};
       }
       // Rooftop ornament.
       _cyDrawRooftop(g, x, baseY, w, k, rng);
-      // Sky-bridge from prev tower's top: only if adjacent and roof
-      // heights are within a tile of each other.
-      if (prevTop && (x - prevTop.right) < 28 && Math.abs(prevTop.y - baseY) < 12) {
-        var bridgeY = Math.min(prevTop.y, baseY) + 8;
-        g.fillStyle = _CYP.creamShade;
-        g.fillRect(prevTop.right, bridgeY, x - prevTop.right, 4);
-        g.fillStyle = _CYP.creamHi;
-        g.fillRect(prevTop.right, bridgeY, x - prevTop.right, 1);
-        // Glass section.
-        g.fillStyle = _CYP.tealH;
-        g.fillRect(prevTop.right + 2, bridgeY + 1, (x - prevTop.right) - 4, 2);
-        // Support struts.
-        g.fillStyle = _CYP.outlineD;
-        g.fillRect(prevTop.right + 1, bridgeY + 4, 1, 4);
-        g.fillRect(x - 2,              bridgeY + 4, 1, 4);
+      // Sky-bridge from prev tower's top: relaxed to allow bridges
+      // up to 40 px wide and heights within 20 px (almost any near
+      // neighbour). Two visual variants: short cream walkway or
+      // longer teal-glass tube depending on gap.
+      if (prevTop && (x - prevTop.right) < 40 && Math.abs(prevTop.y - baseY) < 20) {
+        var bridgeY = Math.min(prevTop.y, baseY) + 10;
+        var gap = x - prevTop.right;
+        if (gap > 18) {
+          // Long teal-glass tube bridge with vine drape underneath.
+          g.fillStyle = _CYP.tealD;
+          g.fillRect(prevTop.right, bridgeY - 1, gap, 1);
+          g.fillRect(prevTop.right, bridgeY + 5, gap, 1);
+          g.fillStyle = _CYP.tealH;
+          g.fillRect(prevTop.right, bridgeY,     gap, 5);
+          g.fillStyle = '#D8F0F2';
+          g.fillRect(prevTop.right, bridgeY,     gap, 1);
+          g.fillStyle = _CYP.tealD;
+          for (var bm = prevTop.right + 4; bm < x; bm += 4) {
+            g.fillRect(bm, bridgeY, 1, 5);
+          }
+          // Vines draping under.
+          g.fillStyle = _CYP.leafDk;
+          for (var bv = prevTop.right + 2; bv < x; bv += 5) {
+            var bvl = 2 + ((bv * 7) & 3);
+            g.fillRect(bv, bridgeY + 6, 1, bvl);
+          }
+          g.fillStyle = _CYP.leafMid;
+          for (var bv2 = prevTop.right + 4; bv2 < x; bv2 += 5) {
+            g.fillRect(bv2, bridgeY + 6, 1, 1);
+          }
+        } else {
+          // Short cream walkway bridge.
+          g.fillStyle = _CYP.creamShade;
+          g.fillRect(prevTop.right, bridgeY, gap, 4);
+          g.fillStyle = _CYP.creamHi;
+          g.fillRect(prevTop.right, bridgeY, gap, 1);
+          g.fillStyle = _CYP.tealH;
+          g.fillRect(prevTop.right + 1, bridgeY + 1, gap - 2, 2);
+          g.fillStyle = _CYP.outlineD;
+          g.fillRect(prevTop.right + 0, bridgeY + 4, 1, 4);
+          g.fillRect(x - 1,             bridgeY + 4, 1, 4);
+        }
       }
       prevTop = { right: x + w, y: baseY };
       // Advance to next building with small overlap.
@@ -3512,7 +3689,9 @@ window.SDD = window.SDD || {};
       return c;
     }
     _cyCache = {
-      far:    mk(960, 180, _cyPaintFar,        1.2),  // atmospheric blur
+      // Strong atmospheric blur on the far layer - distant towers
+      // should be soft silhouettes, not crisp shapes.
+      far:    mk(960, 180, _cyPaintFar,        2.4),
       mid:    mk(960, 180, _cyPaintMid,        0),
       bridge: mk(960, 180, _cyPaintBridge,     0),
       fg:     mk(960, 180, _cyPaintForeground, 0)
