@@ -4935,13 +4935,14 @@ window.SDD = window.SDD || {};
     }
 
     // 4. Far skyline (cached, atmospheric-blurred). Mild saturation
-    //    boost only - distance shouldn't pop.
+    //    boost only - distance shouldn't pop. v0.59: slight bump.
     var farImg = S.cyberFar && S.cyberFar();
-    tileLayer(farImg || cache.far, 0.10, null, 'saturate(115%)');
+    tileLayer(farImg || cache.far, 0.10, null, 'saturate(130%)');
 
     // 5. Mid city - the gold-standard layer Mark wants colorful.
+    //    v0.59: cranked to compensate for the lightened multiply pass.
     var midImg = S.cyberMid && S.cyberMid();
-    tileLayer(midImg || cache.mid, 0.25, null, 'saturate(145%) contrast(106%)');
+    tileLayer(midImg || cache.mid, 0.25, null, 'saturate(180%) contrast(112%)');
 
     // 5b. MONORAIL TRACK + train (animated, drawn between mid and
     //     bridge so it sits behind the shopfront row). Track scrolls
@@ -4951,9 +4952,10 @@ window.SDD = window.SDD || {};
     // 6. Bridge / shopfront walkway (canvas is 240 tall so the bottom
     //    sub-level structural pass covers when camera scrolls up).
     //    Strongest saturation boost since the shops carry the warmest
-    //    accent palette.
+    //    accent palette. v0.59: pushed harder for the vibrant feel
+    //    Mark called for.
     var brImg = S.cyberBridge && S.cyberBridge();
-    tileLayer(brImg || cache.bridge, 0.50, null, 'saturate(155%) contrast(108%)');
+    tileLayer(brImg || cache.bridge, 0.50, null, 'saturate(195%) contrast(114%)');
 
     // 7. SHADER PASS - applied to background layers. Compositing
     //    blends inject dynamic light + grading on top of the cached
@@ -5372,18 +5374,19 @@ window.SDD = window.SDD || {};
     g.fillRect(0, 0, 320, 180);
     g.restore();
 
-    // 8. GLOBAL MULTIPLY DARKEN (v0.57) - Mark "way too bright, bring
-    //    everything down by half". Deep blue-grey gradient multiplied
-    //    over the whole frame halves brightness while cooling shadows.
-    //    Applied LAST so it grades every preceding pass. Foreground
-    //    draws AFTER (separate function) and keeps full value, so the
-    //    near/far brightness inversion deepens.
+    // 8. GLOBAL MULTIPLY DARKEN (v0.57 / softened v0.59) - Mark
+    //    wanted brightness down ~50% in v0.57, then "bright up a bit,
+    //    too flat now" in v0.59. Multiply stops lightened so the
+    //    scene only dims ~25-30% instead of half - keeps the
+    //    contrast inversion between Layer 1 and the rest, but
+    //    doesn't kill the colors. Tint warmed (less cool blue) so
+    //    the cream + coral palette stays vivid.
     g.save();
     g.globalCompositeOperation = 'multiply';
     var darken = g.createLinearGradient(0, 0, 0, 180);
-    darken.addColorStop(0,    'rgba(110,128,158,1)');
-    darken.addColorStop(0.6,  'rgba(95,110,135,1)');
-    darken.addColorStop(1,    'rgba(78,90,112,1)');
+    darken.addColorStop(0,    'rgba(208,212,220,1)');
+    darken.addColorStop(0.5,  'rgba(190,196,208,1)');
+    darken.addColorStop(1,    'rgba(160,172,188,1)');
     g.fillStyle = darken;
     g.fillRect(0, 0, 320, 180);
     g.restore();
@@ -5400,7 +5403,8 @@ window.SDD = window.SDD || {};
     var span = src.width || 320, off = -(((camx * 0.70) % span) + span) % span;
     // v0.58: saturation boost on Layer 1 so the dark anchor towers +
     // vivid neon punch even harder against the darkened backdrop.
-    g.filter = 'saturate(140%) contrast(108%)';
+    // v0.59: cranked to match the new bridge / mid intensity.
+    g.filter = 'saturate(175%) contrast(112%)';
     for (var b = off - span; b < 320 + span; b += span) {
       g.drawImage(src, b, -camy);
     }
