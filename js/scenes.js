@@ -2647,8 +2647,13 @@ window.SDD = window.SDD || {};
         }
       }
     }
-    // Final atmospheric haze overlay to push everything back.
-    g.fillStyle = 'rgba(210,228,240,0.35)';
+    // Stronger atmospheric haze overlay - fades the towers further
+    // back into the sky for proper aerial perspective.
+    var hzAtm = g.createLinearGradient(0, 60, 0, 145);
+    hzAtm.addColorStop(0,    'rgba(210,228,240,0.20)');
+    hzAtm.addColorStop(0.6,  'rgba(220,238,248,0.40)');
+    hzAtm.addColorStop(1,    'rgba(228,244,250,0.55)');
+    g.fillStyle = hzAtm;
     g.fillRect(0, 60, W, 90);
   }
 
@@ -2813,6 +2818,97 @@ window.SDD = window.SDD || {};
       // Advance to next building with small overlap.
       x += w - 2 - Math.floor(rng() * 4);
     }
+    // SIGNATURE FEATURE - giant botanical greenhouse domes in the
+    // mid distance. Read as the district's central arboretum.
+    // Mark's brief listed "greenhouse dome in the distance" as a
+    // memorable feature. 3 across the cached canvas so at least one
+    // is on-screen at most camera positions.
+    _cyDrawGreenhouseDome(g, 160, 100);
+    _cyDrawGreenhouseDome(g, 480, 106);
+    _cyDrawGreenhouseDome(g, 800, 98);
+  }
+
+  // ---- Greenhouse / botanical dome ---------------------------------
+  function _cyDrawGreenhouseDome(g, cx, cy) {
+    var dr = 28;
+    // Base platform.
+    g.fillStyle = _CYP.creamShade;
+    g.fillRect(cx - 30, cy + 4, 60, 6);
+    g.fillStyle = _CYP.creamHi;
+    g.fillRect(cx - 30, cy + 4, 60, 1);
+    g.fillStyle = '#8C7448';
+    g.fillRect(cx - 30, cy + 9, 60, 1);
+    // Stepped platform descent.
+    g.fillStyle = _CYP.creamShade;
+    g.fillRect(cx - 22, cy + 10, 44, 2);
+    g.fillRect(cx - 16, cy + 12, 32, 2);
+    // Main dome (half-circle).
+    g.fillStyle = _CYP.teal;
+    g.beginPath(); g.arc(cx, cy + 4, dr, Math.PI, 0); g.fill();
+    g.fillStyle = _CYP.tealH;
+    g.beginPath(); g.arc(cx, cy + 4, dr - 2, Math.PI, 0); g.fill();
+    g.fillStyle = _CYP.teal;
+    g.beginPath(); g.arc(cx, cy + 4, dr - 4, Math.PI, 0); g.fill();
+    // Glass panel framework - radial lines from apex.
+    g.strokeStyle = _CYP.tealD;
+    g.lineWidth = 1;
+    g.beginPath();
+    for (var ra = 0; ra < 7; ra++) {
+      var ang = Math.PI + (ra / 6) * Math.PI;
+      g.moveTo(cx, cy + 4);
+      g.lineTo(cx + Math.cos(ang) * dr, cy + 4 + Math.sin(ang) * dr);
+    }
+    g.stroke();
+    // Horizontal arcs (latitude bands).
+    g.beginPath();
+    for (var hb = 0; hb < 3; hb++) {
+      var hr = (dr - 4) * (1 - (hb + 1) / 4);
+      g.arc(cx, cy + 4, hr, Math.PI, 0);
+    }
+    g.stroke();
+    // Bright sun-catch reflection.
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.fillRect(cx - 10, cy - 14, 4, 2);
+    g.fillRect(cx - 12, cy - 10, 2, 4);
+    // Apex spire with weathervane.
+    g.fillStyle = _CYP.outlineD;
+    g.fillRect(cx, cy - 26, 1, 6);
+    g.fillRect(cx - 1, cy - 26, 3, 1);
+    g.fillStyle = _CYP.accent;
+    g.fillRect(cx, cy - 28, 1, 2);
+    // Hint of greenery inside (faint dark green smudges visible
+    // through the glass).
+    g.fillStyle = 'rgba(31,86,57,0.55)';
+    g.fillRect(cx - 18, cy - 4, 6, 4);
+    g.fillRect(cx - 8,  cy - 8, 6, 6);
+    g.fillRect(cx + 4,  cy - 6, 6, 5);
+    g.fillRect(cx + 14, cy - 2, 4, 3);
+    g.fillStyle = 'rgba(101,185,95,0.65)';
+    g.fillRect(cx - 6,  cy - 7, 3, 2);
+    g.fillRect(cx + 6,  cy - 5, 3, 2);
+    // Door at the base.
+    g.fillStyle = _CYP.outlineD;
+    g.fillRect(cx - 4, cy + 1, 8, 5);
+    g.fillStyle = _CYP.warmWin;
+    g.fillRect(cx - 3, cy + 2, 6, 4);
+    g.fillStyle = _CYP.warmWinH;
+    g.fillRect(cx - 3, cy + 2, 6, 1);
+    g.fillStyle = _CYP.outlineD;
+    g.fillRect(cx,     cy + 2, 1, 4);
+    // Side accent towers framing the dome.
+    g.fillStyle = _CYP.creamShade;
+    g.fillRect(cx - 28, cy - 8, 4, 14);
+    g.fillRect(cx + 24, cy - 8, 4, 14);
+    g.fillStyle = _CYP.creamHi;
+    g.fillRect(cx - 28, cy - 8, 4, 1);
+    g.fillRect(cx + 24, cy - 8, 4, 1);
+    g.fillStyle = _CYP.teal;
+    g.fillRect(cx - 27, cy - 5, 2, 8);
+    g.fillRect(cx + 25, cy - 5, 2, 8);
+    // Top accent lantern on the side towers.
+    g.fillStyle = _CYP.accent;
+    g.fillRect(cx - 27, cy - 9, 2, 1);
+    g.fillRect(cx + 25, cy - 9, 2, 1);
   }
 
   // =================================================================
