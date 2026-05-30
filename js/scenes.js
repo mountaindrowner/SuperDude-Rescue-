@@ -2713,51 +2713,60 @@ window.SDD = window.SDD || {};
   function _cyPaintFar(g) {
     var rng = _cyRng(0xC1FA);
     var W = 960;
-    // Atmospheric haze background - PALER than before so distant
-    // towers blend mostly into a near-white horizon. Mark's brief:
-    // "have buildings farther as bright."
+    // Light haze background - lighter than before so the towers
+    // behind have more presence (Mark: "see more of the skyline
+    // in the distance").
     var hz = g.createLinearGradient(0, 50, 0, 140);
-    hz.addColorStop(0, 'rgba(225,238,247,0.80)');
-    hz.addColorStop(1, 'rgba(245,250,254,1.00)');
+    hz.addColorStop(0, 'rgba(225,238,247,0.55)');
+    hz.addColorStop(1, 'rgba(238,246,251,0.80)');
     g.fillStyle = hz; g.fillRect(0, 50, W, 95);
 
-    // 60 towers (denser than before for skyline depth). Use a near-
-    // white / pale-cyan palette so towers feel like they're far back
-    // in atmospheric haze. Variety in height + roof type but VERY
-    // little contrast within each tower.
+    // 90 towers (up from 60) for a denser skyline. Mix tall + short
+    // so the silhouette has rhythm. Each tower has a 3-tone body
+    // shade (left dark, mid body, right highlight) so it reads as
+    // solid even at low contrast.
     var towers = [];
-    for (var i = 0; i < 60; i++) {
+    for (var i = 0; i < 90; i++) {
       towers.push({
-        x: Math.floor(rng() * (W + 50)) - 30,
-        w: 8 + Math.floor(rng() * 16),
-        h: 30 + Math.floor(rng() * 80),     // taller spires for grandeur
+        x: Math.floor(rng() * (W + 60)) - 40,
+        w: 7 + Math.floor(rng() * 18),
+        h: 30 + Math.floor(rng() * 90),
         r: rng(),
-        roof: Math.floor(rng() * 5)
+        roof: Math.floor(rng() * 6),
+        billboard: rng() > 0.85,        // 15% have a colored billboard
+        billboardCol: ['#FF4FA8', '#5AE8FF', '#FFD23A', '#FF8A40'][Math.floor(rng() * 4)]
       });
     }
-    // Paint tallest first (background-most), then progressively
-    // shorter on top so silhouettes interlock.
     towers.sort(function (a, b) { return b.h - a.h; });
     for (var k = 0; k < towers.length; k++) {
       var T = towers[k];
       var baseY = 140 - T.h;
-      // Depth tint: tallest = palest (deepest in haze), shortest =
-      // slightly more saturated (closer to mid layer).
-      var depth = 1 - Math.max(0, Math.min(1, (T.h - 30) / 80));
-      var rT = Math.floor(_cyMix(220, 165, depth));
-      var gT = Math.floor(_cyMix(232, 188, depth));
-      var bT = Math.floor(_cyMix(244, 210, depth));
+      // Depth tint: tallest = palest, shorter = slightly more saturated.
+      var depth = 1 - Math.max(0, Math.min(1, (T.h - 30) / 90));
+      var rT = Math.floor(_cyMix(210, 152, depth));
+      var gT = Math.floor(_cyMix(224, 178, depth));
+      var bT = Math.floor(_cyMix(238, 198, depth));
       var col = _cyHex(rT, gT, bT);
-      var shade = _cyHex(rT - 14, gT - 12, bT - 8);
-      var hi = _cyHex(Math.min(255, rT + 14), Math.min(255, gT + 12), Math.min(255, bT + 8));
+      var shade = _cyHex(rT - 22, gT - 18, bT - 12);
+      var hi = _cyHex(Math.min(255, rT + 18), Math.min(255, gT + 14), Math.min(255, bT + 8));
       g.fillStyle = col; g.fillRect(T.x, baseY, T.w, T.h);
-      g.fillStyle = shade; g.fillRect(T.x, baseY, 1, T.h);
+      g.fillStyle = shade; g.fillRect(T.x, baseY, 2, T.h);
       g.fillStyle = hi;    g.fillRect(T.x + T.w - 1, baseY, 1, T.h);
-      // Roof variants (5 options for skyline silhouette variety).
+      g.fillStyle = hi;    g.fillRect(T.x, baseY, T.w, 1);
+      // Subtle panel division at ~60% height (mid-tier setback hint).
+      if ((k & 3) === 0 && T.h > 60) {
+        var setY = baseY + Math.floor(T.h * 0.4);
+        g.fillStyle = shade;
+        g.fillRect(T.x, setY, T.w, 1);
+        g.fillStyle = hi;
+        g.fillRect(T.x, setY + 1, T.w, 1);
+      }
+      // Roof variants (6 options for skyline silhouette variety).
       if (T.roof === 0) {
-        // Stepped slab.
         g.fillStyle = shade;
         g.fillRect(T.x + 1, baseY - 2, T.w - 2, 2);
+        g.fillStyle = hi;
+        g.fillRect(T.x + 1, baseY - 2, T.w - 2, 1);
       } else if (T.roof === 1) {
         // Soft dome.
         var dr = Math.max(2, Math.floor(T.w / 3));
@@ -2768,58 +2777,87 @@ window.SDD = window.SDD || {};
       } else if (T.roof === 2) {
         // Tall thin spire.
         g.fillStyle = shade;
-        g.fillRect(T.x + Math.floor(T.w / 2), baseY - 10, 1, 10);
+        g.fillRect(T.x + Math.floor(T.w / 2), baseY - 12, 1, 12);
         g.fillStyle = col;
-        g.fillRect(T.x + Math.floor(T.w / 2) - 1, baseY - 4, 3, 2);
+        g.fillRect(T.x + Math.floor(T.w / 2) - 1, baseY - 5, 3, 2);
       } else if (T.roof === 3) {
-        // Tapered top (skyscraper crown).
+        // Tapered crown.
         g.fillStyle = col;
         g.fillRect(T.x + 1,         baseY - 2, T.w - 2, 2);
         g.fillRect(T.x + 2,         baseY - 4, T.w - 4, 2);
         g.fillRect(T.x + 3,         baseY - 6, T.w - 6, 2);
         g.fillStyle = shade;
         g.fillRect(T.x + Math.floor(T.w / 2), baseY - 10, 1, 4);
-      } else {
+      } else if (T.roof === 4) {
         // Twin-spire crown.
         g.fillStyle = shade;
-        g.fillRect(T.x + 1,        baseY - 5, 1, 5);
-        g.fillRect(T.x + T.w - 2,  baseY - 5, 1, 5);
+        g.fillRect(T.x + 1,        baseY - 6, 1, 6);
+        g.fillRect(T.x + T.w - 2,  baseY - 6, 1, 6);
         g.fillStyle = col;
         g.fillRect(T.x + 1,        baseY - 2, T.w - 2, 2);
+      } else {
+        // Slanted asymmetric roof.
+        g.fillStyle = shade;
+        for (var sl = 0; sl < Math.min(5, Math.floor(T.w / 2)); sl++) {
+          g.fillRect(T.x + sl, baseY - 1 - sl, T.w - sl, 1);
+        }
       }
-      // Sparse window hints — only on shorter (less hazy) towers,
-      // never on the tallest most distant spires.
-      if (depth < 0.5) {
-        g.fillStyle = _cyHex(rT - 24, gT - 18, bT - 8);
-        for (var wy = baseY + 8; wy < baseY + T.h - 4; wy += 10) {
-          for (var wx = T.x + 2; wx < T.x + T.w - 2; wx += 6) {
-            if (((wx * 13 + wy * 7 + k) & 7) < 2) {
+      // Distant neon billboard — a colored block on the upper third
+      // of select towers. Visible at distance as a glowing rectangle.
+      if (T.billboard && T.h > 50) {
+        var bbW = Math.max(4, T.w - 4);
+        var bbH = 6;
+        var bbX = T.x + Math.floor((T.w - bbW) / 2);
+        var bbY = baseY + 8;
+        g.fillStyle = '#0E1422';
+        g.fillRect(bbX, bbY, bbW, bbH);
+        // Faded billboard color (atmospheric perspective dims neon too).
+        var bbAlpha = 1 - depth * 0.4;
+        g.fillStyle = T.billboardCol;
+        g.globalAlpha = bbAlpha;
+        g.fillRect(bbX + 1, bbY + 1, bbW - 2, bbH - 2);
+        g.globalAlpha = 1;
+        // Bright pixel highlight.
+        g.fillStyle = '#FFFFFF';
+        g.fillRect(bbX + 1, bbY + 1, 1, 1);
+      }
+      // Sparse window hints on the closer towers (more visible than
+      // before because Mark wants more skyline detail visible).
+      if (depth < 0.6) {
+        var winCol = _cyHex(rT - 28, gT - 22, bT - 10);
+        for (var wy = baseY + 8; wy < baseY + T.h - 4; wy += 6) {
+          for (var wx = T.x + 2; wx < T.x + T.w - 2; wx += 4) {
+            var lit = ((wx * 13 + wy * 7 + k) & 0xf);
+            if (lit < 4) {
+              g.fillStyle = winCol;
+              g.fillRect(wx, wy, 1, 1);
+            } else if (lit < 6 && depth < 0.3) {
+              // Faint warm window glow on closer towers.
+              g.fillStyle = 'rgba(255,210,160,' + (0.4 * (1 - depth)).toFixed(2) + ')';
               g.fillRect(wx, wy, 1, 1);
             }
           }
         }
       }
-      // Very rare aviation strobe (red pixel) on top of the spire
-      // roofs - one in every ~10 towers.
-      if (T.roof === 2 && (k % 11) === 3) {
-        g.fillStyle = '#ff6464';
-        g.fillRect(T.x + Math.floor(T.w / 2), baseY - 10, 1, 1);
+      // Rare aviation strobe on spire roofs.
+      if (T.roof === 2 && (k % 9) === 3) {
+        g.fillStyle = '#FF6464';
+        g.fillRect(T.x + Math.floor(T.w / 2), baseY - 12, 1, 1);
       }
     }
 
-    // FINAL atmospheric haze pass - heavy whitewash so the far layer
-    // truly recedes. This is the key contrast lever Mark wants:
-    // distant = bright + pale + low contrast.
+    // Final atmospheric haze pass - LIGHTER than the previous version
+    // so the city detail behind is more visible per Mark's brief.
     var hzAtm = g.createLinearGradient(0, 50, 0, 145);
-    hzAtm.addColorStop(0,    'rgba(238,247,253,0.45)');
-    hzAtm.addColorStop(0.55, 'rgba(242,250,254,0.65)');
-    hzAtm.addColorStop(1,    'rgba(248,253,255,0.85)');
+    hzAtm.addColorStop(0,    'rgba(238,247,253,0.25)');
+    hzAtm.addColorStop(0.55, 'rgba(242,250,254,0.38)');
+    hzAtm.addColorStop(1,    'rgba(248,253,255,0.55)');
     g.fillStyle = hzAtm;
     g.fillRect(0, 50, W, 95);
-    // Sky-tint top-down so towers also hue-shift toward the sky.
+    // Light sky-tint top-down.
     var skyTint = g.createLinearGradient(0, 50, 0, 145);
-    skyTint.addColorStop(0,    'rgba(180,225,250,0.30)');
-    skyTint.addColorStop(1,    'rgba(216,238,250,0.06)');
+    skyTint.addColorStop(0,    'rgba(180,225,250,0.18)');
+    skyTint.addColorStop(1,    'rgba(216,238,250,0.04)');
     g.fillStyle = skyTint;
     g.fillRect(0, 50, W, 95);
   }
@@ -2838,34 +2876,36 @@ window.SDD = window.SDD || {};
       var h = 46 + Math.floor(rng() * 58);
       var baseY = 148 - h;
       k++;
-      // Body palette: cream / tan / teal / coral / lavender / peach /
-      // soft pink. ~50% are cream-family, the rest split across the
-      // solarpunk accent colors so the skyline doesn't read as beige.
+      // DEEPENED body palette per Mark's brief - less pastel, more
+      // saturated solarpunk accent colors. Cream + warm-brown still
+      // dominate but each accent tone is now richer than the previous
+      // wash of pale pastels.
       var tone = Math.floor(rng() * 10);
       var body, shade, hi;
-      if (tone < 3) {
-        // Cream (default).
-        body = _CYP.creamBody;  shade = _CYP.creamShade; hi = _CYP.creamHi;
-      } else if (tone === 3) {
-        body = '#D8CCB0';       shade = '#A8966A';       hi = '#F0E4C8';
+      if (tone < 2) {
+        // Warm cream (mid-saturation).
+        body = '#D6BD8E';  shade = '#8A6D40';  hi = '#F0DEB0';
+      } else if (tone < 4) {
+        // Warm ochre / muted brown.
+        body = '#B89066';  shade = '#7A5A38';  hi = '#D8B080';
       } else if (tone === 4) {
-        // Pale teal glass tower.
-        body = '#9CBEC2';       shade = '#5F7D8B';       hi = '#C8DEDE';
+        // Deep teal glass tower.
+        body = '#5A8590';  shade = '#2C4858';  hi = '#88B0B8';
       } else if (tone === 5) {
-        // Soft coral / warm pink.
-        body = '#E8A8A0';       shade = '#A86A6A';       hi = '#FFC8C0';
+        // Saturated coral.
+        body = '#D87060';  shade = '#8A3838';  hi = '#F4A088';
       } else if (tone === 6) {
-        // Peach.
-        body = '#F0BC90';       shade = '#A8804A';       hi = '#FFD8A8';
+        // Rich peach / warm orange.
+        body = '#E89860';  shade = '#A05828';  hi = '#FFC088';
       } else if (tone === 7) {
-        // Lavender.
-        body = '#B8A8C8';       shade = '#7A6A8A';       hi = '#D8C8E0';
+        // Deep lavender / plum.
+        body = '#806CA0';  shade = '#4A3868';  hi = '#A892C0';
       } else if (tone === 8) {
-        // Mint green.
-        body = '#A8D0B0';       shade = '#6A906A';       hi = '#C8E8C8';
+        // Forest mint green.
+        body = '#6A9878';  shade = '#365844';  hi = '#90C098';
       } else {
-        // Soft pink.
-        body = '#E8B8D0';       shade = '#A87898';       hi = '#FFD8E8';
+        // Saturated rose pink.
+        body = '#D078A0';  shade = '#883858';  hi = '#F0A0C8';
       }
       // Body.
       g.fillStyle = body;  g.fillRect(x, baseY, w, h);
@@ -2980,8 +3020,217 @@ window.SDD = window.SDD || {};
           g.fillRect(sax, say + 3 + cell * 3, 4, 1);
         }
       }
+      // ========== ANCHOR TREATMENT for mid-city buildings ==========
+      // Each building gets a chance at: vertical neon sign, balcony
+      // shelves with cascading planter foliage, warm window pairs,
+      // side pipes, glow halos around windows. Mark loved this look
+      // on the foreground anchors and wants it spread across the city.
+
+      // 1. VERTICAL NEON SIGN — ~38% of mid buildings get one running
+      //    down one side. Smaller + a touch dimmer than the foreground
+      //    anchors so the layer reads as receding.
+      if (rng() < 0.38 && w > 26 && h > 50) {
+        var neonOnRight = rng() > 0.5;
+        var neonCols = ['#FF4FA8', '#5AE8FF', '#FFD23A', '#FF8A40', '#A0F060'];
+        var neonCol = neonCols[Math.floor(rng() * 5)];
+        var neonGlow = neonCol === '#FF4FA8' ? 'rgba(255,79,168,0.22)'
+                     : neonCol === '#5AE8FF' ? 'rgba(90,232,255,0.22)'
+                     : neonCol === '#FFD23A' ? 'rgba(255,210,58,0.20)'
+                     : neonCol === '#FF8A40' ? 'rgba(255,138,64,0.22)'
+                                              : 'rgba(160,240,96,0.20)';
+        var nx = neonOnRight ? x + w - 6 : x + 2;
+        var nh = Math.min(h - 20, 48);
+        var ny = baseY + 6;
+        // Dark panel.
+        g.fillStyle = '#0A0E18';
+        g.fillRect(nx, ny, 4, nh);
+        // Glow halo around the sign.
+        g.fillStyle = neonGlow;
+        g.fillRect(nx - 3, ny - 1, 10, nh + 2);
+        // Re-paint dark panel on top of halo.
+        g.fillStyle = '#0A0E18';
+        g.fillRect(nx + 1, ny + 1, 2, nh - 2);
+        // Glyph stack - smaller than foreground (4x6 cells vs 4x8).
+        var glyphsMid = [
+          [[0,0,3,1],[0,1,1,2],[2,1,1,1],[0,3,3,1]],
+          [[0,0,3,1],[1,1,1,2],[0,3,3,1]],
+          [[0,0,1,3],[2,0,1,3],[0,2,3,1]],
+          [[0,1,3,1],[1,0,1,3],[0,2,3,1]],
+          [[0,0,3,3]]
+        ];
+        var charHMid = 6;
+        for (var gc = 0; gc < Math.floor(nh / charHMid); gc++) {
+          var gly = glyphsMid[Math.floor(rng() * 5)];
+          g.fillStyle = neonCol;
+          for (var gp = 0; gp < gly.length; gp++) {
+            g.fillRect(nx + 1 + gly[gp][0], ny + 1 + gc * charHMid + gly[gp][1],
+                       gly[gp][2], gly[gp][3]);
+          }
+          g.fillStyle = '#FFFFFF';
+          g.fillRect(nx + 1, ny + 1 + gc * charHMid, 1, 1);
+        }
+      }
+
+      // 2. BALCONY SHELVES with cascading planter foliage on ~55% of
+      //    buildings (skipping vertical gardens which already have
+      //    leaves everywhere).
+      if (!verticalGarden && rng() < 0.55 && w > 22 && h > 50) {
+        // 2-4 balcony shelves spaced down the facade.
+        var balconies = 2 + Math.floor(rng() * 3);
+        var spacing = Math.floor(h / (balconies + 1));
+        for (var bc = 0; bc < balconies; bc++) {
+          var balY = baseY + spacing * (bc + 1);
+          if (balY > baseY + h - 12) break;
+          // Shelf.
+          g.fillStyle = shade;
+          g.fillRect(x + 2, balY, w - 4, 2);
+          g.fillStyle = hi;
+          g.fillRect(x + 2, balY, w - 4, 1);
+          // Railing bars.
+          g.fillStyle = _CYP.outlineD;
+          g.fillRect(x + 3, balY + 2, w - 6, 1);
+          for (var rb = x + 4; rb < x + w - 4; rb += 3) {
+            g.fillRect(rb, balY + 3, 1, 2);
+          }
+          // Cascading foliage spilling over the rail.
+          g.fillStyle = _CYP.leafDk;
+          for (var pf = x + 3; pf < x + w - 3; pf += 3) {
+            var trailLen = 3 + ((pf * 13 + balY * 7) & 3);
+            g.fillRect(pf, balY + 5, 1, trailLen);
+          }
+          g.fillStyle = _CYP.leafMid;
+          for (var pf2 = x + 4; pf2 < x + w - 3; pf2 += 4) {
+            g.fillRect(pf2, balY + 5, 1, 2);
+          }
+          g.fillStyle = _CYP.leafLt;
+          g.fillRect(x + Math.floor(w / 2), balY + 5, 1, 1);
+          // Occasional blossom dots on the foliage.
+          if ((bc + k) & 1) {
+            g.fillStyle = _CYP.blossom;
+            g.fillRect(x + 5,         balY + 6, 1, 1);
+            g.fillRect(x + w - 6,     balY + 7, 1, 1);
+          }
+        }
+      }
+
+      // 3. WARM WINDOW GLOW HALOS — on ~30% of buildings add soft
+      //    halos around random window positions so the city feels lit.
+      if (!verticalGarden && rng() < 0.30 && h > 40) {
+        for (var gh = 0; gh < 2; gh++) {
+          var ghx = x + 3 + Math.floor(rng() * (w - 8));
+          var ghy = baseY + 8 + Math.floor(rng() * (h - 16));
+          g.fillStyle = 'rgba(255,210,140,0.18)';
+          g.fillRect(ghx - 2, ghy - 2, 6, 6);
+          // Bright lit center.
+          g.fillStyle = '#FFE8A0';
+          g.fillRect(ghx, ghy, 2, 2);
+        }
+      }
+
+      // 4. SIDE PIPE — vertical pipe with joints on ~35% of buildings.
+      if (rng() < 0.35 && h > 50) {
+        var pipeSide = rng() > 0.5;
+        var ppx = pipeSide ? x + w - 2 : x + 1;
+        g.fillStyle = shade;
+        g.fillRect(ppx,     baseY + 4, 1, h - 8);
+        g.fillStyle = '#5A4830';
+        g.fillRect(ppx + (pipeSide ? -1 : 1), baseY + 4, 1, h - 8);
+        // Joint bands every 12 px.
+        for (var pj = baseY + 14; pj < baseY + h - 8; pj += 14) {
+          g.fillStyle = _CYP.outlineD;
+          g.fillRect(ppx - 1, pj, 3, 2);
+        }
+      }
+
       // Rooftop ornament.
       _cyDrawRooftop(g, x, baseY, w, k, rng);
+
+      // 5. BILLBOARD AD PANEL — ~12% of buildings get a square ad
+      //    billboard on the upper facade. Mark's references show
+      //    anime-style portrait ads + product photos. Procedural here
+      //    so each looks distinct.
+      if (rng() < 0.12 && w > 30 && h > 70) {
+        var adW = Math.min(w - 8, 18);
+        var adH = Math.min(20, Math.floor(h * 0.3));
+        var adX = x + Math.floor((w - adW) / 2);
+        var adY = baseY + 8;
+        // Outer frame.
+        g.fillStyle = '#0E1422';
+        g.fillRect(adX - 1, adY - 1, adW + 2, adH + 2);
+        // Inner background (pale teal / pink / yellow depending on ad).
+        var adKind = Math.floor(rng() * 3);
+        if (adKind === 0) {
+          // Portrait ad - peach skin, dark hair, pink BG (anime).
+          g.fillStyle = '#F0B0C0';
+          g.fillRect(adX, adY, adW, adH);
+          // Hair (dark).
+          g.fillStyle = '#3A2840';
+          g.fillRect(adX + 2, adY + 1, adW - 4, 5);
+          g.fillRect(adX + 1, adY + 3, 2, 4);
+          g.fillRect(adX + adW - 3, adY + 3, 2, 4);
+          // Face.
+          g.fillStyle = '#FFE0C8';
+          g.fillRect(adX + 4, adY + 5, adW - 8, 5);
+          // Eyes.
+          g.fillStyle = '#3A2840';
+          g.fillRect(adX + 5, adY + 7, 1, 1);
+          g.fillRect(adX + adW - 6, adY + 7, 1, 1);
+          // Cheek blush.
+          g.fillStyle = '#F08AB0';
+          g.fillRect(adX + 4, adY + 9, 1, 1);
+          g.fillRect(adX + adW - 5, adY + 9, 1, 1);
+          // Shoulders / outfit.
+          g.fillStyle = '#5AB8E8';
+          g.fillRect(adX + 2, adY + 11, adW - 4, adH - 13);
+          // Text bar at bottom.
+          g.fillStyle = '#FFFFFF';
+          g.fillRect(adX + 2, adY + adH - 3, adW - 4, 2);
+          g.fillStyle = '#FF4FA8';
+          g.fillRect(adX + 3, adY + adH - 2, 4, 1);
+          g.fillRect(adX + 8, adY + adH - 2, 2, 1);
+        } else if (adKind === 1) {
+          // Product/logo ad - bright color block + logo glyph.
+          var adBG = ['#FFD23A', '#5AE8FF', '#FF4FA8'][Math.floor(rng() * 3)];
+          g.fillStyle = adBG;
+          g.fillRect(adX, adY, adW, adH);
+          // Logo glyph (centered circle + accent).
+          g.fillStyle = '#FFFFFF';
+          g.beginPath();
+          g.arc(adX + adW / 2, adY + adH / 2, Math.min(4, adW / 4), 0, 6.28);
+          g.fill();
+          g.fillStyle = '#0E1422';
+          g.fillRect(adX + adW / 2 - 1, adY + adH / 2 - 1, 2, 2);
+          // Text bars.
+          g.fillStyle = '#0E1422';
+          g.fillRect(adX + 2, adY + adH - 4, adW - 4, 1);
+          g.fillRect(adX + 3, adY + adH - 2, adW - 6, 1);
+        } else {
+          // Scrolling text-style ad - dark bg with bright kanji-style glyphs.
+          g.fillStyle = '#0E1422';
+          g.fillRect(adX, adY, adW, adH);
+          var txCol = ['#5AE8FF', '#FFD23A', '#A0F060'][Math.floor(rng() * 3)];
+          g.fillStyle = txCol;
+          for (var trow = 0; trow < 3; trow++) {
+            var ty2 = adY + 3 + trow * 6;
+            if (ty2 > adY + adH - 4) break;
+            for (var tcol = 0; tcol < 3; tcol++) {
+              var tx2 = adX + 2 + tcol * 5;
+              if (tx2 > adX + adW - 3) break;
+              g.fillRect(tx2, ty2, 3, 1);
+              g.fillRect(tx2, ty2 + 2, 3, 1);
+              g.fillRect(tx2 + 1, ty2 + 1, 1, 1);
+            }
+          }
+        }
+        // Support struts down from the billboard to the rooftop edge.
+        g.fillStyle = '#0E1422';
+        g.fillRect(adX + 2,         adY + adH, 1, 2);
+        g.fillRect(adX + adW - 3,   adY + adH, 1, 2);
+        // Soft glow halo around the ad.
+        g.fillStyle = 'rgba(255,255,255,0.10)';
+        g.fillRect(adX - 3, adY - 3, adW + 6, adH + 6);
+      }
+
       // Sky-bridge from prev tower's top: relaxed to allow bridges
       // up to 40 px wide and heights within 20 px (almost any near
       // neighbour). Two visual variants: short cream walkway or
