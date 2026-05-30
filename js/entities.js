@@ -453,9 +453,24 @@ window.SDD = window.SDD || {};
       if (this.vy > 2.2) this.vy = 2.2;
       if (In.pressed('jump')) {
         // Stronger paddle in the small escape pools of walking levels
-        // (6-1 water-over-pits) so spamming jump reliably climbs out;
-        // the fully-underwater 5-2 keeps its tuned -2.7 feel.
-        this.vy = level.underwater ? -2.7 : -3.4;
+        // (6-1 water-over-pits) so spamming jump reliably climbs out
+        // - playtester still got "trapped on occasion", so bumped to
+        // -4.2 + propel-out: if the player is near the water surface
+        // when they paddle, give them an extra kick to clear the lip.
+        // The fully-underwater 5-2 keeps its tuned -2.7 feel.
+        if (level.underwater) {
+          this.vy = -2.7;
+        } else {
+          this.vy = -4.2;
+          // Near-surface kick: if the tile directly above is air,
+          // launch out hard so the player lands cleanly on the lip.
+          var lvT = 16, surfTx = Math.floor((this.x + this.w / 2) / lvT);
+          var surfTy = Math.floor((this.y + this.h / 2) / lvT) - 1;
+          if (surfTy >= 0) {
+            var aboveTile = level.map.get(surfTx, surfTy);
+            if (aboveTile === ' ' || aboveTile === '') this.vy = -5.2;
+          }
+        }
         SDD.audio.sfx('jump');
         // Each spacebar press triggers a fresh stroke animation cycle.
         // Mark Pass 9: "should change every time I press the spacebar
@@ -1580,11 +1595,13 @@ window.SDD = window.SDD || {};
     this.scale = sc;
     this.x = x; this.y = y;
     this.w = Math.round(8 * sc); this.h = Math.round(10 * sc);
-    this.vx = 0; this.vy = 1.0; this.life = 360; this.remove = false;
+    // ~33% slower per playtest ("sunflares are kind of too fast"):
+    // initial vy 1.0 -> 0.65, accel 0.045 -> 0.030, cap 3.6 -> 2.4.
+    this.vx = 0; this.vy = 0.65; this.life = 360; this.remove = false;
   }
   SolarFlare.prototype.update = function (level) {
-    this.vy += 0.045;
-    if (this.vy > 3.6) this.vy = 3.6;
+    this.vy += 0.030;
+    if (this.vy > 2.4) this.vy = 2.4;
     this.y += this.vy;
     this.life--;
     if (this.life <= 0 || this.y > level.map.pxH + 40) this.remove = true;

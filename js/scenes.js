@@ -504,6 +504,7 @@ window.SDD = window.SDD || {};
       this.t = 0;
       this.idx = 0;
       this.confirmErase = null;          // when set: holds 'easy'/'medium'/'hard'
+      SDD.runLives = 3;                  // fresh 3-life budget on new run
       // Active difficulty starts highlighted so opening the picker keeps
       // the cursor on the player's most recent slot.
       var cur = SDD.save.curDifficulty();
@@ -2541,9 +2542,16 @@ window.SDD = window.SDD || {};
       this.day = (d && d.day) || 1;
       this.stage = (d && d.stage) || 1;
       this.difficulty = SDD.save.curDifficulty();
-      // Easy mode runs with unlimited lives - no game-over screen.
-      // Med + Hard keep the classic 3-life budget.
-      this.lives = (this.difficulty === 'easy') ? Infinity : 3;
+      // Easy mode runs with unlimited lives. Med + Hard carry lives
+      // ACROSS stages within a run (Mark feedback: "lives don't carry
+      // over"). SDD.runLives is set to 3 at game start / after a
+      // game-over and decremented on death; level.enter reads it here.
+      if (this.difficulty === 'easy') {
+        this.lives = Infinity;
+      } else {
+        if (typeof SDD.runLives !== 'number' || SDD.runLives <= 0) SDD.runLives = 3;
+        this.lives = SDD.runLives;
+      }
       // Cleared on fresh entry into the stage; preserved across
       // death respawns inside the same attempt. Both the recall
       // position AND the per-checkpoint triggered-key set have to
@@ -2871,6 +2879,8 @@ window.SDD = window.SDD || {};
       if (this.state !== 'play') return;
       this.state = 'won'; this.winTimer = 0;
       this.player.victory();
+      // Persist lives so they carry into the next stage (Mark).
+      if (this.difficulty !== 'easy') SDD.runLives = this.lives;
       A.stopMusic(); A.sfx('win');
       this.burst(this.player.x + 5, this.player.y, '#ffd23a', 14);
     },
@@ -2893,6 +2903,15 @@ window.SDD = window.SDD || {};
       var i;
       if (this.state === 'play' && !this.player.dead) this.timeSteps++;
       if (this.livesPulseT > 0) this.livesPulseT--;
+      // Flappy auto-win: in flappy mode the player can't backtrack, so
+      // missing the timepart icon would soft-lock them at the wall.
+      // Reaching the right edge of the map counts as a win (Mark
+      // playtest: "you should be able to win by getting to the end of
+      // the map, not touching the icon").
+      if (this.flappy && this.state === 'play' && this.player &&
+          this.player.x > this.map.pxW - 24) {
+        this.completeLevel();
+      }
       // Day 5-1 (Wings of Day): ramp gravity from light at the start
       // toward normal over the first ~30 seconds so the kid eases
       // into the flappy controls (Mark: "the character falls too
@@ -2963,7 +2982,20 @@ window.SDD = window.SDD || {};
           // day's enemy roster) phase through harmlessly.
           if (pl.signatureKind === 'friendlybugs' &&
               (e instanceof SDD.ent.Wisp || e instanceof SDD.ent.Walker)) continue;
-          var stomp = e.stompable && pl.vy > 1 && (pl.y + pl.h - e.y) < 13;
+          // Sun-burst signature (Day 1): tip says "RUN INTO BAD GUYS
+          // TO ZAP THEM" - so on contact, kill the enemy if it's
+          // stoppable (zap-immune things like the lion still no-op).
+          if (pl.signatureKind === 'sunburst' && !e.unkillable) {
+            if (e.zap) e.zap(); else if (e.stomped) e.stomped();
+            this.score += 120; A.sfx('blast');
+            this.burst(e.x + e.w / 2, e.y + e.h / 2, '#ffd84a', 8);
+            continue;
+          }
+          // Cloud-glide signature (Day 2-1): stomp threshold is gentler
+          // so you can bounce on enemies while floating down (Mark
+          // feedback: "hovering doesn't let me bounce on enemies").
+          var stompVy = (pl.signatureKind === 'cloudglide') ? 0.2 : 1;
+          var stomp = e.stompable && pl.vy > stompVy && (pl.y + pl.h - e.y) < 13;
           if (stomp) {
             e.stomped();
             pl.vy = C.STOMP_BOUNCE * (In.held('jump') ? 1.18 : 1);
@@ -3069,7 +3101,7 @@ window.SDD = window.SDD || {};
       if (this.player.deadDone && !this.deathHandled) {
         this.deathHandled = true;
         // Easy = unlimited lives (Infinity stays Infinity through --).
-        if (this.difficulty !== 'easy') this.lives--;
+        if (this.difficulty !== 'easy') { this.lives--; SDD.runLives = this.lives; }
         if (this.lives > 0) { this.loadLevel(); }
         else { this.state = 'gameover'; this.goTimer = 0; A.stopMusic(); A.sfx('gameover'); }
       }
@@ -3725,6 +3757,7 @@ window.SDD = window.SDD || {};
     enter: function (d) {
       this.d = d || {}; this.t = 0;
       this.quip = pickQuip();
+      SDD.runLives = 3;                    // fresh 3-life budget on retry
       A.startMusic('gameover');
     },
     update: function () {

@@ -49,7 +49,7 @@ window.SDD = window.SDD || {};
       ],
       medium: [
         { ref: 'GENESIS 1:14', text: 'Let there be ___ in the expanse of the heavens.', answer: 'LIGHTS' },
-        { ref: 'GENESIS 1:16', text: 'And God made the stars ___.', answer: 'ALSO' }
+        { ref: 'GENESIS 1:16', text: 'And God made the ___ also.', answer: 'STARS' }
       ],
       hard: [
         { ref: 'GENESIS 1:14', text: 'Let them be for ___, and for seasons, and for days and years.', answer: 'SIGNS' }
