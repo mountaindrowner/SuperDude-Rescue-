@@ -3199,6 +3199,98 @@ window.SDD = window.SDD || {};
       var which = (s & 1) ? 'L' : 'R';
       _cyPaintFgAnchor(g, which === 'L' ? screenLeft - 4 : screenLeft + 320 - 28, rng);
     }
+
+    // Signature café-patio foreground feature - one parasol + table
+    // cluster per screen slot, placed in the opposite side from the
+    // architectural anchor so the silhouette stays balanced.
+    for (var sc = 0; sc < slots; sc++) {
+      var slotLeft = sc * 320;
+      var which2 = (sc & 1) ? 'R' : 'L';  // opposite of anchor
+      var cafeX = (which2 === 'L') ? slotLeft + 40 : slotLeft + 240;
+      _cyPaintFgCafePatio(g, cafeX, rng);
+    }
+  }
+
+  // Foreground café-patio cluster: 1 parasol over 2 tables + chairs,
+  // sitting on a curved planter / wooden deck rim. Mark's brief asked
+  // for "rooftop café with orange awning" as a memorable feature.
+  function _cyPaintFgCafePatio(g, x, rng) {
+    var y = 144;     // sits on the foreground sidewalk plane
+    // Parasol pole.
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 7, y - 16, 1, 22);
+    // Parasol canopy (warm-orange striped).
+    g.fillStyle = _CYP.awningOD;
+    g.fillRect(x,     y - 18, 16, 3);
+    g.fillRect(x + 1, y - 19, 14, 1);
+    g.fillRect(x + 3, y - 20, 10, 1);
+    g.fillStyle = _CYP.awningO;
+    g.fillRect(x,     y - 17, 16, 2);
+    g.fillRect(x + 1, y - 18, 14, 1);
+    g.fillRect(x + 3, y - 19, 10, 1);
+    g.fillStyle = _CYP.awningOH;
+    g.fillRect(x + 4, y - 20, 8, 1);
+    g.fillRect(x + 5, y - 19, 6, 1);
+    // Stripe bands.
+    g.fillStyle = _CYP.awningOD;
+    g.fillRect(x + 2, y - 18, 1, 4);
+    g.fillRect(x + 6, y - 19, 1, 5);
+    g.fillRect(x + 10, y - 19, 1, 5);
+    g.fillRect(x + 14, y - 18, 1, 4);
+    // Drop tassels at the edges.
+    g.fillStyle = _CYP.awningOD;
+    g.fillRect(x,         y - 14, 1, 2);
+    g.fillRect(x + 15,    y - 14, 1, 2);
+    // Bistro table (front).
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 1, y - 4, 7, 1);
+    g.fillStyle = _CYP.barkH;
+    g.fillRect(x + 1, y - 5, 7, 1);
+    g.fillRect(x,     y - 4, 9, 1);
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 4, y - 3, 1, 5);
+    g.fillRect(x + 2, y + 2, 5, 1);                         // base
+    // Coffee cup + saucer on the table.
+    g.fillStyle = '#FFF5D8';
+    g.fillRect(x + 3, y - 7, 3, 2);
+    g.fillStyle = _CYP.outlineD;
+    g.fillRect(x + 6, y - 6, 1, 1);                         // handle
+    // Steam.
+    g.fillStyle = 'rgba(255,255,255,0.7)';
+    g.fillRect(x + 3, y - 9, 1, 1);
+    g.fillRect(x + 5, y - 10, 1, 1);
+    // Chair 1 (left).
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 9,  y - 7, 3, 4);
+    g.fillStyle = _CYP.barkH;
+    g.fillRect(x + 9,  y - 7, 3, 1);
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 8,  y - 3, 5, 1);
+    g.fillRect(x + 8,  y - 2, 1, 3);
+    g.fillRect(x + 12, y - 2, 1, 3);
+    // Chair 2 (right).
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 13, y - 6, 3, 3);
+    g.fillStyle = _CYP.barkH;
+    g.fillRect(x + 13, y - 6, 3, 1);
+    g.fillStyle = _CYP.bark;
+    g.fillRect(x + 13, y - 3, 4, 1);
+    g.fillRect(x + 13, y - 2, 1, 3);
+    g.fillRect(x + 16, y - 2, 1, 3);
+    // Deck planter band beneath the patio.
+    g.fillStyle = _CYP.creamShade;
+    g.fillRect(x - 2, y + 3, 22, 3);
+    g.fillStyle = _CYP.creamHi;
+    g.fillRect(x - 2, y + 3, 22, 1);
+    g.fillStyle = _CYP.leafDk;
+    g.fillRect(x - 1, y + 2, 4, 1);
+    g.fillRect(x + 18, y + 2, 3, 1);
+    g.fillStyle = _CYP.leafMid;
+    g.fillRect(x,      y + 2, 2, 1);
+    g.fillRect(x + 18, y + 2, 2, 1);
+    g.fillStyle = _CYP.blossom;
+    g.fillRect(x + 1,  y + 1, 1, 1);
+    g.fillRect(x + 19, y + 1, 1, 1);
   }
 
   // Light foreground anchor - a slim cream tower edge with a few warm
@@ -3360,16 +3452,34 @@ window.SDD = window.SDD || {};
     g.fillStyle = _CYP.sunDisc;
     g.beginPath(); g.arc(sunX, sunY, 5, 0, 6.28); g.fill();
 
-    // 3. Soft drifting clouds at multiple tiers + parallax.
+    // 3. Soft drifting clouds at multiple tiers + parallax. Organic
+    // multi-bump shape rather than flat rectangles - reads as fluffy
+    // cumulus instead of cyber-grid blocks.
     function paintCloud(g, x, y, w, alpha) {
+      // Body fill (3 stacked bumps).
       g.fillStyle = 'rgba(244,255,248,' + alpha + ')';
-      g.fillRect(x + 4, y - 1, w - 8, 4);
-      g.fillRect(x,     y + 1, w,     2);
-      g.fillRect(x + 6, y - 2, w - 12,1);
-      g.fillStyle = 'rgba(255,255,255,' + Math.min(1, alpha + 0.15) + ')';
-      g.fillRect(x + 6, y + 1, w - 12, 1);
-      g.fillStyle = 'rgba(205,238,242,' + (alpha * 0.6) + ')';
-      g.fillRect(x + 2, y + 3, w - 4, 1);
+      g.fillRect(x + 4,             y,     w - 8,    3);
+      g.fillRect(x + 8,             y - 2, w - 16,   2);
+      g.fillRect(x,                 y + 1, w,        2);
+      g.fillRect(x + 12,            y - 4, w - 24,   2);
+      // Top-left bump.
+      var bumpW = Math.min(10, Math.floor(w / 4));
+      g.fillRect(x + 2,             y - 1, bumpW,    2);
+      // Right tail bump.
+      g.fillRect(x + w - 12,        y - 1, 8,        2);
+      // Bright highlight on the upper edge.
+      g.fillStyle = 'rgba(255,255,255,' + Math.min(1, alpha + 0.18) + ')';
+      g.fillRect(x + 10,            y - 3, w - 22,   1);
+      g.fillRect(x + 4,             y - 1, bumpW - 2, 1);
+      g.fillRect(x + w - 10,        y - 1, 6,        1);
+      // Cool shadow underneath.
+      g.fillStyle = 'rgba(205,228,242,' + (alpha * 0.7) + ')';
+      g.fillRect(x + 4,             y + 3, w - 8,    1);
+      g.fillRect(x + 8,             y + 4, w - 16,   1);
+      // Subtle pixel chip on the corners (soften the silhouette).
+      g.fillStyle = 'rgba(244,255,248,' + (alpha * 0.6) + ')';
+      g.fillRect(x - 1,             y + 2, 1,        1);
+      g.fillRect(x + w,             y + 2, 1,        1);
     }
     // High clouds, slow parallax.
     for (var hc = 0; hc < 6; hc++) {
@@ -3395,6 +3505,30 @@ window.SDD = window.SDD || {};
     g.fillRect(ash + 7, 41, 4, 2);
     g.fillStyle = _CYP.accent;
     g.fillRect(ash + 16, 39, 1, 1);
+
+    // Small flock of birds drifting across the sky - flapping
+    // animation via 2-frame swap. Strong parallax so they pass
+    // briskly through the frame.
+    var flockX = ((t * 0.5 - camx * 0.18) % 460 + 460) % 460 - 60;
+    var frame = (Math.floor(t / 12) & 1);
+    var birdCols = ['#3a4664', '#23324d'];
+    for (var bdi = 0; bdi < 5; bdi++) {
+      var bx = flockX + bdi * 14 + (bdi & 1 ? 4 : 0);
+      var by = 56 + (bdi % 3) * 4 + (bdi & 1 ? -2 : 0);
+      g.fillStyle = birdCols[bdi % 2];
+      if (frame === 0) {
+        // Wings up.
+        g.fillRect(bx,     by,     1, 1);
+        g.fillRect(bx + 1, by - 1, 1, 1);
+        g.fillRect(bx + 2, by,     1, 1);
+        g.fillRect(bx + 3, by - 1, 1, 1);
+        g.fillRect(bx + 4, by,     1, 1);
+      } else {
+        // Wings level (flap mid).
+        g.fillRect(bx,     by,     5, 1);
+        g.fillRect(bx + 2, by + 1, 1, 1);
+      }
+    }
 
     function tileLayer(img, factor) {
       if (!img) return;
