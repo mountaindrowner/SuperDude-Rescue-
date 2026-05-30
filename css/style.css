@@ -46,33 +46,97 @@ html, body {
   font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
-/* A couple of "console LED" pulses on the left + right panels, so the
-   side bars feel a little alive. Hidden when the canvas covers them
-   (e.g. exactly-16:9 viewports); only visible when there's room. */
+/* === LAB CONSOLE PANELS (left + right of viewport) ===
+   Mark wanted them "more ticky" - stacked features visible whenever
+   the 16:9 canvas letterboxes. All CSS gradients, zero asset weight.
+   Layout (top-to-bottom inside each panel):
+     ~ 2-6%   CRT readout (cyan scanlines on dark glass)
+     ~ 12-20% R/Y/G round button cluster
+     ~ 24-32% Two toggle switches with dark tips
+     ~ 36-44% Multi-colour LED column
+     ~ 48-66% Round analog gauge (sweep arc + needle)
+     ~ 70-82% Vent grille
+     ~ 84-92% Yellow hazard-stripe label
+     edges    Riveted bezel down both sides
+   The whole panel pulses (filter brightness) on the existing LED
+   keyframes so the console "breathes." */
 body::before, body::after {
   content: "";
   position: fixed;
-  top: 12%;
-  width: 6px;
-  height: 76%;
-  border-radius: 3px;
+  top: 4%;
+  width: 38px;
+  height: 92%;
+  border-radius: 6px;
   pointer-events: none;
+  border: 1px solid rgba(120,160,210,0.20);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 0 18px rgba(0,0,0,0.55),
+    0 0 14px rgba(0,200,255,0.10);
   background:
-    radial-gradient(circle at 50% 8%,  #3aff60 0 2.5px, transparent 3.5px),
-    radial-gradient(circle at 50% 28%, #ff5a3a 0 2.5px, transparent 3.5px),
-    radial-gradient(circle at 50% 52%, #5af0ff 0 2.5px, transparent 3.5px),
-    radial-gradient(circle at 50% 76%, #ffd23a 0 2.5px, transparent 3.5px),
-    radial-gradient(circle at 50% 94%, #3aff60 0 2.5px, transparent 3.5px),
-    linear-gradient(180deg, rgba(20,30,50,0.6), rgba(10,15,25,0.6));
-  box-shadow: inset 0 0 4px rgba(0,0,0,0.6);
-  opacity: 0.85;
+    /* --- CRT scanlines (cyan glow lines) --- */
+    repeating-linear-gradient(0deg,
+      transparent 0 2px,
+      rgba(70,240,255,0.32) 2px 3px) 50% 4% / 28px 26px no-repeat,
+    /* --- CRT screen well (dark glass) --- */
+    linear-gradient(180deg, #03070d, #061522) 50% 4% / 28px 26px no-repeat,
+
+    /* --- Button cluster: red / yellow / green (horizontal triplet) --- */
+    radial-gradient(circle at 50% 50%, #ff5a3a 0 4.5px, rgba(0,0,0,0.7) 4.5px 6px, transparent 6.5px) 18% 16% / 12px 12px no-repeat,
+    radial-gradient(circle at 50% 50%, #ffd23a 0 4.5px, rgba(0,0,0,0.7) 4.5px 6px, transparent 6.5px) 50% 16% / 12px 12px no-repeat,
+    radial-gradient(circle at 50% 50%, #3aff60 0 4.5px, rgba(0,0,0,0.7) 4.5px 6px, transparent 6.5px) 82% 16% / 12px 12px no-repeat,
+    /* button-highlight glints */
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.55) 0 1px, transparent 1.5px) 18% 16% / 12px 12px no-repeat,
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.55) 0 1px, transparent 1.5px) 50% 16% / 12px 12px no-repeat,
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.55) 0 1px, transparent 1.5px) 82% 16% / 12px 12px no-repeat,
+
+    /* --- Toggle switches: chrome rocker with dark cap --- */
+    linear-gradient(180deg, #c8ccdc 0 60%, #8a90a8 60% 100%) 32% 28% / 8px 14px no-repeat,
+    radial-gradient(circle at 50% 25%, rgba(0,0,0,0.9) 0 2.5px, transparent 3px) 32% 28% / 8px 14px no-repeat,
+    linear-gradient(180deg, #c8ccdc 0 60%, #8a90a8 60% 100%) 68% 28% / 8px 14px no-repeat,
+    radial-gradient(circle at 50% 75%, rgba(0,0,0,0.9) 0 2.5px, transparent 3px) 68% 28% / 8px 14px no-repeat,
+
+    /* --- LED column (4 colours, vertically stacked) --- */
+    radial-gradient(circle at 50% 50%, #5af0ff 0 2.2px, transparent 3px) 25% 40% / 8px 8px no-repeat,
+    radial-gradient(circle at 50% 50%, #ffd23a 0 2.2px, transparent 3px) 50% 40% / 8px 8px no-repeat,
+    radial-gradient(circle at 50% 50%, #ff5a3a 0 2.2px, transparent 3px) 75% 40% / 8px 8px no-repeat,
+    radial-gradient(circle at 50% 50%, #3aff60 0 2.2px, transparent 3px) 50% 44% / 8px 8px no-repeat,
+
+    /* --- Gauge: needle tick + sweep arc + dark well --- */
+    radial-gradient(circle at 50% 50%, #ffd23a 0 1.5px, transparent 2px) 50% 58% / 26px 26px no-repeat,
+    conic-gradient(from 220deg at 50% 50%,
+      rgba(70,240,255,0.55) 0deg 100deg,
+      transparent 100deg 360deg) 50% 58% / 22px 22px no-repeat,
+    radial-gradient(circle at 50% 50%, #050a14 0 10px, transparent 11px) 50% 58% / 26px 26px no-repeat,
+
+    /* --- Vent grille (horizontal slats) --- */
+    repeating-linear-gradient(0deg,
+      rgba(0,0,0,0.55) 0 2px,
+      rgba(140,170,210,0.18) 2px 4px) 50% 76% / 24px 18px no-repeat,
+
+    /* --- Hazard-stripe warning label --- */
+    repeating-linear-gradient(135deg,
+      rgba(255,210,80,0.55) 0 4px,
+      rgba(30,20,5,0.55) 4px 8px) 50% 88% / 28px 7px no-repeat,
+
+    /* --- Edge rivets down both sides --- */
+    radial-gradient(circle at 50% 50%, rgba(180,210,240,0.6) 0 1.2px, transparent 2px) 8% 0 / 8px 28px repeat-y,
+    radial-gradient(circle at 50% 50%, rgba(180,210,240,0.6) 0 1.2px, transparent 2px) 92% 0 / 8px 28px repeat-y,
+
+    /* --- Brushed-metal panel base --- */
+    linear-gradient(90deg,
+      rgba(255,255,255,0.02) 0%,
+      rgba(255,255,255,0.06) 50%,
+      rgba(0,0,0,0.04) 100%),
+    linear-gradient(180deg, #1a2238 0%, #131a2a 50%, #0d1220 100%);
+  opacity: 0.9;
   animation: lab-led-pulse 2.4s ease-in-out infinite;
 }
-body::before { left: 1.2vw; }
-body::after  { right: 1.2vw; animation-delay: 1.2s; }
+body::before { left: 0.6vw; }
+body::after  { right: 0.6vw; animation-delay: 1.2s; }
 @keyframes lab-led-pulse {
-  0%, 100% { filter: brightness(0.85); }
-  50%      { filter: brightness(1.25); }
+  0%, 100% { filter: brightness(0.88); }
+  50%      { filter: brightness(1.20); }
 }
 
 #game-container {
