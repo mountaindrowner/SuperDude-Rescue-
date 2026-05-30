@@ -9,7 +9,30 @@ html, body {
      pinch-zoom-out doesn't fire. 100vh is the fallback. */
   height: 100vh;
   height: 100dvh;
-  background: #05050d;
+  /* Lab-tech side-panel paint: bolt rows + vertical pipe stripes +
+     console gradient (Mark: "make the side bars feel like lab tech -
+     tubes wires buttons consoles"). Canvas covers the centre; the
+     side bars on a 19.5:9 phone in landscape now show this through.
+     All CSS gradients - zero asset weight. Subtle so it doesn't fight
+     for attention with gameplay. */
+  background:
+    /* row of "bolts" near the top */
+    radial-gradient(circle at 50% 8%, rgba(70,240,255,0.55) 0 1.5px, transparent 2.5px) 0 0 / 32px 100vh repeat-x,
+    /* row of bolts near the bottom */
+    radial-gradient(circle at 50% 92%, rgba(255,210,80,0.45) 0 1.5px, transparent 2.5px) 0 0 / 48px 100vh repeat-x,
+    /* fine scanlines so it reads as a CRT/console */
+    repeating-linear-gradient(0deg,
+      rgba(120,140,180,0.06) 0 1px,
+      transparent 1px 3px),
+    /* vertical pipe stripes (the "lab tubes") */
+    repeating-linear-gradient(90deg,
+      transparent 0 24px,
+      rgba(70,90,130,0.22) 24px 28px,
+      transparent 28px 56px,
+      rgba(60,80,120,0.14) 56px 58px,
+      transparent 58px 96px),
+    /* slate-metal base gradient */
+    linear-gradient(180deg, #131a2a 0%, #0a0d18 55%, #05050d 100%);
   overflow: hidden;
   position: fixed;
   inset: 0;
@@ -23,6 +46,35 @@ html, body {
   font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
+/* A couple of "console LED" pulses on the left + right panels, so the
+   side bars feel a little alive. Hidden when the canvas covers them
+   (e.g. exactly-16:9 viewports); only visible when there's room. */
+body::before, body::after {
+  content: "";
+  position: fixed;
+  top: 12%;
+  width: 6px;
+  height: 76%;
+  border-radius: 3px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 8%,  #3aff60 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 50% 28%, #ff5a3a 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 50% 52%, #5af0ff 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 50% 76%, #ffd23a 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 50% 94%, #3aff60 0 2.5px, transparent 3.5px),
+    linear-gradient(180deg, rgba(20,30,50,0.6), rgba(10,15,25,0.6));
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.6);
+  opacity: 0.85;
+  animation: lab-led-pulse 2.4s ease-in-out infinite;
+}
+body::before { left: 1.2vw; }
+body::after  { right: 1.2vw; animation-delay: 1.2s; }
+@keyframes lab-led-pulse {
+  0%, 100% { filter: brightness(0.85); }
+  50%      { filter: brightness(1.25); }
+}
+
 #game-container {
   position: fixed;
   inset: 0;
@@ -30,7 +82,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #05050d;
+  /* No background here - let the body's lab-tech paint show through
+     the side bars. */
 }
 
 /* The canvas is sized by JS to fit the viewport while keeping its 16:9 ratio.
@@ -56,12 +109,15 @@ body.touch #touch-controls { display: block; }
 .tc-btn {
   position: absolute;
   pointer-events: auto;
-  color: #fff;
+  color: rgba(255,255,255,0.78);                           /* slightly muted glyph */
   font-size: 5vmin;
   font-weight: 700;
   font-family: system-ui, "Segoe UI", sans-serif;
-  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.24), rgba(255,255,255,0.09) 62%, rgba(255,255,255,0.03));
-  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  /* Mark: "make the buttons more transparent." Base alpha dropped
+     so they overlay the game world without competing with it; pressed
+     state stays bright so the tap feedback is still obvious. */
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.12), rgba(255,255,255,0.04) 62%, rgba(255,255,255,0.01));
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   border-radius: 22%;
   display: flex;
   align-items: center;
@@ -69,14 +125,16 @@ body.touch #touch-controls { display: block; }
   -webkit-user-select: none;
   user-select: none;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
-  box-shadow: 0 0.5vmin 1.5vmin rgba(0,0,0,0.42), inset 0 1px 1px rgba(255,255,255,0.26);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0.4vmin 1.2vmin rgba(0,0,0,0.34), inset 0 1px 1px rgba(255,255,255,0.14);
   transition: transform .05s ease, background .08s ease;
 }
 .tc-btn.pressed, .tc-btn:active {
   transform: scale(0.9);
-  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.44), rgba(255,255,255,0.18));
+  color: #fff;
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.40), rgba(255,255,255,0.16));
+  border-color: rgba(255,255,255,0.42);
 }
 
 /* D-pad, bottom-left - rounded-square keys */
@@ -88,20 +146,22 @@ body.touch #touch-controls { display: block; }
 
 /* A / B buttons, bottom-right - A green (action), B orange (also "back") */
 #action-pad { position: absolute; right: 4vmin; bottom: 4vmin; width: 44vmin; height: 28vmin; }
+/* A / B + pause: same transparency drop as the d-pad. Pressed state
+   restores the saturated look so the tap feedback stays obvious. */
 .tc-a { right: 0; bottom: 0; width: 20vmin; height: 20vmin; border-radius: 50%;
-  background: radial-gradient(circle at 35% 28%, rgba(130,225,160,0.58), rgba(46,170,98,0.32) 62%, rgba(46,170,98,0.16));
-  border-color: rgba(160,255,190,0.55); }
-.tc-a.pressed, .tc-a:active { background: radial-gradient(circle at 35% 28%, rgba(170,255,200,0.88), rgba(70,200,120,0.55)); }
+  background: radial-gradient(circle at 35% 28%, rgba(130,225,160,0.30), rgba(46,170,98,0.14) 62%, rgba(46,170,98,0.06));
+  border-color: rgba(160,255,190,0.30); }
+.tc-a.pressed, .tc-a:active { background: radial-gradient(circle at 35% 28%, rgba(170,255,200,0.85), rgba(70,200,120,0.55)); border-color: rgba(170,255,200,0.7); }
 .tc-b { right: 18vmin; bottom: 8vmin; width: 17vmin; height: 17vmin; border-radius: 50%;
-  background: radial-gradient(circle at 35% 28%, rgba(235,160,125,0.55), rgba(190,90,65,0.32) 62%, rgba(190,90,65,0.16));
-  border-color: rgba(255,180,150,0.55); }
-.tc-b.pressed, .tc-b:active { background: radial-gradient(circle at 35% 28%, rgba(255,190,160,0.88), rgba(215,120,85,0.55)); }
+  background: radial-gradient(circle at 35% 28%, rgba(235,160,125,0.28), rgba(190,90,65,0.13) 62%, rgba(190,90,65,0.06));
+  border-color: rgba(255,180,150,0.30); }
+.tc-b.pressed, .tc-b:active { background: radial-gradient(circle at 35% 28%, rgba(255,190,160,0.85), rgba(215,120,85,0.55)); border-color: rgba(255,190,160,0.7); }
 
 /* START / PAUSE button, top-right corner. */
 .tc-pause { right: 3vmin; top: 3vmin; width: 11vmin; height: 11vmin;
             border-radius: 50%; font-size: 5vmin; line-height: 1;
-            background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.26), rgba(255,255,255,0.08));
-            border-color: rgba(255, 255, 255, 0.42); }
+            background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
+            border-color: rgba(255, 255, 255, 0.22); }
 
 /* ---- Level editor (dev tool) ---- */
 /* All editor UI lives under #editor-ui so removing the editor is one
