@@ -3826,10 +3826,127 @@ window.SDD = window.SDD || {};
     var brImg = S.cyberBridge && S.cyberBridge();
     tileLayer(brImg || cache.bridge, 0.50);
 
-    // 7. Warm sunlight overlay - very subtle, washes the whole frame
-    //    in golden hour.
-    g.fillStyle = 'rgba(255,236,180,0.06)';
+    // 7. SHADER PASS - applied to background layers. Compositing
+    //    blends inject dynamic light + grading on top of the cached
+    //    layer blits. Adds drama without modifying the base art.
+    _cyDrawShaders(g, camx, camy, t);
+  }
+
+  // =================================================================
+  // SHADER PASS - dynamic lighting + contrast grading on the bg
+  // =================================================================
+  function _cyDrawShaders(g, camx, camy, t) {
+    var sunX = 248 - camx * 0.02, sunY = 30;
+    // 1. WARM SUN-SIDE GRADE (screen) - brightens the right side
+    //    around the sun for golden-hour glow. The pulse breathes
+    //    slowly so the light feels alive.
+    var pulse = 0.94 + Math.sin(t * 0.018) * 0.08;
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    var sunSide = g.createRadialGradient(sunX, sunY, 8, sunX, sunY, 240);
+    sunSide.addColorStop(0,    'rgba(255,236,170,' + (0.38 * pulse).toFixed(3) + ')');
+    sunSide.addColorStop(0.45, 'rgba(255,220,140,' + (0.16 * pulse).toFixed(3) + ')');
+    sunSide.addColorStop(1,    'rgba(255,180,120,0)');
+    g.fillStyle = sunSide;
     g.fillRect(0, 0, 320, 180);
+    g.restore();
+
+    // 2. COOL SHADOW GRADE (multiply) - subtle teal tint on the
+    //    left/lower side so the split-tone reads as a sunny day with
+    //    cooler shadow.
+    g.save();
+    g.globalCompositeOperation = 'multiply';
+    var coolSide = g.createLinearGradient(0, 180, 320, 0);
+    coolSide.addColorStop(0,    'rgba(205,222,236,1)');
+    coolSide.addColorStop(0.45, 'rgba(232,238,246,1)');
+    coolSide.addColorStop(1,    'rgba(255,255,255,1)');
+    g.fillStyle = coolSide;
+    g.fillRect(0, 0, 320, 180);
+    g.restore();
+
+    // 3. GOD RAYS - 5 soft diagonal beams from the sun. Slow drift
+    //    via t so the rays read as animated atmospheric volumetrics.
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    for (var r = 0; r < 5; r++) {
+      var angle = 1.95 + r * 0.10 + Math.sin(t * 0.012 + r * 1.3) * 0.06;
+      var rayLen = 220 + Math.sin(t * 0.02 + r) * 12;
+      g.save();
+      g.translate(sunX, sunY);
+      g.rotate(angle);
+      var ray = g.createLinearGradient(0, 0, 0, rayLen);
+      var rayA = (0.10 + Math.sin(t * 0.04 + r * 2.1) * 0.04).toFixed(3);
+      ray.addColorStop(0,   'rgba(255,238,160,' + rayA + ')');
+      ray.addColorStop(0.4, 'rgba(255,220,130,' + (rayA * 0.6).toFixed(3) + ')');
+      ray.addColorStop(1,   'rgba(255,180,100,0)');
+      g.fillStyle = ray;
+      g.fillRect(-4, 0, 8, rayLen);
+      g.restore();
+    }
+    g.restore();
+
+    // 4. SUN FLARE / DISC HALO - bright additive bloom directly on
+    //    the sun position with a 4-point starburst.
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    var halo = g.createRadialGradient(sunX, sunY, 2, sunX, sunY, 28);
+    halo.addColorStop(0,    'rgba(255,255,232,0.85)');
+    halo.addColorStop(0.4,  'rgba(255,232,160,0.45)');
+    halo.addColorStop(1,    'rgba(255,200,140,0)');
+    g.fillStyle = halo;
+    g.fillRect(sunX - 28, sunY - 28, 56, 56);
+    // Starburst arms (4-point).
+    var burstLen = 32 + Math.sin(t * 0.04) * 4;
+    g.fillStyle = 'rgba(255,250,200,0.55)';
+    g.fillRect(sunX - 1,        sunY - burstLen, 2, burstLen * 2);
+    g.fillRect(sunX - burstLen, sunY - 1,        burstLen * 2, 2);
+    // Diagonal arms (shorter).
+    g.save();
+    g.translate(sunX, sunY);
+    g.rotate(Math.PI / 4);
+    g.fillRect(-1, -burstLen * 0.55, 2, burstLen * 1.1);
+    g.fillRect(-burstLen * 0.55, -1, burstLen * 1.1, 2);
+    g.restore();
+    g.restore();
+
+    // 5. VOLUMETRIC MIST DRIFT - slow-moving translucent horizontal
+    //    bands across the mid-city band. Gives a layered fog feel.
+    g.save();
+    for (var mi = 0; mi < 4; mi++) {
+      var mx = ((mi * 200 + t * 0.5) % 500 + 500) % 500 - 90;
+      var my = 76 + mi * 16;
+      var mw = 280;
+      var mgrad = g.createLinearGradient(mx, my, mx + mw, my);
+      mgrad.addColorStop(0,    'rgba(255,255,255,0)');
+      mgrad.addColorStop(0.3,  'rgba(255,255,255,0.16)');
+      mgrad.addColorStop(0.7,  'rgba(232,244,252,0.16)');
+      mgrad.addColorStop(1,    'rgba(255,255,255,0)');
+      g.fillStyle = mgrad;
+      g.fillRect(mx, my, mw, 5);
+    }
+    g.restore();
+
+    // 6. WINDOW LIGHT BREATHE - subtle warm pulse on the mid-city
+    //    band where lit windows are concentrated. Reads as the city
+    //    being alive.
+    var winPulse = 0.04 + Math.sin(t * 0.035) * 0.025;
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    g.fillStyle = 'rgba(255,210,140,' + winPulse.toFixed(3) + ')';
+    g.fillRect(0, 102, 320, 46);
+    g.restore();
+
+    // 7. SOFT VIGNETTE (multiply) - corners slightly cooler so the
+    //    focus stays on the city center. Very gentle.
+    g.save();
+    g.globalCompositeOperation = 'multiply';
+    var vig = g.createRadialGradient(160, 90, 120, 160, 90, 220);
+    vig.addColorStop(0,    'rgba(255,255,255,1)');
+    vig.addColorStop(0.6,  'rgba(245,248,252,1)');
+    vig.addColorStop(1,    'rgba(208,220,236,1)');
+    g.fillStyle = vig;
+    g.fillRect(0, 0, 320, 180);
+    g.restore();
   }
 
   function drawForeground_cyber(g, camx, camy, prog, t) {
@@ -3861,6 +3978,39 @@ window.SDD = window.SDD || {};
     beam.addColorStop(1,   'rgba(255,236,140,0)');
     g.fillStyle = beam;
     g.fillRect(0, 0, 320, 180);
+
+    // 8. GLASS CURTAIN GLINT - rare bright diagonal sweep across
+    //    the visible glass towers. Triggered every ~5 seconds.
+    var glintPhase = (t % 300) / 300;
+    if (glintPhase > 0.45 && glintPhase < 0.62) {
+      var glintT = (glintPhase - 0.45) / 0.17;   // 0..1
+      var fall = Math.sin(glintT * Math.PI);     // ease in/out
+      var gx = -60 + glintT * 460;
+      g.save();
+      g.globalCompositeOperation = 'screen';
+      g.globalAlpha = 0.55 * fall;
+      g.translate(gx, 0);
+      g.rotate(0.32);
+      var glint = g.createLinearGradient(0, 0, 100, 0);
+      glint.addColorStop(0,   'rgba(255,255,255,0)');
+      glint.addColorStop(0.5, 'rgba(255,255,255,0.9)');
+      glint.addColorStop(1,   'rgba(255,255,255,0)');
+      g.fillStyle = glint;
+      g.fillRect(0, -20, 100, 240);
+      g.restore();
+    }
+
+    // 9. CINEMATIC CONTRAST CRUSH (soft-light) - lifts highlights,
+    //    deepens shadows by a touch. Final polish pass.
+    g.save();
+    g.globalCompositeOperation = 'soft-light';
+    var contrast = g.createLinearGradient(0, 0, 0, 180);
+    contrast.addColorStop(0,    'rgba(255,250,230,1)');
+    contrast.addColorStop(0.6,  'rgba(245,250,255,1)');
+    contrast.addColorStop(1,    'rgba(120,140,170,1)');
+    g.fillStyle = contrast;
+    g.fillRect(0, 0, 320, 180);
+    g.restore();
   }
 
   var THEMES = {
