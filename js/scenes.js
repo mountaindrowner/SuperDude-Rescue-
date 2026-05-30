@@ -2979,10 +2979,11 @@ window.SDD = window.SDD || {};
       _cyPaintFgTower(g, screenLeft + 320 - rw - 2, rw, rh, rng);
     }
 
-    // Hanging signs across the top of the screen.
-    for (var hs = 0; hs < 14; hs++) {
-      var hx = 30 + Math.floor(rng() * (W - 60));
-      var hy = 6 + Math.floor(rng() * 26);
+    // Hanging signs across the top of the screen. Sparse so they
+    // don't crowd the HUD subtitle ribbon.
+    for (var hs = 0; hs < 7; hs++) {
+      var hx = 40 + Math.floor(rng() * (W - 80));
+      var hy = 10 + Math.floor(rng() * 22);
       _cyPaintHangingSign(g, hx, hy, rng);
     }
 
@@ -3356,6 +3357,65 @@ window.SDD = window.SDD || {};
     for (var b = off - span; b < 320 + span; b += span) {
       g.drawImage(src, b, 0);
     }
+    // Wet-road light reflections: small smudged horizontal bars on
+    // the asphalt where camera-aligned lights are above. Drawn here
+    // (in the foreground pass) so they go OVER the road tiles for
+    // the "rain has fallen, road is slick" look.
+    var roadY = 178 - camy;
+    if (roadY > 100 && roadY < 180) {
+      for (var rf = 0; rf < 6; rf++) {
+        var rfx = ((rf * 53 + 30 + t * 0.2 - camx * 0.50) % 320 + 320) % 320;
+        var col = (rf & 1) ? 'rgba(255,210,80,0.30)' : 'rgba(90,240,255,0.28)';
+        g.fillStyle = col;
+        g.fillRect(rfx - 4, roadY + 2, 8, 1);
+        g.fillStyle = (rf & 1) ? 'rgba(255,210,80,0.14)' : 'rgba(90,240,255,0.14)';
+        g.fillRect(rfx - 6, roadY + 4, 12, 1);
+      }
+    }
+    // Diagonal rain streaks - light density so it reads as drizzle
+    // rather than a downpour blocking the view.
+    g.strokeStyle = 'rgba(180,210,240,0.35)';
+    g.lineWidth = 1;
+    g.beginPath();
+    for (var rn = 0; rn < 22; rn++) {
+      var rx = ((rn * 47 + (t * 3) - camx * 0.85) % 360 + 360) % 360 - 20;
+      var ry = ((rn * 31 + (t * 6)) % 200) - 10;
+      g.moveTo(rx, ry);
+      g.lineTo(rx - 3, ry + 8);
+    }
+    g.stroke();
+    // Stronger near-foreground rain streaks (denser at the very front
+    // for parallax depth).
+    g.strokeStyle = 'rgba(220,235,255,0.55)';
+    g.beginPath();
+    for (var rn2 = 0; rn2 < 12; rn2++) {
+      var r2x = ((rn2 * 31 + (t * 5)) % 360) - 10;
+      var r2y = ((rn2 * 23 + (t * 10)) % 200) - 12;
+      g.moveTo(r2x, r2y);
+      g.lineTo(r2x - 5, r2y + 12);
+    }
+    g.stroke();
+    // Scrolling LED ticker mounted on a foreground sign at SCREEN-LEFT.
+    // Sits below the HUD subtitle ribbon at y=42 so it doesn't compete
+    // with "JULY 2026 AD" / "ADVENTURE CITY". Marquee scrolls leftward.
+    var marquee = '   ADVENTURE CITY TOWERS   *   2026  *   STATUS: ALL CLEAR   *';
+    var mqOffset = Math.floor(t / 4) % marquee.length;
+    var mqText = '';
+    for (var mc = 0; mc < 14; mc++) {
+      mqText += marquee.charAt((mqOffset + mc) % marquee.length);
+    }
+    var mqx = 8;
+    var mqy = 42;
+    g.fillStyle = 'rgba(10,10,30,0.88)';
+    g.fillRect(mqx, mqy, 86, 9);
+    g.fillStyle = '#5af0ff';
+    g.fillRect(mqx, mqy, 86, 1);
+    g.fillRect(mqx, mqy + 8, 86, 1);
+    // Mounting bracket up to the foreground.
+    g.fillStyle = '#1a2240';
+    g.fillRect(mqx + 14, mqy - 4, 2, 4);
+    g.fillRect(mqx + 70, mqy - 4, 2, 4);
+    SDD.sprites.text(g, mqText.substring(0, 14), mqx + 3, mqy + 2, '#5af0ff', 1, 'left');
     // Animated overlays: blinking neon signs (a few of them flicker),
     // raindrops dripping past the screen edges, occasional bird/heli
     // silhouette flying across.
