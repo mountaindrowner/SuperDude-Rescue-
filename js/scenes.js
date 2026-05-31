@@ -4233,10 +4233,20 @@ window.SDD = window.SDD || {};
   // =================================================================
   // FOREGROUND PAINTER - light anchors + hanging vines + flowering tree
   // =================================================================
+  // v0.67 (Mark): "remove all decorations on layer 1 except for
+  // buildings... light poles, benches, signs and everything else."
+  // Flag short-circuits the decorative passes here + in
+  // drawForeground_cyber so the foreground reads as buildings-only.
+  // Flip to false to bring vines/branches/girder/café/street
+  // furniture/petals/helicopter back.
+  var _CY_DECOR = false;
+
   function _cyPaintForeground(g) {
     var rng = _cyRng(0xF6E8);
     var W = 960;
     g.clearRect(0, 0, W, 180);
+
+    if (_CY_DECOR) {
 
     // ===== HEADER GIRDER (v0.62 audit fix) =====
     // Continuous steel cross-beam at the top of the foreground frame
@@ -4318,9 +4328,11 @@ window.SDD = window.SDD || {};
       _cyPaintFgBranch(g, bx, by, (brc & 1) ? 1 : -1, rng);
     }
 
-    // Slim foreground architectural anchors at extreme edges (NOT
-    // heavy black towers). One per screen slot (960/320 = 3), pinned
-    // to either left or right so the gameplay center stays open.
+    }   // end if (_CY_DECOR) for vines + girder + branches
+
+    // ===== BUILDINGS (always painted - the only Layer-1 elements
+    // Mark wants in v0.67) =====
+    // Anchor towers at extreme edges (one per slot, alternating L/R).
     var slots = 3;
     for (var s = 0; s < slots; s++) {
       var screenLeft = s * 320;
@@ -4328,15 +4340,14 @@ window.SDD = window.SDD || {};
       _cyPaintFgAnchor(g, which === 'L' ? screenLeft - 4 : screenLeft + 320 - 28, rng);
     }
 
-    // Signature café-patio foreground feature - one parasol + table
-    // cluster, placed in the middle of slot 1 so the silhouette stays
-    // balanced. v0.65: 3 -> 1 per Mark "Layer 1 too busy."
-    _cyPaintFgCafePatio(g, 320 + 100, rng);
+    if (_CY_DECOR) {
+      // Café patio counts as decoration (parasol + tables, not a
+      // building). Hidden in v0.67.
+      _cyPaintFgCafePatio(g, 320 + 100, rng);
+    }
 
-    // Short overlap pieces - kiosk / storefront / utility cabinet
-    // between anchors. v0.66: 3 -> 1 per Mark "Layer 1 too busy."
-    // Just one in slot 0 to give the foreground a bit of mid-height
-    // variety without clutter.
+    // Kiosks (small storefronts / utility cabinets) - count as
+    // buildings, painted unconditionally.
     _cyPaintFgKiosk(g, 110, rng);
   }
 
@@ -5462,22 +5473,22 @@ window.SDD = window.SDD || {};
       g.drawImage(src, b, -camy);
     }
     g.filter = 'none';
-    // Street furniture overlay - lamp posts, crosswalks, signs, benches
-    // at the road plane. World-coord positioned so it stays glued to
-    // the tile layer as the camera scrolls.
-    _cyDrawStreetFurniture(g, camx, camy, t);
-    // Falling flower petals + leaves drifting through the foreground -
-    // hopeful, peaceful, no rain.
-    for (var pp = 0; pp < 10; pp++) {
-      var ppx = ((pp * 41 + (t * 0.7) - camx * 0.75) % 360 + 360) % 360 - 20;
-      var ppy = ((pp * 27 + (t * 0.5)) % 200) - 10 - camy;
-      var ppSw = Math.sin((t + pp * 30) * 0.06) * 2;
-      var col = (pp % 3 === 0) ? _CYP.blossom
-              : (pp % 3 === 1) ? _CYP.leafLt
-                                : _CYP.leafMid;
-      g.fillStyle = col;
-      g.fillRect(ppx + ppSw, ppy, 1, 1);
-      if (pp % 2 === 0) g.fillRect(ppx + ppSw + 1, ppy, 1, 1);
+    // v0.67: street furniture + petals gated behind the _CY_DECOR
+    // flag at the top of this file. Mark wanted only buildings on
+    // Layer 1 - no lamps, no benches, no signs, no petals.
+    if (_CY_DECOR) {
+      _cyDrawStreetFurniture(g, camx, camy, t);
+      for (var pp = 0; pp < 10; pp++) {
+        var ppx = ((pp * 41 + (t * 0.7) - camx * 0.75) % 360 + 360) % 360 - 20;
+        var ppy = ((pp * 27 + (t * 0.5)) % 200) - 10 - camy;
+        var ppSw = Math.sin((t + pp * 30) * 0.06) * 2;
+        var col = (pp % 3 === 0) ? _CYP.blossom
+                : (pp % 3 === 1) ? _CYP.leafLt
+                                  : _CYP.leafMid;
+        g.fillStyle = col;
+        g.fillRect(ppx + ppSw, ppy, 1, 1);
+        if (pp % 2 === 0) g.fillRect(ppx + ppSw + 1, ppy, 1, 1);
+      }
     }
     // Subtle warm light shaft from the upper-left (sun-streak through
     // the buildings) - VERY low alpha so it tints rather than dominates.
