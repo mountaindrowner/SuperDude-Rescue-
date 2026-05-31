@@ -5,7 +5,7 @@
 // to the network. New deploys bump CACHE_NAME to evict the old cache on
 // activation so updates roll out cleanly without leaving stale JS.
 
-const CACHE_NAME = 'sdd-shell-v67';
+const CACHE_NAME = 'sdd-shell-v68';
 
 // Precache list. Includes every game-script + the painted images that
 // scenes.js reaches for. Music files are NOT precached - they're big and
@@ -34,8 +34,10 @@ const PRECACHE_URLS = [
   './js/level_6_2.js',
   './js/level_7_1.js',
   './js/level_8_1.js',
+  './js/cyber_decor_8_1.js',
   './js/quiz_data.js',
   './js/scenes.js',
+  './js/decor_editor.js',
   './js/main.js',
   './assets/title.png',
   './assets/lab.png',

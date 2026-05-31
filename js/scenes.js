@@ -437,6 +437,12 @@ window.SDD = window.SDD || {};
       // can jump straight into the secret stage for art iteration.
       // Restore the `if (SDD.save.data.firstClear)` gate before ship.
       this.items.push({ label: 'ADVENTURE CITY (TEST)', act: 'adventurecity' });
+      // TEMP (v0.68): decoration editor for Layer 1 of Adventure
+      // City. Dev-only, strip with the rest of the editor before
+      // public release.
+      if (SDD.scenes.decorEdit) {
+        this.items.push({ label: 'DECOR EDITOR (TEST)', act: 'decoredit' });
+      }
       // Dev: in-game level editor. Remove this line + js/editor.js
       // load + the 'editor' branch below to ship without the editor.
       if (SDD.scenes.editor) this.items.push({ label: 'LEVEL EDITOR', act: 'editor' });
@@ -453,6 +459,7 @@ window.SDD = window.SDD || {};
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
         else if (act === 'adventurecity') { go('level', { day: 8, stage: 1 }); }
+        else if (act === 'decoredit') { go('decorEdit', { day: 8, stage: 1 }); }
         else if (act === 'editor') { go('editor'); }
       }
     },
@@ -5323,6 +5330,167 @@ window.SDD = window.SDD || {};
   }
 
   // =================================================================
+  // DECOR EDITOR RENDERER + KINDS (v0.67)
+  // =================================================================
+  // Reads SDD.cyberDecor['8-1'] (array of { kind, x, y, variant })
+  // and paints each piece on Layer 1 in world-space. Drawn from
+  // drawForeground_cyber AFTER the building canvas blits so decor
+  // sits in front of buildings.
+  //
+  // All kind painters take SCREEN coords (sx, sy). The dispatcher
+  // converts world coords (x, y) -> (x - camx, y - camy).
+  //
+  // Adding a new kind: extend DECOR_KINDS + add a case in
+  // _cyPaintDecorPiece + (optional) expose a thumbnail painter for
+  // the editor toolbar.
+  var DECOR_KINDS = ['lamp', 'bench', 'sign', 'crosswalk', 'vine',
+                     'cafe', 'hangingSign', 'branch'];
+  function _cyDrawDecor(g, camx, camy, t) {
+    if (!SDD.cyberDecor) return;
+    var sc = SDD.scene;
+    var key = (sc && sc.day != null && sc.stage != null)
+      ? sc.day + '-' + sc.stage : null;
+    if (!key) return;
+    var decor = SDD.cyberDecor[key];
+    if (!decor || !decor.length) return;
+    for (var i = 0; i < decor.length; i++) {
+      var d = decor[i];
+      var sx = (d.x | 0) - camx;
+      var sy = (d.y | 0) - camy;
+      if (sx < -80 || sx > 400) continue;
+      _cyPaintDecorPiece(g, d.kind || 'lamp', sx, sy, d.variant || 0, t, d);
+    }
+  }
+  function _cyPaintDecorPiece(g, kind, sx, sy, variant, t, d) {
+    switch (kind) {
+      case 'lamp':       _cyPaintLampAt(g, sx, sy); return;
+      case 'bench':      _cyPaintBenchAt(g, sx, sy); return;
+      case 'sign':       _cyDrawStreetSign(g, sx, sy, variant | 0); return;
+      case 'crosswalk':  _cyPaintCrosswalkAt(g, sx, sy); return;
+      case 'vine':       _cyPaintSingleVine(g, sx, sy, (d && d.len) || 18, variant | 0); return;
+      case 'cafe':       _cyPaintFgCafePatio(g, sx, _cyRng((d && d.seed) || 0x1234)); return;
+      case 'hangingSign': _cyPaintHangingSignAt(g, sx, sy, variant | 0); return;
+      case 'branch':     _cyPaintFgBranch(g, sx, sy, variant >= 2 ? -1 : 1, _cyRng((d && d.seed) || 0x5678)); return;
+    }
+  }
+  // Single lamp post. sx = base center x, sy = sidewalk top y.
+  // Iron post + curved arm + lamp housing + warm bulb + radial halo.
+  function _cyPaintLampAt(g, sx, sy) {
+    var halo = g.createRadialGradient(sx + 6, sy - 18, 2, sx + 6, sy - 18, 28);
+    halo.addColorStop(0,   'rgba(255,228,160,0.55)');
+    halo.addColorStop(0.5, 'rgba(255,200,120,0.22)');
+    halo.addColorStop(1,   'rgba(255,200,120,0)');
+    g.fillStyle = halo;
+    g.fillRect(sx - 22, sy - 40, 56, 44);
+    g.fillStyle = '#22232C';
+    g.fillRect(sx,     sy - 28, 2, 28);
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(sx + 1, sy - 28, 1, 28);
+    g.fillStyle = '#22232C';
+    g.fillRect(sx - 2, sy - 2,  6, 2);
+    g.fillStyle = '#5E6173';
+    g.fillRect(sx - 2, sy - 2,  6, 1);
+    g.fillStyle = '#22232C';
+    g.fillRect(sx + 2, sy - 28, 4, 1);
+    g.fillRect(sx + 5, sy - 27, 2, 1);
+    g.fillRect(sx + 6, sy - 26, 1, 2);
+    g.fillStyle = '#22232C';
+    g.fillRect(sx + 4, sy - 24, 4, 3);
+    g.fillStyle = '#5E6173';
+    g.fillRect(sx + 4, sy - 24, 4, 1);
+    g.fillStyle = '#FFE4A0';
+    g.fillRect(sx + 5, sy - 22, 2, 1);
+    g.fillStyle = '#FFFFFF';
+    g.fillRect(sx + 5, sy - 22, 1, 1);
+  }
+  // Single bench. sx = left edge, sy = sidewalk top.
+  function _cyPaintBenchAt(g, sx, sy) {
+    g.fillStyle = '#8C5A3A';
+    g.fillRect(sx,     sy - 6, 16, 2);
+    g.fillStyle = '#5A3818';
+    g.fillRect(sx,     sy - 4, 16, 1);
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(sx + 1, sy - 3, 2, 3);
+    g.fillRect(sx + 13, sy - 3, 2, 3);
+    g.fillStyle = '#8C5A3A';
+    g.fillRect(sx,     sy - 12, 16, 1);
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(sx + 1, sy - 11, 1, 5);
+    g.fillRect(sx + 14, sy - 11, 1, 5);
+  }
+  // Crosswalk - 5 white bars on the road. sx = left edge, sy = road top.
+  function _cyPaintCrosswalkAt(g, sx, sy) {
+    for (var st = 0; st < 5; st++) {
+      g.fillStyle = '#E8DFC8';
+      g.fillRect(sx + st * 6, sy + 4, 4, 1);
+      g.fillStyle = '#8C7448';
+      g.fillRect(sx + st * 6, sy + 5, 4, 1);
+    }
+  }
+  // Single hanging vine. sx = attachment x, sy = attachment y.
+  // len = pixel length downward. variant 0 = green vine, 1 = with
+  // pink blossom cluster at the bottom.
+  function _cyPaintSingleVine(g, sx, sy, len, variant) {
+    // Attachment fixture (small dark bracket).
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(sx - 1, sy, 3, 1);
+    g.fillStyle = _CYP.leafDk;
+    for (var vy = 1; vy <= len; vy++) {
+      var jit = (Math.sin(vy * 0.55) | 0);
+      g.fillRect(sx + jit, sy + vy, 1, 1);
+      if (vy % 3 === 1) {
+        g.fillStyle = _CYP.leafMid;
+        g.fillRect(sx + jit - 1, sy + vy, 1, 1);
+        g.fillRect(sx + jit + 1, sy + vy, 1, 1);
+        g.fillStyle = _CYP.leafDk;
+      }
+    }
+    if (variant === 1 && len > 12) {
+      g.fillStyle = _CYP.blossom;
+      g.fillRect(sx,     sy + len - 2, 2, 2);
+      g.fillRect(sx - 1, sy + len - 1, 1, 1);
+      g.fillStyle = _CYP.blossomDk;
+      g.fillRect(sx + 2, sy + len - 1, 1, 1);
+    }
+  }
+  // Single hanging sign panel with neon glow + glyph stack.
+  // sx = horizontal center, sy = top attachment (cable from above).
+  function _cyPaintHangingSignAt(g, sx, sy, variant) {
+    var w = 14, h = 12;
+    // Cable from above (suspends the sign).
+    g.fillStyle = '#1A1E2A';
+    g.fillRect(sx,     sy - 6, 1, 6);
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(sx - 4, sy - 1, 9, 1);
+    // Sign panel.
+    g.fillStyle = '#0A0E18';
+    g.fillRect(sx - w / 2, sy, w, h);
+    var cols = ['#FF4FA8', '#5AE8FF', '#FFD23A', '#FF8A40', '#A0F060'];
+    var nc = cols[(variant | 0) % 5];
+    var glow = nc === '#FF4FA8' ? 'rgba(255,79,168,0.30)'
+             : nc === '#5AE8FF' ? 'rgba(90,232,255,0.30)'
+             : nc === '#FFD23A' ? 'rgba(255,210,58,0.28)'
+             : nc === '#FF8A40' ? 'rgba(255,138,64,0.30)'
+                                  : 'rgba(160,240,96,0.28)';
+    g.fillStyle = glow;
+    g.fillRect(sx - w / 2 - 2, sy - 1, w + 4, h + 2);
+    g.fillStyle = '#0A0E18';
+    g.fillRect(sx - w / 2, sy, w, h);
+    // 3 glyph cells.
+    g.fillStyle = nc;
+    g.fillRect(sx - w / 2 + 2, sy + 2, 4, 1);
+    g.fillRect(sx - w / 2 + 3, sy + 3, 2, 1);
+    g.fillRect(sx - w / 2 + 2, sy + 5, 4, 1);
+    g.fillRect(sx - w / 2 + 8, sy + 2, 4, 1);
+    g.fillRect(sx - w / 2 + 9, sy + 4, 2, 1);
+    g.fillRect(sx - w / 2 + 8, sy + 6, 4, 1);
+    g.fillRect(sx - w / 2 + 2, sy + 8, 10, 2);
+    g.fillStyle = '#FFFFFF';
+    g.fillRect(sx - w / 2 + 2, sy + 2, 1, 1);
+    g.fillRect(sx - w / 2 + 8, sy + 2, 1, 1);
+  }
+
+  // =================================================================
   // SHADER PASS - dynamic lighting + contrast grading on the bg
   // =================================================================
   function _cyDrawShaders(g, camx, camy, t) {
@@ -5473,6 +5641,10 @@ window.SDD = window.SDD || {};
       g.drawImage(src, b, -camy);
     }
     g.filter = 'none';
+    // v0.68: editor-placed decorations from SDD.cyberDecor[key] paint
+    // here on Layer 1 in world-space. Replaces the procedural street
+    // furniture that v0.67 removed.
+    _cyDrawDecor(g, camx, camy, t);
     // v0.67: street furniture + petals gated behind the _CY_DECOR
     // flag at the top of this file. Mark wanted only buildings on
     // Layer 1 - no lamps, no benches, no signs, no petals.
@@ -7199,6 +7371,13 @@ window.SDD = window.SDD || {};
     { lines: ['THE RESCUE TEAM WAS WAITING.', 'WELCOME HOME, HERO!'] },
     { lines: ['YOUR ADVENTURE NEVER ENDS.', 'KEEP EXPLORING!'] }
   ];
+
+  // v0.68: expose the cyber-theme painters so the decor editor scene
+  // (js/decor_editor.js) can render its preview backdrop + the live
+  // decor list. Keeps the editor decoupled from the level scene.
+  SDD._drawSkyCyber       = drawSky_cyber;
+  SDD._drawForegroundCyber = drawForeground_cyber;
+  SDD._drawDecor          = _cyDrawDecor;
   SDD.scenes.cityArrival = {
     enter: function (d) {
       this.d = d || {}; this.beat = 0; this.t = 0;
