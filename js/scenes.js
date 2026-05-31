@@ -5673,6 +5673,114 @@ window.SDD = window.SDD || {};
     }
   }
 
+  // =================================================================
+  // v0.70 — Adventure City tunnel + dawn district painters
+  // =================================================================
+  // Tunnel theme: the player enters a covered brick passage. Dark
+  // background, scrolling brick wall texture at high parallax, warm
+  // wall lamps casting halos. No sky visible. The level's brick
+  // ceiling tiles take care of the upper boundary; this painter
+  // handles the BACK wall of the tunnel that scrolls behind the
+  // player.
+  function drawSky_cyberTunnel(g, camx, camy, prog, t) {
+    // Deep brown/black sky - feels enclosed.
+    var bg = g.createLinearGradient(0, 0, 0, 180);
+    bg.addColorStop(0,    '#0E0A06');
+    bg.addColorStop(0.6,  '#1A1208');
+    bg.addColorStop(1,    '#241608');
+    g.fillStyle = bg; g.fillRect(0, 0, 320, 180);
+
+    // Brick wall texture - scrolls fast (parallax 0.85, close to camera).
+    var brickW = 24, brickH = 8;
+    var brickPF = 0.85;
+    var bx0 = -(((camx * brickPF) % brickW) + brickW) % brickW;
+    var by0 = 0;
+    for (var by = by0; by < 180; by += brickH) {
+      var rowOff = ((by / brickH) | 0) % 2 ? brickW / 2 : 0;
+      for (var bx = bx0 - brickW; bx < 320 + brickW; bx += brickW) {
+        var x0 = bx + rowOff;
+        // Brick body.
+        g.fillStyle = '#3A1E10';
+        g.fillRect(x0, by, brickW - 1, brickH - 1);
+        g.fillStyle = '#4A2A18';
+        g.fillRect(x0, by, brickW - 1, 1);
+        g.fillStyle = '#1A0E08';
+        g.fillRect(x0, by + brickH - 2, brickW - 1, 1);
+        // Subtle highlight pixel.
+        g.fillStyle = '#5A3820';
+        g.fillRect(x0 + 1, by + 1, 2, 1);
+      }
+    }
+    // Mortar lines on top (sparse light grey).
+    g.fillStyle = 'rgba(60,40,30,0.55)';
+    for (var my = by0; my < 180; my += brickH) {
+      g.fillRect(0, my + brickH - 1, 320, 1);
+    }
+
+    // Warm wall lamps at intervals - small bracket + bright bulb + halo.
+    var lampSpacing = 64;
+    var lpx0 = -(((camx * brickPF) % lampSpacing) + lampSpacing) % lampSpacing;
+    for (var lp = lpx0 - lampSpacing; lp < 320 + lampSpacing; lp += lampSpacing) {
+      var lpY = 56 + (((lp | 0) + 100) % 40);
+      // Halo.
+      var halo = g.createRadialGradient(lp + 6, lpY, 2, lp + 6, lpY, 32);
+      halo.addColorStop(0,   'rgba(255,180,100,0.55)');
+      halo.addColorStop(0.5, 'rgba(255,140,70,0.20)');
+      halo.addColorStop(1,   'rgba(255,140,70,0)');
+      g.fillStyle = halo;
+      g.fillRect(lp - 26, lpY - 22, 64, 44);
+      // Bracket.
+      g.fillStyle = '#0A0608';
+      g.fillRect(lp + 4, lpY - 2, 4, 4);
+      g.fillRect(lp + 5, lpY - 4, 2, 2);
+      // Bulb.
+      g.fillStyle = '#FFE0A0';
+      g.fillRect(lp + 6, lpY - 1, 2, 2);
+      g.fillStyle = '#FFFFFF';
+      g.fillRect(lp + 6, lpY - 1, 1, 1);
+    }
+
+    // Subtle smoke / dust drift across the lower band so the tunnel
+    // feels lived-in.
+    g.fillStyle = 'rgba(120,90,60,0.10)';
+    for (var dr = 0; dr < 5; dr++) {
+      var drx = ((dr * 80 - camx * 0.4 + t * 0.5) % 400 + 400) % 400 - 40;
+      g.fillRect(drx, 140 + dr * 4, 60, 1);
+    }
+  }
+
+  // Dawn district theme: same cyber painters underneath, then a warm
+  // peach/coral overlay tinted across the frame. Reads as "emerged
+  // into a new district at sunrise."
+  function drawSky_cyberDawn(g, camx, camy, prog, t) {
+    // Layer 1: full cyber paint (sky + far + mid + bridge + shaders).
+    drawSky_cyber(g, camx, camy, prog, t);
+    // Layer 2: warm dawn overlay. Screen blend so the colors lift
+    // instead of darkening; a vertical gradient with peach at top,
+    // golden in middle, soft pink at horizon.
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    var dawn = g.createLinearGradient(0, 0, 0, 180);
+    dawn.addColorStop(0,    'rgba(255,178,128,0.34)');
+    dawn.addColorStop(0.4,  'rgba(255,196,120,0.28)');
+    dawn.addColorStop(0.75, 'rgba(255,170,170,0.20)');
+    dawn.addColorStop(1,    'rgba(255,210,170,0.10)');
+    g.fillStyle = dawn;
+    g.fillRect(0, 0, 320, 180);
+    g.restore();
+    // Pink/orange horizon glow concentrated near the bottom 2/3 to
+    // simulate the rising sun band.
+    g.save();
+    g.globalCompositeOperation = 'screen';
+    var glow = g.createLinearGradient(0, 60, 0, 150);
+    glow.addColorStop(0,   'rgba(255,140,180,0)');
+    glow.addColorStop(0.5, 'rgba(255,130,170,0.18)');
+    glow.addColorStop(1,   'rgba(255,180,140,0)');
+    g.fillStyle = glow;
+    g.fillRect(0, 60, 320, 90);
+    g.restore();
+  }
+
   var THEMES = {
     'galactic': function (g, x, y, p, t) { drawSkyGalactic(g, x, y, t); },
     'sky': drawSky_sky,
@@ -5687,14 +5795,23 @@ window.SDD = window.SDD || {};
     'village-dusk': drawSky_village_dusk,
     'eden': drawSky_eden,
     'bugscale': drawSky_bugscale,
-    'cyber': drawSky_cyber
+    'cyber': drawSky_cyber,
+    // v0.70: tunnel + dawn district for Adventure City. Mark's
+    // request: "tunnel and change of background when coming out."
+    'cyber-tunnel': drawSky_cyberTunnel,
+    'cyber-dawn':   drawSky_cyberDawn
   };
 
   // Per-theme foreground layer (drawn AFTER entities, BEFORE HUD). Only
   // themes that need an overlapping layer for parallax depth register
   // here; missing entries are no-ops. Mirror of THEMES dispatch.
   var FOREGROUNDS = {
-    'cyber': drawForeground_cyber
+    'cyber':       drawForeground_cyber,
+    // v0.70: dawn district reuses the same cyber foreground with a
+    // warm tint applied via the sky painter's overlay pass; no
+    // entry for cyber-tunnel so no city silhouettes paint inside
+    // the brick walls.
+    'cyber-dawn':  drawForeground_cyber
   };
 
   // Comedian loading-screen quips - random pick per stageintro card.
@@ -6662,7 +6779,19 @@ window.SDD = window.SDD || {};
       // Per-theme foreground overlay (currently only 'cyber' uses this).
       // Drawn after entities + projectiles so the painted layer can
       // visually OVERLAP the player + obstacles for parallax depth.
-      var fgFn = FOREGROUNDS[this.theme];
+      // v0.70: themeZone-aware. The active zone's theme overrides the
+      // level's primary theme for the foreground lookup, so a tunnel
+      // section can suppress the foreground (no city silhouettes
+      // inside the brick walls) and the dawn district can use a
+      // different foreground painter.
+      var fgTheme = this.theme;
+      if (this.themeZones && this.themeZones.length) {
+        var fgCamCol = Math.floor(cam.x / C.TILE);
+        for (var fzi = 0; fzi < this.themeZones.length; fzi++) {
+          if (fgCamCol + 10 >= this.themeZones[fzi].startCol) fgTheme = this.themeZones[fzi].theme;
+        }
+      }
+      var fgFn = FOREGROUNDS[fgTheme];
       if (fgFn) fgFn(g, cam.x, cam.y, prog, this.timeSteps);
 
       this.drawHUD(g);

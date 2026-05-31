@@ -40,8 +40,21 @@ SDD.levels = SDD.levels || {};
     [44, 4], [78, 5], [120, 4], [164, 5], [210, 4], [254, 5], [300, 4]
   ]);
   var rowParkourMid = withPlats([
-    [28, 5], [60, 6], [100, 5], [140, 6], [188, 5], [232, 6], [276, 5], [318, 6]
+    [28, 5], [60, 6], [100, 5], [140, 6], [232, 6], [276, 5], [318, 6]
   ]);
+
+  // v0.70 - TUNNEL section cols 150-200 (50 tiles wide). Two rows
+  // of solid brick ceiling form the tunnel roof so the player walks
+  // through under cover. ThemeZones swap the sky from cyber to
+  // cyber-tunnel inside, then crossfade to cyber-dawn on the way out.
+  var TUNNEL_LO = 150, TUNNEL_HI = 200;
+  function withBrickStretch(row, from, to) {
+    var arr = row.split('');
+    for (var x = from; x < to; x++) arr[x] = '#';
+    return arr.join('');
+  }
+  var rowTunnelTop = withBrickStretch(SKY,           TUNNEL_LO, TUNNEL_HI);
+  var rowTunnelLow = withBrickStretch(rowParkourMid, TUNNEL_LO, TUNNEL_HI);
 
   var rowGround = rep('X', W);
   // Two pits in the street for danger (~5 tiles wide so a careful jump
@@ -131,9 +144,9 @@ SDD.levels = SDD.levels || {};
       SKY,
       rowParkourHigh,
       SKY,
-      SKY,
-      SKY,
-      rowParkourMid,
+      rowTunnelTop,        // row 5 - tunnel ceiling (upper brick) at cols 150-200
+      rowTunnelLow,        // row 6 - tunnel ceiling (lower brick) at cols 150-200
+      rowParkourMid,       // row 7 - parkour platforms (mid-stage platforms removed inside tunnel range)
       SKY,
       SKY,
       SKY,
@@ -142,6 +155,15 @@ SDD.levels = SDD.levels || {};
       dirt2WithPits
     ],
     spawns: spawns,
-    movers: []
+    movers: [],
+    // v0.70 - multi-zone parallax. The engine crossfades the sky
+    // function over a 24-tile window around each zone boundary, so
+    // the player visibly emerges from a tunnel into a warmer dawn
+    // district.
+    themeZones: [
+      { startCol: 0,    theme: 'cyber' },
+      { startCol: 150,  theme: 'cyber-tunnel' },
+      { startCol: 205,  theme: 'cyber-dawn' }
+    ]
   };
 })();
