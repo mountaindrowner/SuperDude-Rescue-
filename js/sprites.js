@@ -2386,72 +2386,56 @@ window.SDD = window.SDD || {};
     px(g, 0, 6, 16, 1, '#9cb6d5');
   }
 
-  // ---- Cyber family (Day 8 Adventure City): solarpunk walkway ----
-  // Lighter, greener pedestrian walkway with grass strips between
-  // pavers so the bottom of the screen doesn't read as a flat brick
-  // wall. Mark's feedback: "reduce the brick-wall feel, integrate
-  // greenery into the ledges."
+  // ---- Cyber family (Day 8 Adventure City): asphalt ROADWAY ----
+  // v0.73: redesigned per Mark "more like a roadway, less tan." Top
+  // tile is dark asphalt with painted yellow centerline + white edge
+  // stripe + warm cream curb at the top edge (sidewalk transition).
+  // Sub-rows are darker asphalt with manhole + sewer grate accents.
+  // Reads unambiguously as a city street.
   function paintRoadTop_cyber(g) {
-    // Light teal-cream paver body (less beige than the previous tile).
-    px(g, 0, 0, 16, 16, '#D8C8B0');
-    px(g, 0, 0, 16, 1, '#F4E6CC');                 // sun-warmed top
-    // Two large paver blocks (split mid-tile horizontally) with a
-    // green grass strip down the middle.
-    px(g, 0, 1, 7, 14, '#E8D6B8');
-    px(g, 9, 1, 7, 14, '#E8D6B8');
-    // Block highlights on the top edge.
-    px(g, 0, 1, 7, 1, '#FFF0D8');
-    px(g, 9, 1, 7, 1, '#FFF0D8');
-    // Grass strip between the two blocks - mid-tile vertical green band.
-    px(g, 7, 0, 2, 16, '#65B95F');
-    px(g, 7, 0, 2, 2,  '#A6E86F');                 // bright grass crown
-    px(g, 7, 14, 2, 2, '#2F7D4F');                 // shadow at the bottom
-    // Single tiny flower in the grass on some tiles (every-third
-    // pattern via the hash already in the renderer).
-    px(g, 7, 5, 1, 1, '#F8B0E0');
-    px(g, 8, 11, 1, 1, '#FFE46B');
-    // Paver block edges (subtle outline so they read as set stones).
-    px(g, 0, 7, 7, 1, '#A08858');
-    px(g, 9, 7, 7, 1, '#A08858');
-    // Bottom curb is now a thin teal-cream band rather than a hard
-    // dark line - softens the visual weight.
-    px(g, 0, 15, 7, 1, '#A8967A');
-    px(g, 9, 15, 7, 1, '#A8967A');
+    // Cream curb at the very top (sidewalk meets road).
+    px(g, 0, 0, 16, 1, '#E8D6B8');
+    px(g, 0, 1, 16, 1, '#A88858');
+    // Asphalt surface body (dark warm grey).
+    px(g, 0, 2, 16, 14, '#3A3640');
+    px(g, 0, 2, 16, 1, '#4A464E');                 // top highlight
+    px(g, 0, 15, 16, 1, '#2A262E');                // base shadow
+    // Aggregate speckle (asphalt texture).
+    px(g, 2,  5,  1, 1, '#4A464E');
+    px(g, 5,  9,  1, 1, '#2A262E');
+    px(g, 9,  4,  1, 1, '#4A464E');
+    px(g, 11, 11, 1, 1, '#2A262E');
+    px(g, 13, 6,  1, 1, '#4A464E');
+    px(g, 3,  13, 1, 1, '#2A262E');
+    // White edge stripe (lane boundary just below the curb).
+    px(g, 0, 3, 16, 1, '#D8DCE4');
+    // Yellow centerline dash (half-tile so tiling forms a broken stripe).
+    px(g, 1, 9, 7, 2, '#E8B03A');
+    px(g, 1, 9, 7, 1, '#FFE070');
   }
   function paintRoadBody_cyber(g) {
-    // Sub-walkway: LIGHTER cream + a continuous vine band so the rows
-    // beneath the player don't compound into a heavy brick wall.
-    // Decorative panel band (planters, vines, soft glow) every tile.
-    px(g, 0, 0, 16, 16, '#E0CDA8');                // pale cream body
-    px(g, 0, 0, 16, 2, '#F0DFC0');                 // top highlight band
-    // Vertical light/dark column accents (reads as architectural
-    // ribbing rather than dense brick texture).
-    px(g, 3, 2, 1, 12, '#C9A982');
-    px(g, 12, 2, 1, 12, '#C9A982');
-    px(g, 3, 2, 1, 1, '#FFE8B8');
-    px(g, 12, 2, 1, 1, '#FFE8B8');
-    // Planter shelf running across the upper portion.
-    px(g, 0, 5, 16, 2, '#A88858');
-    px(g, 0, 5, 16, 1, '#C9A982');
-    // Vines + small green clusters hanging over the planter.
-    px(g, 1, 7, 2, 2, '#2F7D4F');
-    px(g, 1, 7, 2, 1, '#65B95F');
-    px(g, 6, 7, 4, 2, '#2F7D4F');
-    px(g, 6, 7, 4, 1, '#65B95F');
-    px(g, 13, 7, 2, 2, '#2F7D4F');
-    px(g, 13, 7, 2, 1, '#65B95F');
-    // Trailing vine wisps.
-    px(g, 2, 9, 1, 2, '#65B95F');
-    px(g, 8, 9, 1, 3, '#65B95F');
-    px(g, 14, 9, 1, 2, '#65B95F');
-    // Tiny blossoms scattered on the vines.
-    px(g, 1, 8, 1, 1, '#F8B0E0');
-    px(g, 7, 8, 1, 1, '#FFE46B');
-    px(g, 14, 8, 1, 1, '#F8B0E0');
-    // Lower portion: lighter still + subtle pipe / decorative line.
-    px(g, 0, 12, 16, 1, '#A88858');
-    px(g, 0, 13, 16, 1, '#D0BFA0');
-    px(g, 0, 15, 16, 1, '#8C7448');
+    // Sub-asphalt body - solid darker grey + sparse texture +
+    // centered manhole cover + sewer grate slits.
+    px(g, 0, 0, 16, 16, '#22202A');
+    px(g, 0, 0, 16, 1, '#3A3640');                  // top highlight
+    px(g, 0, 15, 16, 1, '#0E0C14');                 // base shadow
+    // Faint aggregate.
+    px(g, 3,  4,  1, 1, '#3A3640');
+    px(g, 11, 6,  1, 1, '#3A3640');
+    px(g, 6,  11, 1, 1, '#3A3640');
+    px(g, 13, 12, 1, 1, '#3A3640');
+    // Round manhole cover (centered).
+    px(g, 5, 5, 6, 5, '#0E0C14');
+    px(g, 6, 4, 4, 1, '#0E0C14');
+    px(g, 4, 6, 1, 3, '#0E0C14');
+    px(g, 11, 6, 1, 3, '#0E0C14');
+    px(g, 6, 10, 4, 1, '#0E0C14');
+    px(g, 6, 5, 4, 1, '#3A3640');                   // rim highlight
+    px(g, 6, 5, 1, 1, '#5A565E');
+    px(g, 6, 7, 4, 1, '#1A1820');                   // centerline groove
+    // Sewer grate slits on the sides.
+    px(g, 1, 13, 3, 1, '#0E0C14');
+    px(g, 12, 12, 3, 1, '#0E0C14');
   }
   function paintBrick_cyber(g) {
     // Solarpunk architectural panel - warm cream cladding with teal
