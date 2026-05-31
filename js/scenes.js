@@ -7665,17 +7665,135 @@ window.SDD = window.SDD || {};
   };
 
   // =====================================================================
-  // CITY ARRIVAL - Adventure City secret stage end-of-stage cutscene.
-  // Modelled after the finale: short beats array, confirm-to-advance,
-  // returns to menu on the last beat and sets secretCleared = true.
-  // Backdrop reuses drawSky_cyber + drawForeground_cyber so the painted
-  // city is the canvas; the rescue team are drawn in the foreground.
+  // CITY ARRIVAL - Adventure City end cinematic (v0.77 rewrite).
+  // The Computer briefs the rescue heroes at HQ: Super Dude Danny is
+  // lost in time and they have to bring him back. The lead hero steps
+  // up and accepts the mission ("WE'VE GOT THIS"). Ends → title.
+  // Built with the placeholder rescue NPCs + computer sprite; real
+  // hero art slots in via the same npc_* sprite keys when Mark
+  // provides it.
+  // beat.speaker: 'computer' lights the wall screen + ticks;
+  //               'leader' spotlights the centre hero stepping fwd.
   // =====================================================================
   var CITY_BEATS = [
-    { lines: ['SUPER DUDE DANNY ARRIVES AT', 'ADVENTURE CITY TOWERS!'] },
-    { lines: ['THE RESCUE TEAM WAS WAITING.', 'WELCOME HOME, HERO!'] },
-    { lines: ['YOUR ADVENTURE NEVER ENDS.', 'KEEP EXPLORING!'] }
+    { lines: ['MEANWHILE - AT RESCUE HQ...'],            speaker: null },
+    { lines: ['SUPER DUDE DANNY IS', 'LOST IN TIME!'],   speaker: 'computer' },
+    { lines: ['HEROES - WE HAVE TO', 'BRING HIM HOME.'], speaker: 'computer' },
+    { lines: ["WE'VE GOT THIS.", "LET'S GO GET HIM!"],   speaker: 'leader' },
+    { lines: ['THE RESCUE BEGINS...', 'TO BE CONTINUED!'], speaker: null }
   ];
+
+  // Rescue team line-up. Leader sits dead-centre so they read as the
+  // "main hero". x = world centre of each hero on the HQ floor.
+  var RESCUE_LINEUP = [
+    { sprite: 'npc_rescue_scientist', x: 96  },
+    { sprite: 'npc_rescue_engineer',  x: 128 },
+    { sprite: 'npc_rescue_leader',    x: 160, lead: true },
+    { sprite: 'npc_rescue_pilot',     x: 198 }
+  ];
+
+  // HQ briefing-room backdrop: dark control room with a big glowing
+  // wall screen (the Computer) + console banks. screenLit pulses the
+  // screen when the Computer is talking.
+  function _cyDrawRescueHQ(g, t, screenLit) {
+    // Room gradient.
+    var room = g.createLinearGradient(0, 0, 0, 180);
+    room.addColorStop(0,   '#101626');
+    room.addColorStop(0.6, '#161e34');
+    room.addColorStop(1,   '#0c1120');
+    g.fillStyle = room; g.fillRect(0, 0, 320, 180);
+    // Back-wall panel seams + rivets.
+    g.fillStyle = 'rgba(90,120,170,0.10)';
+    for (var px = 0; px < 320; px += 32) g.fillRect(px, 0, 1, 150);
+    for (var py = 0; py < 150; py += 24) g.fillRect(0, py, 320, 1);
+    // Big wall screen (centre-top) - the Computer's broadcast.
+    var sx = 108, sy = 18, sw = 104, sh = 60;
+    g.fillStyle = '#050a14';
+    g.fillRect(sx - 3, sy - 3, sw + 6, sh + 6);
+    // Screen glow frame.
+    g.fillStyle = screenLit ? '#5af0ff' : '#2a6a80';
+    g.fillRect(sx - 3, sy - 3, sw + 6, 2);
+    g.fillRect(sx - 3, sy + sh + 1, sw + 6, 2);
+    g.fillStyle = screenLit ? '#3aa8c8' : '#1e4a5a';
+    g.fillRect(sx - 3, sy - 3, 2, sh + 6);
+    g.fillRect(sx + sw + 1, sy - 3, 2, sh + 6);
+    // Screen interior - dark with cyan scanlines.
+    var scr = g.createLinearGradient(0, sy, 0, sy + sh);
+    scr.addColorStop(0, screenLit ? '#0e2a38' : '#0a1622');
+    scr.addColorStop(1, screenLit ? '#08202c' : '#070f18');
+    g.fillStyle = scr; g.fillRect(sx, sy, sw, sh);
+    g.fillStyle = screenLit ? 'rgba(90,240,255,0.10)' : 'rgba(90,240,255,0.05)';
+    for (var ln = sy + 2; ln < sy + sh; ln += 4) g.fillRect(sx, ln, sw, 1);
+    // The Computer displayed large on the screen (scaled sprite).
+    var comp = S.get('npc_computer');
+    if (comp) {
+      var scale = 1.7;
+      var cw = comp.width * scale, ch = comp.height * scale;
+      var bob = Math.round(Math.sin(t * 0.08) * 1);
+      g.imageSmoothingEnabled = false;
+      g.drawImage(comp, sx + sw / 2 - cw / 2, sy + sh - ch - 2 + bob, cw, ch);
+    }
+    // Talking ticks beside the screen when lit.
+    if (screenLit && (t % 30 < 18)) {
+      g.fillStyle = '#5af0ff';
+      var tickN = 1 + Math.floor((t % 30) / 6);
+      for (var tk = 0; tk < tickN; tk++) {
+        g.fillRect(sx + sw + 5, sy + 8 + tk * 6, 4, 3);
+        g.fillRect(sx - 9, sy + 8 + tk * 6, 4, 3);
+      }
+    }
+    // "LIVE" alert pip top-right of the screen.
+    if (screenLit && (t % 24 < 14)) {
+      g.fillStyle = '#ff5a3a';
+      g.fillRect(sx + sw - 8, sy + 4, 4, 4);
+    }
+    // Console bank along the floor (in front of the heroes' feet line).
+    g.fillStyle = '#0e1422'; g.fillRect(0, 158, 320, 22);
+    g.fillStyle = '#1a2438'; g.fillRect(0, 158, 320, 2);
+    // Blinking console LEDs.
+    for (var cl = 8; cl < 320; cl += 22) {
+      var on = ((t / 12 | 0) + cl) % 3 === 0;
+      g.fillStyle = on ? '#3aff60' : '#15351f';
+      g.fillRect(cl, 162, 3, 2);
+      g.fillStyle = ((cl + 7) % 4 === 0 && on) ? '#ffd23a' : '#3a3010';
+      g.fillRect(cl + 6, 162, 3, 2);
+    }
+    // Floor line where the heroes stand.
+    g.fillStyle = '#243150'; g.fillRect(0, 150, 320, 1);
+    g.fillStyle = 'rgba(90,120,170,0.18)'; g.fillRect(0, 151, 320, 7);
+  }
+
+  // Draw the rescue line-up. `focusLead` raises + spotlights the lead.
+  function _cyDrawRescueLineup(g, t, focusLead) {
+    var floorY = 150;
+    for (var i = 0; i < RESCUE_LINEUP.length; i++) {
+      var hero = RESCUE_LINEUP[i];
+      var spr = S.get(hero.sprite);
+      if (!spr) continue;
+      var lead = hero.lead;
+      var step = (focusLead && lead) ? 6 : 0;          // lead steps fwd/down
+      var bob = Math.round(Math.sin(t * 0.09 + i) * 1);
+      var hx = Math.round(hero.x - spr.width / 2);
+      var hy = floorY - spr.height + step + bob;
+      // Spotlight pool under the lead when they accept the mission.
+      if (focusLead && lead) {
+        var sp = g.createRadialGradient(hero.x, floorY + 2, 2, hero.x, floorY + 2, 30);
+        sp.addColorStop(0, 'rgba(255,230,150,0.40)');
+        sp.addColorStop(1, 'rgba(255,230,150,0)');
+        g.fillStyle = sp; g.fillRect(hero.x - 30, floorY - 30, 60, 40);
+      }
+      // Non-focused heroes dim slightly during the lead's moment.
+      if (focusLead && !lead) { g.save(); g.globalAlpha = 0.62; }
+      g.imageSmoothingEnabled = false;
+      g.drawImage(spr, hx, hy);
+      if (focusLead && !lead) g.restore();
+      // Lead raises a determined "fist" pip when accepting.
+      if (focusLead && lead && (t % 40 < 26)) {
+        g.fillStyle = '#ffd23a';
+        g.fillRect(hx + spr.width - 2, hy - 3, 3, 3);
+      }
+    }
+  }
 
   // v0.68: expose the cyber-theme painters so the decor editor scene
   // (js/decor_editor.js) can render its preview backdrop + the live
@@ -7689,14 +7807,18 @@ window.SDD = window.SDD || {};
   SDD.scenes.cityArrival = {
     enter: function (d) {
       this.d = d || {}; this.beat = 0; this.t = 0;
-      // Reuse the finale track for now - Mark may compose a dedicated
-      // Adventure City arrival cue later.
+      // Reuse the finale track for the briefing; Mark may swap in a
+      // dedicated rescue-HQ cue later.
       A.startMusic('finale');
     },
     update: function () {
       this.t++;
-      if (this.beat === 1 && this.t === 1) A.sfx('win');
-      if (this.beat === 2 && this.t === 1) A.sfx('1up');
+      var beat = CITY_BEATS[this.beat];
+      // Audio accents: alert sting when the Computer first speaks,
+      // hero "yes!" sting when the lead accepts.
+      if (beat && beat.speaker === 'computer' && this.t === 1) A.sfx('hit');
+      if (beat && beat.speaker === 'leader'   && this.t === 1) A.sfx('1up');
+      if (this.beat === CITY_BEATS.length - 1 && this.t === 1) A.sfx('win');
       if (In.confirm() || this.t > 360) {
         this.beat++; this.t = 0; A.sfx('select');
         if (this.beat >= CITY_BEATS.length) {
@@ -7705,88 +7827,39 @@ window.SDD = window.SDD || {};
             SDD.save.data.secretCleared = true;
             SDD.save.save();
           }
-          go('menu');
+          go('menu');   // back to the title screen
         }
       }
     },
     render: function (g) {
       var b = this.beat, t = this.t;
-      // Painted city as the backdrop on every beat (the sky + fg
-      // hooks already tile + parallax).
-      drawSky_cyber(g, t * 0.4, 0, 0, t);
-      // A solid road band so the rescue team have a floor to stand on.
-      g.fillStyle = '#1a1f30'; g.fillRect(0, 156, 320, 24);
-      g.fillStyle = '#2a3450'; g.fillRect(0, 156, 320, 1);
-
-      var idleIdx = Math.floor(t / 18) % 4;
-      var bob = Math.sin(t * 0.08) * 1;
+      var beat = CITY_BEATS[b] || {};
+      var speaker = beat.speaker;
+      var lastBeat = (b === CITY_BEATS.length - 1);
+      // HQ briefing room - wall screen lit while the Computer talks.
+      _cyDrawRescueHQ(g, t, speaker === 'computer');
+      // Rescue heroes lined up facing the screen; lead steps forward
+      // when accepting the mission.
+      _cyDrawRescueLineup(g, t, speaker === 'leader');
 
       if (b === 0) {
-        // Danny strides toward the Towers (right edge), rescue team
-        // peeking from the right.
-        drawDannyScaled(g, 'big', 'walk', 'east', Math.floor(t / 7) % 4,
-          80, 152, 1.5);
-        // Solarpunk landmark Towers - cream body, mid teal accent
-        // band, warm windows, rooftop garden cap with flowering
-        // shrubs + antenna.
-        g.fillStyle = '#E8D6B8'; g.fillRect(220, 60, 50, 96);
-        g.fillStyle = '#F4E6CC'; g.fillRect(220, 60, 50, 1);
-        g.fillStyle = '#C9A982'; g.fillRect(220, 60, 1, 96);
-        g.fillStyle = '#A08858'; g.fillRect(269, 60, 1, 96);
-        // Teal accent band mid-tower.
-        g.fillStyle = '#8FA7A8'; g.fillRect(220, 94, 50, 4);
-        g.fillStyle = '#B5CECC'; g.fillRect(220, 94, 50, 1);
-        // Warm windows (4 rows x 3 cols).
-        var twYs = [70, 84, 104, 118];
-        var twXs = [230, 244, 258];
-        for (var wri = 0; wri < twYs.length; wri++) {
-          for (var wci = 0; wci < twXs.length; wci++) {
-            g.fillStyle = '#3A4664'; g.fillRect(twXs[wci], twYs[wri], 5, 7);
-            g.fillStyle = '#FFD080'; g.fillRect(twXs[wci] + 1, twYs[wri] + 1, 3, 5);
-            g.fillStyle = '#FFE8A0'; g.fillRect(twXs[wci] + 1, twYs[wri] + 1, 3, 1);
-          }
+        tsh(g, 'RESCUE HQ', 160, 8, '#5af0ff', '#0a2230', 1, 'center');
+      } else if (lastBeat) {
+        // Mission-go flourish: title-ish stamp + energy sparks.
+        tsh(g, 'THE RESCUE BEGINS', 160, 90, '#ffd23a', '#7a4a10', 2, 'center');
+        for (var p = 0; p < 20; p++) {
+          var pxx = ((p * 47 + t * 1.4) % 320);
+          var pyy = ((p * 29 + t * 1.1) % 150);
+          g.fillStyle = (p % 3 === 0) ? '#ffd23a' : (p % 3 === 1) ? '#5af0ff' : '#ff5a3a';
+          g.fillRect(pxx | 0, pyy | 0, 2, 2);
         }
-        // Rooftop garden cap.
-        g.fillStyle = '#C9A982'; g.fillRect(222, 56, 46, 4);
-        g.fillStyle = '#F4E6CC'; g.fillRect(222, 56, 46, 1);
-        // Trees + blossoms.
-        var treeXs = [225, 238, 251, 261];
-        for (var tri = 0; tri < treeXs.length; tri++) {
-          g.fillStyle = '#2F7D4F'; g.fillRect(treeXs[tri], 50, 6, 6);
-          g.fillStyle = '#65B95F'; g.fillRect(treeXs[tri] + 1, 50, 4, 2);
-          g.fillStyle = '#A6E86F'; g.fillRect(treeXs[tri] + 2, 50, 2, 1);
-          g.fillStyle = '#F8B0E0'; g.fillRect(treeXs[tri] + 3, 49, 1, 1);
-        }
-        // Antenna.
-        g.fillStyle = '#3A4664'; g.fillRect(245, 42, 1, 8);
-        g.fillStyle = '#FFE46B'; g.fillRect(244, 42, 3, 1);
-        tsh(g, 'ADVENTURE CITY TOWERS', 160, 28, '#ffd23a', '#5a3a18', 1, 'center');
-      } else if (b === 1) {
-        // Rescue team greeting line - draw the placeholder NPC
-        // silhouettes side by side beside a celebrating Danny.
-        var npcSprites = ['npc_rescue_leader', 'npc_rescue_scientist',
-                          'npc_rescue_engineer', 'npc_rescue_pilot'];
-        for (var ri = 0; ri < npcSprites.length; ri++) {
-          var spr = S.get(npcSprites[ri]);
-          if (spr) g.drawImage(spr, 180 + ri * 22, 130 + Math.round(bob));
-        }
-        drawDannyScaled(g, 'big', 'celebrate', 'east', Math.floor(t / 5) % 9,
-          110, 152, 1.5);
-        tsh(g, 'THE RESCUE TEAM', 160, 28, '#ffd23a', '#1a1630', 1, 'center');
-      } else {
-        // Hero send-off: Danny lifted by the team, end-card text.
-        tsh(g, 'SUPER DUDE DANNY', 160, 60, '#ffd23a', '#a8631a', 2, 'center');
-        tsh(g, 'IS HOME!', 160, 90, '#ff5d4a', '#7a1f16', 3, 'center');
-        drawDannyScaled(g, 'big', 'celebrate', 'south',
-          Math.floor(t / 5) % 9, 130, 124, 2);
-        // Confetti.
-        for (var p = 0; p < 24; p++) {
-          var px = ((p * 37 + t * 1.2) % 320);
-          var py = ((p * 23 + t * 1.8) % 180);
-          var col = (p % 3 === 0) ? '#ffd23a' : (p % 3 === 1) ? '#5af0ff' : '#ff5a3a';
-          g.fillStyle = col;
-          g.fillRect(px | 0, py | 0, 2, 2);
-        }
+      }
+
+      // Speech pointer: a small caret over whoever is talking.
+      if (speaker === 'computer' && (t % 30 < 18)) {
+        g.fillStyle = '#5af0ff'; g.fillRect(158, 12, 4, 3);
+      } else if (speaker === 'leader' && (t % 30 < 18)) {
+        g.fillStyle = '#ffd23a'; g.fillRect(158, 120, 4, 3);
       }
 
       // Caption box - same shape as the finale's.
