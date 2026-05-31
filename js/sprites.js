@@ -3328,6 +3328,11 @@ window.SDD = window.SDD || {};
   // first spacesuit drop.
   var PL_BIG_SPACE_NEW = 'assets/New Assets/Big Danny New Space Suit/Full_New_space_suit_but_only/animations';
   var PL_SM_SPACE_NEW  = 'assets/New Assets/Small Danny New Space Suit/Small_Full_new_Space_suit_but_only/animations';
+  // v0.77: Computer Character (Mark) - plays Adventure City (Day 8-1)
+  // INSTEAD of Super Dude Danny. One art set, shared by both player
+  // sizes. Folders: Breathing_Idle / Running / Jumping /
+  // Falling_Back_Death (east+west) + a Warp_in entrance anim (south).
+  var PL_COMP = 'assets/New Assets/Computer Character Sprites';
   var PL_MANIFEST = {
     big: {
       base: PL_BIG,
@@ -3361,7 +3366,13 @@ window.SDD = window.SDD || {};
         space_hurt: { base: PL_BIG_SPACE,     folder: 'Taking_Punch-19dd094a',      frames: 6 },
         space_die:  { base: PL_BIG_SPACE_NEW, folder: 'Falling_Back_Death-520535c4', frames: 7 },
         jet:        { base: PL_BIG_JET,   folder: 'The_character_remains_in_a_profile_view_as_the_jet-0a9ef652',
-                      frames: 9 }
+                      frames: 9 },
+        // Computer character (Adventure City). Same art for big + small.
+        comp_idle: { base: PL_COMP, folder: 'Breathing_Idle-abd6c06d',  frames: 4 },
+        comp_run:  { base: PL_COMP, folder: 'Running-2a4de5aa',         frames: 8 },
+        comp_jump: { base: PL_COMP, folder: 'Jumping-9517892d',         frames: 9 },
+        comp_die:  { base: PL_COMP, folder: 'Falling_Back_Death-77c146c5', frames: 7 },
+        comp_warp: { base: PL_COMP, folder: 'Warp_in_from_a_burst_of_light_and_energy_waves_and-fe78329d', frames: 16, south: true }
       }
     },
     small: {
@@ -3390,7 +3401,13 @@ window.SDD = window.SDD || {};
         space_die:  { base: PL_SM_SPACE_NEW, folder: 'Falling_Back_Death-ff4c9c9e', frames: 7 },
         jet:        { base: 'assets/Super Dude Danny Small Sprites -/With_a_jetpack/animations',
                       folder: 'The_characters_jetpack_ignites_emitting_a_burst_of-1690deaa',
-                      frames: 9 }
+                      frames: 9 },
+        // Computer character shares the same art as big (one sprite set).
+        comp_idle: { base: PL_COMP, folder: 'Breathing_Idle-abd6c06d',  frames: 4 },
+        comp_run:  { base: PL_COMP, folder: 'Running-2a4de5aa',         frames: 8 },
+        comp_jump: { base: PL_COMP, folder: 'Jumping-9517892d',         frames: 9 },
+        comp_die:  { base: PL_COMP, folder: 'Falling_Back_Death-77c146c5', frames: 7 },
+        comp_warp: { base: PL_COMP, folder: 'Warp_in_from_a_burst_of_light_and_energy_waves_and-fe78329d', frames: 16, south: true }
       }
     }
   };
@@ -3467,7 +3484,13 @@ window.SDD = window.SDD || {};
       space_jump: { east:  { x: 31, y: 23, w: 35, h: 52 }, west: { x: 30, y: 23, w: 35, h: 52 } },
       space_hurt: { east:  { x: 31, y: 24, w: 32, h: 49 }, west: { x: 33, y: 24, w: 32, h: 49 } },
       space_die:  { east:  { x: 26, y: 24, w: 44, h: 48 }, west: { x: 28, y: 24, w: 37, h: 48 } },
-      jet:        { east:  { x: 30, y: 22, w: 33, h: 50 }, west: { x: 33, y: 22, w: 33, h: 50 } }
+      jet:        { east:  { x: 30, y: 22, w: 33, h: 50 }, west: { x: 33, y: 22, w: 33, h: 50 } },
+      // Computer character (measured from the 116x116 source PNGs).
+      comp_idle: { east: { x: 44, y: 34, w: 27, h: 55 }, west: { x: 45, y: 34, w: 27, h: 55 } },
+      comp_run:  { east: { x: 39, y: 32, w: 33, h: 59 }, west: { x: 44, y: 32, w: 33, h: 59 } },
+      comp_jump: { east: { x: 39, y: 36, w: 39, h: 56 }, west: { x: 38, y: 36, w: 39, h: 56 } },
+      comp_die:  { east: { x: 34, y: 41, w: 48, h: 50 }, west: { x: 34, y: 41, w: 48, h: 50 } },
+      comp_warp: { south: { x: 20, y: 15, w: 77, h: 82 } }
     },
     small: {
       idle:      { east: { x: 36, y: 24, w: 19, h: 45 }, west: { x: 35, y: 24, w: 20, h: 45 } },
@@ -3495,7 +3518,13 @@ window.SDD = window.SDD || {};
       space_jump: { east:  { x: 32, y: 24, w: 30, h: 47 }, west: { x: 30, y: 24, w: 30, h: 47 } },
       space_hurt: { east:  { x: 30, y: 25, w: 28, h: 43 }, west: { x: 34, y: 25, w: 28, h: 43 } },
       space_die:  { east:  { x: 29, y: 26, w: 35, h: 42 }, west: { x: 28, y: 26, w: 35, h: 42 } },
-      jet:        { east:  { x: 28, y: 21, w: 35, h: 50 }, west: { x: 25, y: 21, w: 35, h: 50 } }
+      jet:        { east:  { x: 28, y: 21, w: 35, h: 50 }, west: { x: 25, y: 21, w: 35, h: 50 } },
+      // Computer character (same source art as big - identical bboxes).
+      comp_idle: { east: { x: 44, y: 34, w: 27, h: 55 }, west: { x: 45, y: 34, w: 27, h: 55 } },
+      comp_run:  { east: { x: 39, y: 32, w: 33, h: 59 }, west: { x: 44, y: 32, w: 33, h: 59 } },
+      comp_jump: { east: { x: 39, y: 36, w: 39, h: 56 }, west: { x: 38, y: 36, w: 39, h: 56 } },
+      comp_die:  { east: { x: 34, y: 41, w: 48, h: 50 }, west: { x: 34, y: 41, w: 48, h: 50 } },
+      comp_warp: { south: { x: 20, y: 15, w: 77, h: 82 } }
     }
   };
 

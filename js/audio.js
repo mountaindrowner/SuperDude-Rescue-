@@ -268,6 +268,14 @@ window.SDD = window.SDD || {};
       }
       regPool(key, ids);
     }
+    // v0.77: Adventure City (Day 8-1) - Mark's three composed tracks
+    // live under "assets/New Assets/Adventure city Music/" with spaces
+    // in the names, so they're registered explicitly (the loop above
+    // only handles the assets/music/<id>.mp3 convention).
+    loadFileTrack('level_8_1_a', encodeURI('assets/New Assets/Adventure city Music/SDDG city.mp3'));
+    loadFileTrack('level_8_1_b', encodeURI('assets/New Assets/Adventure city Music/SDDG city 2.mp3'));
+    loadFileTrack('level_8_1_c', encodeURI('assets/New Assets/Adventure city Music/AW City remix.mp3'));
+    regPool('level_8_1', ['level_8_1_a', 'level_8_1_b', 'level_8_1_c']);
     // Finale: no dedicated track yet - reuse Day 7 Eden tracks.
     regPool('finale', ['level_7_1_a', 'level_7_1_b']);
   }

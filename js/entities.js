@@ -1050,7 +1050,31 @@ window.SDD = window.SDD || {};
       // the sun too. 4-1 keeps its normal gravity; only the costume
       // (and the dropped sweat overlay below) changes there.
       var costume = (theme === 'cosmic-night' || theme === 'sunlit') ? 'space' : '';
-      if (this.win) {
+      // v0.77: Adventure City (Day 8) swaps the WHOLE character to the
+      // Computer Character sprite set. Only idle/run/jump/die art
+      // exists, so every player state maps onto one of those four.
+      var compMode = scene && scene.day === 8;
+      if (compMode) {
+        dirPL = this.facing > 0 ? 'east' : 'west';
+        if (this.dead) {
+          anim = 'comp_die';
+          idx = Math.min(6, Math.floor(this.deadT / 10));
+        } else if (this.landT > 0) {
+          anim = 'comp_jump'; idx = 8;
+        } else if (!this.onGround) {
+          anim = 'comp_jump';
+          if (this.vy < -3) idx = 1;
+          else if (this.vy < 0) idx = 3;
+          else if (this.vy < 2) idx = 5;
+          else idx = 7;
+        } else if (Math.abs(this.vx) > 0.4) {
+          anim = 'comp_run'; idx = Math.floor(this.animT / 4) % 8;
+        } else {
+          // idle covers standing, hurt, blast, win - brief states with
+          // no dedicated computer art.
+          anim = 'comp_idle'; idx = Math.floor(this.animT / 18) % 4;
+        }
+      } else if (this.win) {
         // celebrate (9f) or funny dance (16f), chosen at victory().
         anim = (this.winPose === 'dance') ? 'dance' : 'celebrate';
         dirPL = 'south';
