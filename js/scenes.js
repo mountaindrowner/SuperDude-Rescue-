@@ -5043,6 +5043,11 @@ window.SDD = window.SDD || {};
     //    blends inject dynamic light + grading on top of the cached
     //    layer blits. Adds drama without modifying the base art.
     _cyDrawShaders(g, camx, camy, t);
+    // v0.74: tunnel overpass overlay - world-space at parallax 1.0
+    // so it sits in Layer 3 over the bridge / shopfront row. Painted
+    // in both cyber + cyber-dawn so it persists across the hard
+    // background swap that happens at the overpass midpoint.
+    _cyDrawTunnelOverlay(g, camx, camy, t);
   }
 
   // =================================================================
@@ -5780,6 +5785,142 @@ window.SDD = window.SDD || {};
     g.fillStyle = glow;
     g.fillRect(0, 60, 320, 90);
     g.restore();
+    // v0.74: tunnel overpass painted on dawn side too so it spans
+    // the hard background swap that lands at the overpass midpoint.
+    _cyDrawTunnelOverlay(g, camx, camy, t);
+  }
+
+  // =================================================================
+  // TUNNEL OVERPASS (v0.74) - Mark wanted a hard-transition tunnel:
+  // a Layer-3 architectural element that the player walks through
+  // while the cyber background remains visible behind it. The
+  // background then HARD-SWITCHES to cyber-dawn at the overpass
+  // midpoint (level themeZones flag `hard: true`), so when the
+  // player exits the other side everything is already dawn.
+  //
+  // Drawn in world space (parallax 1.0). Hooked from both
+  // drawSky_cyber + drawSky_cyberDawn AFTER the shader pass so the
+  // beam paints over the bridge cache + sun haze but still under
+  // the world tiles + entities + foreground.
+  // =================================================================
+  function _cyDrawTunnelOverlay(g, camx, camy, t) {
+    // Overpass world footprint - matches the tile-level extent in
+    // level_8_1.js. Cols 150-200 = world x 2400-3200.
+    var X0 = 2400, X1 = 3200;
+    var sx0 = X0 - camx;
+    var sx1 = X1 - camx;
+    if (sx1 < -8 || sx0 > 328) return;   // off-screen
+
+    // Beam vertical extent (world y 56-100 covers rows ~3.5-6.25).
+    var beamY = 56 - camy;
+    var beamH = 44;
+
+    // Vertical entrance + exit columns (concrete pillars dropping
+    // from the beam to the road). World y 100 to 176 covers rows
+    // 6.25 to 11.
+    var colW = 8;
+    var colY = beamY + beamH;
+    var colH = (176 - camy) - colY;
+
+    function pillar(cx) {
+      if (cx < -10 || cx > 330) return;
+      g.fillStyle = '#22232C';
+      g.fillRect(cx, colY, colW, colH);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(cx + colW - 1, colY, 1, colH);
+      g.fillStyle = '#5E6173';
+      g.fillRect(cx, colY, 1, colH);
+      // Capital flare at the top.
+      g.fillStyle = '#22232C';
+      g.fillRect(cx - 2, colY, colW + 4, 3);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(cx - 2, colY, colW + 4, 1);
+      // Base flare at the bottom.
+      g.fillStyle = '#22232C';
+      g.fillRect(cx - 2, colY + colH - 3, colW + 4, 3);
+    }
+    pillar(sx0);
+    pillar(sx1 - colW);
+
+    // Beam body (concrete).
+    if (sx0 < 320 && sx1 > 0) {
+      var lo = Math.max(-2, sx0);
+      var hi = Math.min(322, sx1);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(lo, beamY, hi - lo, beamH);
+      // Top edge (sunlit).
+      g.fillStyle = '#5E6173';
+      g.fillRect(lo, beamY, hi - lo, 1);
+      g.fillStyle = '#7A7E8E';
+      g.fillRect(lo, beamY + 1, hi - lo, 1);
+      // Bottom drip line.
+      g.fillStyle = '#22232C';
+      g.fillRect(lo, beamY + beamH - 2, hi - lo, 1);
+      g.fillStyle = '#0E0C14';
+      g.fillRect(lo, beamY + beamH - 1, hi - lo, 1);
+
+      // Horizontal panel seams across the beam.
+      g.fillStyle = '#2A2A33';
+      g.fillRect(lo, beamY + 12, hi - lo, 1);
+      g.fillRect(lo, beamY + 24, hi - lo, 1);
+      g.fillRect(lo, beamY + 36, hi - lo, 1);
+      // Rivet line under the panel seams.
+      g.fillStyle = '#5E6173';
+      for (var rv = Math.ceil(lo / 16) * 16; rv < hi; rv += 16) {
+        if (rv >= -2 && rv <= 322) {
+          g.fillRect(rv, beamY + 13, 1, 1);
+          g.fillRect(rv, beamY + 25, 1, 1);
+        }
+      }
+
+      // Warm wall lamps mounted on the underside. World-spaced
+      // every 64 px so they stay aligned with the level as the
+      // camera scrolls.
+      var lampSpacing = 64;
+      for (var lwx = X0 + 32; lwx < X1; lwx += lampSpacing) {
+        var lsx = lwx - camx;
+        if (lsx < -10 || lsx > 330) continue;
+        var lsy = beamY + beamH - 4;
+        // Halo first (so bracket paints on top).
+        var halo = g.createRadialGradient(lsx, lsy + 4, 2, lsx, lsy + 4, 28);
+        halo.addColorStop(0,   'rgba(255,200,120,0.55)');
+        halo.addColorStop(0.5, 'rgba(255,160,80,0.20)');
+        halo.addColorStop(1,   'rgba(255,160,80,0)');
+        g.fillStyle = halo;
+        g.fillRect(lsx - 22, lsy - 4, 44, 36);
+        // Bracket.
+        g.fillStyle = '#0A0608';
+        g.fillRect(lsx - 1, lsy, 3, 4);
+        // Bulb.
+        g.fillStyle = '#FFE0A0';
+        g.fillRect(lsx - 1, lsy + 2, 2, 2);
+        g.fillStyle = '#FFFFFF';
+        g.fillRect(lsx,     lsy + 2, 1, 1);
+      }
+
+      // Sign panel slung under the beam at the entrance side - small
+      // green directional ("3RD ST →" vibe).
+      var signX = sx0 + 22;
+      if (signX > -20 && signX < 320) {
+        var signY = beamY + beamH + 2;
+        g.fillStyle = '#1A1E2A';
+        g.fillRect(signX, signY, 22, 8);
+        g.fillStyle = '#3A8060';
+        g.fillRect(signX + 1, signY + 1, 20, 6);
+        g.fillStyle = '#5AAA80';
+        g.fillRect(signX + 1, signY + 1, 20, 1);
+        g.fillStyle = '#E8E8E8';
+        g.fillRect(signX + 3, signY + 3, 3, 1);
+        g.fillRect(signX + 3, signY + 5, 3, 1);
+        g.fillRect(signX + 8, signY + 3, 2, 3);
+        g.fillRect(signX + 13, signY + 3, 4, 1);
+        g.fillRect(signX + 13, signY + 5, 4, 1);
+        // Hanging cables from the beam down to the sign.
+        g.fillStyle = '#22232C';
+        g.fillRect(signX + 2,  signY - 2, 1, 2);
+        g.fillRect(signX + 19, signY - 2, 1, 2);
+      }
+    }
   }
 
   var THEMES = {
@@ -5800,7 +5941,13 @@ window.SDD = window.SDD || {};
     // v0.70: tunnel + dawn district for Adventure City. Mark's
     // request: "tunnel and change of background when coming out."
     'cyber-tunnel': drawSky_cyberTunnel,
-    'cyber-dawn':   drawSky_cyberDawn
+    'cyber-dawn':   drawSky_cyberDawn,
+    // v0.74: same-sky-no-foreground aliases. The level uses these
+    // for the tunnel-pass cols 150-200 so the cyber / cyber-dawn
+    // background still paints but the Layer-1 foreground anchors +
+    // kiosk are suppressed inside the tunnel range.
+    'cyber-tunnel-pass':       drawSky_cyber,
+    'cyber-dawn-tunnel-pass':  drawSky_cyberDawn
   };
 
   // Per-theme foreground layer (drawn AFTER entities, BEFORE HUD). Only
@@ -6654,7 +6801,10 @@ window.SDD = window.SDD || {};
         activeFn(g, cam.x, cam.y, prog, this.timeSteps);
         // Crossfade INTO the next zone over the last 24 columns
         // before its startCol (the camera approaching the transition).
-        if (nextZone) {
+        // v0.74: skip the crossfade entirely when the next zone has
+        // a `hard: true` flag (Mark's "hard transition" tunnel
+        // request - the swap should snap, not fade).
+        if (nextZone && !nextZone.hard) {
           var distToNext = nextZone.startCol - (camCol + 10);
           if (distToNext > 0 && distToNext < 24) {
             var alpha = 1 - (distToNext / 24);    // 0 -> 1 as we approach
