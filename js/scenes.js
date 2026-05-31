@@ -5011,14 +5011,17 @@ window.SDD = window.SDD || {};
 
     // 4. Far skyline (cached, atmospheric-blurred). Mild saturation
     //    boost only - distance shouldn't pop. v0.65: nudged up.
+    //    v0.69: Y-parallax decoupled to 0.04 (was = X factor 0.10) so
+    //    the layer barely shifts vertically when the camera follows
+    //    the player up - keeps the colorful lower portions visible
+    //    in-game, matching the cutscene look Mark preferred.
     var farImg = S.cyberFar && S.cyberFar();
-    tileLayer(farImg || cache.far, 0.10, null, 'saturate(150%)');
+    tileLayer(farImg || cache.far, 0.10, 0.04, 'saturate(150%)');
 
     // 5. Mid city - the gold-standard layer Mark wants colorful.
-    //    v0.65: cranked higher to compensate for the further-lightened
-    //    multiply pass.
+    //    v0.69: Y-parallax decoupled to 0.10 (was 0.25).
     var midImg = S.cyberMid && S.cyberMid();
-    tileLayer(midImg || cache.mid, 0.25, null, 'saturate(215%) contrast(116%)');
+    tileLayer(midImg || cache.mid, 0.25, 0.10, 'saturate(215%) contrast(116%)');
 
     // 5b. MONORAIL TRACK + train (animated, drawn between mid and
     //     bridge so it sits behind the shopfront row). Track scrolls
@@ -5028,9 +5031,12 @@ window.SDD = window.SDD || {};
     // 6. Bridge / shopfront walkway (canvas is 240 tall so the bottom
     //    sub-level structural pass covers when camera scrolls up).
     //    Strongest saturation boost since the shops carry the warmest
-    //    accent palette. v0.65: pushed further again.
+    //    accent palette. v0.65: pushed further again. v0.69:
+    //    Y-parallax decoupled to 0.20 (was 0.50) so the bridge's
+    //    rich shopfront row stays visible at the default camera
+    //    position instead of shifting half-up off-screen.
     var brImg = S.cyberBridge && S.cyberBridge();
-    tileLayer(brImg || cache.bridge, 0.50, null, 'saturate(235%) contrast(120%)');
+    tileLayer(brImg || cache.bridge, 0.50, 0.20, 'saturate(235%) contrast(120%)');
 
     // 7. SHADER PASS - applied to background layers. Compositing
     //    blends inject dynamic light + grading on top of the cached
@@ -5645,9 +5651,12 @@ window.SDD = window.SDD || {};
     // here on Layer 1 in world-space. Replaces the procedural street
     // furniture that v0.67 removed.
     _cyDrawDecor(g, camx, camy, t);
-    // v0.67: street furniture + petals gated behind the _CY_DECOR
-    // flag at the top of this file. Mark wanted only buildings on
-    // Layer 1 - no lamps, no benches, no signs, no petals.
+    // v0.69: stripped the foreground-only shader passes (warm light
+    // shaft, glass curtain glint, cinematic contrast crush) that
+    // weren't running in cityArrival. Mark preferred the cutscene's
+    // saturated coloring and those passes were desaturating the
+    // bottom of the screen via a cool-blue soft-light tint plus
+    // washing the upper-left with a warm beam.
     if (_CY_DECOR) {
       _cyDrawStreetFurniture(g, camx, camy, t);
       for (var pp = 0; pp < 10; pp++) {
@@ -5662,47 +5671,6 @@ window.SDD = window.SDD || {};
         if (pp % 2 === 0) g.fillRect(ppx + ppSw + 1, ppy, 1, 1);
       }
     }
-    // Subtle warm light shaft from the upper-left (sun-streak through
-    // the buildings) - VERY low alpha so it tints rather than dominates.
-    var beam = g.createLinearGradient(40, 0, 220, 180);
-    beam.addColorStop(0,   'rgba(255,236,140,0.10)');
-    beam.addColorStop(0.6, 'rgba(255,236,140,0.04)');
-    beam.addColorStop(1,   'rgba(255,236,140,0)');
-    g.fillStyle = beam;
-    g.fillRect(0, 0, 320, 180);
-
-    // 8. GLASS CURTAIN GLINT - rare bright diagonal sweep across
-    //    the visible glass towers. Triggered every ~5 seconds.
-    var glintPhase = (t % 300) / 300;
-    if (glintPhase > 0.45 && glintPhase < 0.62) {
-      var glintT = (glintPhase - 0.45) / 0.17;   // 0..1
-      var fall = Math.sin(glintT * Math.PI);     // ease in/out
-      var gx = -60 + glintT * 460;
-      g.save();
-      g.globalCompositeOperation = 'screen';
-      g.globalAlpha = 0.55 * fall;
-      g.translate(gx, 0);
-      g.rotate(0.32);
-      var glint = g.createLinearGradient(0, 0, 100, 0);
-      glint.addColorStop(0,   'rgba(255,255,255,0)');
-      glint.addColorStop(0.5, 'rgba(255,255,255,0.9)');
-      glint.addColorStop(1,   'rgba(255,255,255,0)');
-      g.fillStyle = glint;
-      g.fillRect(0, -20, 100, 240);
-      g.restore();
-    }
-
-    // 9. CINEMATIC CONTRAST CRUSH (soft-light) - lifts highlights,
-    //    deepens shadows by a touch. Final polish pass.
-    g.save();
-    g.globalCompositeOperation = 'soft-light';
-    var contrast = g.createLinearGradient(0, 0, 0, 180);
-    contrast.addColorStop(0,    'rgba(255,250,230,1)');
-    contrast.addColorStop(0.6,  'rgba(245,250,255,1)');
-    contrast.addColorStop(1,    'rgba(120,140,170,1)');
-    g.fillStyle = contrast;
-    g.fillRect(0, 0, 320, 180);
-    g.restore();
   }
 
   var THEMES = {
