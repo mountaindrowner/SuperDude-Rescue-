@@ -4281,7 +4281,8 @@ window.SDD = window.SDD || {};
 
     // Hanging vines from the girder (now anchored to a visible
     // structural element, not floating from nothing).
-    for (var vi = 0; vi < 18; vi++) {
+    // v0.65: 18 -> 9 per Mark "Layer 1 has too many things, cut in half."
+    for (var vi = 0; vi < 9; vi++) {
       var vx = Math.floor(rng() * W);
       var vlen = 14 + Math.floor(rng() * 22);
       var blossom = rng() > 0.6;
@@ -4310,7 +4311,8 @@ window.SDD = window.SDD || {};
     }
 
     // Flowering tree branches reaching in from screen corners.
-    for (var brc = 0; brc < 6; brc++) {
+    // v0.65: 6 -> 3.
+    for (var brc = 0; brc < 3; brc++) {
       var bx = (brc & 1) ? Math.floor(rng() * 100) : W - Math.floor(rng() * 100);
       var by = 4 + Math.floor(rng() * 28);
       _cyPaintFgBranch(g, bx, by, (brc & 1) ? 1 : -1, rng);
@@ -4327,24 +4329,17 @@ window.SDD = window.SDD || {};
     }
 
     // Signature café-patio foreground feature - one parasol + table
-    // cluster per screen slot, placed in the opposite side from the
-    // architectural anchor so the silhouette stays balanced.
-    for (var sc = 0; sc < slots; sc++) {
-      var slotLeft = sc * 320;
-      var which2 = (sc & 1) ? 'R' : 'L';  // opposite of anchor
-      var cafeX = (which2 === 'L') ? slotLeft + 40 : slotLeft + 240;
-      _cyPaintFgCafePatio(g, cafeX, rng);
-    }
+    // cluster, placed in the middle of slot 1 so the silhouette stays
+    // balanced. v0.65: 3 -> 1 per Mark "Layer 1 too busy."
+    _cyPaintFgCafePatio(g, 320 + 100, rng);
 
-    // v0.57 - short overlap pieces per Mark "doesn't all have to be so
-    // tall, can be some little pieces and parts of a city that
-    // overlap." Two per slot, between the anchor + cafe positions, so
-    // the foreground silhouette has tall / short / tall / short
-    // rhythm.
+    // Short overlap pieces - kiosk / storefront / utility cabinet
+    // between anchors. v0.65: 6 -> 3 (one per slot, alternating
+    // positions so the rhythm stays varied).
     for (var sk = 0; sk < slots; sk++) {
       var sl = sk * 320;
-      _cyPaintFgKiosk(g, sl + 110, rng);
-      _cyPaintFgKiosk(g, sl + 190, rng);
+      var px = (sk % 2 === 0) ? sl + 110 : sl + 190;
+      _cyPaintFgKiosk(g, px, rng);
     }
   }
 
@@ -4984,14 +4979,15 @@ window.SDD = window.SDD || {};
     }
 
     // 4. Far skyline (cached, atmospheric-blurred). Mild saturation
-    //    boost only - distance shouldn't pop. v0.59: slight bump.
+    //    boost only - distance shouldn't pop. v0.65: nudged up.
     var farImg = S.cyberFar && S.cyberFar();
-    tileLayer(farImg || cache.far, 0.10, null, 'saturate(130%)');
+    tileLayer(farImg || cache.far, 0.10, null, 'saturate(150%)');
 
     // 5. Mid city - the gold-standard layer Mark wants colorful.
-    //    v0.59: cranked to compensate for the lightened multiply pass.
+    //    v0.65: cranked higher to compensate for the further-lightened
+    //    multiply pass.
     var midImg = S.cyberMid && S.cyberMid();
-    tileLayer(midImg || cache.mid, 0.25, null, 'saturate(180%) contrast(112%)');
+    tileLayer(midImg || cache.mid, 0.25, null, 'saturate(215%) contrast(116%)');
 
     // 5b. MONORAIL TRACK + train (animated, drawn between mid and
     //     bridge so it sits behind the shopfront row). Track scrolls
@@ -5001,10 +4997,9 @@ window.SDD = window.SDD || {};
     // 6. Bridge / shopfront walkway (canvas is 240 tall so the bottom
     //    sub-level structural pass covers when camera scrolls up).
     //    Strongest saturation boost since the shops carry the warmest
-    //    accent palette. v0.59: pushed harder for the vibrant feel
-    //    Mark called for.
+    //    accent palette. v0.65: pushed further again.
     var brImg = S.cyberBridge && S.cyberBridge();
-    tileLayer(brImg || cache.bridge, 0.50, null, 'saturate(195%) contrast(114%)');
+    tileLayer(brImg || cache.bridge, 0.50, null, 'saturate(235%) contrast(120%)');
 
     // 7. SHADER PASS - applied to background layers. Compositing
     //    blends inject dynamic light + grading on top of the cached
@@ -5423,19 +5418,17 @@ window.SDD = window.SDD || {};
     g.fillRect(0, 0, 320, 180);
     g.restore();
 
-    // 8. GLOBAL MULTIPLY DARKEN (v0.57 / softened v0.59) - Mark
-    //    wanted brightness down ~50% in v0.57, then "bright up a bit,
-    //    too flat now" in v0.59. Multiply stops lightened so the
-    //    scene only dims ~25-30% instead of half - keeps the
-    //    contrast inversion between Layer 1 and the rest, but
-    //    doesn't kill the colors. Tint warmed (less cool blue) so
-    //    the cream + coral palette stays vivid.
+    // 8. GLOBAL MULTIPLY DARKEN (v0.57 / softened v0.59 / lifted v0.65)
+    //    - Mark "still too washed out, increase color without
+    //    darkening." Multiply stops lifted further so the scene
+    //    barely dims (~12-18%). Just enough to anchor the brightness
+    //    inversion against Layer 1; not enough to flatten colors.
     g.save();
     g.globalCompositeOperation = 'multiply';
     var darken = g.createLinearGradient(0, 0, 0, 180);
-    darken.addColorStop(0,    'rgba(208,212,220,1)');
-    darken.addColorStop(0.5,  'rgba(190,196,208,1)');
-    darken.addColorStop(1,    'rgba(160,172,188,1)');
+    darken.addColorStop(0,    'rgba(228,228,232,1)');
+    darken.addColorStop(0.5,  'rgba(216,218,224,1)');
+    darken.addColorStop(1,    'rgba(196,202,212,1)');
     g.fillStyle = darken;
     g.fillRect(0, 0, 320, 180);
     g.restore();
@@ -5452,8 +5445,8 @@ window.SDD = window.SDD || {};
     var span = src.width || 320, off = -(((camx * 0.70) % span) + span) % span;
     // v0.58: saturation boost on Layer 1 so the dark anchor towers +
     // vivid neon punch even harder against the darkened backdrop.
-    // v0.59: cranked to match the new bridge / mid intensity.
-    g.filter = 'saturate(175%) contrast(112%)';
+    // v0.65: cranked to match the new bridge / mid intensity.
+    g.filter = 'saturate(210%) contrast(115%)';
     for (var b = off - span; b < 320 + span; b += span) {
       g.drawImage(src, b, -camy);
     }
