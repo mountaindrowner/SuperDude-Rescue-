@@ -30,16 +30,48 @@ window.SDD = window.SDD || {};
   // ---- Kind metadata (matches DECOR_KINDS in scenes.js) ----------
   // Each entry defines the toolbar label + the default snap point
   // (where the decoration sits relative to the road).
+  // thumb: { x, y } anchor in the 96x64 catalog thumbnail canvas so
+  // each piece's painter renders fully inside the swatch.
   var KINDS = [
-    { id: 'lamp',        label: 'LAMP',    snapY: 172, variants: 1 },
-    { id: 'bench',       label: 'BENCH',   snapY: 172, variants: 1 },
-    { id: 'sign',        label: 'SIGN',    snapY: 172, variants: 4 },
-    { id: 'crosswalk',   label: 'CROSS',   snapY: 172, variants: 1 },
-    { id: 'vine',        label: 'VINE',    snapY: 60,  variants: 2 },
-    { id: 'cafe',        label: 'CAFE',    snapY: 144, variants: 1 },
-    { id: 'hangingSign', label: 'NEON',    snapY: 40,  variants: 5 },
-    { id: 'branch',      label: 'BRANCH',  snapY: 60,  variants: 4 }
+    { id: 'lamp',        label: 'LAMP',    snapY: 172, variants: 1, thumb: { x: 44, y: 54 } },
+    { id: 'bench',       label: 'BENCH',   snapY: 172, variants: 1, thumb: { x: 30, y: 52 } },
+    { id: 'sign',        label: 'SIGN',    snapY: 172, variants: 4, thumb: { x: 28, y: 56 } },
+    { id: 'crosswalk',   label: 'CROSS',   snapY: 172, variants: 1, thumb: { x: 26, y: 28 } },
+    { id: 'vine',        label: 'VINE',    snapY: 60,  variants: 2, thumb: { x: 48, y: 8  } },
+    { id: 'cafe',        label: 'CAFE',    snapY: 144, variants: 1, thumb: { x: 24, y: 50 } },
+    { id: 'hangingSign', label: 'NEON',    snapY: 40,  variants: 5, thumb: { x: 48, y: 14 } },
+    { id: 'branch',      label: 'BRANCH',  snapY: 60,  variants: 4, thumb: { x: 14, y: 22 } }
   ];
+
+  // Render one kind/variant into a small thumbnail canvas using the
+  // live single-piece painter exposed by scenes.js.
+  function makeThumb(kind, variant) {
+    var W = 96, H = 64;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    // Soft checker so transparent pieces still read.
+    g.fillStyle = '#11162a'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#1a2238';
+    for (var yy = 0; yy < H; yy += 8) {
+      for (var xx = 0; xx < W; xx += 8) {
+        if (((xx + yy) / 8) % 2 === 0) g.fillRect(xx, yy, 8, 8);
+      }
+    }
+    // Ground line for road-level pieces.
+    var def = KINDS.filter(function (k) { return k.id === kind; })[0];
+    if (def && def.snapY >= 144) {
+      g.fillStyle = '#3a3640'; g.fillRect(0, def.id === 'cafe' ? 53 : 55, W, H);
+    }
+    var a = def ? def.thumb : { x: 48, y: 40 };
+    if (SDD._paintDecorPiece) {
+      var d = { kind: kind, x: 0, y: 0, variant: variant | 0,
+                len: kind === 'vine' ? 32 : undefined,
+                seed: 0x1234 };
+      SDD._paintDecorPiece(g, kind, a.x, a.y, variant | 0, 0, d);
+    }
+    return c;
+  }
 
   // ---- Editor state ----------------------------------------------
   var state = null;
@@ -128,19 +160,13 @@ window.SDD = window.SDD || {};
     ].join(';');
     var btnCSS = 'background:rgba(255,255,255,0.10);color:#fff;border:1px solid rgba(255,255,255,0.30);padding:6px 10px;cursor:pointer;font:inherit;border-radius:4px;';
     var activeCSS = 'background:#ffd23a;color:#1a1a2a;border-color:#ffd23a;';
+    // v0.76: kind selection moved to the CATALOG side panel (built
+    // separately in buildCatalog). The bottom bar is now actions only.
     var btns = {};
-    KINDS.forEach(function (k) {
-      var b = document.createElement('button');
-      b.textContent = k.label;
-      b.style.cssText = btnCSS;
-      b.addEventListener('click', function () {
-        state.kind = k.id;
-        state.variant = 0;
-        refreshUI();
-      });
-      btns[k.id] = b;
-      ui.appendChild(b);
-    });
+    var hintLbl = document.createElement('span');
+    hintLbl.textContent = 'PICK FROM CATALOG →   TAP MAP TO PLACE';
+    hintLbl.style.cssText = 'color:#9aeaff;font-size:11px;';
+    ui.appendChild(hintLbl);
     var spacer = document.createElement('span');
     spacer.style.cssText = 'flex:1';
     ui.appendChild(spacer);
@@ -181,22 +207,84 @@ window.SDD = window.SDD || {};
     backBtn.addEventListener('click', function () { go('menu'); });
     ui.appendChild(backBtn);
     function refreshUI() {
-      KINDS.forEach(function (k) {
-        btns[k.id].style.cssText = btnCSS + (state.kind === k.id ? activeCSS : '');
-      });
       var def = KINDS.filter(function (kk) { return kk.id === state.kind; })[0];
       varBtn.textContent = 'VAR ' + ((state.variant | 0) + 1) + '/' + (def ? def.variants : 1);
+      if (catalog && catalog._refresh) catalog._refresh();
     }
     ui._refresh = refreshUI;
     return ui;
   }
+
+  // ---- CATALOG side panel (v0.76) --------------------------------
+  // Right-side scrollable panel showing a live thumbnail of every
+  // decor kind. Clicking a thumbnail selects that kind for placing.
+  // The selected kind's variant cycles via the VAR button in the
+  // bottom bar, and the thumbnail updates to match.
+  var catalog = null;
+  function buildCatalog() {
+    if (catalog) return catalog;
+    catalog = document.createElement('div');
+    catalog.id = 'decor-catalog-ui';
+    catalog.style.cssText = [
+      'position:fixed', 'right:0', 'top:0', 'bottom:46px', 'z-index:201',
+      'width:108px', 'overflow-y:auto', 'box-sizing:border-box',
+      'background:rgba(12,15,28,0.94)', 'color:#fff',
+      'font-family:system-ui,sans-serif', 'padding:6px 6px 12px',
+      'border-left:1.5px solid #ffd23a', 'pointer-events:auto'
+    ].join(';');
+    var title = document.createElement('div');
+    title.textContent = 'CATALOG';
+    title.style.cssText = 'color:#ffd23a;font-size:12px;font-weight:700;margin-bottom:6px;text-align:center;';
+    catalog.appendChild(title);
+    var cells = {};
+    KINDS.forEach(function (k) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'margin-bottom:6px;cursor:pointer;border:1.5px solid transparent;border-radius:5px;padding:3px;text-align:center;';
+      var thumbImg = document.createElement('canvas');
+      thumbImg.width = 96; thumbImg.height = 64;
+      thumbImg.style.cssText = 'width:90px;height:60px;display:block;image-rendering:pixelated;border-radius:3px;';
+      cell.appendChild(thumbImg);
+      var lbl = document.createElement('div');
+      lbl.textContent = k.label;
+      lbl.style.cssText = 'font-size:10px;color:#cfe0ff;margin-top:2px;';
+      cell.appendChild(lbl);
+      cell.addEventListener('click', function () {
+        state.kind = k.id;
+        state.variant = 0;
+        if (ui && ui._refresh) ui._refresh();
+      });
+      cells[k.id] = { cell: cell, canvas: thumbImg };
+      catalog.appendChild(cell);
+    });
+    function refreshCatalog() {
+      KINDS.forEach(function (k) {
+        var c = cells[k.id];
+        if (!c) return;
+        var sel = state && state.kind === k.id;
+        c.cell.style.borderColor = sel ? '#ffd23a' : 'transparent';
+        c.cell.style.background = sel ? 'rgba(255,210,58,0.12)' : 'transparent';
+        // Render thumb (selected kind shows the active variant).
+        var vv = sel ? (state.variant | 0) : 0;
+        var thumb = makeThumb(k.id, vv);
+        var g = c.canvas.getContext('2d');
+        g.clearRect(0, 0, 96, 64);
+        g.drawImage(thumb, 0, 0);
+      });
+    }
+    catalog._refresh = refreshCatalog;
+    return catalog;
+  }
+
   function showUI() {
     if (!ui) buildUI();
     if (ui.parentNode !== document.body) document.body.appendChild(ui);
+    if (!catalog) buildCatalog();
+    if (catalog.parentNode !== document.body) document.body.appendChild(catalog);
     if (ui._refresh) ui._refresh();
   }
   function hideUI() {
     if (ui && ui.parentNode) ui.parentNode.removeChild(ui);
+    if (catalog && catalog.parentNode) catalog.parentNode.removeChild(catalog);
   }
 
   function deleteSelected() {
@@ -335,6 +423,13 @@ window.SDD = window.SDD || {};
     enter: function (d) {
       var day   = (d && d.day)   || 8;
       var stage = (d && d.stage) || 1;
+      // v0.76: expose day + stage on the scene object itself so the
+      // _cyDrawDecor renderer (which keys on SDD.scene.day +
+      // SDD.scene.stage) finds the right per-stage decor array.
+      // Without this the editor's preview + the in-game decor both
+      // come back empty - Mark's "I can't see it when I try it" bug.
+      this.day = day;
+      this.stage = stage;
       var key   = day + '-' + stage;
       var level = SDD.levels && SDD.levels[key];
       var T = (SDD.engine && SDD.engine.TILE) || 16;

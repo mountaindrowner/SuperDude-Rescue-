@@ -3032,7 +3032,7 @@ window.SDD = window.SDD || {};
       // 1. VERTICAL NEON SIGN — ~38% of mid buildings get one running
       //    down one side. Smaller + a touch dimmer than the foreground
       //    anchors so the layer reads as receding.
-      if (rng() < 0.38 && w > 26 && h > 50) {
+      if (rng() < 0.24 && w > 26 && h > 50) {   // v0.76: 0.38 -> 0.24 declutter
         var neonOnRight = rng() > 0.5;
         var neonCols = ['#FF4FA8', '#5AE8FF', '#FFD23A', '#FF8A40', '#A0F060'];
         var neonCol = neonCols[Math.floor(rng() * 5)];
@@ -3077,7 +3077,7 @@ window.SDD = window.SDD || {};
       // 2. BALCONY SHELVES with cascading planter foliage on ~55% of
       //    buildings (skipping vertical gardens which already have
       //    leaves everywhere).
-      if (!verticalGarden && rng() < 0.55 && w > 22 && h > 50) {
+      if (!verticalGarden && rng() < 0.38 && w > 22 && h > 50) {  // v0.76: 0.55 -> 0.38
         // 2-4 balcony shelves spaced down the facade.
         var balconies = 2 + Math.floor(rng() * 3);
         var spacing = Math.floor(h / (balconies + 1));
@@ -3118,7 +3118,7 @@ window.SDD = window.SDD || {};
 
       // 3. WARM WINDOW GLOW HALOS — on ~30% of buildings add soft
       //    halos around random window positions so the city feels lit.
-      if (!verticalGarden && rng() < 0.30 && h > 40) {
+      if (!verticalGarden && rng() < 0.18 && h > 40) {  // v0.76: 0.30 -> 0.18
         for (var gh = 0; gh < 2; gh++) {
           var ghx = x + 3 + Math.floor(rng() * (w - 8));
           var ghy = baseY + 8 + Math.floor(rng() * (h - 16));
@@ -3131,7 +3131,7 @@ window.SDD = window.SDD || {};
       }
 
       // 4. SIDE PIPE — vertical pipe with joints on ~35% of buildings.
-      if (rng() < 0.35 && h > 50) {
+      if (rng() < 0.22 && h > 50) {   // v0.76: 0.35 -> 0.22 declutter
         var pipeSide = rng() > 0.5;
         var ppx = pipeSide ? x + w - 2 : x + 1;
         g.fillStyle = shade;
@@ -3152,7 +3152,7 @@ window.SDD = window.SDD || {};
       //    billboard on the upper facade. Mark's references show
       //    anime-style portrait ads + product photos. Procedural here
       //    so each looks distinct.
-      if (rng() < 0.12 && w > 30 && h > 70) {
+      if (rng() < 0.08 && w > 30 && h > 70) {   // v0.76: 0.12 -> 0.08 declutter
         var adW = Math.min(w - 8, 18);
         var adH = Math.min(20, Math.floor(h * 0.3));
         var adX = x + Math.floor((w - adW) / 2);
@@ -4837,13 +4837,18 @@ window.SDD = window.SDD || {};
       // (another 25% off) per Mark "lower blur on the farthest
       // background by 25%."
       far:    mk(960, 180, _cyPaintFar,        1.26),
-      mid:    mk(960, 180, _cyPaintMid,        0),
+      // v0.76: small depth-of-field blur on mid (layer 4) + bridge
+      // (layer 3) so the sharp road / play plane (layer 2) stands
+      // out. Mark: "add a small amount of blur, just a little bit...
+      // not too much." Bridge is closer to the focal plane so it
+      // gets less blur than mid.
+      mid:    mk(960, 180, _cyPaintMid,        0.9),
       // v0.57: bridge canvas grew 180→240 so the layer covers the
       // bottom of the screen when the camera scrolls up during a
       // jump (Mark: "when I jump, I can see under the layers").
       // Sub-level structural content (foundation arches + support
       // pillars) paints at y=152-240.
-      bridge: mk(960, 240, _cyPaintBridge,     0),
+      bridge: mk(960, 240, _cyPaintBridge,     0.5),
       // v0.66: foreground canvas grown 180 -> 240 so the anchor
       // towers + kiosks + cafés reach all the way down to the
       // bottom of the screen (or below it, out of view). Mark:
@@ -5636,6 +5641,48 @@ window.SDD = window.SDD || {};
     g.restore();
   }
 
+  // v0.76: in-world directional signpost (Adventure City start).
+  // sign = { col, label }. Painted on the sidewalk at the given
+  // world column with a pole, a green sign panel + label, and a
+  // bobbing yellow arrow pointing right.
+  function _cyDrawStartSign(g, camx, camy, t, sign) {
+    var T = C.TILE;
+    var wx = (sign.col || 8) * T;
+    var sx = Math.round(wx - camx);
+    if (sx < -120 || sx > 340) return;
+    // Ground row is 11; sidewalk top ~ row 11 * 16 = 176.
+    var groundY = 176 - camy;
+    var poleTop = groundY - 40;
+    // Pole.
+    g.fillStyle = '#2a2e3a';
+    g.fillRect(sx, poleTop, 2, 40);
+    g.fillStyle = '#3d4150';
+    g.fillRect(sx, poleTop, 1, 40);
+    // Sign panel (green directional).
+    var pw = 56, ph = 14;
+    var px = sx - 4, py = poleTop - 2;
+    g.fillStyle = '#1a3a28';
+    g.fillRect(px, py, pw, ph);
+    g.fillStyle = '#2e7d4f';
+    g.fillRect(px + 1, py + 1, pw - 2, ph - 2);
+    g.fillStyle = '#46c878';
+    g.fillRect(px + 1, py + 1, pw - 2, 1);
+    g.fillStyle = '#0e2418';
+    g.fillRect(px, py + ph - 1, pw, 1);
+    SDD.sprites.text(g, sign.label || 'TOWER', px + pw / 2 - 1, py + 4, '#eafff0', 1, 'center');
+    // Bobbing yellow arrow pointing right, just below the sign.
+    var bob = Math.round(Math.sin(t * 0.12) * 2);
+    var ay = py + ph + 4 + bob;
+    var ax = sx + 6;
+    g.fillStyle = '#ffd23a';
+    g.fillRect(ax, ay + 2, 10, 2);          // shaft
+    g.fillRect(ax + 8, ay, 2, 6);           // arrowhead verticals
+    g.fillRect(ax + 10, ay + 1, 2, 4);
+    g.fillRect(ax + 12, ay + 2, 2, 2);
+    g.fillStyle = '#fff0a0';
+    g.fillRect(ax, ay + 2, 8, 1);
+  }
+
   function drawForeground_cyber(g, camx, camy, prog, t) {
     var S = SDD.sprites || {};
     var fgImg = S.cyberFg && S.cyberFg();
@@ -6182,6 +6229,9 @@ window.SDD = window.SDD || {};
       // Optional control hint shown briefly on level entry (e.g. vines,
       // flappy). Cleared after ~4s of play so it doesn't linger.
       this.hint = L.hint || null;
+      // v0.76: optional persistent directional signpost near the
+      // stage start (Adventure City). { col, label } in world tiles.
+      this.startSign = L.startSign || null;
       // Mode flags - Player.update reads these via the level reference
       // it gets each frame.
       this.flappy = !!L.flappy;
@@ -6884,6 +6934,13 @@ window.SDD = window.SDD || {};
           else if (code === 'U') name = 'tile_qused';
           if (name) g.drawImage(S.get(name), tx * T - cam.x, ty * T - cam.y);
         }
+      }
+      // v0.76: persistent in-world directional signpost near the start
+      // of Adventure City (Mark: "arrow pointing right... get to
+      // Adventure Tower"). Drawn at world col 8, on the sidewalk, so
+      // it scrolls away as the player advances. Bobbing arrow + label.
+      if (this.startSign) {
+        _cyDrawStartSign(g, cam.x, cam.y, this.timeSteps, this.startSign);
       }
       // entities
       var i;
@@ -7626,6 +7683,9 @@ window.SDD = window.SDD || {};
   SDD._drawSkyCyber       = drawSky_cyber;
   SDD._drawForegroundCyber = drawForeground_cyber;
   SDD._drawDecor          = _cyDrawDecor;
+  // v0.76: expose the single-piece painter so the decor editor can
+  // render catalog thumbnails of each kind/variant.
+  SDD._paintDecorPiece    = _cyPaintDecorPiece;
   SDD.scenes.cityArrival = {
     enter: function (d) {
       this.d = d || {}; this.beat = 0; this.t = 0;

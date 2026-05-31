@@ -95,7 +95,10 @@ SDD.levels = SDD.levels || {};
         tx: 12 + k * step,
         ty: ty,
         dir: dir,
-        spd: 2.2 + (k % 2) * 0.2,
+        // v0.76: cars slowed from 2.2 base to 1.5 (-32%) per Mark
+        // "slow down it's a little too fast." Variance kept so lanes
+        // still have rhythm.
+        spd: 1.5 + (k % 2) * 0.15,
         period: periodBase + (k * 20) % 60,
         phase: (k * 47) % periodBase,
         color: color
@@ -129,6 +132,9 @@ SDD.levels = SDD.levels || {};
   SDD.levels['8-1'] = {
     name: 'ADVENTURE CITY',
     theme: 'cyber',
+    // v0.76: opening hint banner (Mark) - shows for ~4s on entry.
+    hint: 'AVOID THE CARS! REACH ADVENTURE TOWER >',
+    startSign: { col: 9, label: 'TOWER >' },
     width: W, height: 14, ground: 11,
     tiles: [
       SKY,

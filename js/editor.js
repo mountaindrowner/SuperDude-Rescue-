@@ -103,6 +103,10 @@ window.SDD = window.SDD || {};
     { title: 'NPC & SIGNATURE', items: [
       { id: 'npc',       desc: 'NPC - kind: adam, eve, etc. Talks on overlap.' },
       { id: 'signature', desc: 'Day-signature power (sunburst, cloudglide, pearl, airbubble, ...).' }
+    ]},
+    { title: 'ADVENTURE CITY', items: [
+      { id: 'carspawner', desc: 'Car spawner - periodically emits a sweeping car. dir: +1/-1, spd, period, color. Deadly on contact, telegraphs first.' },
+      { id: 'car',        desc: 'Single car (one-shot). Mostly for debugging - production uses carspawner.' }
     ]}
   ];
 
@@ -116,6 +120,8 @@ window.SDD = window.SDD || {};
       case 'eel':        return { maxH: 96, period: 220, phase: 0 };
       case 'stampede':   return { range: 24, spd: 2.0, dir: -1 };
       case 'leafstream': return { period: 70, fallSpeed: 1.0, swayAmp: 2 };
+      case 'carspawner': return { dir: -1, spd: 1.5, period: 180, phase: 0, color: '#46f0ff' };
+      case 'car':        return { dir: -1, spd: 1.5, warnT: 30, color: '#46f0ff' };
       default:           return {};
     }
   }
@@ -130,7 +136,8 @@ window.SDD = window.SDD || {};
       'friendlybugs', 'pollentrail', 'doveblessing'
     ],
     'skyhazard.kind': ['flare', 'meteor', 'meteorH', 'lavaPlume'],
-    'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove'],
+    'npc.kind':       ['adam', 'eve', 'lion', 'deer', 'dove', 'computer',
+                       'rescue_leader', 'rescue_scientist', 'rescue_engineer', 'rescue_pilot'],
     // spawn.variant values (theme default = empty)
     'walker.variant':  ['', 'lion', 'porcupine', 'beetle', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
     'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud', 'bee'],
@@ -996,11 +1003,13 @@ window.SDD = window.SDD || {};
         this.zoomStep(e.deltaY < 0 ? +1 : -1);
         return;
       }
+      // v0.76: pan rate slowed 0.5 -> 0.28 per Mark "it's a little
+      // too fast" navigating the level editor.
       var dx = e.deltaY;
       if (e.shiftKey) {
-        this.cam.y = this.cam.y + dx * 0.5;
+        this.cam.y = this.cam.y + dx * 0.28;
       } else {
-        this.cam.x = this.cam.x + dx * 0.5;
+        this.cam.x = this.cam.x + dx * 0.28;
       }
       this.clampCam();
     },
@@ -1510,14 +1519,17 @@ window.SDD = window.SDD || {};
         wisp: '#a8c8ff', crab: '#ff7050', core: '#46f0ff',
         timepart: '#fff', npc: '#9bf0a0', checkpoint: '#ffe070',
         signature: '#ffe890', skyhazard: '#ff5418', bubble: '#a8e6ff',
-        octopus: '#d068a0', twister: '#dfe6ff', eel: '#7adfff'
+        octopus: '#d068a0', twister: '#dfe6ff', eel: '#7adfff',
+        carspawner: '#ff4f6a', car: '#ff8a40', leafstream: '#9bf0a0',
+        stampede: '#c08050'
       };
       // Short labels so the on-canvas tag doesn't overflow.
       var typeShort = {
         player: 'PLR', walker: 'walk', thrower: 'throw', wisp: 'wisp',
         crab: 'crab', core: 'CORE', timepart: 'PART', npc: 'NPC',
         checkpoint: 'CHK', signature: 'SIG', skyhazard: 'HZRD',
-        bubble: 'bubl', octopus: 'oct', twister: 'twst', eel: 'eel'
+        bubble: 'bubl', octopus: 'oct', twister: 'twst', eel: 'eel',
+        carspawner: 'CAR>', car: 'car', leafstream: 'leaf', stampede: 'herd'
       };
       var spawns = lvl.spawns;
       for (var i = 0; i < spawns.length; i++) {
