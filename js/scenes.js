@@ -4281,8 +4281,8 @@ window.SDD = window.SDD || {};
 
     // Hanging vines from the girder (now anchored to a visible
     // structural element, not floating from nothing).
-    // v0.65: 18 -> 9 per Mark "Layer 1 has too many things, cut in half."
-    for (var vi = 0; vi < 9; vi++) {
+    // v0.66: 9 -> 4 (Mark wanted Layer 1 further reduced).
+    for (var vi = 0; vi < 4; vi++) {
       var vx = Math.floor(rng() * W);
       var vlen = 14 + Math.floor(rng() * 22);
       var blossom = rng() > 0.6;
@@ -4311,8 +4311,8 @@ window.SDD = window.SDD || {};
     }
 
     // Flowering tree branches reaching in from screen corners.
-    // v0.65: 6 -> 3.
-    for (var brc = 0; brc < 3; brc++) {
+    // v0.66: 3 -> 1 (further reduction per Mark).
+    for (var brc = 0; brc < 1; brc++) {
       var bx = (brc & 1) ? Math.floor(rng() * 100) : W - Math.floor(rng() * 100);
       var by = 4 + Math.floor(rng() * 28);
       _cyPaintFgBranch(g, bx, by, (brc & 1) ? 1 : -1, rng);
@@ -4334,13 +4334,10 @@ window.SDD = window.SDD || {};
     _cyPaintFgCafePatio(g, 320 + 100, rng);
 
     // Short overlap pieces - kiosk / storefront / utility cabinet
-    // between anchors. v0.65: 6 -> 3 (one per slot, alternating
-    // positions so the rhythm stays varied).
-    for (var sk = 0; sk < slots; sk++) {
-      var sl = sk * 320;
-      var px = (sk % 2 === 0) ? sl + 110 : sl + 190;
-      _cyPaintFgKiosk(g, px, rng);
-    }
+    // between anchors. v0.66: 3 -> 1 per Mark "Layer 1 too busy."
+    // Just one in slot 0 to give the foreground a bit of mid-height
+    // variety without clutter.
+    _cyPaintFgKiosk(g, 110, rng);
   }
 
   // Short overlapping foreground piece (50-72px tall). One of 3
@@ -4352,7 +4349,9 @@ window.SDD = window.SDD || {};
     var variant = Math.floor(rng() * 3);
     var baseY = 110 + Math.floor(rng() * 20);   // 110-130 top
     var w = 22 + Math.floor(rng() * 14);
-    var bot = 180;
+    // v0.66: bot extended 180 -> 240 so the kiosk's base + side
+    // ladder + sidewalk shadow reach the screen bottom or go off.
+    var bot = 240;
     var h = bot - baseY;
     if (variant === 0) {
       // VENDING KIOSK + BENCH. Tall narrow kiosk with bright lit
@@ -4604,7 +4603,13 @@ window.SDD = window.SDD || {};
   function _cyPaintFgAnchor(g, x, rng) {
     var w = 28 + Math.floor(rng() * 10);
     var h = 120 + Math.floor(rng() * 40);
+    // v0.66: anchor extends to y=240 (canvas bottom) instead of
+    // stopping at y=180, so its base reaches the road or goes
+    // off-screen below per Mark "reach all the way down to the
+    // ground or lower out of view."
     var baseY = 180 - h;
+    var bottomY = 240;
+    h = bottomY - baseY;
     // DARK foreground building palette - deep teal-slate / dark
     // warm-brown. Mark's brief: "buildings closer darker." These
     // contrast hard against the pale far skyline.
@@ -4682,7 +4687,9 @@ window.SDD = window.SDD || {};
     // Warm windows + balconies - shifted to OPPOSITE side from the
     // neon sign so they don't compete visually.
     var winSideX = neonOnRight ? x + 4 : x + w - 10;
-    for (var wy = baseY + 18; wy < 180 - 28; wy += 18) {
+    // v0.66: windows continue down to bottomY-28 (was 180-28) since
+    // the anchor now extends to y=240.
+    for (var wy = baseY + 18; wy < bottomY - 28; wy += 18) {
       // Window frame (single bigger window not two).
       g.fillStyle = '#0E1422';
       g.fillRect(winSideX - 1, wy - 1, 6, 8);
@@ -4744,7 +4751,7 @@ window.SDD = window.SDD || {};
     g.fillStyle = hi;
     g.fillRect(pipeX + (neonOnRight ? 1 : -1), baseY + 6, 1, h - 10);
     // Pipe joints every 14 px.
-    for (var pj = baseY + 16; pj < 180 - 12; pj += 14) {
+    for (var pj = baseY + 16; pj < bottomY - 12; pj += 14) {
       g.fillStyle = '#0E1422';
       g.fillRect(pipeX - 1, pj, 3, 2);
     }
@@ -4818,7 +4825,12 @@ window.SDD = window.SDD || {};
       // Sub-level structural content (foundation arches + support
       // pillars) paints at y=152-240.
       bridge: mk(960, 240, _cyPaintBridge,     0),
-      fg:     mk(960, 180, _cyPaintForeground, 0)
+      // v0.66: foreground canvas grown 180 -> 240 so the anchor
+      // towers + kiosks + cafés reach all the way down to the
+      // bottom of the screen (or below it, out of view). Mark:
+      // "buildings from layer one should reach all the way down
+      // to the ground or lower out of view."
+      fg:     mk(960, 240, _cyPaintForeground, 0)
     };
     return _cyCache;
   }
@@ -5133,8 +5145,8 @@ window.SDD = window.SDD || {};
     var wx0 = camx - 32;
     var wx1 = camx + 320 + 32;
 
-    // CROSSWALK STRIPES every 200 world-px (5 white bars on the road).
-    var crossSpacing = 200;
+    // CROSSWALK STRIPES every 320 world-px (was 200; v0.66 thinning).
+    var crossSpacing = 320;
     var crossStart = Math.floor(wx0 / crossSpacing) * crossSpacing;
     for (var cw = crossStart; cw < wx1; cw += crossSpacing) {
       var cx = cw - camx;
@@ -5146,9 +5158,8 @@ window.SDD = window.SDD || {};
       }
     }
 
-    // LAMP POSTS every 96 world-px on the sidewalk side. Tall iron
-    // post + curved arm + warm glow halo.
-    var lampSpacing = 96;
+    // LAMP POSTS every 160 world-px (was 96; v0.66 thinning).
+    var lampSpacing = 160;
     var lampStart = Math.floor(wx0 / lampSpacing) * lampSpacing;
     for (var lp = lampStart; lp < wx1; lp += lampSpacing) {
       var lx = lp - camx;
@@ -5186,9 +5197,8 @@ window.SDD = window.SDD || {};
       g.fillRect(lx + 5, sideY - 22, 1, 1);
     }
 
-    // STREET SIGNS every 140 world-px, alternating 4 types. Rotates
-    // by (sx / 140) so the pattern is deterministic across the level.
-    var signSpacing = 140;
+    // STREET SIGNS every 240 world-px (was 140; v0.66 thinning).
+    var signSpacing = 240;
     var signStart = Math.floor(wx0 / signSpacing) * signSpacing;
     for (var sg = signStart; sg < wx1; sg += signSpacing) {
       var sx = sg - camx;
@@ -5197,8 +5207,8 @@ window.SDD = window.SDD || {};
       _cyDrawStreetSign(g, sx, sideY, signKind | 0);
     }
 
-    // BENCHES every 220 world-px on the sidewalk.
-    var benchSpacing = 220;
+    // BENCHES every 360 world-px (was 220; v0.66 thinning).
+    var benchSpacing = 360;
     var benchStart = Math.floor(wx0 / benchSpacing) * benchSpacing + 60;
     for (var bn = benchStart; bn < wx1; bn += benchSpacing) {
       var bxw = bn - camx;
