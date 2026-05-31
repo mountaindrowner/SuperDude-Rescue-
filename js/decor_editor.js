@@ -158,9 +158,21 @@ window.SDD = window.SDD || {};
     delBtn.style.cssText = btnCSS;
     delBtn.addEventListener('click', function () { deleteSelected(); });
     ui.appendChild(delBtn);
+    // v0.75: TEST button - jumps into the live level scene so Mark
+    // can see the decor placements with cars, foreground, gameplay,
+    // etc. Same as the level editor's test mode. Sets a flag so the
+    // BACK button (pause) returns here instead of the menu.
+    var testBtn = document.createElement('button');
+    testBtn.textContent = 'TEST';
+    testBtn.style.cssText = btnCSS + 'background:#3aff60;color:#1a1a2a;border-color:#3aff60;';
+    testBtn.addEventListener('click', function () {
+      state.testReturning = true;
+      go('level', { day: state.day, stage: state.stage });
+    });
+    ui.appendChild(testBtn);
     var saveBtn = document.createElement('button');
     saveBtn.textContent = 'SAVE';
-    saveBtn.style.cssText = btnCSS;
+    saveBtn.style.cssText = btnCSS + 'background:#5af0ff;color:#1a1a2a;border-color:#5af0ff;';
     saveBtn.addEventListener('click', save);
     ui.appendChild(saveBtn);
     var backBtn = document.createElement('button');

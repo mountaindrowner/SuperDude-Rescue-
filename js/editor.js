@@ -19,7 +19,7 @@ window.SDD = window.SDD || {};
   var SDD = window.SDD;
 
   var STAGE_KEYS = ['1-1', '2-1', '2-2', '3-1', '3-2', '4-1', '4-2',
-                    '5-1', '5-2', '6-1', '6-2', '7-1'];
+                    '5-1', '5-2', '6-1', '6-2', '7-1', '8-1'];
   var STAGE_NAMES = {
     '1-1': 'Light & Darkness',
     '2-1': 'Sky Above', '2-2': 'Sea Below',
@@ -27,7 +27,8 @@ window.SDD = window.SDD || {};
     '4-1': 'Solar Climb',   '4-2': 'Moonlit Run',
     '5-1': 'Wings of Day',  '5-2': 'Deep Currents',
     '6-1': 'Plains to Forest', '6-2': 'Creeping Things',
-    '7-1': 'The Garden'
+    '7-1': 'The Garden',
+    '8-1': 'Adventure City'
   };
 
   // -----------------------------------------------------------------
