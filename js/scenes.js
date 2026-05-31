@@ -4237,13 +4237,59 @@ window.SDD = window.SDD || {};
     var rng = _cyRng(0xF6E8);
     var W = 960;
     g.clearRect(0, 0, W, 180);
-    // Hanging vines from the top of the frame, scattered across.
+
+    // ===== HEADER GIRDER (v0.62 audit fix) =====
+    // Continuous steel cross-beam at the top of the foreground frame
+    // so vines + hanging signs attach to something visible instead of
+    // floating from off-canvas. When the camera scrolls up during a
+    // jump (Layer 1 is world-space, -camy parallax), this girder is
+    // what the eye reads as the structural anchor for everything
+    // hanging below it.
+    g.fillStyle = '#22232C';
+    g.fillRect(0, 0, W, 5);
+    g.fillStyle = '#3D3F4A';
+    g.fillRect(0, 0, W, 1);
+    g.fillStyle = '#5E6173';
+    g.fillRect(0, 4, W, 1);
+    // Rivets every 16 px so it reads as bolted steel.
+    g.fillStyle = '#5E6173';
+    for (var rv = 6; rv < W; rv += 16) {
+      g.fillRect(rv,     1, 2, 1);
+      g.fillRect(rv + 7, 3, 1, 1);
+    }
+    // Vertical hanger studs every 80 px going up off-canvas - reads
+    // as "girder suspended from buildings above the frame."
+    g.fillStyle = '#22232C';
+    for (var pyS = 32; pyS < W; pyS += 80) {
+      g.fillRect(pyS,     0, 2, 5);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(pyS - 2, 0, 6, 1);
+      g.fillStyle = '#22232C';
+    }
+    // Hangers / hooks sticking DOWN from the girder where vines + signs
+    // will attach. Spacing matches the hanging-vine RNG so most vines
+    // land on a hook.
+    g.fillStyle = '#3D3F4A';
+    for (var hk = 8; hk < W; hk += 24) {
+      g.fillRect(hk, 5, 1, 1);
+    }
+
+    // Trolley wire / power cable strung along the underside of the
+    // girder - thin highlight so the eye reads it as taut.
+    g.fillStyle = 'rgba(206,224,236,0.30)';
+    g.fillRect(0, 6, W, 1);
+
+    // Hanging vines from the girder (now anchored to a visible
+    // structural element, not floating from nothing).
     for (var vi = 0; vi < 18; vi++) {
       var vx = Math.floor(rng() * W);
       var vlen = 14 + Math.floor(rng() * 22);
       var blossom = rng() > 0.6;
+      // Tiny attachment fixture so the vine clearly grips the girder.
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(vx - 1, 5, 3, 1);
       g.fillStyle = _CYP.leafDk;
-      for (var vy = 0; vy < vlen; vy++) {
+      for (var vy = 5; vy < 5 + vlen; vy++) {
         var jitter = (Math.sin(vy * 0.6 + vi) | 0);
         g.fillRect(vx + jitter, vy, 1, 1);
         if (vy % 3 === 1) {
@@ -4256,10 +4302,10 @@ window.SDD = window.SDD || {};
       // Optional blossom cluster at the bottom.
       if (blossom && vlen > 18) {
         g.fillStyle = _CYP.blossom;
-        g.fillRect(vx,     vlen - 2, 2, 2);
-        g.fillRect(vx - 1, vlen - 1, 1, 1);
+        g.fillRect(vx,     5 + vlen - 2, 2, 2);
+        g.fillRect(vx - 1, 5 + vlen - 1, 1, 1);
         g.fillStyle = _CYP.blossomDk;
-        g.fillRect(vx + 2, vlen - 1, 1, 1);
+        g.fillRect(vx + 2, 5 + vlen - 1, 1, 1);
       }
     }
 
