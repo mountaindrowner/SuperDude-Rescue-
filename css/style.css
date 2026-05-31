@@ -68,6 +68,12 @@ body::before, body::after {
   height: 92%;
   border-radius: 6px;
   pointer-events: none;
+  /* v0.72: pin the lab-tech bezels to z-index 0 so they sit behind
+     the game canvas AND the touch controls. Without this they paint
+     after their later-in-source-order siblings (#game-container,
+     #touch-controls) and the right panel covered the pause/menu
+     button. */
+  z-index: 0;
   border: 1px solid rgba(120,160,210,0.20);
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,0.05),
@@ -146,8 +152,10 @@ body::after  { right: 0.6vw; animation-delay: 1.2s; }
   display: flex;
   align-items: center;
   justify-content: center;
-  /* No background here - let the body's lab-tech paint show through
-     the side bars. */
+  /* v0.72: above the lab-tech bezels (z:0) so the canvas paints in
+     front of them along its actual footprint. The bezels still show
+     in the unused viewport edges where the canvas doesn't reach. */
+  z-index: 5;
 }
 
 /* The canvas is sized by JS to fit the viewport while keeping its 16:9 ratio.
@@ -165,6 +173,10 @@ body::after  { right: 0.6vw; animation-delay: 1.2s; }
   inset: 0;
   pointer-events: none;
   display: none;
+  /* v0.72: lift above the body::before / body::after lab-tech
+     bezels so the pause button + A/B controls don't get covered by
+     the right side panel. */
+  z-index: 10;
 }
 body.touch #touch-controls { display: block; }
 
