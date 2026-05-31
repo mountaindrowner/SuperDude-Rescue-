@@ -4807,9 +4807,10 @@ window.SDD = window.SDD || {};
     }
     _cyCache = {
       // Atmospheric blur on the far layer - distant towers as soft
-      // silhouettes. v0.62: 2.4 -> 1.68px per Mark "5th layer less
-      // blurred by 30%."
-      far:    mk(960, 180, _cyPaintFar,        1.68),
+      // silhouettes. v0.62: 2.4 -> 1.68px. v0.66: 1.68 -> 1.26px
+      // (another 25% off) per Mark "lower blur on the farthest
+      // background by 25%."
+      far:    mk(960, 180, _cyPaintFar,        1.26),
       mid:    mk(960, 180, _cyPaintMid,        0),
       // v0.57: bridge canvas grew 180→240 so the layer covers the
       // bottom of the screen when the camera scrolls up during a
@@ -5418,17 +5419,17 @@ window.SDD = window.SDD || {};
     g.fillRect(0, 0, 320, 180);
     g.restore();
 
-    // 8. GLOBAL MULTIPLY DARKEN (v0.57 / softened v0.59 / lifted v0.65)
-    //    - Mark "still too washed out, increase color without
-    //    darkening." Multiply stops lifted further so the scene
-    //    barely dims (~12-18%). Just enough to anchor the brightness
-    //    inversion against Layer 1; not enough to flatten colors.
+    // 8. GLOBAL MULTIPLY DARKEN (v0.66 - Mark "lower brightness to
+    //    fourteen") - stops pulled down ~14 RGB units so the scene
+    //    dims another notch on top of v0.65. Layer 1 (foreground)
+    //    draws AFTER and is unaffected, keeping the contrast
+    //    inversion intact.
     g.save();
     g.globalCompositeOperation = 'multiply';
     var darken = g.createLinearGradient(0, 0, 0, 180);
-    darken.addColorStop(0,    'rgba(228,228,232,1)');
-    darken.addColorStop(0.5,  'rgba(216,218,224,1)');
-    darken.addColorStop(1,    'rgba(196,202,212,1)');
+    darken.addColorStop(0,    'rgba(214,214,218,1)');
+    darken.addColorStop(0.5,  'rgba(202,204,210,1)');
+    darken.addColorStop(1,    'rgba(182,188,200,1)');
     g.fillStyle = darken;
     g.fillRect(0, 0, 320, 180);
     g.restore();
