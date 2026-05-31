@@ -120,24 +120,52 @@
 6. **Spacesuit + jetpack Danny sprites** — Mark mentioned these
    in-flight; some costume sprites already wired (commit `af34470`).
    Confirm with Mark if more are coming.
-7. **Post-stage scripture teaching beat** (idea banked 2026-05-30,
-   not yet designed/built). Stages that are NOT followed by a
-   between-days quiz (the first stage of any 2-stage day, and the
-   Adventure City secret stage) feel a little abrupt at the end —
-   stage clears → straight to results → straight to overworld. Mark
-   wants a brief "Super Dude Danny teaches from scripture" beat
-   inserted between the results screen and the overworld. Concept:
-   a "READ THIS OUT LOUD" card showing a short scripture verse,
-   with Danny in his teaching pose (the lecturer frames in
-   `assets/New Assets/Big Danny/Actively_teaching_...`) reading
-   it aloud / pointing at the text. Confirm-to-advance. Verse
-   chosen by stage (a per-stage lookup in `js/quiz_data.js` style,
-   or a small new file). Should be SHORT (1 verse, ~2 lines) so it
-   doesn't feel like homework. Only triggers on the no-quiz
-   stages — the existing `quiz` scene already carries the
-   teaching beat between days, this fills the gap on intra-day
-   stages. NOT YET implemented; revisit after the Adventure City
-   art passes are done.
+7. **Post-stage scripture teaching beat / mini-lessons between
+   non-quiz levels** (idea banked 2026-05-30, refined 2026-05-31
+   per Mark, not yet designed/built). Stages that are NOT followed
+   by a between-days quiz (the first stage of any 2-stage day, and
+   the Adventure City secret stage) feel a little abrupt at the
+   end. Mark wants a brief "Super Dude Danny teaches from
+   scripture" mini-lesson inserted between the results screen and
+   the overworld — DOES NOT REPLACE the existing between-day quiz
+   scene, just fills the gap on no-quiz stages.
+
+   Concept refined 2026-05-31:
+   - Danny in his lab (probably reusing the painted ART_LAB
+     backdrop the finale uses) in his **teaching / lecturing
+     animation** (`assets/New Assets/Big Danny/Actively_teaching_
+     and_lecturing_talking_and_waving-dfb619f4` or the
+     `Funny_teaching_and_lecturing_...` variant).
+   - Short scripture verse for the stage's biblical day, in the
+     **ICB (International Children's Bible) version**.
+   - Text **types out slowly** character-by-character with **little
+     fun typing noises** as each character lands (small click /
+     pop sound, maybe pitched per letter). Similar feel to a
+     Pokémon dialog box.
+   - Confirm-to-advance once the text finishes typing.
+   - Per-stage verse lookup, probably a new file
+     `js/scripture_data.js` keyed by `'d-s'` and storing the verse
+     text + reference (book, chapter, verse). Stays separate from
+     `js/quiz_data.js` so the quiz between-days remains untouched.
+
+   Implementation rough plan when it's time:
+   - New scene `SDD.scenes.lesson` with painted lab backdrop +
+     Danny in the lecturing pose (sprite cycles 2-3 frames at low
+     fps for talking).
+   - Inserted before `go('results', ...)` in the level scene's
+     `finish()` only when the day's stage count is > 1 AND this
+     is NOT the last stage of the day (so the between-day quiz
+     handles the last-stage case). Also for Adventure City (Day
+     8-1) which is outside the quiz progression entirely.
+   - Typing animation: reveal one char per ~3 frames, play a small
+     synthesised tick (existing `A.sfx('select')` at very low
+     volume + slight pitch variation, OR a new dedicated
+     `SDD.audio.SFX.typewriter` tone).
+   - SKIP button (or hold-confirm) reveals all text instantly for
+     replays.
+
+   NOT YET implemented; revisit after the Adventure City art
+   passes are done and Mark gives the go.
 
 ### Most recent session in plain English
 
