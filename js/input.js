@@ -154,6 +154,102 @@ window.SDD = window.SDD || {};
   function onGpConnect(e)    { if (typeof console !== 'undefined') console.log('gamepad connected:',    e.gamepad && e.gamepad.id); }
   function onGpDisconnect(e) { if (typeof console !== 'undefined') console.log('gamepad disconnected:', e.gamepad && e.gamepad.id); }
 
+  // ---- Virtual joystick (v0.63) -------------------------------------
+  //
+  // Replaces the fixed 4-button DPad. The #vstick-zone div covers the
+  // left half of the viewport - touch down anywhere inside it and the
+  // joystick base + knob render at the touch point. Drag the knob in
+  // any direction; deflection past the deadzone fires left/right/up/
+  // down actions. Release returns to neutral.
+  //
+  // Implementation notes:
+  //   - Tracks ONE active pointer (multi-touch is reserved for the A/B
+  //     buttons on the right side).
+  //   - Pointer is captured on the zone element so movement OUTSIDE
+  //     the zone still drives the joystick (kid drags too far).
+  //   - Base radius is in vmin so the deadzone scales with screen size.
+  function bindVStick() {
+    var zone = document.getElementById('vstick-zone');
+    var vs   = document.getElementById('vstick');
+    var base = document.getElementById('vstick-base');
+    var knob = document.getElementById('vstick-knob');
+    if (!zone || !vs || !base || !knob) return;
+    var activePtr = null;
+    var baseX = 0, baseY = 0;
+    var BASE_R_VMIN  = 15;       // base half-size (matches #vstick-base 30vmin)
+    var DEADZONE     = 0.30;     // 30% deflection = direction action fires
+    var lastL = false, lastR = false, lastU = false, lastD = false;
+
+    function vminPx() {
+      return Math.min(window.innerWidth, window.innerHeight) / 100;
+    }
+    function setVsXY(x, y, kx, ky) {
+      vs.style.left = '0';
+      vs.style.top  = '0';
+      base.style.left = x + 'px';
+      base.style.top  = y + 'px';
+      knob.style.left = kx + 'px';
+      knob.style.top  = ky + 'px';
+    }
+    function clearDirs() {
+      if (lastL) { setTouch('left',  false); lastL = false; }
+      if (lastR) { setTouch('right', false); lastR = false; }
+      if (lastU) { setTouch('up',    false); lastU = false; }
+      if (lastD) { setTouch('down',  false); lastD = false; }
+    }
+    function applyDelta(dx, dy) {
+      var r = BASE_R_VMIN * vminPx();
+      // Normalised deflection (clamped to circle).
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > r) { dx = dx * r / dist; dy = dy * r / dist; }
+      var nx = dx / r, ny = dy / r;
+      // Update knob visual position.
+      knob.style.left = (baseX + dx) + 'px';
+      knob.style.top  = (baseY + dy) + 'px';
+      // Map to discrete direction actions with hysteresis (deadzone).
+      var L = nx < -DEADZONE;
+      var R = nx >  DEADZONE;
+      var U = ny < -DEADZONE;
+      var D = ny >  DEADZONE;
+      if (L !== lastL) { setTouch('left',  L); lastL = L; }
+      if (R !== lastR) { setTouch('right', R); lastR = R; }
+      if (U !== lastU) { setTouch('up',    U); lastU = U; }
+      if (D !== lastD) { setTouch('down',  D); lastD = D; }
+    }
+
+    function start(e) {
+      if (activePtr !== null) return;     // already tracking a touch
+      e.preventDefault();
+      fireFirstGesture();
+      activePtr = e.pointerId;
+      baseX = e.clientX;
+      baseY = e.clientY;
+      setVsXY(baseX, baseY, baseX, baseY);
+      vs.classList.remove('vstick-hidden');
+      try { zone.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    function move(e) {
+      if (e.pointerId !== activePtr) return;
+      var dx = e.clientX - baseX;
+      var dy = e.clientY - baseY;
+      applyDelta(dx, dy);
+    }
+    function end(e) {
+      if (e.pointerId !== activePtr) return;
+      activePtr = null;
+      vs.classList.add('vstick-hidden');
+      clearDirs();
+      try { zone.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+
+    zone.addEventListener('pointerdown',   start);
+    zone.addEventListener('pointermove',   move);
+    zone.addEventListener('pointerup',     end);
+    zone.addEventListener('pointercancel', end);
+    zone.addEventListener('pointerleave',  end);
+    zone.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
   function init() {
     window.addEventListener('keydown', onKey(true));
     window.addEventListener('keyup', onKey(false));
@@ -163,6 +259,7 @@ window.SDD = window.SDD || {};
 
     var btns = document.querySelectorAll('.tc-btn');
     for (var i = 0; i < btns.length; i++) bindButton(btns[i]);
+    bindVStick();
 
     // Mouse left-click anywhere on the canvas = blast.
     var cv = document.getElementById('game') || document.querySelector('canvas');

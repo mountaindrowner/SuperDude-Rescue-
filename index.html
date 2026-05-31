@@ -32,11 +32,14 @@
 
   <!-- On-screen touch controls (shown only on touch devices) -->
   <div id="touch-controls" aria-hidden="true">
-    <div id="dpad">
-      <button class="tc-btn tc-up"    data-action="up">&#9650;</button>
-      <button class="tc-btn tc-left"  data-action="left">&#9664;</button>
-      <button class="tc-btn tc-right" data-action="right">&#9654;</button>
-      <button class="tc-btn tc-down"  data-action="down">&#9660;</button>
+    <!-- Virtual joystick: touch anywhere on the left half spawns the
+         joystick at the touch point. Replaces the 4-button DPad in
+         v0.63 per Mark - lets the player rest their thumb anywhere
+         comfortable instead of hunting for fixed-position buttons. -->
+    <div id="vstick-zone"></div>
+    <div id="vstick" class="vstick-hidden">
+      <div id="vstick-base"></div>
+      <div id="vstick-knob"></div>
     </div>
     <div id="action-pad">
       <button class="tc-btn tc-b" data-action="blast">B</button>

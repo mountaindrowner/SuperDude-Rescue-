@@ -201,12 +201,56 @@ body.touch #touch-controls { display: block; }
   border-color: rgba(255,255,255,0.42);
 }
 
-/* D-pad, bottom-left - rounded-square keys */
-#dpad { position: absolute; left: 4vmin; bottom: 4vmin; width: 39vmin; height: 39vmin; }
-.tc-up    { left: 13vmin; top: 0;        width: 13vmin; height: 13vmin; }
-.tc-down  { left: 13vmin; bottom: 0;     width: 13vmin; height: 13vmin; }
-.tc-left  { left: 0;      top: 13vmin;   width: 13vmin; height: 13vmin; }
-.tc-right { right: 0;     top: 13vmin;   width: 13vmin; height: 13vmin; }
+/* VIRTUAL JOYSTICK (v0.63). Replaces the 4-button DPad. The zone
+   covers the LEFT HALF of the viewport - touch down anywhere inside
+   it and the joystick base + knob spawn at the touch point. Drag the
+   knob in any direction to move; release to stop. */
+#vstick-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
+  pointer-events: auto;
+  /* Block browser pan/zoom on this region so quick drags don't
+     scroll the page on iOS Safari. */
+  touch-action: none;
+  /* invisible - the zone is the touch capture, the joystick visuals
+     are #vstick (positioned at touch point). */
+  background: transparent;
+}
+#vstick {
+  position: absolute;
+  pointer-events: none;
+  /* Position is set per-touch in JS; opacity controls visibility. */
+  left: 0; top: 0;
+  width: 0; height: 0;
+  opacity: 1;
+  transition: opacity 0.10s ease;
+}
+#vstick.vstick-hidden { opacity: 0; }
+#vstick-base, #vstick-knob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+#vstick-base {
+  width: 30vmin;
+  height: 30vmin;
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.16), rgba(255,255,255,0.04) 62%, rgba(255,255,255,0.01));
+  border: 1.8px solid rgba(255,255,255,0.34);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0.4vmin 1.2vmin rgba(0,0,0,0.34), inset 0 1px 1px rgba(255,255,255,0.14);
+}
+#vstick-knob {
+  width: 13vmin;
+  height: 13vmin;
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.55), rgba(255,255,255,0.22) 62%, rgba(255,255,255,0.10));
+  border: 1.8px solid rgba(255,255,255,0.62);
+  box-shadow: 0 0.4vmin 0.8vmin rgba(0,0,0,0.40), inset 0 1px 2px rgba(255,255,255,0.30);
+}
 
 /* A / B buttons, bottom-right - A green (action), B orange (also "back") */
 #action-pad { position: absolute; right: 4vmin; bottom: 4vmin; width: 44vmin; height: 28vmin; }
