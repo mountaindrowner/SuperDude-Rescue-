@@ -2401,9 +2401,10 @@ window.SDD = window.SDD || {};
 
   // Solarpunk palette (anchored to Mark's brief).
   var _CYP = {
-    // v0.62: pulled 30% back toward the v0.60 deeper blue so the sky
-    // sits between the washed-out v0.61 and the over-saturated v0.60.
-    skyTop:    '#5CA5DE', skyMid:   '#87C9EF', skyHoriz: '#C2E8F6',
+    // v0.62 was #5CA5DE/#87C9EF/#C2E8F6; v0.71 pushes deeper than the
+    // previous saturated v0.60 baseline (#3B92D8/#6EBEEC/#B5E2F3) per
+    // Mark "the sky should be a deeper blue still."
+    skyTop:    '#2A82CC', skyMid:   '#4FA8DE', skyHoriz: '#9ED4EC',
     cloudBase: '#F4FFF8', cloudHi:  '#FFFFFF', cloudShadow: '#CDEEF2',
     sunDisc:   '#FFF6C8', sunHalo:  '#FFE890',
     farHaze:   '#A8C9D8', farMid:   '#B5C4D4', farDark: '#8FA3BD', farGreen: '#9CC4A0',
