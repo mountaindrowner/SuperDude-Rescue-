@@ -117,13 +117,12 @@ SDD.levels = SDD.levels || {};
   var allPits = prePits.concat(tunnelPits, postPits);
   carve(ground, allPits);
 
-  // Tower entrance plinth at cols 706-718 (slightly raised step into
-  // the door). One tile higher so it visually reads as a threshold.
-  // Use solid 'X' on row 10 for a single-tile step up.
-  // (Implemented below on the row10 variable.)
-
+  // v0.88: tower-entrance plinth REMOVED so the player can walk
+  // straight into the door without hitting a wall (Mark: "right now
+  // I hit a wall walking straight"). Row 10 is clear; the entrance
+  // is now a flat-ground walk-in framed by a Layer-3 back wall and
+  // a Layer-1 foreground doorway pillars + lintel.
   var row10 = blank();
-  placeSolid(row10, [[706, 12]]);
 
   // ---- TILE ROWS ASSEMBLY -----------------------------------------
   // 14 rows.
@@ -131,8 +130,6 @@ SDD.levels = SDD.levels || {};
   var SKY = rep(' ', W);
   var dirt = ground.slice();                       // dirt layer 1
   var dirt2 = ground.slice();                      // dirt layer 2
-  // Tower plinth dirt fill - extend the solid block downward.
-  for (var dp = 706; dp < 718; dp++) { dirt[dp] = 'X'; dirt2[dp] = 'X'; }
 
   var tiles = [
     SKY,                       // 0

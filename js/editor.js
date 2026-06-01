@@ -1680,6 +1680,11 @@ window.SDD = window.SDD || {};
       // top of the bright parallax (e.g. the cyber bridge layer).
       g.fillStyle = 'rgba(0,0,0,0.18)';
       g.fillRect(0, 0, 320, 180);
+      // v0.88: tower-entrance Bg pass also lives in the editor's bg
+      // layer so the facade reads behind tiles + spawn markers.
+      if (lvl.towerEntrance && SDD._drawTowerEntranceBg) {
+        SDD._drawTowerEntranceBg(g, camx, camy, this.t, lvl.towerEntrance);
+      }
     },
 
     // v0.86: foreground layer + Adventure City tower entrance + start
@@ -1704,8 +1709,11 @@ window.SDD = window.SDD || {};
       }
       if (FG && FG[theme]) FG[theme](g, camx, camy, prog, this.t);
       // Tower entrance + start sign (cyber theme).
-      if (lvl.towerEntrance && SDD._drawTowerEntrance) {
-        SDD._drawTowerEntrance(g, camx, camy, this.t, lvl.towerEntrance);
+      // v0.88: tower-entrance Fg pass (pillars + lintel + threshold)
+      // is the part that overlaps the player; the Bg facade + cavity
+      // already painted earlier in _paintLayersBg below.
+      if (lvl.towerEntrance && SDD._drawTowerEntranceFg) {
+        SDD._drawTowerEntranceFg(g, camx, camy, this.t, lvl.towerEntrance);
       }
       if (lvl.startSign && SDD._drawStartSign) {
         SDD._drawStartSign(g, camx, camy, this.t, lvl.startSign);

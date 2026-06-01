@@ -11,9 +11,38 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.87` / `sdd-shell-v87`.
+- **Live build**: `v0.88` / `sdd-shell-v88`.
 
-### v0.87 — Post-tunnel foreground stripped + time machine vanishes (latest)
+### v0.88 — Tower walk-in (Layer-1+3 combo) + solid tunnel interior (latest)
+
+- **Tower entrance is now walk-in-able.** Mark: "transition into the
+  adventure tower should be a combo of layer 1 and 3 so I walk in.
+  But right now I hit a wall walking straight." Two fixes together:
+  1. **Level data**: the solid-tile plinth at cols 706-717 (row 10
+     `placeSolid` + the dirt extensions on rows 12-13) is removed in
+     `level_8_1.js`, so the player walks flat all the way into the
+     door without bumping into a raised step.
+  2. **Painter split**: `_cyDrawTowerEntrance` is split into a
+     `_Bg` pass (Layer-3 depth: facade body + windows + signage +
+     spire + recessed door **cavity** with warm lobby glow + tiled
+     foyer floor) painted BEFORE entities, and a `_Fg` pass (Layer-1
+     depth: door pillars/jambs + lintel with rivets + keystone +
+     threshold step + overhead awning lamps) painted AFTER the
+     foreground silhouettes. Net result: the player walks toward the
+     door, sees the lit lobby behind them, gets framed by the
+     foreground pillars, touches the timepart inside the cavity,
+     fade-to-black, cityArrival cutscene. Editor mirrors the same
+     split via `SDD._drawTowerEntranceBg/Fg`.
+- **Tunnel interior is no longer transparent.** Mark: "tunnel
+  background is transparent, let's make it solid color and not see
+  through." Swapped the multiply-darken pass for an OPAQUE dark
+  navy gradient fill across the tunnel range. The cyber-city
+  parallax behind is now fully hidden — the tunnel reads as a
+  sealed concrete interior, with structural detail (pillars, deck
+  skirt, lamps, signs, ceiling girders) popping cleanly against the
+  solid background. Pre/post-tunnel zones unchanged.
+
+### v0.87 — Post-tunnel foreground stripped + time machine vanishes
 
 - **Layer-1 (foreground) removed after the tunnel** (Mark: "remove
   first layer pieces after the tunnel"). Dropped the `cyber-dawn`

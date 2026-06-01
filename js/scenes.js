@@ -5684,28 +5684,43 @@ window.SDD = window.SDD || {};
   }
 
   // v0.85: ADVENTURE TOWER entrance painted at the end of Day 8-1.
-  // Replaces the rescue-NPC lineup at the goal - Mark wants the stage
-  // to end with a closed tower entrance we walk through into the
-  // cinematic. Tall tower facade + lit double doors + glowing
-  // ADVENTURE TOWER signage on the parapet.
-  function _cyDrawTowerEntrance(g, camx, camy, t, ent) {
+  // v0.88: SPLIT into _Bg (back wall + door cavity, drawn behind the
+  // player) and _Fg (door pillars + lintel + threshold, drawn in
+  // front of the player). Mark: "transition should be a combo of
+  // layer 1 and 3 so I walk in." The player walks flat into the door,
+  // gets framed by the foreground pillars, touches the timepart
+  // inside the cavity, and the cityArrival cutscene takes over.
+  function _cyDrawTowerEntranceShared(ent, camx, camy) {
     var T = C.TILE;
     var wx0 = ent.col * T;
     var ww  = (ent.width || 16) * T;
     var sx0 = Math.round(wx0 - camx);
-    if (sx0 + ww < -8 || sx0 > 328) return;
+    if (sx0 + ww < -8 || sx0 > 328) return null;
     var groundY = 176 - camy;
     var topY    = 0 - camy;
+    var doorW = 38, doorH = 56;
+    var doorX = sx0 + Math.floor((ww - doorW) / 2);
+    var doorY = groundY - doorH;
+    return {
+      sx0: sx0, ww: ww, groundY: groundY, topY: topY,
+      doorW: doorW, doorH: doorH, doorX: doorX, doorY: doorY
+    };
+  }
+
+  function _cyDrawTowerEntranceBg(g, camx, camy, t, ent) {
+    var d = _cyDrawTowerEntranceShared(ent, camx, camy);
+    if (!d) return;
+    var sx0 = d.sx0, ww = d.ww, groundY = d.groundY, topY = d.topY;
+    var doorW = d.doorW, doorH = d.doorH, doorX = d.doorX, doorY = d.doorY;
 
     // Facade body (dark teal-grey block).
     g.fillStyle = '#1a2a44';
     g.fillRect(sx0, topY, ww, groundY - topY);
-    // Highlight pillar edges.
     g.fillStyle = '#2a4a78';
     g.fillRect(sx0, topY, 2, groundY - topY);
     g.fillStyle = '#0c1424';
     g.fillRect(sx0 + ww - 2, topY, 2, groundY - topY);
-    // Vertical pinstripes for tower height.
+    // Vertical pinstripes.
     g.fillStyle = '#22365a';
     for (var s = sx0 + 12; s < sx0 + ww - 12; s += 14) {
       g.fillRect(s, topY + 8, 1, groundY - topY - 12);
@@ -5715,16 +5730,15 @@ window.SDD = window.SDD || {};
     for (var fy = topY + 24; fy < groundY - 20; fy += 18) {
       g.fillRect(sx0 + 4, fy, ww - 8, 1);
     }
-    // Lit windows in a grid (warm yellows + a few cyan).
-    var winCols = 5, winRows = 6;
-    var winW = 8, winH = 6;
+    // Lit windows (warm yellows + a few cyan), skipping the cavity
+    // band so the doorway opening reads clean.
+    var winCols = 5, winRows = 6, winW = 8, winH = 6;
     var startX = sx0 + Math.floor((ww - (winCols * winW + (winCols - 1) * 4)) / 2);
     for (var rr = 0; rr < winRows; rr++) {
       for (var cc = 0; cc < winCols; cc++) {
         var wxw = startX + cc * (winW + 4);
         var wyw = topY + 30 + rr * 14;
-        if (wyw + winH > groundY - 32) continue;
-        // Hash so individual windows pick stable colours.
+        if (wyw + winH > doorY - 22) continue;        // leave room for signage
         var hash = (rr * 31 + cc * 17 + ent.col) % 7;
         var col;
         if (hash < 4)      col = '#ffd070';
@@ -5738,46 +5752,6 @@ window.SDD = window.SDD || {};
         g.fillRect(wxw, wyw, 1, 1);
       }
     }
-    // Door portal at the base, centered.
-    var doorW = 38, doorH = 56;
-    var doorX = sx0 + Math.floor((ww - doorW) / 2);
-    var doorY = groundY - doorH;
-    // Arch frame.
-    g.fillStyle = '#3a5a8a';
-    g.fillRect(doorX - 3, doorY - 4, doorW + 6, doorH + 4);
-    g.fillStyle = '#0c1424';
-    g.fillRect(doorX, doorY, doorW, doorH);
-    // Door body (split double doors with a seam).
-    var doorGrad = g.createLinearGradient(doorX, doorY, doorX, doorY + doorH);
-    doorGrad.addColorStop(0,   '#3a6098');
-    doorGrad.addColorStop(0.6, '#1c3870');
-    doorGrad.addColorStop(1,   '#0c1424');
-    g.fillStyle = doorGrad;
-    g.fillRect(doorX + 2, doorY + 2, doorW - 4, doorH - 4);
-    // Center seam.
-    g.fillStyle = '#0c1424';
-    g.fillRect(doorX + doorW / 2 - 1, doorY + 2, 2, doorH - 4);
-    // Door inset panels.
-    g.fillStyle = 'rgba(255,255,255,0.10)';
-    g.fillRect(doorX + 4, doorY + 6, doorW / 2 - 7, doorH - 14);
-    g.fillRect(doorX + doorW / 2 + 3, doorY + 6, doorW / 2 - 7, doorH - 14);
-    // Door handles.
-    g.fillStyle = '#ffe89a';
-    g.fillRect(doorX + doorW / 2 - 6, doorY + doorH / 2, 2, 4);
-    g.fillRect(doorX + doorW / 2 + 4, doorY + doorH / 2, 2, 4);
-    // Threshold step.
-    g.fillStyle = '#6a8ab0';
-    g.fillRect(doorX - 6, groundY - 4, doorW + 12, 2);
-    g.fillStyle = '#0c1424';
-    g.fillRect(doorX - 6, groundY - 2, doorW + 12, 2);
-    // Warm door glow (pulses gently).
-    var pulse = 0.55 + Math.sin(t * 0.04) * 0.10;
-    var dg = g.createRadialGradient(doorX + doorW / 2, doorY + doorH - 6, 4,
-                                    doorX + doorW / 2, doorY + doorH - 6, 48);
-    dg.addColorStop(0, 'rgba(255,220,140,' + pulse.toFixed(2) + ')');
-    dg.addColorStop(1, 'rgba(255,200,80,0)');
-    g.fillStyle = dg;
-    g.fillRect(doorX - 24, doorY + doorH / 2 - 10, doorW + 48, doorH);
     // ADVENTURE TOWER signage above the door (lit panel + text).
     var sigW = Math.min(ww - 16, 102);
     var sigH = 16;
@@ -5791,7 +5765,6 @@ window.SDD = window.SDD || {};
     g.fillRect(sigX, sigY, sigW, 2);
     g.fillStyle = '#0c1424';
     g.fillRect(sigX, sigY + sigH - 2, sigW, 2);
-    // Signage halo glow.
     var sg = g.createLinearGradient(sigX, sigY - 6, sigX, sigY + sigH + 6);
     sg.addColorStop(0,   'rgba(120,200,255,0)');
     sg.addColorStop(0.5, 'rgba(120,200,255,0.22)');
@@ -5799,6 +5772,39 @@ window.SDD = window.SDD || {};
     g.fillStyle = sg;
     g.fillRect(sigX - 8, sigY - 6, sigW + 16, sigH + 12);
     SDD.sprites.text(g, 'ADVENTURE TOWER', sigX + sigW / 2 - 1, sigY + 5, '#ffffff', 1, 'center');
+
+    // DOOR CAVITY (open recessed interior, no slab in the way).
+    // Dark back wall.
+    g.fillStyle = '#070b14';
+    g.fillRect(doorX, doorY, doorW, doorH);
+    // Interior wall side-shading so the cavity reads as RECESSED.
+    g.fillStyle = '#11192e';
+    g.fillRect(doorX, doorY, 3, doorH);
+    g.fillRect(doorX + doorW - 3, doorY, 3, doorH);
+    g.fillStyle = '#1a2444';
+    g.fillRect(doorX, doorY, doorW, 4);              // back wall top edge
+    // Tiled foyer floor inside the cavity.
+    g.fillStyle = '#22365a';
+    g.fillRect(doorX, doorY + doorH - 6, doorW, 6);
+    g.fillStyle = '#3a5a8a';
+    g.fillRect(doorX, doorY + doorH - 6, doorW, 1);
+    for (var fx = doorX + 4; fx < doorX + doorW; fx += 8) {
+      g.fillStyle = '#0c1424';
+      g.fillRect(fx, doorY + doorH - 4, 1, 4);
+    }
+    // Warm lobby glow pouring out of the opening.
+    var pulse = 0.65 + Math.sin(t * 0.04) * 0.10;
+    var dg = g.createRadialGradient(doorX + doorW / 2, doorY + doorH - 10, 2,
+                                    doorX + doorW / 2, doorY + doorH - 10, 56);
+    dg.addColorStop(0,   'rgba(255,220,140,' + pulse.toFixed(2) + ')');
+    dg.addColorStop(0.5, 'rgba(255,200,110,0.40)');
+    dg.addColorStop(1,   'rgba(255,200,80,0)');
+    g.fillStyle = dg;
+    g.fillRect(doorX - 16, doorY + doorH / 2 - 18, doorW + 32, doorH);
+    // A subtle inner-bottom highlight where the lobby floor reflects.
+    g.fillStyle = 'rgba(255,220,140,0.45)';
+    g.fillRect(doorX + 4, doorY + doorH - 7, doorW - 8, 1);
+
     // Apex spire on the parapet.
     var spireX = sx0 + Math.floor(ww / 2);
     g.fillStyle = '#0c1424';
@@ -5814,6 +5820,101 @@ window.SDD = window.SDD || {};
     g.fillRect(sx0 - 2, topY - 2, ww + 4, 4);
     g.fillStyle = '#3a6cb0';
     g.fillRect(sx0 - 2, topY - 2, ww + 4, 1);
+  }
+
+  function _cyDrawTowerEntranceFg(g, camx, camy, t, ent) {
+    var d = _cyDrawTowerEntranceShared(ent, camx, camy);
+    if (!d) return;
+    var groundY = d.groundY, doorW = d.doorW, doorH = d.doorH;
+    var doorX = d.doorX, doorY = d.doorY;
+
+    // LINTEL - thick beam above the doorway opening.
+    var lintelH = 8;
+    var lintelX = doorX - 8;
+    var lintelW = doorW + 16;
+    var lintelY = doorY - lintelH - 2;
+    g.fillStyle = '#0c1424';
+    g.fillRect(lintelX, lintelY, lintelW, lintelH);
+    g.fillStyle = '#3a5a8a';
+    g.fillRect(lintelX + 1, lintelY + 1, lintelW - 2, lintelH - 3);
+    g.fillStyle = '#6a8ab0';
+    g.fillRect(lintelX + 1, lintelY + 1, lintelW - 2, 1);
+    g.fillStyle = '#22365a';
+    g.fillRect(lintelX + 1, lintelY + lintelH - 3, lintelW - 2, 1);
+    // Lintel rivets.
+    g.fillStyle = '#9bb0d0';
+    for (var rx = lintelX + 6; rx < lintelX + lintelW - 4; rx += 10) {
+      g.fillRect(rx, lintelY + 3, 1, 1);
+    }
+    // Small ornament keystone at the center.
+    var kx = doorX + Math.floor(doorW / 2);
+    g.fillStyle = '#ffd070';
+    g.fillRect(kx - 2, lintelY - 2, 4, 4);
+    g.fillStyle = '#fff2b0';
+    g.fillRect(kx - 1, lintelY - 2, 2, 1);
+
+    // LEFT + RIGHT door pillars/jambs (frame the opening).
+    function pillar(px) {
+      var pw = 5, pyTop = lintelY, pyBot = groundY;
+      g.fillStyle = '#0c1424';
+      g.fillRect(px, pyTop, pw, pyBot - pyTop);
+      g.fillStyle = '#3a5a8a';
+      g.fillRect(px + 1, pyTop, pw - 2, pyBot - pyTop);
+      // Highlight strip on the inward-facing edge.
+      g.fillStyle = '#6a8ab0';
+      g.fillRect(px + 1, pyTop, 1, pyBot - pyTop);
+      // Dark shadow on the outward edge.
+      g.fillStyle = '#22365a';
+      g.fillRect(px + pw - 2, pyTop, 1, pyBot - pyTop);
+      // Decorative band near the top + base.
+      g.fillStyle = '#0c1424';
+      g.fillRect(px, pyTop + 8, pw, 2);
+      g.fillRect(px, pyBot - 12, pw, 2);
+      g.fillStyle = '#9bb0d0';
+      g.fillRect(px + 1, pyTop + 9, pw - 2, 1);
+      g.fillRect(px + 1, pyBot - 11, pw - 2, 1);
+    }
+    pillar(doorX - 6);                                // left jamb
+    pillar(doorX + doorW + 1);                        // right jamb
+
+    // THRESHOLD step in front of the cavity (on top of the ground row).
+    var thW = doorW + 22;
+    var thX = doorX - 11;
+    g.fillStyle = '#0c1424';
+    g.fillRect(thX, groundY - 2, thW, 4);
+    g.fillStyle = '#3a5a8a';
+    g.fillRect(thX, groundY - 2, thW, 1);
+    g.fillStyle = '#6a8ab0';
+    g.fillRect(thX + 1, groundY - 2, thW - 2, 1);
+    // Threshold gleam (warm reflection from the lobby glow).
+    g.fillStyle = 'rgba(255,220,140,0.55)';
+    g.fillRect(thX + 4, groundY - 2, thW - 8, 1);
+
+    // Small overhead awning lamp on each side of the lintel.
+    function lamp(lx) {
+      g.fillStyle = '#0c1424';
+      g.fillRect(lx, lintelY + lintelH, 3, 2);
+      g.fillStyle = '#ffe89a';
+      g.fillRect(lx, lintelY + lintelH + 2, 3, 2);
+      g.fillStyle = '#ffffff';
+      g.fillRect(lx + 1, lintelY + lintelH + 2, 1, 1);
+      // Halo.
+      var lh = g.createRadialGradient(lx + 1, lintelY + lintelH + 4, 1,
+                                      lx + 1, lintelY + lintelH + 4, 16);
+      lh.addColorStop(0, 'rgba(255,220,140,0.50)');
+      lh.addColorStop(1, 'rgba(255,180,80,0)');
+      g.fillStyle = lh;
+      g.fillRect(lx - 14, lintelY + lintelH, 32, 22);
+    }
+    lamp(doorX - 14);
+    lamp(doorX + doorW + 12);
+  }
+
+  // Back-compat shim: code that hasn't been split yet still calls the
+  // single name; this paints both layers together (legacy fallback).
+  function _cyDrawTowerEntrance(g, camx, camy, t, ent) {
+    _cyDrawTowerEntranceBg(g, camx, camy, t, ent);
+    _cyDrawTowerEntranceFg(g, camx, camy, t, ent);
   }
 
   function drawForeground_cyber(g, camx, camy, prog, t) {
@@ -5999,25 +6100,20 @@ window.SDD = window.SDD || {};
     var sx1 = X1 - camx;
     if (sx1 < -8 || sx0 > 328) return;
 
-    // INTERIOR DARKENING. Multiply a deep navy across the visible
-    // tunnel range so the bright background city dims out and reads
-    // as "inside a tunnel". Skip the small flare zones at the portal
-    // walls so the entrance + exit feel transitional.
+    // INTERIOR FILL. v0.88: SOLID dark fill (was a multiply pass that
+    // left the bright city showing through, per Mark "the tunnel
+    // background is transparent, let's make it solid color"). Opaque
+    // gradient covers the whole tunnel range so far/mid/bridge sky
+    // layers behind are completely hidden, and the structural detail
+    // (pillars, deck skirt, lamps) reads as a sealed concrete interior.
     var darkLo = Math.max(0, sx0);
     var darkHi = Math.min(320, sx1);
     if (darkLo < darkHi) {
-      g.save();
-      g.globalCompositeOperation = 'multiply';
-      var grd = g.createLinearGradient(0, 0, 0, 180);
-      grd.addColorStop(0,    '#0a1424');
-      grd.addColorStop(0.45, '#142640');
-      grd.addColorStop(1,    '#0a1018');
-      g.fillStyle = grd;
-      g.fillRect(darkLo, 0, darkHi - darkLo, 180);
-      g.restore();
-      // Atmospheric haze layer (volumetric tint) - normal blend on top
-      // of multiply so warm lamp halos read against the dim interior.
-      g.fillStyle = 'rgba(20,30,60,0.30)';
+      var solid = g.createLinearGradient(0, 0, 0, 180);
+      solid.addColorStop(0,    '#0a1018');
+      solid.addColorStop(0.45, '#0e1c30');
+      solid.addColorStop(1,    '#070b12');
+      g.fillStyle = solid;
       g.fillRect(darkLo, 0, darkHi - darkLo, 180);
     }
 
@@ -7183,6 +7279,13 @@ window.SDD = window.SDD || {};
       if (this.startSign) {
         _cyDrawStartSign(g, cam.x, cam.y, this.timeSteps, this.startSign);
       }
+      // v0.88: tower entrance BACKGROUND pass (facade + door cavity
+      // + warm lobby glow) paints BEFORE entities so the player draws
+      // IN FRONT of it as they walk into the door. The FG pillars +
+      // lintel paint later, after the foreground silhouette layer.
+      if (this.towerEntrance) {
+        _cyDrawTowerEntranceBg(g, cam.x, cam.y, this.timeSteps, this.towerEntrance);
+      }
       // entities
       var i;
       for (i = 0; i < this.platforms.length; i++) this.platforms[i].draw(g, cam);
@@ -7267,11 +7370,13 @@ window.SDD = window.SDD || {};
       var fgFn = FOREGROUNDS[fgTheme];
       if (fgFn) fgFn(g, cam.x, cam.y, prog, this.timeSteps);
 
-      // v0.85: tower entrance paints AFTER foreground so the painted
-      // facade isn't occluded by Layer-1 anchor silhouettes near the
-      // right edge of the stage.
+      // v0.88: tower entrance FOREGROUND pass (door pillars, lintel,
+      // threshold) draws AFTER the foreground silhouettes so it sits
+      // in front of the player as they walk into the door. The BG
+      // pass (facade body + door cavity + warm lobby glow) is drawn
+      // earlier - see the sky/tile pass above.
       if (this.towerEntrance) {
-        _cyDrawTowerEntrance(g, cam.x, cam.y, this.timeSteps, this.towerEntrance);
+        _cyDrawTowerEntranceFg(g, cam.x, cam.y, this.timeSteps, this.towerEntrance);
       }
 
       this.drawHUD(g);
@@ -8210,8 +8315,10 @@ window.SDD = window.SDD || {};
   // render the parallax sky + foreground layers for any stage. Also
   // expose Adventure City's tower entrance + start sign painters.
   SDD.themes = { SKY: THEMES, FG: FOREGROUNDS };
-  SDD._drawTowerEntrance  = _cyDrawTowerEntrance;
-  SDD._drawStartSign      = _cyDrawStartSign;
+  SDD._drawTowerEntrance   = _cyDrawTowerEntrance;
+  SDD._drawTowerEntranceBg = _cyDrawTowerEntranceBg;
+  SDD._drawTowerEntranceFg = _cyDrawTowerEntranceFg;
+  SDD._drawStartSign       = _cyDrawStartSign;
   var DLG_WRAP = 44;          // chars per dialogue line (full-width box)
   var DLG_CPS  = 0.5;         // characters revealed per frame (~30/s)
   var CY_RUNIN = 54;          // run-in duration (frames)
