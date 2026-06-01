@@ -11,9 +11,36 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.88` / `sdd-shell-v88`.
+- **Live build**: `v0.89` / `sdd-shell-v89`.
 
-### v0.88 — Tower walk-in (Layer-1+3 combo) + solid tunnel interior (latest)
+### v0.89 — Dialog polish + Computer audio (latest)
+
+- **Name tags no longer crop the glyphs.** Tag height bumped 9→11 px
+  (inner panel 7→9 px) so all 7 rows of pixel-font glyphs sit cleanly
+  inside without the bottom row being eaten by the accent border
+  (Mark: "names are too big and don't fit, they end up cropped").
+  Applied to both cityArrival hero dialogue + cityIntro Computer
+  dialogue.
+- **Mobile dialog box shrinks to avoid the touch buttons.** When
+  `body.touch` class is on, `boxW` drops from 308 → 218 so the box
+  ends well before the A/B touch buttons on the right side of the
+  viewport. Dialogue text re-wraps to the narrower width via
+  `_cyWrap(line.text, maxChars)` computed from the live boxW. Desktop
+  view unchanged.
+- **Computer teleport-in sound.** New `warpin` SFX in audio.js -
+  layered ~0.9s sound: rising sawtooth/triangle hum (220/110 Hz with
+  glide), high sine shimmer arpeggio at 1320/1760/2080/2640/2200 Hz,
+  three noise crackle bursts at 0.00/0.18/0.42s, settling triangle
+  tone at 880/660 Hz. Replaces the old single `power` call on warpT=1.
+- **Computer walking sounds.** New `step_computer` SFX (square click
+  at 620 Hz + 380 Hz glide + brief noise + low-triangle thunk at 180 Hz)
+  and matching `land_computer`. Added `'cyber': 'computer'` to the
+  `THEME_SURFACE` map in entities.js so Adventure City auto-uses them
+  during normal Player.update. Also tick a `step_computer` every 14
+  prologue frames while the Computer walks in during the cityIntro
+  cold-open.
+
+### v0.88 — Tower walk-in (Layer-1+3 combo) + solid tunnel interior
 
 - **Tower entrance is now walk-in-able.** Mark: "transition into the
   adventure tower should be a combo of layer 1 and 3 so I walk in.

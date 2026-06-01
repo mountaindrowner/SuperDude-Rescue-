@@ -103,6 +103,32 @@ window.SDD = window.SDD || {};
       case 'step_cloud':  tone(440, t, 0.06, 'sine', 0.04, 280); break;
       case 'step_water':  noise(t, 0.07, 0.08); tone(280, t, 0.03, 'sine', 0.05, 180); break;
       case 'step_metal':  tone(520, t, 0.02, 'square', 0.06, 420); break;
+      // v0.89: Adventure City Computer footstep + warp-in.
+      // step_computer = brittle robotic tick + brief noise (servos +
+      // contact). Slightly louder than other steps so the heavy chassis
+      // reads against the city ambience.
+      case 'step_computer': tone(620, t, 0.02, 'square', 0.10, 380); noise(t, 0.02, 0.04); tone(180, t + 0.02, 0.03, 'triangle', 0.05, 120); break;
+      // Land: deeper chassis thump with a soft mechanical clank.
+      case 'land_computer': tone(140, t, 0.06, 'triangle', 0.16, 70); tone(440, t + 0.03, 0.04, 'square', 0.10, 320); noise(t, 0.04, 0.07); break;
+      // Teleport-in: ascending electric shimmer + descending sweep
+      // (warm whoosh) + sparkle high notes that fizz out. ~0.9s total
+      // length, designed to underscore the 16-frame comp_warp anim.
+      case 'warpin':
+        // Body: rising hum that locks in.
+        tone(220, t,        0.35, 'sawtooth', 0.10, 880);
+        tone(110, t + 0.06, 0.30, 'triangle', 0.12, 660);
+        // High shimmer arpeggios (sci-fi twinkle).
+        [1320, 1760, 2080, 2640, 2200].forEach(function (f, i) {
+          tone(f, t + 0.04 + i * 0.10, 0.12, 'sine', 0.16);
+        });
+        // Crackle bursts.
+        noise(t + 0.00, 0.05, 0.06);
+        noise(t + 0.18, 0.04, 0.05);
+        noise(t + 0.42, 0.06, 0.05);
+        // Settling tone at the end.
+        tone(880, t + 0.55, 0.20, 'triangle', 0.10, 440);
+        tone(660, t + 0.62, 0.20, 'sine',     0.08, 330);
+        break;
       // Landing thump (heavier than a step). Surface picks colour.
       case 'land_grass':  tone(150, t, 0.06, 'triangle', 0.12, 80); noise(t, 0.04, 0.07); break;
       case 'land_sand':   noise(t, 0.10, 0.14); tone(120, t, 0.05, 'sine', 0.08, 60); break;

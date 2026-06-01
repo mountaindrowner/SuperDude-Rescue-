@@ -44,7 +44,10 @@ window.SDD = window.SDD || {};
     'village-dusk':  'wood',
     'eden':          'grass',
     'bugscale':      'wood',
-    'galactic':      'metal'
+    'galactic':      'metal',
+    // v0.89: Adventure City - Computer character has its own robotic
+    // footstep + landing variant (`step_computer` / `land_computer`).
+    'cyber':         'computer'
   };
   function surfaceForTheme(theme) {
     return THEME_SURFACE[theme] || 'grass';

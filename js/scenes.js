@@ -7106,7 +7106,10 @@ window.SDD = window.SDD || {};
       // clock don't start until the burst finishes. Skippable with A.
       if (this.state === 'warpin') {
         this.warpT++;
-        if (this.warpT === 1) A.sfx('power');
+        // v0.89: dedicated teleport-in sound (Mark: "give the
+        // teleport in a noise for computer"). Layered shimmer +
+        // electric crackle + settling hum across ~0.9s.
+        if (this.warpT === 1) A.sfx('warpin');
         if (In.confirm() && this.warpT > 8) this.warpT = this.warpTotal;
         if (this.warpT >= this.warpTotal) this.state = 'play';
         return;
@@ -8435,9 +8438,12 @@ window.SDD = window.SDD || {};
         return;
       }
 
-      // ---- BOTTOM DIALOGUE BOX (full width) ----
+      // ---- BOTTOM DIALOGUE BOX ----
+      // v0.89: width shrinks on touch (mobile) so the box doesn't sit
+      // under the A/B touch buttons on the right side of the viewport.
       var accent = act ? act.accent : '#ffd23a';
-      var boxX = 6, boxY = 128, boxW = 308, boxH = 46;
+      var touchMode = (typeof document !== 'undefined' && document.body && document.body.classList.contains('touch'));
+      var boxX = 6, boxY = 128, boxW = touchMode ? 218 : 308, boxH = 46;
       var psz = 40;
       g.fillStyle = 'rgba(8,10,22,0.95)'; g.fillRect(boxX, boxY, boxW, boxH);
       g.strokeStyle = accent; g.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1);
@@ -8445,14 +8451,20 @@ window.SDD = window.SDD || {};
       var portX = boxX + 3, portY = boxY + 3;
       if (act) _cyDrawPixPortrait(g, act.psize, act.panim, act.pdir, Math.floor(cl / 16) % 4, portX, portY, psz, accent);
       var textX = portX + psz + 8;
-      // Name tag riding the box top edge.
+      // Name tag riding the box top edge. v0.89: tag is 11px tall +
+      // 9px inner panel so the 7-row glyphs sit cleanly inside without
+      // the bottom row being eaten by the accent border (Mark: "names
+      // are too big and don't fit, they end up cropped").
       if (line.name) {
         var nw = line.name.length * 6 + 10;
-        g.fillStyle = accent; g.fillRect(textX, boxY - 6, nw, 9);
-        g.fillStyle = '#0a0e18'; g.fillRect(textX + 1, boxY - 5, nw - 2, 7);
-        text(g, line.name, textX + nw / 2, boxY - 4, accent, 1, 'center');
+        g.fillStyle = accent;       g.fillRect(textX, boxY - 8, nw, 11);
+        g.fillStyle = '#0a0e18';    g.fillRect(textX + 1, boxY - 7, nw - 2, 9);
+        text(g, line.name, textX + nw / 2, boxY - 6, accent, 1, 'center');
       }
-      // Typed text.
+      // Typed text. Wrap dynamically to the dialog box width so short
+      // boxes (touch mode) still flow nicely.
+      var maxChars = Math.max(20, Math.floor((boxW - psz - 16) / 6));
+      this.lines = _cyWrap(line.text || '', maxChars);
       var revealed = Math.floor(this.shown), consumed = 0;
       for (var li = 0; li < this.lines.length; li++) {
         var ln = this.lines[li], show = ln;
@@ -8516,7 +8528,14 @@ window.SDD = window.SDD || {};
         this.pt++;
         if (this.pt === 1) A.sfx('power');                 // machine spins up
         if (this.pt === PRO_FLASH) A.sfx('grow');          // the teleport zap
-        if (this.pt === PRO_WALK) A.sfx('select');         // footsteps begin
+        if (this.pt === PRO_WALK) A.sfx('step_computer');  // first footstep
+        // v0.89: Computer footstep cadence while he walks in from
+        // the left (PRO_WALK -> PRO_WALKEND). Every 14 steps to match
+        // the in-game walk cadence.
+        if (this.pt > PRO_WALK && this.pt < PRO_WALKEND &&
+            ((this.pt - PRO_WALK) % 14) === 0) {
+          A.sfx('step_computer');
+        }
         var skip = In.confirm() && this.pt > 6;
         if (this.pt >= PRO_END || skip) { this.phase = 'dialogue'; this._prep(); }
         return;
@@ -8740,18 +8759,24 @@ window.SDD = window.SDD || {};
       g.fillStyle = accent; g.fillRect(0, 14, 320, 1);
       tsh(g, "SUPER DUDE DANNY'S LAB", 160, 3, accent, '#0a1622', 1, 'center');
 
-      // --- Dialogue box (full width, bottom) + portrait + typed text ---
-      var boxX = 6, boxY = 128, boxW = 308, boxH = 46, psz = 40;
+      // --- Dialogue box (bottom) + portrait + typed text ---
+      // v0.89: width shrinks on touch so it doesn't sit under the
+      // A/B touch buttons.
+      var touchMode = (typeof document !== 'undefined' && document.body && document.body.classList.contains('touch'));
+      var boxX = 6, boxY = 128, boxW = touchMode ? 218 : 308, boxH = 46, psz = 40;
       g.fillStyle = 'rgba(8,10,22,0.95)'; g.fillRect(boxX, boxY, boxW, boxH);
       g.strokeStyle = accent; g.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1);
       var portX = boxX + 3, portY = boxY + 3;
       _cyDrawPixPortrait(g, 'comp2', mood, 'south', Math.floor(cl / 5) % n, portX, portY, psz, accent);
       var textX = portX + psz + 8;
-      // Name tag.
+      // Name tag - 11px tall + 9px inner so glyphs aren't cropped.
       var nm = 'COMPUTER', nw = nm.length * 6 + 10;
-      g.fillStyle = accent; g.fillRect(textX, boxY - 6, nw, 9);
-      g.fillStyle = '#0a0e18'; g.fillRect(textX + 1, boxY - 5, nw - 2, 7);
-      text(g, nm, textX + nw / 2, boxY - 4, accent, 1, 'center');
+      g.fillStyle = accent;    g.fillRect(textX, boxY - 8, nw, 11);
+      g.fillStyle = '#0a0e18'; g.fillRect(textX + 1, boxY - 7, nw - 2, 9);
+      text(g, nm, textX + nw / 2, boxY - 6, accent, 1, 'center');
+      // Re-wrap to the current box width.
+      var maxChars = Math.max(20, Math.floor((boxW - psz - 16) / 6));
+      this.lines = _cyWrap(line.text || '', maxChars);
       // Typed text.
       var revealed = Math.floor(this.shown), consumed = 0;
       for (var li = 0; li < this.lines.length; li++) {
