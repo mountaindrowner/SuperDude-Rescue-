@@ -7754,87 +7754,122 @@ window.SDD = window.SDD || {};
     return lines;
   }
 
-  // HQ briefing-room backdrop: dark control room with a big glowing
-  // wall screen (the Computer) + console banks. screenLit pulses the
-  // screen when the Computer is talking.
-  function _cyDrawRescueHQ(g, t, screenLit) {
+  // Avengers-style "AW" emblem (Andy & W... the rescue team's crest).
+  // A bold ring with a gap on the lower-right where a sweep arrow
+  // exits, an "A" monogram, and a "W" sharing the A's legs.
+  function _cyDrawAWEmblem(g, cx, cy, r, t, lit) {
+    var gold = lit ? '#ffe27a' : '#e8b24a';
+    var goldD = '#8a5e18';
+    // Soft glow behind.
+    var glow = g.createRadialGradient(cx, cy, 2, cx, cy, r + 8);
+    glow.addColorStop(0, lit ? 'rgba(255,220,120,0.30)' : 'rgba(255,210,90,0.16)');
+    glow.addColorStop(1, 'rgba(255,210,90,0)');
+    g.fillStyle = glow; g.fillRect(cx - r - 8, cy - r - 8, (r + 8) * 2, (r + 8) * 2);
+    // Ring with a gap on the lower-right (Avengers sweep exit).
+    g.strokeStyle = gold; g.lineWidth = 2.4; g.lineCap = 'butt';
+    g.beginPath(); g.arc(cx, cy, r, -2.0, 0.55); g.stroke();          // top arc
+    g.beginPath(); g.arc(cx, cy, r, 1.15, Math.PI * 2 - 2.0 + 6.283); g.stroke();
+    // (simpler: draw most of the ring, leave a gap ~0.55..1.15 rad)
+    g.strokeStyle = goldD; g.lineWidth = 0.8;
+    g.beginPath(); g.arc(cx, cy, r + 1, -2.0, 0.55); g.stroke();
+    // The "A": apex top, two legs splaying down. Sweep arrow extends
+    // from the right leg out through the ring gap.
+    var ah = r * 0.86, aw = r * 0.62;
+    g.strokeStyle = gold; g.lineWidth = 2.6; g.lineJoin = 'miter';
+    g.beginPath();
+    g.moveTo(cx - aw, cy + ah);            // left foot
+    g.lineTo(cx,      cy - ah);            // apex
+    g.lineTo(cx + aw, cy + ah);            // right foot
+    g.stroke();
+    // A crossbar.
+    g.lineWidth = 2.2;
+    g.beginPath();
+    g.moveTo(cx - aw * 0.5, cy + ah * 0.18);
+    g.lineTo(cx + aw * 0.5, cy + ah * 0.18);
+    g.stroke();
+    // The "W": inner zigzag sharing the A's lower legs. Two inner
+    // peaks make the W read under the A.
+    g.lineWidth = 2.2;
+    g.beginPath();
+    g.moveTo(cx - aw * 0.78, cy + ah * 0.30);
+    g.lineTo(cx - aw * 0.30, cy + ah);        // valley 1
+    g.lineTo(cx,             cy + ah * 0.32);  // centre peak
+    g.lineTo(cx + aw * 0.30, cy + ah);        // valley 2
+    g.lineTo(cx + aw * 0.78, cy + ah * 0.30);
+    g.stroke();
+    // Sweep arrow exiting lower-right through the ring gap.
+    g.lineWidth = 2.4;
+    g.beginPath();
+    g.moveTo(cx + aw * 0.55, cy + ah * 0.55);
+    g.lineTo(cx + r + 5,     cy + r * 0.62);
+    g.stroke();
+    // Arrowhead.
+    g.fillStyle = gold;
+    var ax = cx + r + 5, ay = cy + r * 0.62;
+    g.beginPath(); g.moveTo(ax + 3, ay); g.lineTo(ax - 3, ay - 3); g.lineTo(ax - 2, ay + 3); g.closePath(); g.fill();
+    g.lineWidth = 1;
+  }
+
+  // HQ briefing-room backdrop: dark control room wall with the AW
+  // emblem crest centred high, flanked by small status monitors, a
+  // console bank, and a floor. `pulse` brightens the crest + monitors
+  // while the Computer is talking.
+  function _cyDrawRescueHQ(g, t, pulse) {
     // Room gradient.
     var room = g.createLinearGradient(0, 0, 0, 180);
     room.addColorStop(0,   '#101626');
     room.addColorStop(0.6, '#161e34');
     room.addColorStop(1,   '#0c1120');
     g.fillStyle = room; g.fillRect(0, 0, 320, 180);
-    // Back-wall panel seams + rivets.
+    // Back-wall panel seams.
     g.fillStyle = 'rgba(90,120,170,0.10)';
     for (var px = 0; px < 320; px += 32) g.fillRect(px, 0, 1, 150);
     for (var py = 0; py < 150; py += 24) g.fillRect(0, py, 320, 1);
-    // Big wall screen (centre-top) - the Computer's broadcast.
-    var sx = 108, sy = 18, sw = 104, sh = 60;
-    g.fillStyle = '#050a14';
-    g.fillRect(sx - 3, sy - 3, sw + 6, sh + 6);
-    // Screen glow frame.
-    g.fillStyle = screenLit ? '#5af0ff' : '#2a6a80';
-    g.fillRect(sx - 3, sy - 3, sw + 6, 2);
-    g.fillRect(sx - 3, sy + sh + 1, sw + 6, 2);
-    g.fillStyle = screenLit ? '#3aa8c8' : '#1e4a5a';
-    g.fillRect(sx - 3, sy - 3, 2, sh + 6);
-    g.fillRect(sx + sw + 1, sy - 3, 2, sh + 6);
-    // Screen interior - dark with cyan scanlines.
-    var scr = g.createLinearGradient(0, sy, 0, sy + sh);
-    scr.addColorStop(0, screenLit ? '#0e2a38' : '#0a1622');
-    scr.addColorStop(1, screenLit ? '#08202c' : '#070f18');
-    g.fillStyle = scr; g.fillRect(sx, sy, sw, sh);
-    g.fillStyle = screenLit ? 'rgba(90,240,255,0.10)' : 'rgba(90,240,255,0.05)';
-    for (var ln = sy + 2; ln < sy + sh; ln += 4) g.fillRect(sx, ln, sw, 1);
-    // The Computer displayed large on the screen (scaled sprite).
-    var comp = S.get('npc_computer');
-    if (comp) {
-      var scale = 1.7;
-      var cw = comp.width * scale, ch = comp.height * scale;
-      var bob = Math.round(Math.sin(t * 0.08) * 1);
-      g.imageSmoothingEnabled = false;
-      g.drawImage(comp, sx + sw / 2 - cw / 2, sy + sh - ch - 2 + bob, cw, ch);
+
+    // AW EMBLEM crest, centred high on the wall.
+    _cyDrawAWEmblem(g, 160, 38, 22, t, pulse);
+
+    // Small status monitors flanking the crest (flavour). Pulse cyan
+    // when the Computer talks.
+    function miniMon(mx, my) {
+      g.fillStyle = '#050a14'; g.fillRect(mx - 1, my - 1, 26, 18);
+      g.fillStyle = pulse ? '#5af0ff' : '#2a6a80'; g.fillRect(mx - 1, my - 1, 26, 1);
+      g.fillStyle = pulse ? '#0e2a38' : '#0a1622'; g.fillRect(mx, my, 24, 16);
+      g.fillStyle = pulse ? 'rgba(90,240,255,0.16)' : 'rgba(90,240,255,0.06)';
+      for (var ln = my + 1; ln < my + 16; ln += 3) g.fillRect(mx, ln, 24, 1);
+      // a couple of moving data blips
+      g.fillStyle = pulse ? '#5af0ff' : '#1e4a5a';
+      g.fillRect(mx + 2 + ((t / 6 | 0) % 18), my + 4, 2, 2);
+      g.fillRect(mx + 2 + ((t / 9 | 0) % 18), my + 10, 2, 1);
     }
-    // Talking ticks beside the screen when lit.
-    if (screenLit && (t % 30 < 18)) {
-      g.fillStyle = '#5af0ff';
-      var tickN = 1 + Math.floor((t % 30) / 6);
-      for (var tk = 0; tk < tickN; tk++) {
-        g.fillRect(sx + sw + 5, sy + 8 + tk * 6, 4, 3);
-        g.fillRect(sx - 9, sy + 8 + tk * 6, 4, 3);
-      }
-    }
-    // "LIVE" alert pip top-right of the screen.
-    if (screenLit && (t % 24 < 14)) {
-      g.fillStyle = '#ff5a3a';
-      g.fillRect(sx + sw - 8, sy + 4, 4, 4);
-    }
-    // Console bank along the floor (in front of the heroes' feet line).
-    g.fillStyle = '#0e1422'; g.fillRect(0, 158, 320, 22);
-    g.fillStyle = '#1a2438'; g.fillRect(0, 158, 320, 2);
-    // Blinking console LEDs.
+    miniMon(28, 26); miniMon(266, 26);
+
+    // Console bank low on the wall, behind the heroes' feet.
+    g.fillStyle = '#0e1422'; g.fillRect(0, 168, 320, 12);
+    g.fillStyle = '#1a2438'; g.fillRect(0, 168, 320, 1);
     for (var cl = 8; cl < 320; cl += 22) {
       var on = ((t / 12 | 0) + cl) % 3 === 0;
       g.fillStyle = on ? '#3aff60' : '#15351f';
-      g.fillRect(cl, 162, 3, 2);
+      g.fillRect(cl, 172, 3, 2);
       g.fillStyle = ((cl + 7) % 4 === 0 && on) ? '#ffd23a' : '#3a3010';
-      g.fillRect(cl + 6, 162, 3, 2);
+      g.fillRect(cl + 6, 172, 3, 2);
     }
     // Floor line where the heroes stand.
-    g.fillStyle = '#243150'; g.fillRect(0, 150, 320, 1);
-    g.fillStyle = 'rgba(90,120,170,0.18)'; g.fillRect(0, 151, 320, 7);
+    g.fillStyle = '#243150'; g.fillRect(0, 168, 320, 1);
   }
 
   // Draw the rescue line-up. `activeId` (scientist/engineer/leader/
   // pilot) spotlights + lifts the speaking hero; the rest dim.
+  // v0.80: floor lowered to 168 so the heroes sit in the lower band,
+  // visible below the banner + portrait UI.
   function _cyDrawRescueLineup(g, t, activeId) {
-    var floorY = 150;
+    var floorY = 168;
     for (var i = 0; i < RESCUE_LINEUP.length; i++) {
       var hero = RESCUE_LINEUP[i];
       var spr = S.get(hero.sprite);
       if (!spr) continue;
       var active = (hero.id === activeId);
-      var step = active ? 5 : 0;                        // speaker steps fwd/down
+      var step = active ? 4 : 0;                        // speaker steps fwd/down
       var bob = Math.round(Math.sin(t * 0.09 + i) * 1);
       var hx = Math.round(hero.x - spr.width / 2);
       var hy = floorY - spr.height + step + bob;
@@ -7944,19 +7979,35 @@ window.SDD = window.SDD || {};
       if (t % 40 < 24) { g.fillRect(6, 5, 5, 5); g.fillRect(309, 5, 5, 5); }  // alert pips
       tsh(g, 'RESCUE HQ - EMERGENCY BRIEFING', 160, 4, '#ffd23a', '#5a3a10', 1, 'center');
 
-      // Final card: big stamp + sparks instead of a portrait line.
+      // Final card: centred stamp + sparks + the typed send-off line,
+      // no portrait. Heroes stay visible below.
       if (isFinal) {
-        tsh(g, 'THE RESCUE BEGINS', 160, 70, '#ffd23a', '#7a4a10', 2, 'center');
-        for (var p = 0; p < 22; p++) {
-          var pxx = ((p * 47 + t * 1.4) % 320), pyy = ((p * 29 + t * 1.1) % 150) + 20;
+        for (var p = 0; p < 24; p++) {
+          var pxx = ((p * 47 + t * 1.4) % 320), pyy = ((p * 29 + t * 1.1) % 130) + 24;
           g.fillStyle = (p % 3 === 0) ? '#ffd23a' : (p % 3 === 1) ? '#5af0ff' : '#ff5a3a';
           g.fillRect(pxx | 0, pyy | 0, 2, 2);
         }
+        tsh(g, 'THE RESCUE BEGINS', 160, 64, '#ffd23a', '#7a4a10', 2, 'center');
+        // Typed send-off (reveal the whole CITY_DIALOG text).
+        var fr = Math.floor(this.shown);
+        var fc = 0;
+        for (var fli = 0; fli < this.lines.length; fli++) {
+          var fl = this.lines[fli], fshow = fl;
+          if (fc + fl.length > fr) fshow = fl.slice(0, Math.max(0, fr - fc));
+          fc += fl.length + 1;
+          text(g, fshow, 160, 92 + fli * 11, '#ffffff', 1, 'center');
+          if (fc > fr) break;
+        }
+        if (this.full && (t % 40 < 26)) tsh(g, 'PRESS A', 160, 120, '#ffd23a', '#000', 1, 'center');
+        return;
       }
 
       // ---- PORTRAIT + DIALOGUE BOX ----
-      var pad = 6, psz = 46;
-      var boxY = 124, boxH = 50;
+      // v0.80: moved UP into the middle band so the heroes stay
+      // visible below (Mark: "banner and portraits above the
+      // characters, so you can still see the characters").
+      var pad = 6, psz = 42;
+      var boxY = 66, boxH = 46;
       var side = act ? act.side : 'L';
       var accent = act ? act.accent : '#ffd23a';
       var portX, boxX, boxW;
