@@ -8268,6 +8268,10 @@ window.SDD = window.SDD || {};
       var step = active ? 3 : 0;
       var bob = Math.round(Math.sin(t * 0.08 + i) * 1);
       var baseY = CY_FLOOR + step + bob;
+      // Contact shadow pinned to the floor (not bobbing) so each hero
+      // visibly stands ON the surface.
+      g.fillStyle = 'rgba(0,0,0,0.30)';
+      g.beginPath(); g.ellipse(hero.x, CY_FLOOR + 1, 11, 3, 0, 0, Math.PI * 2); g.fill();
       // Spotlight pool under the active speaker.
       if (active) {
         var sp = g.createRadialGradient(hero.x, baseY + 1, 2, hero.x, baseY + 1, 26);
@@ -8288,6 +8292,9 @@ window.SDD = window.SDD || {};
   function _cyDrawComputerActor(g, t, cx, mode, lit) {
     var SP = SDD.sprites;
     var baseY = CY_FLOOR + Math.round(Math.sin(t * 0.08) * 1);
+    // Contact shadow pinned to the floor so the Computer stands on it.
+    g.fillStyle = 'rgba(0,0,0,0.30)';
+    g.beginPath(); g.ellipse(cx, CY_FLOOR + 1, 12, 3, 0, 0, Math.PI * 2); g.fill();
     if (lit) {
       var gl = g.createRadialGradient(cx, baseY - 16, 3, cx, baseY - 16, 34);
       gl.addColorStop(0, 'rgba(90,240,255,0.34)');
@@ -8334,7 +8341,10 @@ window.SDD = window.SDD || {};
       this.idx = 0; this.t = 0; this.clock = 0;
       this.shown = 0; this.full = false;
       this.lines = ['']; this.total = 0;
-      A.startMusic('finale');
+      // v0.90 (Mark): the closing cinematic uses the same theme as
+      // Super Dude Danny's opening new-game cinematic (the `intro`
+      // track) so the story bookends with the same music.
+      A.startMusic('intro');
     },
     // Pre-wrap the current line + reset the typewriter + speaker sting.
     _prep: function () {
@@ -8391,10 +8401,24 @@ window.SDD = window.SDD || {};
       tsh(g, 'RESCUE HQ - EMERGENCY BRIEFING', 160, 4, '#ffd23a', '#5a3a10', 1, 'center');
     },
     _floor: function (g) {
-      // Ground line the characters stand on (the HQ floor sits behind
-      // the bottom dialogue box, so draw a visible line at CY_FLOOR).
-      g.fillStyle = '#243150'; g.fillRect(0, 120, 320, 1);
-      g.fillStyle = 'rgba(90,120,170,0.16)'; g.fillRect(0, 121, 320, 6);
+      // v0.90 (Mark: "they seem like they're floating"): a SOLID floor
+      // plane from CY_FLOOR down so the team is clearly standing on a
+      // surface, not hovering in the dark room. Lit leading edge +
+      // receding seams give it a bit of depth.
+      var fy = CY_FLOOR;                                   // 120 = feet line
+      var fl = g.createLinearGradient(0, fy, 0, 180);
+      fl.addColorStop(0,    '#2c3c60');
+      fl.addColorStop(0.18, '#1c2742');
+      fl.addColorStop(1,    '#0b1120');
+      g.fillStyle = fl; g.fillRect(0, fy, 320, 180 - fy);
+      // Bright wall/floor seam where the surface starts.
+      g.fillStyle = '#3d5485'; g.fillRect(0, fy, 320, 1);
+      g.fillStyle = 'rgba(160,190,235,0.32)'; g.fillRect(0, fy + 1, 320, 1);
+      // Receding perspective seams (short verticals at the seam line).
+      g.fillStyle = 'rgba(10,16,30,0.45)';
+      for (var sx = 16; sx < 320; sx += 32) g.fillRect(sx, fy + 2, 1, 7);
+      // A faint horizontal tile band a few px down.
+      g.fillStyle = 'rgba(90,120,170,0.12)'; g.fillRect(0, fy + 9, 320, 1);
     },
     render: function (g) {
       var cl = this.clock;

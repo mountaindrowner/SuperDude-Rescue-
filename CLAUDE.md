@@ -11,7 +11,38 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.89` / `sdd-shell-v89`.
+- **Live build**: `v0.90` / `sdd-shell-v90`.
+
+### v0.90 — Mark's editor level + car spawn fix + ending floor/music (latest)
+
+- **Day 8-1 replaced with Mark's editor-saved layout.** New tile
+  layout / spawn placement / 20 car spawners / 3 checkpoints, saved
+  from the in-game editor. NOTE: the editor serializer only emits
+  `width/height/ground/tiles/spawns/movers/name/theme/themeZones`,
+  so the three render-only custom fields (`hint`, `startSign`,
+  `towerEntrance`) were re-attached by hand at the bottom of
+  `level_8_1.js` after the paste — without them the tower walk-in
+  goal + start signpost + hint banner don't render. If you re-save
+  from the editor again, re-add those three fields.
+- **Car spawners now emit AT the marker, only while on-screen**
+  (Mark: "cars spawn on the player screen not where I placed the
+  spawner... too many near the end, they all spawn really fast").
+  `CarSpawner.update` rewritten: a spawner only ticks its period
+  while its world x is within ~the viewport (camx-40 .. camx+360);
+  off-screen it resets `t=0`. The car is created at the spawner's
+  own `(this.x, this.y)` instead of the camera-relative screen edge.
+  Fixes the end-of-map barrage (previously every spawner that
+  scrolled into a wide +720px forward band instantly dumped a car)
+  and makes editor placement meaningful. Telegraph (warnT honk +
+  flash) still warns before the sweep.
+- **Closing cinematic uses the opening theme.** `cityArrival.enter`
+  now `startMusic('intro')` (was 'finale') so the ending bookends
+  with Super Dude Danny's new-game opening track.
+- **Rescue HQ floor.** `_floor` rewritten from a 1px line into a
+  SOLID floor plane from CY_FLOOR(120) down with a lit wall/floor
+  seam + receding seams (Mark: "they seem like they're floating").
+  Added fixed contact-shadow ellipses under each hero + the Computer
+  so they're grounded even while the sprites bob.
 
 ### v0.89 — Dialog polish + Computer audio (latest)
 

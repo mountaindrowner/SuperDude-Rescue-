@@ -3081,23 +3081,22 @@ window.SDD = window.SDD || {};
     this.dead = false; this.remove = false;
   }
   CarSpawner.prototype.update = function (level) {
+    var camx = (level && level.camera) ? level.camera.x : 0;
+    // v0.90 (Mark): a spawner only runs its timer while it is actually
+    // on-screen, and the car appears AT the spawner's placed world
+    // position - not at the screen edge. This makes editor placement
+    // meaningful (cars come from exactly where you put the marker) and
+    // fixes the "barrage near the end" bug: previously every spawner
+    // that scrolled into a wide forward band instantly dumped a car,
+    // so a dense run of spawners all fired at once. Now an off-screen
+    // spawner resets its timer, so each one has to be visible for a
+    // full period before it emits.
+    var onScreen = (this.x > camx - 40 && this.x < camx + 320 + 40);
+    if (!onScreen) { this.t = 0; return; }
     this.t++;
     if (this.t < this.period) return;
-    // Only emit when the spawner is roughly in the player's reach.
-    // Spawners far offscreen don't tick down their period either, so
-    // when the player wanders into range the next car arrives with
-    // its full telegraph window intact.
-    var camx = (level && level.camera) ? level.camera.x : 0;
-    if (this.x < camx - 400 || this.x > camx + 720) {
-      this.t = this.period - 1;     // hold ready
-      return;
-    }
     this.t = 0;
-    // Car appears at the on-screen edge it's coming FROM (slightly
-    // inside the viewport so the telegraph flash is visible) and
-    // sweeps across once the warn window expires.
-    var spawnX = (this.dir > 0) ? (camx + 8) : (camx + 320 - 30);
-    var c = new Car(spawnX, this.y, {
+    var c = new Car(this.x, this.y, {
       dir: this.dir, spd: this.spd, color: this.color
     });
     level.enemies.push(c);
