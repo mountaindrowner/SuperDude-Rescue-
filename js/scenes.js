@@ -458,7 +458,7 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
-        else if (act === 'adventurecity') { go('level', { day: 8, stage: 1 }); }
+        else if (act === 'adventurecity') { go('cityIntro'); }
         else if (act === 'decoredit') { go('decorEdit', { day: 8, stage: 1 }); }
         else if (act === 'editor') { go('editor'); }
       }
@@ -7700,26 +7700,26 @@ window.SDD = window.SDD || {};
   // left; the rest are the heroes on the right. Each gets a line that
   // moves the conversation forward. Kevin is the team lead.
   var CITY_DIALOG = [
-    { who: 'computer', name: 'COMPUTER', text: 'TEAM! SUPER DUDE DANNY IS LOST IN TIME!' },
-    { who: 'computer', name: 'COMPUTER', text: 'I NEED THE FIVE OF YOU TO BRING HIM HOME.' },
-    { who: 'victoria', name: 'VICTORIA', text: 'COUNT ME IN. I NEVER LEAVE A FRIEND BEHIND.' },
-    { who: 'nayah',    name: 'NAYAH',    text: 'WHEREVER HE IS, WE WILL FIND HIM.' },
-    { who: 'kevin',    name: 'KEVIN',    text: "GEAR UP, TEAM. I'LL LEAD US IN." },
-    { who: 'carlos',   name: 'CARLOS',   text: "TIME JUMPS?! AWESOME. LET'S GO!" },
-    { who: 'josh',     name: 'JOSH',     text: 'STEADY, EVERYONE. WE DO THIS TOGETHER.' },
-    { who: 'computer', name: 'COMPUTER', text: 'THEN IT IS SETTLED. THE RESCUE BEGINS!' },
-    { who: null,       name: null,       text: 'TO BE CONTINUED...' }
+    { who: 'computer', name: 'COMPUTER', text: "MADE IT! OKAY, TEAM - BIG PROBLEM. SUPER DUDE DANNY IS LOST IN TIME." },
+    { who: 'computer', name: 'COMPUTER', text: "I'D GO MYSELF, BUT I HAVE THE UPPER-BODY STRENGTH OF A DESK LAMP." },
+    { who: 'victoria', name: 'VICTORIA', text: "LOST IN TIME? PFFT. WE'VE PULLED PEOPLE OUT OF WORSE. PROBABLY." },
+    { who: 'nayah',    name: 'NAYAH',    text: "IF HE'S OUT THERE, WE'LL FIND HIM - PAST, FUTURE, OR FRIDAY." },
+    { who: 'kevin',    name: 'KEVIN',    text: "ALRIGHT, TEAM. GEAR UP. WE BRING OUR HERO HOME - TOGETHER." },
+    { who: 'carlos',   name: 'CARLOS',   text: "TIME TRAVEL?! THAT'S THE COOLEST MISSION EVER - LET'S GOOO!" },
+    { who: 'josh',     name: 'JOSH',     text: "EASY, CARLOS. DEEP BREATHS. ...OKAY, I'M PRETTY HYPED TOO." },
+    { who: 'computer', name: 'COMPUTER', text: "THEN IT'S SETTLED. HANG ON, DANNY - ADVENTURE AWAITS!" },
+    { who: null,       name: null,       text: 'THE RESCUE BEGINS... TO BE CONTINUED!' }
   ];
 
   // Per-speaker accent + portrait source. Heroes use the pixDraw
-  // 'rescue' frames; the Computer uses the playable comp sprite.
+  // 'rescue' frames; the Computer uses the expressive comp2 'talk'.
   var DIALOG_ACTOR = {
-    computer: { accent: '#5af0ff', psize: 'big',    panim: 'comp_idle', pdir: 'east'  },
-    victoria: { accent: '#ff7ac0', psize: 'rescue', panim: 'victoria',  pdir: 'south' },
-    nayah:    { accent: '#c89bf0', psize: 'rescue', panim: 'nayah',     pdir: 'south' },
-    kevin:    { accent: '#ffd23a', psize: 'rescue', panim: 'kevin',     pdir: 'south' },
-    carlos:   { accent: '#5ae89a', psize: 'rescue', panim: 'carlos',    pdir: 'south' },
-    josh:     { accent: '#ff8a40', psize: 'rescue', panim: 'josh',      pdir: 'south' }
+    computer: { accent: '#5af0ff', psize: 'comp2',  panim: 'talk',     pdir: 'south' },
+    victoria: { accent: '#ff7ac0', psize: 'rescue', panim: 'victoria', pdir: 'south' },
+    nayah:    { accent: '#c89bf0', psize: 'rescue', panim: 'nayah',    pdir: 'south' },
+    kevin:    { accent: '#ffd23a', psize: 'rescue', panim: 'kevin',    pdir: 'south' },
+    carlos:   { accent: '#5ae89a', psize: 'rescue', panim: 'carlos',   pdir: 'south' },
+    josh:     { accent: '#ff8a40', psize: 'rescue', panim: 'josh',     pdir: 'south' }
   };
 
   // Square close-up portrait from a pixelLab frame (crops the head +
@@ -7778,33 +7778,44 @@ window.SDD = window.SDD || {};
     g.strokeStyle = gold;  g.lineWidth = 2.0;
     g.beginPath(); g.arc(cx, cy, r, 0, 6.283); g.stroke();
 
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    g.strokeStyle = gold; g.lineWidth = 2.4;
-    var hh = r * 0.50;          // half letter height
-    var hw = r * 0.26;          // half letter width
-    var ax = cx - r * 0.40;     // letter A centre x (left)
-    var wx = cx + r * 0.40;     // letter W centre x (right)
+    // v0.83: bolder, italic "hero font" letters. Forward slant +
+    // beveled double-stroke (dark under-stroke, bright over-stroke)
+    // so the A + W read like a comic-book team crest.
+    g.lineCap = 'round'; g.lineJoin = 'miter'; g.miterLimit = 3;
+    var hh = r * 0.52;          // half letter height
+    var hw = r * 0.27;          // half letter width
+    var slant = r * 0.16;       // top vertices lean right (italic)
+    var ax = cx - r * 0.42;     // letter A centre x (left)
+    var wx = cx + r * 0.42;     // letter W centre x (right)
+    var topY = cy - hh, botY = cy + hh;
 
-    // Letter A (left).
-    g.beginPath();
-    g.moveTo(ax - hw, cy + hh);          // left foot
-    g.lineTo(ax,      cy - hh);          // apex
-    g.lineTo(ax + hw, cy + hh);          // right foot
-    g.stroke();
-    g.beginPath();                        // crossbar
-    g.moveTo(ax - hw * 0.55, cy + hh * 0.25);
-    g.lineTo(ax + hw * 0.55, cy + hh * 0.25);
-    g.stroke();
-
-    // Letter W (right) - four strokes: down, up, down, up.
-    g.beginPath();
-    g.moveTo(wx - hw,        cy - hh);
-    g.lineTo(wx - hw * 0.5,  cy + hh);
-    g.lineTo(wx,             cy - hh * 0.15);
-    g.lineTo(wx + hw * 0.5,  cy + hh);
-    g.lineTo(wx + hw,        cy - hh);
-    g.stroke();
-    g.lineCap = 'butt'; g.lineWidth = 1;
+    // Draw the A + W strokes through a shared path builder so we can
+    // stroke twice (dark bevel under, bright on top).
+    function letterPaths() {
+      // A: feet at the bottom, apex slanted right at the top.
+      g.beginPath();
+      g.moveTo(ax - hw,         botY);
+      g.lineTo(ax + slant,      topY);
+      g.lineTo(ax + hw,         botY);
+      // A crossbar.
+      g.moveTo(ax - hw * 0.52 + slant * 0.5, cy + hh * 0.28);
+      g.lineTo(ax + hw * 0.52 + slant * 0.5, cy + hh * 0.28);
+      // W: down, up, down, up - top vertices slanted right.
+      g.moveTo(wx - hw + slant,        topY);
+      g.lineTo(wx - hw * 0.5,          botY);
+      g.lineTo(wx + slant * 0.5,       cy - hh * 0.18);
+      g.lineTo(wx + hw * 0.5,          botY);
+      g.lineTo(wx + hw + slant,        topY);
+    }
+    // Dark bevel under-stroke.
+    g.strokeStyle = goldD; g.lineWidth = 4.2; letterPaths(); g.stroke();
+    // Bright top stroke.
+    g.strokeStyle = lit ? '#fff0b0' : gold; g.lineWidth = 2.2; letterPaths(); g.stroke();
+    // Tiny spark accents at the apexes for extra "hero" pop.
+    g.fillStyle = lit ? '#ffffff' : '#fff0c0';
+    g.fillRect(Math.round(ax + slant) - 1, Math.round(topY) - 1, 2, 2);
+    g.fillRect(Math.round(wx + hw + slant) - 1, Math.round(topY) - 1, 2, 2);
+    g.lineCap = 'butt'; g.lineJoin = 'miter'; g.lineWidth = 1;
   }
 
   // HQ briefing-room backdrop: dark control room wall with the AW
@@ -7881,21 +7892,28 @@ window.SDD = window.SDD || {};
     }
   }
 
-  // Draw the Computer (player character) on the LEFT, facing the team.
-  // anim 'comp_run' during the run-in, else 'comp_idle'. `lit` adds a
-  // cyan speaking glow.
-  function _cyDrawComputerActor(g, t, cx, anim, lit) {
+  // Draw the Computer on the LEFT of the briefing. During the run-in
+  // it uses the playable comp_run (facing the team); once briefing it
+  // switches to the expressive comp2 'talk' / 'concerned'. `lit` adds
+  // a cyan speaking glow.
+  function _cyDrawComputerActor(g, t, cx, mode, lit) {
     var SP = SDD.sprites;
     var baseY = CY_FLOOR + Math.round(Math.sin(t * 0.08) * 1);
     if (lit) {
-      var gl = g.createRadialGradient(cx, baseY - 14, 3, cx, baseY - 14, 30);
+      var gl = g.createRadialGradient(cx, baseY - 16, 3, cx, baseY - 16, 34);
       gl.addColorStop(0, 'rgba(90,240,255,0.34)');
       gl.addColorStop(1, 'rgba(90,240,255,0)');
-      g.fillStyle = gl; g.fillRect(cx - 30, baseY - 44, 60, 44);
+      g.fillStyle = gl; g.fillRect(cx - 34, baseY - 52, 68, 52);
     }
-    var idx = (anim === 'comp_run') ? (Math.floor(t / 4) % 8)
-                                    : (Math.floor(t / 16) % 4);
-    if (SP.pixDraw) SP.pixDraw(g, 'big', anim, 'east', idx, cx, baseY);
+    if (mode === 'runin') {
+      if (SP.pixDraw) SP.pixDraw(g, 'big', 'comp_run', 'east', Math.floor(t / 4) % 8, cx, baseY);
+    } else {
+      // Expressive cutscene computer; 'talk' while speaking, else
+      // 'concerned' as a calmer waiting idle.
+      var anim = lit ? 'talk' : 'concerned';
+      var n = (anim === 'concerned') ? 17 : 16;
+      if (SP.pixDraw) SP.pixDraw(g, 'comp2', anim, 'south', Math.floor(t / 5) % n, cx, baseY);
+    }
   }
 
   // v0.68: expose the cyber-theme painters so the decor editor scene
@@ -7991,7 +8009,7 @@ window.SDD = window.SDD || {};
         _cyDrawRescueLineup(g, cl, null);              // heroes waiting
         var p = Math.min(1, this.runT / CY_RUNIN);
         var rx = Math.round(-24 + p * (CY_COMPX + 24));
-        _cyDrawComputerActor(g, cl, rx, 'comp_run', false);
+        _cyDrawComputerActor(g, cl, rx, 'runin', false);
         this._banner(g);
         return;
       }
@@ -8007,7 +8025,7 @@ window.SDD = window.SDD || {};
       _cyDrawRescueHQ(g, cl, compTalk);
       this._floor(g);
       _cyDrawRescueLineup(g, cl, heroActive);
-      _cyDrawComputerActor(g, cl, CY_COMPX, 'comp_idle', compTalk);
+      _cyDrawComputerActor(g, cl, CY_COMPX, 'brief', compTalk);
       this._banner(g);
 
       // Final card overlay.
@@ -8052,6 +8070,147 @@ window.SDD = window.SDD || {};
       if (this.full && (cl % 40 < 26)) {
         tsh(g, 'PRESS A >', boxX + boxW - 4, boxY + boxH - 11, accent, '#000000', 1, 'right');
       }
+    }
+  };
+
+  // =====================================================================
+  // CITY INTRO - opening cinematic for Adventure City (v0.83).
+  // Plays right after Super Dude Danny vanishes: the Computer walks
+  // into the wrecked lab, panics, then realises the rescue team at
+  // Adventure Tower can help. Computer-only, expressive comp2 anims +
+  // typed dialogue + portrait. Ends -> the playable level.
+  // Each beat: { mood, text } where mood = the comp2 anim + portrait.
+  // =====================================================================
+  var INTRO_DIALOG = [
+    { mood: 'alert',     text: "WHOA-! THE LAB'S A WRECK. SPARKS, SMOKE, LOOSE BOLTS EVERYWHERE..." },
+    { mood: 'scared',    text: "...AND SUPER DUDE DANNY IS GONE?! THE TIME MACHINE ZAPPED HIM INTO WHO-KNOWS-WHEN!" },
+    { mood: 'concerned', text: "OKAY. OKAAAY. DON'T PANIC, CIRCUITS. ...I'M PANICKING A LITTLE." },
+    { mood: 'concerned', text: "I CAN'T DO THIS ALONE. I'M BASICALLY A TOASTER WITH FEELINGS." },
+    { mood: 'talk',      text: "WAIT - THE RESCUE TEAM! THEY HANG OUT AT ADVENTURE TOWER!" },
+    { mood: 'talk',      text: "HANG ON, DANNY. HELP IS COMING... RIGHT AFTER I CROSS THE WHOLE CITY. GULP." }
+  ];
+  var INTRO_FRAMES = { alert: 16, scared: 16, concerned: 17, talk: 16 };
+
+  SDD.scenes.cityIntro = {
+    enter: function () {
+      this.idx = 0; this.t = 0; this.clock = 0;
+      this.shown = 0; this.full = false;
+      A.startMusic('level_8_1');
+      this._prep();
+    },
+    _prep: function () {
+      var line = INTRO_DIALOG[this.idx] || { text: '' };
+      this.lines = _cyWrap(line.text, 44);
+      this.total = line.text.length;
+      this.shown = 0; this.full = false; this.t = 0;
+      if (line.mood === 'alert' || line.mood === 'scared') A.sfx('hit');
+      else if (line.mood === 'talk') A.sfx('1up');
+      else A.sfx('select');
+    },
+    update: function () {
+      this.clock++; this.t++;
+      if (!this.full) {
+        this.shown += 0.5;
+        if (Math.floor(this.shown) % 3 === 0 && (this.shown - Math.floor(this.shown)) < 0.5) A.sfx('chirp');
+        if (this.shown >= this.total) { this.shown = this.total; this.full = true; }
+      }
+      if (In.confirm()) {
+        if (!this.full) { this.shown = this.total; this.full = true; A.sfx('select'); }
+        else {
+          this.idx++;
+          if (this.idx >= INTRO_DIALOG.length) { go('level', { day: 8, stage: 1 }); return; }
+          this._prep();
+        }
+      }
+    },
+    render: function (g) {
+      var cl = this.clock, line = INTRO_DIALOG[this.idx] || {};
+      var mood = line.mood || 'concerned';
+      var accent = (mood === 'alert' || mood === 'scared') ? '#ff6a4a' : '#5af0ff';
+
+      // --- Lab backdrop (painted lab if present, else dark room) ---
+      if (ART_LAB.ok) { g.imageSmoothingEnabled = false; g.drawImage(ART_LAB.img, 0, 0, 320, 180); }
+      else {
+        var rm = g.createLinearGradient(0, 0, 0, 180);
+        rm.addColorStop(0, '#161226'); rm.addColorStop(1, '#0c0a18');
+        g.fillStyle = rm; g.fillRect(0, 0, 320, 180);
+      }
+      // Dim + cool the room a touch so the alarm-red FX read.
+      g.fillStyle = 'rgba(10,12,28,0.34)'; g.fillRect(0, 0, 320, 180);
+
+      // --- Aftermath: broken time machine on the right + smoke + sparks ---
+      var mx = 250, mBaseY = 150;
+      if (ART_MACHINE_BROKEN.ok) {
+        var mh = 96, mw = Math.round(mh * (1024 / 1536));
+        g.drawImage(ART_MACHINE_BROKEN.img, mx - mw / 2, mBaseY - mh, mw, mh);
+      } else {
+        g.fillStyle = '#3a4a6a'; g.fillRect(mx - 18, mBaseY - 44, 36, 44);
+        g.fillStyle = '#23304a'; g.fillRect(mx - 14, mBaseY - 40, 28, 22);
+      }
+      // Rising smoke puffs from the machine.
+      for (var s = 0; s < 5; s++) {
+        var ph = (cl * 0.8 + s * 26) % 70;
+        var syy = mBaseY - 44 - ph * 0.7;
+        var a = 0.34 - ph * 0.004; if (a < 0.04) continue;
+        g.fillStyle = 'rgba(150,160,180,' + a.toFixed(2) + ')';
+        var sw = 5 + s + (ph * 0.06);
+        g.fillRect(mx - sw / 2 + Math.sin(syy * 0.2 + s) * 3, syy, sw, 3);
+      }
+      // Electric sparks flickering around the machine.
+      if (cl % 8 < 4) {
+        g.fillStyle = '#9af0ff';
+        for (var sp = 0; sp < 4; sp++) {
+          var spx = mx - 16 + ((cl * 7 + sp * 13) % 32);
+          var spy = mBaseY - 38 + ((cl * 5 + sp * 9) % 30);
+          g.fillRect(spx, spy, 1, 2);
+        }
+      }
+      // Alarm glow pulse across the top while alert/scared.
+      if (mood === 'alert' || mood === 'scared') {
+        var ap = 0.10 + Math.sin(cl * 0.25) * 0.06;
+        g.fillStyle = 'rgba(255,60,40,' + Math.max(0, ap).toFixed(2) + ')';
+        g.fillRect(0, 0, 320, 22);
+      }
+
+      // --- The Computer, centre-left, expression per beat ---
+      var compX = 96, compY = 150 + Math.round(Math.sin(cl * 0.08) * 1);
+      var n = INTRO_FRAMES[mood] || 16;
+      // Spotlight pool so the robot pops off the busy lab backdrop.
+      var spot = g.createRadialGradient(compX, compY - 18, 4, compX, compY - 6, 46);
+      spot.addColorStop(0, 'rgba(120,200,255,0.30)');
+      spot.addColorStop(1, 'rgba(120,200,255,0)');
+      g.fillStyle = spot; g.fillRect(compX - 46, compY - 56, 92, 60);
+      // Jitter slightly while scared/alert.
+      var jit = (mood === 'alert' || mood === 'scared') ? Math.round(Math.sin(cl * 0.9) * 1) : 0;
+      if (SDD.sprites.pixDraw) SDD.sprites.pixDraw(g, 'comp2', mood, 'south', Math.floor(cl / 5) % n, compX + jit, compY);
+
+      // --- Location banner ---
+      g.fillStyle = 'rgba(8,10,22,0.9)'; g.fillRect(0, 0, 320, 14);
+      g.fillStyle = accent; g.fillRect(0, 14, 320, 1);
+      tsh(g, "SUPER DUDE DANNY'S LAB", 160, 3, accent, '#0a1622', 1, 'center');
+
+      // --- Dialogue box (full width, bottom) + portrait + typed text ---
+      var boxX = 6, boxY = 128, boxW = 308, boxH = 46, psz = 40;
+      g.fillStyle = 'rgba(8,10,22,0.95)'; g.fillRect(boxX, boxY, boxW, boxH);
+      g.strokeStyle = accent; g.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1);
+      var portX = boxX + 3, portY = boxY + 3;
+      _cyDrawPixPortrait(g, 'comp2', mood, 'south', Math.floor(cl / 5) % n, portX, portY, psz, accent);
+      var textX = portX + psz + 8;
+      // Name tag.
+      var nm = 'COMPUTER', nw = nm.length * 6 + 10;
+      g.fillStyle = accent; g.fillRect(textX, boxY - 6, nw, 9);
+      g.fillStyle = '#0a0e18'; g.fillRect(textX + 1, boxY - 5, nw - 2, 7);
+      text(g, nm, textX + nw / 2, boxY - 4, accent, 1, 'center');
+      // Typed text.
+      var revealed = Math.floor(this.shown), consumed = 0;
+      for (var li = 0; li < this.lines.length; li++) {
+        var lnn = this.lines[li], show = lnn;
+        if (consumed + lnn.length > revealed) show = lnn.slice(0, Math.max(0, revealed - consumed));
+        consumed += lnn.length + 1;
+        text(g, show, textX, boxY + 8 + li * 11, '#ffffff', 1, 'left');
+        if (consumed > revealed) break;
+      }
+      if (this.full && (cl % 40 < 26)) tsh(g, 'PRESS A >', boxX + boxW - 4, boxY + boxH - 11, accent, '#000000', 1, 'right');
     }
   };
 })();

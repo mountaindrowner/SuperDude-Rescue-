@@ -3422,13 +3422,25 @@ window.SDD = window.SDD || {};
         carlos:   { base: 'assets/New Assets/Adventure Rescue Team/4. Carlos Young_male_pixel_action_hero_medium_tan_skin_short/Young_male_pixel_action_hero_medium_tan_skin_short/animations', folder: 'Breathing_Idle-50c239ec', frames: 4, south: true },
         josh:     { base: 'assets/New Assets/Adventure Rescue Team/5. Josh Adult_male_pixel_action_hero_medium_tan_skin_short/Adult_male_pixel_action_hero_medium_tan_skin_short/animations', folder: 'Breathing_Idle-95cd701e', frames: 4, south: true }
       }
+    },
+    // v0.83: expressive Computer for the cutscenes (Mark's "Computer
+    // cutscene sprites" - a wires-for-limbs robot with emotive anims).
+    // Used in the opening lab cinematic + the rescue briefing.
+    comp2: {
+      base: 'assets/New Assets/Computer cutscene sprites/A_computer-headed_robot_wires_for_limbs_happy_and/animations',
+      anims: {
+        talk:      { folder: 'talking-fb746825',              frames: 16, south: true },
+        concerned: { folder: 'Concerned_nervous_idle-d68dc043', frames: 17, south: true },
+        alert:     { folder: 'Alert_scared-a461d0f6',         frames: 16, south: true },
+        scared:    { folder: 'Scared_Idol-b2a1cb61',          frames: 16, south: true }
+      }
     }
   };
   // Target on-screen height of the CHARACTER (not the padded PNG canvas).
   // The renderer crops each frame to the per-animation non-transparent
   // bounding box and scales the crop to this height. Big > small gives
   // the "I just took a hit" health-bar feedback.
-  var PL_DISPLAY_H = { big: 36, small: 26, rescue: 34 };
+  var PL_DISPLAY_H = { big: 36, small: 26, rescue: 34, comp2: 52 };
   // Per-anim display-height overrides. Swim renders at full standing
   // height for both sizes - the corrected bbox is naturally wide
   // (aspect ~1.5) so the sprite reads as a horizontal swim pose
@@ -3546,6 +3558,13 @@ window.SDD = window.SDD || {};
       kevin:    { south: { x: 36, y: 23, w: 20, h: 44 } },
       carlos:   { south: { x: 36, y: 22, w: 20, h: 45 } },
       josh:     { south: { x: 36, y: 23, w: 20, h: 45 } }
+    },
+    // Expressive cutscene Computer bboxes (measured from 116x116).
+    comp2: {
+      talk:      { south: { x: 32, y: 28, w: 54, h: 60 } },
+      concerned: { south: { x: 33, y: 28, w: 49, h: 60 } },
+      alert:     { south: { x: 30, y: 21, w: 56, h: 71 } },
+      scared:    { south: { x: 35, y: 27, w: 46, h: 61 } }
     }
   };
 

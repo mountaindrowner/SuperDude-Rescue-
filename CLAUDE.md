@@ -11,7 +11,56 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.55` / `sdd-shell-v55`.
+- **Live build**: `v0.83` / `sdd-shell-v83`.
+
+### Adventure City (Day 8-1) — current state as of v0.83 (read this)
+
+Massive iteration arc on the secret stage. Key facts for the next session:
+
+- **Menu access**: `ADVENTURE CITY (TEST)` is shown unconditionally
+  (TEMP — the `firstClear` gate is removed in scenes.js menu; restore
+  before ship). It routes to `cityIntro` (opening cinematic) →
+  `level 8-1` → reach the Tower → `cityArrival` (ending cinematic) →
+  menu. `DECOR EDITOR (TEST)` also on the menu.
+- **Player character on 8-1**: the **Computer** (CRT-headed robot)
+  replaces Danny — `compMode` in `entities.js` Player.draw keys on
+  `scene.day === 8`, mapping every state to `comp_idle/run/jump/die`
+  (registered in `sprites.js` PL_MANIFEST under size `big`). Danny is
+  untouched elsewhere.
+- **Cyber theme art** (`scenes.js`): fully procedural 5-layer parallax
+  (`_cyPaint*` painters cached in `_cyBuild`), atmospheric DOF blur on
+  far/mid/bridge, per-layer saturation, `_cyDrawShaders` lighting pass.
+  Tunnel = Layer-3 concrete overpass (`_cyDrawTunnelOverlay`) at cols
+  150-200 with a HARD theme swap cyber→cyber-dawn at the midpoint
+  (themeZones `hard:true`). Road tiles are asphalt (`paintRoad*_cyber`).
+  Sky stops + the whole look were tuned heavily to Mark's feedback —
+  see ART_STYLE.md.
+- **Decor system**: `SDD.cyberDecor['8-1']` (data file
+  `js/cyber_decor_8_1.js`) drawn by `_cyDrawDecor` on Layer 1; edited
+  in-game via `js/decor_editor.js` (scene `decorEdit`) which has a
+  thumbnail CATALOG side panel. `_CY_DECOR=false` flag hides the old
+  procedural Layer-1 clutter (Mark wanted buildings-only).
+- **Music**: 3 tracks wired as the `level_8_1` pool in `audio.js`
+  (`assets/New Assets/Adventure city Music/*.mp3`).
+- **Two cinematics** (both in scenes.js, visual-novel style: top
+  banner + speaker portrait + typewriter dialogue + name tag):
+  - `cityIntro` (OPENING): Computer alone in the wrecked lab, panics,
+    decides to find the rescue team. Uses expressive **comp2** sprites
+    (`assets/New Assets/Computer cutscene sprites/.../animations`:
+    talk/concerned/alert/scared, registered as size `comp2`). Backdrop
+    = ART_LAB + ART_MACHINE_BROKEN + smoke/sparks.
+  - `cityArrival` (ENDING): Computer runs into the Tower, then briefs
+    the **5 rescue heroes** (Victoria, Nayah, Kevin [lead], Carlos,
+    Josh — real sprites, size `rescue` in sprites.js, idle-only,
+    south-facing) standing on the RIGHT; Computer on the LEFT. The
+    `AW` crest emblem (`_cyDrawAWEmblem`, stylized italic hero font;
+    "Adventure Awaits") sits on the HQ wall. Ends → menu.
+- **OPEN for Mark**: he may refine the dialogue lines (current copy is
+  a lighthearted first pass), add per-hero animations (heroes are
+  idle-only now), and provide more cutscene art. The scripts live in
+  `INTRO_DIALOG` + `CITY_DIALOG` in scenes.js — easy to rewrite.
+- **Banked idea** (roadmap item 7): post-stage scripture mini-lessons.
+
 - **Latest landed (v0.55) — Day 8-1 Adventure City secret stage:**
   - **New theme `cyber`** with 4-layer parallax (`drawSky_cyber` for
     far/mid/bridge + new `drawForeground_cyber` hook that draws AFTER
