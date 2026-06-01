@@ -24,10 +24,15 @@ window.SDD = window.SDD || {};
   // Optional swap-in artwork. Each loader sets <name>Ok=true once the
   // PNG decodes; renderers fall back to procedural art when false so
   // the game keeps working if a file is missing.
+  // v0.99: also track `loaded` separately from `ok` so callers can
+  // tell "still in flight" from "loaded and broken" (Mark hit this on
+  // Netlify cold-loads where title.png was still arriving when the
+  // logo scene's safety timeout fired and skipped the card).
   function loadArt(path) {
-    var img = new Image(); var state = { img: img, ok: false };
-    img.onload  = function () { state.ok = (img.width > 0); };
-    img.onerror = function () { state.ok = false; };
+    var img = new Image();
+    var state = { img: img, ok: false, loaded: false };
+    img.onload  = function () { state.loaded = true; state.ok = (img.width > 0); };
+    img.onerror = function () { state.loaded = true; state.ok = false; };
     img.src = path;
     return state;
   }
@@ -182,12 +187,17 @@ window.SDD = window.SDD || {};
       In.onFirstGesture(function () { A.startMusic('title'); });
     },
     update: function () {
-      // If the title PNG isn't loaded yet, give it ~0.5 sec and then
-      // skip straight to the menu (the painted card is mandatory; no
-      // placeholder card to show).
+      // v0.99: WAIT for the title PNG to actually finish loading
+      // (instead of giving up after 30 frames). On a cold Netlify
+      // load the PNG can take >0.5s and the old code would skip
+      // straight to the menu without showing the title or starting
+      // music. Only fall through if the image truly FAILED (loaded
+      // with an error) or after a long safety timeout (~10s).
       if (!ART_TITLE.ok) {
         this.waited++;
-        if (this.waited > 30) {
+        var failed = ART_TITLE.loaded && !ART_TITLE.ok;
+        var givenUp = this.waited > 600;             // ~10s safety net
+        if (failed || givenUp) {
           A.startMusic('title');
           go('menu');
           return;

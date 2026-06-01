@@ -24,6 +24,10 @@
      had to wait for the buffer. -->
 <link rel="preload" as="audio" href="assets/music/title.mp3" type="audio/mpeg">
 <link rel="preload" as="audio" href="assets/music/intro.mp3" type="audio/mpeg">
+<!-- v0.99 (Mark): preload the title PNG so it's in the browser cache
+     by the time the logo scene's render runs - prevents the "first
+     boot dumped me on the menu" cold-load bug on slow networks. -->
+<link rel="preload" as="image" href="assets/title.png" type="image/png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
