@@ -6510,6 +6510,16 @@ window.SDD = window.SDD || {};
         this.player.grow();
         this.player.giveBlast();
       }
+      // Adventure City (Day 8): the Computer doesn't just appear - he
+      // WARPS into the stage in a burst of light + energy before
+      // control hands over (continues the opening cinematic's "I have
+      // to cross the city" beat). 16-frame comp_warp anim. Skipped on a
+      // checkpoint respawn so deaths don't replay the entrance.
+      this.warpT = 0;
+      if (this.day === 8 && !this.lastCheckpoint) {
+        this.state = 'warpin';
+        this.warpTotal = 16 * 5;                       // 16 frames x 5 steps
+      }
     },
 
     // ---- level callbacks used by entities ----
@@ -6774,6 +6784,16 @@ window.SDD = window.SDD || {};
 
     update: function () {
       if (this.state === 'paused') { this.updatePaused(); return; }
+      // Adventure City warp-in: hold control while the Computer
+      // materialises. World is frozen (no stepWorld) so enemies + the
+      // clock don't start until the burst finishes. Skippable with A.
+      if (this.state === 'warpin') {
+        this.warpT++;
+        if (this.warpT === 1) A.sfx('power');
+        if (In.confirm() && this.warpT > 8) this.warpT = this.warpTotal;
+        if (this.warpT >= this.warpTotal) this.state = 'play';
+        return;
+      }
       if (this.state === 'won') {
         this.winTimer++; this.stepWorld();
         if (this.winTimer > 168) this.finish();
@@ -6961,7 +6981,22 @@ window.SDD = window.SDD || {};
       if (hornFreeze) {
         g.restore();
       }
-      this.player.draw(g, cam);
+      if (this.state === 'warpin') {
+        // Computer materialising: bright energy pool behind the
+        // 16-frame burst-in sprite, fading as he solidifies.
+        var wp = this.player, wn = 16, wf = Math.min(wn - 1, Math.floor(this.warpT / 5));
+        var wcx = Math.round(wp.x + wp.w / 2 - cam.x);
+        var wbase = Math.round(wp.y + wp.h - cam.y);
+        var glowA = 0.55 * (1 - wf / wn);
+        var wg = g.createRadialGradient(wcx, wbase - 18, 2, wcx, wbase - 16, 34);
+        wg.addColorStop(0, 'rgba(170,238,255,' + glowA.toFixed(2) + ')');
+        wg.addColorStop(0.5, 'rgba(110,180,255,' + (glowA * 0.6).toFixed(2) + ')');
+        wg.addColorStop(1, 'rgba(110,180,255,0)');
+        g.fillStyle = wg; g.fillRect(wcx - 36, wbase - 52, 72, 64);
+        if (SDD.sprites.pixDraw) SDD.sprites.pixDraw(g, 'big', 'comp_warp', 'south', wf, wcx, wbase);
+      } else {
+        this.player.draw(g, cam);
+      }
       // Sunlit-level cosmetic: sweat drop animating above Danny's head
       // so the player feels the heat (Day 4-1 The Sun).
       if (this.theme === 'sunlit' && !this.player.dead) {
@@ -8091,12 +8126,20 @@ window.SDD = window.SDD || {};
   ];
   var INTRO_FRAMES = { alert: 16, scared: 16, concerned: 17, talk: 16 };
 
+  // Cold-open prologue timeline (steps @ 60fps). Danny is at the intact
+  // time machine; it charges, flashes, and zaps him out of time; then
+  // the Computer walks in from the left to find the lab wrecked.
+  var PRO_FLASH = 118;   // white-flash peak (Danny + machine vanish here)
+  var PRO_WALK  = 150;   // Computer starts walking in from the left edge
+  var PRO_WALKEND = 244; // Computer reaches centre stage
+  var PRO_END   = 268;   // auto-advance into the dialogue beats
+
   SDD.scenes.cityIntro = {
     enter: function () {
+      this.phase = 'prologue'; this.pt = 0;
       this.idx = 0; this.t = 0; this.clock = 0;
       this.shown = 0; this.full = false;
       A.startMusic('level_8_1');
-      this._prep();
     },
     _prep: function () {
       var line = INTRO_DIALOG[this.idx] || { text: '' };
@@ -8108,7 +8151,18 @@ window.SDD = window.SDD || {};
       else A.sfx('select');
     },
     update: function () {
-      this.clock++; this.t++;
+      this.clock++;
+      // --- Prologue: silent cinematic, auto-advancing, A skips it. ---
+      if (this.phase === 'prologue') {
+        this.pt++;
+        if (this.pt === 1) A.sfx('power');                 // machine spins up
+        if (this.pt === PRO_FLASH) A.sfx('grow');          // the teleport zap
+        if (this.pt === PRO_WALK) A.sfx('select');         // footsteps begin
+        var skip = In.confirm() && this.pt > 6;
+        if (this.pt >= PRO_END || skip) { this.phase = 'dialogue'; this._prep(); }
+        return;
+      }
+      this.t++;
       if (!this.full) {
         this.shown += 0.5;
         if (Math.floor(this.shown) % 3 === 0 && (this.shown - Math.floor(this.shown)) < 0.5) A.sfx('chirp');
@@ -8123,7 +8177,118 @@ window.SDD = window.SDD || {};
         }
       }
     },
+    _renderProlog: function (g) {
+      var pt = this.pt, cl = this.clock;
+      var accent = '#5af0ff';
+      var gone = pt >= PRO_FLASH;                     // Danny + machine zapped
+
+      // --- Lab backdrop ---
+      if (ART_LAB.ok) { g.imageSmoothingEnabled = false; g.drawImage(ART_LAB.img, 0, 0, 320, 180); }
+      else {
+        var rm = g.createLinearGradient(0, 0, 0, 180);
+        rm.addColorStop(0, '#161226'); rm.addColorStop(1, '#0c0a18');
+        g.fillStyle = rm; g.fillRect(0, 0, 320, 180);
+      }
+      g.fillStyle = 'rgba(10,12,28,0.30)'; g.fillRect(0, 0, 320, 180);
+
+      // --- Time machine: intact + charging before the zap, broken after ---
+      var mx = 250, mBaseY = 150;
+      var charge = Math.max(0, Math.min(1, (pt - 24) / (PRO_FLASH - 24)));
+      if (!gone) {
+        if (ART_MACHINE.ok) {
+          var mh = 100, mw = Math.round(mh * (1024 / 1536));
+          g.drawImage(ART_MACHINE.img, mx - mw / 2, mBaseY - mh, mw, mh);
+        } else { g.fillStyle = '#3a6a8a'; g.fillRect(mx - 18, mBaseY - 48, 36, 48); }
+        // Dome glow swells as it charges.
+        if (charge > 0) {
+          var dg = g.createRadialGradient(mx, mBaseY - 58, 2, mx, mBaseY - 58, 18 + charge * 16);
+          dg.addColorStop(0, 'rgba(150,235,255,' + (0.25 + charge * 0.5).toFixed(2) + ')');
+          dg.addColorStop(1, 'rgba(150,235,255,0)');
+          g.fillStyle = dg; g.fillRect(mx - 40, mBaseY - 100, 80, 80);
+        }
+        // Electric arcs crackle faster as the charge builds.
+        if (charge > 0.2 && cl % Math.max(2, Math.round(8 - charge * 6)) < 2) {
+          g.strokeStyle = '#bff4ff'; g.lineWidth = 1; g.beginPath();
+          var ax0 = mx, ay0 = mBaseY - 60;
+          for (var aa = 0; aa < 4; aa++) {
+            var ex = mx - 22 + ((cl * 7 + aa * 19) % 44);
+            var ey = mBaseY - 78 + ((cl * 5 + aa * 11) % 40);
+            g.moveTo(ax0, ay0); g.lineTo(ex, ey);
+          }
+          g.stroke();
+        }
+      } else {
+        if (ART_MACHINE_BROKEN.ok) {
+          var bh = 96, bw = Math.round(bh * (1024 / 1536));
+          g.drawImage(ART_MACHINE_BROKEN.img, mx - bw / 2, mBaseY - bh, bw, bh);
+        } else { g.fillStyle = '#3a4a6a'; g.fillRect(mx - 18, mBaseY - 44, 36, 44); }
+        // Aftermath smoke from the wreck.
+        for (var s = 0; s < 5; s++) {
+          var ph = ((pt - PRO_FLASH) * 0.8 + s * 26) % 70;
+          var syy = mBaseY - 44 - ph * 0.7, a = 0.34 - ph * 0.004;
+          if (a < 0.04) continue;
+          g.fillStyle = 'rgba(150,160,180,' + a.toFixed(2) + ')';
+          var sw = 5 + s + ph * 0.06;
+          g.fillRect(mx - sw / 2 + Math.sin(syy * 0.2 + s) * 3, syy, sw, 3);
+        }
+      }
+
+      // --- Super Dude Danny at the machine until the flash takes him ---
+      if (!gone) {
+        var dShake = charge > 0.5 ? Math.round(Math.sin(cl * 1.3) * charge * 2) : 0;
+        var idleIdx = Math.floor(cl / 14) % 4;
+        drawDannyScaled(g, 'big', 'idle', 'east', idleIdx, 206 + dShake, mBaseY, 1.7);
+        // Rising teleport motes as the charge peaks.
+        if (charge > 0.4) {
+          g.fillStyle = '#bff4ff';
+          for (var m = 0; m < 6; m++) {
+            var mvy = (cl * 2 + m * 14) % 46;
+            g.fillRect(200 + ((m * 9 + cl) % 18), mBaseY - 6 - mvy, 1, 2);
+          }
+        }
+      }
+
+      // --- The white teleport flash (covers the vanish) ---
+      if (pt >= PRO_FLASH - 12 && pt <= PRO_FLASH + 18) {
+        var fa;
+        if (pt < PRO_FLASH) fa = (pt - (PRO_FLASH - 12)) / 12 * 0.9;
+        else fa = Math.max(0, 1 - (pt - PRO_FLASH) / 18) * 0.95;
+        g.fillStyle = 'rgba(220,245,255,' + fa.toFixed(2) + ')';
+        g.fillRect(0, 0, 320, 180);
+      }
+
+      // --- Computer walks in from the left after the dust settles ---
+      if (pt >= PRO_WALK) {
+        var wp = Math.min(1, (pt - PRO_WALK) / (PRO_WALKEND - PRO_WALK));
+        var cxp = Math.round(-24 + wp * (96 + 24));
+        var walking = wp < 1;
+        var cy = 150;
+        // Spotlight pool so he reads against the busy lab.
+        var spot = g.createRadialGradient(cxp, cy - 18, 4, cxp, cy - 6, 44);
+        spot.addColorStop(0, 'rgba(120,200,255,0.26)');
+        spot.addColorStop(1, 'rgba(120,200,255,0)');
+        g.fillStyle = spot; g.fillRect(cxp - 44, cy - 54, 88, 58);
+        if (SDD.sprites.pixDraw) {
+          if (walking) SDD.sprites.pixDraw(g, 'big', 'comp_run', 'east', Math.floor(cl / 4) % 8, cxp, cy);
+          else SDD.sprites.pixDraw(g, 'comp2', 'concerned', 'south', Math.floor(cl / 5) % 17, cxp, cy);
+        }
+        // A startled "!" once he arrives and sees the wreck.
+        if (!walking && (cl % 60 < 38)) {
+          tsh(g, '!', cxp, cy - 64, '#ff6a4a', '#000000', 1, 'center');
+        }
+      }
+
+      // --- Location banner ---
+      g.fillStyle = 'rgba(8,10,22,0.9)'; g.fillRect(0, 0, 320, 14);
+      g.fillStyle = accent; g.fillRect(0, 14, 320, 1);
+      tsh(g, "SUPER DUDE DANNY'S LAB", 160, 3, accent, '#0a1622', 1, 'center');
+
+      // --- Skip hint ---
+      if (cl % 50 < 32) tsh(g, 'PRESS A TO SKIP >', 314, 168, accent, '#000000', 1, 'right');
+    },
+
     render: function (g) {
+      if (this.phase === 'prologue') { this._renderProlog(g); return; }
       var cl = this.clock, line = INTRO_DIALOG[this.idx] || {};
       var mood = line.mood || 'concerned';
       var accent = (mood === 'alert' || mood === 'scared') ? '#ff6a4a' : '#5af0ff';

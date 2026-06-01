@@ -11,7 +11,38 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.83` / `sdd-shell-v83`.
+- **Live build**: `v0.84` / `sdd-shell-v84`.
+
+### v0.84 — Adventure City intro teleport + level warp-in (latest)
+
+Mark's note: the opening cinematic should begin *as Super Dude Danny
+teleports away with the time machine*, then the Computer walks in; and
+when the level starts, the Computer should *warp in* with his warp
+animation before play begins. Both done:
+
+- **`cityIntro` prologue** (new `phase: 'prologue'` before the dialogue
+  beats, in scenes.js): silent auto-advancing cold-open. Danny stands at
+  the **intact** time machine (`ART_MACHINE`) in the lab; the machine's
+  dome glow + electric arcs build (`charge` ramp), a white teleport
+  flash peaks at `PRO_FLASH` (118) — Danny + intact machine vanish, the
+  machine swaps to `ART_MACHINE_BROKEN` + smoke. Then the Computer walks
+  in from the left edge (`comp_run`) at `PRO_WALK` (150) and settles
+  centre-stage in `comp2 'concerned'` with a startled "!" at
+  `PRO_WALKEND` (244). Auto-advances into the existing 6-beat dialogue at
+  `PRO_END` (268); **A skips** the prologue. New `_renderProlog(g)` on
+  the scene; timeline consts `PRO_FLASH/PRO_WALK/PRO_WALKEND/PRO_END`.
+- **Level warp-in** (Day 8 only, in `scenes.level`): new
+  `state: 'warpin'` set at the end of `loadLevel()` when `day === 8 &&
+  !lastCheckpoint` (so death-respawns onto a checkpoint don't replay
+  it). World is frozen — `update()` returns before `stepWorld()` so the
+  clock + enemies wait. The render draws the 16-frame `comp_warp` sprite
+  (size `big`, south, already in PL_MANIFEST/PL_BBOX) over a fading
+  cyan energy pool at the spawn point instead of the normal player.
+  `power` SFX on entry; `warpTotal = 16*5 = 80` steps; A skips after 8
+  steps. On finish → `state = 'play'` and the normal player draw resumes
+  (compMode → comp_idle).
+- Verified via puppeteer: prologue beats (danny→charge→flash→wreck→
+  walk→arrived) + warp-in (start→mid→end) all render, 0 page errors.
 
 ### Adventure City (Day 8-1) — current state as of v0.83 (read this)
 
