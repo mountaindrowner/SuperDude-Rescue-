@@ -47,7 +47,12 @@ window.SDD = window.SDD || {};
       // buses (Mark wanted to lower music + raise sfx separately).
       // Defaults: music a touch quiet, sfx a bit louder so the small
       // footstep/enemy cues are audible over the track.
-      options: { muted: false, volume: 0.7, musicVolume: 0.5, sfxVolume: 0.85, god: false }
+      // `secretUnlocked` (global, v0.98): flips true the first time the
+      // game is finished on ANY difficulty. The menu uses it to reveal
+      // the ADVENTURE CITY UNLOCKED button - shared across all slots so
+      // beating it once unlocks it for good. `god` is dev-only and is
+      // force-cleared on load (the public build has no way to set it).
+      options: { muted: false, volume: 0.7, musicVolume: 0.5, sfxVolume: 0.85, god: false, secretUnlocked: false }
     };
   }
 
@@ -109,6 +114,9 @@ window.SDD = window.SDD || {};
     var d = defaults();
     if (p.difficulty && d.slots[p.difficulty]) d.difficulty = p.difficulty;
     if (p.options) d.options = Object.assign(d.options, p.options);
+    // Dev-kit removed for the public build: god mode can never be
+    // enabled, so clear it even if an older save had it on.
+    d.options.god = false;
     if (p.slots && typeof p.slots === 'object') {
       DIFFICULTIES.forEach(function (k) {
         var s = p.slots[k];

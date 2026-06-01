@@ -430,21 +430,20 @@ window.SDD = window.SDD || {};
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
-      // v0.55 secret stage: once the active slot's firstClear flag is
-      // true (set when the kid finishes the finale), the Computer
-      // character offers the Adventure City stage. Hidden until earned.
-      // TEMP (v0.56): unlock unconditionally + label as TEST so Mark
-      // can jump straight into the secret stage for art iteration.
-      // Restore the `if (SDD.save.data.firstClear)` gate before ship.
-      this.items.push({ label: 'ADVENTURE CITY (TEST)', act: 'adventurecity' });
-      // TEMP (v0.68): decoration editor for Layer 1 of Adventure
-      // City. Dev-only, strip with the rest of the editor before
-      // public release.
-      if (SDD.scenes.decorEdit) {
-        this.items.push({ label: 'DECOR EDITOR (TEST)', act: 'decoredit' });
+      // Secret stage (v0.98): the ADVENTURE CITY UNLOCKED button only
+      // appears once the player has finished the whole game on ANY
+      // difficulty. `secretUnlocked` is a global (cross-slot) flag set
+      // by the finale, so the unlock sticks from then on.
+      if (SDD.save.data.options.secretUnlocked) {
+        this.items.push({ label: 'ADVENTURE CITY UNLOCKED', act: 'adventurecity' });
       }
-      // Dev: in-game level editor. Remove this line + js/editor.js
-      // load + the 'editor' branch below to ship without the editor.
+      // Dev tools: the level + decor editors only show when their
+      // scripts are loaded. The <script> tags are commented out of
+      // index.html for the public build, so these stay hidden. Re-add
+      // the two tags for a dev/level-editing session (see index.html).
+      if (SDD.scenes.decorEdit) {
+        this.items.push({ label: 'DECOR EDITOR', act: 'decoredit' });
+      }
       if (SDD.scenes.editor) this.items.push({ label: 'LEVEL EDITOR', act: 'editor' });
       this.idx = SDD.save.hasSave() ? 1 : 0;
     },
@@ -659,7 +658,7 @@ window.SDD = window.SDD || {};
     enter: function (d) { this.from = (d && d.from) || 'menu'; this.idx = 0; this.t = 0; },
     update: function () {
       this.t++;
-      listNav(this, 5);
+      listNav(this, 4);
       var o = SDD.save.data.options;
       if (typeof o.musicVolume !== 'number') o.musicVolume = 0.5;
       if (typeof o.sfxVolume !== 'number') o.sfxVolume = 0.85;
@@ -677,10 +676,7 @@ window.SDD = window.SDD || {};
         if (In.pressed('left'))  { o.sfxVolume = Math.max(0, Math.round((o.sfxVolume - 0.1) * 10) / 10); A.setSfxVolume(o.sfxVolume); A.sfx('select'); SDD.save.save(); }
         if (In.pressed('right')) { o.sfxVolume = Math.min(1, Math.round((o.sfxVolume + 0.1) * 10) / 10); A.setSfxVolume(o.sfxVolume); A.sfx('select'); SDD.save.save(); }
       }
-      if (this.idx === 3 && In.confirm()) {
-        o.god = !o.god; SDD.save.save(); A.sfx('confirm');
-      }
-      if (this.idx === 4 && In.confirm()) { A.sfx('confirm'); this.exitTo(); }
+      if (this.idx === 3 && In.confirm()) { A.sfx('confirm'); this.exitTo(); }
       if (In.back()) { A.sfx('confirm'); this.exitTo(); }
     },
     exitTo: function () {
@@ -709,7 +705,6 @@ window.SDD = window.SDD || {};
         'SOUND:  ' + (o.muted ? 'OFF' : 'ON'),
         'MUSIC:  ' + bar(mv),
         'SFX:    ' + bar(sv),
-        'GOD MODE: ' + (o.god ? 'ON' : 'OFF'),
         'BACK'
       ];
       for (var i = 0; i < rows.length; i++) {
@@ -718,7 +713,6 @@ window.SDD = window.SDD || {};
         text(g, rows[i], 76, y, sel ? '#ffffff' : '#9aa0c4', 1, 'left');
       }
       text(g, 'ARROWS TO CHANGE   A TO CONFIRM', 160, 158, '#8a90b4', 1, 'center');
-      text(g, 'TIP: PRESS G ANYWHERE TO TOGGLE GOD MODE', 160, 168, '#6d7398', 1, 'center');
     }
   };
   function repeat(ch, n) { var s = ''; for (var i = 0; i < n; i++) s += ch; return s; }
@@ -7966,10 +7960,6 @@ window.SDD = window.SDD || {};
         var sigLine = secLeft > 99 ? sigName : (sigName + ' ' + secLeft + 's');
         text(g, sigLine, 314, 14, '#ffe890', 1, 'right');
       }
-      if (sv.data.options.god) {
-        g.fillStyle = 'rgba(255,210,80,0.85)'; g.fillRect(284, 14, 32, 8);
-        text(g, 'GOD', 300, 15, '#1a1630', 1, 'center');
-      }
     },
 
     drawBanner: function (g, msg, col) {
@@ -8377,10 +8367,22 @@ window.SDD = window.SDD || {};
   SDD.scenes.finale = {
     enter: function (d) {
       this.d = d || {}; this.beat = 0; this.t = 0;
+      this.phase = 'beats'; this.alertT = 0;
       A.startMusic('finale');
     },
     update: function () {
       this.t++;
+      // v0.98: "SECRET LEVEL UNLOCKED" alert shown the FIRST time the
+      // game is finished (any difficulty). Holds, accepts A to skip,
+      // then fades to the main menu.
+      if (this.phase === 'unlock') {
+        this.alertT++;
+        if ((In.confirm() && this.alertT > 24) || this.alertT > 250) {
+          A.stopMusic();
+          go('menu');
+        }
+        return;
+      }
       if (this.beat === 2 && this.t % 18 === 0) A.sfx('power');
       if (this.beat === 3 && this.t % 12 === 0) A.sfx('chirp');
       if (this.beat === 4 && this.t === 1) A.sfx('win');
@@ -8388,20 +8390,69 @@ window.SDD = window.SDD || {};
       if (In.confirm() || this.t > 360) {
         this.beat++; this.t = 0; A.sfx('select');
         if (this.beat >= FINALE_BEATS.length) {
-          A.stopMusic();
-          // First time the kid finishes the finale, unlock the secret
-          // Adventure City stage. firstClear is per-slot so each
-          // difficulty earns the unlock independently.
-          if (!SDD.save.data.firstClear) {
-            SDD.save.data.firstClear = true;
-            SDD.save.save();
+          // Per-slot firstClear (kept) + the global secretUnlocked flag
+          // that the menu reads. `firstUnlock` is true only the very
+          // first time the game is beaten on ANY difficulty.
+          var firstUnlock = !SDD.save.data.options.secretUnlocked;
+          SDD.save.data.firstClear = true;
+          SDD.save.data.options.secretUnlocked = true;
+          SDD.save.save();
+          if (firstUnlock) {
+            this.phase = 'unlock'; this.alertT = 0; A.sfx('1up');
+            return;
           }
+          A.stopMusic();
           go('menu');
         }
       }
     },
     render: function (g) {
       var b = this.beat, t = this.t;
+      // v0.98: SECRET-LEVEL-UNLOCKED alert (first completion only).
+      // Centered panel that fades in over a darkened end-card, holds,
+      // then fades to black before handing off to the menu. Mobile-safe
+      // (panel <= 240 wide, centered).
+      if (this.phase === 'unlock') {
+        var at = this.alertT;
+        // Warm end-card backdrop behind the alert.
+        var bg = g.createLinearGradient(0, 0, 0, 180);
+        bg.addColorStop(0, '#2a1a40'); bg.addColorStop(1, '#0a0818');
+        g.fillStyle = bg; g.fillRect(0, 0, 320, 180);
+        drawStarfield(g, t);
+        // Sparkle confetti.
+        for (var cf = 0; cf < 26; cf++) {
+          var cfx = ((cf * 53 + at * 1.3) % 320), cfy = ((cf * 29 + at * 0.9) % 150) + 8;
+          g.fillStyle = (cf % 3 === 0) ? '#ffd23a' : (cf % 3 === 1) ? '#5af0ff' : '#ff7ac0';
+          g.fillRect(cfx | 0, cfy | 0, 2, 2);
+        }
+        // Fade-in 0-28 (smoothstep), fade-to-black 220-250.
+        var fin = Math.max(0, Math.min(1, at / 28));
+        var finE = fin * fin * (3 - 2 * fin);
+        var panelW = 240, panelH = 70;
+        var pxp = Math.round((320 - panelW) / 2), pyp = 52;
+        g.save();
+        g.globalAlpha = finE;
+        // Framed panel.
+        g.fillStyle = '#7a4a10'; g.fillRect(pxp - 3, pyp - 3, panelW + 6, panelH + 6);
+        g.fillStyle = '#ffd23a'; g.fillRect(pxp - 1, pyp - 1, panelW + 2, panelH + 2);
+        g.fillStyle = 'rgba(10,10,24,0.97)'; g.fillRect(pxp, pyp, panelW, panelH);
+        g.fillStyle = '#ffd23a'; g.fillRect(pxp, pyp, panelW, 2); g.fillRect(pxp, pyp + panelH - 2, panelW, 2);
+        // A little star burst above the headline.
+        var bob = Math.sin(at * 0.12) * 1;
+        tsh(g, 'SECRET LEVEL', 160, pyp + 10 + bob, '#ffd23a', '#7a4a10', 2, 'center');
+        tsh(g, 'UNLOCKED!', 160, pyp + 26 + bob, '#5af0ff', '#0a3340', 2, 'center');
+        g.fillStyle = '#5af0ff'; g.fillRect(pxp + 16, pyp + 44, panelW - 32, 1);
+        text(g, 'PLAY  ADVENTURE CITY', 160, pyp + 50, '#ffffff', 1, 'center');
+        text(g, 'FROM THE MAIN MENU', 160, pyp + 60, '#bce8ff', 1, 'center');
+        g.restore();
+        if (at > 40 && (t % 40 < 26)) tsh(g, 'PRESS A', 160, pyp + panelH + 14, '#ffd23a', '#000', 1, 'center');
+        // Fade to black at the tail.
+        if (at > 220) {
+          g.fillStyle = 'rgba(0,0,0,' + Math.min(1, (at - 220) / 30).toFixed(2) + ')';
+          g.fillRect(0, 0, 320, 180);
+        }
+        return;
+      }
       // Backdrop varies per beat:
       //   0, 1, 2 = Garden of Eden (where Day 7 ends - he installs the
       //             last part, witnesses creation, machine roars to life)

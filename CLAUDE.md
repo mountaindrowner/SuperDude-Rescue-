@@ -11,7 +11,37 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.97` / `sdd-shell-v97`.
+- **Live build**: `v0.98` / `sdd-shell-v98`.
+
+### v0.98 — Dev-kit removed + Adventure City unlock flow (latest)
+
+- **God mode removed.** OPTIONS row gone (nav 5→4), HUD `GOD` badge
+  gone, "PRESS G" tip gone. `save.js reconstruct()` force-clears
+  `options.god = false` on every load so stale saves can't keep it on.
+  The `options.god` gameplay branches in `entities.js` / `scenes.js`
+  remain but are now permanently inert (no UI to enable) - left in
+  place to avoid touching player physics; safe to deep-clean later.
+- **Editor + decor editor unloaded (source kept).** The two
+  `<script>` tags in `index.html` are COMMENTED OUT for the public
+  build, and removed from the SW precache. The menu items auto-hide
+  (`if (SDD.scenes.editor)` guard). To edit levels: uncomment the two
+  tags in index.html, reload, use LEVEL EDITOR / DECOR EDITOR, save,
+  re-comment. Files `js/editor.js` + `js/decor_editor.js` stay in repo.
+- **Version badge KEPT** on the menu (Mark's choice) so the live
+  build is identifiable.
+- **Adventure City unlock gating.** New GLOBAL flag
+  `save.data.options.secretUnlocked` (cross-slot, in `options` which
+  is shared across difficulties). The finale sets it true on FIRST
+  completion of the whole game on ANY difficulty (also keeps the
+  per-slot `firstClear`). The menu shows an `ADVENTURE CITY UNLOCKED`
+  button only when the flag is set - replaces the old unconditional
+  `(TEST)` entry.
+- **Unlock alert.** First time the game is beaten, the finale enters a
+  new `phase: 'unlock'` instead of going straight to menu: a centered
+  framed panel "SECRET LEVEL UNLOCKED! / PLAY ADVENTURE CITY FROM THE
+  MAIN MENU" fades in (smoothstep), holds, accepts A to skip, then
+  fades to black → menu. Subsequent completions skip the alert.
+  Mobile-safe (240-wide panel, centered).
 
 ### v0.97 — Audit pass: PWA fix, repo cleanup (-41 MB), final-card polish (latest)
 
