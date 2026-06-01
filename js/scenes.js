@@ -7754,60 +7754,50 @@ window.SDD = window.SDD || {};
     return lines;
   }
 
-  // Avengers-style "AW" emblem (Andy & W... the rescue team's crest).
-  // A bold ring with a gap on the lower-right where a sweep arrow
-  // exits, an "A" monogram, and a "W" sharing the A's legs.
+  // "A W" crest - the letters A (left) and W (right) side by side
+  // inside a circle. Mark: "AW like the letters next to each other,
+  // left then right, in a circle."
   function _cyDrawAWEmblem(g, cx, cy, r, t, lit) {
-    var gold = lit ? '#ffe27a' : '#e8b24a';
+    var gold  = lit ? '#ffe27a' : '#e8b24a';
     var goldD = '#8a5e18';
     // Soft glow behind.
     var glow = g.createRadialGradient(cx, cy, 2, cx, cy, r + 8);
     glow.addColorStop(0, lit ? 'rgba(255,220,120,0.30)' : 'rgba(255,210,90,0.16)');
     glow.addColorStop(1, 'rgba(255,210,90,0)');
     g.fillStyle = glow; g.fillRect(cx - r - 8, cy - r - 8, (r + 8) * 2, (r + 8) * 2);
-    // Ring with a gap on the lower-right (Avengers sweep exit).
-    g.strokeStyle = gold; g.lineWidth = 2.4; g.lineCap = 'butt';
-    g.beginPath(); g.arc(cx, cy, r, -2.0, 0.55); g.stroke();          // top arc
-    g.beginPath(); g.arc(cx, cy, r, 1.15, Math.PI * 2 - 2.0 + 6.283); g.stroke();
-    // (simpler: draw most of the ring, leave a gap ~0.55..1.15 rad)
-    g.strokeStyle = goldD; g.lineWidth = 0.8;
-    g.beginPath(); g.arc(cx, cy, r + 1, -2.0, 0.55); g.stroke();
-    // The "A": apex top, two legs splaying down. Sweep arrow extends
-    // from the right leg out through the ring gap.
-    var ah = r * 0.86, aw = r * 0.62;
-    g.strokeStyle = gold; g.lineWidth = 2.6; g.lineJoin = 'miter';
+    // Full ring.
+    g.strokeStyle = goldD; g.lineWidth = 3.2;
+    g.beginPath(); g.arc(cx, cy, r, 0, 6.283); g.stroke();
+    g.strokeStyle = gold;  g.lineWidth = 2.0;
+    g.beginPath(); g.arc(cx, cy, r, 0, 6.283); g.stroke();
+
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.strokeStyle = gold; g.lineWidth = 2.4;
+    var hh = r * 0.50;          // half letter height
+    var hw = r * 0.26;          // half letter width
+    var ax = cx - r * 0.40;     // letter A centre x (left)
+    var wx = cx + r * 0.40;     // letter W centre x (right)
+
+    // Letter A (left).
     g.beginPath();
-    g.moveTo(cx - aw, cy + ah);            // left foot
-    g.lineTo(cx,      cy - ah);            // apex
-    g.lineTo(cx + aw, cy + ah);            // right foot
+    g.moveTo(ax - hw, cy + hh);          // left foot
+    g.lineTo(ax,      cy - hh);          // apex
+    g.lineTo(ax + hw, cy + hh);          // right foot
     g.stroke();
-    // A crossbar.
-    g.lineWidth = 2.2;
+    g.beginPath();                        // crossbar
+    g.moveTo(ax - hw * 0.55, cy + hh * 0.25);
+    g.lineTo(ax + hw * 0.55, cy + hh * 0.25);
+    g.stroke();
+
+    // Letter W (right) - four strokes: down, up, down, up.
     g.beginPath();
-    g.moveTo(cx - aw * 0.5, cy + ah * 0.18);
-    g.lineTo(cx + aw * 0.5, cy + ah * 0.18);
+    g.moveTo(wx - hw,        cy - hh);
+    g.lineTo(wx - hw * 0.5,  cy + hh);
+    g.lineTo(wx,             cy - hh * 0.15);
+    g.lineTo(wx + hw * 0.5,  cy + hh);
+    g.lineTo(wx + hw,        cy - hh);
     g.stroke();
-    // The "W": inner zigzag sharing the A's lower legs. Two inner
-    // peaks make the W read under the A.
-    g.lineWidth = 2.2;
-    g.beginPath();
-    g.moveTo(cx - aw * 0.78, cy + ah * 0.30);
-    g.lineTo(cx - aw * 0.30, cy + ah);        // valley 1
-    g.lineTo(cx,             cy + ah * 0.32);  // centre peak
-    g.lineTo(cx + aw * 0.30, cy + ah);        // valley 2
-    g.lineTo(cx + aw * 0.78, cy + ah * 0.30);
-    g.stroke();
-    // Sweep arrow exiting lower-right through the ring gap.
-    g.lineWidth = 2.4;
-    g.beginPath();
-    g.moveTo(cx + aw * 0.55, cy + ah * 0.55);
-    g.lineTo(cx + r + 5,     cy + r * 0.62);
-    g.stroke();
-    // Arrowhead.
-    g.fillStyle = gold;
-    var ax = cx + r + 5, ay = cy + r * 0.62;
-    g.beginPath(); g.moveTo(ax + 3, ay); g.lineTo(ax - 3, ay - 3); g.lineTo(ax - 2, ay + 3); g.closePath(); g.fill();
-    g.lineWidth = 1;
+    g.lineCap = 'butt'; g.lineWidth = 1;
   }
 
   // HQ briefing-room backdrop: dark control room wall with the AW
