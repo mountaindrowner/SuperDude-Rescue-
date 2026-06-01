@@ -1247,6 +1247,47 @@ window.SDD = window.SDD || {};
     }
   }
 
+  // v0.91: Adventure City sky drone. 14x14 canvas. Hover-pod silhouette
+  // with twin underside thrusters + cockpit canopy + tiny antenna +
+  // strobe LED that pulses across the two anim frames.
+  function paintWisp_drone(g, frame) {
+    var body = '#3a4a6a', bodyD = '#1a2438', bodyL = '#6a8ab0';
+    var canopy = '#5af0ff', canopyL = '#bcefff';
+    var thrust = (frame === 0) ? '#ffd870' : '#ffa040';
+    var strobe = (frame === 0) ? '#ff5a3a' : '#ffe890';
+    // Shell - rounded hover pod across the middle band.
+    px(g, 2, 5, 10, 4, body);
+    px(g, 1, 6, 12, 2, body);
+    px(g, 3, 4, 8, 1, body);
+    // Top highlight.
+    px(g, 3, 4, 8, 1, bodyL);
+    px(g, 2, 5, 1, 1, bodyL);
+    px(g, 11, 5, 1, 1, bodyL);
+    // Dark belly seam.
+    px(g, 2, 8, 10, 1, bodyD);
+    // Cockpit canopy (centered, glowing cyan).
+    px(g, 5, 5, 4, 2, canopy);
+    px(g, 5, 5, 1, 1, canopyL);
+    px(g, 8, 5, 1, 1, canopyL);
+    // Side fins / wing tips.
+    px(g, 0, 7, 1, 2, bodyD);
+    px(g, 13, 7, 1, 2, bodyD);
+    px(g, 1, 8, 1, 1, body);
+    px(g, 12, 8, 1, 1, body);
+    // Twin underside thrusters with glow.
+    px(g, 3, 9, 2, 1, thrust);
+    px(g, 9, 9, 2, 1, thrust);
+    px(g, 3, 10, 2, 1, bodyD);
+    px(g, 9, 10, 2, 1, bodyD);
+    // Thruster trail wisps under each.
+    px(g, 3, 11, 2, 1, thrust);
+    px(g, 9, 11, 2, 1, thrust);
+    // Top strobe LED + tiny antenna.
+    px(g, 6, 3, 2, 1, bodyD);
+    px(g, 6, 2, 1, 1, strobe);
+    px(g, 7, 2, 1, 1, bodyD);
+  }
+
   // ----- themed Thrower variants (16w x 16h stationary) -----
 
   // Rain cloud (sky / sea-surface).
@@ -3136,7 +3177,8 @@ window.SDD = window.SDD || {};
         stormcloud: paintWisp_stormcloud,
         jellyfish:  paintWisp_jellyfish,
         bee:        paintWisp_bee,
-        piranha:    paintWisp_piranha
+        piranha:    paintWisp_piranha,
+        drone:      paintWisp_drone
       };
       // Bee gets a bigger 18x16 canvas so its iconic over-the-body
       // wings can dominate the silhouette like the reference art.

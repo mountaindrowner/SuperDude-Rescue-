@@ -11,7 +11,53 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.90` / `sdd-shell-v90`.
+- **Live build**: `v0.91` / `sdd-shell-v91`.
+
+### v0.91 — Cars become patrol mobs + new hazards (dump truck, hydrant, drone, crumble tile, cat) (latest)
+
+- **Cars are now persistent patrol mobs.** Mark: "lets instead make
+  them like normal mobs, that go back and forth on a path." `Car`
+  class gains `patrol: true` + `range` (default 96 world-px each side).
+  Bounces between `minX` and `maxX`. The legacy `carspawner` spawn
+  entries are converted at level-load into single patrol cars at
+  their marker (keeps Mark's editor-saved layout working without
+  re-editing). New `car` spawn type also uses patrol mode.
+- **Dump truck.** `Car kind: 'dump'` → 50×21 box, slower (0.85 spd),
+  amber color, boxy cab with windshield + headlights + warning
+  stripes, tilted load bed with cargo pile, dual rear wheels. New
+  spawn type `dumptruck`. Same patrol behaviour as the car.
+- **Fire hydrant.** New `HydrantJet` projectile (blue-cyan column,
+  mirrors `LavaPlume` rise/hold/fall timing) + a new
+  `HazardSpawner.kind = 'hydrantJet'` branch that paints the red
+  hydrant base on the road + periodically launches the jet. New
+  spawn type `hydrant` with `period` field. Hydrant jet is a
+  persistent damaging column - touching it hurts (added to the
+  projectile-collision branch alongside LavaPlume).
+- **Sky drones.** New `Wisp variant: 'drone'` with a procedural
+  14×14 hover-pod sprite (cyan canopy, twin underside thrusters,
+  side fins, top strobe LED, tiny antenna). Reuses the Wisp float +
+  stomp logic so they behave like cyber birds. New spawn type
+  `drone`.
+- **Crumbling road tile.** New tile code `'C'`. Added to engine
+  `SOLID` map so the player can stand on it. Crumble logic lives in
+  `level.stepWorld`: when the grounded player overlaps a 'C' tile
+  at their feet column, that tile's timer in `level.crumblers`
+  advances; at t=28 plays a `block` warning sfx + shake; at t≥50
+  the tile becomes empty + emits a debris burst. Painted directly
+  in the tile loop with progressive shake + warning glow.
+- **Cat sprite at the start.** Procedural orange tabby pixel cat
+  sitting at world col 13 (just right of the TOWER > sign) on the
+  sidewalk. Idle breathing + tail swish + occasional blink. Painted
+  via `_cyDrawCityCat` called from the level render whenever
+  `this.theme === 'cyber'`. Cosmetic only - not an entity, no
+  collision.
+- **Editor palette updated:** crumble tile in the HAZARDS tile
+  group; `car / dumptruck / hydrant / drone / carspawner` in the
+  Adventure City spawn group with friendly defaults +
+  `wisp.variant: 'drone'` enum entry.
+- Seed placements in `level_8_1.js` (Mark can move/delete via
+  editor): 2 dump trucks, 3 hydrants, 5 drones, and 15 'C' road
+  tiles in three short spans (col 200, 400, 620).
 
 ### v0.90 — Mark's editor level + car spawn fix + ending floor/music (latest)
 

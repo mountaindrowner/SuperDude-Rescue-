@@ -130,7 +130,19 @@ SDD.levels['8-1'] = {
     { type: "carspawner", tx: 140, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 205, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 260, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
-    { type: "carspawner", tx: 499, ty: 4, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" }
+    { type: "carspawner", tx: 499, ty: 4, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
+    /* v0.91 — sample placements for the new mob / hazard types. Mark
+       can move/delete them in the editor. */
+    { type: "dumptruck", tx: 120, ty: 10, dir: -1, range: 64 },
+    { type: "dumptruck", tx: 560, ty: 10, dir:  1, range: 80 },
+    { type: "hydrant",   tx:  85, ty: 10, period: 130 },
+    { type: "hydrant",   tx: 540, ty: 10, period: 140 },
+    { type: "hydrant",   tx: 660, ty: 10, period: 120 },
+    { type: "drone",     tx:  55, ty:  3 },
+    { type: "drone",     tx: 150, ty:  3 },
+    { type: "drone",     tx: 470, ty:  3 },
+    { type: "drone",     tx: 600, ty:  3 },
+    { type: "drone",     tx: 680, ty:  3 }
   ],
   movers: [
   ],
@@ -144,3 +156,21 @@ SDD.levels['8-1'] = {
   startSign: { col: 9, label: 'TOWER >' },
   towerEntrance: { col: 706, width: 16 }
 };
+
+// v0.91: sprinkle a few CRUMBLING road tiles into the ground row so
+// the new hazard is in-play immediately. Done in JS so the row-length
+// invariant is impossible to break by hand. Mark can move / extend /
+// remove these from the editor.
+(function () {
+  var L = SDD.levels['8-1'];
+  var row = L.tiles[11].split('');
+  function crumbleSpan(start, count) {
+    for (var i = start; i < start + count && i < row.length; i++) {
+      if (row[i] === 'X') row[i] = 'C';
+    }
+  }
+  crumbleSpan(200, 4);   // mid-section
+  crumbleSpan(400, 6);   // post-tunnel approach
+  crumbleSpan(620, 5);   // tower run-up
+  L.tiles[11] = row.join('');
+})();

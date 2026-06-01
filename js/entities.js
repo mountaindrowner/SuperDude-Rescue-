@@ -1603,6 +1603,71 @@ window.SDD = window.SDD || {};
     ctx.fillRect(cx + Math.round(ex), by - h - 6 - (t % 6), 1, 1);
   };
 
+  // ===================== HYDRANT JET (Day 8) =====================
+  // Mirrors LavaPlume but blue/cyan water with a softer crown. The
+  // anchor (ax, ay) is the hydrant nozzle world position; the column
+  // grows upward each frame, holds, then collapses.
+  function HydrantJet(x, y, scale) {
+    var sc = scale || 1;
+    this.scale = sc;
+    this.ax = x;
+    this.ay = y + 2;                             // jet anchor at hydrant top
+    this.maxH = Math.round(46 * sc);
+    this.colW = Math.round(10 * sc);
+    this.t = 0;
+    this.rise = 60; this.hold = 26; this.fall = 60;
+    this.remove = false;
+    this.curH = 0;
+    this.w = this.colW; this.h = 0;
+    this.x = this.ax - this.colW / 2; this.y = this.ay;
+  }
+  HydrantJet.prototype.update = function () {
+    this.t++;
+    var h;
+    if (this.t <= this.rise) h = this.maxH * (this.t / this.rise);
+    else if (this.t <= this.rise + this.hold) h = this.maxH;
+    else if (this.t <= this.rise + this.hold + this.fall)
+      h = this.maxH * (1 - (this.t - this.rise - this.hold) / this.fall);
+    else { this.remove = true; return; }
+    this.curH = h;
+    this.h = h;
+    this.y = this.ay - h;
+    this.x = this.ax - this.colW / 2;
+  };
+  HydrantJet.prototype.draw = function (ctx, cam) {
+    if (this.curH < 1) return;
+    var sc = this.scale || 1;
+    var R = function (n) { return Math.round(n * sc); };
+    var cx = Math.round(this.ax - cam.x);
+    var by = Math.round(this.ay - cam.y);
+    var h = Math.round(this.curH);
+    // Cool glow around the column.
+    glow(ctx, cx, by - h / 2, Math.round(14 * sc), '#48b8ff', 0.34);
+    // Column body: outer mid-blue, inner pale, core white.
+    ctx.fillStyle = '#1a5a96';
+    ctx.fillRect(cx - R(5), by - h, R(10), h);
+    ctx.fillStyle = '#48b8ff';
+    ctx.fillRect(cx - R(3), by - h, R(6), h);
+    ctx.fillStyle = '#bce6ff';
+    ctx.fillRect(cx - R(1), by - h, Math.max(1, R(2)), h);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx, by - h + 2, 1, Math.max(0, h - 4));
+    // Crown spray at the top.
+    var t = this.t;
+    var c1 = Math.sin(t * 0.5) * 1.4;
+    var c2 = Math.cos(t * 0.6) * 1.2;
+    ctx.fillStyle = '#bce6ff';
+    ctx.fillRect(cx - R(4) + Math.round(c1), by - h - 2, R(2), R(2));
+    ctx.fillRect(cx - R(1), by - h - 3, R(2), R(3));
+    ctx.fillRect(cx + R(2) + Math.round(c2), by - h - 2, R(2), R(2));
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx, by - h - R(4), Math.max(1, R(1)), R(2));
+    // Droplets raining sideways.
+    var dxx = (t * 7) % 16 - 8;
+    ctx.fillStyle = '#a0d8ff';
+    ctx.fillRect(cx + Math.round(dxx), by - h - 5 - (t % 4), 1, 1);
+  };
+
   // ===================== SKY HAZARDS (Day 4) =====================
   // Solar flare - drops straight down with increasing speed. Hits player
   // on contact like an Orb.
@@ -1696,10 +1761,50 @@ window.SDD = window.SDD || {};
         level.projectiles.push(m);
       } else if (this.kind === 'lavaPlume') {
         level.projectiles.push(new LavaPlume(this.x, this.y, sc));
+      } else if (this.kind === 'hydrantJet') {
+        level.projectiles.push(new HydrantJet(this.x, this.y, sc));
       }
     }
   };
   HazardSpawner.prototype.draw = function (ctx, cam) {
+    if (this.kind === 'hydrantJet') {
+      // Painted hydrant base on the road. Squat red fire hydrant
+      // with brass cap + side outlets.
+      var T = 16;
+      var gx = Math.round(this.x - cam.x);
+      var gy = Math.round((this.ty + 1) * T - cam.y);
+      // Shadow + base flange.
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(gx - 7, gy - 1, 14, 2);
+      ctx.fillStyle = '#3a0808';
+      ctx.fillRect(gx - 6, gy - 3, 12, 3);
+      // Body (red).
+      ctx.fillStyle = '#c01a1a';
+      ctx.fillRect(gx - 4, gy - 11, 8, 9);
+      ctx.fillStyle = '#ff4a3a';
+      ctx.fillRect(gx - 4, gy - 11, 1, 9);
+      ctx.fillStyle = '#7a0c0c';
+      ctx.fillRect(gx + 3, gy - 11, 1, 9);
+      // Side outlets (nuts).
+      ctx.fillStyle = '#3a0808';
+      ctx.fillRect(gx - 7, gy - 8, 3, 3);
+      ctx.fillRect(gx + 4, gy - 8, 3, 3);
+      ctx.fillStyle = '#a0a0a8';
+      ctx.fillRect(gx - 6, gy - 7, 2, 1);
+      ctx.fillRect(gx + 5, gy - 7, 2, 1);
+      // Brass cap on top.
+      ctx.fillStyle = '#7a5018';
+      ctx.fillRect(gx - 3, gy - 14, 6, 3);
+      ctx.fillStyle = '#d4a850';
+      ctx.fillRect(gx - 3, gy - 14, 6, 1);
+      // Charging warning glint when the jet is about to fire.
+      var remain = Math.max(0, this.period - this.t);
+      if (remain < 16) {
+        ctx.fillStyle = (this.t % 4 < 2) ? '#bce6ff' : '#5af0ff';
+        ctx.fillRect(gx - 1, gy - 13, 2, 1);
+      }
+      return;
+    }
     if (this.kind !== 'lavaPlume') return;
     var T = 16, sc = this.scale || 1;
     var gx = Math.round(this.x - cam.x);
@@ -2840,16 +2945,33 @@ window.SDD = window.SDD || {};
   function Car(x, y, opts) {
     opts = opts || {};
     this.x = x; this.y = y;
-    // v0.85: cars 50% bigger + sleeker / more futuristic detail layer
-    // (Mark: "higher definition style wise, more futuristic"). Base
-    // box 33x15; drones still tuned at 36x14.
-    this.w = opts.w || 33;
-    this.h = opts.h || 15;
+    // v0.91 (Mark): cars are now persistent PATROL mobs that bounce
+    // left/right on a fixed range. Old one-shot spawner behaviour kept
+    // for legacy callers (warnT > 0).
+    this.kind = opts.kind || 'car';                  // 'car' or 'dump'
+    if (this.kind === 'dump') {
+      // Dump truck - bigger box, slower, heavier read.
+      this.w = opts.w || 50;
+      this.h = opts.h || 21;
+      this.spd = (opts.spd != null) ? opts.spd : 0.85;
+      this.color = opts.color || '#e8a040';
+    } else {
+      this.w = opts.w || 33;
+      this.h = opts.h || 15;
+      this.spd = (opts.spd != null) ? opts.spd : 1.65;
+      this.color = opts.color || '#46f0ff';
+    }
     this.dir = opts.dir || -1;
-    this.spd = opts.spd || 1.65;
-    this.color = opts.color || '#46f0ff';
-    this.warnT = (opts.warnT != null) ? opts.warnT : 30;
-    this.harmless = this.warnT > 0;
+    this.patrol = !!opts.patrol;
+    if (this.patrol) {
+      var range = (opts.range != null) ? opts.range : 96;
+      this.minX = x - range;
+      this.maxX = x + range;
+      this.warnT = 0;
+    } else {
+      this.warnT = (opts.warnT != null) ? opts.warnT : 30;
+    }
+    this.harmless = (this.warnT > 0);
     this.stompable = false; this.unkillable = true;
     this.dead = false; this.remove = false;
     this.t = 0; this.honked = false;
@@ -2866,11 +2988,12 @@ window.SDD = window.SDD || {};
       return;
     }
     this.x += this.dir * this.spd;
-    // Camera-relative cull: once the car has swept fully past the
-    // visible viewport (with a small buffer for trail visuals) it's
-    // gone forever - the player can't dodge what they can't see. Keeps
-    // the active-entity count bounded even on a long stage with many
-    // spawners.
+    if (this.patrol) {
+      if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
+      if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
+      return;
+    }
+    // Legacy off-screen cull (non-patrol cars).
     var camx = (level && level.camera) ? level.camera.x : 0;
     if (this.x + this.w < camx - 80 || this.x > camx + 320 + 80) {
       this.remove = true;
@@ -2911,11 +3034,84 @@ window.SDD = window.SDD || {};
       var trailX2 = (this.dir > 0) ? dx - 9 : dx + this.w + 4;
       ctx.fillRect(trailX2, dy + 3, 4, this.h - 6);
     }
-    // Car body. Drone-lane = sleek hover pod with twin thrusters;
-    // ground + low-sky = futuristic coupe with neon underglow,
-    // canopy, dual rear thrusters, side vents, racing seam, antenna.
-    var isDrone = this.y < 80;
+    // Car body. v0.91 adds the DUMP-TRUCK variant (boxy cab + tilted
+    // load bed + double rear wheels). Drone-lane = sleek hover pod;
+    // ground + low-sky = futuristic coupe.
     var W = this.w, H = this.h;
+    if (this.kind === 'dump') {
+      // DUMP TRUCK: chunky industrial silhouette.
+      // Underglow + shadow.
+      ctx.fillStyle = 'rgba(255,140,40,0.30)';
+      ctx.fillRect(dx + 4, dy + H - 1, W - 8, 1);
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(dx + 5, dy + H + 1, W - 10, 1);
+      // Lower chassis.
+      ctx.fillStyle = '#1a1208';
+      ctx.fillRect(dx + 2, dy + 4, W - 4, H - 6);
+      // Cab (front 18px in dir).
+      var cabW = 18;
+      var cabX = (this.dir > 0) ? (dx + W - cabW - 1) : (dx + 1);
+      ctx.fillStyle = this.color;
+      ctx.fillRect(cabX, dy + 2, cabW, H - 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.40)';
+      ctx.fillRect(cabX, dy + 2, cabW, 1);
+      // Cab windshield (dark glass).
+      ctx.fillStyle = '#0c1830';
+      ctx.fillRect(cabX + 2, dy + 4, cabW - 4, 5);
+      ctx.fillStyle = '#5a96d4';
+      ctx.fillRect(cabX + 3, dy + 5, cabW - 6, 3);
+      ctx.fillStyle = '#aaeaff';
+      var glareX = (this.dir > 0) ? (cabX + cabW - 5) : (cabX + 3);
+      ctx.fillRect(glareX, dy + 5, 2, 1);
+      // Headlights + bumper.
+      var hX = (this.dir > 0) ? (dx + W - 3) : (dx + 1);
+      ctx.fillStyle = '#fff8a0'; ctx.fillRect(hX, dy + 11, 2, 2);
+      ctx.fillStyle = '#06080e';  ctx.fillRect(hX - (this.dir > 0 ? 1 : -2), dy + 13, 3, 2);
+      // LOAD BED (rear).
+      var bedX = (this.dir > 0) ? (dx + 1) : (dx + cabW + 2);
+      var bedW = W - cabW - 4;
+      ctx.fillStyle = '#3a2410';
+      ctx.fillRect(bedX, dy + 1, bedW, H - 6);
+      ctx.fillStyle = '#5a3818';
+      ctx.fillRect(bedX, dy + 1, bedW, 2);
+      // Bed walls (dark outer frame).
+      ctx.fillStyle = '#06080e';
+      ctx.fillRect(bedX, dy + 1, 1, H - 6);
+      ctx.fillRect(bedX + bedW - 1, dy + 1, 1, H - 6);
+      ctx.fillRect(bedX, dy + 1, bedW, 1);
+      // Pile of cargo (gravel / blocks).
+      ctx.fillStyle = '#7a5028';
+      for (var pg = 0; pg < bedW - 2; pg += 3) {
+        var h0 = (((pg * 7) ^ (this.color.charCodeAt(2) || 11)) % 3) + 1;
+        ctx.fillRect(bedX + 1 + pg, dy + 3 - h0, 2, h0);
+      }
+      ctx.fillStyle = '#9a703a';
+      for (var pg2 = 1; pg2 < bedW - 3; pg2 += 4) {
+        ctx.fillRect(bedX + 1 + pg2, dy + 2, 1, 1);
+      }
+      // Wheels (4 - dual rear pair, single front).
+      ctx.fillStyle = '#02030a';
+      var wheelY = dy + H - 3;
+      ctx.fillRect(dx + 4,         wheelY, 8, 3);
+      ctx.fillRect(dx + W - 12,    wheelY, 8, 3);
+      ctx.fillRect(dx + W - 22,    wheelY, 8, 3);
+      ctx.fillStyle = '#161620';
+      ctx.fillRect(dx + 5,         wheelY, 6, 2);
+      ctx.fillRect(dx + W - 11,    wheelY, 6, 2);
+      ctx.fillRect(dx + W - 21,    wheelY, 6, 2);
+      ctx.fillStyle = '#7a86a0';
+      ctx.fillRect(dx + 7,         wheelY, 2, 1);
+      ctx.fillRect(dx + W - 9,     wheelY, 2, 1);
+      ctx.fillRect(dx + W - 19,    wheelY, 2, 1);
+      // Warning stripes on the rear.
+      var stripeX = (this.dir > 0) ? (dx + 1) : (dx + W - 3);
+      ctx.fillStyle = '#ffd23a';
+      ctx.fillRect(stripeX, dy + H - 7, 2, 2);
+      ctx.fillStyle = '#0c0c10';
+      ctx.fillRect(stripeX, dy + H - 5, 2, 1);
+      return;
+    }
+    var isDrone = this.y < 80;
     if (isDrone) {
       // HOVER POD: wider oval shell + dual underside thrusters.
       ctx.fillStyle = '#070a18';
@@ -3110,7 +3306,7 @@ window.SDD = window.SDD || {};
     ItemDrop: ItemDrop, TimePart: TimePart, NPC: NPC,
     Checkpoint: Checkpoint, Signature: Signature,
     SolarFlare: SolarFlare, Meteor: Meteor, HazardSpawner: HazardSpawner,
-    Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume,
+    Crab: Crab, WaterJet: WaterJet, LavaPlume: LavaPlume, HydrantJet: HydrantJet,
     BubbleUp: BubbleUp, Octopus: Octopus, Twister: Twister,
     ElectricEel: ElectricEel, Stampede: Stampede,
     LeafFall: LeafFall, LeafSpawner: LeafSpawner,

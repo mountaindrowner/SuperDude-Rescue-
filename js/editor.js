@@ -59,14 +59,15 @@ window.SDD = window.SDD || {};
     { c: '?', label: 'q-core', desc: 'Mystery brick - hit from below to release a power core.', color: '#46f0ff' },
     { c: 'G', label: 'q-grow', desc: 'Mystery brick - hit from below for a Grow powerup.', color: '#ffb24a' },
     { c: 'B', label: 'q-blast',desc: 'Mystery brick - hit from below for a Blast powerup.', color: '#fff0a0' },
-    { c: 'U', label: 'q-used', desc: 'Already-spent mystery brick (solid).', color: '#605040' }
+    { c: 'U', label: 'q-used', desc: 'Already-spent mystery brick (solid).', color: '#605040' },
+    { c: 'C', label: 'crumble',desc: 'Crumbling road - solid until the player stands on it for ~50 frames; then breaks.', color: '#5a5a66' }
   ];
   // Grouped tile palette - mirrors the spawn groups for visual consistency.
   var TILE_GROUPS = [
     { title: 'SOLID',         codes: ['X', '#'] },
     { title: 'PLATFORMS',     codes: ['=', 'V'] },
     { title: 'WATER',         codes: ['~', 'W'] },
-    { title: 'HAZARDS',       codes: ['L'] },
+    { title: 'HAZARDS',       codes: ['L', 'C'] },
     { title: 'POWER BLOCKS',  codes: ['?', 'G', 'B', 'U'] },
     { title: 'TOOLS',         codes: [' '] }
   ];
@@ -105,8 +106,11 @@ window.SDD = window.SDD || {};
       { id: 'signature', desc: 'Day-signature power (sunburst, cloudglide, pearl, airbubble, ...).' }
     ]},
     { title: 'ADVENTURE CITY', items: [
-      { id: 'carspawner', desc: 'Car spawner - periodically emits a sweeping car. dir: +1/-1, spd, period, color. Deadly on contact, telegraphs first.' },
-      { id: 'car',        desc: 'Single car (one-shot). Mostly for debugging - production uses carspawner.' }
+      { id: 'car',        desc: 'Patrol car (v0.91) - bounces left/right on a fixed range. Set range = patrol half-width in world-px (default 96).' },
+      { id: 'dumptruck',  desc: 'Patrol DUMP TRUCK - bigger + slower than a car. Same range/dir/spd fields.' },
+      { id: 'hydrant',    desc: 'Fire hydrant - periodically launches a water jet straight up. Touch the jet = hurt. period = frames between bursts.' },
+      { id: 'drone',      desc: 'Sky drone - floats left/right like a bird. Stompable.' },
+      { id: 'carspawner', desc: 'LEGACY car spawner - now creates one patrol car at the marker (v0.91 design change).' }
     ]}
   ];
 
@@ -120,8 +124,11 @@ window.SDD = window.SDD || {};
       case 'eel':        return { maxH: 96, period: 220, phase: 0 };
       case 'stampede':   return { range: 24, spd: 2.0, dir: -1 };
       case 'leafstream': return { period: 70, fallSpeed: 1.0, swayAmp: 2 };
-      case 'carspawner': return { dir: -1, spd: 1.5, period: 180, phase: 0, color: '#46f0ff' };
-      case 'car':        return { dir: -1, spd: 1.5, warnT: 30, color: '#46f0ff' };
+      case 'carspawner': return { dir: -1, spd: 1.5, range: 96, color: '#46f0ff' };
+      case 'car':        return { dir: -1, spd: 1.65, range: 96, color: '#46f0ff' };
+      case 'dumptruck':  return { dir: -1, spd: 0.85, range: 80, color: '#e8a040' };
+      case 'hydrant':    return { period: 130, scale: 1 };
+      case 'drone':      return {};
       default:           return {};
     }
   }
@@ -140,7 +147,7 @@ window.SDD = window.SDD || {};
                        'rescue_leader', 'rescue_scientist', 'rescue_engineer', 'rescue_pilot'],
     // spawn.variant values (theme default = empty)
     'walker.variant':  ['', 'lion', 'porcupine', 'beetle', 'leaf', 'rock', 'clam', 'flame', 'cloud', 'fruit'],
-    'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud', 'bee'],
+    'wisp.variant':    ['', 'bird', 'star', 'jellyfish', 'leaf', 'bat', 'smoke', 'stormcloud', 'bee', 'drone'],
     'thrower.variant': ['', 'rain', 'rock', 'seed', 'sun', 'fruit'],
     // Boolean-ish flag
     'wisp.shoots': ['false', 'true']
@@ -162,7 +169,13 @@ window.SDD = window.SDD || {};
     octopus:    [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     twister:    [{f:'tx'},{f:'ty'},{f:'spd',opt:true},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
     eel:        [{f:'tx'},{f:'ty'},{f:'maxH',opt:true},{f:'period',opt:true},{f:'phase',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
-    stampede:   [{f:'tx'},{f:'ty'},{f:'range',opt:true},{f:'spd',opt:true},{f:'dir',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}]
+    stampede:   [{f:'tx'},{f:'ty'},{f:'range',opt:true},{f:'spd',opt:true},{f:'dir',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    // v0.91 Adventure City mob/hazard types.
+    car:        [{f:'tx'},{f:'ty'},{f:'dir',opt:true},{f:'spd',opt:true},{f:'range',opt:true},{f:'color',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    dumptruck:  [{f:'tx'},{f:'ty'},{f:'dir',opt:true},{f:'spd',opt:true},{f:'range',opt:true},{f:'color',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    hydrant:    [{f:'tx'},{f:'ty'},{f:'period',opt:true},{f:'scale',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    drone:      [{f:'tx'},{f:'ty'},{f:'offsetX',opt:true},{f:'offsetY',opt:true}],
+    carspawner: [{f:'tx'},{f:'ty'},{f:'dir',opt:true},{f:'spd',opt:true},{f:'range',opt:true},{f:'color',opt:true},{f:'offsetX',opt:true},{f:'offsetY',opt:true}]
   };
 
   // -----------------------------------------------------------------
@@ -1534,6 +1547,7 @@ window.SDD = window.SDD || {};
         signature: '#ffe890', skyhazard: '#ff5418', bubble: '#a8e6ff',
         octopus: '#d068a0', twister: '#dfe6ff', eel: '#7adfff',
         carspawner: '#ff4f6a', car: '#ff8a40', leafstream: '#9bf0a0',
+        dumptruck: '#e8a040', hydrant: '#ff4040', drone: '#5af0ff',
         stampede: '#c08050'
       };
       // Short labels so the on-canvas tag doesn't overflow.
@@ -1542,7 +1556,8 @@ window.SDD = window.SDD || {};
         crab: 'crab', core: 'CORE', timepart: 'PART', npc: 'NPC',
         checkpoint: 'CHK', signature: 'SIG', skyhazard: 'HZRD',
         bubble: 'bubl', octopus: 'oct', twister: 'twst', eel: 'eel',
-        carspawner: 'CAR>', car: 'car', leafstream: 'leaf', stampede: 'herd'
+        carspawner: 'CAR>', car: 'car', leafstream: 'leaf', stampede: 'herd',
+        dumptruck: 'DUMP', hydrant: 'HYDR', drone: 'DRON'
       };
       var spawns = lvl.spawns;
       for (var i = 0; i < spawns.length; i++) {

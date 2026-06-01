@@ -25,7 +25,9 @@ window.SDD = window.SDD || {};
   }
 
   // ---- tile map ----
-  var SOLID = { 'X': 1, '#': 1, 'U': 1, '?': 1, 'G': 1, 'B': 1 };
+  // 'C' (v0.91) = crumbling road tile - solid until the player stands
+  // on it, then breaks after ~50 frames (logic in scenes.js).
+  var SOLID = { 'X': 1, '#': 1, 'U': 1, '?': 1, 'G': 1, 'B': 1, 'C': 1 };
   var ONEWAY = { '=': 1 };
   var QBLOCK = { '?': 1, 'G': 1, 'B': 1 };
 

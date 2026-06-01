@@ -5683,6 +5683,76 @@ window.SDD = window.SDD || {};
     g.fillRect(ax, ay + 2, 8, 1);
   }
 
+  // v0.91: little cat sprite that hangs out near the start of
+  // Adventure City (Mark: "add a little cat sprite to just hang out on
+  // the first panel"). Procedural pixel cat - orange tabby silhouette
+  // that breathes + occasionally swishes its tail. Always rendered at
+  // world col 13 (just right of the TOWER > sign), on the sidewalk.
+  function _cyDrawCityCat(g, camx, camy, t) {
+    var wx = 13 * 16;
+    var sx = Math.round(wx - camx);
+    if (sx < -32 || sx > 340) return;
+    var groundY = 176 - camy;
+    var by = groundY - 12;                       // cat body bottom
+    var breathe = Math.round(Math.sin(t * 0.05) * 1);
+    var ty = by - breathe;
+    // Soft contact shadow.
+    g.fillStyle = 'rgba(0,0,0,0.30)';
+    g.fillRect(sx - 8, groundY - 1, 16, 1);
+    // Tail (swishes occasionally).
+    var swish = Math.round(Math.sin(t * 0.13) * 2);
+    g.fillStyle = '#c2741a';
+    g.fillRect(sx - 11, ty + 3, 1, 1);
+    g.fillRect(sx - 12 + swish, ty + 2, 1, 1);
+    g.fillRect(sx - 13 + swish, ty + 1, 1, 1);
+    g.fillStyle = '#7a4010';
+    g.fillRect(sx - 11, ty + 4, 1, 1);
+    // Body (curled / sitting).
+    g.fillStyle = '#e89030';
+    g.fillRect(sx - 10, ty + 4, 11, 6);
+    g.fillRect(sx - 9,  ty + 3, 9, 1);
+    // Stripes.
+    g.fillStyle = '#a05818';
+    g.fillRect(sx - 8, ty + 5, 1, 4);
+    g.fillRect(sx - 5, ty + 5, 1, 4);
+    g.fillRect(sx - 2, ty + 5, 1, 4);
+    // Belly highlight.
+    g.fillStyle = '#ffc070';
+    g.fillRect(sx - 9, ty + 8, 9, 1);
+    // Head.
+    g.fillStyle = '#e89030';
+    g.fillRect(sx - 4, ty + 1, 6, 4);
+    g.fillRect(sx - 3, ty,     4, 1);
+    // Ears.
+    g.fillStyle = '#7a4010';
+    g.fillRect(sx - 4, ty - 1, 1, 2);
+    g.fillRect(sx + 1, ty - 1, 1, 2);
+    g.fillStyle = '#ffc070';
+    g.fillRect(sx - 3, ty,     1, 1);
+    g.fillRect(sx,     ty,     1, 1);
+    // Eyes (blink occasionally).
+    var blink = (t % 220 < 8);
+    g.fillStyle = blink ? '#7a4010' : '#1a1a1a';
+    g.fillRect(sx - 3, ty + 2, 1, 1);
+    g.fillRect(sx,     ty + 2, 1, 1);
+    if (!blink) {
+      g.fillStyle = '#ffe890';
+      g.fillRect(sx - 3, ty + 2, 1, 1);                  // catchlight tweak
+      g.fillStyle = '#1a1a1a';
+      g.fillRect(sx - 3, ty + 2, 1, 1);
+    }
+    // Nose.
+    g.fillStyle = '#ff7a8a';
+    g.fillRect(sx - 1, ty + 3, 1, 1);
+    // Front paws.
+    g.fillStyle = '#c2741a';
+    g.fillRect(sx - 7, ty + 9, 2, 1);
+    g.fillRect(sx - 3, ty + 9, 2, 1);
+    g.fillStyle = '#ffc070';
+    g.fillRect(sx - 7, ty + 9, 1, 1);
+    g.fillRect(sx - 3, ty + 9, 1, 1);
+  }
+
   // v0.85: ADVENTURE TOWER entrance painted at the end of Day 8-1.
   // v0.88: SPLIT into _Bg (back wall + door cavity, drawn behind the
   // player) and _Fg (door pillars + lintel + threshold, drawn in
@@ -6561,6 +6631,8 @@ window.SDD = window.SDD || {};
       this.themeZones = L.themeZones || null;
       this.enemies = []; this.platforms = []; this.items = [];
       this.projectiles = []; this.particles = [];
+      // v0.91: per-tile crumble state for 'C' tiles. Keyed by 'tx,ty'.
+      this.crumblers = {};
       this.cores = 0; this.score = 0; this.timeSteps = 0;
       this.livesPulseT = 0;
       this.state = 'play'; this.deathHandled = false;
@@ -6729,27 +6801,48 @@ window.SDD = window.SDD || {};
           // the same palette as that stage's time-machine part.
           e = new SDD.ent.Signature(s.tx * T + 1, s.ty * T, s.kind, this.day + '-' + this.stage);
           this.items.push(e);
-        } else if (s.type === 'car') {
-          // Adventure City (Day 8-1) single-shot car. Mostly used for
-          // editor placement / debugging; production runs use carspawner.
+        } else if (s.type === 'car' || s.type === 'dumptruck') {
+          // v0.91: cars / dump trucks are persistent PATROL mobs (Mark
+          // switched the design - no more spawn waves). Each one
+          // exists at level load and bounces left/right on a fixed
+          // range around its placement.
           e = new SDD.ent.Car(s.tx * T, s.ty * T, {
             dir: s.dir || -1,
             spd: s.spd,
             color: s.color,
-            warnT: (s.warnT != null) ? s.warnT : 30
+            kind: s.type === 'dumptruck' ? 'dump' : (s.kind || 'car'),
+            patrol: true,
+            range: (s.range != null) ? s.range : 96,
+            warnT: 0
           });
           this.enemies.push(e);
         } else if (s.type === 'carspawner') {
-          // Adventure City: invisible periodic car emitter. Each tick
-          // pushes a fresh Car into level.enemies. Lane Y is the spawn
-          // tile row (8/10/13 for high-sky / low-sky / ground).
-          e = new SDD.ent.CarSpawner(s.tx * T, s.ty * T, {
+          // v0.91: legacy carspawner data now creates ONE patrol car
+          // at the marker (was a periodic emitter). Lets Mark's saved
+          // editor layouts keep working with the new persistent-mob
+          // design without re-editing.
+          e = new SDD.ent.Car(s.tx * T, s.ty * T, {
             dir: s.dir || -1,
             spd: s.spd,
             color: s.color,
-            period: s.period || 180,
-            phase: s.phase || 0
+            patrol: true,
+            range: (s.range != null) ? s.range : 96,
+            warnT: 0
           });
+          this.enemies.push(e);
+        } else if (s.type === 'hydrant') {
+          // Adventure City fire hydrant - hazard spawner that fires
+          // an upward water column on a period (LavaPlume-style).
+          e = new SDD.ent.HazardSpawner(
+            s.tx * T + 8, s.ty * T + 8,
+            'hydrantJet', s.period || 130, 1, s.scale || 1);
+          e.tx = s.tx; e.ty = s.ty;
+          this.enemies.push(e);
+        } else if (s.type === 'drone') {
+          // Adventure City sky drone - reuses Wisp with variant='drone'
+          // so the float / patrol / stomp logic is identical to birds.
+          e = new SDD.ent.Wisp(s.tx * T + 8, s.ty * T + 4);
+          e.variant = 'drone';
           this.enemies.push(e);
         }
         // Optional pixel-level nudge from the editor (offsetX/offsetY).
@@ -6980,6 +7073,32 @@ window.SDD = window.SDD || {};
       // they fall off the bottom of the level. Static MovPlats never
       // set remove, so this only culls the streaming ones.
       compactInPlace(this.platforms,   keepNotRemoved);
+      // v0.91: crumbling road tiles. When the player is grounded on a
+      // 'C' tile, advance that tile's crumble timer. Once it passes
+      // 50 frames the tile becomes empty (and the player falls
+      // through). The timer also advances slowly for tiles already
+      // crumbling (so a quick step still sets them on the path to
+      // collapse - touch + run isn't a safe dodge).
+      var pl = this.player;
+      if (pl && pl.onGround && !pl.dead) {
+        var feetTy = Math.floor((pl.y + pl.h) / C.TILE);
+        var leftTx  = Math.floor(pl.x / C.TILE);
+        var rightTx = Math.floor((pl.x + pl.w - 1) / C.TILE);
+        for (var ftx = leftTx; ftx <= rightTx; ftx++) {
+          if (this.map.get(ftx, feetTy) === 'C') {
+            var key = ftx + ',' + feetTy;
+            var st = this.crumblers[key] || (this.crumblers[key] = { tx: ftx, ty: feetTy, t: 0 });
+            st.t++;
+            if (st.t === 28 && SDD.audio && SDD.audio.sfx) SDD.audio.sfx('block');
+            if (st.t >= 50) {
+              this.map.set(ftx, feetTy, ' ');
+              delete this.crumblers[key];
+              this.burst(ftx * C.TILE + 8, feetTy * C.TILE + 12, '#7a6a5a', 8);
+              if (SDD.audio && SDD.audio.sfx) SDD.audio.sfx('bump');
+            }
+          }
+        }
+      }
       this.camera.follow(this.player, this.map);
     },
 
@@ -7082,17 +7201,17 @@ window.SDD = window.SDD || {};
                    pr instanceof SDD.ent.SolarFlare ||
                    pr instanceof SDD.ent.Meteor ||
                    pr instanceof SDD.ent.WaterJet ||
-                   pr instanceof SDD.ent.LavaPlume) {
-          // Signature immunities: flame-dash blocks lava plumes (3-1)
-          // - you're wreathed in fire - sun-shield blocks solar flares
-          // + meteors (4-1).
+                   pr instanceof SDD.ent.LavaPlume ||
+                   pr instanceof SDD.ent.HydrantJet) {
           var isLava = pr instanceof SDD.ent.LavaPlume;
+          var isJet  = pr instanceof SDD.ent.HydrantJet;
           var isFlareLike = pr instanceof SDD.ent.SolarFlare || pr instanceof SDD.ent.Meteor;
           if (pl.signatureKind === 'flamedash' && isLava) continue;
           if (pl.signatureKind === 'sunshield' && isFlareLike) continue;
           if (!pl.dead && !pl.win && pl.invuln <= 0 && E.overlap(pl, pr)) {
-            // LavaPlume persists (it's a vertical column, not a single hit)
-            if (!isLava) pr.remove = true;
+            // Persistent columns (lava plume + hydrant jet) don't pop
+            // on contact - they're constant hazards while erupting.
+            if (!isLava && !isJet) pr.remove = true;
             if (pl.hurt()) this.burst(pl.x + pl.w / 2, pl.y + pl.h / 2, '#ff8a6a', 6);
           }
         }
@@ -7254,6 +7373,46 @@ window.SDD = window.SDD || {};
           else if (code === '=') {
             name = (this.theme && S.get('tile_platform_' + this.theme)) ? 'tile_platform_' + this.theme : 'tile_platform';
           }
+          else if (code === 'C') {
+            // v0.91: Crumbling road tile (Adventure City). Painted
+            // directly here so the cracks + shake increase as the
+            // player stands on it. Stored crumble state lives on the
+            // level scene in this.crumblers.
+            var crum = this.crumblers && this.crumblers[tx + ',' + ty];
+            var ratio = crum ? Math.min(1, crum.t / 50) : 0;
+            var jit = ratio > 0.4 ? Math.round((Math.random() - 0.5) * 2 * ratio) : 0;
+            var dx0 = tx * T - cam.x + jit;
+            var dy0 = ty * T - cam.y;
+            // Asphalt base.
+            g.fillStyle = '#2a2e36';
+            g.fillRect(dx0, dy0, T, T);
+            // Top lit edge.
+            g.fillStyle = '#4a4f5a';
+            g.fillRect(dx0, dy0, T, 2);
+            // Yellow lane mark (so it reads as road).
+            g.fillStyle = '#ffd23a';
+            g.fillRect(dx0 + 4, dy0 + 7, 8, 1);
+            // Crack pattern (deepens with ratio).
+            g.fillStyle = '#06080e';
+            g.fillRect(dx0 + 3, dy0 + 4, 1, 8);
+            g.fillRect(dx0 + 4, dy0 + 5, 1, 2);
+            g.fillRect(dx0 + 9, dy0 + 3, 1, 9);
+            g.fillRect(dx0 + 10, dy0 + 8, 1, 3);
+            g.fillRect(dx0 + 6, dy0 + 11, 4, 1);
+            if (ratio > 0.4) {
+              g.fillStyle = 'rgba(255,140,40,0.50)';
+              g.fillRect(dx0 + 2, dy0 + 6, T - 4, 1);
+              g.fillRect(dx0 + 6, dy0 + 2, 1, T - 4);
+            }
+            if (ratio > 0.7) {
+              // Bits of debris falling.
+              g.fillStyle = '#3a3a3a';
+              g.fillRect(dx0 + 2, dy0 + T - 2, 2, 1);
+              g.fillStyle = '#1a1a1a';
+              g.fillRect(dx0 + T - 3, dy0 + T - 2, 2, 1);
+            }
+            continue;        // fully drawn - skip the generic sprite path
+          }
           else if (code === 'V') name = 'tile_vine';
           else if (code === 'W') name = 'tile_water';
           else if (code === '~') name = 'tile_water_top';
@@ -7281,6 +7440,11 @@ window.SDD = window.SDD || {};
       // it scrolls away as the player advances. Bobbing arrow + label.
       if (this.startSign) {
         _cyDrawStartSign(g, cam.x, cam.y, this.timeSteps, this.startSign);
+      }
+      // v0.91: little tabby cat sprite hanging out at the level start
+      // (Adventure City only). Cosmetic only.
+      if (this.theme === 'cyber') {
+        _cyDrawCityCat(g, cam.x, cam.y, this.timeSteps);
       }
       // v0.88: tower entrance BACKGROUND pass (facade + door cavity
       // + warm lobby glow) paints BEFORE entities so the player draws
