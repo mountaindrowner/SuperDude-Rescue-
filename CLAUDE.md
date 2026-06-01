@@ -11,7 +11,20 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.95` / `sdd-shell-v95`.
+- **Live build**: `v0.96` / `sdd-shell-v96`.
+
+### v0.96 — VOTE MAYOR NAYAH billboard on Layer 4 (latest)
+
+- New `_cyPaintMayorBillboard(g, cx, topY)` painter called at the end
+  of `_cyPaintMid` (Layer 4 / mid-city), so the billboard is baked
+  into the mid cache canvas at build time and parallaxes naturally
+  with the rest of the layer (0.25 X / 0.10 Y). Anchored at canvas
+  x=240, top y=36. Panel design: deep navy back with cyan top border,
+  pink banner stripe, white "VOTE" headline, scale-2 golden "NAYAH"
+  name, "FOR MAYOR" sub-label in cool cyan, gold star emblems in the
+  upper corners, rooftop support struts down to the building below,
+  + soft pink halo glow. Easter-egg callback to Nayah from the rescue
+  team.
 
 ### v0.95 — Car physics + audio polish + Adventure Week 2026 reference (latest)
 

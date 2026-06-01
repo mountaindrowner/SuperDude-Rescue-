@@ -3529,6 +3529,71 @@ window.SDD = window.SDD || {};
     _cyDrawGreenhouseDome(g, 160, 100);
     _cyDrawGreenhouseDome(g, 480, 106);
     _cyDrawGreenhouseDome(g, 800, 98);
+    // v0.96 (Mark): "VOTE MAYOR NAYAH" campaign billboard painted onto
+    // a Layer-4 (mid) building. Bakes into the mid cache canvas at
+    // build time so it parallaxes naturally with the rest of the
+    // layer. Anchored at a fixed canvas x so it shows up early in the
+    // stage from the player's perspective.
+    _cyPaintMayorBillboard(g, 240, 36);
+  }
+
+  // Layer-4 campaign billboard: framed panel mounted on rooftop struts,
+  // dark backing with cyan border + warm-pink banner stripe, "VOTE"
+  // headline, big "NAYAH" name, "MAYOR" sub-label, plus a star emblem.
+  function _cyPaintMayorBillboard(g, cx, topY) {
+    var bw = 78, bh = 36;
+    var bx = cx - bw / 2;
+    // Support struts down to a building rooftop.
+    g.fillStyle = _CYP.outlineD;
+    g.fillRect(bx + 6,  topY + bh, 2, 18);
+    g.fillRect(bx + bw - 8, topY + bh, 2, 18);
+    g.fillStyle = '#3A3F50';
+    g.fillRect(bx + 6,  topY + bh, 1, 18);
+    g.fillRect(bx + bw - 8, topY + bh, 1, 18);
+    // Panel back (deep navy).
+    g.fillStyle = '#0E1422';
+    g.fillRect(bx - 2, topY - 2, bw + 4, bh + 4);
+    g.fillStyle = '#1A2438';
+    g.fillRect(bx, topY, bw, bh);
+    // Top accent border (cyan).
+    g.fillStyle = '#5AE8FF';
+    g.fillRect(bx, topY, bw, 2);
+    g.fillStyle = '#0E1422';
+    g.fillRect(bx, topY + bh - 2, bw, 2);
+    // Pink banner strip behind the headline.
+    g.fillStyle = '#D44A88';
+    g.fillRect(bx + 3, topY + 4, bw - 6, 8);
+    g.fillStyle = '#F082B0';
+    g.fillRect(bx + 3, topY + 4, bw - 6, 1);
+    // Headline: VOTE
+    SDD.sprites.text(g, 'VOTE', cx - 1, topY + 6, '#ffffff', 1, 'center');
+    // Big name: NAYAH (scale 2)
+    SDD.sprites.text(g, 'NAYAH', cx - 1, topY + 15, '#FFD23A', 2, 'center');
+    // MAYOR sub-label below the name, smaller.
+    SDD.sprites.text(g, 'FOR MAYOR', cx - 1, topY + 29, '#BCE8FF', 1, 'center');
+    // Star emblem in the corners.
+    function star(sx, sy) {
+      g.fillStyle = '#FFD23A';
+      g.fillRect(sx,     sy - 2, 1, 5);
+      g.fillRect(sx - 2, sy,     5, 1);
+      g.fillRect(sx - 1, sy - 1, 3, 3);
+      g.fillStyle = '#FFFFFF';
+      g.fillRect(sx, sy, 1, 1);
+    }
+    star(bx + 5,      topY + 8);
+    star(bx + bw - 6, topY + 8);
+    // Outer panel rivets.
+    g.fillStyle = '#5E6173';
+    g.fillRect(bx + 2,      topY + 2, 1, 1);
+    g.fillRect(bx + bw - 3, topY + 2, 1, 1);
+    g.fillRect(bx + 2,      topY + bh - 3, 1, 1);
+    g.fillRect(bx + bw - 3, topY + bh - 3, 1, 1);
+    // Soft glow halo around the panel.
+    var halo = g.createRadialGradient(cx, topY + bh / 2, 4, cx, topY + bh / 2, 56);
+    halo.addColorStop(0, 'rgba(255,180,210,0.25)');
+    halo.addColorStop(1, 'rgba(255,180,210,0)');
+    g.fillStyle = halo;
+    g.fillRect(bx - 28, topY - 28, bw + 56, bh + 56);
   }
 
   // ---- Greenhouse / botanical dome ---------------------------------
