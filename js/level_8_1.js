@@ -11,13 +11,13 @@ SDD.levels['8-1'] = {
     "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ",
     "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         XXXXXXXXXXXXXXXXXXXXXXXXXXXXX    XXXXXXXXXXXXXXXXXX    XXXXX                                                                                                                                                                           ",
     "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   XXXXXXXXXXXXXXXXXXXXXXXXXXXXX                                                                                                                                                                         ",
-    "                                                                                                                                                                                                                                                                                    =========================================================================================================================================================================================                        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                                                                                                                                                                       ",
+    "                                                                                                                                                                                                                                                                      =======================================================================================================================================================================================                                        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                                                                                                                                                                       ",
     "                         ====     ====                       ====   ====                                     XXXXXX                                                                                                                                                                                                                                                                                                                                                                                XXXXXX##          ##          ##           ##         ##        ##XXXXXX                                                                                                                                                                     ",
     "                                                                                                         XXXXXXXXXXXXX                                                  ====   ====                     ====   ====                                                                                                                                                                                                                                                                              XXXXXX  ##          ##          ##           ##         ##        ##  XXXXXX                                                                                                                                                                   ",
     "                                                                                                       XXXXXXXXXXXXXXXXX                                                                                                                                                                                                                                                                                                                                                                       XXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXX                                                                                                                                                                 ",
-    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#W#W#W#W#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#W#W#W#W#W#W#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#W#W#W#W#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##W#W#W#W#W#W##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXCCCCXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXCCCCCCXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXCCC CC #  CCCC   CCCC  CCC #CCCCCC CCCCCC # C C C CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#W#W#W#W#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#W#W#W#W#W#W#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWWW#WWWWWWWWWWWWWWWWWWW#WWWWWWWWWWWWWW#WWWWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#W#W#W#W#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##W#W#W#W#W#W##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##WWW##WWWWWWWWWW##WWWWWWWWWW##WWWWWWWWWWW##WWWWWWWWW##WWWWWWWW##WWWW##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXWWWWWWWWW#WWWWWWWWWWWWWWWWWWW#WWWWWWWWWWWWWW#WWWWWWWWWWXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
   ],
   spawns: [
     { type: "player", tx: 3, ty: 10 },
@@ -63,11 +63,11 @@ SDD.levels['8-1'] = {
     { type: "core", tx: 468, ty: 10 },
     { type: "core", tx: 478, ty: 10 },
     { type: "core", tx: 498, ty: 10 },
-    { type: "core", tx: 508, ty: 10 },
-    { type: "core", tx: 518, ty: 10 },
-    { type: "core", tx: 528, ty: 10 },
-    { type: "core", tx: 538, ty: 10 },
-    { type: "core", tx: 548, ty: 10 },
+    { type: "core", tx: 506, ty: 4 },
+    { type: "core", tx: 518, ty: 5 },
+    { type: "core", tx: 526, ty: 4 },
+    { type: "core", tx: 537, ty: 4 },
+    { type: "core", tx: 551, ty: 5 },
     { type: "core", tx: 568, ty: 10 },
     { type: "core", tx: 578, ty: 10 },
     { type: "core", tx: 588, ty: 10 },
@@ -102,10 +102,9 @@ SDD.levels['8-1'] = {
     { type: "core", tx: 202, ty: 8 },
     { type: "core", tx: 208, ty: 8 },
     { type: "core", tx: 234, ty: 7 },
-    { type: "core", tx: 468, ty: 7 },
+    { type: "core", tx: 474, ty: 9 },
     { type: "core", tx: 510, ty: 3 },
     { type: "core", tx: 560, ty: 9 },
-    { type: "core", tx: 596, ty: 7 },
     { type: "core", tx: 644, ty: 7 },
     { type: "timepart", tx: 712, ty: 10 },
     { type: "checkpoint", tx: 225, ty: 10 },
@@ -120,8 +119,6 @@ SDD.levels['8-1'] = {
     { type: "carspawner", tx: 439, ty: 6, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 454, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 529, ty: 4, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
-    { type: "carspawner", tx: 576, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
-    { type: "carspawner", tx: 604, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 622, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 642, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 666, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
@@ -131,18 +128,24 @@ SDD.levels['8-1'] = {
     { type: "carspawner", tx: 205, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 260, ty: 10, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     { type: "carspawner", tx: 499, ty: 4, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
-    /* v0.91 — sample placements for the new mob / hazard types. Mark
-       can move/delete them in the editor. */
     { type: "dumptruck", tx: 120, ty: 10, dir: -1, range: 80 },
-    { type: "dumptruck", tx: 560, ty: 10, dir:  1, range: 100 },
-    { type: "hydrant",   tx:  85, ty: 10, period: 130 },
-    { type: "hydrant",   tx: 540, ty: 10, period: 140 },
-    { type: "hydrant",   tx: 660, ty: 10, period: 120 },
-    { type: "drone",     tx:  55, ty:  3 },
-    { type: "drone",     tx: 150, ty:  3 },
-    { type: "drone",     tx: 470, ty:  3 },
-    { type: "drone",     tx: 600, ty:  3 },
-    { type: "drone",     tx: 680, ty:  3 }
+    { type: "dumptruck", tx: 569, ty: 10, dir: 1, range: 100 },
+    { type: "hydrant", tx: 85, ty: 10, period: 130 },
+    { type: "hydrant", tx: 547, ty: 4, period: 140 },
+    { type: "hydrant", tx: 660, ty: 10, period: 120 },
+    { type: "drone", tx: 55, ty: 3 },
+    { type: "drone", tx: 150, ty: 3 },
+    { type: "drone", tx: 470, ty: 3 },
+    { type: "drone", tx: 600, ty: 3 },
+    { type: "drone", tx: 680, ty: 3 },
+    { type: "carspawner", tx: 172, ty: 10, dir: -1, spd: 1.5, range: 96, color: "#46f0ff" },
+    { type: "carspawner", tx: 240, ty: 10, dir: -1, spd: 1.5, range: 96, color: "#46f0ff" },
+    { type: "dumptruck", tx: 297, ty: 6, dir: -1, spd: 0.85, range: 80, color: "#e8a040" },
+    { type: "dumptruck", tx: 363, ty: 10, dir: -1, spd: 0.85, range: 80, color: "#e8a040" },
+    { type: "dumptruck", tx: 380, ty: 6, dir: -1, spd: 0.85, range: 80, color: "#e8a040" },
+    { type: "carspawner", tx: 403, ty: 11, dir: -1, spd: 1.5, range: 96, color: "#46f0ff" },
+    { type: "carspawner", tx: 424, ty: 6, dir: -1, spd: 1.5, range: 96, color: "#46f0ff" },
+    { type: "carspawner", tx: 442, ty: 10, dir: -1, spd: 1.5, range: 96, color: "#46f0ff" }
   ],
   movers: [
   ],
@@ -152,25 +155,9 @@ SDD.levels['8-1'] = {
   // Render-only fields the editor doesn't serialize - re-attached so
   // the opening hint banner, the start signpost, and the painted
   // ADVENTURE TOWER entrance (walk-in goal) all still appear.
+  // Note: crumble (C) tiles are now placed directly in the tile rows
+  // via the editor, so no post-processor IIFE is needed.
   hint: 'AVOID THE CARS! REACH ADVENTURE TOWER >',
   startSign: { col: 9, label: 'TOWER >' },
   towerEntrance: { col: 706, width: 16 }
 };
-
-// v0.91: sprinkle a few CRUMBLING road tiles into the ground row so
-// the new hazard is in-play immediately. Done in JS so the row-length
-// invariant is impossible to break by hand. Mark can move / extend /
-// remove these from the editor.
-(function () {
-  var L = SDD.levels['8-1'];
-  var row = L.tiles[11].split('');
-  function crumbleSpan(start, count) {
-    for (var i = start; i < start + count && i < row.length; i++) {
-      if (row[i] === 'X') row[i] = 'C';
-    }
-  }
-  crumbleSpan(200, 4);   // mid-section
-  crumbleSpan(400, 6);   // post-tunnel approach
-  crumbleSpan(620, 5);   // tower run-up
-  L.tiles[11] = row.join('');
-})();
