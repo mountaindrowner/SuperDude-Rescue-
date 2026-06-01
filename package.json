@@ -1,0 +1,20 @@
+{
+  "name": "super-dude-danny",
+  "version": "0.98.0",
+  "private": true,
+  "description": "Super Dude Danny - a kid-friendly retro platformer through the seven days of creation. Plain HTML5 Canvas + Web Audio, no build step. This package.json exists only to wrap the web game as a native iOS/Android app via Capacitor; the game itself still runs as a standalone PWA from index.html.",
+  "scripts": {
+    "build:web": "node scripts/build-web.mjs",
+    "ios:assets": "npx @capacitor/assets generate --ios",
+    "ios:add": "npm run build:web && npx cap add ios && npm run ios:assets && npx cap sync ios",
+    "ios:open": "npm run build:web && npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.2"
+  }
+}

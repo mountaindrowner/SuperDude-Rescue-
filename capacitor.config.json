@@ -1,0 +1,17 @@
+{
+  "appId": "org.thecrossroads.superdudedanny",
+  "appName": "Super Dude Danny",
+  "webDir": "www",
+  "backgroundColor": "#0a0a1a",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0a0a1a"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#0a0a1a",
+      "showSpinner": false
+    }
+  }
+}

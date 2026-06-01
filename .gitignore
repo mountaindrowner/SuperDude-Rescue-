@@ -11,3 +11,10 @@ Thumbs.db
 # Node modules in case a dev installs locally for the tools/ scripts.
 node_modules/
 package-lock.json
+
+# Capacitor / iOS wrap (generated on the build Mac).
+www/
+ios/
+android/
+.gradle/
+*.xcuserstate
