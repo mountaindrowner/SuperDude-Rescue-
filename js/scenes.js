@@ -8925,15 +8925,60 @@ window.SDD = window.SDD || {};
       this._banner(g);
 
       // Final card overlay.
+      // v0.97 (Mark): smooth fade-in for the final text + visible
+      // background banner panel so the message stands out. Mobile-safe
+      // sizing (width <= 296 with margins).
       if (isFinal) {
+        // Soft confetti behind everything.
         for (var s = 0; s < 22; s++) {
           var sxx = ((s * 47 + cl * 1.4) % 320), syy = ((s * 29 + cl * 1.1) % 96) + 22;
           g.fillStyle = (s % 3 === 0) ? '#ffd23a' : (s % 3 === 1) ? '#5af0ff' : '#ff5a3a';
           g.fillRect(sxx | 0, syy | 0, 2, 2);
         }
-        tsh(g, 'THE RESCUE BEGINS', 160, 58, '#ffd23a', '#7a4a10', 2, 'center');
-        text(g, line.text, 160, 84, '#ffffff', 1, 'center');
-        if (this.t > 8 && (cl % 40 < 26)) tsh(g, 'PRESS A', 160, 100, '#ffd23a', '#000', 1, 'center');
+        // Fade ramp 0->1 over the first 36 frames after the card opens.
+        var fade = Math.max(0, Math.min(1, this.t / 36));
+        // Smoothstep so the alpha eases in, not linear.
+        var ease = fade * fade * (3 - 2 * fade);
+        // ---- Background banner panel (mobile-safe width) ----
+        var pw = 296, ph = 64;
+        var px = Math.round((320 - pw) / 2), py = 40;
+        g.save();
+        g.globalAlpha = ease * 0.88;
+        // Outer accent border + inner dark fill.
+        g.fillStyle = '#7a4a10';
+        g.fillRect(px - 2, py - 2, pw + 4, ph + 4);
+        g.fillStyle = '#ffd23a';
+        g.fillRect(px - 1, py - 1, pw + 2, ph + 2);
+        g.fillStyle = 'rgba(8,10,22,0.96)';
+        g.fillRect(px, py, pw, ph);
+        // Top + bottom highlight bars.
+        g.fillStyle = '#ffd23a';
+        g.fillRect(px, py, pw, 2);
+        g.fillRect(px, py + ph - 2, pw, 2);
+        // Inner thin cyan rule under the headline.
+        g.fillStyle = '#5af0ff';
+        g.fillRect(px + 12, py + 28, pw - 24, 1);
+        g.restore();
+        // ---- Headline (RESCUE BEGINS) - fades in fast ----
+        g.save();
+        g.globalAlpha = ease;
+        tsh(g, 'THE RESCUE BEGINS', 160, py + 12, '#ffd23a', '#7a4a10', 2, 'center');
+        g.restore();
+        // ---- Body text (Adventure Week 2026 message) - fades in
+        //      slower so the eye lands on the headline first ----
+        var bodyFade = Math.max(0, Math.min(1, (this.t - 14) / 38));
+        var bodyEase = bodyFade * bodyFade * (3 - 2 * bodyFade);
+        g.save();
+        g.globalAlpha = bodyEase;
+        // Wrap onto two lines so it never overruns the banner on
+        // narrow viewports.
+        text(g, 'CONTINUE THE STORY AT', 160, py + 35, '#ffffff', 1, 'center');
+        tsh(g, 'ADVENTURE WEEK 2026!', 160, py + 47, '#5af0ff', '#0a1622', 1, 'center');
+        g.restore();
+        // Press-A prompt - shows after the banner has fully faded in.
+        if (this.t > 60 && (cl % 40 < 26)) {
+          tsh(g, 'PRESS A', 160, py + ph + 16, '#ffd23a', '#000', 1, 'center');
+        }
         return;
       }
 

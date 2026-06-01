@@ -1,0 +1,13 @@
+# Local Claude Code workspace (per-machine permissions etc.).
+.claude/
+
+# OS / editor scratch files.
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Node modules in case a dev installs locally for the tools/ scripts.
+node_modules/
+package-lock.json

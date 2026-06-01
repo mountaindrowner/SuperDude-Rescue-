@@ -11,7 +11,34 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.96` / `sdd-shell-v96`.
+- **Live build**: `v0.97` / `sdd-shell-v97`.
+
+### v0.97 — Audit pass: PWA fix, repo cleanup (-41 MB), final-card polish (latest)
+
+Full technical audit ran (3 parallel Explore agents + secrets scan).
+Safe fixes implemented:
+- **Final cinematic card polished.** Smooth fade-in (smoothstep ease)
+  - banner panel appears t=0-36, body text staggered t=14-52,
+  PRESS A after t=60. Framed gold/dark panel (296×64) with cyan
+  divider rule + Adventure Week 2026 message in cyan accent. Tested
+  on 960×540, mobile portrait (390×844), and landscape (812×375) -
+  never clips. See `scenes.js` final-card block in cityArrival.
+- **Service worker fix:** added `./js/editor.js` to PRECACHE_URLS
+  (was loaded by index.html but missing from cache - editor would
+  break offline).
+- **iOS polish:** added `sizes="180x180"` to `apple-touch-icon` link
+  so older Safari versions recognise it cleanly.
+- **Repo bloat -41 MB:** deleted 15 orphaned root-level loose MP3s
+  (level X-Y.{1,2}.mp3) - exact duplicates of `assets/music/`
+  underscore-named tracks, zero code references. Also deleted
+  `assets/overworld.png` (legacy; code loads `assets/New Assets/
+  New Overworld.png` since v0.x).
+- **`.gitignore` added** keeping `.claude/`, OS scratch, node_modules
+  out of git.
+- **Security/privacy scan clean:** no API keys, tokens, passwords,
+  JWTs, private keys, emails, telemetry SDKs, fetch/XHR/WebSocket
+  to outside origins. Only outbound URL in code is an MDN doc link
+  in input.js. No PII committed anywhere in tree or history.
 
 ### v0.96 — VOTE MAYOR NAYAH billboard on Layer 4 (latest)
 
