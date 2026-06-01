@@ -3043,18 +3043,25 @@ window.SDD = window.SDD || {};
     }
     // Pre-body: headlight cone projected forward when at full speed.
     if (this.warnT === 0) {
-      var hxBeam = (this.dir > 0) ? (dx + W) : (dx - 16);
-      // v0.94 (Mark): soft-edged beam. Radial falloff centered at the
-      // lamp so it's full at the bulb and fades to transparent on ALL
-      // edges (far end + top + bottom), instead of a hard-edged rect.
+      // v0.94 (Mark): soft-edged beam, full at the bulb and fading to
+      // transparent on EVERY edge (far end + top + bottom). Drawn in a
+      // y-squashed space so the radial falloff is a wide ellipse - the
+      // vertical fade is twice as fast as the forward throw, so the
+      // top + bottom reach transparent within the car height instead
+      // of being clipped by a hard rectangle edge.
       var lampX = (this.dir > 0) ? (dx + W) : dx;
       var lampY = dy + H / 2;
-      var beam = ctx.createRadialGradient(lampX, lampY, 2, lampX, lampY, 20);
+      var R = 20;
+      ctx.save();
+      ctx.translate(lampX, lampY);
+      ctx.scale(1, 0.5);
+      var beam = ctx.createRadialGradient(0, 0, 2, 0, 0, R);
       beam.addColorStop(0,   'rgba(255,250,180,0.60)');
-      beam.addColorStop(0.5, 'rgba(255,250,180,0.30)');
+      beam.addColorStop(0.5, 'rgba(255,250,180,0.28)');
       beam.addColorStop(1,   'rgba(255,250,180,0)');
       ctx.fillStyle = beam;
-      ctx.fillRect(hxBeam, dy - 2, 16, H + 4);
+      ctx.fillRect((this.dir > 0) ? 0 : -R, -R, R, R * 2);
+      ctx.restore();
       // Speed trail.
       ctx.fillStyle = 'rgba(70,240,255,0.35)';
       var trailX = (this.dir > 0) ? dx - 5 : dx + W;
