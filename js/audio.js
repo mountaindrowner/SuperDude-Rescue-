@@ -110,6 +110,18 @@ window.SDD = window.SDD || {};
       case 'step_computer': tone(620, t, 0.02, 'square', 0.10, 380); noise(t, 0.02, 0.04); tone(180, t + 0.02, 0.03, 'triangle', 0.05, 120); break;
       // Land: deeper chassis thump with a soft mechanical clank.
       case 'land_computer': tone(140, t, 0.06, 'triangle', 0.16, 70); tone(440, t + 0.03, 0.04, 'square', 0.10, 320); noise(t, 0.04, 0.07); break;
+      // v0.95 (Mark): cartoon car HONK on impact - two-tone HONK-HONK.
+      case 'honk':
+        tone(420, t,        0.10, 'sawtooth', 0.28, 340);
+        tone(260, t + 0.10, 0.16, 'sawtooth', 0.26, 200);
+        tone(420, t + 0.28, 0.10, 'sawtooth', 0.24, 340);
+        tone(260, t + 0.38, 0.14, 'sawtooth', 0.22, 200);
+        break;
+      // v0.95: drone whizz-by beep - quick high two-tone chirp.
+      case 'drone_beep':
+        tone(1480, t,        0.06, 'square', 0.08, 1920);
+        tone(2080, t + 0.07, 0.05, 'sine',   0.07, 2400);
+        break;
       // Teleport-in: ascending electric shimmer + descending sweep
       // (warm whoosh) + sparkle high notes that fizz out. ~0.9s total
       // length, designed to underscore the 16-frame comp_warp anim.

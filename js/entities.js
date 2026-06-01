@@ -1309,13 +1309,19 @@ window.SDD = window.SDD || {};
     if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
     if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
     this.animT++;
-    // Quiet ambient cue when player is near (bee buzz / bird chirp).
-    // Piranhas are underwater - no ambient.
-    if (this.variant !== 'piranha' && level.player && Math.random() < 0.003) {
+    // Quiet ambient cue when player is near (bee buzz / bird chirp /
+    // drone beep). Piranhas are underwater - no ambient.
+    // v0.95 (Mark): drones get a more frequent two-tone beep so they
+    // "whizz by with beeps" as they pass the player.
+    var droneRate = (this.variant === 'drone') ? 0.012 : 0.003;
+    if (this.variant !== 'piranha' && level.player && Math.random() < droneRate) {
       var pl = level.player;
       var ad = Math.abs((this.x + this.w / 2) - (pl.x + pl.w / 2));
       if (ad < 220) {
-        SDD.audio.sfx(this.variant === 'bee' ? 'amb_buzz' : 'amb_chirp');
+        var sfxName = (this.variant === 'bee') ? 'amb_buzz'
+                    : (this.variant === 'drone') ? 'drone_beep'
+                    : 'amb_chirp';
+        SDD.audio.sfx(sfxName);
       }
     }
     // shoot variant: periodic downward orb (cloud-creature rain drop)
@@ -2995,6 +3001,12 @@ window.SDD = window.SDD || {};
     this.stompable = false; this.unkillable = true;
     this.dead = false; this.remove = false;
     this.t = 0; this.honked = false;
+    // v0.95 (Mark): real-car physics. `spd` is now the TARGET (cruise)
+    // speed; `curSpd` ramps toward it. Approach the end of the patrol
+    // -> decelerate -> brief stop -> accelerate the other way.
+    this.maxSpd = this.spd;
+    this.curSpd = this.spd;
+    this.stopT  = 0;                                 // frames paused at end
   }
   Car.prototype.update = function (level) {
     this.t++;
@@ -3007,12 +3019,36 @@ window.SDD = window.SDD || {};
       if (this.warnT === 0) this.harmless = false;
       return;
     }
-    this.x += this.dir * this.spd;
     if (this.patrol) {
-      if (this.x < this.minX) { this.x = this.minX; this.dir = 1; }
-      if (this.x > this.maxX) { this.x = this.maxX; this.dir = -1; }
+      // v0.95 (Mark): "cars should slow down before changing
+      // directions, like a real car." Cruise -> approach end ->
+      // decelerate (sqrt profile = proper Newtonian decel) ->
+      // brief stop -> accelerate the other way.
+      var brakeDist = Math.max(24, this.maxSpd * 22);    // ~1s of brake travel
+      var accel = this.maxSpd / 28;                      // ~28 frames to cruise
+      var distToEnd = (this.dir > 0) ? (this.maxX - this.x) : (this.x - this.minX);
+      if (distToEnd < 0) distToEnd = 0;
+      var targetSpd = (distToEnd < brakeDist)
+        ? this.maxSpd * Math.sqrt(distToEnd / brakeDist)
+        : this.maxSpd;
+      if (this.stopT > 0) targetSpd = 0;
+      if (this.curSpd < targetSpd) this.curSpd = Math.min(targetSpd, this.curSpd + accel);
+      else if (this.curSpd > targetSpd) this.curSpd = Math.max(targetSpd, this.curSpd - accel * 1.4);
+      this.x += this.dir * this.curSpd;
+      if (this.stopT > 0) {
+        this.stopT--;
+        if (this.stopT === 0) {
+          this.dir = -this.dir;
+          this.curSpd = 0;     // re-accelerate from rest the other way
+        }
+      } else if (this.dir > 0 && (this.x >= this.maxX || (distToEnd < 2 && this.curSpd < 0.1))) {
+        this.x = this.maxX; this.curSpd = 0; this.stopT = 16;
+      } else if (this.dir < 0 && (this.x <= this.minX || (distToEnd < 2 && this.curSpd < 0.1))) {
+        this.x = this.minX; this.curSpd = 0; this.stopT = 16;
+      }
       return;
     }
+    this.x += this.dir * this.spd;
     // Legacy off-screen cull (non-patrol cars).
     var camx = (level && level.camera) ? level.camera.x : 0;
     if (this.x + this.w < camx - 80 || this.x > camx + 320 + 80) {

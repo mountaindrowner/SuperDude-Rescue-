@@ -11,7 +11,33 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.94` / `sdd-shell-v94`.
+- **Live build**: `v0.95` / `sdd-shell-v95`.
+
+### v0.95 — Car physics + audio polish + Adventure Week 2026 reference (latest)
+
+- **Warp-in sprite shrunk 25%.** Scale 1.25 → 0.9375 in
+  `scenes.js`. Computer is now close to native sprite size.
+- **Honk on car-hit.** New `honk` SFX in `audio.js` (two-tone
+  HONK-HONK sawtooth). Played from the `player vs enemies` collision
+  branch in `scenes.js` when `pl.hurt()` resolves true AND the enemy
+  is `instanceof SDD.ent.Car` (covers patrol cars + dump trucks).
+- **Cars brake + stop + accelerate at patrol bounds.** `Car`
+  constructor now stores `maxSpd` (target / cruise) and `curSpd`
+  (instantaneous). Patrol branch uses a sqrt-decel curve
+  (`maxSpd * sqrt(distToEnd / brakeDist)`) so the car slows over the
+  last ~brakeDist=22*spd world-px, snaps to the bound when speed
+  drops below 0.1, pauses for 16 frames at `stopT`, flips dir, and
+  accelerates from rest (~28 frames to cruise). Verified via
+  puppeteer: car cruises 1.65 → smoothly brakes to 0 → 16f pause →
+  re-accelerates 0.29 → 0.88 → 1.65 cruise the other way.
+- **Drones whizz by with beeps.** New `drone_beep` SFX (two-tone
+  high square+sine chirp). `Wisp.update` fires it at 4× the normal
+  ambient rate (0.012 vs 0.003) when the drone variant is within
+  220 world-px of the player.
+- **Final cinematic references Adventure Week 2026.** Last
+  `CITY_DIALOG` entry changed from "THE RESCUE BEGINS... TO BE
+  CONTINUED!" to "CONTINUE THE STORY AT ADVENTURE WEEK 2026!". The
+  "THE RESCUE BEGINS" banner above it is preserved as the headline.
 
 ### v0.94 — Soft-edged car headlights (latest)
 

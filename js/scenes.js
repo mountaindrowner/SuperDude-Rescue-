@@ -7381,6 +7381,9 @@ window.SDD = window.SDD || {};
             if (pl.hurt()) {
               pl.vx = (pl.x < e.x ? -1 : 1) * 1.6;
               this.burst(pl.x + pl.w / 2, pl.y + pl.h / 2, '#ff8a6a', 6);
+              // v0.95 (Mark): cartoon honk when a CAR or DUMP TRUCK
+              // hits the player. Other enemies use the default hurt SFX.
+              if (e instanceof SDD.ent.Car) A.sfx('honk');
             }
           }
         }
@@ -7727,11 +7730,12 @@ window.SDD = window.SDD || {};
         wg.addColorStop(1, 'rgba(110,180,255,0)');
         g.fillStyle = wg; g.fillRect(wcx - 36, wbase - 52, 72, 64);
         if (SDD.sprites.pixDraw) {
-          // v0.85: warp-in sprite scaled 1.25x to match the prologue
-          // Computer (Mark: same as the cinematic, increase 25%).
+          // v0.95 (Mark): warp-in sprite SHRUNK 25% (from the prior
+          // 1.25x boost) so the effect is more contained. Net scale
+          // 0.9375 - close to native sprite size.
           g.save();
           g.translate(wcx, wbase);
-          g.scale(1.25, 1.25);
+          g.scale(0.9375, 0.9375);
           g.translate(-wcx, -wbase);
           SDD.sprites.pixDraw(g, 'big', 'comp_warp', 'south', wf, wcx, wbase);
           g.restore();
@@ -8503,7 +8507,7 @@ window.SDD = window.SDD || {};
     { who: 'carlos',   name: 'CARLOS',   text: "TIME TRAVEL?! THAT'S THE COOLEST MISSION EVER - LET'S GOOO!" },
     { who: 'josh',     name: 'JOSH',     text: "EASY, CARLOS. DEEP BREATHS. ...OKAY, I'M PRETTY HYPED TOO." },
     { who: 'computer', name: 'COMPUTER', text: "THEN IT'S SETTLED. HANG ON, DANNY - ADVENTURE AWAITS!" },
-    { who: null,       name: null,       text: 'THE RESCUE BEGINS... TO BE CONTINUED!' }
+    { who: null,       name: null,       text: 'CONTINUE THE STORY AT ADVENTURE WEEK 2026!' }
   ];
 
   // Per-speaker accent + portrait source. Heroes use the pixDraw
