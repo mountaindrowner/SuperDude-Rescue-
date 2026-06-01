@@ -1,0 +1,25 @@
+# Netlify deploy config for the Super Dude Danny PWA.
+#
+# This repo has no traditional build step, but package.json now exists
+# for the Capacitor (iOS) wrap. To keep the WEB deploy clean, we reuse
+# the same packaging script that feeds the iOS app: it assembles a
+# ./www folder containing ONLY the playable game (index.html, css, js,
+# assets, manifest, service-worker, privacy) and publishes that. No
+# dev files, editor scripts, build tooling, or iOS resources ship.
+
+[build]
+  command = "node scripts/build-web.mjs"
+  publish = "www"
+
+# The service worker handles its own cache-busting and the HTML is tiny,
+# so tell the CDN never to hold a stale copy of either - this guarantees
+# a new deploy reaches players on their next load.
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
