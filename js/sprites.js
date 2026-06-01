@@ -3409,13 +3409,26 @@ window.SDD = window.SDD || {};
         comp_die:  { base: PL_COMP, folder: 'Falling_Back_Death-77c146c5', frames: 7 },
         comp_warp: { base: PL_COMP, folder: 'Warp_in_from_a_burst_of_light_and_energy_waves_and-fe78329d', frames: 16, south: true }
       }
+    },
+    // v0.82: Adventure Rescue Team (Mark) - 5 named heroes for the
+    // ending cutscene. Each has a 4-frame south-facing breathing idle.
+    // Drawn via pixDraw(ctx, 'rescue', '<name>', 'south', idx, ...).
+    rescue: {
+      base: 'assets/New Assets/Adventure Rescue Team',
+      anims: {
+        victoria: { base: 'assets/New Assets/Adventure Rescue Team/1. Victoria Female_pixel_action_hero_medium_skin_messy_brown_b/Female_pixel_action_hero_medium_skin_messy_brown_b/animations', folder: 'Breathing_Idle-170e84ff', frames: 4, south: true },
+        nayah:    { base: 'assets/New Assets/Adventure Rescue Team/2. Nayah Female_pixel_action_hero_medium_tan_skin_long_wavy/Female_pixel_action_hero_medium_tan_skin_long_wavy/animations', folder: 'Breathing_Idle-7188e0a9', frames: 4, south: true },
+        kevin:    { base: 'assets/New Assets/Adventure Rescue Team/3. Kevin Male_lead_pixel_action_hero_medium_tan_skin_medium/Male_lead_pixel_action_hero_medium_tan_skin_medium/animations', folder: 'Breathing_Idle-add710fe', frames: 4, south: true },
+        carlos:   { base: 'assets/New Assets/Adventure Rescue Team/4. Carlos Young_male_pixel_action_hero_medium_tan_skin_short/Young_male_pixel_action_hero_medium_tan_skin_short/animations', folder: 'Breathing_Idle-50c239ec', frames: 4, south: true },
+        josh:     { base: 'assets/New Assets/Adventure Rescue Team/5. Josh Adult_male_pixel_action_hero_medium_tan_skin_short/Adult_male_pixel_action_hero_medium_tan_skin_short/animations', folder: 'Breathing_Idle-95cd701e', frames: 4, south: true }
+      }
     }
   };
   // Target on-screen height of the CHARACTER (not the padded PNG canvas).
   // The renderer crops each frame to the per-animation non-transparent
   // bounding box and scales the crop to this height. Big > small gives
   // the "I just took a hit" health-bar feedback.
-  var PL_DISPLAY_H = { big: 36, small: 26 };
+  var PL_DISPLAY_H = { big: 36, small: 26, rescue: 34 };
   // Per-anim display-height overrides. Swim renders at full standing
   // height for both sizes - the corrected bbox is naturally wide
   // (aspect ~1.5) so the sprite reads as a horizontal swim pose
@@ -3525,6 +3538,14 @@ window.SDD = window.SDD || {};
       comp_jump: { east: { x: 39, y: 36, w: 39, h: 56 }, west: { x: 38, y: 36, w: 39, h: 56 } },
       comp_die:  { east: { x: 34, y: 41, w: 48, h: 50 }, west: { x: 34, y: 41, w: 48, h: 50 } },
       comp_warp: { south: { x: 20, y: 15, w: 77, h: 82 } }
+    },
+    // Adventure Rescue Team idle bboxes (measured from 92x92 frames).
+    rescue: {
+      victoria: { south: { x: 33, y: 22, w: 22, h: 47 } },
+      nayah:    { south: { x: 32, y: 23, w: 28, h: 45 } },
+      kevin:    { south: { x: 36, y: 23, w: 20, h: 44 } },
+      carlos:   { south: { x: 36, y: 22, w: 20, h: 45 } },
+      josh:     { south: { x: 36, y: 23, w: 20, h: 45 } }
     }
   };
 

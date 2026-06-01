@@ -7683,62 +7683,69 @@ window.SDD = window.SDD || {};
     { lines: ['THE RESCUE BEGINS...', 'TO BE CONTINUED!'], speaker: null }
   ];
 
-  // Rescue team line-up. Leader sits dead-centre so they read as the
-  // "main hero". x = world centre of each hero on the HQ floor.
-  // id matches the dialogue `who` field for portrait + highlight.
+  // v0.82: Adventure Rescue Team line-up (Mark's 5 named heroes), in
+  // order 1-5, standing on the RIGHT side waiting while the Computer
+  // (the player character) explains from the LEFT. anim = the pixDraw
+  // 'rescue' animation key. x = world centre on the floor.
   var RESCUE_LINEUP = [
-    { id: 'scientist', sprite: 'npc_rescue_scientist', x: 96  },
-    { id: 'engineer',  sprite: 'npc_rescue_engineer',  x: 128 },
-    { id: 'leader',    sprite: 'npc_rescue_leader',    x: 160, lead: true },
-    { id: 'pilot',     sprite: 'npc_rescue_pilot',     x: 198 }
+    { id: 'victoria', anim: 'victoria', x: 160 },
+    { id: 'nayah',    anim: 'nayah',    x: 188 },
+    { id: 'kevin',    anim: 'kevin',    x: 216, lead: true },
+    { id: 'carlos',   anim: 'carlos',   x: 244 },
+    { id: 'josh',     anim: 'josh',     x: 272 }
   ];
 
-  // v0.79: visual-novel dialogue for the ending. Each line = one
-  // speaker reacting to the Computer's briefing. who -> portrait +
-  // name + lineup highlight. name/text are placeholders; Mark swaps
-  // in the real character names + lines (and real portraits) later.
-  // who 'computer' uses the npc_computer sprite + left portrait;
-  // heroes use their npc_rescue_* sprite + right portrait.
+  // Ending dialogue: the Computer (player) ran into the Tower and is
+  // now briefing the rescue team. who 'computer' = the player on the
+  // left; the rest are the heroes on the right. Each gets a line that
+  // moves the conversation forward. Kevin is the team lead.
   var CITY_DIALOG = [
-    { who: 'computer',  name: 'COMPUTER',  text: 'HEROES! I HAVE URGENT NEWS.' },
-    { who: 'computer',  name: 'COMPUTER',  text: 'SUPER DUDE DANNY IS LOST IN TIME!' },
-    { who: 'scientist', name: 'SCIENTIST', text: 'LOST IN TIME?! THE MACHINE MUST HAVE MISFIRED!' },
-    { who: 'engineer',  name: 'ENGINEER',  text: 'I CAN OPEN A NEW TIME-GATE. JUST GIVE ME A MINUTE!' },
-    { who: 'computer',  name: 'COMPUTER',  text: 'THERE IS NO TIME TO LOSE. WILL YOU GO?' },
-    { who: 'leader',    name: 'CAPTAIN',   text: "WE'VE GOT THIS. LET'S GO GET HIM!" },
-    { who: 'pilot',     name: 'PILOT',     text: 'TIME-JET FUELED AND READY TO LAUNCH!' },
-    { who: null,        name: null,        text: 'THE RESCUE BEGINS... TO BE CONTINUED!' }
+    { who: 'computer', name: 'COMPUTER', text: 'TEAM! SUPER DUDE DANNY IS LOST IN TIME!' },
+    { who: 'computer', name: 'COMPUTER', text: 'I NEED THE FIVE OF YOU TO BRING HIM HOME.' },
+    { who: 'victoria', name: 'VICTORIA', text: 'COUNT ME IN. I NEVER LEAVE A FRIEND BEHIND.' },
+    { who: 'nayah',    name: 'NAYAH',    text: 'WHEREVER HE IS, WE WILL FIND HIM.' },
+    { who: 'kevin',    name: 'KEVIN',    text: "GEAR UP, TEAM. I'LL LEAD US IN." },
+    { who: 'carlos',   name: 'CARLOS',   text: "TIME JUMPS?! AWESOME. LET'S GO!" },
+    { who: 'josh',     name: 'JOSH',     text: 'STEADY, EVERYONE. WE DO THIS TOGETHER.' },
+    { who: 'computer', name: 'COMPUTER', text: 'THEN IT IS SETTLED. THE RESCUE BEGINS!' },
+    { who: null,       name: null,       text: 'TO BE CONTINUED...' }
   ];
 
-  // Square close-up portrait of a speaker. Crops the head+shoulders
-  // (top ~58%) of the full-body sprite and scales it to fill the box.
-  // Real portrait art can replace this by registering npc_<id>_face
-  // sprites later. side: 'L' or 'R' picks the frame accent.
-  function _cyDrawPortrait(g, spriteKey, x, y, sz, accent) {
-    // Frame + inner well.
+  // Per-speaker accent + portrait source. Heroes use the pixDraw
+  // 'rescue' frames; the Computer uses the playable comp sprite.
+  var DIALOG_ACTOR = {
+    computer: { accent: '#5af0ff', psize: 'big',    panim: 'comp_idle', pdir: 'east'  },
+    victoria: { accent: '#ff7ac0', psize: 'rescue', panim: 'victoria',  pdir: 'south' },
+    nayah:    { accent: '#c89bf0', psize: 'rescue', panim: 'nayah',     pdir: 'south' },
+    kevin:    { accent: '#ffd23a', psize: 'rescue', panim: 'kevin',     pdir: 'south' },
+    carlos:   { accent: '#5ae89a', psize: 'rescue', panim: 'carlos',    pdir: 'south' },
+    josh:     { accent: '#ff8a40', psize: 'rescue', panim: 'josh',      pdir: 'south' }
+  };
+
+  // Square close-up portrait from a pixelLab frame (crops the head +
+  // shoulders region of the character's bbox + cover-fits the square).
+  function _cyDrawPixPortrait(g, size, anim, dir, frameIdx, x, y, sz, accent) {
+    // Frame.
     g.fillStyle = '#0a0e18'; g.fillRect(x - 2, y - 2, sz + 4, sz + 4);
-    g.fillStyle = accent;    g.fillRect(x - 2, y - 2, sz + 4, 2);
-    g.fillStyle = accent;    g.fillRect(x - 2, y + sz, sz + 4, 2);
-    g.fillStyle = accent;    g.fillRect(x - 2, y - 2, 2, sz + 4);
-    g.fillStyle = accent;    g.fillRect(x + sz, y - 2, 2, sz + 4);
-    // Inner background gradient.
+    g.fillStyle = accent;
+    g.fillRect(x - 2, y - 2, sz + 4, 2); g.fillRect(x - 2, y + sz, sz + 4, 2);
+    g.fillRect(x - 2, y - 2, 2, sz + 4); g.fillRect(x + sz, y - 2, 2, sz + 4);
     var bg = g.createLinearGradient(0, y, 0, y + sz);
     bg.addColorStop(0, '#1a2438'); bg.addColorStop(1, '#0e1422');
     g.fillStyle = bg; g.fillRect(x, y, sz, sz);
-    var spr = S.get(spriteKey);
-    if (!spr) return;
-    // Crop the top head+chest region and cover-fit into the box.
-    var srcH = Math.floor(spr.height * 0.60);
-    var srcW = spr.width;
-    // cover: scale so the crop fills the square, centered.
-    var scale = Math.max(sz / srcW, sz / srcH);
+    var SP = SDD.sprites;
+    var img = SP.pixFrame && SP.pixFrame(size, anim, dir, frameIdx || 0);
+    var bb  = SP.pixBBox && SP.pixBBox(size, anim, dir);
+    if (!img || !bb || !img.complete || !img.naturalWidth) return;
+    // Head crop = top ~56% of the bbox, slightly inset from the top.
+    var srcX = bb.x, srcY = bb.y, srcW = bb.w, srcH = Math.round(bb.h * 0.56);
+    var scale = Math.max(sz / srcW, sz / srcH);   // cover-fit
     var dw = Math.round(srcW * scale), dh = Math.round(srcH * scale);
-    var dx = x + Math.round((sz - dw) / 2);
-    var dy = y + Math.round((sz - dh) / 2);
+    var dx = x + Math.round((sz - dw) / 2), dy = y + 1;   // top-align the face
     g.save();
     g.beginPath(); g.rect(x, y, sz, sz); g.clip();
     g.imageSmoothingEnabled = false;
-    g.drawImage(spr, 0, 0, srcW, srcH, dx, dy, dw, dh);
+    g.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
     g.restore();
   }
 
@@ -7848,34 +7855,47 @@ window.SDD = window.SDD || {};
     g.fillStyle = '#243150'; g.fillRect(0, 168, 320, 1);
   }
 
-  // Draw the rescue line-up. `activeId` (scientist/engineer/leader/
-  // pilot) spotlights + lifts the speaking hero; the rest dim.
-  // v0.80: floor lowered to 168 so the heroes sit in the lower band,
-  // visible below the banner + portrait UI.
+  var CY_FLOOR = 120;   // ending-cutscene floor line (characters above the box)
+
+  // Draw the 5 rescue heroes on the RIGHT via pixDraw. `activeId`
+  // spotlights + steps the speaking hero forward; the rest dim.
   function _cyDrawRescueLineup(g, t, activeId) {
-    var floorY = 168;
+    var SP = SDD.sprites;
     for (var i = 0; i < RESCUE_LINEUP.length; i++) {
       var hero = RESCUE_LINEUP[i];
-      var spr = S.get(hero.sprite);
-      if (!spr) continue;
       var active = (hero.id === activeId);
-      var step = active ? 4 : 0;                        // speaker steps fwd/down
-      var bob = Math.round(Math.sin(t * 0.09 + i) * 1);
-      var hx = Math.round(hero.x - spr.width / 2);
-      var hy = floorY - spr.height + step + bob;
+      var idx = (Math.floor(t / 16) + i) % 4;           // idle breathing
+      var step = active ? 3 : 0;
+      var bob = Math.round(Math.sin(t * 0.08 + i) * 1);
+      var baseY = CY_FLOOR + step + bob;
       // Spotlight pool under the active speaker.
       if (active) {
-        var sp = g.createRadialGradient(hero.x, floorY + 2, 2, hero.x, floorY + 2, 28);
+        var sp = g.createRadialGradient(hero.x, baseY + 1, 2, hero.x, baseY + 1, 26);
         sp.addColorStop(0, 'rgba(255,230,150,0.42)');
         sp.addColorStop(1, 'rgba(255,230,150,0)');
-        g.fillStyle = sp; g.fillRect(hero.x - 28, floorY - 28, 56, 38);
+        g.fillStyle = sp; g.fillRect(hero.x - 26, baseY - 30, 52, 36);
       }
-      // Non-active heroes dim while someone else speaks.
-      if (activeId && !active) { g.save(); g.globalAlpha = 0.55; }
-      g.imageSmoothingEnabled = false;
-      g.drawImage(spr, hx, hy);
-      if (activeId && !active) g.restore();
+      if (activeId && !active) g.globalAlpha = 0.5;
+      if (SP.pixDraw) SP.pixDraw(g, 'rescue', hero.anim, 'south', idx, hero.x, baseY);
+      g.globalAlpha = 1;
     }
+  }
+
+  // Draw the Computer (player character) on the LEFT, facing the team.
+  // anim 'comp_run' during the run-in, else 'comp_idle'. `lit` adds a
+  // cyan speaking glow.
+  function _cyDrawComputerActor(g, t, cx, anim, lit) {
+    var SP = SDD.sprites;
+    var baseY = CY_FLOOR + Math.round(Math.sin(t * 0.08) * 1);
+    if (lit) {
+      var gl = g.createRadialGradient(cx, baseY - 14, 3, cx, baseY - 14, 30);
+      gl.addColorStop(0, 'rgba(90,240,255,0.34)');
+      gl.addColorStop(1, 'rgba(90,240,255,0)');
+      g.fillStyle = gl; g.fillRect(cx - 30, baseY - 44, 60, 44);
+    }
+    var idx = (anim === 'comp_run') ? (Math.floor(t / 4) % 8)
+                                    : (Math.floor(t / 16) % 4);
+    if (SP.pixDraw) SP.pixDraw(g, 'big', anim, 'east', idx, cx, baseY);
   }
 
   // v0.68: expose the cyber-theme painters so the decor editor scene
@@ -7887,51 +7907,52 @@ window.SDD = window.SDD || {};
   // v0.76: expose the single-piece painter so the decor editor can
   // render catalog thumbnails of each kind/variant.
   SDD._paintDecorPiece    = _cyPaintDecorPiece;
-  // Per-speaker accent color + portrait sprite + side.
-  var DIALOG_ACTOR = {
-    computer:  { accent: '#5af0ff', sprite: 'npc_computer',         side: 'L' },
-    scientist: { accent: '#9bf0a0', sprite: 'npc_rescue_scientist', side: 'R' },
-    engineer:  { accent: '#ff8a40', sprite: 'npc_rescue_engineer',  side: 'R' },
-    leader:    { accent: '#ffd23a', sprite: 'npc_rescue_leader',    side: 'R' },
-    pilot:     { accent: '#46f0ff', sprite: 'npc_rescue_pilot',     side: 'R' }
-  };
-  var DLG_WRAP = 30;          // chars per dialogue line
+  var DLG_WRAP = 44;          // chars per dialogue line (full-width box)
   var DLG_CPS  = 0.5;         // characters revealed per frame (~30/s)
+  var CY_RUNIN = 54;          // run-in duration (frames)
+  var CY_COMPX = 44;          // Computer's resting x on the left
 
   SDD.scenes.cityArrival = {
     enter: function (d) {
-      this.d = d || {}; this.idx = 0; this.t = 0;
+      this.d = d || {};
+      this.phase = 'runin'; this.runT = 0;
+      this.idx = 0; this.t = 0; this.clock = 0;
       this.shown = 0; this.full = false;
+      this.lines = ['']; this.total = 0;
       A.startMusic('finale');
-      this._prep();
     },
-    // Pre-wrap the current line + reset the typewriter.
+    // Pre-wrap the current line + reset the typewriter + speaker sting.
     _prep: function () {
       var line = CITY_DIALOG[this.idx] || { text: '' };
       this.lines = _cyWrap(line.text, DLG_WRAP);
       this.total = line.text.length;
       this.shown = 0; this.full = false; this.t = 0;
-      var act = line.who && DIALOG_ACTOR[line.who];
       if (line.who === 'computer') A.sfx('hit');
-      else if (line.who === 'leader') A.sfx('1up');
+      else if (line.who === 'kevin') A.sfx('1up');
       else if (line.who) A.sfx('select');
     },
     update: function () {
+      this.clock++;
+      // ---- run-in: the Computer (player) dashes into the Tower ----
+      if (this.phase === 'runin') {
+        this.runT++;
+        if (this.runT >= CY_RUNIN || In.confirm()) {
+          this.phase = 'talk'; this._prep();
+        }
+        return;
+      }
+      // ---- dialogue ----
       this.t++;
       if (!this.full) {
         this.shown += DLG_CPS;
-        // Soft typewriter tick every ~3 revealed chars.
         if (Math.floor(this.shown) % 3 === 0 && (this.shown - Math.floor(this.shown)) < DLG_CPS) {
           A.sfx('chirp');
         }
         if (this.shown >= this.total) { this.shown = this.total; this.full = true; }
       }
       if (In.confirm()) {
-        if (!this.full) {
-          // First press: reveal the whole line instantly.
-          this.shown = this.total; this.full = true; A.sfx('select');
-        } else {
-          // Advance to the next line.
+        if (!this.full) { this.shown = this.total; this.full = true; A.sfx('select'); }
+        else {
           this.idx++;
           if (this.idx >= CITY_DIALOG.length) {
             A.stopMusic();
@@ -7946,93 +7967,90 @@ window.SDD = window.SDD || {};
         }
       }
     },
+    _banner: function (g) {
+      var t = this.clock;
+      g.fillStyle = 'rgba(8,10,22,0.92)'; g.fillRect(0, 0, 320, 16);
+      g.fillStyle = '#ffd23a'; g.fillRect(0, 16, 320, 1);
+      g.fillStyle = '#ff5a3a';
+      if (t % 40 < 24) { g.fillRect(6, 5, 5, 5); g.fillRect(309, 5, 5, 5); }
+      tsh(g, 'RESCUE HQ - EMERGENCY BRIEFING', 160, 4, '#ffd23a', '#5a3a10', 1, 'center');
+    },
+    _floor: function (g) {
+      // Ground line the characters stand on (the HQ floor sits behind
+      // the bottom dialogue box, so draw a visible line at CY_FLOOR).
+      g.fillStyle = '#243150'; g.fillRect(0, 120, 320, 1);
+      g.fillStyle = 'rgba(90,120,170,0.16)'; g.fillRect(0, 121, 320, 6);
+    },
     render: function (g) {
-      var t = this.t;
+      var cl = this.clock;
+
+      // ---- RUN-IN PHASE: Computer sprints in from the left ----
+      if (this.phase === 'runin') {
+        _cyDrawRescueHQ(g, cl, false);
+        this._floor(g);
+        _cyDrawRescueLineup(g, cl, null);              // heroes waiting
+        var p = Math.min(1, this.runT / CY_RUNIN);
+        var rx = Math.round(-24 + p * (CY_COMPX + 24));
+        _cyDrawComputerActor(g, cl, rx, 'comp_run', false);
+        this._banner(g);
+        return;
+      }
+
+      // ---- TALK PHASE ----
       var line = CITY_DIALOG[this.idx] || {};
       var who = line.who;
       var act = who && DIALOG_ACTOR[who];
       var isFinal = (this.idx === CITY_DIALOG.length - 1);
-
-      // Backdrop: HQ briefing room (screen lit when the Computer talks)
-      // + the hero line-up (active speaker spotlit).
-      _cyDrawRescueHQ(g, t, who === 'computer');
+      var compTalk = (who === 'computer');
       var heroActive = (who && who !== 'computer') ? who : null;
-      _cyDrawRescueLineup(g, t, heroActive);
 
-      // Dim the whole scene a touch so the VN UI reads on top.
-      g.fillStyle = 'rgba(8,10,22,0.30)'; g.fillRect(0, 0, 320, 180);
+      _cyDrawRescueHQ(g, cl, compTalk);
+      this._floor(g);
+      _cyDrawRescueLineup(g, cl, heroActive);
+      _cyDrawComputerActor(g, cl, CY_COMPX, 'comp_idle', compTalk);
+      this._banner(g);
 
-      // ---- TOP BANNER ----
-      g.fillStyle = 'rgba(8,10,22,0.92)'; g.fillRect(0, 0, 320, 16);
-      g.fillStyle = '#ffd23a'; g.fillRect(0, 16, 320, 1);
-      g.fillStyle = '#ff5a3a';
-      if (t % 40 < 24) { g.fillRect(6, 5, 5, 5); g.fillRect(309, 5, 5, 5); }  // alert pips
-      tsh(g, 'RESCUE HQ - EMERGENCY BRIEFING', 160, 4, '#ffd23a', '#5a3a10', 1, 'center');
-
-      // Final card: centred stamp + sparks + the typed send-off line,
-      // no portrait. Heroes stay visible below.
+      // Final card overlay.
       if (isFinal) {
-        for (var p = 0; p < 24; p++) {
-          var pxx = ((p * 47 + t * 1.4) % 320), pyy = ((p * 29 + t * 1.1) % 130) + 24;
-          g.fillStyle = (p % 3 === 0) ? '#ffd23a' : (p % 3 === 1) ? '#5af0ff' : '#ff5a3a';
-          g.fillRect(pxx | 0, pyy | 0, 2, 2);
+        for (var s = 0; s < 22; s++) {
+          var sxx = ((s * 47 + cl * 1.4) % 320), syy = ((s * 29 + cl * 1.1) % 96) + 22;
+          g.fillStyle = (s % 3 === 0) ? '#ffd23a' : (s % 3 === 1) ? '#5af0ff' : '#ff5a3a';
+          g.fillRect(sxx | 0, syy | 0, 2, 2);
         }
-        tsh(g, 'THE RESCUE BEGINS', 160, 64, '#ffd23a', '#7a4a10', 2, 'center');
-        // Typed send-off (reveal the whole CITY_DIALOG text).
-        var fr = Math.floor(this.shown);
-        var fc = 0;
-        for (var fli = 0; fli < this.lines.length; fli++) {
-          var fl = this.lines[fli], fshow = fl;
-          if (fc + fl.length > fr) fshow = fl.slice(0, Math.max(0, fr - fc));
-          fc += fl.length + 1;
-          text(g, fshow, 160, 92 + fli * 11, '#ffffff', 1, 'center');
-          if (fc > fr) break;
-        }
-        if (this.full && (t % 40 < 26)) tsh(g, 'PRESS A', 160, 120, '#ffd23a', '#000', 1, 'center');
+        tsh(g, 'THE RESCUE BEGINS', 160, 58, '#ffd23a', '#7a4a10', 2, 'center');
+        text(g, line.text, 160, 84, '#ffffff', 1, 'center');
+        if (this.t > 8 && (cl % 40 < 26)) tsh(g, 'PRESS A', 160, 100, '#ffd23a', '#000', 1, 'center');
         return;
       }
 
-      // ---- PORTRAIT + DIALOGUE BOX ----
-      // v0.80: moved UP into the middle band so the heroes stay
-      // visible below (Mark: "banner and portraits above the
-      // characters, so you can still see the characters").
-      var pad = 6, psz = 42;
-      var boxY = 66, boxH = 46;
-      var side = act ? act.side : 'L';
+      // ---- BOTTOM DIALOGUE BOX (full width) ----
       var accent = act ? act.accent : '#ffd23a';
-      var portX, boxX, boxW;
-      if (side === 'L') {
-        portX = pad; boxX = pad + psz + 6; boxW = 320 - boxX - pad;
-      } else {
-        portX = 320 - pad - psz; boxX = pad; boxW = portX - 6 - boxX;
-      }
-      // Dialogue panel.
-      g.fillStyle = 'rgba(8,10,22,0.94)'; g.fillRect(boxX, boxY, boxW, boxH);
+      var boxX = 6, boxY = 128, boxW = 308, boxH = 46;
+      var psz = 40;
+      g.fillStyle = 'rgba(8,10,22,0.95)'; g.fillRect(boxX, boxY, boxW, boxH);
       g.strokeStyle = accent; g.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1);
-      // Name tag riding the top edge.
+      // Speaker portrait inset on the left of the box.
+      var portX = boxX + 3, portY = boxY + 3;
+      if (act) _cyDrawPixPortrait(g, act.psize, act.panim, act.pdir, Math.floor(cl / 16) % 4, portX, portY, psz, accent);
+      var textX = portX + psz + 8;
+      // Name tag riding the box top edge.
       if (line.name) {
         var nw = line.name.length * 6 + 10;
-        g.fillStyle = accent; g.fillRect(boxX + 6, boxY - 6, nw, 9);
-        g.fillStyle = '#0a0e18'; g.fillRect(boxX + 7, boxY - 5, nw - 2, 7);
-        text(g, line.name, boxX + 6 + nw / 2, boxY - 4, accent, 1, 'center');
+        g.fillStyle = accent; g.fillRect(textX, boxY - 6, nw, 9);
+        g.fillStyle = '#0a0e18'; g.fillRect(textX + 1, boxY - 5, nw - 2, 7);
+        text(g, line.name, textX + nw / 2, boxY - 4, accent, 1, 'center');
       }
-      // Portrait (only for actor lines).
-      if (act) _cyDrawPortrait(g, act.sprite, portX, boxY + 2, psz, accent);
-
-      // Typed text, word-wrapped, revealed up to `shown` chars.
-      var revealed = Math.floor(this.shown);
-      var consumed = 0;
+      // Typed text.
+      var revealed = Math.floor(this.shown), consumed = 0;
       for (var li = 0; li < this.lines.length; li++) {
-        var ln = this.lines[li];
-        var show = ln;
+        var ln = this.lines[li], show = ln;
         if (consumed + ln.length > revealed) show = ln.slice(0, Math.max(0, revealed - consumed));
-        consumed += ln.length + 1;   // +1 for the space removed by wrap
-        text(g, show, boxX + 6, boxY + 8 + li * 10, '#ffffff', 1, 'left');
+        consumed += ln.length + 1;
+        text(g, show, textX, boxY + 8 + li * 11, '#ffffff', 1, 'left');
         if (consumed > revealed) break;
       }
-      // Prompt / blinking advance arrow once the line finishes.
-      if (this.full && (t % 40 < 26)) {
-        tsh(g, isFinal ? 'PRESS A' : 'PRESS A >', boxX + boxW - 4, boxY + boxH - 10, accent, '#000000', 1, 'right');
+      if (this.full && (cl % 40 < 26)) {
+        tsh(g, 'PRESS A >', boxX + boxW - 4, boxY + boxH - 11, accent, '#000000', 1, 'right');
       }
     }
   };
