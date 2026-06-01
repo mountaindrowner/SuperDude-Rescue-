@@ -11,7 +11,37 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.91` / `sdd-shell-v91`.
+- **Live build**: `v0.92` / `sdd-shell-v92`.
+
+### v0.92 — Portrait play + volcano on 3-1 + galaxy spiral on 1-1 (latest)
+
+- **Portrait/landscape both playable.** Deleted the
+  `@media (orientation: portrait)` block from `css/style.css` that
+  was overlaying a "TURN YOUR PHONE SIDEWAYS" prompt on touch devices.
+  Game now letterboxes the 16:9 canvas inside whatever the viewport is
+  (portrait fits the canvas to width, leaves dead space above + below
+  for the touch controls; landscape unchanged).
+- **Day 3-1 "Forming Land" got the depth treatment.** Rewrote
+  `drawSky_rocky`:
+  - 5-stop atmospheric sky gradient (warm magma → smoky horizon).
+  - New `_drawVolcano(g, cx, baseY, t)` painter draws a 92×58 cone in
+    the FAR layer (parallax 0.05) with crater rim, glowing lava lake
+    (pulsing), lava trickle on the left flank, erosion ridges,
+    rising layered smoke plume (12 puffs that scale up + fade to
+    dark as they rise), and arcing glowing lava flecks ejecting
+    from the crater.
+  - 3 jagged mountain ridges instead of 2 (far/mid/near at 0.08 /
+    0.16 / 0.30 parallax) for proper layered depth.
+  - Volumetric warm low-fog band above the horizon + drifting ash
+    particles + heat-shimmer dust motes.
+- **Day 1-1 "Light & Darkness" got a forming galaxy.** New
+  `_drawGalaxySpiral(g, camx, t)` painter called from
+  `drawSkyGalactic`. Slowly-rotating logarithmic-spiral (r = a·e^(b·θ))
+  with two main arms of star particles colored warm→cool from core
+  to rim, bright golden core with radial bloom, faint dust lane
+  between arms, flattened elliptical disc rim, and 18 satellite
+  stars orbiting the disc. Reads as a galaxy mid-formation - on-theme
+  for Day 1 of creation.
 
 ### v0.91 — Cars become patrol mobs + new hazards (dump truck, hydrant, drone, crumble tile, cat) (latest)
 

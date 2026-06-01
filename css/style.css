@@ -584,27 +584,7 @@ body.touch #touch-controls { display: block; }
   font: inherit;
 }
 
-/* ---- Landscape lock (mobile) ----
-   On touch devices held in portrait, cover the screen with a
-   rotate-your-phone prompt so the 16:9 game is always played wide.
-   The game keeps running underneath, ready the instant they rotate. */
-@media (orientation: portrait) {
-  body.touch #touch-controls { display: none; }
-  body.touch::after {
-    content: "\1F504\A\A TURN YOUR PHONE \A SIDEWAYS TO PLAY";
-    white-space: pre-line;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: radial-gradient(circle at 50% 38%, #1a1640, #05050d 75%);
-    color: #ffd23a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.5;
-    font: 700 7vw system-ui, "Segoe UI", sans-serif;
-    letter-spacing: 0.04em;
-    padding: 6vw;
-  }
-}
+/* v0.92 (Mark): removed the @media (orientation: portrait) rotate-prompt
+   overlay so the game is playable in BOTH portrait and landscape on
+   mobile. The 16:9 canvas letterboxes inside whatever the viewport is,
+   touch controls keep their vmin-relative sizing. */

@@ -1186,6 +1186,11 @@ window.SDD = window.SDD || {};
     nebula(80 - camx * 0.07, 50, 70, 'rgba(180,80,200,0.35)');
     nebula(240 - camx * 0.04, 95, 80, 'rgba(80,150,220,0.30)');
     nebula(150 - camx * 0.05, 130, 60, 'rgba(220,90,180,0.22)');
+    // v0.92 (Mark): forming-galaxy spiral - slowly-rotating logarithmic
+    // spiral arms of star particles painted behind the foreground
+    // starfield + central light burst. Reads as a young galaxy being
+    // shaped (Day 1 of creation).
+    _drawGalaxySpiral(g, camx, t);
     // base starfield
     drawStarfield(g, t);
     // brighter stars with twinkle + slow parallax
@@ -1214,6 +1219,92 @@ window.SDD = window.SDD || {};
     burst.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = burst;
     g.fillRect(bX - 130, bY - 130, 260, 260);
+  }
+
+  // v0.92: forming-galaxy spiral for Day 1-1. Two logarithmic arms +
+  // an inner core dust disc + scattered satellite stars, all slowly
+  // rotating around (cx, cy). Designed to read as a young spiral
+  // galaxy in the middle of being formed.
+  function _drawGalaxySpiral(g, camx, t) {
+    var cx = 160 - camx * 0.03;            // slight parallax with the world
+    var cy = 88;
+    var rot = t * 0.0035;                  // very slow rotation
+    var ARMS = 2;                          // 2 main arms + a faint 3rd
+    // ---- inner disc haze (warm core glow) ----
+    var disc = g.createRadialGradient(cx, cy, 1, cx, cy, 56);
+    disc.addColorStop(0,   'rgba(255,210,140,0.42)');
+    disc.addColorStop(0.4, 'rgba(180,130,220,0.18)');
+    disc.addColorStop(1,   'rgba(40,20,80,0)');
+    g.fillStyle = disc;
+    g.fillRect(cx - 56, cy - 56, 112, 112);
+    // ---- elliptical disc rim (very subtle, gives the disc shape) ----
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(rot * 1.8);
+    g.scale(1, 0.42);                      // flatten into a disc
+    var rim = g.createRadialGradient(0, 0, 18, 0, 0, 64);
+    rim.addColorStop(0,    'rgba(120,160,255,0)');
+    rim.addColorStop(0.65, 'rgba(140,180,255,0.10)');
+    rim.addColorStop(1,    'rgba(120,160,255,0)');
+    g.fillStyle = rim;
+    g.fillRect(-64, -64, 128, 128);
+    g.restore();
+    // ---- spiral arms - star particles along log-spiral paths ----
+    // r = a * exp(b * theta). Each arm is offset by 2pi/ARMS.
+    var a = 1.6, b = 0.21;
+    for (var arm = 0; arm < ARMS; arm++) {
+      var armOff = (arm / ARMS) * Math.PI * 2;
+      for (var step = 0; step < 90; step++) {
+        var theta = step * 0.18 + armOff + rot;
+        var r = a * Math.exp(b * (step * 0.18));
+        if (r > 78) break;                   // clip past disc radius
+        // Pseudo-random scatter perpendicular to the arm.
+        var jx = ((step * 31 + arm * 11) % 7) - 3;
+        var jy = ((step * 17 + arm * 23) % 7) - 3;
+        var x = cx + Math.cos(theta) * r + jx * 0.5;
+        var y = cy + Math.sin(theta) * r * 0.42 + jy * 0.3;   // flatten
+        // Color + size: inner = warm yellow/white, outer = cool blue/violet.
+        var f = step / 90;
+        var col;
+        if (f < 0.25)      col = 'rgba(255,240,180,';
+        else if (f < 0.55) col = 'rgba(255,210,230,';
+        else if (f < 0.8)  col = 'rgba(180,170,255,';
+        else               col = 'rgba(120,140,220,';
+        // Twinkle.
+        var tw = 0.55 + 0.45 * Math.sin(t * 0.05 + step * 0.7 + arm * 2.3);
+        var alpha = (0.55 + (1 - f) * 0.35) * tw;
+        g.fillStyle = col + alpha.toFixed(2) + ')';
+        var sz = (step % 9 === 0 && f < 0.6) ? 2 : 1;
+        g.fillRect(x | 0, y | 0, sz, sz);
+      }
+    }
+    // ---- faint dust lane between the arms (single thin curve) ----
+    g.fillStyle = 'rgba(40,20,60,0.42)';
+    for (var d = 0; d < 60; d++) {
+      var dt = d * 0.22 + rot;
+      var dr = a * Math.exp(b * (d * 0.22)) + 4;
+      if (dr > 70) break;
+      var dxd = cx + Math.cos(dt + Math.PI * 0.5) * dr;
+      var dyd = cy + Math.sin(dt + Math.PI * 0.5) * dr * 0.42;
+      g.fillRect(dxd | 0, dyd | 0, 1, 1);
+    }
+    // ---- bright dense core (inner concentration) ----
+    var core = g.createRadialGradient(cx, cy, 0, cx, cy, 14);
+    core.addColorStop(0,   'rgba(255,250,220,0.95)');
+    core.addColorStop(0.4, 'rgba(255,210,160,0.55)');
+    core.addColorStop(1,   'rgba(255,180,120,0)');
+    g.fillStyle = core;
+    g.fillRect(cx - 14, cy - 14, 28, 28);
+    // ---- satellite stars sparsely scattered around the disc ----
+    for (var s = 0; s < 18; s++) {
+      var sa = (s * 0.7 + rot * 0.6) % (Math.PI * 2);
+      var sr = 60 + ((s * 31) % 28);
+      var sx = cx + Math.cos(sa) * sr;
+      var sy = cy + Math.sin(sa) * sr * 0.55;
+      var stw = 0.6 + 0.4 * Math.sin(t * 0.06 + s * 1.9);
+      g.fillStyle = 'rgba(220,230,255,' + (0.50 * stw).toFixed(2) + ')';
+      g.fillRect(sx | 0, sy | 0, 1, 1);
+    }
   }
 
   function drawSky(g, camx, camy, prog, t) {
@@ -1357,15 +1448,164 @@ window.SDD = window.SDD || {};
     }
   }
   function drawSky_rocky(g, camx, camy, prog, t) {
-    vGradient(g, '#d68a55', '#f5cd92');
-    simpleSun(g, 220, 40, 18, '#ffe0a8', false);
-    jaggedRow(g, camx, 0.12, 138, '#7a3e20', 70);
-    jaggedRow(g, camx, 0.22, 165, '#4a2a16', 50);
-    for (var i = 0; i < 18; i++) {
+    // v0.92 (Mark): "Forming Land" gets the Adventure-City depth
+    // treatment - layered atmospheric perspective with an erupting
+    // volcano in the far background, smoky horizon haze, and drifting
+    // ash. Brightness inversion: far = pale + warm, near = dark +
+    // saturated.
+    // ----- multi-stop sky -----
+    var sky = g.createLinearGradient(0, 0, 0, 180);
+    sky.addColorStop(0,    '#b85a30');           // upper warm magma
+    sky.addColorStop(0.30, '#e08850');
+    sky.addColorStop(0.60, '#f5cd92');
+    sky.addColorStop(0.85, '#f6b878');           // smoky horizon
+    sky.addColorStop(1,    '#d68a55');
+    g.fillStyle = sky; g.fillRect(0, 0, 320, 180);
+
+    // Volumetric haze band right above the volcano range (warm low-fog).
+    var haze = g.createLinearGradient(0, 110, 0, 160);
+    haze.addColorStop(0, 'rgba(255,180,110,0)');
+    haze.addColorStop(0.5, 'rgba(255,180,110,0.18)');
+    haze.addColorStop(1, 'rgba(255,180,110,0)');
+    g.fillStyle = haze; g.fillRect(0, 110, 320, 50);
+
+    // Sun (slightly larger + warmer than the legacy version).
+    simpleSun(g, 240, 36, 20, '#ffd896', false);
+
+    // ----- ERUPTING VOLCANO (very far layer) -----
+    // Parallax 0.05 - reads as a distant landmark anchored to the
+    // horizon. World seed (camx) keeps the cone in the same spot.
+    var volX = Math.round(150 - camx * 0.05);
+    while (volX < -80) volX += 640;
+    while (volX > 320) volX -= 640;
+    _drawVolcano(g, volX, 152, t);
+
+    // Distant ridge (palest, far).
+    jaggedRow(g, camx, 0.08, 144, '#a86040', 36);
+    // Mid ridge - middle band.
+    jaggedRow(g, camx, 0.16, 156, '#7a3e20', 58);
+    // Near ridge - darkest, closest.
+    jaggedRow(g, camx, 0.30, 170, '#3a2210', 46);
+
+    // Drifting ash particles + heat-shimmer specks.
+    for (var i = 0; i < 26; i++) {
       var dx = (((i * 47) - camx * 0.3 + t * 0.5) % 320 + 320) % 320;
-      var dy = 100 + ((i * 17) % 70);
-      g.fillStyle = 'rgba(255,200,140,0.35)';
+      var dy = 90 + ((i * 17) % 80);
+      // Larger drift up + horizontal scroll for the ash flakes.
+      var ax = ((i * 31) - camx * 0.18 - t * 0.45) % 320;
+      ax = (ax + 320) % 320;
+      var ay = ((i * 13) % 70) + Math.sin(t * 0.04 + i) * 4;
+      g.fillStyle = 'rgba(60,40,30,0.35)';
+      g.fillRect(ax | 0, ay | 0, (i % 5 === 0) ? 2 : 1, 1);
+      // Heat shimmer dust.
+      g.fillStyle = 'rgba(255,200,140,0.32)';
       g.fillRect(dx | 0, dy | 0, 1, 1);
+    }
+  }
+
+  // Far-background volcano with crater glow, lava trickle on the flank,
+  // and a rising plume of warm smoke + flecks. (cx, baseY) is the
+  // base center on the screen.
+  function _drawVolcano(g, cx, baseY, t) {
+    // Cone silhouette - asymmetric trapezoid for character.
+    var coneW = 92;            // base width
+    var coneTopW = 28;         // truncated peak width
+    var coneH = 58;            // height
+    var l = cx - coneW / 2,    r = cx + coneW / 2;
+    var lt = cx - coneTopW / 2, rt = cx + coneTopW / 2;
+    var topY = baseY - coneH;
+    // Body (dark warm brown - reads as distant rocky mass).
+    g.fillStyle = '#5a3018';
+    g.beginPath();
+    g.moveTo(l, baseY);
+    g.lineTo(lt, topY);
+    g.lineTo(rt, topY);
+    g.lineTo(r, baseY);
+    g.closePath();
+    g.fill();
+    // Left-side warm rim (sunlit edge).
+    g.fillStyle = '#8a4824';
+    g.beginPath();
+    g.moveTo(l, baseY);
+    g.lineTo(lt, topY);
+    g.lineTo(lt + 3, topY + 1);
+    g.lineTo(l + 6, baseY);
+    g.closePath();
+    g.fill();
+    // Right-side shadow.
+    g.fillStyle = '#3a1c0e';
+    g.beginPath();
+    g.moveTo(r, baseY);
+    g.lineTo(rt, topY);
+    g.lineTo(rt - 3, topY + 1);
+    g.lineTo(r - 6, baseY);
+    g.closePath();
+    g.fill();
+    // Erosion ridges (a few diagonal dark streaks down the cone).
+    g.fillStyle = '#3a1c0e';
+    g.fillRect(cx - 18, topY + 14, 1, 38);
+    g.fillRect(cx - 6,  topY + 10, 1, 44);
+    g.fillRect(cx + 8,  topY + 16, 1, 36);
+    g.fillRect(cx + 20, topY + 12, 1, 40);
+    // Crater rim (lighter ash deposits).
+    g.fillStyle = '#a06840';
+    g.fillRect(lt, topY,     coneTopW, 2);
+    g.fillStyle = '#7a4828';
+    g.fillRect(lt + 2, topY + 2, coneTopW - 4, 1);
+    // Lava lake glowing in the crater (animated pulse).
+    var pulse = 0.7 + Math.sin(t * 0.05) * 0.3;
+    g.fillStyle = '#ff5418';
+    g.fillRect(lt + 4, topY + 1, coneTopW - 8, 2);
+    g.fillStyle = '#ffd048';
+    g.fillRect(lt + 6 + Math.floor((t * 0.2) % 3), topY + 1, coneTopW - 14, 1);
+    // Soft heat glow around the crater.
+    var ch = g.createRadialGradient(cx, topY + 1, 2, cx, topY + 1, 22);
+    ch.addColorStop(0, 'rgba(255,180,80,' + (0.55 * pulse).toFixed(2) + ')');
+    ch.addColorStop(1, 'rgba(255,180,80,0)');
+    g.fillStyle = ch; g.fillRect(cx - 24, topY - 20, 48, 36);
+    // Lava trickle running down the left flank.
+    g.fillStyle = '#ff5418';
+    g.fillRect(cx - 10, topY + 4, 1, 18);
+    g.fillRect(cx - 9,  topY + 20, 1, 14);
+    g.fillRect(cx - 8,  topY + 32, 1, 12);
+    g.fillStyle = '#ffd048';
+    g.fillRect(cx - 10, topY + 4,  1, 4);
+    g.fillRect(cx - 9,  topY + 20, 1, 4);
+    // ----- Rising eruption plume -----
+    // Layered smoke puffs that scale up as they ascend; warmer tones
+    // near the crater, cooler / darker as they rise + drift.
+    var pCount = 12;
+    for (var p = 0; p < pCount; p++) {
+      var ph = ((t * 0.6 + p * 18) % 200);    // 0..200 cycle
+      var lift = ph * 0.6;                     // rise rate
+      var px = cx + Math.sin(ph * 0.05 + p) * (4 + ph * 0.04);
+      var py = topY - lift;
+      if (py < -10) continue;
+      var rad = 5 + ph * 0.08;
+      // Hue fades from warm orange near the crater to dark smoke up high.
+      var k = Math.min(1, ph / 180);
+      var rcol = Math.round(180 - k * 100);
+      var gcol = Math.round(110 - k * 70);
+      var bcol = Math.round(70 - k * 50);
+      var alpha = (1 - k) * 0.55 + 0.15;
+      var puff = g.createRadialGradient(px, py, 1, px, py, rad);
+      puff.addColorStop(0, 'rgba(' + rcol + ',' + gcol + ',' + bcol + ',' + alpha.toFixed(2) + ')');
+      puff.addColorStop(1, 'rgba(' + rcol + ',' + gcol + ',' + bcol + ',0)');
+      g.fillStyle = puff;
+      g.fillRect(px - rad, py - rad, rad * 2, rad * 2);
+    }
+    // Glowing lava flecks ejecting from the crater (small bright dots
+    // that arc up + sideways, then fade).
+    for (var f = 0; f < 8; f++) {
+      var fh = ((t * 0.8 + f * 22) % 140);
+      var arc = (fh - 70) / 70;                // -1..1 across the arc
+      var fx = cx + arc * 24 + (f - 4) * 1.2;
+      var fy = topY - (1 - arc * arc) * 32 - 4;
+      var fa = Math.max(0, 1 - fh / 140);
+      g.fillStyle = (fh < 60)
+        ? 'rgba(255,232,140,' + fa.toFixed(2) + ')'
+        : 'rgba(255,90,40,' + fa.toFixed(2) + ')';
+      g.fillRect(fx | 0, fy | 0, 1, 1);
     }
   }
   // Pine-tree row (taller, pointy silhouettes - for layered forest depth).
