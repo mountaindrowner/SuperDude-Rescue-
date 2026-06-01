@@ -11,9 +11,71 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.84` / `sdd-shell-v84`.
+- **Live build**: `v0.85` / `sdd-shell-v85`.
 
-### v0.84 — Adventure City intro teleport + level warp-in (latest)
+### v0.85 — Adventure City: 2x length, immersive tunnel, futuristic cars, tower entrance (latest)
+
+Big polish + scope pass on Day 8-1 driven by Mark's feedback:
+
+- **Stage doubled to 720 cols** (was 360). `level_8_1.js` rewritten
+  around three acts: cyber city 0-250, big tunnel 250-440, cyber-dawn
+  city + tower approach 440-720. `mapW = 11520` (was 5760). New
+  checkpoint at col 460 (post-tunnel) in addition to the mid-stage
+  one. Car spawners scaled out across the whole length.
+- **EXPANDED TUNNEL with above + below platforming.** Tunnel range
+  cols 250-440 (190 wide vs. the old 50). Multi-deck design:
+  - Lower street (row 11) with pits and ground cars
+  - Walkable UPPER DECK on row 6 (one-way `=` tiles) with strategic
+    gaps so jumping between deck islands is required
+  - Mid parkour platforms (row 8) bridging street → deck
+  - Two upper-deck car lanes inside the tunnel (cars driving ON
+    the overpass)
+  - Bonus core line along the upper deck
+  - Second signature pickup (`sunshield`) on the dawn-side deck
+  - `_cyDrawTunnelOverlay` rewritten: heavy interior multiply-darken
+    (deep navy across the visible tunnel range), warm lamp halos
+    every 64 world-px, hanging directional signs every 128 px,
+    ceiling girders + ceiling lamps every 96 px, portal walls at
+    entrance + exit, pillars every 64 px from skirt → street.
+    Result: the tunnel feels like an enclosed *room* you traverse
+    instead of an outdoor passing overpass. Skirt at world y 112-128
+    so the painted under-deck reads beneath the row-6 `=` tiles.
+  - Hard background swap to cyber-dawn at the midpoint (T_DAWN
+    = col 345) preserved.
+- **Cars: 50% bigger, 25% slower, more futuristic.** `Car` defaults
+  in entities.js: `w 22→33, h 10→15, spd 1.65 base`; spawner base
+  `1.125` per laneRow. Hover drone reskinned with twin underside
+  thrusters + side fins + antenna. Ground/sky coupe re-detailed:
+  neon underglow strip, aerodynamic canopy with directional glare
+  streak, LED headlight bar + red taillight strip, side vent slats,
+  dual rear thruster ports with warm glow, wider wheel arches with
+  rim highlights, occasional motion-line speed lines at full speed.
+- **Tower entrance instead of rescue NPCs at the goal.** New
+  `_cyDrawTowerEntrance` painter renders a tall facade at world cols
+  706-722: pinstripe pillars, lit-window grid (warm yellow + cyan
+  mix), arched double doors with pulsing warm-glow halo, ADVENTURE
+  TOWER signage panel above the doors, parapet spire + crown ledge.
+  Drawn AFTER the foreground layer so it isn't occluded. Level data:
+  new `towerEntrance: { col: 706, width: 16 }` field; old rescue
+  NPC spawns deleted; only the `timepart` at col 712 remains.
+- **Win = fade to black for day 8.** Adventure City's `state === 'won'`
+  branch now ramps a black overlay (winTimer/110) instead of the
+  yellow "DAY 8-1 COMPLETE!" banner, so the walk-into-the-tower
+  reads as a cinematic cut into the cityArrival cutscene. Other
+  levels keep the celebratory banner.
+- **Computer sprite scaled 1.25x in cinematics + warp-in.** In
+  the `cityIntro` prologue (run-in + arrived poses) and the level
+  warp-in, the pixDraw call is wrapped in a scale-around-baseline
+  context transform so the Computer reads larger against the lab /
+  city backdrops.
+- Verified via puppeteer with cache-bust + frozen world (set
+  `stepWorld = update = noop` so the RAF loop doesn't reset the
+  forced camera position before screenshot). Captured prologue beats,
+  warp-in stages, all stage cams (start → pretun → 4× tunnel views
+  → post → tower entrance close-up), car showcase inside the tunnel,
+  and the fade-to-black on win. Zero page errors.
+
+### v0.84 — Adventure City intro teleport + level warp-in
 
 Mark's note: the opening cinematic should begin *as Super Dude Danny
 teleports away with the time machine*, then the Computer walks in; and

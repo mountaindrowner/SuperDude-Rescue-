@@ -5683,6 +5683,139 @@ window.SDD = window.SDD || {};
     g.fillRect(ax, ay + 2, 8, 1);
   }
 
+  // v0.85: ADVENTURE TOWER entrance painted at the end of Day 8-1.
+  // Replaces the rescue-NPC lineup at the goal - Mark wants the stage
+  // to end with a closed tower entrance we walk through into the
+  // cinematic. Tall tower facade + lit double doors + glowing
+  // ADVENTURE TOWER signage on the parapet.
+  function _cyDrawTowerEntrance(g, camx, camy, t, ent) {
+    var T = C.TILE;
+    var wx0 = ent.col * T;
+    var ww  = (ent.width || 16) * T;
+    var sx0 = Math.round(wx0 - camx);
+    if (sx0 + ww < -8 || sx0 > 328) return;
+    var groundY = 176 - camy;
+    var topY    = 0 - camy;
+
+    // Facade body (dark teal-grey block).
+    g.fillStyle = '#1a2a44';
+    g.fillRect(sx0, topY, ww, groundY - topY);
+    // Highlight pillar edges.
+    g.fillStyle = '#2a4a78';
+    g.fillRect(sx0, topY, 2, groundY - topY);
+    g.fillStyle = '#0c1424';
+    g.fillRect(sx0 + ww - 2, topY, 2, groundY - topY);
+    // Vertical pinstripes for tower height.
+    g.fillStyle = '#22365a';
+    for (var s = sx0 + 12; s < sx0 + ww - 12; s += 14) {
+      g.fillRect(s, topY + 8, 1, groundY - topY - 12);
+    }
+    // Horizontal floor seams.
+    g.fillStyle = '#0c1424';
+    for (var fy = topY + 24; fy < groundY - 20; fy += 18) {
+      g.fillRect(sx0 + 4, fy, ww - 8, 1);
+    }
+    // Lit windows in a grid (warm yellows + a few cyan).
+    var winCols = 5, winRows = 6;
+    var winW = 8, winH = 6;
+    var startX = sx0 + Math.floor((ww - (winCols * winW + (winCols - 1) * 4)) / 2);
+    for (var rr = 0; rr < winRows; rr++) {
+      for (var cc = 0; cc < winCols; cc++) {
+        var wxw = startX + cc * (winW + 4);
+        var wyw = topY + 30 + rr * 14;
+        if (wyw + winH > groundY - 32) continue;
+        // Hash so individual windows pick stable colours.
+        var hash = (rr * 31 + cc * 17 + ent.col) % 7;
+        var col;
+        if (hash < 4)      col = '#ffd070';
+        else if (hash < 6) col = '#ffe9a0';
+        else               col = '#7be0ff';
+        g.fillStyle = '#000000';
+        g.fillRect(wxw - 1, wyw - 1, winW + 2, winH + 2);
+        g.fillStyle = col;
+        g.fillRect(wxw, wyw, winW, winH);
+        g.fillStyle = 'rgba(255,255,255,0.55)';
+        g.fillRect(wxw, wyw, 1, 1);
+      }
+    }
+    // Door portal at the base, centered.
+    var doorW = 38, doorH = 56;
+    var doorX = sx0 + Math.floor((ww - doorW) / 2);
+    var doorY = groundY - doorH;
+    // Arch frame.
+    g.fillStyle = '#3a5a8a';
+    g.fillRect(doorX - 3, doorY - 4, doorW + 6, doorH + 4);
+    g.fillStyle = '#0c1424';
+    g.fillRect(doorX, doorY, doorW, doorH);
+    // Door body (split double doors with a seam).
+    var doorGrad = g.createLinearGradient(doorX, doorY, doorX, doorY + doorH);
+    doorGrad.addColorStop(0,   '#3a6098');
+    doorGrad.addColorStop(0.6, '#1c3870');
+    doorGrad.addColorStop(1,   '#0c1424');
+    g.fillStyle = doorGrad;
+    g.fillRect(doorX + 2, doorY + 2, doorW - 4, doorH - 4);
+    // Center seam.
+    g.fillStyle = '#0c1424';
+    g.fillRect(doorX + doorW / 2 - 1, doorY + 2, 2, doorH - 4);
+    // Door inset panels.
+    g.fillStyle = 'rgba(255,255,255,0.10)';
+    g.fillRect(doorX + 4, doorY + 6, doorW / 2 - 7, doorH - 14);
+    g.fillRect(doorX + doorW / 2 + 3, doorY + 6, doorW / 2 - 7, doorH - 14);
+    // Door handles.
+    g.fillStyle = '#ffe89a';
+    g.fillRect(doorX + doorW / 2 - 6, doorY + doorH / 2, 2, 4);
+    g.fillRect(doorX + doorW / 2 + 4, doorY + doorH / 2, 2, 4);
+    // Threshold step.
+    g.fillStyle = '#6a8ab0';
+    g.fillRect(doorX - 6, groundY - 4, doorW + 12, 2);
+    g.fillStyle = '#0c1424';
+    g.fillRect(doorX - 6, groundY - 2, doorW + 12, 2);
+    // Warm door glow (pulses gently).
+    var pulse = 0.55 + Math.sin(t * 0.04) * 0.10;
+    var dg = g.createRadialGradient(doorX + doorW / 2, doorY + doorH - 6, 4,
+                                    doorX + doorW / 2, doorY + doorH - 6, 48);
+    dg.addColorStop(0, 'rgba(255,220,140,' + pulse.toFixed(2) + ')');
+    dg.addColorStop(1, 'rgba(255,200,80,0)');
+    g.fillStyle = dg;
+    g.fillRect(doorX - 24, doorY + doorH / 2 - 10, doorW + 48, doorH);
+    // ADVENTURE TOWER signage above the door (lit panel + text).
+    var sigW = Math.min(ww - 16, 102);
+    var sigH = 16;
+    var sigX = sx0 + Math.floor((ww - sigW) / 2);
+    var sigY = doorY - sigH - 10;
+    g.fillStyle = '#0c1424';
+    g.fillRect(sigX - 2, sigY - 2, sigW + 4, sigH + 4);
+    g.fillStyle = '#1a3a78';
+    g.fillRect(sigX, sigY, sigW, sigH);
+    g.fillStyle = '#3a6cb0';
+    g.fillRect(sigX, sigY, sigW, 2);
+    g.fillStyle = '#0c1424';
+    g.fillRect(sigX, sigY + sigH - 2, sigW, 2);
+    // Signage halo glow.
+    var sg = g.createLinearGradient(sigX, sigY - 6, sigX, sigY + sigH + 6);
+    sg.addColorStop(0,   'rgba(120,200,255,0)');
+    sg.addColorStop(0.5, 'rgba(120,200,255,0.22)');
+    sg.addColorStop(1,   'rgba(120,200,255,0)');
+    g.fillStyle = sg;
+    g.fillRect(sigX - 8, sigY - 6, sigW + 16, sigH + 12);
+    SDD.sprites.text(g, 'ADVENTURE TOWER', sigX + sigW / 2 - 1, sigY + 5, '#ffffff', 1, 'center');
+    // Apex spire on the parapet.
+    var spireX = sx0 + Math.floor(ww / 2);
+    g.fillStyle = '#0c1424';
+    g.fillRect(spireX - 1, topY - 6, 2, 8);
+    g.fillStyle = '#ff5a3a';
+    g.fillRect(spireX - 1, topY - 8, 2, 2);
+    if ((t >> 4) & 1) {
+      g.fillStyle = '#ffe89a';
+      g.fillRect(spireX, topY - 8, 1, 1);
+    }
+    // Crown ledge at the top.
+    g.fillStyle = '#22365a';
+    g.fillRect(sx0 - 2, topY - 2, ww + 4, 4);
+    g.fillStyle = '#3a6cb0';
+    g.fillRect(sx0 - 2, topY - 2, ww + 4, 1);
+  }
+
   function drawForeground_cyber(g, camx, camy, prog, t) {
     var S = SDD.sprites || {};
     var fgImg = S.cyberFg && S.cyberFg();
@@ -5851,122 +5984,207 @@ window.SDD = window.SDD || {};
   // the world tiles + entities + foreground.
   // =================================================================
   function _cyDrawTunnelOverlay(g, camx, camy, t) {
-    // Overpass world footprint - matches the tile-level extent in
-    // level_8_1.js. Cols 150-200 = world x 2400-3200.
-    var X0 = 2400, X1 = 3200;
+    // v0.85: EXTENDED multi-deck overpass. World cols 250-440 =
+    // x 4000-7040 (190 cols wide). The painted layer draws:
+    //   - a heavy interior darkening that makes the tunnel feel
+    //     enclosed (sky/city behind goes dim, structural detail pops)
+    //   - the underside skirt of the upper deck (world y 112-128)
+    //   - pillars dropping from the deck to the street every 64 px
+    //   - portal walls at the entrance + exit
+    //   - hanging lamps + ceiling girders + signs
+    // The walkable deck surface itself is the row 6 '=' tiles in
+    // the level data, so gaps in the deck stay visually consistent.
+    var X0 = 4000, X1 = 7040;
     var sx0 = X0 - camx;
     var sx1 = X1 - camx;
-    if (sx1 < -8 || sx0 > 328) return;   // off-screen
+    if (sx1 < -8 || sx0 > 328) return;
 
-    // Beam vertical extent (world y 56-100 covers rows ~3.5-6.25).
-    var beamY = 56 - camy;
-    var beamH = 44;
-
-    // Vertical entrance + exit columns (concrete pillars dropping
-    // from the beam to the road). World y 100 to 176 covers rows
-    // 6.25 to 11.
-    var colW = 8;
-    var colY = beamY + beamH;
-    var colH = (176 - camy) - colY;
-
-    function pillar(cx) {
-      if (cx < -10 || cx > 330) return;
-      g.fillStyle = '#22232C';
-      g.fillRect(cx, colY, colW, colH);
-      g.fillStyle = '#3D3F4A';
-      g.fillRect(cx + colW - 1, colY, 1, colH);
-      g.fillStyle = '#5E6173';
-      g.fillRect(cx, colY, 1, colH);
-      // Capital flare at the top.
-      g.fillStyle = '#22232C';
-      g.fillRect(cx - 2, colY, colW + 4, 3);
-      g.fillStyle = '#3D3F4A';
-      g.fillRect(cx - 2, colY, colW + 4, 1);
-      // Base flare at the bottom.
-      g.fillStyle = '#22232C';
-      g.fillRect(cx - 2, colY + colH - 3, colW + 4, 3);
+    // INTERIOR DARKENING. Multiply a deep navy across the visible
+    // tunnel range so the bright background city dims out and reads
+    // as "inside a tunnel". Skip the small flare zones at the portal
+    // walls so the entrance + exit feel transitional.
+    var darkLo = Math.max(0, sx0);
+    var darkHi = Math.min(320, sx1);
+    if (darkLo < darkHi) {
+      g.save();
+      g.globalCompositeOperation = 'multiply';
+      var grd = g.createLinearGradient(0, 0, 0, 180);
+      grd.addColorStop(0,    '#0a1424');
+      grd.addColorStop(0.45, '#142640');
+      grd.addColorStop(1,    '#0a1018');
+      g.fillStyle = grd;
+      g.fillRect(darkLo, 0, darkHi - darkLo, 180);
+      g.restore();
+      // Atmospheric haze layer (volumetric tint) - normal blend on top
+      // of multiply so warm lamp halos read against the dim interior.
+      g.fillStyle = 'rgba(20,30,60,0.30)';
+      g.fillRect(darkLo, 0, darkHi - darkLo, 180);
     }
-    pillar(sx0);
-    pillar(sx1 - colW);
 
-    // Beam body (concrete).
-    if (sx0 < 320 && sx1 > 0) {
-      var lo = Math.max(-2, sx0);
-      var hi = Math.min(322, sx1);
+    // Underside skirt of the deck (visible from street level).
+    var skirtY = 112 - camy;
+    var skirtH = 16;
+    // Top-of-deck railing strip (thin, hugs the deck top).
+    var railY = 94 - camy;
+    var railH = 2;
+    // Pillar span from skirt to street.
+    var streetY = 176 - camy;
+
+    var lo = Math.max(-2, sx0);
+    var hi = Math.min(322, sx1);
+    if (lo < hi) {
+      // Underside skirt body.
       g.fillStyle = '#3D3F4A';
-      g.fillRect(lo, beamY, hi - lo, beamH);
-      // Top edge (sunlit).
-      g.fillStyle = '#5E6173';
-      g.fillRect(lo, beamY, hi - lo, 1);
+      g.fillRect(lo, skirtY, hi - lo, skirtH);
+      // Top sunlit edge.
       g.fillStyle = '#7A7E8E';
-      g.fillRect(lo, beamY + 1, hi - lo, 1);
-      // Bottom drip line.
-      g.fillStyle = '#22232C';
-      g.fillRect(lo, beamY + beamH - 2, hi - lo, 1);
-      g.fillStyle = '#0E0C14';
-      g.fillRect(lo, beamY + beamH - 1, hi - lo, 1);
-
-      // Horizontal panel seams across the beam.
-      g.fillStyle = '#2A2A33';
-      g.fillRect(lo, beamY + 12, hi - lo, 1);
-      g.fillRect(lo, beamY + 24, hi - lo, 1);
-      g.fillRect(lo, beamY + 36, hi - lo, 1);
-      // Rivet line under the panel seams.
+      g.fillRect(lo, skirtY, hi - lo, 1);
       g.fillStyle = '#5E6173';
-      for (var rv = Math.ceil(lo / 16) * 16; rv < hi; rv += 16) {
-        if (rv >= -2 && rv <= 322) {
-          g.fillRect(rv, beamY + 13, 1, 1);
-          g.fillRect(rv, beamY + 25, 1, 1);
+      g.fillRect(lo, skirtY + 1, hi - lo, 1);
+      // Bottom drip lines.
+      g.fillStyle = '#22232C';
+      g.fillRect(lo, skirtY + skirtH - 2, hi - lo, 1);
+      g.fillStyle = '#0E0C14';
+      g.fillRect(lo, skirtY + skirtH - 1, hi - lo, 1);
+      // Horizontal panel seam mid-skirt.
+      g.fillStyle = '#2A2A33';
+      g.fillRect(lo, skirtY + 7, hi - lo, 1);
+      // Rivet beads spaced every 16 world-px.
+      g.fillStyle = '#7A7E8E';
+      for (var rv = Math.ceil((camx + lo) / 16) * 16 - camx; rv < hi; rv += 16) {
+        if (rv >= lo - 2 && rv <= hi + 2) {
+          g.fillRect(rv, skirtY + 4, 1, 1);
+          g.fillRect(rv, skirtY + 10, 1, 1);
         }
       }
+      // Top-deck low railing (thin dark strip just above the deck
+      // line so the deck reads as edged).
+      g.fillStyle = '#1A1B22';
+      g.fillRect(lo, railY, hi - lo, railH);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(lo, railY + 1, hi - lo, 1);
+    }
 
-      // Warm wall lamps mounted on the underside. World-spaced
-      // every 64 px so they stay aligned with the level as the
-      // camera scrolls.
-      var lampSpacing = 64;
-      for (var lwx = X0 + 32; lwx < X1; lwx += lampSpacing) {
-        var lsx = lwx - camx;
-        if (lsx < -10 || lsx > 330) continue;
-        var lsy = beamY + beamH - 4;
-        // Halo first (so bracket paints on top).
-        var halo = g.createRadialGradient(lsx, lsy + 4, 2, lsx, lsy + 4, 28);
-        halo.addColorStop(0,   'rgba(255,200,120,0.55)');
-        halo.addColorStop(0.5, 'rgba(255,160,80,0.20)');
-        halo.addColorStop(1,   'rgba(255,160,80,0)');
-        g.fillStyle = halo;
-        g.fillRect(lsx - 22, lsy - 4, 44, 36);
-        // Bracket.
-        g.fillStyle = '#0A0608';
-        g.fillRect(lsx - 1, lsy, 3, 4);
-        // Bulb.
-        g.fillStyle = '#FFE0A0';
-        g.fillRect(lsx - 1, lsy + 2, 2, 2);
-        g.fillStyle = '#FFFFFF';
-        g.fillRect(lsx,     lsy + 2, 1, 1);
-      }
+    // PILLARS every 64 world-px, dropping from skirt bottom to street.
+    var pillarSpacing = 64;
+    var colW = 8;
+    for (var pwx = X0 + 16; pwx < X1; pwx += pillarSpacing) {
+      var psx = pwx - camx;
+      if (psx < -12 || psx > 332) continue;
+      var pcolY = skirtY + skirtH;
+      var pcolH = streetY - pcolY;
+      // Pillar body.
+      g.fillStyle = '#22232C';
+      g.fillRect(psx, pcolY, colW, pcolH);
+      // Right edge highlight.
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(psx + colW - 1, pcolY, 1, pcolH);
+      // Left edge sunlit.
+      g.fillStyle = '#5E6173';
+      g.fillRect(psx, pcolY, 1, pcolH);
+      // Capital flare at the top.
+      g.fillStyle = '#22232C';
+      g.fillRect(psx - 2, pcolY, colW + 4, 3);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(psx - 2, pcolY, colW + 4, 1);
+      // Base flare at the bottom.
+      g.fillStyle = '#22232C';
+      g.fillRect(psx - 2, pcolY + pcolH - 3, colW + 4, 3);
+    }
 
-      // Sign panel slung under the beam at the entrance side - small
-      // green directional ("3RD ST →" vibe).
-      var signX = sx0 + 22;
-      if (signX > -20 && signX < 320) {
-        var signY = beamY + beamH + 2;
-        g.fillStyle = '#1A1E2A';
-        g.fillRect(signX, signY, 22, 8);
-        g.fillStyle = '#3A8060';
-        g.fillRect(signX + 1, signY + 1, 20, 6);
-        g.fillStyle = '#5AAA80';
-        g.fillRect(signX + 1, signY + 1, 20, 1);
-        g.fillStyle = '#E8E8E8';
-        g.fillRect(signX + 3, signY + 3, 3, 1);
-        g.fillRect(signX + 3, signY + 5, 3, 1);
-        g.fillRect(signX + 8, signY + 3, 2, 3);
-        g.fillRect(signX + 13, signY + 3, 4, 1);
-        g.fillRect(signX + 13, signY + 5, 4, 1);
-        // Hanging cables from the beam down to the sign.
-        g.fillStyle = '#22232C';
-        g.fillRect(signX + 2,  signY - 2, 1, 2);
-        g.fillRect(signX + 19, signY - 2, 1, 2);
-      }
+    // PORTAL WALL pieces at the entrance + exit (full-height frames
+    // so the tunnel reads as a "room").
+    function portalWall(cx) {
+      if (cx < -16 || cx > 336) return;
+      var pwTop = 0 - camy;
+      var pwBot = streetY;
+      // Wall body.
+      g.fillStyle = '#22232C';
+      g.fillRect(cx - 6, pwTop, 12, pwBot - pwTop);
+      // Lit edge facing into the tunnel.
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(cx, pwTop, 1, pwBot - pwTop);
+      g.fillStyle = '#5E6173';
+      g.fillRect(cx - 6, pwTop, 1, pwBot - pwTop);
+      // Mid panel seam.
+      g.fillStyle = '#0E0C14';
+      g.fillRect(cx - 6, pwTop + 40, 12, 1);
+      g.fillRect(cx - 6, pwTop + 100, 12, 1);
+    }
+    portalWall(sx0);
+    portalWall(sx1);
+
+    // Warm wall lamps mounted on the deck underside, every 64 px.
+    var lampSpacing = 64;
+    for (var lwx = X0 + 32; lwx < X1; lwx += lampSpacing) {
+      var lsx = lwx - camx;
+      if (lsx < -10 || lsx > 330) continue;
+      var lsy = skirtY + skirtH - 3;
+      var halo = g.createRadialGradient(lsx, lsy + 6, 2, lsx, lsy + 6, 32);
+      halo.addColorStop(0,   'rgba(255,200,120,0.60)');
+      halo.addColorStop(0.5, 'rgba(255,160,80,0.22)');
+      halo.addColorStop(1,   'rgba(255,160,80,0)');
+      g.fillStyle = halo;
+      g.fillRect(lsx - 24, lsy - 4, 48, 40);
+      g.fillStyle = '#0A0608';
+      g.fillRect(lsx - 1, lsy, 3, 4);
+      g.fillStyle = '#FFE0A0';
+      g.fillRect(lsx - 1, lsy + 2, 2, 2);
+      g.fillStyle = '#FFFFFF';
+      g.fillRect(lsx,     lsy + 2, 1, 1);
+    }
+
+    // Periodic directional signs hung from the underside (every
+    // 128 world-px).
+    var signSpacing = 128;
+    for (var swx = X0 + 80; swx < X1 - 30; swx += signSpacing) {
+      var ssx = swx - camx;
+      if (ssx < -30 || ssx > 340) continue;
+      var ssy = skirtY + skirtH + 2;
+      g.fillStyle = '#1A1E2A';
+      g.fillRect(ssx, ssy, 22, 8);
+      g.fillStyle = '#3A8060';
+      g.fillRect(ssx + 1, ssy + 1, 20, 6);
+      g.fillStyle = '#5AAA80';
+      g.fillRect(ssx + 1, ssy + 1, 20, 1);
+      g.fillStyle = '#E8E8E8';
+      g.fillRect(ssx + 3, ssy + 3, 3, 1);
+      g.fillRect(ssx + 3, ssy + 5, 3, 1);
+      g.fillRect(ssx + 8, ssy + 3, 2, 3);
+      g.fillRect(ssx + 13, ssy + 3, 4, 1);
+      g.fillRect(ssx + 13, ssy + 5, 4, 1);
+      g.fillStyle = '#22232C';
+      g.fillRect(ssx + 2,  ssy - 2, 1, 2);
+      g.fillRect(ssx + 19, ssy - 2, 1, 2);
+    }
+
+    // Ceiling girders (cross beams above the deck) every 96 world-px
+    // - thin shadow trusses high up so the tunnel has depth above
+    // the player. Visible at world y 30-44.
+    var girderSpacing = 96;
+    for (var gwx = X0 + 48; gwx < X1; gwx += girderSpacing) {
+      var gsx = gwx - camx;
+      if (gsx < -16 || gsx > 336) continue;
+      var gy = 30 - camy;
+      g.fillStyle = '#1A1B22';
+      g.fillRect(gsx - 14, gy, 28, 3);
+      g.fillStyle = '#3D3F4A';
+      g.fillRect(gsx - 14, gy, 28, 1);
+      g.fillStyle = '#0E0C14';
+      g.fillRect(gsx - 14, gy + 3, 28, 1);
+      // Hanging chain to a small ceiling lamp.
+      g.fillStyle = '#22232C';
+      g.fillRect(gsx, gy + 4, 1, 5);
+      g.fillStyle = '#FFE0A0';
+      g.fillRect(gsx - 1, gy + 9, 3, 2);
+      g.fillStyle = '#FFFFFF';
+      g.fillRect(gsx, gy + 9, 1, 1);
+      // Halo on the ceiling lamp.
+      var ch = g.createRadialGradient(gsx, gy + 10, 1, gsx, gy + 10, 18);
+      ch.addColorStop(0, 'rgba(255,200,120,0.45)');
+      ch.addColorStop(1, 'rgba(255,160,80,0)');
+      g.fillStyle = ch;
+      g.fillRect(gsx - 16, gy + 4, 32, 20);
     }
   }
 
@@ -6232,6 +6450,8 @@ window.SDD = window.SDD || {};
       // v0.76: optional persistent directional signpost near the
       // stage start (Adventure City). { col, label } in world tiles.
       this.startSign = L.startSign || null;
+      // v0.85: Adventure City tower entrance painter target.
+      this.towerEntrance = L.towerEntrance || null;
       // Mode flags - Player.update reads these via the level reference
       // it gets each frame.
       this.flappy = !!L.flappy;
@@ -6993,7 +7213,16 @@ window.SDD = window.SDD || {};
         wg.addColorStop(0.5, 'rgba(110,180,255,' + (glowA * 0.6).toFixed(2) + ')');
         wg.addColorStop(1, 'rgba(110,180,255,0)');
         g.fillStyle = wg; g.fillRect(wcx - 36, wbase - 52, 72, 64);
-        if (SDD.sprites.pixDraw) SDD.sprites.pixDraw(g, 'big', 'comp_warp', 'south', wf, wcx, wbase);
+        if (SDD.sprites.pixDraw) {
+          // v0.85: warp-in sprite scaled 1.25x to match the prologue
+          // Computer (Mark: same as the cinematic, increase 25%).
+          g.save();
+          g.translate(wcx, wbase);
+          g.scale(1.25, 1.25);
+          g.translate(-wcx, -wbase);
+          SDD.sprites.pixDraw(g, 'big', 'comp_warp', 'south', wf, wcx, wbase);
+          g.restore();
+        }
       } else {
         this.player.draw(g, cam);
       }
@@ -7037,13 +7266,29 @@ window.SDD = window.SDD || {};
       var fgFn = FOREGROUNDS[fgTheme];
       if (fgFn) fgFn(g, cam.x, cam.y, prog, this.timeSteps);
 
+      // v0.85: tower entrance paints AFTER foreground so the painted
+      // facade isn't occluded by Layer-1 anchor silhouettes near the
+      // right edge of the stage.
+      if (this.towerEntrance) {
+        _cyDrawTowerEntrance(g, cam.x, cam.y, this.timeSteps, this.towerEntrance);
+      }
+
       this.drawHUD(g);
       this.drawSignatureHint(g);
 
       if (this.state === 'won') {
-        var sf = SDD.save.stagesForDay(this.day);
-        var msg = sf > 1 ? ('DAY ' + this.day + '-' + this.stage + ' COMPLETE!') : ('DAY ' + this.day + ' COMPLETE!');
-        this.drawBanner(g, msg, '#ffd23a');
+        // v0.85: Adventure City fades to black so the tower-entrance
+        // walk-through reads as "we go inside, cut to cutscene". The
+        // other levels keep the celebratory COMPLETE banner.
+        if (this.day === 8) {
+          var fa = Math.min(1, this.winTimer / 110);
+          g.fillStyle = 'rgba(0,0,0,' + fa.toFixed(2) + ')';
+          g.fillRect(0, 0, 320, 180);
+        } else {
+          var sf = SDD.save.stagesForDay(this.day);
+          var msg = sf > 1 ? ('DAY ' + this.day + '-' + this.stage + ' COMPLETE!') : ('DAY ' + this.day + ' COMPLETE!');
+          this.drawBanner(g, msg, '#ffd23a');
+        }
       }
       if (this.state === 'gameover') this.drawBanner(g, 'GAME OVER', '#ff5d4a');
       if (this.state === 'paused') this.drawPause(g);
@@ -8269,8 +8514,15 @@ window.SDD = window.SDD || {};
         spot.addColorStop(1, 'rgba(120,200,255,0)');
         g.fillStyle = spot; g.fillRect(cxp - 44, cy - 54, 88, 58);
         if (SDD.sprites.pixDraw) {
+          // v0.85: Computer scaled 1.25x in the prologue per Mark - the
+          // run-in + arrived idle felt small against the lab backdrop.
+          g.save();
+          g.translate(cxp, cy);
+          g.scale(1.25, 1.25);
+          g.translate(-cxp, -cy);
           if (walking) SDD.sprites.pixDraw(g, 'big', 'comp_run', 'east', Math.floor(cl / 4) % 8, cxp, cy);
           else SDD.sprites.pixDraw(g, 'comp2', 'concerned', 'south', Math.floor(cl / 5) % 17, cxp, cy);
+          g.restore();
         }
         // A startled "!" once he arrives and sees the wreck.
         if (!walking && (cl % 60 < 38)) {

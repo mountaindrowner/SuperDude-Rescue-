@@ -2837,10 +2837,13 @@ window.SDD = window.SDD || {};
   function Car(x, y, opts) {
     opts = opts || {};
     this.x = x; this.y = y;
-    this.w = opts.w || 22;
-    this.h = opts.h || 10;
+    // v0.85: cars 50% bigger + sleeker / more futuristic detail layer
+    // (Mark: "higher definition style wise, more futuristic"). Base
+    // box 33x15; drones still tuned at 36x14.
+    this.w = opts.w || 33;
+    this.h = opts.h || 15;
     this.dir = opts.dir || -1;
-    this.spd = opts.spd || 2.2;
+    this.spd = opts.spd || 1.65;
     this.color = opts.color || '#46f0ff';
     this.warnT = (opts.warnT != null) ? opts.warnT : 30;
     this.harmless = this.warnT > 0;
@@ -2905,87 +2908,156 @@ window.SDD = window.SDD || {};
       var trailX2 = (this.dir > 0) ? dx - 9 : dx + this.w + 4;
       ctx.fillRect(trailX2, dy + 3, 4, this.h - 6);
     }
-    // Car body. Drone-lane gets a hovercraft variant (oval pod with
-    // thruster); ground + low-sky get a sleek pixel-art coupe with
-    // windshield reflection, fender skirts, and rounded body.
+    // Car body. Drone-lane = sleek hover pod with twin thrusters;
+    // ground + low-sky = futuristic coupe with neon underglow,
+    // canopy, dual rear thrusters, side vents, racing seam, antenna.
     var isDrone = this.y < 80;
+    var W = this.w, H = this.h;
     if (isDrone) {
-      // HOVER DRONE: oval pod + glow underside.
-      ctx.fillStyle = '#0a1020';
-      ctx.fillRect(dx + 2, dy, this.w - 4, this.h);
-      ctx.fillRect(dx, dy + 2, this.w, this.h - 4);
+      // HOVER POD: wider oval shell + dual underside thrusters.
+      ctx.fillStyle = '#070a18';
+      ctx.fillRect(dx + 3, dy, W - 6, H);
+      ctx.fillRect(dx + 1, dy + 2, W - 2, H - 4);
+      ctx.fillRect(dx, dy + 4, W, H - 8);
       ctx.fillStyle = this.color;
-      ctx.fillRect(dx + 3, dy + 1, this.w - 6, this.h - 2);
-      ctx.fillRect(dx + 1, dy + 3, this.w - 2, this.h - 6);
-      // Cockpit dome.
-      ctx.fillStyle = '#aaeaff';
-      ctx.fillRect(dx + this.w / 2 - 3, dy + 1, 6, 3);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(dx + this.w / 2 - 2, dy + 1, 2, 1);
-      // Thruster underside glow.
-      ctx.fillStyle = 'rgba(90,240,255,0.7)';
-      ctx.fillRect(dx + 3, dy + this.h, this.w - 6, 1);
-      ctx.fillStyle = 'rgba(90,240,255,0.35)';
-      ctx.fillRect(dx + 1, dy + this.h + 1, this.w - 2, 1);
-      ctx.fillStyle = 'rgba(255,250,200,0.45)';
-      ctx.fillRect(dx + this.w / 2 - 1, dy + this.h, 2, 3);
-      // Side fins.
-      ctx.fillStyle = '#1a3050';
-      ctx.fillRect(dx, dy + 4, 2, 2);
-      ctx.fillRect(dx + this.w - 2, dy + 4, 2, 2);
-    } else {
-      // GROUND/SKY CAR: sleek coupe with windshield + chassis.
-      // Lower chassis (darker).
-      ctx.fillStyle = '#0a1020';
-      ctx.fillRect(dx + 1, dy + 3, this.w - 2, this.h - 3);
-      // Main body (this.color).
-      ctx.fillStyle = this.color;
-      ctx.fillRect(dx + 2, dy + 2, this.w - 4, this.h - 4);
-      // Round front + rear corners.
-      ctx.fillStyle = this.color;
-      ctx.fillRect(dx + 1, dy + 3, 1, this.h - 5);
-      ctx.fillRect(dx + this.w - 2, dy + 3, 1, this.h - 5);
-      // Highlight stripe along the top of the body.
-      var lighter = 'rgba(255,255,255,0.30)';
-      ctx.fillStyle = lighter;
-      ctx.fillRect(dx + 2, dy + 2, this.w - 4, 1);
-      // Roof / windshield.
-      ctx.fillStyle = '#1a3050';
-      var roofX = dx + 5, roofW = this.w - 10;
-      ctx.fillRect(roofX, dy - 2, roofW, 4);
-      // Windshield reflection (lighter blue).
+      ctx.fillRect(dx + 4, dy + 1, W - 8, H - 2);
+      ctx.fillRect(dx + 2, dy + 3, W - 4, H - 6);
+      // Body highlight band.
+      ctx.fillStyle = 'rgba(255,255,255,0.32)';
+      ctx.fillRect(dx + 4, dy + 1, W - 8, 1);
+      // Dark belly seam.
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(dx + 4, dy + H - 4, W - 8, 1);
+      // Cockpit canopy (wide).
+      var cw = Math.floor(W * 0.42);
+      var cxc = dx + Math.floor((W - cw) / 2);
+      ctx.fillStyle = '#0c1830';
+      ctx.fillRect(cxc, dy + 2, cw, 5);
       ctx.fillStyle = '#5a96d4';
-      ctx.fillRect(roofX + 1, dy - 1, roofW - 2, 1);
+      ctx.fillRect(cxc + 1, dy + 3, cw - 2, 2);
       ctx.fillStyle = '#aaeaff';
-      ctx.fillRect(roofX + 2, dy - 1, 2, 1);
-      // Headlight pair.
-      var hx = (this.dir > 0) ? (dx + this.w - 2) : dx;
-      ctx.fillStyle = '#fff8a0';
-      ctx.fillRect(hx, dy + 3, 2, 2);
+      ctx.fillRect(cxc + 2, dy + 3, 3, 1);
+      // Twin underside thrusters with glow.
+      var th1 = dx + 4, th2 = dx + W - 8;
+      ctx.fillStyle = 'rgba(110,240,255,0.75)';
+      ctx.fillRect(th1, dy + H, 4, 1);
+      ctx.fillRect(th2, dy + H, 4, 1);
+      ctx.fillStyle = 'rgba(110,240,255,0.35)';
+      ctx.fillRect(th1 - 1, dy + H + 1, 6, 1);
+      ctx.fillRect(th2 - 1, dy + H + 1, 6, 1);
+      ctx.fillStyle = 'rgba(255,250,200,0.55)';
+      ctx.fillRect(th1 + 1, dy + H, 2, 2);
+      ctx.fillRect(th2 + 1, dy + H, 2, 2);
+      // Side fins (wing tips).
+      ctx.fillStyle = '#0c1830';
+      ctx.fillRect(dx, dy + 6, 2, 3);
+      ctx.fillRect(dx + W - 2, dy + 6, 2, 3);
+      ctx.fillStyle = this.color;
+      ctx.fillRect(dx, dy + 7, 1, 1);
+      ctx.fillRect(dx + W - 1, dy + 7, 1, 1);
+      // Antenna.
+      ctx.fillStyle = '#0c1830';
+      ctx.fillRect(dx + Math.floor(W / 2), dy - 2, 1, 2);
+      ctx.fillStyle = '#ff5a5a';
+      ctx.fillRect(dx + Math.floor(W / 2), dy - 3, 1, 1);
+    } else {
+      // GROUND/SKY COUPE: low-slung futuristic body.
+      // Underglow neon strip (the car's "ground effect").
+      ctx.fillStyle = 'rgba(110,220,255,0.40)';
+      ctx.fillRect(dx + 3, dy + H - 1, W - 6, 1);
+      ctx.fillStyle = 'rgba(110,220,255,0.22)';
+      ctx.fillRect(dx + 2, dy + H, W - 4, 1);
+      // Shadow drop under the car.
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(dx + 4, dy + H + 1, W - 8, 1);
+      // Lower chassis (deep dark).
+      ctx.fillStyle = '#06080e';
+      ctx.fillRect(dx + 1, dy + 4, W - 2, H - 5);
+      ctx.fillRect(dx + 2, dy + 3, W - 4, H - 4);
+      // Main body in this.color with rounded front + rear.
+      ctx.fillStyle = this.color;
+      ctx.fillRect(dx + 3, dy + 3, W - 6, H - 6);
+      ctx.fillRect(dx + 2, dy + 4, W - 4, H - 7);
+      ctx.fillRect(dx + 1, dy + 5, W - 2, H - 9);
+      // Top hi-light gradient stripe.
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillRect(dx + 3, dy + 3, W - 6, 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
+      ctx.fillRect(dx + 3, dy + 4, W - 6, 1);
+      // Mid-body accent band (deeper saturate of this.color).
+      ctx.fillStyle = 'rgba(0,0,0,0.20)';
+      ctx.fillRect(dx + 3, dy + Math.floor(H / 2), W - 6, 1);
+      // Aerodynamic canopy / windshield, swept back from the dir.
+      var roofX = dx + 5, roofW = W - 12;
+      // Pillars.
+      ctx.fillStyle = '#06080e';
+      ctx.fillRect(roofX - 1, dy - 1, 1, 4);
+      ctx.fillRect(roofX + roofW, dy - 1, 1, 4);
+      // Canopy darken.
+      ctx.fillStyle = '#0c1830';
+      ctx.fillRect(roofX, dy - 3, roofW, 5);
+      // Glass tint.
+      ctx.fillStyle = '#2a4a78';
+      ctx.fillRect(roofX + 1, dy - 2, roofW - 2, 3);
+      ctx.fillStyle = '#5a96d4';
+      ctx.fillRect(roofX + 1, dy - 2, roofW - 2, 1);
+      // Glare streak (forward facing).
+      ctx.fillStyle = '#aaeaff';
+      var glareX = (this.dir > 0) ? (roofX + roofW - 4) : (roofX + 1);
+      ctx.fillRect(glareX, dy - 2, 3, 1);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(hx, dy + 3, 1, 1);
-      // Taillight on the OPPOSITE end.
-      var tx = (this.dir > 0) ? dx : (dx + this.w - 1);
-      ctx.fillStyle = '#ff4040';
-      ctx.fillRect(tx, dy + 4, 1, 1);
-      // Side window slit (between roof + body).
-      ctx.fillStyle = '#0a0e20';
-      ctx.fillRect(roofX + 2, dy + 1, roofW - 4, 1);
-      // Wheel arches + wheels.
-      ctx.fillStyle = '#0a0a14';
-      ctx.fillRect(dx + 3, dy + this.h - 1, 4, 1);
-      ctx.fillRect(dx + this.w - 7, dy + this.h - 1, 4, 1);
-      // Wheels (round-ish pixel).
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(dx + 3, dy + this.h - 2, 4, 2);
-      ctx.fillRect(dx + this.w - 7, dy + this.h - 2, 4, 2);
-      // Wheel hub highlight.
-      ctx.fillStyle = '#5a5a5a';
-      ctx.fillRect(dx + 4, dy + this.h - 2, 1, 1);
-      ctx.fillRect(dx + this.w - 6, dy + this.h - 2, 1, 1);
-      // Door seam.
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(dx + this.w / 2, dy + 2, 1, this.h - 4);
+      ctx.fillRect(glareX + (this.dir > 0 ? 1 : 0), dy - 2, 1, 1);
+      // Headlight bar (full-width slim LED, brighter pixel on the lead).
+      var hx0 = (this.dir > 0) ? (dx + W - 4) : (dx + 1);
+      ctx.fillStyle = '#fff8a0';
+      ctx.fillRect(hx0, dy + 5, 3, 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(hx0 + (this.dir > 0 ? 1 : 1), dy + 5, 1, 1);
+      // Taillight strip (red LED bar on the trailing edge).
+      var tx0 = (this.dir > 0) ? (dx + 1) : (dx + W - 3);
+      ctx.fillStyle = '#ff3030';
+      ctx.fillRect(tx0, dy + 6, 2, 2);
+      ctx.fillStyle = '#ff8080';
+      ctx.fillRect(tx0, dy + 6, 1, 1);
+      // Side vent slats (2 angled marks along the door panel).
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      var vx = dx + Math.floor(W * 0.40);
+      ctx.fillRect(vx,     dy + Math.floor(H / 2) + 1, 3, 1);
+      ctx.fillRect(vx + 4, dy + Math.floor(H / 2) + 1, 3, 1);
+      // Rear dual thruster ports + glow on the trailing edge.
+      var thX = (this.dir > 0) ? (dx + 1) : (dx + W - 3);
+      ctx.fillStyle = '#06080e';
+      ctx.fillRect(thX, dy + 8, 2, 2);
+      ctx.fillStyle = 'rgba(255,180,80,0.85)';
+      ctx.fillRect(thX, dy + 8, 2, 1);
+      ctx.fillStyle = 'rgba(255,140,60,0.45)';
+      var glowX = (this.dir > 0) ? (thX - 4) : (thX + 2);
+      ctx.fillRect(glowX, dy + 8, 4, 1);
+      // Wheel arches (wider).
+      ctx.fillStyle = '#02030a';
+      ctx.fillRect(dx + 4, dy + H - 2, 7, 2);
+      ctx.fillRect(dx + W - 11, dy + H - 2, 7, 2);
+      // Wheels.
+      ctx.fillStyle = '#161620';
+      ctx.fillRect(dx + 4, dy + H - 3, 7, 3);
+      ctx.fillRect(dx + W - 11, dy + H - 3, 7, 3);
+      // Wheel rim highlight.
+      ctx.fillStyle = '#7a86a0';
+      ctx.fillRect(dx + 6, dy + H - 3, 3, 1);
+      ctx.fillRect(dx + W - 9, dy + H - 3, 3, 1);
+      ctx.fillStyle = '#bbc8e0';
+      ctx.fillRect(dx + 7, dy + H - 3, 1, 1);
+      ctx.fillRect(dx + W - 8, dy + H - 3, 1, 1);
+      // Door seam (subtle).
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(dx + Math.floor(W / 2), dy + 4, 1, H - 7);
+      // Speed motion lines along the body when moving (only at speed).
+      if (this.warnT === 0 && (this.t % 6 < 3)) {
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        var ml = (this.dir > 0) ? (dx - 2) : (dx + W);
+        ctx.fillRect(ml, dy + 6, 2, 1);
+        ctx.fillRect(ml + (this.dir > 0 ? -3 : 3), dy + 9, 1, 1);
+      }
     }
   };
 
