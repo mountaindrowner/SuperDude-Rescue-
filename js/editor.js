@@ -730,6 +730,10 @@ window.SDD = window.SDD || {};
       this.zoom = loadZoom();
       this.t = 0;
       this.hoverCol = -1; this.hoverRow = -1;
+      // v0.86: editor shows the full layer stack (sky / parallax / tunnel
+      // overlay / foreground) so multi-layer stages like Adventure City
+      // can be edited in context. Toggle with L.
+      this.showLayers = true;
       this.loadStage();
       this.ui = buildUI(this);
       this.installCanvasHandlers();
@@ -1034,6 +1038,9 @@ window.SDD = window.SDD || {};
       if (k === '3') { e.preventDefault(); this.setTool('mover'); return; }
       if (k === '4') { e.preventDefault(); this.setTool('select'); return; }
       if (k === 't' || k === 'T') { e.preventDefault(); this.test(); return; }
+      // v0.86: toggle parallax + foreground layer preview (Mark: "all
+      // 5 layers visible especially for 8-1"). Defaults ON.
+      if (k === 'l' || k === 'L') { e.preventDefault(); this.showLayers = !this.showLayers; return; }
       if ((e.ctrlKey || e.metaKey) && (k === 's' || k === 'S')) { e.preventDefault(); this.save(false); return; }
       if ((e.ctrlKey || e.metaKey) && (k === 'z' || k === 'Z') && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
       if (((e.ctrlKey || e.metaKey) && (k === 'y' || k === 'Y')) ||
@@ -1449,6 +1456,12 @@ window.SDD = window.SDD || {};
       g.fillRect(0, 0, 320, 180);
       var lvl = this.lvl;
       if (!lvl) return;
+      // v0.86: paint the parallax sky layers + tunnel overlay BEFORE
+      // tiles so the editor previews exactly what'll appear in-game.
+      // Lives outside the zoom transform so the bg always fills the
+      // 320x180 view regardless of zoom level. themeZones are honored
+      // via the same activeIdx logic the level scene uses.
+      this._paintLayersBg(g);
       var T = 16;
       // Zoom transform: every subsequent draw is scaled around (0,0).
       // World coords stay in pixels; ctx.scale handles the rest.
@@ -1611,6 +1624,92 @@ window.SDD = window.SDD || {};
         g.strokeRect(this.hoverCol * T - camx + 0.5, this.hoverRow * T - camy + 0.5, T - 1, T - 1);
       }
       g.restore();
+      // v0.86: foreground layer (Layer-1 silhouettes + tower entrance
+      // for Adventure City) paints AFTER the zoom restore so it sits
+      // on top of tiles + spawns - same z-order as in-game.
+      this._paintLayersFg(g);
+      // Layer-toggle hint in the corner.
+      if (!this.showLayers) {
+        SDD.sprites.text(g, 'LAYERS: OFF (L)', 4, 172, '#ffd23a', 1, 'left');
+      }
+    },
+
+    // v0.86: parallax + tunnel background layers, painted BEFORE the
+    // editor zoom transform. Honors themeZones so the Adventure City
+    // tunnel sections + hard background swap show up in the editor.
+    _paintLayersBg: function (g) {
+      if (!this.showLayers) return;
+      var lvl = this.lvl;
+      if (!lvl || !lvl.theme) return;
+      var THEMES = SDD.themes && SDD.themes.SKY;
+      if (!THEMES) return;
+      // Editor camera maps directly to world coords (no flappy scale).
+      var camx = Math.round(this.cam.x), camy = Math.round(this.cam.y);
+      var prog = 0;
+      var mapPxW = lvl.width * 16;
+      if (mapPxW > 320) prog = Math.max(0, Math.min(1, camx / (mapPxW - 320)));
+      // Pick the active themeZone the same way the level scene does.
+      var theme = lvl.theme;
+      if (lvl.themeZones && lvl.themeZones.length) {
+        var camCol = camx / 16, idx = 0;
+        for (var zi = 0; zi < lvl.themeZones.length; zi++) {
+          if (camCol + 10 >= lvl.themeZones[zi].startCol) idx = zi;
+        }
+        theme = lvl.themeZones[idx].theme;
+        var nextZone = lvl.themeZones[idx + 1];
+        var skyFn = THEMES[theme];
+        if (skyFn) skyFn(g, camx, camy, prog, this.t);
+        // Soft crossfade preview for non-hard transitions.
+        if (nextZone && !nextZone.hard) {
+          var distToNext = nextZone.startCol - (camCol + 10);
+          if (distToNext > 0 && distToNext < 24) {
+            var alpha = 1 - (distToNext / 24);
+            var nextFn = THEMES[nextZone.theme];
+            if (nextFn) {
+              g.save(); g.globalAlpha = alpha;
+              nextFn(g, camx, camy, prog, this.t);
+              g.restore();
+            }
+          }
+        }
+      } else {
+        var fn = THEMES[theme];
+        if (fn) fn(g, camx, camy, prog, this.t);
+      }
+      // Slight dim overlay so the editor's grid + tiles read well on
+      // top of the bright parallax (e.g. the cyber bridge layer).
+      g.fillStyle = 'rgba(0,0,0,0.18)';
+      g.fillRect(0, 0, 320, 180);
+    },
+
+    // v0.86: foreground layer + Adventure City tower entrance + start
+    // sign, painted AFTER the tile + spawn pass. Same theme-resolution
+    // logic as the bg pass.
+    _paintLayersFg: function (g) {
+      if (!this.showLayers) return;
+      var lvl = this.lvl;
+      if (!lvl || !lvl.theme) return;
+      var FG = SDD.themes && SDD.themes.FG;
+      var camx = Math.round(this.cam.x), camy = Math.round(this.cam.y);
+      var prog = 0;
+      var mapPxW = lvl.width * 16;
+      if (mapPxW > 320) prog = Math.max(0, Math.min(1, camx / (mapPxW - 320)));
+      var theme = lvl.theme;
+      if (lvl.themeZones && lvl.themeZones.length) {
+        var camCol = camx / 16, idx = 0;
+        for (var zi = 0; zi < lvl.themeZones.length; zi++) {
+          if (camCol + 10 >= lvl.themeZones[zi].startCol) idx = zi;
+        }
+        theme = lvl.themeZones[idx].theme;
+      }
+      if (FG && FG[theme]) FG[theme](g, camx, camy, prog, this.t);
+      // Tower entrance + start sign (cyber theme).
+      if (lvl.towerEntrance && SDD._drawTowerEntrance) {
+        SDD._drawTowerEntrance(g, camx, camy, this.t, lvl.towerEntrance);
+      }
+      if (lvl.startSign && SDD._drawStartSign) {
+        SDD._drawStartSign(g, camx, camy, this.t, lvl.startSign);
+      }
     }
   };
 

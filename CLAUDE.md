@@ -11,9 +11,36 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.85` / `sdd-shell-v85`.
+- **Live build**: `v0.86` / `sdd-shell-v86`.
 
-### v0.85 — Adventure City: 2x length, immersive tunnel, futuristic cars, tower entrance (latest)
+### v0.86 — Layered editor preview + new SD app icon (latest)
+
+- **Editor now renders the full layer stack** (Mark: "all 5 layers
+  visible, especially for 8-1"). New `_paintLayersBg` paints the
+  parallax sky + tunnel overlay BEFORE the editor's zoom transform;
+  `_paintLayersFg` paints the foreground silhouettes + tower entrance
+  + start sign AFTER tiles + spawn markers, so the z-order in the
+  editor matches the in-game render. Multi-zone levels (Day 6-1 plains
+  → forest → bugscale; Day 8-1 cyber → tunnel → cyber-dawn) honor
+  `themeZones` exactly like the level scene does, including the
+  hard-swap flag. Adds a `showLayers` flag default-on with **L key**
+  to toggle. New exports: `SDD.themes = { SKY: THEMES, FG: FOREGROUNDS }`,
+  `SDD._drawTowerEntrance`, `SDD._drawStartSign`. Verified across
+  Adventure City (start / city / pre-tunnel / 3× tunnel cams / dawn /
+  tower) and Day 3-2 Jungle Path (forest backdrop now visible in
+  editor). Note: bg paints at native 320×180 — perfect alignment at
+  zoom=1, informative-only at other zoom levels.
+- **New app icon.** Replaced the Crossroads/Adventure-Week branded
+  icon with a Super Dude Danny badge: deep-navy circle with subtle
+  starfield, 12 golden sunburst rays, big beveled italic **SD**
+  monogram (same hero-font style as the AW emblem), cyan ring border,
+  warm orange aura behind the letters, "SUPER DUDE DANNY" wordmark
+  strip at the bottom. 4 PNGs generated procedurally via
+  `tools/make_icon.js` (canvas module): `icon-192`, `icon-512`,
+  `apple-touch-icon` (180×180), `icon-512-maskable` (no wordmark,
+  generous safe-zone for OS masking).
+
+### v0.85 — Adventure City: 2x length, immersive tunnel, futuristic cars, tower entrance
 
 Big polish + scope pass on Day 8-1 driven by Mark's feedback:
 

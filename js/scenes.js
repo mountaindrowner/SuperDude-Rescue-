@@ -8205,6 +8205,12 @@ window.SDD = window.SDD || {};
   // v0.76: expose the single-piece painter so the decor editor can
   // render catalog thumbnails of each kind/variant.
   SDD._paintDecorPiece    = _cyPaintDecorPiece;
+  // v0.86: expose the full theme registries so the level editor can
+  // render the parallax sky + foreground layers for any stage. Also
+  // expose Adventure City's tower entrance + start sign painters.
+  SDD.themes = { SKY: THEMES, FG: FOREGROUNDS };
+  SDD._drawTowerEntrance  = _cyDrawTowerEntrance;
+  SDD._drawStartSign      = _cyDrawStartSign;
   var DLG_WRAP = 44;          // chars per dialogue line (full-width box)
   var DLG_CPS  = 0.5;         // characters revealed per frame (~30/s)
   var CY_RUNIN = 54;          // run-in duration (frames)
