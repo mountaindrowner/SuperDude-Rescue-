@@ -11,9 +11,27 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.86` / `sdd-shell-v86`.
+- **Live build**: `v0.87` / `sdd-shell-v87`.
 
-### v0.86 — Layered editor preview + new SD app icon (latest)
+### v0.87 — Post-tunnel foreground stripped + time machine vanishes (latest)
+
+- **Layer-1 (foreground) removed after the tunnel** (Mark: "remove
+  first layer pieces after the tunnel"). Dropped the `cyber-dawn`
+  entry from the FOREGROUNDS dispatch in scenes.js so the dawn city
+  range (cols 440-720) renders only its parallax bg + bridge layer
+  — no Layer-1 anchor towers overlapping the player. Pre-tunnel
+  cyber section keeps its full foreground. The cityArrival cutscene
+  paints its own backdrop so it isn't affected.
+- **Broken time machine no longer stays behind in the cinematic**
+  (Mark: "it's not supposed to stay behind"). The machine took
+  Danny with it — both gone. Replaced the `ART_MACHINE_BROKEN`
+  draw (in BOTH the cityIntro prologue's post-flash render and the
+  dialogue scene's lab backdrop) with a residual scorch mark on the
+  floor + a handful of charred bolts + lingering smoke + low
+  electric sparks at the empty spot. Reads as "the machine was
+  HERE and zapped away with Danny".
+
+### v0.86 — Layered editor preview + new SD app icon
 
 - **Editor now renders the full layer stack** (Mark: "all 5 layers
   visible, especially for 8-1"). New `_paintLayersBg` paints the

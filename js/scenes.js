@@ -6219,12 +6219,13 @@ window.SDD = window.SDD || {};
   // themes that need an overlapping layer for parallax depth register
   // here; missing entries are no-ops. Mirror of THEMES dispatch.
   var FOREGROUNDS = {
-    'cyber':       drawForeground_cyber,
-    // v0.70: dawn district reuses the same cyber foreground with a
-    // warm tint applied via the sky painter's overlay pass; no
-    // entry for cyber-tunnel so no city silhouettes paint inside
-    // the brick walls.
-    'cyber-dawn':  drawForeground_cyber
+    'cyber':       drawForeground_cyber
+    // v0.87: cyber-dawn DROPPED from the foreground dispatch (Mark:
+    // "remove first layer pieces after the tunnel"). The dawn city
+    // after the tunnel now reads as open / clear with just the
+    // parallax sky behind, no Layer-1 anchor silhouettes overlapping
+    // the player. The cityArrival cutscene draws its own backdrop
+    // directly so it isn't affected.
   };
 
   // Comedian loading-screen quips - random pick per stageintro card.
@@ -8469,14 +8470,27 @@ window.SDD = window.SDD || {};
           g.stroke();
         }
       } else {
-        if (ART_MACHINE_BROKEN.ok) {
-          var bh = 96, bw = Math.round(bh * (1024 / 1536));
-          g.drawImage(ART_MACHINE_BROKEN.img, mx - bw / 2, mBaseY - bh, bw, bh);
-        } else { g.fillStyle = '#3a4a6a'; g.fillRect(mx - 18, mBaseY - 44, 36, 44); }
-        // Aftermath smoke from the wreck.
+        // v0.87: machine is GONE - it took Danny with it (Mark: "the
+        // broken Time Machine is not supposed to stay behind"). Just
+        // a scorch mark on the floor + lingering smoke + sparks where
+        // the machine USED to stand.
+        var floorScY = mBaseY - 2;
+        var scorch = g.createRadialGradient(mx, floorScY, 2, mx, floorScY, 32);
+        scorch.addColorStop(0,   'rgba(20,8,12,0.85)');
+        scorch.addColorStop(0.6, 'rgba(40,18,22,0.45)');
+        scorch.addColorStop(1,   'rgba(40,18,22,0)');
+        g.fillStyle = scorch;
+        g.fillRect(mx - 36, mBaseY - 8, 72, 14);
+        // A handful of charred bolts + debris on the floor.
+        g.fillStyle = '#1a1820';
+        g.fillRect(mx - 18, mBaseY - 2, 2, 2);
+        g.fillRect(mx + 6,  mBaseY - 1, 3, 2);
+        g.fillRect(mx - 4,  mBaseY,     2, 1);
+        g.fillRect(mx + 14, mBaseY - 2, 2, 1);
+        // Aftermath smoke rising from the empty spot.
         for (var s = 0; s < 5; s++) {
           var ph = ((pt - PRO_FLASH) * 0.8 + s * 26) % 70;
-          var syy = mBaseY - 44 - ph * 0.7, a = 0.34 - ph * 0.004;
+          var syy = mBaseY - 6 - ph * 0.9, a = 0.34 - ph * 0.004;
           if (a < 0.04) continue;
           g.fillStyle = 'rgba(150,160,180,' + a.toFixed(2) + ')';
           var sw = 5 + s + ph * 0.06;
@@ -8561,30 +8575,37 @@ window.SDD = window.SDD || {};
       // Dim + cool the room a touch so the alarm-red FX read.
       g.fillStyle = 'rgba(10,12,28,0.34)'; g.fillRect(0, 0, 320, 180);
 
-      // --- Aftermath: broken time machine on the right + smoke + sparks ---
+      // --- Aftermath: machine GONE (took Danny with it). Just a
+      //     scorch mark + smoke + a few residual electric sparks
+      //     where it used to stand. ---
       var mx = 250, mBaseY = 150;
-      if (ART_MACHINE_BROKEN.ok) {
-        var mh = 96, mw = Math.round(mh * (1024 / 1536));
-        g.drawImage(ART_MACHINE_BROKEN.img, mx - mw / 2, mBaseY - mh, mw, mh);
-      } else {
-        g.fillStyle = '#3a4a6a'; g.fillRect(mx - 18, mBaseY - 44, 36, 44);
-        g.fillStyle = '#23304a'; g.fillRect(mx - 14, mBaseY - 40, 28, 22);
-      }
-      // Rising smoke puffs from the machine.
+      var dlgScorch = g.createRadialGradient(mx, mBaseY - 2, 2, mx, mBaseY - 2, 32);
+      dlgScorch.addColorStop(0,   'rgba(20,8,12,0.80)');
+      dlgScorch.addColorStop(0.6, 'rgba(40,18,22,0.42)');
+      dlgScorch.addColorStop(1,   'rgba(40,18,22,0)');
+      g.fillStyle = dlgScorch;
+      g.fillRect(mx - 36, mBaseY - 8, 72, 14);
+      // Charred bolts / debris.
+      g.fillStyle = '#1a1820';
+      g.fillRect(mx - 18, mBaseY - 2, 2, 2);
+      g.fillRect(mx + 6,  mBaseY - 1, 3, 2);
+      g.fillRect(mx - 4,  mBaseY,     2, 1);
+      g.fillRect(mx + 14, mBaseY - 2, 2, 1);
+      // Rising smoke puffs from the empty floor.
       for (var s = 0; s < 5; s++) {
         var ph = (cl * 0.8 + s * 26) % 70;
-        var syy = mBaseY - 44 - ph * 0.7;
+        var syy = mBaseY - 6 - ph * 0.9;
         var a = 0.34 - ph * 0.004; if (a < 0.04) continue;
         g.fillStyle = 'rgba(150,160,180,' + a.toFixed(2) + ')';
         var sw = 5 + s + (ph * 0.06);
         g.fillRect(mx - sw / 2 + Math.sin(syy * 0.2 + s) * 3, syy, sw, 3);
       }
-      // Electric sparks flickering around the machine.
-      if (cl % 8 < 4) {
+      // Residual electric sparks dancing low to the ground.
+      if (cl % 12 < 4) {
         g.fillStyle = '#9af0ff';
-        for (var sp = 0; sp < 4; sp++) {
-          var spx = mx - 16 + ((cl * 7 + sp * 13) % 32);
-          var spy = mBaseY - 38 + ((cl * 5 + sp * 9) % 30);
+        for (var sp = 0; sp < 3; sp++) {
+          var spx = mx - 14 + ((cl * 7 + sp * 13) % 28);
+          var spy = mBaseY - 4 + ((cl * 5 + sp * 9) % 6);
           g.fillRect(spx, spy, 1, 2);
         }
       }
