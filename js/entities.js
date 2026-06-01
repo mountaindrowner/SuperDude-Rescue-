@@ -527,7 +527,12 @@ window.SDD = window.SDD || {};
         // Per-level jumpScale lets a low-grav level (e.g. 4-2) soften
         // the launch so the jump feels floaty instead of explosive.
         var js = level.jumpScale || 1.0;
-        this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul * js;
+        // v0.93 (Mark): the Computer (Day 8 / Adventure City) jumps 15%
+        // HIGHER at the apex. Apex scales with velocity^2, so a +15%
+        // peak is an impulse of sqrt(1.15) ~= 1.0724. Day 8 only -
+        // Danny's jump on every other day is unchanged.
+        var compJump = (level && level.day === 8) ? 1.0724 : 1.0;
+        this.vy = (this.big ? C.JUMP_BIG : C.JUMP_SMALL) * godJumpMul * js * compJump;
         this.jumpBuf = 0; this.coyote = 0;
         SDD.audio.sfx(this.big ? 'jumpbig' : 'jump');
         if (this.onGround) this.signatureJumpsUsed = 0;
@@ -2949,24 +2954,39 @@ window.SDD = window.SDD || {};
     // left/right on a fixed range. Old one-shot spawner behaviour kept
     // for legacy callers (warnT > 0).
     this.kind = opts.kind || 'car';                  // 'car' or 'dump'
+    // v0.93 (Mark): the VISUAL size (drawW/drawH) is the full sprite;
+    // the collision box (this.w/this.h) is 20% smaller, centered inside
+    // the sprite, so contact is more forgiving without shrinking the
+    // look. The draw offsets (drawOX/drawOY) re-place the full sprite
+    // so it renders in exactly the same spot as before.
+    var vw, vh;
     if (this.kind === 'dump') {
       // Dump truck - bigger box, slower, heavier read.
-      this.w = opts.w || 50;
-      this.h = opts.h || 21;
-      this.spd = (opts.spd != null) ? opts.spd : 0.85;
+      vw = opts.w || 50;
+      vh = opts.h || 21;
+      this.spd = (opts.spd != null) ? opts.spd : 0.595;   // -30% (was 0.85)
       this.color = opts.color || '#e8a040';
     } else {
-      this.w = opts.w || 33;
-      this.h = opts.h || 15;
+      vw = opts.w || 33;
+      vh = opts.h || 15;
       this.spd = (opts.spd != null) ? opts.spd : 1.65;
       this.color = opts.color || '#46f0ff';
     }
+    this.drawW = vw; this.drawH = vh;
+    this.w = Math.round(vw * 0.8);
+    this.h = Math.round(vh * 0.8);
+    this.drawOX = -Math.round((vw - this.w) / 2);
+    this.drawOY = -Math.round((vh - this.h) / 2);
+    // Center the smaller hitbox inside where the full sprite used to
+    // sit (spawn x/y is the old visual top-left).
+    this.x = x - this.drawOX;
+    this.y = y - this.drawOY;
     this.dir = opts.dir || -1;
     this.patrol = !!opts.patrol;
     if (this.patrol) {
       var range = (opts.range != null) ? opts.range : 96;
-      this.minX = x - range;
-      this.maxX = x + range;
+      this.minX = this.x - range;
+      this.maxX = this.x + range;
       this.warnT = 0;
     } else {
       this.warnT = (opts.warnT != null) ? opts.warnT : 30;
@@ -3002,42 +3022,45 @@ window.SDD = window.SDD || {};
   Car.prototype.stomped = function () {};
   Car.prototype.zap     = function () {};
   Car.prototype.draw = function (ctx, cam) {
-    var dx = Math.round(this.x - cam.x);
-    var dy = Math.round(this.y - cam.y);
+    // v0.93: render the FULL sprite (drawW/drawH) offset so it sits
+    // centered over the (20%-smaller) collision box.
+    var W = this.drawW, H = this.drawH;
+    var dx = Math.round(this.x + this.drawOX - cam.x);
+    var dy = Math.round(this.y + this.drawOY - cam.y);
     // Telegraph: flashing yellow outline + "!" honk indicator above
     // the car for the first 30 frames after spawn.
     if (this.warnT > 0) {
       if ((this.warnT >> 2) & 1) {
         ctx.fillStyle = '#ffd23a';
-        ctx.fillRect(dx - 2, dy - 2, this.w + 4, 2);
-        ctx.fillRect(dx - 2, dy + this.h, this.w + 4, 2);
-        ctx.fillRect(dx - 2, dy - 2, 2, this.h + 4);
-        ctx.fillRect(dx + this.w, dy - 2, 2, this.h + 4);
+        ctx.fillRect(dx - 2, dy - 2, W + 4, 2);
+        ctx.fillRect(dx - 2, dy + H, W + 4, 2);
+        ctx.fillRect(dx - 2, dy - 2, 2, H + 4);
+        ctx.fillRect(dx + W, dy - 2, 2, H + 4);
       }
       ctx.fillStyle = '#ff5a3a';
-      ctx.fillRect(dx + Math.floor(this.w / 2) - 1, dy - 10, 2, 5);
-      ctx.fillRect(dx + Math.floor(this.w / 2) - 1, dy - 4, 2, 2);
+      ctx.fillRect(dx + Math.floor(W / 2) - 1, dy - 10, 2, 5);
+      ctx.fillRect(dx + Math.floor(W / 2) - 1, dy - 4, 2, 2);
     }
     // Pre-body: headlight cone projected forward when at full speed.
     if (this.warnT === 0) {
-      var hxBeam = (this.dir > 0) ? (dx + this.w) : (dx - 16);
-      var beam = ctx.createLinearGradient(hxBeam, dy + this.h / 2, hxBeam + (this.dir > 0 ? 16 : -16), dy + this.h / 2);
+      var hxBeam = (this.dir > 0) ? (dx + W) : (dx - 16);
+      var beam = ctx.createLinearGradient(hxBeam, dy + H / 2, hxBeam + (this.dir > 0 ? 16 : -16), dy + H / 2);
       beam.addColorStop(0, 'rgba(255,250,180,0.55)');
       beam.addColorStop(1, 'rgba(255,250,180,0)');
       ctx.fillStyle = beam;
-      ctx.fillRect(hxBeam, dy + 2, 16, this.h - 4);
+      ctx.fillRect(hxBeam, dy + 2, 16, H - 4);
       // Speed trail.
       ctx.fillStyle = 'rgba(70,240,255,0.35)';
-      var trailX = (this.dir > 0) ? dx - 5 : dx + this.w;
-      ctx.fillRect(trailX, dy + 2, 5, this.h - 4);
+      var trailX = (this.dir > 0) ? dx - 5 : dx + W;
+      ctx.fillRect(trailX, dy + 2, 5, H - 4);
       ctx.fillStyle = 'rgba(70,240,255,0.18)';
-      var trailX2 = (this.dir > 0) ? dx - 9 : dx + this.w + 4;
-      ctx.fillRect(trailX2, dy + 3, 4, this.h - 6);
+      var trailX2 = (this.dir > 0) ? dx - 9 : dx + W + 4;
+      ctx.fillRect(trailX2, dy + 3, 4, H - 6);
     }
     // Car body. v0.91 adds the DUMP-TRUCK variant (boxy cab + tilted
     // load bed + double rear wheels). Drone-lane = sleek hover pod;
-    // ground + low-sky = futuristic coupe.
-    var W = this.w, H = this.h;
+    // ground + low-sky = futuristic coupe. W/H = full visual size
+    // (declared at the top of draw, = drawW/drawH).
     if (this.kind === 'dump') {
       // DUMP TRUCK: chunky industrial silhouette.
       // Underglow + shadow.

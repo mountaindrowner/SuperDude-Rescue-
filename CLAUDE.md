@@ -11,7 +11,27 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.92` / `sdd-shell-v92`.
+- **Live build**: `v0.93` / `sdd-shell-v93`.
+
+### v0.93 — Adventure City feel tuning (latest)
+
+Four scoped numeric changes (verified via puppeteer):
+- **Computer jump apex +15% (Day 8 ONLY).** New `compJump` multiplier
+  (`level.day === 8 ? 1.0724 : 1.0`) folded into the ground-jump impulse
+  at `entities.js:530`. Apex scales with v² so √1.15 ≈ 1.0724 gives a
+  true +15% peak. Day-8 launch vy = -6.97 vs base -6.5; Danny on every
+  other day is untouched (global `C.JUMP_*` constants unchanged).
+- **Car + dump-truck hitbox −20%, visual unchanged.** `Car` now stores
+  the full sprite size in `drawW/drawH` and sets the collision box
+  `this.w/this.h` to 80% (car 33×15→26×12, dump 50×21→40×17), centered
+  inside the sprite via `drawOX/drawOY` + an `x/y` shift at construct.
+  `Car.prototype.draw` renders `drawW/drawH` at the offset so the look
+  is identical; collision (`E.overlap` reads w/h) is more forgiving.
+- **Dump truck speed −30%:** default spd 0.85 → 0.595 (dump branch only).
+- **Dump truck path +25% each side:** the two seeded trucks in
+  `level_8_1.js` go `range` 64→80 and 80→100.
+- **Crumble tile 50% faster:** thresholds in `scenes.js` /1.5 — warning
+  28→19, collapse 50→33, draw ratio divisor 50→33 (~0.55s grace).
 
 ### v0.92 — Portrait play + volcano on 3-1 + galaxy spiral on 1-1 (latest)
 

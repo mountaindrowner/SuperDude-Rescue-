@@ -7329,8 +7329,10 @@ window.SDD = window.SDD || {};
             var key = ftx + ',' + feetTy;
             var st = this.crumblers[key] || (this.crumblers[key] = { tx: ftx, ty: feetTy, t: 0 });
             st.t++;
-            if (st.t === 28 && SDD.audio && SDD.audio.sfx) SDD.audio.sfx('block');
-            if (st.t >= 50) {
+            // v0.93 (Mark): crumble 50% faster - thresholds /1.5
+            // (warning 28->19, collapse 50->33). ~0.55s grace.
+            if (st.t === 19 && SDD.audio && SDD.audio.sfx) SDD.audio.sfx('block');
+            if (st.t >= 33) {
               this.map.set(ftx, feetTy, ' ');
               delete this.crumblers[key];
               this.burst(ftx * C.TILE + 8, feetTy * C.TILE + 12, '#7a6a5a', 8);
@@ -7619,7 +7621,7 @@ window.SDD = window.SDD || {};
             // player stands on it. Stored crumble state lives on the
             // level scene in this.crumblers.
             var crum = this.crumblers && this.crumblers[tx + ',' + ty];
-            var ratio = crum ? Math.min(1, crum.t / 50) : 0;
+            var ratio = crum ? Math.min(1, crum.t / 33) : 0;
             var jit = ratio > 0.4 ? Math.round((Math.random() - 0.5) * 2 * ratio) : 0;
             var dx0 = tx * T - cam.x + jit;
             var dy0 = ty * T - cam.y;

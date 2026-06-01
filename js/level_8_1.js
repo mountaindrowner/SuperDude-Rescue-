@@ -133,8 +133,8 @@ SDD.levels['8-1'] = {
     { type: "carspawner", tx: 499, ty: 4, dir: -1, spd: 1.5, period: 180, phase: 0, color: "#46f0ff" },
     /* v0.91 — sample placements for the new mob / hazard types. Mark
        can move/delete them in the editor. */
-    { type: "dumptruck", tx: 120, ty: 10, dir: -1, range: 64 },
-    { type: "dumptruck", tx: 560, ty: 10, dir:  1, range: 80 },
+    { type: "dumptruck", tx: 120, ty: 10, dir: -1, range: 80 },
+    { type: "dumptruck", tx: 560, ty: 10, dir:  1, range: 100 },
     { type: "hydrant",   tx:  85, ty: 10, period: 130 },
     { type: "hydrant",   tx: 540, ty: 10, period: 140 },
     { type: "hydrant",   tx: 660, ty: 10, period: 120 },
