@@ -3044,11 +3044,17 @@ window.SDD = window.SDD || {};
     // Pre-body: headlight cone projected forward when at full speed.
     if (this.warnT === 0) {
       var hxBeam = (this.dir > 0) ? (dx + W) : (dx - 16);
-      var beam = ctx.createLinearGradient(hxBeam, dy + H / 2, hxBeam + (this.dir > 0 ? 16 : -16), dy + H / 2);
-      beam.addColorStop(0, 'rgba(255,250,180,0.55)');
-      beam.addColorStop(1, 'rgba(255,250,180,0)');
+      // v0.94 (Mark): soft-edged beam. Radial falloff centered at the
+      // lamp so it's full at the bulb and fades to transparent on ALL
+      // edges (far end + top + bottom), instead of a hard-edged rect.
+      var lampX = (this.dir > 0) ? (dx + W) : dx;
+      var lampY = dy + H / 2;
+      var beam = ctx.createRadialGradient(lampX, lampY, 2, lampX, lampY, 20);
+      beam.addColorStop(0,   'rgba(255,250,180,0.60)');
+      beam.addColorStop(0.5, 'rgba(255,250,180,0.30)');
+      beam.addColorStop(1,   'rgba(255,250,180,0)');
       ctx.fillStyle = beam;
-      ctx.fillRect(hxBeam, dy + 2, 16, H - 4);
+      ctx.fillRect(hxBeam, dy - 2, 16, H + 4);
       // Speed trail.
       ctx.fillStyle = 'rgba(70,240,255,0.35)';
       var trailX = (this.dir > 0) ? dx - 5 : dx + W;

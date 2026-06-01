@@ -11,7 +11,16 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.93` / `sdd-shell-v93`.
+- **Live build**: `v0.94` / `sdd-shell-v94`.
+
+### v0.94 — Soft-edged car headlights (latest)
+
+- Car/dump headlight beam (`Car.prototype.draw`, the `warnT === 0`
+  pre-body block in `entities.js`) switched from a length-only linear
+  gradient (hard top/bottom/far edges) to a RADIAL gradient centered at
+  the lamp: full at the bulb (0.60α) → 0.30 at mid → transparent at
+  radius 20. Fill rect grown to `dy-2 .. dy+H+2` so the vertical falloff
+  has room. Reads as a soft glow cone with faded edges on all sides.
 
 ### v0.93 — Adventure City feel tuning (latest)
 
