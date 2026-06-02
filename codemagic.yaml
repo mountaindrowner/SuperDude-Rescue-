@@ -33,17 +33,6 @@ workflows:
       app_store_connect: superdude_asc
 
     environment:
-      # This block is what makes Codemagic FETCH the distribution
-      # certificate + App Store provisioning profile (which now exist -
-      # they were created on the earlier runs) and set up the keychain
-      # BEFORE the scripts run, in exactly the layout that
-      # `xcode-project use-profiles` reads. Without it, use-profiles
-      # can't wire the profile into the project and the archive fails
-      # with "App requires a provisioning profile". The bundle id must
-      # already be registered (it is) and the API key must be Admin.
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: org.thecrossroads.superdudeadventures
       node: 20
       xcode: latest
       cocoapods: default
@@ -77,16 +66,33 @@ workflows:
           cd ios/App
           pod install
 
-      - name: Set up code signing settings on the Xcode project
+      - name: Set up code signing (DIAGNOSTIC - prints account state)
         script: |
-          # The ios_signing environment block (above) already fetched the
-          # cert + profile and set up the keychain. This applies the
-          # fetched App Store profile to the App target. This is exactly
-          # Codemagic's official Capacitor signing flow.
-          xcode-project use-profiles
-          echo "--- provisioning profiles available to use-profiles: ---"
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null \
-            || echo "(NONE found)"
+          echo "========== A. distribution certificates in the account =========="
+          # If this lists 2 already, we're at Apple's limit and a NEW one
+          # can't be created -> the cloud Mac then has a profile but no
+          # usable signing identity (private key), which is the likely
+          # root cause. We do NOT have the private keys for certs created
+          # on your personal Mac for your other app.
+          app-store-connect certificates list --type IOS_DISTRIBUTION || true
+          echo "========== B. existing app_store profiles =========="
+          app-store-connect profiles list --type IOS_APP_STORE || true
+          echo "========== C. initialize keychain =========="
+          keychain initialize
+          echo "========== D. fetch/create signing files (verbose) =========="
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create \
+            --verbose
+          echo "========== E. import certs into keychain =========="
+          keychain add-certificates
+          echo "========== F. provisioning profiles now on disk =========="
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || echo "NONE on disk"
+          echo "========== G. valid codesigning identities in keychain =========="
+          # '0 valid identities found' here = the cert/private-key problem.
+          security find-identity -v -p codesigning || true
+          echo "========== H. apply profiles to the Xcode project =========="
+          xcode-project use-profiles --verbose
 
       - name: Set the marketing version + auto-incrementing build number
         script: |
