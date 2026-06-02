@@ -9,8 +9,8 @@ Thumbs.db
 *~
 
 # Node modules in case a dev installs locally for the tools/ scripts.
+# (package-lock.json IS tracked - Codemagic's `npm ci` requires it.)
 node_modules/
-package-lock.json
 
 # Capacitor / iOS wrap (generated on the build Mac).
 www/
