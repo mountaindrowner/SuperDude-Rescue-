@@ -96,7 +96,20 @@ then shows the `ADVENTURE CITY UNLOCKED` button.
   remembers its last position (localStorage), pops to full alpha on
   touch. Classes `.vstick-idle` / `.vstick-active`.
 
-### Repo additions since the v0.97 audit (file layout below is older)
+### Companion docs (read these too)
+- **`docs/TECH_REFERENCE.md`** — full technical map + inventories
+  (modules, scenes, entities, spawn types, tile codes, sprites,
+  themes, audio, save) + the GOTCHAS list (editor-drops-fields,
+  cache trap, MP3/chiptune, puppeteer harness quirks, Capacitor
+  webDir, iOS/macOS blocker, no-build invariant). **Read after this
+  snapshot.**
+- **`ART_STYLE.md`** — cyber-theme pixel-art bible (read before
+  touching `drawSky_cyber` / `_cy*` painters).
+- **`docs/SCRIPTURE_LESSONS_SPEC.md`** — lesson scene design + locked
+  decisions. **`IOS_BUILD.md`** — Capacitor→App Store steps + listing
+  copy. **`PLAN.md`** — historical design record.
+
+### Repo additions since the v0.97 audit (older file-layout section below)
 `js/scripture_data.js`, `docs/SCRIPTURE_LESSONS_SPEC.md`,
 `package.json`, `capacitor.config.json`, `scripts/build-web.mjs`,
 `resources/icon.png` + `splash.png`, `privacy.html`, `netlify.toml`,
