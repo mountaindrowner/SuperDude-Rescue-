@@ -242,18 +242,23 @@ window.SDD = window.SDD || {};
   var FILE_TRACKS = {};      // id  -> { el, loop }
   var VARIANT_POOLS = {};    // key -> [id, id, id]
   var currentFileTrack = null;
-  function loadFileTrack(id, path, loop) {
+  function loadFileTrack(id, path, loop, eager) {
     var a = new Audio();
-    a.preload = 'auto';
+    // v1.0.4 (Mark: "why does music take forever to load"): LAZY by
+    // default. preload='none' means the browser does NOT fetch the file
+    // until we explicitly ask for it (when its scene/level is entered).
+    // Only the few framing tracks needed at startup (title/menu/intro)
+    // are 'eager'. Previously ALL ~38 MP3s had preload='auto' + load()
+    // fired at boot, so the browser tried to download ~130 MB at once
+    // and the title track (needed first) was starved of bandwidth.
+    a.preload = eager ? 'auto' : 'none';
     a.loop = loop !== false;
     a.volume = muted ? 0 : musicVolume * mixFor(id);
     a.src = path;
-    // Explicit load() nudges the browser to actually start downloading
-    // - 'auto' is a HINT and many browsers defer audio until first
-    // play(). For title/intro tracks especially we want the bytes
-    // in memory by the time the user taps the title card.
-    try { a.load(); } catch (e) {}
-    var rec = { el: a, loop: loop !== false, id: id, failed: false };
+    // Only the eager (startup) tracks force a download now; lazy tracks
+    // are kicked the moment startMusic() asks for them (see ensureLoading).
+    if (eager) { try { a.load(); } catch (e) {} }
+    var rec = { el: a, loop: loop !== false, id: id, failed: false, kicked: !!eager };
     FILE_TRACKS[id] = rec;
     // A genuine fetch/decode error (404, bad codec) flips `failed` so
     // tryFileTrack skips this variant and uses a sibling. A SLOW load
@@ -263,6 +268,14 @@ window.SDD = window.SDD || {};
     a.addEventListener('error', function () { rec.failed = true; });
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
+  // Kick a lazily-registered track into downloading the instant we know
+  // we're about to play it (its scene/level was just entered). Idempotent
+  // - only the first call actually flips preload + load().
+  function ensureLoading(tr) {
+    if (!tr || tr.kicked) return;
+    tr.kicked = true;
+    try { tr.el.preload = 'auto'; tr.el.load(); } catch (e) {}
+  }
   // v1.0.2 (Mark: "I'm getting the old original chiptune on certain
   // distributed playthroughs"). Root cause: the previous version had a
   // 2.5s timeout that, if an MP3 hadn't STARTED yet, gave up and played
@@ -286,6 +299,7 @@ window.SDD = window.SDD || {};
     if (!usable.length) return false;        // every variant dead -> chiptune
     var id = usable[Math.floor(Math.random() * usable.length)];
     var tr = FILE_TRACKS[id]; if (!tr) return false;
+    ensureLoading(tr);                       // lazy track: start its download now
     stopMusic();
     currentFileTrack = tr;
     curSong = name;                          // commit now so retries aren't seen as superseded
@@ -349,9 +363,12 @@ window.SDD = window.SDD || {};
   }
   function loadAllFileTracks() {
     // Framing
-    loadFileTrack('title',      'assets/music/title.mp3');
-    loadFileTrack('menu',       'assets/music/menu.mp3');
-    loadFileTrack('intro',      'assets/music/intro.mp3');
+    // Eager (4th arg = true): these are needed at/near startup, so load
+    // them right away. Everything below stays LAZY and downloads only
+    // when its scene/level is entered.
+    loadFileTrack('title',      'assets/music/title.mp3', true, true);
+    loadFileTrack('menu',       'assets/music/menu.mp3',  true, true);
+    loadFileTrack('intro',      'assets/music/intro.mp3', true, true);
     loadFileTrack('overworld_a','assets/music/overworld_a.mp3');
     loadFileTrack('overworld_b','assets/music/overworld_b.mp3');
     loadFileTrack('results_a',  'assets/music/results_a.mp3', false);  // stinger

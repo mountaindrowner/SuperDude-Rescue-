@@ -11,7 +11,14 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v1.0.4` / `sdd-shell-v104`.
+- **Live build**: `v1.0.5` / `sdd-shell-v105`.
+- **v1.0.5 audio load fix:** root-caused "music takes forever to load."
+  `loadFileTrack` previously set `preload='auto'` + `load()` on ALL ~38
+  MP3s at boot → the browser tried to pull ~130 MB at once and the title
+  track was bandwidth-starved. Now LAZY: only `title/menu/intro` are
+  eager (4th arg `true`); every other track has `preload='none'` and is
+  kicked by `ensureLoading(tr)` from `tryFileTrack` the moment its
+  scene/level is entered. Verified: 3 MP3 requests at boot (was 38).
 - **iOS App Store: LIVE pipeline.** Codemagic cloud build works end to
   end — signs (mints its own iOS Distribution cert via `--certificate-key`
   with a generated/stored key), archives, uploads to App Store Connect.
