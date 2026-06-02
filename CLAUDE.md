@@ -11,7 +11,14 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v1.0.2` / `sdd-shell-v102`.
+- **Live build**: `v1.0.3` / `sdd-shell-v103`.
+- **App is now titled "Super Dude Adventures"** (the menu wordmark + the
+  PWA/app/store name). Danny is still the on-screen hero/character —
+  only the brand/title changed; narrative "Super Dude Danny" references
+  (cinematics, quips, "Danny's Lab") were deliberately LEFT as-is.
+  Bundle ID is now `org.thecrossroads.superdudeadventures`. iOS ships
+  via **Codemagic cloud build** (no local Xcode / no macOS upgrade) —
+  see `CODEMAGIC_SETUP.md` + `codemagic.yaml`.
 
 ---
 

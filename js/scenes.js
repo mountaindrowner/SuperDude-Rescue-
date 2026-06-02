@@ -481,7 +481,7 @@ window.SDD = window.SDD || {};
 
       var bob = Math.sin(this.t * 0.05) * 2;
       tsh(g, 'SUPER DUDE', 160, 30 + bob, '#ffd23a', '#a8631a', 3, 'center');
-      tsh(g, 'DANNY', 160, 56 + bob, '#ff5d4a', '#7a1f16', 5, 'center');
+      tsh(g, 'ADVENTURES', 160, 54 + bob, '#ff5d4a', '#7a1f16', 4, 'center');
       // Menu Danny: ~50% bigger, static idle facing right. Mark found
       // the rotating-pose version too chaotic - "just have him standing
       // idle looking right."

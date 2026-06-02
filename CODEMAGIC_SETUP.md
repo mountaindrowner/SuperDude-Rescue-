@@ -1,6 +1,6 @@
-# Super Dude Danny → App Store via Codemagic (cloud build)
+# Super Dude Adventures → App Store via Codemagic (cloud build)
 
-**Goal:** get Super Dude Danny onto the Apple App Store *without* a local
+**Goal:** get Super Dude Adventures onto the Apple App Store *without* a local
 Xcode and *without* upgrading your Mac's OS. A cloud service (Codemagic)
 runs the build on its own modern macOS + Xcode machines. Everything you
 do is in a **web browser**. Your Mac only needs Safari/Chrome.
@@ -39,8 +39,8 @@ Three identifiers you'll reuse throughout — write them down as you go:
 
 | Name | Value | Where it comes from |
 |---|---|---|
-| **Bundle ID** | `org.thecrossroads.superdudedanny` | already set in `capacitor.config.json` — use exactly this |
-| **App name** | `Super Dude Danny` | what shows on the store |
+| **Bundle ID** | `org.thecrossroads.superdudeadventures` | already set in `capacitor.config.json` — use exactly this |
+| **App name** | `Super Dude Adventures` | what shows on the store |
 | **API key files** | Issuer ID + Key ID + `.p8` | Phase 3 |
 
 ---
@@ -56,9 +56,9 @@ This reserves the bundle identifier for your account.
 4. Select **App IDs** → **Continue**.
 5. Type → choose **App** → **Continue**.
 6. Fill in:
-   - **Description:** `Super Dude Danny`
+   - **Description:** `Super Dude Adventures`
    - **Bundle ID:** select **Explicit**, then type exactly:
-     `org.thecrossroads.superdudedanny`
+     `org.thecrossroads.superdudeadventures`
 7. **Capabilities:** leave everything **unchecked**. The game needs no
    push notifications, no iCloud, no special entitlements — it's a
    self-contained offline game. (Leaving these off makes review simpler.)
@@ -83,13 +83,13 @@ published app** — we're making a brand-new record.
 2. Click **Apps** (top) → the blue **+** (top-left) → **New App**.
 3. Fill in the dialog:
    - **Platforms:** check **iOS**.
-   - **Name:** `Super Dude Danny`
+   - **Name:** `Super Dude Adventures`
      *(must be globally unique on the App Store; if it's taken, try
-     `Super Dude Danny - Creation` or similar and note what you chose).*
+     `Super Dude Adventures - Creation` or similar and note what you chose).*
    - **Primary Language:** English (U.S.).
-   - **Bundle ID:** pick **`org.thecrossroads.superdudedanny`** from the
+   - **Bundle ID:** pick **`org.thecrossroads.superdudeadventures`** from the
      dropdown (it appears because you registered it in Phase 1).
-   - **SKU:** any internal string, e.g. `superdudedanny2026`
+   - **SKU:** any internal string, e.g. `superdudeadventures2026`
      (not shown publicly — just your own reference).
    - **User Access:** Full Access (default).
 4. Click **Create**.
@@ -207,7 +207,7 @@ profile automatically every build. You never touch a certificate file.
 
 After the build lands in TestFlight you can complete the public listing.
 
-1. App Store Connect → **Apps** → **Super Dude Danny** → the **iOS** app
+1. App Store Connect → **Apps** → **Super Dude Adventures** → the **iOS** app
    → the version (e.g. **1.0.2**) in the left sidebar under
    "iOS App".
 2. **Listing copy** — ready-to-paste text (name, subtitle, description,

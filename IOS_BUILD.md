@@ -1,4 +1,4 @@
-# Super Dude Danny — iOS App Store build guide
+# Super Dude Adventures — iOS App Store build guide
 
 Wraps the existing HTML5 game (no code changes) into a native iOS app
 with **Capacitor**, for submission to the App Store. The web game still
@@ -30,7 +30,7 @@ If `npx cap add ios` asks for CocoaPods, install it once with
 
 1. Select the **App** target → **Signing & Capabilities** → set your
    **Team** (your existing Apple Developer account).
-2. Confirm the **Bundle Identifier**. It's `org.thecrossroads.superdudedanny`
+2. Confirm the **Bundle Identifier**. It's `org.thecrossroads.superdudeadventures`
    in `capacitor.config.json` — **change it** there (and re-run
    `npx cap sync ios`) if your team uses a different reverse-domain.
 3. Set **Deployment Target** to iOS 14 or later.
@@ -58,9 +58,9 @@ Then re-archive in Xcode.
 
 ## App Store Connect — listing copy (ready to paste)
 
-- **Name:** Super Dude Danny
+- **Name:** Super Dude Adventures
 - **Subtitle:** A retro adventure through creation
-- **Bundle ID:** `org.thecrossroads.superdudedanny` (match your team)
+- **Bundle ID:** `org.thecrossroads.superdudeadventures` (match your team)
 - **Primary category:** Games → Adventure (Secondary: Education)
 - **Privacy Policy URL:** host `privacy.html` (e.g. on your Subsplash
   site or the web host) and paste that URL. The page is committed at
