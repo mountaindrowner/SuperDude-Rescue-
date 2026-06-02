@@ -68,18 +68,25 @@ workflows:
 
       - name: Set up code signing (create cert + profile if missing)
         script: |
-          # The --create flag is the important part: Codemagic CREATES
-          # the distribution certificate AND the App Store provisioning
-          # profile (and registers the bundle ID if it isn't yet)
-          # instead of only searching for existing ones. This is the fix
-          # for "No matching profiles found for bundle identifier ...".
+          # Canonical Codemagic manual-signing ORDER matters:
+          #   1. initialize the keychain FIRST
+          #   2. fetch/create the distribution cert + App Store profile
+          #      (--create also registers the bundle id if needed)
+          #   3. import the cert into the keychain
+          #   4. patch the Xcode project to use the fetched profile
+          # Running keychain-initialize AFTER the fetch (the previous bug)
+          # left use-profiles unable to bind a signing identity, so the
+          # archive failed with "App requires a provisioning profile".
           # Requires the App Store Connect API key to have Admin access.
+          keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
-          keychain initialize
           keychain add-certificates
           xcode-project use-profiles
+          echo "--- provisioning profiles present after fetch: ---"
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null \
+            || echo "(NONE found - signing would fail)"
 
       - name: Set the marketing version + auto-incrementing build number
         script: |
