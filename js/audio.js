@@ -255,70 +255,80 @@ window.SDD = window.SDD || {};
     try { a.load(); } catch (e) {}
     var rec = { el: a, loop: loop !== false, id: id, failed: false };
     FILE_TRACKS[id] = rec;
-    // v0.99 follow-up (Mark: "music has serious trouble loading on
-    // first load... takes several reloads"). On a cold network the
-    // fetch can error or stall silently and the player hears nothing.
-    // Track the error state so callers can drop straight to chiptune.
+    // A genuine fetch/decode error (404, bad codec) flips `failed` so
+    // tryFileTrack skips this variant and uses a sibling. A SLOW load
+    // does NOT fire 'error' - it just isn't ready yet - so slow loads
+    // never get marked failed (that was the bug that dropped players
+    // to the old chiptune on the deployed site).
     a.addEventListener('error', function () { rec.failed = true; });
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
-  // v0.99 follow-up: robust MP3 start. Old code was optimistic - it
-  // called play() and ignored any rejection, so on cold-load fetches
-  // that weren't ready in time the player heard NOTHING with no retry
-  // and no chiptune fallback. New behaviour:
-  //   - skip variants whose audio element already errored on fetch
-  //   - on play() rejection, retry once on `canplay`
-  //   - if MP3 still isn't playing 2.5s later, hard-fall to chiptune
+  // v1.0.2 (Mark: "I'm getting the old original chiptune on certain
+  // distributed playthroughs"). Root cause: the previous version had a
+  // 2.5s timeout that, if an MP3 hadn't STARTED yet, gave up and played
+  // the synthesized SONGS fallback - and marked the track dead for the
+  // session. On a real network (Netlify / mobile) MP3s routinely take
+  // >2.5s on a cold load, so the chiptune kept surfacing.
+  //
+  // New behaviour: once we commit to a registered MP3 we NEVER swap in
+  // the chiptune for it. If play() rejects because data isn't buffered,
+  // we wait for `canplay` and retry - as many times as it takes. The
+  // chiptune only ever plays if NO file is registered for the name, or
+  // every variant in the pool fired a genuine load `error` (404).
   function tryFileTrack(name) {
     var ids = VARIANT_POOLS[name] || (FILE_TRACKS[name] ? [name] : null);
     if (!ids) return false;
-    // Filter out variants whose fetch has failed.
+    // Skip variants whose fetch genuinely errored (404 / bad codec).
     var usable = [];
-    for (var k = 0; k < ids.length; k++) if (FILE_TRACKS[ids[k]] && !FILE_TRACKS[ids[k]].failed) usable.push(ids[k]);
-    if (!usable.length) return false;
+    for (var k = 0; k < ids.length; k++) {
+      if (FILE_TRACKS[ids[k]] && !FILE_TRACKS[ids[k]].failed) usable.push(ids[k]);
+    }
+    if (!usable.length) return false;        // every variant dead -> chiptune
     var id = usable[Math.floor(Math.random() * usable.length)];
     var tr = FILE_TRACKS[id]; if (!tr) return false;
     stopMusic();
-    try {
-      tr.el.currentTime = 0;
-      tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
-      currentFileTrack = tr;
-      var p = tr.el.play();
+    currentFileTrack = tr;
+    curSong = name;                          // commit now so retries aren't seen as superseded
+    try { tr.el.currentTime = 0; } catch (e) {}
+    tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
+
+    function superseded() { return curSong !== name || currentFileTrack !== tr; }
+
+    // Genuine load error on THIS track -> mark it failed + retry the
+    // pool (sibling variant, or chiptune only if all siblings are dead).
+    function onErr() {
+      tr.el.removeEventListener('error', onErr);
+      if (superseded()) return;
+      tr.failed = true;
+      currentFileTrack = null;
+      curSong = null;
+      startMusic(name);
+    }
+    tr.el.addEventListener('error', onErr);
+
+    // Keep attempting play() until it actually starts. On a cold load
+    // play() rejects with "not enough data" - we wait for the next
+    // `canplay` and try again. Never substitutes the chiptune.
+    function attempt() {
+      if (superseded()) return;
+      var p;
+      try { p = tr.el.play(); } catch (e) { p = null; }
       if (p && p.then) {
-        p.catch(function () {
-          // play() rejected. Most likely cause on cold-load: data not
-          // ready yet. Wait for `canplay` and try again.
-          if (currentFileTrack !== tr) return;     // moved on already
-          var retried = false;
-          var doRetry = function () {
-            if (retried) return; retried = true;
-            tr.el.removeEventListener('canplay', doRetry);
-            if (curSong !== name || currentFileTrack !== tr) return;
-            try {
-              var pp = tr.el.play();
-              if (pp && pp.catch) pp.catch(function () {});
-            } catch (e) {}
+        p.then(function () {
+          // Started cleanly - drop the error watcher.
+          tr.el.removeEventListener('error', onErr);
+        }).catch(function () {
+          if (superseded()) return;
+          var onReady = function () {
+            tr.el.removeEventListener('canplay', onReady);
+            attempt();
           };
-          tr.el.addEventListener('canplay', doRetry);
+          tr.el.addEventListener('canplay', onReady);
         });
       }
-      // Last-resort safety net: if 2.5s elapse and the element still
-      // isn't playing, give up on MP3 + drop to the chiptune fallback
-      // so the player never hears silence.
-      setTimeout(function () {
-        if (curSong === name && currentFileTrack === tr && tr.el.paused) {
-          var failedTrack = tr;
-          currentFileTrack = null;
-          failedTrack.failed = true;             // don't pick this variant again this session
-          curSong = null;                        // so startMusic doesn't short-circuit
-          startMusic(name);                      // re-entry: picks a new variant OR chiptune
-        }
-      }, 2500);
-      return true;
-    } catch (e) {
-      currentFileTrack = null;
-      return false;
     }
+    attempt();
+    return true;
   }
   function stopFileTrack(immediate) {
     if (!currentFileTrack) return;

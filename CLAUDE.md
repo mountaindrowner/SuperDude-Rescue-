@@ -11,7 +11,31 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v1.0` / `sdd-shell-v100`.
+- **Live build**: `v1.0.2` / `sdd-shell-v102`.
+
+### v1.0.2 — Fix: old chiptune surfacing on the deployed build (latest)
+
+Mark heard the original synthesized `SONGS` chiptune (not the MP3s) on
+"certain distributed playthroughs." Cause: the v0.99 music-robustness
+pass added a 2.5s timeout in `tryFileTrack` that, if an MP3 hadn't
+STARTED within 2.5s, substituted the chiptune and marked the track
+dead for the session. On a real network (Netlify / mobile) MP3s
+routinely exceed 2.5s on a cold load, so the chiptune kept winning.
+
+Fix in `js/audio.js`:
+- Removed the 2.5s chiptune-substitution timeout entirely.
+- `tryFileTrack` now COMMITS to a registered MP3 and retries `play()`
+  on every `canplay` until it actually starts - never swaps in the
+  chiptune for a slow load.
+- A variant is only marked `failed` (and skipped) on a genuine load
+  `error` event (404 / bad codec), not on a slow load.
+- The chiptune `SONGS` fallback now only plays if NO file is
+  registered for a name, or every variant in the pool 404'd - i.e.
+  effectively never, since all 38 MP3s ship.
+- Verified: with MP3s artificially delayed 4s, the retry loop runs
+  with zero exceptions and the real track plays once it arrives.
+
+### v1.0 — Post-stage scripture lessons LIVE
 
 ### v1.0 — Post-stage scripture lessons LIVE (latest)
 
