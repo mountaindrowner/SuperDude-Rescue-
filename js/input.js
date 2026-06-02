@@ -162,6 +162,12 @@ window.SDD = window.SDD || {};
   // any direction; deflection past the deadzone fires left/right/up/
   // down actions. Release returns to neutral.
   //
+  // v1.0.1 (Mark): the joystick is now ALWAYS visible at a low alpha
+  // - when not actively touched it sits in idle mode (very transparent
+  // ghost) at its last position, or a default lower-left spot on first
+  // load. On touch-down it snaps to the touch point and the alpha
+  // jumps to active.
+  //
   // Implementation notes:
   //   - Tracks ONE active pointer (multi-touch is reserved for the A/B
   //     buttons on the right side).
@@ -179,6 +185,7 @@ window.SDD = window.SDD || {};
     var BASE_R_VMIN  = 15;       // base half-size (matches #vstick-base 30vmin)
     var DEADZONE     = 0.30;     // 30% deflection = direction action fires
     var lastL = false, lastR = false, lastU = false, lastD = false;
+    var IDLE_KEY = 'sdd.vstick.idlePos';     // saved position across loads
 
     function vminPx() {
       return Math.min(window.innerWidth, window.innerHeight) / 100;
@@ -190,6 +197,40 @@ window.SDD = window.SDD || {};
       base.style.top  = y + 'px';
       knob.style.left = kx + 'px';
       knob.style.top  = ky + 'px';
+    }
+    function defaultIdlePos() {
+      // Lower-left of the viewport, comfortably inside the zone.
+      return {
+        x: Math.round(window.innerWidth * 0.18),
+        y: Math.round(window.innerHeight * 0.78)
+      };
+    }
+    function loadIdlePos() {
+      try {
+        var s = localStorage.getItem(IDLE_KEY);
+        if (s) {
+          var p = JSON.parse(s);
+          // Sanity-clamp to the current viewport (rotation/resize).
+          var maxX = Math.max(80, window.innerWidth * 0.5 - 20);
+          var maxY = Math.max(80, window.innerHeight - 20);
+          if (typeof p.x === 'number' && typeof p.y === 'number'
+              && p.x > 20 && p.x < maxX && p.y > 20 && p.y < maxY) {
+            return p;
+          }
+        }
+      } catch (e) {}
+      return defaultIdlePos();
+    }
+    function saveIdlePos(x, y) {
+      try { localStorage.setItem(IDLE_KEY, JSON.stringify({ x: x, y: y })); } catch (e) {}
+    }
+    function showIdle() {
+      // Park the knob centered on the base + go to idle alpha.
+      var p = loadIdlePos();
+      baseX = p.x; baseY = p.y;
+      setVsXY(baseX, baseY, baseX, baseY);
+      vs.classList.remove('vstick-active');
+      vs.classList.add('vstick-idle');
     }
     function clearDirs() {
       if (lastL) { setTouch('left',  false); lastL = false; }
@@ -225,7 +266,8 @@ window.SDD = window.SDD || {};
       baseX = e.clientX;
       baseY = e.clientY;
       setVsXY(baseX, baseY, baseX, baseY);
-      vs.classList.remove('vstick-hidden');
+      vs.classList.remove('vstick-idle');
+      vs.classList.add('vstick-active');
       try { zone.setPointerCapture(e.pointerId); } catch (err) {}
     }
     function move(e) {
@@ -237,10 +279,22 @@ window.SDD = window.SDD || {};
     function end(e) {
       if (e.pointerId !== activePtr) return;
       activePtr = null;
-      vs.classList.add('vstick-hidden');
+      // Remember where the kid was last using the stick so the idle
+      // ghost reappears there on the next session too.
+      saveIdlePos(baseX, baseY);
       clearDirs();
+      showIdle();
       try { zone.releasePointerCapture(e.pointerId); } catch (err) {}
     }
+
+    // First-paint: show the idle ghost so the kid can SEE where the
+    // joystick lives even before touching it.
+    showIdle();
+    // If the viewport resizes/rotates, re-park the idle ghost so it
+    // doesn't end up off-screen.
+    window.addEventListener('resize', function () {
+      if (activePtr === null) showIdle();
+    });
 
     zone.addEventListener('pointerdown',   start);
     zone.addEventListener('pointermove',   move);

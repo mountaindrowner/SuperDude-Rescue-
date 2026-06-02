@@ -234,13 +234,17 @@ body.touch #touch-controls { display: block; }
 #vstick {
   position: absolute;
   pointer-events: none;
-  /* Position is set per-touch in JS; opacity controls visibility. */
+  /* v1.0.1 (Mark): the joystick is now ALWAYS visible. Idle state is
+     a very transparent ghost so it doesn't dominate the screen but
+     the kid can always see where it lives. Active state (touch held)
+     pops to full alpha. JS toggles .vstick-idle and .vstick-active. */
   left: 0; top: 0;
   width: 0; height: 0;
   opacity: 1;
-  transition: opacity 0.10s ease;
+  transition: opacity 0.18s ease;
 }
-#vstick.vstick-hidden { opacity: 0; }
+#vstick.vstick-idle   { opacity: 0.22; }
+#vstick.vstick-active { opacity: 1; }
 #vstick-base, #vstick-knob {
   position: absolute;
   border-radius: 50%;
