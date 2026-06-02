@@ -214,19 +214,21 @@ typewriter cadence + the bubble + the read-along highlight.
 
 ---
 
-## 7. Open questions before we light it up
+## 7. Design decisions (locked)
 
-1. **Replay value** — should the lesson appear on every clear of an
-   eligible stage, or only the **first** clear? My recommendation:
-   only first clear (cheap to gate via a `lessonsSeen` set on the save
-   slot); subsequent clears skip straight through. VBS kids replaying
-   stages don't need the same reflection again.
-2. **Skip-ability** — should we let parents/leaders skip the lesson
-   for older kids who've heard it? Probably yes — hold B (or long-press
-   anywhere on touch) for ~1 second to skip to the next scene. Easy to
-   add.
-3. **Adventure Week 2026 tie-in** — should the closing beat (`close`)
-   mention "ADVENTURE WEEK 2026" for the bonus stage 8-1? Could.
-4. **Voiceover** — out of scope for v1, but the data structure already
-   supports it (per-beat `audio` field could load an MP3 of Mark or a
-   VBS leader reading the verse aloud).
+These were the open questions; Mark answered them.
+
+1. **Replay frequency: every clear.** The lesson fires every time an
+   eligible stage is finished, not just the first time. No
+   `lessonsSeen` set on the save slot, no gating — just trigger the
+   scene every time `finish()` runs on a lesson-eligible stage.
+2. **No skip.** No hold-B-to-skip, no leader bypass. The lesson plays
+   in full each time. Kids press A to advance beat-by-beat at their
+   own pace, but they can't jump out.
+3. **No Adventure-Week-2026 callback in the 8-1 closing.** Keep the
+   8-1 close generic to the Ecclesiastes verse — no AW2026 mention.
+   The Adventure Week 2026 banner stays exclusive to the cityArrival
+   final card.
+4. **Voiceover** — still out of scope for v1, but the data structure
+   can grow a per-beat `audio` field later if Mark or a VBS leader
+   wants to record themselves reading the verse.
