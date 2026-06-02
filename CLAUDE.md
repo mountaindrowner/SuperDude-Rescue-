@@ -13,6 +13,124 @@
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
 - **Live build**: `v1.0.2` / `sdd-shell-v102`.
 
+---
+
+## ★ PROJECT STATE SNAPSHOT (v1.0.2) — read this whole block first
+
+> Consolidated current-state handover so a fresh/compacted session has
+> everything in one place without scrolling the version-by-version
+> changelog below. If anything here conflicts with an older changelog
+> entry, THIS block wins.
+
+### What this is
+**Super Dude Danny** — a finished, kid-friendly retro HTML5 platformer
+built for **The Crossroads Foundation's VBS 2026** (theme: the seven
+days of creation). Plain HTML/CSS/JS, Canvas + Web Audio, **no build
+step, no dependencies**. 320×180 world rendered 3× to a 960×540 canvas.
+Everything hangs off `window.SDD`; 24 classic `<script>` tags load in
+dependency order via `index.html`. The game is **feature-complete at
+v1.0.2**.
+
+### Content (what's in the game)
+- **12 main stages** across 7 creation days + **Day 8-1 "Adventure
+  City"** secret bonus stage (cyber theme, Computer character, rescue
+  cinematic, Ecclesiastes lesson).
+- **3 difficulty modes** (easy/medium/hard) with independent save slots.
+- **Between-day Bible quizzes** (Days 2-6; fill-in-the-blank, ESV,
+  graduated hints, pass to unlock next day). `js/quiz_data.js`.
+- **Post-stage scripture lessons** (v1.0) — ICB verses, Danny teaching
+  in the lab, typewriter + read-along karaoke + reflect question.
+  `js/scripture_data.js`, scene `SDD.scenes.lesson`.
+- **After-stage routing** (the key map): X-1 stages (2-1,3-1,4-1,5-1,
+  6-1) → LESSON; X-2 stages (2-2..6-2) → QUIZ; 7-1 → FINALE; 8-1 →
+  cityArrival cutscene → LESSON → menu; 1-1 → overworld. Lesson plays
+  EVERY clear, no skip. (Day 7 has dormant unused quiz data.)
+- **Per-stage signature power-ups**, animated cinematics (intro +
+  finale + Adventure City open/close), 38 MP3 tracks w/ chiptune
+  fallback, painted overworld + backdrops.
+
+### Distribution status
+- **PWA is LIVE on Netlify**, git-connected to this repo + branch
+  (auto-deploys every push). Netlify build = `node scripts/build-web.mjs`
+  → publishes `www/` (clean game bundle). Config in `netlify.toml`.
+  The PWA is installable ("Add to Home Screen") = the shipping product
+  today. Also link it from Mark's Subsplash site as the front door.
+- **iOS App Store: scaffolded but BLOCKED.** Capacitor wrap is fully
+  prepped (`package.json`, `capacitor.config.json` appId
+  `org.thecrossroads.superdudedanny`, `scripts/build-web.mjs`,
+  `resources/icon.png` + `splash.png`, `IOS_BUILD.md` step-by-step +
+  listing copy, `privacy.html`). **BLOCKER: Mark's Mac runs macOS 12
+  Monterey → max Xcode 14.2, but Apple requires Xcode 15+ (iOS 17 SDK)
+  to submit.** Mark needs to upgrade to macOS 13 Ventura+ (free if his
+  Mac is 2017+) then install Xcode 15/16, OR use a cloud build
+  (Codemagic). He said he'll do the OS upgrade "soon." Until then the
+  PWA is the distribution.
+
+### Dev kit REMOVED (v0.98) — public build
+- **God mode gone** (no OPTIONS row, no HUD badge, no PRESS-G tip;
+  `save.js` force-clears `options.god=false` on load). Inert god
+  branches remain in entities.js but can never fire.
+- **Editors UNLOADED, source kept.** The `<script>` tags for
+  `js/editor.js` + `js/decor_editor.js` are COMMENTED OUT in
+  `index.html`. To edit levels: uncomment both, reload, use LEVEL/DECOR
+  EDITOR, save, re-comment. Menu items auto-hide when unloaded.
+  **Reminder: the editor's save format DROPS the 3 render-only fields
+  on `level_8_1.js` (`hint`, `startSign`, `towerEntrance`) — re-attach
+  them at the bottom of the file after any editor re-save.**
+- **Version badge KEPT** on the menu (Mark's choice) — bottom-right,
+  reads the live `SDD.VERSION`.
+
+### Adventure City unlock (v0.98)
+Global flag `save.data.options.secretUnlocked` (cross-slot). Finale
+sets it true on FIRST whole-game completion on ANY difficulty +
+shows a centered "SECRET LEVEL UNLOCKED!" alert → fades to menu. Menu
+then shows the `ADVENTURE CITY UNLOCKED` button.
+
+### Recent reliability fixes
+- **Music (v1.0.2):** removed the 2.5s MP3→chiptune timeout that made
+  the old synth music surface on slow/deployed loads. MP3s now always
+  win; chiptune only if a file truly 404s.
+- **Cold-load title (v0.99):** logo scene waits for `title.png` to
+  actually load instead of bailing to the menu after 0.5s.
+- **Joystick (v1.0.1):** always-visible ghost (22% opacity) that
+  remembers its last position (localStorage), pops to full alpha on
+  touch. Classes `.vstick-idle` / `.vstick-active`.
+
+### Repo additions since the v0.97 audit (file layout below is older)
+`js/scripture_data.js`, `docs/SCRIPTURE_LESSONS_SPEC.md`,
+`package.json`, `capacitor.config.json`, `scripts/build-web.mjs`,
+`resources/icon.png` + `splash.png`, `privacy.html`, `netlify.toml`,
+`IOS_BUILD.md`, `tools/make_icon.js`, `.gitignore` (ignores
+`node_modules/`, `www/`, `ios/`, `.claude/`). The v0.97 audit also
+deleted 15 orphaned root MP3s + legacy `assets/overworld.png` (-41 MB)
+and confirmed a clean secrets/PII scan.
+
+### How to run / deploy / build
+- **Local:** `python3 -m http.server 8000` → open `localhost:8000`.
+- **Live preview (branch):** GitHack URL in "How to run" section, or
+  the Netlify URL.
+- **Deploy:** just `git push` — Netlify auto-builds.
+- **iOS (when macOS upgraded):** see `IOS_BUILD.md` — `npm install` →
+  `npm run ios:add` → `npx cap open ios` → set Team → archive → submit.
+- **Cache trap:** bump `SDD.VERSION` (main.js) + `CACHE_NAME`
+  (service-worker.js) in lockstep on every ship. To force-update a
+  browser: DevTools → Application → Unregister SW + Clear site data.
+
+### Pending / next steps
+1. Mark upgrades macOS → Xcode 15+ → finish iOS submission (I can
+   generate App Store screenshots at required sizes on request).
+2. Optional: slim the ~130 MB asset bundle (re-encode MP3s) before the
+   iOS build.
+3. Banked: a Day-7 reflection (would be a lesson before the finale,
+   not a quiz). Voiceover field for lessons (data structure ready).
+
+### Verification habit
+Puppeteer harness in `/tmp` (cache-bust + freeze `stepWorld`/`update`
++ screenshot). Install on demand: `cd /tmp && npm i puppeteer canvas`.
+Always `node --check` touched JS before committing.
+
+---
+
 ### v1.0.2 — Fix: old chiptune surfacing on the deployed build (latest)
 
 Mark heard the original synthesized `SONGS` chiptune (not the MP3s) on
@@ -36,8 +154,6 @@ Fix in `js/audio.js`:
   with zero exceptions and the real track plays once it arrives.
 
 ### v1.0 — Post-stage scripture lessons LIVE
-
-### v1.0 — Post-stage scripture lessons LIVE (latest)
 
 The theory-crafted VBS lesson scene is wired in. Triggers after every
 clear of the 6 eligible stages (2-1, 3-1, 4-1, 5-1, 6-1, 8-1) - i.e.
