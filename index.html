@@ -21,8 +21,13 @@
      key on the title card (Mark Pass 9: 'music started really
      late'). Without this, the browser deprioritized title.mp3
      behind all the PNG sprite assets and the user-gesture play()
-     had to wait for the buffer. -->
-<link rel="preload" as="audio" href="assets/music/title.mp3" type="audio/mpeg">
+     had to wait for the buffer.
+     v0.99 follow-up: explicit fetchpriority="high" on title.mp3
+     so the CDN fetch races ahead of every other resource on cold
+     load - Mark hit "music has serious trouble loading on first
+     load" on a fresh Netlify install. -->
+<link rel="preload" as="audio" href="assets/music/title.mp3" type="audio/mpeg" fetchpriority="high">
+<link rel="preload" as="audio" href="assets/music/menu.mp3"  type="audio/mpeg" fetchpriority="high">
 <link rel="preload" as="audio" href="assets/music/intro.mp3" type="audio/mpeg">
 <!-- v0.99 (Mark): preload the title PNG so it's in the browser cache
      by the time the logo scene's render runs - prevents the "first

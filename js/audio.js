@@ -238,23 +238,72 @@ window.SDD = window.SDD || {};
     // play(). For title/intro tracks especially we want the bytes
     // in memory by the time the user taps the title card.
     try { a.load(); } catch (e) {}
-    FILE_TRACKS[id] = { el: a, loop: loop !== false, id: id };
+    var rec = { el: a, loop: loop !== false, id: id, failed: false };
+    FILE_TRACKS[id] = rec;
+    // v0.99 follow-up (Mark: "music has serious trouble loading on
+    // first load... takes several reloads"). On a cold network the
+    // fetch can error or stall silently and the player hears nothing.
+    // Track the error state so callers can drop straight to chiptune.
+    a.addEventListener('error', function () { rec.failed = true; });
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
+  // v0.99 follow-up: robust MP3 start. Old code was optimistic - it
+  // called play() and ignored any rejection, so on cold-load fetches
+  // that weren't ready in time the player heard NOTHING with no retry
+  // and no chiptune fallback. New behaviour:
+  //   - skip variants whose audio element already errored on fetch
+  //   - on play() rejection, retry once on `canplay`
+  //   - if MP3 still isn't playing 2.5s later, hard-fall to chiptune
   function tryFileTrack(name) {
     var ids = VARIANT_POOLS[name] || (FILE_TRACKS[name] ? [name] : null);
     if (!ids) return false;
-    var id = ids[Math.floor(Math.random() * ids.length)];
+    // Filter out variants whose fetch has failed.
+    var usable = [];
+    for (var k = 0; k < ids.length; k++) if (FILE_TRACKS[ids[k]] && !FILE_TRACKS[ids[k]].failed) usable.push(ids[k]);
+    if (!usable.length) return false;
+    var id = usable[Math.floor(Math.random() * usable.length)];
     var tr = FILE_TRACKS[id]; if (!tr) return false;
     stopMusic();
     try {
       tr.el.currentTime = 0;
       tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
-      var p = tr.el.play();
-      if (p && p.catch) p.catch(function () {});   // ignore autoplay rejection
       currentFileTrack = tr;
+      var p = tr.el.play();
+      if (p && p.then) {
+        p.catch(function () {
+          // play() rejected. Most likely cause on cold-load: data not
+          // ready yet. Wait for `canplay` and try again.
+          if (currentFileTrack !== tr) return;     // moved on already
+          var retried = false;
+          var doRetry = function () {
+            if (retried) return; retried = true;
+            tr.el.removeEventListener('canplay', doRetry);
+            if (curSong !== name || currentFileTrack !== tr) return;
+            try {
+              var pp = tr.el.play();
+              if (pp && pp.catch) pp.catch(function () {});
+            } catch (e) {}
+          };
+          tr.el.addEventListener('canplay', doRetry);
+        });
+      }
+      // Last-resort safety net: if 2.5s elapse and the element still
+      // isn't playing, give up on MP3 + drop to the chiptune fallback
+      // so the player never hears silence.
+      setTimeout(function () {
+        if (curSong === name && currentFileTrack === tr && tr.el.paused) {
+          var failedTrack = tr;
+          currentFileTrack = null;
+          failedTrack.failed = true;             // don't pick this variant again this session
+          curSong = null;                        // so startMusic doesn't short-circuit
+          startMusic(name);                      // re-entry: picks a new variant OR chiptune
+        }
+      }, 2500);
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      currentFileTrack = null;
+      return false;
+    }
   }
   function stopFileTrack(immediate) {
     if (!currentFileTrack) return;
