@@ -4,13 +4,16 @@
 #
 # One-time setup is documented step-by-step in CODEMAGIC_SETUP.md. The
 # short version:
-#   1. Register App ID  org.thecrossroads.superdudeadventures  in the
-#      Apple Developer portal (developer.apple.com).
-#   2. Create the app record in App Store Connect (same bundle ID).
-#   3. Create an App Store Connect API key (.p8) and upload it to
-#      Codemagic as an integration named exactly  superdude_asc
-#      (or rename it here to whatever you call it).
-#   4. Connect this GitHub repo + branch in Codemagic, then run the
+#   1. Create an App Store Connect API key (.p8) with ADMIN access and
+#      upload it to Codemagic as an integration named exactly
+#      superdude_asc (or rename it here to whatever you call it). Admin
+#      is required so the signing step below can CREATE the certificate
+#      + profile + bundle ID automatically.
+#   2. Create the app record in App Store Connect (New App, same bundle
+#      ID). Needed so the final TestFlight upload has a target. (The App
+#      ID / bundle identifier itself is auto-registered by the signing
+#      step's --create, so you don't have to register it by hand first.)
+#   3. Connect this GitHub repo + branch in Codemagic, then run the
 #      "ios-appstore" workflow below.
 #
 # Nothing here changes the game. build:web just assembles the same clean
@@ -30,12 +33,6 @@ workflows:
       app_store_connect: superdude_asc
 
     environment:
-      # Codemagic uses the API key above to AUTOMATICALLY create/fetch
-      # the distribution certificate + provisioning profile for this
-      # bundle ID. No certificates to manage by hand, no Xcode.
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: org.thecrossroads.superdudeadventures
       node: 20
       xcode: latest
       cocoapods: default
@@ -45,7 +42,7 @@ workflows:
         BUNDLE_ID: "org.thecrossroads.superdudeadventures"
         # Marketing version shown on the store. Keep in step with
         # SDD.VERSION in js/main.js (strip the leading "v").
-        MARKETING_VERSION: "1.0.2"
+        MARKETING_VERSION: "1.0.3"
 
     scripts:
       - name: Install npm dependencies
@@ -69,8 +66,20 @@ workflows:
           cd ios/App
           pod install
 
-      - name: Apply the signing profiles Codemagic fetched via the API key
-        script: xcode-project use-profiles
+      - name: Set up code signing (create cert + profile if missing)
+        script: |
+          # The --create flag is the important part: Codemagic CREATES
+          # the distribution certificate AND the App Store provisioning
+          # profile (and registers the bundle ID if it isn't yet)
+          # instead of only searching for existing ones. This is the fix
+          # for "No matching profiles found for bundle identifier ...".
+          # Requires the App Store Connect API key to have Admin access.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
 
       - name: Set the marketing version + auto-incrementing build number
         script: |
