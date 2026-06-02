@@ -33,6 +33,17 @@ workflows:
       app_store_connect: superdude_asc
 
     environment:
+      # This block is what makes Codemagic FETCH the distribution
+      # certificate + App Store provisioning profile (which now exist -
+      # they were created on the earlier runs) and set up the keychain
+      # BEFORE the scripts run, in exactly the layout that
+      # `xcode-project use-profiles` reads. Without it, use-profiles
+      # can't wire the profile into the project and the archive fails
+      # with "App requires a provisioning profile". The bundle id must
+      # already be registered (it is) and the API key must be Admin.
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: org.thecrossroads.superdudeadventures
       node: 20
       xcode: latest
       cocoapods: default
@@ -66,27 +77,16 @@ workflows:
           cd ios/App
           pod install
 
-      - name: Set up code signing (create cert + profile if missing)
+      - name: Set up code signing settings on the Xcode project
         script: |
-          # Canonical Codemagic manual-signing ORDER matters:
-          #   1. initialize the keychain FIRST
-          #   2. fetch/create the distribution cert + App Store profile
-          #      (--create also registers the bundle id if needed)
-          #   3. import the cert into the keychain
-          #   4. patch the Xcode project to use the fetched profile
-          # Running keychain-initialize AFTER the fetch (the previous bug)
-          # left use-profiles unable to bind a signing identity, so the
-          # archive failed with "App requires a provisioning profile".
-          # Requires the App Store Connect API key to have Admin access.
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
+          # The ios_signing environment block (above) already fetched the
+          # cert + profile and set up the keychain. This applies the
+          # fetched App Store profile to the App target. This is exactly
+          # Codemagic's official Capacitor signing flow.
           xcode-project use-profiles
-          echo "--- provisioning profiles present after fetch: ---"
+          echo "--- provisioning profiles available to use-profiles: ---"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null \
-            || echo "(NONE found - signing would fail)"
+            || echo "(NONE found)"
 
       - name: Set the marketing version + auto-incrementing build number
         script: |
