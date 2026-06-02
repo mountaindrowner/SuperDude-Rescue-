@@ -66,33 +66,28 @@ workflows:
           cd ios/App
           pod install
 
-      - name: Set up code signing (DIAGNOSTIC - prints account state)
+      - name: Set up code signing (mint a fresh distribution cert + profile)
         script: |
-          echo "========== A. distribution certificates in the account =========="
-          # If this lists 2 already, we're at Apple's limit and a NEW one
-          # can't be created -> the cloud Mac then has a profile but no
-          # usable signing identity (private key), which is the likely
-          # root cause. We do NOT have the private keys for certs created
-          # on your personal Mac for your other app.
-          app-store-connect certificates list --type IOS_DISTRIBUTION || true
-          echo "========== B. existing app_store profiles =========="
-          app-store-connect profiles list --type IOS_APP_STORE || true
-          echo "========== C. initialize keychain =========="
           keychain initialize
-          echo "========== D. fetch/create signing files (verbose) =========="
+          # ROOT-CAUSE FIX (confirmed from the diagnostic build):
+          # the account has ZERO iOS Distribution certificates whose
+          # private key lives on this cloud Mac, so Codemagic could not
+          # save a signing identity ("Cannot save Signing Certificates
+          # without certificate private key"). We generate a fresh private
+          # key and pass it with --certificate-key, so --create mints a
+          # brand-new iOS Distribution certificate we own PLUS the App
+          # Store provisioning profile for our bundle id, and saves a
+          # usable .p12 into the keychain.
+          CERT_KEY=/tmp/codemagic_dist_key.pem
+          openssl genrsa -out "$CERT_KEY" 2048
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create \
-            --verbose
-          echo "========== E. import certs into keychain =========="
+            --certificate-key @file:"$CERT_KEY" \
+            --create
           keychain add-certificates
-          echo "========== F. provisioning profiles now on disk =========="
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || echo "NONE on disk"
-          echo "========== G. valid codesigning identities in keychain =========="
-          # '0 valid identities found' here = the cert/private-key problem.
+          xcode-project use-profiles
+          echo "--- codesigning identities after setup (expect 1 valid) ---"
           security find-identity -v -p codesigning || true
-          echo "========== H. apply profiles to the Xcode project =========="
-          xcode-project use-profiles --verbose
 
       - name: Set the marketing version + auto-incrementing build number
         script: |
