@@ -97,11 +97,10 @@ then shows the `ADVENTURE CITY UNLOCKED` button.
   touch. Classes `.vstick-idle` / `.vstick-active`.
 
 ### Companion docs (read these too)
-- **`docs/TECH_REFERENCE.md`** — full technical map + inventories
-  (modules, scenes, entities, spawn types, tile codes, sprites,
-  themes, audio, save) + the GOTCHAS list (editor-drops-fields,
-  cache trap, MP3/chiptune, puppeteer harness quirks, Capacitor
-  webDir, iOS/macOS blocker, no-build invariant). **Read after this
+- **TECHNICAL REFERENCE** — full technical map + inventories (modules,
+  scenes, entities, spawn types, tile codes, sprites, themes, audio,
+  save) + the GOTCHAS list. **Now folded inline into this file — see
+  the "## TECHNICAL REFERENCE & DISCOVERIES" section just below this
   snapshot.**
 - **`ART_STYLE.md`** — cyber-theme pixel-art bible (read before
   touching `drawSky_cyber` / `_cy*` painters).
@@ -141,6 +140,203 @@ and confirmed a clean secrets/PII scan.
 Puppeteer harness in `/tmp` (cache-bust + freeze `stepWorld`/`update`
 + screenshot). Install on demand: `cd /tmp && npm i puppeteer canvas`.
 Always `node --check` touched JS before committing.
+
+---
+
+## TECHNICAL REFERENCE & DISCOVERIES
+
+> The durable technical map + the hard-won "gotchas" so a new session
+> doesn't re-learn them the painful way. Accurate as of **v1.0.2**.
+> (Previously a separate `docs/TECH_REFERENCE.md`; folded in here so
+> the handover is one self-contained file.)
+
+### T1. Documentation inventory (read order)
+
+| File | What it is |
+|---|---|
+| `CLAUDE.md` (this file) | **Read first.** Snapshot + this technical reference + version-by-version changelog. |
+| `ART_STYLE.md` | Adventure City cyber-theme pixel-art bible (5-layer parallax, palette, per-building paint stack, shader pass, neon-sign formula). Read before touching `drawSky_cyber` / the `_cy*` painters. |
+| `docs/SCRIPTURE_LESSONS_SPEC.md` | Lesson scene design spec (implemented v1.0). Locked decisions in §7. |
+| `IOS_BUILD.md` | Capacitor → Xcode → App Store steps + ready-to-paste listing copy + privacy answers. |
+| `PLAN.md` | Historical design record (Passes 1-11). Read for *why* things look the way they do. |
+| `README.md` / `assets/README.txt` | Public description / legacy art-swap note. |
+
+### T2. Module map — the `window.SDD` namespace
+
+24 classic `<script>` tags in `index.html`, **strict dependency
+order**: `save → input → audio → sprites → engine → entities →
+level1 → level_2_1…7_1 → level_8_1 → cyber_decor_8_1 → quiz_data →
+scripture_data → scenes → [editor, decor_editor — COMMENTED OUT] →
+main`. Each file is an IIFE attaching to `window.SDD`.
+
+| Export | Defined in | Purpose |
+|---|---|---|
+| `SDD.C` | engine.js | Constants: `TILE 16`, `VIEW_W/H 320/180`, `GRAVITY 0.36`, `MAX_FALL 5.8`, `JUMP_SMALL -6.5`, `JUMP_BIG -7.0`. |
+| `SDD.engine` | engine.js | `TileMap`, `Camera`, `overlap`, `clamp`, `randInt`. |
+| `SDD.ent` | entities.js | All entity constructors (see T4). |
+| `SDD.sprites` | sprites.js | `build()`, `get(name)`, `text/textShadow`, `pixDraw`, `pixFrame`, `pixBBox`, `drawDanny`, the `F` pixel font, PixelLab manifest. |
+| `SDD.audio` | audio.js | `init/resume`, `sfx(name)`, `startMusic/stopMusic`, volume buses, MP3 pools + chiptune fallback. |
+| `SDD.input` | input.js | keyboard + virtual joystick + touch buttons + gamepad; `pressed/held/confirm/back`, `onFirstGesture`, `endStep`. |
+| `SDD.save` | save.js | v4 save; `data` proxy, `recordStage`, `isQuizPassed`, `curDifficulty`, `secretUnlocked`. |
+| `SDD.levels` | level_*.js | `SDD.levels['d-s']` plain data. |
+| `SDD.quiz` / `SDD.scripture` + `SDD.scriptureFor` | quiz_data / scripture_data | quiz Q&A / ICB lessons. |
+| `SDD.scenes` + `SDD.setScene` + `SDD.scene` | scenes.js + main.js | scene registry / switcher / current. |
+| `SDD.themes` | scenes.js | `{ SKY: THEMES, FG: FOREGROUNDS }` — for editor preview. |
+| `SDD._draw*` / `SDD._paintDecorPiece` / `SDD.cyberDecor` | scenes.js | cyber painters exposed for editors. |
+| `SDD.editor` / `SDD.editorLib` | editor.js | dev tool (unloaded in public build). |
+| `SDD.runLives` | main.js/scenes.js | lives carried across stages within a run. |
+
+**Late-binding rule:** cross-module calls happen inside functions
+(scene enter/update/render), by which point all scripts are loaded.
+Editor/decor_editor guard `SDD._draw*`/`SDD.themes` reads with `if`.
+
+### T3. Scenes (17 registered)
+
+`logo → menu → newgame → overworld → stageintro → level → results →
+(quiz | lesson) → overworld`; plus `intro` (new-game cinematic),
+`finale` (game-complete + unlock alert), `cityIntro`/`cityArrival`
+(Adventure City), `howto`, `options`, `gameover`. Dev: `editor`,
+`decorEdit`. Each scene = `{ enter(d), update(dt), render(ctx) }`;
+60 Hz fixed-step loop in main.js, `ctx.setTransform(3…)` before render.
+
+**After-stage routing** (`level.finish` + `scenes.results`): finish →
+day 8 = cityArrival; day 7 = finale; else results. results →
+last-stage-of-day + quiz exists + not passed = quiz; else
+`scriptureFor(day,stage)` = lesson; else overworld. cityArrival end →
+lesson (8-1) → menu.
+
+### T4. Entity inventory (`SDD.ent`)
+
+`Player, Walker, Wisp, Thrower, Orb, Blast, MovPlat, Core, ItemDrop,
+TimePart, NPC, Checkpoint, Signature, SolarFlare, Meteor,
+HazardSpawner, Crab, WaterJet, LavaPlume, HydrantJet, BubbleUp,
+Octopus, Twister, ElectricEel, Stampede, LeafFall, LeafSpawner, Car,
+CarSpawner`.
+- **Player** keys off `scene.day` (`day===8` → Computer sprite +
+  jump boost). Costumes swap per theme.
+- **Car** (v0.91+): persistent **patrol** mob (`patrol`, `range`,
+  `kind:'car'|'dump'`). Cruise→brake(sqrt)→stop→flip→accelerate.
+  Visual decoupled from hitbox (`drawW/drawH` full sprite, `w/h` =
+  80% collision box, centered via `drawOX/OY`). Soft radial headlight.
+- **HydrantJet** = blue LavaPlume clone. **Wisp `variant:'drone'`** =
+  sky drone. **HazardSpawner kinds:** `flare, meteor, meteorH,
+  lavaPlume, hydrantJet`.
+
+### T5. Spawn types (level data + editor)
+
+`player, core, timepart, checkpoint, signature, walker, thrower, crab,
+stampede, wisp, octopus, eel, skyhazard, twister, bubble, leafstream,
+npc, item, car, dumptruck, hydrant, drone, carspawner`. Handled in
+`level.loadLevel`; editor mirrors via `SPAWN_GROUPS`/`spawnDefaults`/
+`SPAWN_FIELDS`.
+
+### T6. Tile codes
+
+Solid: `X` ground, `#` brick, `U` used-Q, `?`/`G`/`B` Q-blocks, `C`
+**crumble** (breaks ~33 frames after the grounded player stands on it;
+logic in `level.stepWorld`, painted inline). One-way: `=`. Render-only:
+`V` vine, `W` water, `~` water-surface, `L` lava. Level data also
+carries `themeZones` (`hard:true` = instant swap), `movers`, `hint`,
+`startSign`, `towerEntrance`, `flappy*`, `underwater`.
+
+### T7. Sprite system (PixelLab)
+
+`PL_MANIFEST` (sprites.js): **size** → anim → `{base, folder, frames,
+south/north/flat}`. Sizes: `big`/`small` (Danny + Computer gameplay
+anims `comp_idle/run/jump/die/warp`), `rescue` (5 heroes), `comp2`
+(expressive Computer cutscene). `PL_BBOX` = measured bbox per anim/dir;
+`PL_DISPLAY_H = { big:36, small:26, rescue:34, comp2:52 }`. `pixDraw(
+ctx, size, anim, dir, idx, cx, baselineY)` crops bbox + scales to
+display height. **Pixel font** `F` (5×7 glyphs): digits, A-Z, punct
+incl. `'` and (v1.0) `"`; missing glyph → renders `?`.
+
+### T8. Themes / parallax
+
+`THEMES` (sky painters) + `FOREGROUNDS` (only `cyber` registers one).
+Biomes: `sky, sea-surface, rocky, forest, sunlit, cosmic-night,
+bird-sky, seaside, savanna, village-dusk, eden, bugscale, galactic,
+cyber, cyber-dawn, cyber-tunnel(-pass)`. Cyber = gold standard, see
+ART_STYLE.md. Day 1-1 = forming-galaxy spiral, Day 3-1 = erupting
+volcano (far layer 0.05 parallax).
+
+### T9. Audio
+
+MP3 preferred via `loadFileTrack(id,path)` + `regPool(key,[ids])`. 38
+MP3s in `assets/music/` (framing + per-level `_a/_b/_c`, random pick)
++ 3 Adventure City tracks under `assets/New Assets/Adventure city
+Music/` (spaces → `encodeURI`). Chiptune `SONGS` fallback **only when
+no file is registered or every variant 404s** (v1.0.2 — never
+substitutes for a slow load). Independent music+sfx gain buses. SFX
+synthesized in `sfx(name)` (~46 cases incl. `typewriter_tick`,
+`lesson_open/close`, `honk`, `drone_beep`, surface steps).
+
+### T10. Save (v4)
+
+`localStorage['superDudeDanny.save.v3']` (key kept v3; payload v4). 3
+slots (easy/medium/hard) each w/ progress + `firstClear`/
+`secretCleared`. **Global** `options` (cross-slot): `muted,
+musicVolume, sfxVolume, god(forced false), secretUnlocked`. `data` is a
+live proxy onto the active slot. v1→v2→v3→v4 migration preserved.
+
+### T11. GOTCHAS / discoveries (don't relearn)
+
+1. **Editor drops custom level fields.** Saving `level_8_1.js` from the
+   in-game editor only emits `width/height/ground/tiles/spawns/movers/
+   name/theme/themeZones` — it DROPS `hint`, `startSign`,
+   `towerEntrance`. Re-attach those 3 at the bottom of the file after
+   every editor re-save. (Bit us twice.)
+2. **Service-worker cache trap.** Bump `SDD.VERSION` (main.js) +
+   `CACHE_NAME` (service-worker.js) in lockstep every ship. Force a
+   browser update: DevTools → Application → Unregister SW + Clear site
+   data.
+3. **MP3 cold-load vs chiptune (v1.0.2).** Never gate MP3 playback on a
+   wall-clock timeout; wait for `canplay`, else the old synth music
+   surfaces on the deployed site.
+4. **title.png cold-load (v0.99).** The logo scene waits for the image's
+   real load/error, not a 0.5s timer (which made Netlify skip the
+   title+music).
+5. **Puppeteer harness quirk.** Tests must (a) cache-bust + unregister
+   SW + clear caches, (b) freeze the RAF loop via `SDD.scene.stepWorld
+   = SDD.scene.update = function(){}` before forcing a camera position
+   (else the loop re-follows the player and resets your framing).
+   canvas + puppeteer live in `/tmp/node_modules`.
+6. **Capacitor webDir.** Can't point at repo root (would bundle `.git`/
+   `node_modules`/`ios/`). `scripts/build-web.mjs` assembles a clean
+   `www/` (same bundle Netlify publishes); `www/` is gitignored.
+7. **PWA features die in an iframe.** SW + install + offline only work
+   at a top-level URL → Subsplash should LINK to the Netlify URL, not
+   iframe-embed it.
+8. **iOS submission needs Xcode 15+ → macOS 13+.** macOS 12 caps at
+   Xcode 14.2 (Apple no longer accepts). Build/test locally OK;
+   submission blocked until OS upgrade (or cloud build).
+9. **`level_8_1.js` needs `movers: []`.** A missing `movers` array
+   crashed loadLevel (reads `.length`).
+10. **No-build invariant.** Plain `<script>`, ES5-ish `var`/`function`,
+    runs from `file://` or any static host. Don't add `import`/`export`
+    or a bundler — it breaks the distribution model.
+
+### T12. Directory structure (current, v1.0.2)
+
+```
+index.html  manifest.webmanifest  service-worker.js  privacy.html
+netlify.toml  package.json  capacitor.config.json  .gitignore
+CLAUDE.md  ART_STYLE.md  PLAN.md  README.md  IOS_BUILD.md
+css/style.css
+docs/        SCRIPTURE_LESSONS_SPEC.md
+js/          save, input, audio, sprites, engine, entities,
+             level1 + level_2_1…8_1, cyber_decor_8_1, quiz_data,
+             scripture_data, scenes, editor, decor_editor, main  (24)
+scripts/     build-web.mjs            (web bundle assembler)
+resources/   icon.png (1024) splash.png (2732)   (Capacitor source art)
+tools/       make_icon.js  swim-bbox.html         (dev)
+tests/       *.js  (puppeteer/static checks, dev-only)
+test/        sprites.html  (standalone sprite preview)
+assets/      ~809 files: music/ (38 mp3), New Assets/ (PixelLab sprite
+             folders + Adventure city Music), painted PNGs (title, lab,
+             timemachine, level-6 bug bg), PWA icons.
+```
+Generated/ignored (not in git): `node_modules/`, `www/`, `ios/`,
+`.claude/`.
 
 ---
 
