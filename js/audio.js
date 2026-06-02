@@ -398,23 +398,17 @@ window.SDD = window.SDD || {};
     if (curSong === name && songState) return;                  // chiptune playing
     if (!ctx) { pendingSong = name; curSong = name; return; }
     resume();
-    // 1) Try Mark's MP3s first.
+    // 1) Play Mark's MP3s.
     if (tryFileTrack(name)) { curSong = name; return; }
-    // 2) Fall back to procedural chiptune. If the name is a per-level
-    //    key (e.g. 'level_6_2') with no dedicated chiptune, fall back
-    //    further to the generic 'level' track.
+    // 2) No MP3 available for this name -> SILENCE.
+    //    v1.0.4 (Mark): the procedural chiptune fallback is REMOVED
+    //    entirely - it occasionally surfaced as the "old original music"
+    //    on the deployed / native build. MP3s always play; if a track
+    //    genuinely fails to load we stay silent rather than EVER play the
+    //    synth chiptune. (The SONGS data + scheduler remain in the file
+    //    but are no longer invoked from anywhere.)
     stopMusic();
     curSong = name;
-    var song = SONGS[name];
-    if (!song && /^level_/.test(name)) song = SONGS.level;
-    if (!song && (name === 'overworld' || name === 'finale')) song = SONGS.overworld;
-    if (!song && (name === 'title' || name === 'menu' || name === 'intro')) song = SONGS.title;
-    if (!song) return;
-    var stepDur = 60 / song.tempo / 4;
-    var t0 = ctx.currentTime + 0.1;
-    songState = { song: song, stepDur: stepDur, melIdx: 0, basIdx: 0, melTime: t0, basTime: t0 };
-    schedTimer = setInterval(scheduler, 25);
-    scheduler();
   }
 
   function stopMusic() {

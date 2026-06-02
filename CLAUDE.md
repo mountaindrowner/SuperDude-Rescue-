@@ -11,7 +11,23 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v1.0.3` / `sdd-shell-v103`.
+- **Live build**: `v1.0.4` / `sdd-shell-v104`.
+- **iOS App Store: LIVE pipeline.** Codemagic cloud build works end to
+  end — signs (mints its own iOS Distribution cert via `--certificate-key`
+  with a generated/stored key), archives, uploads to App Store Connect.
+  App record exists (App ID `6775989095`, bundle
+  `org.thecrossroads.superdudeadventures`). Tested on a real iPhone via
+  TestFlight. Remaining to ship: screenshots (generated, iPhone 6.7" +
+  iPad 12.9" in `/tmp/appstore_shots` last session) → listing copy
+  (`IOS_BUILD.md`) → submit. See `CODEMAGIC_SETUP.md`.
+- **v1.0.4 fixes (Mark, on-device feedback):** (1) chiptune REMOVED
+  entirely from `audio.js` startMusic — MP3s only, silence if a track
+  fails, never the synth. (2) Touch A/B buttons: pointer-capture +
+  dropped `pointerleave` release (whole face now responsive) + A grown
+  20→24vmin. (3) iOS app locked **landscape-only** via an Info.plist
+  step in `codemagic.yaml` (no turn-phone prompt). (4) Codemagic signing
+  is now cert-REUSE capable (set Codemagic env var `CERT_PRIVATE_KEY` to
+  stop minting a new cert each build; falls back to generating one).
 - **App is now titled "Super Dude Adventures"** (the menu wordmark + the
   PWA/app/store name). Danny is still the on-screen hero/character —
   only the brand/title changed; narrative "Super Dude Danny" references

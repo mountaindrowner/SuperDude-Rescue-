@@ -42,7 +42,7 @@ workflows:
         BUNDLE_ID: "org.thecrossroads.superdudeadventures"
         # Marketing version shown on the store. Keep in step with
         # SDD.VERSION in js/main.js (strip the leading "v").
-        MARKETING_VERSION: "1.0.3"
+        MARKETING_VERSION: "1.0.4"
 
     scripts:
       - name: Install npm dependencies
@@ -61,6 +61,23 @@ workflows:
       - name: Generate the app icon + splash from resources/
         script: npx @capacitor/assets generate --ios
 
+      - name: Lock the iOS app to landscape-only orientation
+        script: |
+          # Capacitor regenerates Info.plist on every build, so we force
+          # landscape-only here (Mark: "landscape only, no turn-phone
+          # words"). iOS then simply keeps the app in landscape - the user
+          # is never prompted to rotate. Applies to both iPhone + iPad.
+          PLIST="ios/App/App/Info.plist"
+          PB=/usr/libexec/PlistBuddy
+          for KEY in UISupportedInterfaceOrientations "UISupportedInterfaceOrientations~ipad"; do
+            $PB -c "Delete :$KEY" "$PLIST" 2>/dev/null || true
+            $PB -c "Add :$KEY array" "$PLIST"
+            $PB -c "Add :$KEY:0 string UIInterfaceOrientationLandscapeLeft" "$PLIST"
+            $PB -c "Add :$KEY:1 string UIInterfaceOrientationLandscapeRight" "$PLIST"
+          done
+          echo "--- iPhone orientations now: ---"
+          $PB -c "Print :UISupportedInterfaceOrientations" "$PLIST"
+
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App
@@ -78,8 +95,22 @@ workflows:
           # brand-new iOS Distribution certificate we own PLUS the App
           # Store provisioning profile for our bundle id, and saves a
           # usable .p12 into the keychain.
+          # CERT REUSE: if you've stored a stable private key as the
+          # Codemagic secure env var CERT_PRIVATE_KEY, we reuse it so
+          # fetch-signing-files finds the SAME certificate every build
+          # (no new cert minted - avoids Apple's 2-cert limit). If the
+          # var is unset, we fall back to generating a fresh key (which
+          # mints a new cert that build). To enable reuse: Codemagic app
+          # settings -> Environment variables -> add CERT_PRIVATE_KEY =
+          # (output of `openssl genrsa 2048`), mark it Secure.
           CERT_KEY=/tmp/codemagic_dist_key.pem
-          openssl genrsa -out "$CERT_KEY" 2048
+          if [ -n "$CERT_PRIVATE_KEY" ]; then
+            printf '%s' "$CERT_PRIVATE_KEY" > "$CERT_KEY"
+            echo "Using stored CERT_PRIVATE_KEY (certificate will be reused)."
+          else
+            openssl genrsa -out "$CERT_KEY" 2048
+            echo "No CERT_PRIVATE_KEY set - generating a fresh key (mints a new cert this build)."
+          fi
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --certificate-key @file:"$CERT_KEY" \

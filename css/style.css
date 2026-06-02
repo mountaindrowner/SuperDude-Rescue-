@@ -269,14 +269,14 @@ body.touch #touch-controls { display: block; }
 }
 
 /* A / B buttons, bottom-right - A green (action), B orange (also "back") */
-#action-pad { position: absolute; right: 4vmin; bottom: 4vmin; width: 44vmin; height: 28vmin; }
+#action-pad { position: absolute; right: 4vmin; bottom: 4vmin; width: 50vmin; height: 34vmin; }
 /* A / B + pause: same transparency drop as the d-pad. Pressed state
    restores the saturated look so the tap feedback stays obvious. */
-.tc-a { right: 0; bottom: 0; width: 20vmin; height: 20vmin; border-radius: 50%;
+.tc-a { right: 0; bottom: 0; width: 24vmin; height: 24vmin; border-radius: 50%;
   background: radial-gradient(circle at 35% 28%, rgba(130,225,160,0.30), rgba(46,170,98,0.14) 62%, rgba(46,170,98,0.06));
   border-color: rgba(160,255,190,0.30); }
 .tc-a.pressed, .tc-a:active { background: radial-gradient(circle at 35% 28%, rgba(170,255,200,0.85), rgba(70,200,120,0.55)); border-color: rgba(170,255,200,0.7); }
-.tc-b { right: 18vmin; bottom: 8vmin; width: 17vmin; height: 17vmin; border-radius: 50%;
+.tc-b { right: 22vmin; bottom: 10vmin; width: 18vmin; height: 18vmin; border-radius: 50%;
   background: radial-gradient(circle at 35% 28%, rgba(235,160,125,0.28), rgba(190,90,65,0.13) 62%, rgba(190,90,65,0.06));
   border-color: rgba(255,180,150,0.30); }
 .tc-b.pressed, .tc-b:active { background: radial-gradient(circle at 35% 28%, rgba(255,190,160,0.85), rgba(215,120,85,0.55)); border-color: rgba(255,190,160,0.7); }

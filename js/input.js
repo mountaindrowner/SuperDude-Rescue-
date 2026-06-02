@@ -65,6 +65,12 @@ window.SDD = window.SDD || {};
     var act = btn.getAttribute('data-action');
     var press = function (e) {
       e.preventDefault();
+      // Capture the pointer so the press stays bound to THIS button until
+      // the finger actually lifts - even if it rolls toward the edge.
+      // Without capture, a tiny move fired 'pointerleave' and released
+      // early, so the button felt dead across part of its face (Mark:
+      // "A isn't sensitive to the entire area shown").
+      try { btn.setPointerCapture(e.pointerId); } catch (err) {}
       fireFirstGesture();
       setTouch(act, true);
       btn.classList.add('pressed');
@@ -77,7 +83,8 @@ window.SDD = window.SDD || {};
     btn.addEventListener('pointerdown', press);
     btn.addEventListener('pointerup', release);
     btn.addEventListener('pointercancel', release);
-    btn.addEventListener('pointerleave', release);
+    // No 'pointerleave' release - pointer capture (above) keeps the press
+    // held across the whole button until the finger lifts.
     btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   }
 
