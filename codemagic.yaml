@@ -108,9 +108,12 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        # Uploads the build to TestFlight automatically. We leave the
-        # final "submit to App Store review" step MANUAL for the first
-        # release, so you can fill in screenshots + metadata in App Store
-        # Connect first, then hit Submit there. Flip this to true later
-        # if you want fully hands-off releases.
-        submit_to_testflight: true
+        # Upload the build to App Store Connect, but do NOT auto-submit
+        # to TestFlight EXTERNAL beta review - that needs Beta App Review
+        # contact info + a separate Apple review, and is NOT required to
+        # release on the App Store. The build still lands in App Store
+        # Connect, ready to attach to a version and submit for App Store
+        # review. (You can also add yourself as an INTERNAL TestFlight
+        # tester - no beta review needed.) Set back to true + fill in the
+        # test info only if you later want to distribute EXTERNAL betas.
+        submit_to_testflight: false
