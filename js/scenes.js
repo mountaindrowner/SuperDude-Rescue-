@@ -8028,15 +8028,22 @@ window.SDD = window.SDD || {};
       this.t++;
       if (this.t > 30 && In.confirm()) {
         A.sfx('confirm');
-        // After the final stage of a day, route into the Bible quiz
-        // if one exists for that day and the kid hasn't already passed
-        // it. Day 1 has no quiz; passed quizzes skip straight back to
-        // the map.
+        // Routing priority:
+        //   1. Final stage of a day + quiz available + not yet passed
+        //      -> Bible quiz
+        //   2. Stage has a scripture lesson defined -> lesson
+        //   3. Default -> overworld
+        // The lesson check covers exactly the 1st stage of any 2-stage
+        // day (2-1, 3-1, 4-1, 5-1, 6-1) since those are the only ones
+        // that pass through results without going to a quiz. 8-1 has
+        // its own lesson trigger from cityArrival.
         var day = this.d.day || 1, stage = this.d.stage || 1;
         var lastStage = stage >= SDD.save.stagesForDay(day);
         var hasQuiz = !!(SDD.quiz && SDD.quiz['day' + day]);
         if (lastStage && hasQuiz && !SDD.save.isQuizPassed(day)) {
           go('quiz', { day: day });
+        } else if (SDD.scriptureFor && SDD.scriptureFor(day, stage)) {
+          go('lesson', { day: day, stage: stage, next: 'overworld' });
         } else {
           go('overworld');
         }
@@ -8870,6 +8877,358 @@ window.SDD = window.SDD || {};
   var CY_RUNIN = 54;          // run-in duration (frames)
   var CY_COMPX = 44;          // Computer's resting x on the left
 
+  // =====================================================================
+  // v1.0  POST-STAGE SCRIPTURE LESSON (VBS theme)
+  // =====================================================================
+  // Plays after stages that DON'T have a between-day quiz:
+  //   2-1, 3-1, 4-1, 5-1, 6-1  (creation days)
+  //   8-1                      (Adventure City - Ecclesiastes 4)
+  // Five beats: intro -> verse (typewriter) -> read-along (karaoke
+  // highlight) -> reflect (tappable question) -> close. Uses Danny's
+  // teach animation + painted lab backdrop. Verse text is ICB.
+  // Data lives in js/scripture_data.js.
+  // -----------------------------------------
+  // SCENE INPUT  (passed via go('lesson', d))
+  //   d.day   day number ('rescue' for 8-1)
+  //   d.stage stage number
+  //   d.next  scene to chain to when the lesson finishes ('overworld' /
+  //           'menu' / etc). Defaults to 'overworld'.
+  // -----------------------------------------
+  var LESSON_BUBBLE_MAX_CHARS_DESKTOP = 24;   // chars per wrapped line
+  var LESSON_BUBBLE_MAX_CHARS_TOUCH   = 18;   // narrower box on mobile
+  var LESSON_TYPE_RATE = 0.34;                // chars per frame (~20/s)
+  var LESSON_TYPE_TICK_EVERY = 3;             // tick SFX every Nth char
+  var LESSON_KARAOKE_FRAMES_PER_WORD = 18;    // ~3 words/sec
+  var LESSON_KARAOKE_PASSES = 2;
+
+  function _lessonWrap(s, maxChars) {
+    var out = [];
+    var paras = ('' + s).split('\n');
+    for (var pi = 0; pi < paras.length; pi++) {
+      var words = paras[pi].split(' '), cur = '';
+      for (var i = 0; i < words.length; i++) {
+        var test = cur ? (cur + ' ' + words[i]) : words[i];
+        if (test.length > maxChars && cur) { out.push(cur); cur = words[i]; }
+        else cur = test;
+      }
+      if (cur) out.push(cur);
+    }
+    return out;
+  }
+
+  function _lessonTouch() {
+    return (typeof document !== 'undefined') && document.body && document.body.classList.contains('touch');
+  }
+
+  // Render: dim lab backdrop + Danny in teach pose + speech bubble
+  // with tail pointing to Danny + banner + prompt strip.
+  function _drawLessonBackdrop(g, t) {
+    if (ART_LAB.ok) {
+      g.imageSmoothingEnabled = false;
+      g.drawImage(ART_LAB.img, 0, 0, 320, 180);
+    } else {
+      var rm = g.createLinearGradient(0, 0, 0, 180);
+      rm.addColorStop(0, '#161226'); rm.addColorStop(1, '#0c0a18');
+      g.fillStyle = rm; g.fillRect(0, 0, 320, 180);
+    }
+    // Dim overlay so the bubble + Danny pop.
+    g.fillStyle = 'rgba(8,10,22,0.42)'; g.fillRect(0, 0, 320, 180);
+  }
+
+  function _drawLessonBanner(g, label, ref) {
+    g.fillStyle = 'rgba(8,10,22,0.88)'; g.fillRect(0, 0, 320, 12);
+    g.fillStyle = '#ffd23a';            g.fillRect(0, 12, 320, 1);
+    tsh(g, label, 4, 3, '#ffd23a', '#5a3a10', 1, 'left');
+    if (ref) tsh(g, ref, 316, 3, '#5af0ff', '#0a3340', 1, 'right');
+  }
+
+  function _drawLessonPrompt(g, msg, cl) {
+    if (!msg) return;
+    if (cl % 40 < 26) {
+      g.fillStyle = 'rgba(8,10,22,0.88)'; g.fillRect(0, 168, 320, 12);
+      g.fillStyle = '#5af0ff';            g.fillRect(0, 167, 320, 1);
+      tsh(g, msg, 160, 170, '#ffd23a', '#5a3a10', 1, 'center');
+    }
+  }
+
+  function _drawLessonDanny(g, beat, t) {
+    // Anim phase cycles through the 17-frame teach animation. Slow
+    // frame rate (every 6 frames) so the lecturing motion is calm
+    // rather than frantic.
+    var n = 17;
+    var idx = Math.floor(t / 6) % n;
+    var cx = 44;                      // Danny x on screen
+    var by = 156;                     // baseline (feet)
+    // Soft contact shadow.
+    g.fillStyle = 'rgba(0,0,0,0.30)';
+    g.beginPath(); g.ellipse(cx, by + 1, 16, 3, 0, 0, Math.PI * 2); g.fill();
+    if (SDD.sprites.pixDraw) {
+      // Scale 1.4x for presence.
+      g.save();
+      g.translate(cx, by);
+      g.scale(1.4, 1.4);
+      g.translate(-cx, -by);
+      SDD.sprites.pixDraw(g, 'big', 'teach', 'south', idx, cx, by);
+      g.restore();
+    }
+  }
+
+  function _drawLessonBubble(g, lines, opts) {
+    opts = opts || {};
+    var touch = _lessonTouch();
+    var maxChars = touch ? LESSON_BUBBLE_MAX_CHARS_TOUCH : LESSON_BUBBLE_MAX_CHARS_DESKTOP;
+    // Bubble geometry.
+    var bw = touch ? 188 : 224;
+    var bx = touch ? 86 : 90;
+    var lineH = 11;
+    var bh = 12 + lineH * Math.max(1, lines.length) + 8;
+    var by = 30;
+    // Halo + frame.
+    g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(bx - 3, by - 3, bw + 6, bh + 6);
+    g.fillStyle = '#ffd23a';          g.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
+    g.fillStyle = '#0e1424';          g.fillRect(bx, by, bw, bh);
+    g.fillStyle = '#ffd23a';          g.fillRect(bx, by, bw, 1); g.fillRect(bx, by + bh - 1, bw, 1);
+    // Tail pointing down-left toward Danny.
+    g.fillStyle = '#ffd23a';
+    g.beginPath();
+    g.moveTo(bx + 4,  by + bh - 1);
+    g.lineTo(bx - 10, by + bh + 12);
+    g.lineTo(bx + 16, by + bh - 1);
+    g.closePath(); g.fill();
+    g.fillStyle = '#0e1424';
+    g.beginPath();
+    g.moveTo(bx + 5,  by + bh - 1);
+    g.lineTo(bx - 6,  by + bh + 9);
+    g.lineTo(bx + 14, by + bh - 1);
+    g.closePath(); g.fill();
+    // Lines.
+    var lineY = by + 5;
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      var ly = lineY + i * lineH;
+      // Karaoke highlight pill behind the current word.
+      if (opts.hlLine === i && opts.hlWord != null) {
+        var words = ln.split(' '), xc = bx + 6;
+        for (var w = 0; w < opts.hlWord && w < words.length; w++) {
+          xc += (words[w].length + 1) * 6;
+        }
+        if (opts.hlWord < words.length) {
+          var word = words[opts.hlWord];
+          g.fillStyle = 'rgba(255,210,80,0.32)';
+          g.fillRect(xc - 1, ly - 1, word.length * 6, 9);
+        }
+      }
+      text(g, ln, bx + 6, ly, '#ffffff', 1, 'left');
+    }
+    return { bx: bx, by: by, bw: bw, bh: bh, maxChars: maxChars };
+  }
+
+  function _drawLessonAnswers(g, answers, idx, picked, t) {
+    if (!answers) return;
+    var touch = _lessonTouch();
+    var bw = touch ? 188 : 224;
+    var bx = touch ? 86 : 90;
+    var topY = 102;
+    var ah = 13;
+    for (var i = 0; i < answers.length; i++) {
+      var ay = topY + i * (ah + 2);
+      var a = answers[i];
+      var isPicked = (picked === i);
+      var isHover  = (picked < 0 && idx === i);
+      // Pulse the picked answer.
+      var pulse = isPicked ? (0.85 + Math.sin(t * 0.3) * 0.15) : 1;
+      g.fillStyle = isPicked
+        ? '#ffd23a'
+        : (isHover ? '#2a4070' : '#1a2540');
+      g.fillRect(bx, ay, bw, ah);
+      g.fillStyle = isPicked ? '#7a4a10' : '#5af0ff';
+      g.fillRect(bx, ay, bw, 1); g.fillRect(bx, ay + ah - 1, bw, 1);
+      if (isHover) { g.fillStyle = '#ffd23a'; text(g, '>', bx + 4, ay + 3, '#ffd23a', 1, 'left'); }
+      text(g, a.text, bx + bw / 2, ay + 3, isPicked ? '#0e1424' : '#ffffff', 1, 'center');
+    }
+  }
+
+  function _drawLessonCelebrate(g, msg, color, t) {
+    // Confetti burst.
+    for (var i = 0; i < 22; i++) {
+      var cx = ((i * 47 + t * 1.4) % 320);
+      var cy = ((i * 29 + t * 1.1) % 140) + 24;
+      g.fillStyle = (i % 3 === 0) ? '#ffd23a' : (i % 3 === 1) ? '#5af0ff' : '#ff7ac0';
+      g.fillRect(cx | 0, cy | 0, 2, 2);
+    }
+    tsh(g, msg, 160, 152, color, '#5a3a10', 2, 'center');
+  }
+
+  SDD.scenes.lesson = {
+    enter: function (d) {
+      d = d || {};
+      this.day = d.day || 1;
+      this.stage = d.stage || 1;
+      this.next = d.next || 'overworld';
+      this.lesson = (SDD.scriptureFor && SDD.scriptureFor(this.day, this.stage)) || null;
+      this.beat = 0;
+      this.t = 0;
+      this.clock = 0;
+      this.shown = 0;
+      this.full = false;
+      this.answerIdx = 0;
+      this.picked = -1;
+      this.pickedT = 0;
+      this.karaT = 0;
+      this.tickedAt = -1;
+      // If no lesson data, just bounce to next - never strand.
+      if (!this.lesson) { go(this.next); return; }
+      A.sfx('lesson_open');
+      // Calm lab-ambient music. The intro track sits well behind text.
+      A.startMusic('intro');
+    },
+    _prepLines: function () {
+      // Re-wrap the current beat's text to the live box width so a
+      // touch/desktop swap mid-scene reflows correctly.
+      var touch = _lessonTouch();
+      var max = touch ? LESSON_BUBBLE_MAX_CHARS_TOUCH : LESSON_BUBBLE_MAX_CHARS_DESKTOP;
+      var src = '';
+      if (this.beat === 0) src = this.lesson.intro;
+      else if (this.beat === 1 || this.beat === 2) src = this.lesson.verse;
+      else if (this.beat === 3) src = this.lesson.reflect.question;
+      else if (this.beat === 4) src = this.lesson.close;
+      this.lines = _lessonWrap(src, max);
+      this.total = src.length;
+    },
+    _advance: function () {
+      this.beat++;
+      this.t = 0; this.shown = 0; this.full = false;
+      this.karaT = 0; this.tickedAt = -1;
+      this.picked = -1; this.answerIdx = 0; this.pickedT = 0;
+      if (this.beat >= 5) {
+        A.sfx('lesson_close');
+        A.stopMusic();
+        go(this.next);
+        return;
+      }
+      this._prepLines();
+      A.sfx('select');
+    },
+    update: function () {
+      if (!this.lesson) return;
+      this.t++; this.clock++;
+      if (!this.lines) this._prepLines();
+      // Beat-specific advance behaviour.
+      if (this.beat === 0 || this.beat === 4) {
+        // Intro / close: A advances.
+        if (In.confirm() && this.t > 6) this._advance();
+        return;
+      }
+      if (this.beat === 1) {
+        // Typewriter.
+        if (!this.full) {
+          this.shown += LESSON_TYPE_RATE;
+          var revealed = Math.floor(this.shown);
+          if (revealed >= this.total) { this.shown = this.total; this.full = true; }
+          // Tick every Nth new char.
+          if (revealed !== this.tickedAt && revealed % LESSON_TYPE_TICK_EVERY === 0 && revealed > 0) {
+            this.tickedAt = revealed;
+            A.sfx('typewriter_tick');
+          }
+        }
+        if (In.confirm() && this.t > 6) {
+          if (!this.full) { this.shown = this.total; this.full = true; }
+          else this._advance();
+        }
+        return;
+      }
+      if (this.beat === 2) {
+        // Read-along karaoke. Highlight slides word-by-word; A advances.
+        this.karaT++;
+        if (In.confirm() && this.t > 6) this._advance();
+        return;
+      }
+      if (this.beat === 3) {
+        // Reflect: up/down nav, A picks. After pick, hold 80 frames
+        // then advance.
+        var ans = this.lesson.reflect && this.lesson.reflect.options;
+        if (!ans) { this._advance(); return; }
+        if (this.picked < 0) {
+          if (In.pressed('up'))   { this.answerIdx = (this.answerIdx + ans.length - 1) % ans.length; A.sfx('select'); }
+          if (In.pressed('down')) { this.answerIdx = (this.answerIdx + 1) % ans.length; A.sfx('select'); }
+          if (In.confirm() && this.t > 6) {
+            this.picked = this.answerIdx;
+            this.pickedT = 0;
+            A.sfx(ans[this.picked].right ? '1up' : 'confirm');
+          }
+        } else {
+          this.pickedT++;
+          if (this.pickedT > 80 && In.confirm()) this._advance();
+          if (this.pickedT > 130) this._advance();   // auto-advance
+        }
+        return;
+      }
+    },
+    render: function (g) {
+      if (!this.lesson) return;
+      if (!this.lines) this._prepLines();
+      _drawLessonBackdrop(g, this.clock);
+      _drawLessonDanny(g, this.beat, this.clock);
+      var dayLabel = (this.day === 'rescue' || this.day === 8)
+        ? 'ADVENTURE CITY LESSON'
+        : ('DAY ' + this.day + ' LESSON');
+      _drawLessonBanner(g, dayLabel, this.lesson.ref);
+      // Build the lines to show + any karaoke highlight.
+      var shownLines;
+      var hlLine = -1, hlWord = -1;
+      if (this.beat === 1 && !this.full) {
+        // Typewriter: reveal chars across all lines.
+        var revealed = Math.floor(this.shown), consumed = 0;
+        shownLines = [];
+        for (var i = 0; i < this.lines.length; i++) {
+          var ln = this.lines[i];
+          if (consumed + ln.length <= revealed) {
+            shownLines.push(ln);
+            consumed += ln.length + 1;
+          } else {
+            shownLines.push(ln.slice(0, Math.max(0, revealed - consumed)));
+            break;
+          }
+        }
+      } else if (this.beat === 2) {
+        shownLines = this.lines;
+        // Compute karaoke word index.
+        var totalWords = 0;
+        for (var li = 0; li < this.lines.length; li++) totalWords += this.lines[li].split(' ').length;
+        var totalFrames = totalWords * LESSON_KARAOKE_FRAMES_PER_WORD;
+        var maxFrames = totalFrames * LESSON_KARAOKE_PASSES;
+        var pos = this.karaT % totalFrames;
+        var wordIdx = Math.floor(pos / LESSON_KARAOKE_FRAMES_PER_WORD);
+        // Map wordIdx -> (line, wordInLine).
+        var acc = 0;
+        for (var lj = 0; lj < this.lines.length; lj++) {
+          var ws = this.lines[lj].split(' ');
+          if (wordIdx < acc + ws.length) { hlLine = lj; hlWord = wordIdx - acc; break; }
+          acc += ws.length;
+        }
+      } else {
+        shownLines = this.lines;
+      }
+      _drawLessonBubble(g, shownLines, { hlLine: hlLine, hlWord: hlWord });
+      if (this.beat === 3) {
+        var opts = this.lesson.reflect && this.lesson.reflect.options;
+        _drawLessonAnswers(g, opts, this.answerIdx, this.picked, this.clock);
+        if (this.picked >= 0) {
+          var right = !!opts[this.picked].right;
+          _drawLessonCelebrate(g, right ? 'EXACTLY!' : 'GOOD GUESS!', right ? '#ffd23a' : '#5af0ff', this.clock);
+        }
+      }
+      // Prompt.
+      var prompt = '';
+      if (this.beat === 0)      prompt = 'PRESS A';
+      else if (this.beat === 1) prompt = this.full ? 'PRESS A TO CONTINUE' : '';
+      else if (this.beat === 2) prompt = 'READ WITH ME!  PRESS A';
+      else if (this.beat === 3) prompt = (this.picked < 0) ? 'PICK YOUR ANSWER' : 'PRESS A';
+      else if (this.beat === 4) prompt = 'PRESS A';
+      _drawLessonPrompt(g, prompt, this.clock);
+    }
+  };
+
   SDD.scenes.cityArrival = {
     enter: function (d) {
       this.d = d || {};
@@ -8920,6 +9279,12 @@ window.SDD = window.SDD || {};
             if (!SDD.save.data.secretCleared) {
               SDD.save.data.secretCleared = true;
               SDD.save.save();
+            }
+            // v1.0: chain into the Adventure City scripture lesson
+            // (Ecclesiastes 4 - teamwork). Lesson then routes to menu.
+            if (SDD.scriptureFor && SDD.scriptureFor(8, 1)) {
+              go('lesson', { day: 8, stage: 1, next: 'menu' });
+              return;
             }
             go('menu');   // back to the title screen
             return;

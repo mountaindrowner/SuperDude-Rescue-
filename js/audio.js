@@ -117,6 +117,21 @@ window.SDD = window.SDD || {};
         tone(420, t + 0.28, 0.10, 'sawtooth', 0.24, 340);
         tone(260, t + 0.38, 0.14, 'sawtooth', 0.22, 200);
         break;
+      // v1.0: scripture-lesson cues. Soft + warm so they sit under
+      // Danny "speaking" the verse without competing.
+      // typewriter_tick = subtle key click as each char appears.
+      case 'typewriter_tick': tone(620, t, 0.018, 'square', 0.06, 720); break;
+      // lesson_open = warm two-note welcome chime (G5 + C6 sine).
+      case 'lesson_open':
+        tone(784, t,        0.22, 'sine', 0.14, 880);
+        tone(1046, t + 0.10, 0.30, 'sine', 0.14, 1175);
+        break;
+      // lesson_close = gentle descending arpeggio C6-A5-F5.
+      case 'lesson_close':
+        tone(1046, t,        0.18, 'sine', 0.14);
+        tone(880,  t + 0.16, 0.18, 'sine', 0.14);
+        tone(698,  t + 0.32, 0.32, 'sine', 0.14);
+        break;
       // v0.95: drone whizz-by beep - quick high two-tone chirp.
       case 'drone_beep':
         tone(1480, t,        0.06, 'square', 0.08, 1920);

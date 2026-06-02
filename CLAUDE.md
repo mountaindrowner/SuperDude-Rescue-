@@ -11,7 +11,35 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v0.98` / `sdd-shell-v98`.
+- **Live build**: `v1.0` / `sdd-shell-v100`.
+
+### v1.0 — Post-stage scripture lessons LIVE (latest)
+
+The theory-crafted VBS lesson scene is wired in. Triggers after every
+clear of the 6 eligible stages (2-1, 3-1, 4-1, 5-1, 6-1, 8-1) - i.e.
+exactly the stages that don't already lead into the Bible quiz or
+finale.
+
+- New scene `SDD.scenes.lesson` (scenes.js, just before cityArrival).
+  5 beats per lesson: intro -> verse typewriter (with `typewriter_tick`
+  SFX every 3 chars) -> read-along karaoke (3 words/sec highlight
+  pill) -> reflect (up/down + A on 2-3 options) -> close.
+- Data: `js/scripture_data.js` (added to index.html load order + SW
+  precache). 6 ICB lessons authored.
+- New SFX in audio.js: `typewriter_tick`, `lesson_open`, `lesson_close`.
+- Missing `"` glyph added to the pixel font in sprites.js (the live
+  font had `'` but not `"` - quote chars rendered as `?`).
+- Trigger wiring:
+  - `scenes.results` checks `SDD.scriptureFor(day, stage)` and routes
+    to `'lesson'` (next='overworld') after the existing quiz check.
+  - `scenes.cityArrival` chains to `'lesson'` (next='menu') for 8-1.
+- Decisions locked per Mark: plays every clear (no save-flag gate),
+  no skip-ability, no Adventure Week 2026 callback in the 8-1 close.
+- Mobile-friendly: bubble shrinks for `body.touch` (`boxW` 224 -> 188),
+  text re-wraps to the narrower max-chars.
+- Verified end-to-end: all 6 lessons load, trigger map exact (1-1 /
+  2-2 / 3-2 / 7-1 correctly skip), all 5 beats render in the live
+  engine + mobile portrait.
 
 ### v0.98 — Dev-kit removed + Adventure City unlock flow (latest)
 
