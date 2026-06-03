@@ -11,7 +11,17 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
-- **Live build**: `v1.0.5` / `sdd-shell-v105`.
+- **Live build**: `v1.0.6` / `sdd-shell-v106`.
+- **v1.0.6 touch-UI sweep (Mark):** audited audio-load timing + A/B +
+  pause button. Confirmed via puppeteer: boot requests only the 3 eager
+  MP3s (title/menu/intro); overworld/level/Adventure-City tracks load
+  on scene entry; A/B register on press AND at the button's extreme
+  edge (v1.0.4 pointer-capture). **Pause button fixed:** (1) it only did
+  anything in the `level` scene (elsewhere "back" is the B button), so
+  it now SHOWS ONLY when `body[data-scene="level"]` (main.js `setScene`
+  sets `data-scene`); hidden as a dead button on menus. (2) Added
+  `env(safe-area-inset-*)` to its position so it's no longer jammed
+  under the notch / rounded corner ("too high in the corner").
 - **v1.0.5 audio load fix:** root-caused "music takes forever to load."
   `loadFileTrack` previously set `preload='auto'` + `load()` on ALL ~38
   MP3s at boot → the browser tried to pull ~130 MB at once and the title

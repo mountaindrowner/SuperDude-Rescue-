@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.5';
+  SDD.VERSION = 'v1.0.6';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -23,6 +23,11 @@ window.SDD = window.SDD || {};
     if (SDD.scene && SDD.scene.exit) SDD.scene.exit();
     SDD.scene = s;
     s._name = name;
+    // Expose the active scene name on <body> so CSS can show/hide
+    // scene-specific touch UI (e.g. the pause button only matters in the
+    // 'level' scene; elsewhere "back" is the B button, so the hamburger
+    // would be a dead button in the corner).
+    try { document.body.setAttribute('data-scene', name); } catch (e) {}
     if (s.enter) s.enter(data || {});
   };
 

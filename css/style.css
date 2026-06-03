@@ -281,11 +281,21 @@ body.touch #touch-controls { display: block; }
   border-color: rgba(255,180,150,0.30); }
 .tc-b.pressed, .tc-b:active { background: radial-gradient(circle at 35% 28%, rgba(255,190,160,0.85), rgba(215,120,85,0.55)); border-color: rgba(255,190,160,0.7); }
 
-/* START / PAUSE button, top-right corner. */
-.tc-pause { right: 3vmin; top: 3vmin; width: 11vmin; height: 11vmin;
+/* START / PAUSE button, top-right corner. Only meaningful DURING
+   GAMEPLAY - it opens the level pause menu. On every other scene "back"
+   is handled by the B button, so the hamburger used to sit there as a
+   dead button (Mark: "it doesn't work because there's no use for it").
+   Hidden by default; shown only while the 'level' scene is active
+   (data-scene set in main.js setScene). Safe-area insets push it off the
+   notch / rounded corner (Mark: "too high in the corner sometimes"). */
+.tc-pause { right: calc(3vmin + env(safe-area-inset-right));
+            top: calc(3vmin + env(safe-area-inset-top));
+            width: 11vmin; height: 11vmin;
             border-radius: 50%; font-size: 5vmin; line-height: 1;
             background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
-            border-color: rgba(255, 255, 255, 0.22); }
+            border-color: rgba(255, 255, 255, 0.22);
+            display: none; }
+body[data-scene="level"] .tc-pause { display: flex; }
 
 /* ---- Level editor (dev tool) ---- */
 /* All editor UI lives under #editor-ui so removing the editor is one
