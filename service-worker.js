@@ -78,9 +78,42 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+// v1.0.5 (research finding): Safari sends Range: bytes=0-1 as the FIRST
+// request for any <audio> element and expects a 206 Partial Content
+// response. The Cache API can only store 200 OK responses, so a naive
+// cache.match() returning a 200 to a Range request makes Safari STOP
+// playback (the "silent MP3 killer" on iOS PWAs). Below: detect Range
+// requests, fetch the full cached blob, slice it into a synthesized 206
+// with a correct Content-Range header. Source: web.dev/sw-range-requests,
+// philna.sh "service workers: beware Safari's range request".
+async function rangeResponse(request, cachedResponse) {
+  var rangeHeader = request.headers.get('range') || '';
+  var match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);
+  if (!match) return cachedResponse;          // not a Range request: pass through
+  var fullBuf = await cachedResponse.clone().arrayBuffer();
+  var total = fullBuf.byteLength;
+  var start = match[1] === '' ? 0 : parseInt(match[1], 10);
+  var end   = match[2] === '' ? total - 1 : parseInt(match[2], 10);
+  if (start >= total || end >= total) {
+    return new Response(null, { status: 416, statusText: 'Range Not Satisfiable',
+      headers: { 'Content-Range': 'bytes */' + total } });
+  }
+  var slice = fullBuf.slice(start, end + 1);
+  return new Response(slice, {
+    status: 206,
+    statusText: 'Partial Content',
+    headers: {
+      'Content-Type': cachedResponse.headers.get('Content-Type') || 'application/octet-stream',
+      'Content-Length': String(slice.byteLength),
+      'Content-Range': 'bytes ' + start + '-' + end + '/' + total,
+      'Accept-Ranges': 'bytes'
+    }
+  });
+}
+
 self.addEventListener('fetch', function (event) {
-  // Same-origin GETs only - leave audio range requests + cross-origin
-  // (CDN, analytics if any) untouched.
+  // Same-origin GETs only - leave cross-origin (CDN, analytics if any)
+  // untouched.
   if (event.request.method !== 'GET') return;
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
@@ -91,6 +124,7 @@ self.addEventListener('fetch', function (event) {
   // assets (images, audio, fonts) stay cache-first so they don't
   // re-download every visit.
   var path = url.pathname;
+  var isAudio = /\.(mp3|ogg|wav|m4a|aac)$/i.test(path);
   var isCode = /\.(html?|js|mjs|css|json|webmanifest)$/i.test(path)
             || path === '/' || path.endsWith('/');
 
@@ -116,10 +150,20 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Cache-first for everything else.
+  // Cache-first for everything else. For audio files, if we have a
+  // cached 200 and the browser sent a Range request, slice it into a 206
+  // (see rangeResponse above) so Safari/iOS don't drop the stream.
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      if (cached) return cached;
+    caches.match(event.request, { ignoreVary: true, ignoreSearch: false }).then(function (cached) {
+      if (cached) {
+        if (isAudio && event.request.headers.has('range')) {
+          return rangeResponse(event.request, cached);
+        }
+        return cached;
+      }
+      // No cached copy: fetch (passing Range header through so the
+      // network response itself is already a 206 if requested), and
+      // only cache a FULL 200 (you can't put a 206 into the Cache API).
       return fetch(event.request).then(function (resp) {
         if (resp && resp.status === 200 && resp.type === 'basic') {
           var copy = resp.clone();

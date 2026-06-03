@@ -19,6 +19,24 @@
   eager (4th arg `true`); every other track has `preload='none'` and is
   kicked by `ensureLoading(tr)` from `tryFileTrack` the moment its
   scene/level is entered. Verified: 3 MP3 requests at boot (was 38).
+- **v1.0.5 follow-on (research-driven, 4 fixes):** after a deep web
+  research pass on HTML5/Capacitor audio loading:
+  **A.** Service worker now handles `Range:` requests properly —
+  synthesizes a 206 Partial Content from cached 200 (Safari's "silent
+  MP3 killer" — sends `Range: bytes=0-1` as first audio request; a 200
+  reply stops playback). `service-worker.js:rangeResponse()`.
+  **B.** Audio session warmed on first gesture: `init()` now plays a
+  silent 1-frame `AudioBuffer` through the master gain so WKWebView's
+  AVAudioSession is hot before the title track's first real `play()`
+  (Capacitor #8176 / Tone.js #666 cold-route bug).
+  **C.** `tryFileTrack` race guard: don't call `play()` until
+  `readyState >= 2` (HAVE_CURRENT_DATA) — guards Safari-12 Howler #1049
+  bug where play-during-preload can lock the element permanently.
+  **D.** Re-encoded all 43 MP3s to mono VBR (`ffmpeg -q:a 6 -ac 1`):
+  total audio **112 MB → 47 MB** (-58%, ~65 MB saved). No audible
+  difference through a phone speaker; mono gets all the bits so the
+  effective per-channel bitrate (~70-90 kbps) is *better* than the
+  ~95 kbps-per-channel of the stereo source.
 - **iOS App Store: LIVE pipeline.** Codemagic cloud build works end to
   end — signs (mints its own iOS Distribution cert via `--certificate-key`
   with a generated/stored key), archives, uploads to App Store Connect.

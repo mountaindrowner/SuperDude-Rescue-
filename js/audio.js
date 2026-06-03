@@ -36,6 +36,20 @@ window.SDD = window.SDD || {};
       // be mixed separately. (MP3 music is volumed via element.volume.)
       musicGain = ctx.createGain(); musicGain.gain.value = musicVolume; musicGain.connect(master);
       sfxGain   = ctx.createGain(); sfxGain.gain.value   = sfxVolume;   sfxGain.connect(master);
+      // v1.0.5 (research finding): WKWebView starts AVAudioSession COLD
+      // on first launch and rebuilds the route on the first real play(),
+      // which made the first track stutter / start silent on iOS. Prime
+      // the session with a single silent buffer now (we're inside the
+      // first user gesture, so this is allowed) so the audio route is
+      // already warm by the time the title track's first canplay fires.
+      // Sources: Capacitor #8176, Tone.js #666.
+      try {
+        var silent = ctx.createBuffer(1, 1, 22050);
+        var src = ctx.createBufferSource();
+        src.buffer = silent;
+        src.connect(master);
+        src.start(0);
+      } catch (e) {}
     } catch (e) { ctx = null; }
     if (ctx && pendingSong) { var s = pendingSong; pendingSong = null; startMusic(s); }
   }
@@ -323,6 +337,11 @@ window.SDD = window.SDD || {};
     // Keep attempting play() until it actually starts. On a cold load
     // play() rejects with "not enough data" - we wait for the next
     // `canplay` and try again. Never substitutes the chiptune.
+    //
+    // v1.0.5 race guard (Howler #1049): on Safari 12+, calling play()
+    // while the clip is still loading (readyState < 2 = HAVE_CURRENT_DATA)
+    // can leave it permanently stuck. Wait for one `canplay` before the
+    // first attempt() if we're not ready yet.
     function attempt() {
       if (superseded()) return;
       var p;
@@ -341,7 +360,15 @@ window.SDD = window.SDD || {};
         });
       }
     }
-    attempt();
+    if (tr.el.readyState >= 2) {
+      attempt();
+    } else {
+      var onReadyFirst = function () {
+        tr.el.removeEventListener('canplay', onReadyFirst);
+        attempt();
+      };
+      tr.el.addEventListener('canplay', onReadyFirst);
+    }
     return true;
   }
   function stopFileTrack(immediate) {
