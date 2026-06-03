@@ -33,6 +33,14 @@ workflows:
       app_store_connect: superdude_asc
 
     environment:
+      # Imports the Codemagic UI variable group named "signing" so the
+      # signing step can read $CERT_PRIVATE_KEY (the stable key for
+      # certificate reuse). Add the variable to a group called exactly
+      # "signing" in the Codemagic UI. If the group/variable is absent
+      # the build still works - the signing step falls back to generating
+      # a fresh key.
+      groups:
+        - signing
       node: 20
       xcode: latest
       cocoapods: default
