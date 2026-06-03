@@ -83,8 +83,17 @@ workflows:
             $PB -c "Add :$KEY:0 string UIInterfaceOrientationLandscapeLeft" "$PLIST"
             $PB -c "Add :$KEY:1 string UIInterfaceOrientationLandscapeRight" "$PLIST"
           done
+          # iPad normally REQUIRES all 4 orientations (for Split View /
+          # multitasking) - landscape-only otherwise triggers App Store
+          # upload error 90474. We're a full-screen landscape game, so opt
+          # OUT of multitasking with UIRequiresFullScreen=true, which makes
+          # the landscape-only lock valid on iPad too. (Standard for games.)
+          $PB -c "Delete :UIRequiresFullScreen" "$PLIST" 2>/dev/null || true
+          $PB -c "Add :UIRequiresFullScreen bool true" "$PLIST"
           echo "--- iPhone orientations now: ---"
           $PB -c "Print :UISupportedInterfaceOrientations" "$PLIST"
+          echo "--- UIRequiresFullScreen: ---"
+          $PB -c "Print :UIRequiresFullScreen" "$PLIST"
 
       - name: Install CocoaPods dependencies
         script: |
