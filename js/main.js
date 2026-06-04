@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.11';
+  SDD.VERSION = 'v1.0.12';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -72,18 +72,28 @@ window.SDD = window.SDD || {};
     canvas.style.width = (960 * sc) + 'px';
     canvas.style.height = (540 * sc) + 'px';
 
-    // v1.0.10: anchor the pause button to a fixed spot BELOW the
-    // right-side HUD column (TIME at game y=4, power timer at game
-    // y=14, bottom of HUD ~y=22 in 180-tall world coords). The HUD
-    // spans roughly the top 14% of canvas height, so we pin the pause
-    // button just below that, hugging the canvas right edge.
+    // v1.0.10/12: anchor the touch buttons (pause + A/B) to the CANVAS
+    // rect, not the viewport edges. Without this the buttons floated in
+    // the dark letterbox gap (Mark: "buttons should be right at the end
+    // of the game screen"). Everything below uses canvas.right /
+    // canvas.bottom as the anchor.
+    var c = canvas.getBoundingClientRect();
+    var iw = window.innerWidth, ih = window.innerHeight;
+    // Pause: small icon sitting just below the right-column HUD
+    // (TIME at game y=4, power timer at game y=14 -> bottom of HUD
+    // ~14% down the canvas), hugging the canvas right edge.
     var pb = document.querySelector('.tc-pause');
     if (pb) {
-      var c = canvas.getBoundingClientRect();
-      var top = c.top + c.height * 0.16;            // just below HUD
-      var right = (window.innerWidth - c.right) + Math.round(c.width * 0.012);
-      pb.style.top = Math.round(top) + 'px';
-      pb.style.right = Math.round(right) + 'px';
+      pb.style.top   = Math.round(c.top + c.height * 0.16) + 'px';
+      pb.style.right = Math.round(iw - c.right + Math.max(4, c.width * 0.012)) + 'px';
+    }
+    // A / B pad: anchor its right + bottom edges ~8px inside the
+    // canvas bottom-right corner so A's right edge sits clearly inside
+    // the gameplay rectangle.
+    var ap = document.getElementById('action-pad');
+    if (ap) {
+      ap.style.right  = Math.round(iw - c.right + 8) + 'px';
+      ap.style.bottom = Math.round(ih - c.bottom + 8) + 'px';
     }
   }
 

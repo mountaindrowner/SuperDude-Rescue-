@@ -166,10 +166,10 @@ body::after  { right: 0.6vw; animation-delay: 1.2s; }
      - The R/L max() inside the LEFT calc keeps the notch clearance
        symmetric regardless of which way the phone is held. */
   padding:
-    max(env(safe-area-inset-top), 50px)
+    max(env(safe-area-inset-top), 30px)
     max(env(safe-area-inset-left), env(safe-area-inset-right), 14px)
     max(env(safe-area-inset-bottom), 14px)
-    calc(max(env(safe-area-inset-left), env(safe-area-inset-right)) + 80px);
+    calc(max(env(safe-area-inset-left), env(safe-area-inset-right)) + 40px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -289,25 +289,23 @@ body.touch #touch-controls { display: block; }
   box-shadow: 0 0.4vmin 0.8vmin rgba(0,0,0,0.40), inset 0 1px 2px rgba(255,255,255,0.30);
 }
 
-/* A / B buttons, bottom-right - A green (action), B orange (also "back").
-   v1.0.8 (Mark on-device): bumped inboard to 70px from the right edge
-   so the buttons sit clearly OVER the gameplay canvas instead of in the
-   strip between canvas and right bezel (which made the game look
-   shifted left). Dropped 'bottom' to ~4px so they sit closer to the
-   bottom of the screen, just clearing the home-indicator safe area. */
+/* A / B buttons. Position is set FROM JS in main.js resize() so the
+   pad anchors to the CANVAS right-bottom corner (not the viewport),
+   keeping the buttons visually attached to the gameplay rectangle no
+   matter how the canvas letterboxes (Mark: "make sure the buttons are
+   right at the end of the game screen"). CSS only owns the sizing. */
 #action-pad { position: absolute;
-  right: calc(max(5vmin, 70px) + env(safe-area-inset-right));
-  bottom: calc(4px + env(safe-area-inset-bottom));
   width: 42vmin; height: 28vmin; }
-/* A / B + pause: same transparency drop as the d-pad. Pressed state
-   restores the saturated look so the tap feedback stays obvious. */
+/* A / B: more transparent base so they sit lighter on the action
+   (Mark v1.0.12: "less opaque and more transparent"). Pressed state
+   stays saturated so tap feedback is still obvious. */
 .tc-a { right: 0; bottom: 0; width: 20vmin; height: 20vmin; border-radius: 50%;
-  background: radial-gradient(circle at 35% 28%, rgba(130,225,160,0.30), rgba(46,170,98,0.14) 62%, rgba(46,170,98,0.06));
-  border-color: rgba(160,255,190,0.30); }
+  background: radial-gradient(circle at 35% 28%, rgba(130,225,160,0.16), rgba(46,170,98,0.07) 62%, rgba(46,170,98,0.03));
+  border-color: rgba(160,255,190,0.18); }
 .tc-a.pressed, .tc-a:active { background: radial-gradient(circle at 35% 28%, rgba(170,255,200,0.85), rgba(70,200,120,0.55)); border-color: rgba(170,255,200,0.7); }
 .tc-b { right: 18vmin; bottom: 8vmin; width: 15vmin; height: 15vmin; border-radius: 50%;
-  background: radial-gradient(circle at 35% 28%, rgba(235,160,125,0.28), rgba(190,90,65,0.13) 62%, rgba(190,90,65,0.06));
-  border-color: rgba(255,180,150,0.30); }
+  background: radial-gradient(circle at 35% 28%, rgba(235,160,125,0.15), rgba(190,90,65,0.07) 62%, rgba(190,90,65,0.03));
+  border-color: rgba(255,180,150,0.18); }
 .tc-b.pressed, .tc-b:active { background: radial-gradient(circle at 35% 28%, rgba(255,190,160,0.85), rgba(215,120,85,0.55)); border-color: rgba(255,190,160,0.7); }
 
 /* START / PAUSE button, top-right corner. Only meaningful DURING
@@ -338,7 +336,7 @@ body[data-scene="level"] .tc-pause { display: block; }
   top: 28%;
   width: 14%;
   height: 44%;
-  background: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.38);
   border-radius: 0.4vmin;
 }
 .tc-pause::before { left: 32%; }
