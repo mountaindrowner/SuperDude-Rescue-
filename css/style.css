@@ -317,24 +317,40 @@ body.touch #touch-controls { display: block; }
    Hidden by default; shown only while the 'level' scene is active
    (data-scene set in main.js setScene). Safe-area insets push it off the
    notch / rounded corner (Mark: "too high in the corner sometimes"). */
-/* v1.0.10 (Mark): the pause button is now a small SEMI-TRANSPARENT
-   pause icon (⏸ rendered as the two-bar ❚❚) tucked BELOW the right-side
-   HUD column (TIME + power-timer). Its exact `top` and `right` are set
-   from JS in main.js resize() so it always anchors to the live canvas
-   rect across iPhone/iPad sizes - CSS just controls its size/visual. */
-.tc-pause { width: 6vmin; height: 6vmin;
-            border-radius: 50%; font-size: 2.6vmin; line-height: 1;
-            letter-spacing: -0.4vmin;          /* the two bars sit tight */
-            color: rgba(255,255,255,0.55);
+/* v1.0.11 (Mark): the pause button is a small SEMI-TRANSPARENT round
+   button with two perfectly-centered vertical bars (drawn as
+   ::before / ::after pseudo-elements rather than text glyphs - text
+   pause icons are font-dependent and rarely centered on the pixel).
+   Its `top`/`right` are set from JS in main.js resize() so it always
+   anchors to the live canvas rect across iPhone/iPad sizes. */
+.tc-pause { width: 4.5vmin; height: 4.5vmin;
+            border-radius: 50%;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.18);
             box-shadow: 0 0.3vmin 0.6vmin rgba(0,0,0,0.30);
+            /* Hide the text content - we draw bars via pseudo-elements. */
+            font-size: 0; color: transparent;
             display: none; }
+body[data-scene="level"] .tc-pause { display: block; }
+.tc-pause::before, .tc-pause::after {
+  content: '';
+  position: absolute;
+  top: 28%;
+  width: 14%;
+  height: 44%;
+  background: rgba(255,255,255,0.55);
+  border-radius: 0.4vmin;
+}
+.tc-pause::before { left: 32%; }
+.tc-pause::after  { right: 32%; }
 .tc-pause.pressed, .tc-pause:active {
-            color: #ffffff;
-            background: rgba(255,255,255,0.22);
-            border-color: rgba(255,255,255,0.45); }
-body[data-scene="level"] .tc-pause { display: flex; }
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.45);
+}
+.tc-pause.pressed::before, .tc-pause.pressed::after,
+.tc-pause:active::before, .tc-pause:active::after {
+  background: #ffffff;
+}
 
 /* ---- Level editor (dev tool) ---- */
 /* All editor UI lives under #editor-ui so removing the editor is one
