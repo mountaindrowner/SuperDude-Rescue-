@@ -5483,11 +5483,10 @@ window.SDD = window.SDD || {};
     // extends upward.
     var roadY = 176 - camy;
     var sideY = roadY - 4;     // sidewalk top
-    // World X range visible: camx to camx + 320. Compute world-x
-    // start offset so anything we paint at integer world coords gets
-    // translated correctly.
+    // World X range visible: camx to camx + VIEW_W (was hardcoded 320,
+    // which left the rightmost slice un-painted on wide-view iPhones).
     var wx0 = camx - 32;
-    var wx1 = camx + 320 + 32;
+    var wx1 = camx + C.VIEW_W + 32;
 
     // CROSSWALK STRIPES every 320 world-px (was 200; v0.66 thinning).
     var crossSpacing = 320;
@@ -7676,7 +7675,7 @@ window.SDD = window.SDD || {};
 
       // tiles
       var T = C.TILE;
-      var t0x = Math.max(0, Math.floor(cam.x / T)), t1x = Math.min(this.map.w - 1, Math.ceil((cam.x + 320) / T));
+      var t0x = Math.max(0, Math.floor(cam.x / T)), t1x = Math.min(this.map.w - 1, Math.ceil((cam.x + C.VIEW_W) / T));
       var t0y = Math.max(0, Math.floor(cam.y / T)), t1y = Math.min(this.map.h - 1, Math.ceil((cam.y + 180) / T));
       for (var ty = t0y; ty <= t1y; ty++) {
         for (var tx = t0x; tx <= t1x; tx++) {
@@ -7894,9 +7893,13 @@ window.SDD = window.SDD || {};
       var saL = SDD.C.SAFE_LEFT   || 0;
       var saR = SDD.C.SAFE_RIGHT  || 0;
       var saT = SDD.C.SAFE_TOP    || 0;
-      var hudLX = saL + 6;
-      var hudRX = C.VIEW_W - saR - 6;
-      var hudTY = saT + 4;
+      // v1.0.19 (Mark on-device): bumped the inboard offsets so HUD text
+      // doesn't sit right against the screen edge. ~14 game pixels left/
+      // right and ~10 down from any safe-area boundary gives readable
+      // breathing room without crowding the gameplay area.
+      var hudLX = saL + 14;
+      var hudRX = C.VIEW_W - saR - 14;
+      var hudTY = saT + 10;
       // No background strip - the HUD text floats directly over the
       // level art (Mark: "transparent border banner... obscures the
       // screen, makes the screen feel smaller"). All HUD glyphs use
