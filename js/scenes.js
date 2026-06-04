@@ -5957,7 +5957,7 @@ window.SDD = window.SDD || {};
     var T = C.TILE;
     var wx = (sign.col || 8) * T;
     var sx = Math.round(wx - camx);
-    if (sx < -120 || sx > 340) return;
+    if (sx < -120 || sx > C.VIEW_W + 20) return;
     // Ground row is 11; sidewalk top ~ row 11 * 16 = 176.
     var groundY = 176 - camy;
     var poleTop = groundY - 40;
@@ -5999,7 +5999,7 @@ window.SDD = window.SDD || {};
   function _cyDrawCityCat(g, camx, camy, t) {
     var wx = 13 * 16;
     var sx = Math.round(wx - camx);
-    if (sx < -32 || sx > 340) return;
+    if (sx < -32 || sx > C.VIEW_W + 20) return;
     var groundY = 176 - camy;
     var by = groundY - 12;                       // cat body bottom
     var breathe = Math.round(Math.sin(t * 0.05) * 1);
@@ -6073,7 +6073,7 @@ window.SDD = window.SDD || {};
     var wx0 = ent.col * T;
     var ww  = (ent.width || 16) * T;
     var sx0 = Math.round(wx0 - camx);
-    if (sx0 + ww < -8 || sx0 > 328) return null;
+    if (sx0 + ww < -8 || sx0 > C.VIEW_W + 8) return null;
     var groundY = 176 - camy;
     var topY    = 0 - camy;
     var doorW = 38, doorH = 56;
@@ -6476,7 +6476,7 @@ window.SDD = window.SDD || {};
     var X0 = 4000, X1 = 7040;
     var sx0 = X0 - camx;
     var sx1 = X1 - camx;
-    if (sx1 < -8 || sx0 > 328) return;
+    if (sx1 < -8 || sx0 > C.VIEW_W + 8) return;
 
     // INTERIOR FILL. v0.88: SOLID dark fill (was a multiply pass that
     // left the bright city showing through, per Mark "the tunnel
@@ -6485,7 +6485,7 @@ window.SDD = window.SDD || {};
     // layers behind are completely hidden, and the structural detail
     // (pillars, deck skirt, lamps) reads as a sealed concrete interior.
     var darkLo = Math.max(0, sx0);
-    var darkHi = Math.min(320, sx1);
+    var darkHi = Math.min(C.VIEW_W, sx1);
     if (darkLo < darkHi) {
       var solid = g.createLinearGradient(0, 0, 0, 180);
       solid.addColorStop(0,    '#0a1018');
@@ -6505,7 +6505,7 @@ window.SDD = window.SDD || {};
     var streetY = 176 - camy;
 
     var lo = Math.max(-2, sx0);
-    var hi = Math.min(322, sx1);
+    var hi = Math.min(C.VIEW_W + 2, sx1);
     if (lo < hi) {
       // Underside skirt body.
       g.fillStyle = '#3D3F4A';
@@ -6544,7 +6544,7 @@ window.SDD = window.SDD || {};
     var colW = 8;
     for (var pwx = X0 + 16; pwx < X1; pwx += pillarSpacing) {
       var psx = pwx - camx;
-      if (psx < -12 || psx > 332) continue;
+      if (psx < -12 || psx > C.VIEW_W + 12) continue;
       var pcolY = skirtY + skirtH;
       var pcolH = streetY - pcolY;
       // Pillar body.
@@ -6569,7 +6569,7 @@ window.SDD = window.SDD || {};
     // PORTAL WALL pieces at the entrance + exit (full-height frames
     // so the tunnel reads as a "room").
     function portalWall(cx) {
-      if (cx < -16 || cx > 336) return;
+      if (cx < -16 || cx > C.VIEW_W + 16) return;
       var pwTop = 0 - camy;
       var pwBot = streetY;
       // Wall body.
@@ -6592,7 +6592,7 @@ window.SDD = window.SDD || {};
     var lampSpacing = 64;
     for (var lwx = X0 + 32; lwx < X1; lwx += lampSpacing) {
       var lsx = lwx - camx;
-      if (lsx < -10 || lsx > 330) continue;
+      if (lsx < -10 || lsx > C.VIEW_W + 10) continue;
       var lsy = skirtY + skirtH - 3;
       var halo = g.createRadialGradient(lsx, lsy + 6, 2, lsx, lsy + 6, 32);
       halo.addColorStop(0,   'rgba(255,200,120,0.60)');
@@ -6613,7 +6613,7 @@ window.SDD = window.SDD || {};
     var signSpacing = 128;
     for (var swx = X0 + 80; swx < X1 - 30; swx += signSpacing) {
       var ssx = swx - camx;
-      if (ssx < -30 || ssx > 340) continue;
+      if (ssx < -30 || ssx > C.VIEW_W + 20) continue;
       var ssy = skirtY + skirtH + 2;
       g.fillStyle = '#1A1E2A';
       g.fillRect(ssx, ssy, 22, 8);
@@ -6638,7 +6638,7 @@ window.SDD = window.SDD || {};
     var girderSpacing = 96;
     for (var gwx = X0 + 48; gwx < X1; gwx += girderSpacing) {
       var gsx = gwx - camx;
-      if (gsx < -16 || gsx > 336) continue;
+      if (gsx < -16 || gsx > C.VIEW_W + 16) continue;
       var gy = 30 - camy;
       g.fillStyle = '#1A1B22';
       g.fillRect(gsx - 14, gy, 28, 3);
