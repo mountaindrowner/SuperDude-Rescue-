@@ -154,22 +154,22 @@ body::after  { right: 0.6vw; animation-delay: 1.2s; }
 #game-container {
   position: fixed;
   inset: 0;
-  /* SYMMETRIC safe-area padding. iOS in landscape returns very
-     asymmetric safe-area-inset-left vs -right (the notch is only on
-     one side), so the previous `padding: ... left ... right` pushed
-     the centered canvas off to one side (Mark: "right side seems to
-     be off, like all going too much to the left"). max() of L/R on
-     BOTH sides keeps the canvas truly centered regardless of which
-     way the phone is held, while still clearing the notch.
-     v1.0.8: also add a minimum 14px top/bottom inset so the HUD
-     ("LIVES", "TIME") doesn't sit right at the rounded-corner edge
-     where it can get visually clipped (Mark: "the words 'lives' on
-     top being cut off a little bit"). */
+  /* Padding strategy (v1.0.9, Mark on-device tuning):
+     - LEFT pad is the symmetric notch-clearance PLUS a fixed 80px
+       extra so the canvas visibly shifts RIGHT (Mark: "the whole
+       frame can still go right some more").
+     - TOP pad has a 50px floor so it visibly shifts DOWN.
+     - RIGHT + BOTTOM stay minimal (just the notch / home-indicator
+       inset). The net effect: canvas sits inside the right-bottom
+       half of the viewport, giving thumb-space for buttons + clear
+       notch room.
+     - The R/L max() inside the LEFT calc keeps the notch clearance
+       symmetric regardless of which way the phone is held. */
   padding:
-    max(env(safe-area-inset-top), 14px)
-    max(env(safe-area-inset-left), env(safe-area-inset-right))
+    max(env(safe-area-inset-top), 50px)
+    max(env(safe-area-inset-left), env(safe-area-inset-right), 14px)
     max(env(safe-area-inset-bottom), 14px)
-    max(env(safe-area-inset-left), env(safe-area-inset-right));
+    calc(max(env(safe-area-inset-left), env(safe-area-inset-right)) + 80px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,14 +298,14 @@ body.touch #touch-controls { display: block; }
 #action-pad { position: absolute;
   right: calc(max(5vmin, 70px) + env(safe-area-inset-right));
   bottom: calc(4px + env(safe-area-inset-bottom));
-  width: 50vmin; height: 34vmin; }
+  width: 42vmin; height: 28vmin; }
 /* A / B + pause: same transparency drop as the d-pad. Pressed state
    restores the saturated look so the tap feedback stays obvious. */
-.tc-a { right: 0; bottom: 0; width: 24vmin; height: 24vmin; border-radius: 50%;
+.tc-a { right: 0; bottom: 0; width: 20vmin; height: 20vmin; border-radius: 50%;
   background: radial-gradient(circle at 35% 28%, rgba(130,225,160,0.30), rgba(46,170,98,0.14) 62%, rgba(46,170,98,0.06));
   border-color: rgba(160,255,190,0.30); }
 .tc-a.pressed, .tc-a:active { background: radial-gradient(circle at 35% 28%, rgba(170,255,200,0.85), rgba(70,200,120,0.55)); border-color: rgba(170,255,200,0.7); }
-.tc-b { right: 22vmin; bottom: 10vmin; width: 18vmin; height: 18vmin; border-radius: 50%;
+.tc-b { right: 18vmin; bottom: 8vmin; width: 15vmin; height: 15vmin; border-radius: 50%;
   background: radial-gradient(circle at 35% 28%, rgba(235,160,125,0.28), rgba(190,90,65,0.13) 62%, rgba(190,90,65,0.06));
   border-color: rgba(255,180,150,0.30); }
 .tc-b.pressed, .tc-b:active { background: radial-gradient(circle at 35% 28%, rgba(255,190,160,0.85), rgba(215,120,85,0.55)); border-color: rgba(255,190,160,0.7); }
@@ -319,7 +319,7 @@ body.touch #touch-controls { display: block; }
    notch / rounded corner (Mark: "too high in the corner sometimes"). */
 .tc-pause { right: calc(max(3vmin, 50px) + env(safe-area-inset-right));
             top: calc(max(3vmin, 14px) + env(safe-area-inset-top));
-            width: 11vmin; height: 11vmin;
+            width: 8vmin; height: 8vmin;
             border-radius: 50%; font-size: 5vmin; line-height: 1;
             background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
             border-color: rgba(255, 255, 255, 0.22);

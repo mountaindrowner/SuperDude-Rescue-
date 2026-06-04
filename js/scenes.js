@@ -7961,7 +7961,7 @@ window.SDD = window.SDD || {};
         }
       }
       var sec = Math.floor(this.timeSteps / 60);
-      text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
+      text(g, 'TIME ' + sec, 296, 4, '#ffffff', 1, 'right');
       // Signature power-up indicator: lives on the right column, just
       // below TIME, so it never collides with the stage subtitle.
       if (this.player && this.player.signatureKind && this.player.signatureT > 0) {
