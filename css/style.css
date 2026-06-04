@@ -15,30 +15,13 @@ html, body {
      long-press / drag inside a non-input area. Setting it on the body
      cascades to the canvas + touch zones, which is what we want. */
   -webkit-touch-callout: none;
-  /* Lab-tech side-panel paint: bolt rows + vertical pipe stripes +
-     console gradient (Mark: "make the side bars feel like lab tech -
-     tubes wires buttons consoles"). Canvas covers the centre; the
-     side bars on a 19.5:9 phone in landscape now show this through.
-     All CSS gradients - zero asset weight. Subtle so it doesn't fight
-     for attention with gameplay. */
-  background:
-    /* row of "bolts" near the top */
-    radial-gradient(circle at 50% 8%, rgba(70,240,255,0.55) 0 1.5px, transparent 2.5px) 0 0 / 32px 100vh repeat-x,
-    /* row of bolts near the bottom */
-    radial-gradient(circle at 50% 92%, rgba(255,210,80,0.45) 0 1.5px, transparent 2.5px) 0 0 / 48px 100vh repeat-x,
-    /* fine scanlines so it reads as a CRT/console */
-    repeating-linear-gradient(0deg,
-      rgba(120,140,180,0.06) 0 1px,
-      transparent 1px 3px),
-    /* vertical pipe stripes (the "lab tubes") */
-    repeating-linear-gradient(90deg,
-      transparent 0 24px,
-      rgba(70,90,130,0.22) 24px 28px,
-      transparent 28px 56px,
-      rgba(60,80,120,0.14) 56px 58px,
-      transparent 58px 96px),
-    /* slate-metal base gradient */
-    linear-gradient(180deg, #131a2a 0%, #0a0d18 55%, #05050d 100%);
+  /* v1.0.14 (Mark: "let's just remove the background and bevels and
+     expand the game screen to just barely be smaller than the screen").
+     The lab-tech bezels + bolt grid + pipe stripes are gone. Body now
+     paints a flat dark slate so the only thing the player sees is the
+     gameplay rectangle, with thin uniform dark borders where the 16:9
+     canvas letterboxes inside a wider phone screen. */
+  background: #05060d;
   overflow: hidden;
   position: fixed;
   inset: 0;
@@ -67,14 +50,12 @@ html, body {
    The whole panel pulses (filter brightness) on the existing LED
    keyframes so the console "breathes." */
 body::before, body::after {
+  /* v1.0.14: lab-tech bezels HIDDEN per Mark's request to go bezel-less
+     and let the gameplay rectangle be the focus. Rules kept around so
+     they can be revived by removing the `display: none` below. */
+  display: none;
   content: "";
   position: fixed;
-  /* v1.0.13 (Mark on-device): bezels now anchored to the CANVAS edges
-     instead of viewport edges, so the lab-tech "frame" actually
-     surrounds the gameplay rectangle. Top/height/left positions are
-     set from JS in main.js resize() via CSS custom properties. The
-     `var(..., fallback)` values keep the old viewport-anchored layout
-     until JS runs (and as a defensive default if it doesn't). */
   top: var(--bezel-top, 4%);
   width: 38px;
   height: var(--bezel-height, 92%);
@@ -171,11 +152,15 @@ body::after  { left: var(--bezel-right-x, calc(100% - 38px - 0.6vw)); animation-
        notch room.
      - The R/L max() inside the LEFT calc keeps the notch clearance
        symmetric regardless of which way the phone is held. */
+  /* v1.0.14: tiny 4px minimum padding so the canvas grows almost edge
+     to edge - "just barely smaller than the screen" (Mark). Safe-area
+     insets still take precedence so the canvas never goes under the
+     notch / Dynamic Island. */
   padding:
-    max(env(safe-area-inset-top), 14px)
-    max(env(safe-area-inset-left), env(safe-area-inset-right), 14px)
-    max(env(safe-area-inset-bottom), 14px)
-    max(env(safe-area-inset-left), env(safe-area-inset-right), 14px);
+    max(env(safe-area-inset-top), 4px)
+    max(env(safe-area-inset-left), env(safe-area-inset-right), 4px)
+    max(env(safe-area-inset-bottom), 4px)
+    max(env(safe-area-inset-left), env(safe-area-inset-right), 4px);
   display: flex;
   align-items: center;
   justify-content: center;

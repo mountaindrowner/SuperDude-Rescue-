@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.13';
+  SDD.VERSION = 'v1.0.14';
 
   var canvas, ctx;
   var STEP = 1 / 60;
