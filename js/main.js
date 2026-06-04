@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.12';
+  SDD.VERSION = 'v1.0.13';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -79,6 +79,16 @@ window.SDD = window.SDD || {};
     // canvas.bottom as the anchor.
     var c = canvas.getBoundingClientRect();
     var iw = window.innerWidth, ih = window.innerHeight;
+    // v1.0.13: move the lab-tech bezels (body::before / body::after)
+    // to FLANK the canvas instead of the viewport edges. The CSS uses
+    // CSS custom properties with fallbacks, so this just overrides
+    // those properties with positions tied to the live canvas rect.
+    // Bezel width is fixed 38px in the CSS.
+    var bodyStyle = document.body.style;
+    bodyStyle.setProperty('--bezel-left-x',  Math.round(c.left - 38) + 'px');
+    bodyStyle.setProperty('--bezel-right-x', Math.round(c.right)      + 'px');
+    bodyStyle.setProperty('--bezel-top',     Math.round(c.top)        + 'px');
+    bodyStyle.setProperty('--bezel-height',  Math.round(c.height)     + 'px');
     // Pause: small icon sitting just below the right-column HUD
     // (TIME at game y=4, power timer at game y=14 -> bottom of HUD
     // ~14% down the canvas), hugging the canvas right edge.
