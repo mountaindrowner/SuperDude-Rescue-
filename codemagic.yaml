@@ -50,7 +50,7 @@ workflows:
         BUNDLE_ID: "org.thecrossroads.superdudeadventures"
         # Marketing version shown on the store. Keep in step with
         # SDD.VERSION in js/main.js (strip the leading "v").
-        MARKETING_VERSION: "1.0.16"
+        MARKETING_VERSION: "1.0.17"
 
     scripts:
       - name: Install npm dependencies

@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.16';
+  SDD.VERSION = 'v1.0.17';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -71,14 +71,20 @@ window.SDD = window.SDD || {};
     // + dialog box (Mark's screenshots, v0.50). Reverted: accept the
     // small black side bars in the browser; an installed PWA has no
     // chrome and gets a tighter fit naturally.
-    // v1.0.15/16: DYNAMIC VIEW_W. The game world height stays 180; width
-    // is recalculated to match the viewport's aspect ratio EXACTLY so the
-    // canvas fills the device screen edge-to-edge (no letterbox bars).
-    // VIEW_W stays 320 (strict 16:9) when WIDE_VIEW is false (revert switch).
+    // v1.0.17: canvas CSS size is now set by CSS (position: fixed; inset:0;
+    // 100vw/100dvh) - on iOS WKWebView, window.innerWidth/Height return
+    // the safe-area-CROPPED viewport even with viewport-fit=cover, but
+    // 100vw/100dvh report the FULL viewport including the area under
+    // the notch + home indicator. Read the actual rendered canvas rect
+    // back to derive the dynamic VIEW_W.
+    var actual = canvas.getBoundingClientRect();
+    var dispW = actual.width || vw;
+    var dispH = actual.height || vh;
+
     var WORLD_H = 180;
     var VIEW_W;
-    if (SDD.C.WIDE_VIEW && vw > 0 && vh > 0) {
-      VIEW_W = Math.round(WORLD_H * vw / vh);
+    if (SDD.C.WIDE_VIEW && dispW > 0 && dispH > 0) {
+      VIEW_W = Math.round(WORLD_H * dispW / dispH);
       VIEW_W = Math.max(VIEW_W, 320);    // never narrower than the 16:9 original
       VIEW_W = Math.min(VIEW_W, 420);    // safety cap on ultra-wide
     } else {
@@ -95,19 +101,12 @@ window.SDD = window.SDD || {};
       ctx.imageSmoothingEnabled = false;       // gets reset by canvas resize
     }
 
-    // FILL the viewport exactly. Since VIEW_W tracks the viewport aspect
-    // ratio closely, the visual distortion from a non-aspect-preserving
-    // stretch is sub-pixel (<1%) - imperceptible on screen, and gets us
-    // a true edge-to-edge fill instead of a letterboxed canvas.
-    canvas.style.width  = vw + 'px';
-    canvas.style.height = vh + 'px';
-
     // Convert safe-area insets from CSS px to GAME px (the units drawHUD
     // and the level scene's HUD use) so HUD elements + touch buttons can
     // stay clear of the notch and home indicator even though the canvas
     // extends behind them.
-    var cssToGameX = VIEW_W / (vw || 1);
-    var cssToGameY = WORLD_H / (vh || 1);
+    var cssToGameX = VIEW_W / (dispW || 1);
+    var cssToGameY = WORLD_H / (dispH || 1);
     SDD.C.SAFE_LEFT   = Math.ceil(saiL * cssToGameX);
     SDD.C.SAFE_RIGHT  = Math.ceil(saiR * cssToGameX);
     SDD.C.SAFE_TOP    = Math.ceil(saiT * cssToGameY);

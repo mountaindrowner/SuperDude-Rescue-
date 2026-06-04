@@ -175,6 +175,17 @@ body::after  { left: var(--bezel-right-x, calc(100% - 38px - 0.6vw)); animation-
   image-rendering: crisp-edges;
   display: block;
   background: #000;
+  /* v1.0.17 (Mark on-device): force the canvas to literally fill the
+     entire visual viewport via CSS viewport units. Bypasses the
+     window.innerWidth/Height JS sizing which on iOS WKWebView returns
+     dimensions that exclude the safe-area-inset bands. position:fixed
+     + inset:0 + 100vw/100dvh = absolute edge-to-edge, no dark bars. */
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;          /* fallback */
+  height: 100dvh;         /* dynamic - matches the live visible area */
+  margin: 0;
 }
 
 /* ---- Touch controls ---- */
