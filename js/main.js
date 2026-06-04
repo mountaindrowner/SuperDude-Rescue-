@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.15';
+  SDD.VERSION = 'v1.0.16';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -45,19 +45,23 @@ window.SDD = window.SDD || {};
   // still get more detail than the old 320x180 buffer ever could.
   function resize() {
     var vw = window.innerWidth, vh = window.innerHeight;
-    // v1.0.8: subtract the #game-container safe-area padding (notch
-    // insets + the 14px top/bottom HUD breathing room) so the canvas
-    // actually fits INSIDE the padded area instead of overflowing past
-    // it. Without this, the JS-set canvas size ignored the CSS padding
-    // and the HUD ("LIVES") rendered at the rounded-corner edge.
-    var gc = document.getElementById('game-container');
-    if (gc) {
-      var cs = getComputedStyle(gc);
-      var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-      var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-      vw = Math.max(0, vw - padX);
-      vh = Math.max(0, vh - padY);
+    // v1.0.16: removed the container padding entirely - read the actual
+    // safe-area-inset env() values via a hidden probe element and convert
+    // them to GAME PIXELS so drawHUD + touch buttons can inset themselves
+    // away from the notch / home indicator while the playfield extends
+    // edge-to-edge. (Probe is created lazily once and reused.)
+    if (!resize._probe) {
+      var pr = document.createElement('div');
+      pr.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;left:0;top:0;'
+        + 'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);';
+      document.body.appendChild(pr);
+      resize._probe = pr;
     }
+    var ps = getComputedStyle(resize._probe);
+    var saiT = parseFloat(ps.paddingTop)    || 0;
+    var saiR = parseFloat(ps.paddingRight)  || 0;
+    var saiB = parseFloat(ps.paddingBottom) || 0;
+    var saiL = parseFloat(ps.paddingLeft)   || 0;
     // Letterbox-to-fit: keep the 16:9 canvas fully inside the viewport.
     //
     // We tried a "fill width on touch landscape" mode (v0.46) but on
@@ -67,17 +71,16 @@ window.SDD = window.SDD || {};
     // + dialog box (Mark's screenshots, v0.50). Reverted: accept the
     // small black side bars in the browser; an installed PWA has no
     // chrome and gets a tighter fit naturally.
-    // v1.0.15: DYNAMIC VIEW_W. The game world height stays 180; the
-    // width is recalculated to match the viewport's aspect ratio so the
-    // canvas fills the screen without letterbox bars. Game stays 16:9
-    // when WIDE_VIEW is false (revert switch).
+    // v1.0.15/16: DYNAMIC VIEW_W. The game world height stays 180; width
+    // is recalculated to match the viewport's aspect ratio EXACTLY so the
+    // canvas fills the device screen edge-to-edge (no letterbox bars).
+    // VIEW_W stays 320 (strict 16:9) when WIDE_VIEW is false (revert switch).
     var WORLD_H = 180;
     var VIEW_W;
     if (SDD.C.WIDE_VIEW && vw > 0 && vh > 0) {
       VIEW_W = Math.round(WORLD_H * vw / vh);
       VIEW_W = Math.max(VIEW_W, 320);    // never narrower than the 16:9 original
       VIEW_W = Math.min(VIEW_W, 420);    // safety cap on ultra-wide
-      VIEW_W = VIEW_W & ~1;              // round DOWN to even px so 3x scale aligns
     } else {
       VIEW_W = 320;
     }
@@ -92,13 +95,23 @@ window.SDD = window.SDD || {};
       ctx.imageSmoothingEnabled = false;       // gets reset by canvas resize
     }
 
-    // CSS-fit the canvas inside the available viewport. The internal
-    // aspect (VIEW_W : 180) matches the viewport aspect closely, so the
-    // letterbox is tiny (~rounding-error pixels only).
-    var sc = Math.min(vw / canvasInternalW, vh / canvasInternalH);
-    if (sc <= 0) sc = 0.1;
-    canvas.style.width  = (canvasInternalW * sc) + 'px';
-    canvas.style.height = (canvasInternalH * sc) + 'px';
+    // FILL the viewport exactly. Since VIEW_W tracks the viewport aspect
+    // ratio closely, the visual distortion from a non-aspect-preserving
+    // stretch is sub-pixel (<1%) - imperceptible on screen, and gets us
+    // a true edge-to-edge fill instead of a letterboxed canvas.
+    canvas.style.width  = vw + 'px';
+    canvas.style.height = vh + 'px';
+
+    // Convert safe-area insets from CSS px to GAME px (the units drawHUD
+    // and the level scene's HUD use) so HUD elements + touch buttons can
+    // stay clear of the notch and home indicator even though the canvas
+    // extends behind them.
+    var cssToGameX = VIEW_W / (vw || 1);
+    var cssToGameY = WORLD_H / (vh || 1);
+    SDD.C.SAFE_LEFT   = Math.ceil(saiL * cssToGameX);
+    SDD.C.SAFE_RIGHT  = Math.ceil(saiR * cssToGameX);
+    SDD.C.SAFE_TOP    = Math.ceil(saiT * cssToGameY);
+    SDD.C.SAFE_BOTTOM = Math.ceil(saiB * cssToGameY);
 
     // v1.0.10/12: anchor the touch buttons (pause + A/B) to the CANVAS
     // rect, not the viewport edges. Without this the buttons floated in
@@ -117,21 +130,18 @@ window.SDD = window.SDD || {};
     bodyStyle.setProperty('--bezel-right-x', Math.round(c.right)      + 'px');
     bodyStyle.setProperty('--bezel-top',     Math.round(c.top)        + 'px');
     bodyStyle.setProperty('--bezel-height',  Math.round(c.height)     + 'px');
-    // Pause: small icon sitting just below the right-column HUD
-    // (TIME at game y=4, power timer at game y=14 -> bottom of HUD
-    // ~14% down the canvas), hugging the canvas right edge.
+    // v1.0.16: now that the canvas extends edge-to-edge, add the actual
+    // safe-area inset on top of the small inboard offset so the buttons
+    // stay clear of the notch / home indicator on real devices.
     var pb = document.querySelector('.tc-pause');
     if (pb) {
-      pb.style.top   = Math.round(c.top + c.height * 0.16) + 'px';
-      pb.style.right = Math.round(iw - c.right + Math.max(4, c.width * 0.012)) + 'px';
+      pb.style.top   = Math.round(c.top + c.height * 0.16 + saiT) + 'px';
+      pb.style.right = Math.round(iw - c.right + saiR + Math.max(4, c.width * 0.012)) + 'px';
     }
-    // A / B pad: anchor its right + bottom edges ~8px inside the
-    // canvas bottom-right corner so A's right edge sits clearly inside
-    // the gameplay rectangle.
     var ap = document.getElementById('action-pad');
     if (ap) {
-      ap.style.right  = Math.round(iw - c.right + 8) + 'px';
-      ap.style.bottom = Math.round(ih - c.bottom + 8) + 'px';
+      ap.style.right  = Math.round(iw - c.right + saiR + 8) + 'px';
+      ap.style.bottom = Math.round(ih - c.bottom + saiB + 8) + 'px';
     }
   }
 

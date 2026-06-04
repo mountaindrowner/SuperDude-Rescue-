@@ -7887,6 +7887,16 @@ window.SDD = window.SDD || {};
     },
 
     drawHUD: function (g) {
+      // v1.0.16: with the canvas extending edge-to-edge under the notch
+      // / home indicator, inset the HUD by the safe-area in GAME PIXELS
+      // (main.js stashes those on C.SAFE_* per resize) so LIVES + TIME
+      // stay visible. Defaults to 0 inset on non-notched devices.
+      var saL = SDD.C.SAFE_LEFT   || 0;
+      var saR = SDD.C.SAFE_RIGHT  || 0;
+      var saT = SDD.C.SAFE_TOP    || 0;
+      var hudLX = saL + 6;
+      var hudRX = C.VIEW_W - saR - 6;
+      var hudTY = saT + 4;
       // No background strip - the HUD text floats directly over the
       // level art (Mark: "transparent border banner... obscures the
       // screen, makes the screen feel smaller"). All HUD glyphs use
@@ -7904,9 +7914,9 @@ window.SDD = window.SDD || {};
       // Replace it with an EASY badge so the kid (and Mark watching them
       // play) always knows what mode is active.
       if (this.difficulty === 'easy') {
-        text(g, 'EASY', 6, 4, '#9bf0a0', 1, 'left');
+        text(g, 'EASY', hudLX, hudTY, '#9bf0a0', 1, 'left');
       } else {
-        text(g, 'LIVES ' + this.lives, 6, 4, livesColor, 1, 'left');
+        text(g, 'LIVES ' + this.lives, hudLX, hudTY, livesColor, 1, 'left');
       }
       if (this.livesPulseT > 0 && this.difficulty !== 'easy') {
         // "+1" rises 12 px above the LIVES label as it fades out.
@@ -7915,10 +7925,10 @@ window.SDD = window.SDD || {};
         var alpha = 1 - t1;
         g.save();
         g.globalAlpha = alpha;
-        tsh(g, '+1', 60, 4 - rise, '#ffe070', '#7a4a10', 1, 'left');
+        tsh(g, '+1', hudLX + 54, hudTY - rise, '#ffe070', '#7a4a10', 1, 'left');
         g.restore();
       }
-      text(g, 'CORES ' + this.cores, 6, 14, '#46f0ff', 1, 'left');
+      text(g, 'CORES ' + this.cores, hudLX, hudTY + 10, '#46f0ff', 1, 'left');
       // Signature power-up indicator: lit when a per-stage pickup is
       // active. Shows seconds remaining (capped at 99). The
       // friendship-token has a 999s timer = "lasts whole stage" - we
@@ -7930,7 +7940,7 @@ window.SDD = window.SDD || {};
       // renders on the next row and carries the location identity.
       if (this.day !== 8) {
         var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
-        text(g, dlabel, C.VIEW_W / 2, 4, '#ffd23a', 1, 'center');
+        text(g, dlabel, C.VIEW_W / 2, hudTY, '#ffd23a', 1, 'center');
       }
       // Theme name (level.name) as a small subtitle under DAY. Pass 12
       // (Mark): the subtitle used to share row Y=14 with the POWER
@@ -7943,7 +7953,7 @@ window.SDD = window.SDD || {};
           (this.timeSteps < 360 ? (360 - this.timeSteps) / 120 : 0);
         if (subAlpha > 0) {
           g.save(); g.globalAlpha = subAlpha;
-          text(g, L.name, C.VIEW_W / 2, 14, '#dfe6ff', 1, 'center');
+          text(g, L.name, C.VIEW_W / 2, hudTY + 10, '#dfe6ff', 1, 'center');
           g.restore();
         }
       }
@@ -7966,14 +7976,14 @@ window.SDD = window.SDD || {};
         }
       }
       var sec = Math.floor(this.timeSteps / 60);
-      text(g, 'TIME ' + sec, C.VIEW_W - 6, 4, '#ffffff', 1, 'right');
+      text(g, 'TIME ' + sec, hudRX, hudTY, '#ffffff', 1, 'right');
       // Signature power-up indicator: lives on the right column, just
       // below TIME, so it never collides with the stage subtitle.
       if (this.player && this.player.signatureKind && this.player.signatureT > 0) {
         var secLeft = Math.ceil(this.player.signatureT / 60);
         var sigName = SIG_LABELS[this.player.signatureKind] || 'POWER';
         var sigLine = secLeft > 99 ? sigName : (sigName + ' ' + secLeft + 's');
-        text(g, sigLine, C.VIEW_W - 6, 14, '#ffe890', 1, 'right');
+        text(g, sigLine, hudRX, hudTY + 10, '#ffe890', 1, 'right');
       }
     },
 
