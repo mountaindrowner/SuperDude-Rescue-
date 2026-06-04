@@ -3051,7 +3051,7 @@ window.SDD = window.SDD || {};
     this.x += this.dir * this.spd;
     // Legacy off-screen cull (non-patrol cars).
     var camx = (level && level.camera) ? level.camera.x : 0;
-    if (this.x + this.w < camx - 80 || this.x > camx + 320 + 80) {
+    if (this.x + this.w < camx - 80 || this.x > camx + SDD.C.VIEW_W + 80) {
       this.remove = true;
     }
   };
@@ -3359,7 +3359,7 @@ window.SDD = window.SDD || {};
     // so a dense run of spawners all fired at once. Now an off-screen
     // spawner resets its timer, so each one has to be visible for a
     // full period before it emits.
-    var onScreen = (this.x > camx - 40 && this.x < camx + 320 + 40);
+    var onScreen = (this.x > camx - 40 && this.x < camx + SDD.C.VIEW_W + 40);
     if (!onScreen) { this.t = 0; return; }
     this.t++;
     if (this.t < this.period) return;

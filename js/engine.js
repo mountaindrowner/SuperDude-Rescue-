@@ -5,7 +5,14 @@ window.SDD = window.SDD || {};
   var SDD = window.SDD;
 
   SDD.C = {
+    // VIEW_W is now DYNAMIC (v1.0.15) when WIDE_VIEW is enabled - main.js
+    // resize() recalculates it based on the live viewport aspect ratio so
+    // the camera + canvas fill the device screen without letterboxing.
+    // VIEW_W stays at 320 (the original 16:9 design) on devices/scenes
+    // where WIDE_VIEW is false. WIDE_VIEW is a runtime toggle so we can
+    // revert to the strict 16:9 view in a single line if anything regresses.
     VIEW_W: 320, VIEW_H: 180, TILE: 16,
+    WIDE_VIEW: true,            // master enable for dynamic VIEW_W
     GRAVITY: 0.36, MAX_FALL: 5.8,
     MOVE_ACCEL: 0.36, FRICTION: 0.30,
     MOVE_MAX_SMALL: 1.85, MOVE_MAX_BIG: 2.05,

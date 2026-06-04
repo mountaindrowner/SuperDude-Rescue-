@@ -1180,7 +1180,7 @@ window.SDD = window.SDD || {};
   function drawSkyGalactic(g, camx, camy, t) {
     var grd = g.createLinearGradient(0, 0, 0, 180);
     grd.addColorStop(0, '#02020c'); grd.addColorStop(1, '#0a0820');
-    g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+    g.fillStyle = grd; g.fillRect(0, 0, C.VIEW_W, 180);
     // two nebula clouds (parallax)
     function nebula(cx, cy, r, col) {
       var rg = g.createRadialGradient(cx, cy, 4, cx, cy, r);
@@ -1199,7 +1199,7 @@ window.SDD = window.SDD || {};
     drawStarfield(g, t);
     // brighter stars with twinkle + slow parallax
     for (var i = 0; i < 45; i++) {
-      var sx = ((((i * 73) % 320) - camx * 0.45) % 320 + 320) % 320;
+      var sx = ((((i * 73) % C.VIEW_W) - camx * 0.45) % C.VIEW_W + C.VIEW_W) % C.VIEW_W;
       var sy = ((i * 41) % 150);
       var tw = 0.5 + 0.5 * Math.sin(t * 0.04 + i * 1.7);
       g.fillStyle = 'rgba(255,255,255,' + (0.55 + tw * 0.45) + ')';
@@ -1207,7 +1207,7 @@ window.SDD = window.SDD || {};
       g.fillRect(sx | 0, sy | 0, sz, sz);
     }
     // periodic shooting star
-    var stT = (t * 0.6) % 320;
+    var stT = (t * 0.6) % C.VIEW_W;
     if (stT < 50) {
       var ssx = -30 + stT * 6, ssy = 24 + stT * 1.4;
       g.strokeStyle = 'rgba(255,250,210,0.85)'; g.lineWidth = 1;
@@ -1316,7 +1316,7 @@ window.SDD = window.SDD || {};
     grd.addColorStop(0, lc([38, 30, 80], [92, 166, 248], prog));
     grd.addColorStop(0.5, lc([88, 62, 122], [146, 204, 250], prog));
     grd.addColorStop(1, lc([196, 142, 156], [226, 244, 255], prog));
-    g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+    g.fillStyle = grd; g.fillRect(0, 0, C.VIEW_W, 180);
     if (prog < 0.6) { g.globalAlpha = (0.6 - prog) * 1.7; drawStarfield(g, t); g.globalAlpha = 1; }
     drawSun(g, 46 + prog * 212, 150 - prog * 112, prog);
     var span = 1480, i, c, cx;
@@ -1338,7 +1338,7 @@ window.SDD = window.SDD || {};
     grd.addColorStop(0, c1);
     if (c3) { grd.addColorStop(0.55, c2); grd.addColorStop(1, c3); }
     else { grd.addColorStop(1, c2); }
-    g.fillStyle = grd; g.fillRect(0, 0, 320, 180);
+    g.fillStyle = grd; g.fillRect(0, 0, C.VIEW_W, 180);
   }
   function simpleSun(g, x, y, r, color, rays) {
     g.save();
@@ -1432,20 +1432,20 @@ window.SDD = window.SDD || {};
     }
     // Far wave streaks (the old dotted lines done as cleaner foam)
     g.fillStyle = 'rgba(255,255,255,0.30)';
-    for (var i = 0; i < 320; i += 18) {
+    for (var i = 0; i < C.VIEW_W; i += 18) {
       var wx = ((i + (t * 0.4) % 18) | 0);
       g.fillRect(wx, 128, 4, 1);
       g.fillRect(wx + 9, 134, 3, 1);
     }
     // Near foam line just below the horizon
     g.fillStyle = 'rgba(255,255,255,0.55)';
-    for (var k = 0; k < 320; k += 6) {
+    for (var k = 0; k < C.VIEW_W; k += 6) {
       var fy2 = 142 + Math.sin(t * 0.08 + k * 0.07) * 0.8;
       g.fillRect(k, fy2 | 0, 3, 1);
     }
     // Sparse fish silhouettes near the horizon
     for (var f = 0; f < 4; f++) {
-      var fx = ((f * 80 + t * 0.3) % 320);
+      var fx = ((f * 80 + t * 0.3) % C.VIEW_W);
       var fy = 132 + Math.sin(t * 0.1 + f) * 2;
       g.fillStyle = '#1a5080';
       g.fillRect(fx | 0, fy | 0, 3, 2);
@@ -1464,14 +1464,14 @@ window.SDD = window.SDD || {};
     sky.addColorStop(0.60, '#f5cd92');
     sky.addColorStop(0.85, '#f6b878');           // smoky horizon
     sky.addColorStop(1,    '#d68a55');
-    g.fillStyle = sky; g.fillRect(0, 0, 320, 180);
+    g.fillStyle = sky; g.fillRect(0, 0, C.VIEW_W, 180);
 
     // Volumetric haze band right above the volcano range (warm low-fog).
     var haze = g.createLinearGradient(0, 110, 0, 160);
     haze.addColorStop(0, 'rgba(255,180,110,0)');
     haze.addColorStop(0.5, 'rgba(255,180,110,0.18)');
     haze.addColorStop(1, 'rgba(255,180,110,0)');
-    g.fillStyle = haze; g.fillRect(0, 110, 320, 50);
+    g.fillStyle = haze; g.fillRect(0, 110, C.VIEW_W, 50);
 
     // Sun (slightly larger + warmer than the legacy version).
     simpleSun(g, 240, 36, 20, '#ffd896', false);
@@ -1481,7 +1481,7 @@ window.SDD = window.SDD || {};
     // horizon. World seed (camx) keeps the cone in the same spot.
     var volX = Math.round(150 - camx * 0.05);
     while (volX < -80) volX += 640;
-    while (volX > 320) volX -= 640;
+    while (volX > C.VIEW_W) volX -= 2 * C.VIEW_W;
     _drawVolcano(g, volX, 152, t);
 
     // Distant ridge (palest, far).
@@ -1493,11 +1493,11 @@ window.SDD = window.SDD || {};
 
     // Drifting ash particles + heat-shimmer specks.
     for (var i = 0; i < 26; i++) {
-      var dx = (((i * 47) - camx * 0.3 + t * 0.5) % 320 + 320) % 320;
+      var dx = (((i * 47) - camx * 0.3 + t * 0.5) % C.VIEW_W + C.VIEW_W) % C.VIEW_W;
       var dy = 90 + ((i * 17) % 80);
       // Larger drift up + horizontal scroll for the ash flakes.
-      var ax = ((i * 31) - camx * 0.18 - t * 0.45) % 320;
-      ax = (ax + 320) % 320;
+      var ax = ((i * 31) - camx * 0.18 - t * 0.45) % C.VIEW_W;
+      ax = (ax + 320) % C.VIEW_W;
       var ay = ((i * 13) % 70) + Math.sin(t * 0.04 + i) * 4;
       g.fillStyle = 'rgba(60,40,30,0.35)';
       g.fillRect(ax | 0, ay | 0, (i % 5 === 0) ? 2 : 1, 1);
@@ -1737,10 +1737,10 @@ window.SDD = window.SDD || {};
     mountainRidge(g, camx, 0.11, 172, '#365048', 70);
     // Atmospheric mist band
     g.fillStyle = 'rgba(220,255,220,0.20)';
-    g.fillRect(0, 86, 320, 28);
+    g.fillRect(0, 86, C.VIEW_W, 28);
     // Diagonal sun shafts (humid, warm)
     for (var s = 0; s < 5; s++) {
-      var sx = 40 + s * 70 + Math.sin(t * 0.012 + s) * 8 - (camx * 0.3) % 320;
+      var sx = 40 + s * 70 + Math.sin(t * 0.012 + s) * 8 - (camx * 0.3) % C.VIEW_W;
       sx = ((sx % 380) + 380) % 380 - 30;
       g.fillStyle = 'rgba(255,250,200,0.10)';
       g.beginPath();
@@ -1768,7 +1768,7 @@ window.SDD = window.SDD || {};
     }
     // Dark undergrowth at the bottom
     g.fillStyle = '#0e2810';
-    g.fillRect(0, 175, 320, 5);
+    g.fillRect(0, 175, C.VIEW_W, 5);
 
     // Green leaf canopy hanging from the TOP of the canvas (Mark
     // Pass 9: "3-2 should have a green leaf canopy up top"). Reads
@@ -1800,11 +1800,11 @@ window.SDD = window.SDD || {};
     }
     // Flat band at the very top so the canopy reads as ceiling
     g.fillStyle = '#143818';
-    g.fillRect(0, 0, 320, 4);
+    g.fillRect(0, 0, C.VIEW_W, 4);
   }
   function drawSky_sunlit(g, camx, camy, prog, t) {
     vGradient(g, '#ffcc60', '#fff0a0');
-    simpleSun(g, 160 - camx * 0.05, 60, 28, '#fff8c8', true);
+    simpleSun(g, C.VIEW_W / 2 - camx * 0.05, 60, 28, '#fff8c8', true);
     driftClouds(g, camx, camy, 0.5);
   }
   function drawSky_cosmic_night(g, camx, camy, prog, t) {
@@ -1983,7 +1983,7 @@ window.SDD = window.SDD || {};
       g.save();
       // Dim overlay (cool blue-gray)
       g.fillStyle = 'rgba(28, 38, 70, ' + (stormStrength * 0.45).toFixed(2) + ')';
-      g.fillRect(0, 0, 320, 180);
+      g.fillRect(0, 0, C.VIEW_W, 180);
       // Dark storm clouds rolling across mid-sky
       g.globalAlpha = stormStrength * 0.85;
       for (var sc = 0; sc < 5; sc++) {
@@ -2006,7 +2006,7 @@ window.SDD = window.SDD || {};
       if (stormStrength > 0.4 && (t % 95) < 3) {
         g.globalAlpha = 0.7;
         g.fillStyle = '#fff8d0';
-        g.fillRect(0, 0, 320, 180);
+        g.fillRect(0, 0, C.VIEW_W, 180);
         // Jagged bolt streaking down from the cloud band
         g.globalAlpha = 0.95;
         g.fillStyle = '#fffbe0';
@@ -2168,12 +2168,12 @@ window.SDD = window.SDD || {};
     }
 
     // Sand seabed strip
-    g.fillStyle = '#c4a070'; g.fillRect(0, 176, 320, 4);
-    g.fillStyle = '#8a6840'; g.fillRect(0, 178, 320, 2);
+    g.fillStyle = '#c4a070'; g.fillRect(0, 176, C.VIEW_W, 4);
+    g.fillStyle = '#8a6840'; g.fillRect(0, 178, C.VIEW_W, 2);
 
     // Bubble streams from the seabed drifting up
     for (var b2 = 0; b2 < 10; b2++) {
-      var bx2 = ((b2 * 32 - camx * 0.5) % 320 + 320) % 320;
+      var bx2 = ((b2 * 32 - camx * 0.5) % C.VIEW_W + C.VIEW_W) % C.VIEW_W;
       var bphase = ((t * 0.6 + b2 * 30) % 220);
       var by2 = 178 - bphase * 0.8;
       if (by2 > 30) {
@@ -2222,14 +2222,14 @@ window.SDD = window.SDD || {};
     g.beginPath(); g.arc(sunX - 4, sunY - 6, 8, 0, 6.28); g.fill();   // hot core highlight
     // Distant haze band on the horizon
     g.fillStyle = 'rgba(255,200,140,0.35)';
-    g.fillRect(0, 118, 320, 14);
+    g.fillRect(0, 118, C.VIEW_W, 14);
     // Heat-shimmer band: thin alternating rows of warm tint just above
     // the horizon, intensity rippling on t. Sells "African heat."
     for (var hs = 0; hs < 6; hs++) {
       var hsY = 132 + hs;
       var alpha = 0.06 + 0.04 * Math.sin(t * 0.04 + hs * 0.7);
       g.fillStyle = 'rgba(255,220,170,' + alpha.toFixed(3) + ')';
-      g.fillRect(0, hsY, 320, 1);
+      g.fillRect(0, hsY, C.VIEW_W, 1);
     }
     // Kilimanjaro silhouette (far parallax, dominant centre-left)
     var kx = 70 - camx * 0.06;
@@ -2339,7 +2339,7 @@ window.SDD = window.SDD || {};
     // and very-near (full alpha) - so the grass reads as motion-rich
     // foreground that the player walks behind.
     function drawTuftRow(baseY, parallax, density, alpha) {
-      var span = 320 / density;
+      var span = C.VIEW_W / density;
       var off = -(((camx * parallax) % span) + span) % span;
       g.fillStyle = 'rgba(58,90,30,' + alpha + ')';
       for (var ti = 0; ti < density + 2; ti++) {
@@ -2357,7 +2357,7 @@ window.SDD = window.SDD || {};
     // Vulture silhouettes circling slowly in the sky
     g.strokeStyle = '#3a2010'; g.lineWidth = 1;
     for (var vi = 0; vi < 3; vi++) {
-      var vx = ((40 + vi * 100 + Math.sin(t * 0.015 + vi) * 30 - camx * 0.04) % 320 + 320) % 320;
+      var vx = ((40 + vi * 100 + Math.sin(t * 0.015 + vi) * 30 - camx * 0.04) % C.VIEW_W + C.VIEW_W) % C.VIEW_W;
       var vy = 30 + vi * 12 + Math.sin(t * 0.04 + vi) * 4;
       g.beginPath();
       g.moveTo(vx - 4, vy + 2);
@@ -2381,7 +2381,7 @@ window.SDD = window.SDD || {};
     vGradient(g, '#3e2860', '#f5a05a', '#ffd28a');
     simpleSun(g, 100, 130, 14, '#ff8060', false);
     for (var i = 0; i < 12; i++) {
-      var rx = ((i * 32 - camx * 0.18) % 320 + 320) % 320;
+      var rx = ((i * 32 - camx * 0.18) % C.VIEW_W + C.VIEW_W) % C.VIEW_W;
       var rh = 8 + (i * 7) % 16;
       g.fillStyle = '#2a1c30';
       g.fillRect(rx | 0, 150 - rh, 28, rh);
@@ -2403,7 +2403,7 @@ window.SDD = window.SDD || {};
     var warmHalo = g.createRadialGradient(160, 30, 10, 160, 30, 130);
     warmHalo.addColorStop(0, 'rgba(255, 240, 200, 0.45)');
     warmHalo.addColorStop(1, 'rgba(255, 240, 200, 0)');
-    g.fillStyle = warmHalo; g.fillRect(0, 0, 320, 110);
+    g.fillStyle = warmHalo; g.fillRect(0, 0, C.VIEW_W, 110);
 
     // 2) BIG SUN with radiating rays (centre-right)
     var sunX = 240 - camx * 0.03, sunY = 52;
@@ -2434,7 +2434,7 @@ window.SDD = window.SDD || {};
     mountainRidge(g, camx, 0.09, 128, '#5a8088', 38);
     // Mist band hiding the mountain base
     g.fillStyle = 'rgba(240, 245, 220, 0.45)';
-    g.fillRect(0, 118, 320, 12);
+    g.fillRect(0, 118, C.VIEW_W, 12);
 
     // 4) FAR FLOWERING TREES - silhouettes with pink/white blossom dots
     var farSpan = 60;
@@ -2463,7 +2463,7 @@ window.SDD = window.SDD || {};
     // 6) REFLECTIVE WATER STRIP - thin ribbon of sky-reflecting water
     //    along the horizon, with sparkles. Sells the paradise vibe.
     g.fillStyle = 'rgba(150, 220, 240, 0.55)';
-    g.fillRect(0, 156, 320, 4);
+    g.fillRect(0, 156, C.VIEW_W, 4);
     g.fillStyle = 'rgba(255, 255, 255, 0.7)';
     for (var sp_ = 0; sp_ < 6; sp_++) {
       var spx = ((sp_ * 56 + Math.sin(t * 0.04 + sp_) * 6 - camx * 0.45) % 340 + 340) % 340;
@@ -2566,7 +2566,7 @@ window.SDD = window.SDD || {};
     if (bg) {
       var bgSpan = bg.width, bgPx = 0.3;
       var bgOff = -(((camx * bgPx) % bgSpan) + bgSpan) % bgSpan;
-      for (var b = bgOff - bgSpan; b < 320 + bgSpan; b += bgSpan) {
+      for (var b = bgOff - bgSpan; b < C.VIEW_W + bgSpan; b += bgSpan) {
         g.drawImage(bg, b, 0);
       }
     } else {
@@ -2579,7 +2579,7 @@ window.SDD = window.SDD || {};
     sunPool.addColorStop(0.6, 'rgba(255, 245, 180, 0.12)');
     sunPool.addColorStop(1, 'rgba(255, 245, 180, 0)');
     g.fillStyle = sunPool;
-    g.fillRect(0, 0, 320, 140);
+    g.fillRect(0, 0, C.VIEW_W, 140);
 
     // Drifting pollen motes tie the depth layers together.
     for (var pm = 0; pm < 22; pm++) {
@@ -4652,7 +4652,7 @@ window.SDD = window.SDD || {};
     // Anchor towers at extreme edges (one per slot, alternating L/R).
     var slots = 3;
     for (var s = 0; s < slots; s++) {
-      var screenLeft = s * 320;
+      var screenLeft = s * C.VIEW_W;
       var which = (s & 1) ? 'L' : 'R';
       _cyPaintFgAnchor(g, which === 'L' ? screenLeft - 4 : screenLeft + 320 - 28, rng);
     }
@@ -5181,7 +5181,7 @@ window.SDD = window.SDD || {};
     sky.addColorStop(0.45, _CYP.skyMid);
     sky.addColorStop(0.85, _CYP.skyHoriz);
     sky.addColorStop(1,    '#F8F2E0');
-    g.fillStyle = sky; g.fillRect(0, 0, 320, 180);
+    g.fillStyle = sky; g.fillRect(0, 0, C.VIEW_W, 180);
 
     // 2. Subtle sun glow upper-right. v0.57 — Mark "sun is way too
     // bright" → halo + disc alphas + colors lowered to match
@@ -5314,11 +5314,11 @@ window.SDD = window.SDD || {};
     // global multiply darken pulls overall brightness down.
     function tileLayer(img, factor, yFactor, sat) {
       if (!img) return;
-      var span = img.width || 320;
+      var span = img.width || C.VIEW_W;
       var off = -(((camx * factor) % span) + span) % span;
       var yOff = -camy * (yFactor != null ? yFactor : factor);
       if (sat) g.filter = sat;
-      for (var b = off - span; b < 320 + span; b += span) {
+      for (var b = off - span; b < C.VIEW_W + span; b += span) {
         g.drawImage(img, b, yOff);
       }
       if (sat) g.filter = 'none';
@@ -5380,7 +5380,7 @@ window.SDD = window.SDD || {};
     // Concrete pylons every 96 px (in world coords, scrolled).
     var spacing = 96;
     var pylonOff = -(((camx * pf) % spacing) + spacing) % spacing;
-    for (var p = pylonOff - spacing; p < 320 + spacing; p += spacing) {
+    for (var p = pylonOff - spacing; p < C.VIEW_W + spacing; p += spacing) {
       // Pylon shaft (concrete).
       g.fillStyle = '#9CB0BE';
       g.fillRect(p,      railY + 4, 5, 60);
@@ -5396,14 +5396,14 @@ window.SDD = window.SDD || {};
     }
     // Continuous rail beam - dark slate top, lighter underside.
     g.fillStyle = '#28384C';
-    g.fillRect(0, railY,     320, 2);
+    g.fillRect(0, railY, C.VIEW_W, 2);
     g.fillStyle = '#5A6E7C';
-    g.fillRect(0, railY + 2, 320, 1);
+    g.fillRect(0, railY + 2, C.VIEW_W, 1);
     g.fillStyle = '#1A2230';
-    g.fillRect(0, railY - 1, 320, 1);
+    g.fillRect(0, railY - 1, C.VIEW_W, 1);
     // Subtle inner light (running powerline).
     g.fillStyle = 'rgba(140,220,255,0.55)';
-    g.fillRect(0, railY, 320, 1);
+    g.fillRect(0, railY, C.VIEW_W, 1);
 
     // Train: rides the rail and loops every 8s. Position is in
     // SCREEN coords so it's always visible (independent of camera).
@@ -5832,7 +5832,7 @@ window.SDD = window.SDD || {};
     sunSide.addColorStop(0.45, 'rgba(255,220,140,' + (0.08 * pulse).toFixed(3) + ')');
     sunSide.addColorStop(1,    'rgba(255,180,120,0)');
     g.fillStyle = sunSide;
-    g.fillRect(0, 0, 320, 180);
+    g.fillRect(0, 0, C.VIEW_W, 180);
     g.restore();
 
     // 2. COOL SHADOW GRADE (multiply) - subtle teal tint on the
@@ -5845,7 +5845,7 @@ window.SDD = window.SDD || {};
     coolSide.addColorStop(0.45, 'rgba(232,238,246,1)');
     coolSide.addColorStop(1,    'rgba(255,255,255,1)');
     g.fillStyle = coolSide;
-    g.fillRect(0, 0, 320, 180);
+    g.fillRect(0, 0, C.VIEW_W, 180);
     g.restore();
 
     // 3. GOD RAYS - 5 soft diagonal beams from the sun. Slow drift
@@ -5919,7 +5919,7 @@ window.SDD = window.SDD || {};
     g.save();
     g.globalCompositeOperation = 'screen';
     g.fillStyle = 'rgba(255,210,140,' + winPulse.toFixed(3) + ')';
-    g.fillRect(0, 102, 320, 46);
+    g.fillRect(0, 102, C.VIEW_W, 46);
     g.restore();
 
     // 7. SOFT VIGNETTE (multiply) - corners slightly cooler so the
@@ -5931,7 +5931,7 @@ window.SDD = window.SDD || {};
     vig.addColorStop(0.6,  'rgba(245,248,252,1)');
     vig.addColorStop(1,    'rgba(208,220,236,1)');
     g.fillStyle = vig;
-    g.fillRect(0, 0, 320, 180);
+    g.fillRect(0, 0, C.VIEW_W, 180);
     g.restore();
 
     // 8. GLOBAL MULTIPLY DARKEN (v0.66 - Mark "lower brightness to
@@ -5946,7 +5946,7 @@ window.SDD = window.SDD || {};
     darken.addColorStop(0.5,  'rgba(202,204,210,1)');
     darken.addColorStop(1,    'rgba(182,188,200,1)');
     g.fillStyle = darken;
-    g.fillRect(0, 0, 320, 180);
+    g.fillRect(0, 0, C.VIEW_W, 180);
     g.restore();
   }
 
@@ -6304,12 +6304,12 @@ window.SDD = window.SDD || {};
     // layer should be in sync with the second layer." Foreground now
     // renders in world-space (y = -camy) so silhouettes shift down on
     // screen when the camera scrolls up, matching the player + tiles.
-    var span = src.width || 320, off = -(((camx * 0.70) % span) + span) % span;
+    var span = src.width || C.VIEW_W, off = -(((camx * 0.70) % span) + span) % span;
     // v0.58: saturation boost on Layer 1 so the dark anchor towers +
     // vivid neon punch even harder against the darkened backdrop.
     // v0.65: cranked to match the new bridge / mid intensity.
     g.filter = 'saturate(210%) contrast(115%)';
-    for (var b = off - span; b < 320 + span; b += span) {
+    for (var b = off - span; b < C.VIEW_W + span; b += span) {
       g.drawImage(src, b, -camy);
     }
     g.filter = 'none';
@@ -6354,7 +6354,7 @@ window.SDD = window.SDD || {};
     bg.addColorStop(0,    '#0E0A06');
     bg.addColorStop(0.6,  '#1A1208');
     bg.addColorStop(1,    '#241608');
-    g.fillStyle = bg; g.fillRect(0, 0, 320, 180);
+    g.fillStyle = bg; g.fillRect(0, 0, C.VIEW_W, 180);
 
     // Brick wall texture - scrolls fast (parallax 0.85, close to camera).
     var brickW = 24, brickH = 8;
@@ -6363,7 +6363,7 @@ window.SDD = window.SDD || {};
     var by0 = 0;
     for (var by = by0; by < 180; by += brickH) {
       var rowOff = ((by / brickH) | 0) % 2 ? brickW / 2 : 0;
-      for (var bx = bx0 - brickW; bx < 320 + brickW; bx += brickW) {
+      for (var bx = bx0 - brickW; bx < C.VIEW_W + brickW; bx += brickW) {
         var x0 = bx + rowOff;
         // Brick body.
         g.fillStyle = '#3A1E10';
@@ -6380,13 +6380,13 @@ window.SDD = window.SDD || {};
     // Mortar lines on top (sparse light grey).
     g.fillStyle = 'rgba(60,40,30,0.55)';
     for (var my = by0; my < 180; my += brickH) {
-      g.fillRect(0, my + brickH - 1, 320, 1);
+      g.fillRect(0, my + brickH - 1, C.VIEW_W, 1);
     }
 
     // Warm wall lamps at intervals - small bracket + bright bulb + halo.
     var lampSpacing = 64;
     var lpx0 = -(((camx * brickPF) % lampSpacing) + lampSpacing) % lampSpacing;
-    for (var lp = lpx0 - lampSpacing; lp < 320 + lampSpacing; lp += lampSpacing) {
+    for (var lp = lpx0 - lampSpacing; lp < C.VIEW_W + lampSpacing; lp += lampSpacing) {
       var lpY = 56 + (((lp | 0) + 100) % 40);
       // Halo.
       var halo = g.createRadialGradient(lp + 6, lpY, 2, lp + 6, lpY, 32);
@@ -6432,7 +6432,7 @@ window.SDD = window.SDD || {};
     dawn.addColorStop(0.75, 'rgba(255,170,170,0.20)');
     dawn.addColorStop(1,    'rgba(255,210,170,0.10)');
     g.fillStyle = dawn;
-    g.fillRect(0, 0, 320, 180);
+    g.fillRect(0, 0, C.VIEW_W, 180);
     g.restore();
     // Pink/orange horizon glow concentrated near the bottom 2/3 to
     // simulate the rising sun band.
@@ -6443,7 +6443,7 @@ window.SDD = window.SDD || {};
     glow.addColorStop(0.5, 'rgba(255,130,170,0.18)');
     glow.addColorStop(1,   'rgba(255,180,140,0)');
     g.fillStyle = glow;
-    g.fillRect(0, 60, 320, 90);
+    g.fillRect(0, 60, C.VIEW_W, 90);
     g.restore();
     // v0.74: tunnel overpass painted on dawn side too so it spans
     // the hard background swap that lands at the overpass midpoint.
@@ -6879,6 +6879,10 @@ window.SDD = window.SDD || {};
   };
 
   SDD.scenes.level = {
+    // v1.0.15: opt this scene into the dynamic-wide canvas - gameplay
+    // renders across the full VIEW_W (camera sees more world on wide
+    // phones). Sky/parallax/HUD all read C.VIEW_W to fill that width.
+    wideView: true,
     enter: function (d) {
       this.day = (d && d.day) || 1;
       this.stage = (d && d.stage) || 1;
@@ -7655,13 +7659,13 @@ window.SDD = window.SDD || {};
         var ph = (this.timeSteps * 0.06);
         // Solid red body
         g.fillStyle = '#7a1a08';
-        g.fillRect(0, Math.round(lavaY + 6), 320, 24);
+        g.fillRect(0, Math.round(lavaY + 6), C.VIEW_W, 24);
         g.fillStyle = '#c83214';
-        g.fillRect(0, Math.round(lavaY + 2), 320, 6);
+        g.fillRect(0, Math.round(lavaY + 2), C.VIEW_W, 6);
         g.fillStyle = '#ff4020';
-        g.fillRect(0, Math.round(lavaY), 320, 3);
+        g.fillRect(0, Math.round(lavaY), C.VIEW_W, 3);
         // Sparse calm shimmer dots that pulse slowly instead of waving
-        for (var lx = 0; lx < 320; lx += 16) {
+        for (var lx = 0; lx < C.VIEW_W; lx += 16) {
           var pulse = (Math.sin(lx * 0.08 + ph) + 1) * 0.5;
           if (pulse > 0.7) {
             g.fillStyle = '#ffc060';
@@ -7871,7 +7875,7 @@ window.SDD = window.SDD || {};
         if (this.day === 8) {
           var fa = Math.min(1, this.winTimer / 110);
           g.fillStyle = 'rgba(0,0,0,' + fa.toFixed(2) + ')';
-          g.fillRect(0, 0, 320, 180);
+          g.fillRect(0, 0, C.VIEW_W, 180);
         } else {
           var sf = SDD.save.stagesForDay(this.day);
           var msg = sf > 1 ? ('DAY ' + this.day + '-' + this.stage + ' COMPLETE!') : ('DAY ' + this.day + ' COMPLETE!');
@@ -7926,7 +7930,7 @@ window.SDD = window.SDD || {};
       // renders on the next row and carries the location identity.
       if (this.day !== 8) {
         var dlabel = 'DAY ' + this.day + (sv.stagesForDay(this.day) > 1 ? '-' + this.stage : '');
-        text(g, dlabel, 160, 4, '#ffd23a', 1, 'center');
+        text(g, dlabel, C.VIEW_W / 2, 4, '#ffd23a', 1, 'center');
       }
       // Theme name (level.name) as a small subtitle under DAY. Pass 12
       // (Mark): the subtitle used to share row Y=14 with the POWER
@@ -7939,7 +7943,7 @@ window.SDD = window.SDD || {};
           (this.timeSteps < 360 ? (360 - this.timeSteps) / 120 : 0);
         if (subAlpha > 0) {
           g.save(); g.globalAlpha = subAlpha;
-          text(g, L.name, 160, 14, '#dfe6ff', 1, 'center');
+          text(g, L.name, C.VIEW_W / 2, 14, '#dfe6ff', 1, 'center');
           g.restore();
         }
       }
@@ -7951,30 +7955,31 @@ window.SDD = window.SDD || {};
         if (hintAlpha > 0) {
           g.save(); g.globalAlpha = hintAlpha;
           var hw = Math.max(120, this.hint.length * 6 + 16);
+          var hcx = C.VIEW_W / 2;
           g.fillStyle = 'rgba(8,8,20,0.80)';
-          g.fillRect(160 - hw / 2, 28, hw, 14);
+          g.fillRect(hcx - hw / 2, 28, hw, 14);
           g.fillStyle = '#46f0ff';
-          g.fillRect(160 - hw / 2, 28, hw, 1);
-          g.fillRect(160 - hw / 2, 41, hw, 1);
-          text(g, this.hint, 160, 32, '#ffe890', 1, 'center');
+          g.fillRect(hcx - hw / 2, 28, hw, 1);
+          g.fillRect(hcx - hw / 2, 41, hw, 1);
+          text(g, this.hint, hcx, 32, '#ffe890', 1, 'center');
           g.restore();
         }
       }
       var sec = Math.floor(this.timeSteps / 60);
-      text(g, 'TIME ' + sec, 314, 4, '#ffffff', 1, 'right');
+      text(g, 'TIME ' + sec, C.VIEW_W - 6, 4, '#ffffff', 1, 'right');
       // Signature power-up indicator: lives on the right column, just
       // below TIME, so it never collides with the stage subtitle.
       if (this.player && this.player.signatureKind && this.player.signatureT > 0) {
         var secLeft = Math.ceil(this.player.signatureT / 60);
         var sigName = SIG_LABELS[this.player.signatureKind] || 'POWER';
         var sigLine = secLeft > 99 ? sigName : (sigName + ' ' + secLeft + 's');
-        text(g, sigLine, 314, 14, '#ffe890', 1, 'right');
+        text(g, sigLine, C.VIEW_W - 6, 14, '#ffe890', 1, 'right');
       }
     },
 
     drawBanner: function (g, msg, col) {
-      g.fillStyle = 'rgba(8,8,20,0.55)'; g.fillRect(0, 70, 320, 40);
-      tsh(g, msg, 160, 80, col, '#000000', 3, 'center');
+      g.fillStyle = 'rgba(8,8,20,0.55)'; g.fillRect(0, 70, C.VIEW_W, 40);
+      tsh(g, msg, C.VIEW_W / 2, 80, col, '#000000', 3, 'center');
     },
 
     // Two-line tooltip for a freshly-activated signature: the big
@@ -7990,25 +7995,23 @@ window.SDD = window.SDD || {};
       g.fillRect(40, 30, 240, 26);
       g.fillStyle = '#46f0ff';
       g.fillRect(40, 30, 240, 1); g.fillRect(40, 55, 240, 1);
-      tsh(g, info.name, 160, 33, '#ffe890', '#000', 1, 'center');
-      tsh(g, info.tip,  160, 45, '#dfe6ff', '#000', 1, 'center');
+      tsh(g, info.name, C.VIEW_W / 2, 33, '#ffe890', '#000', 1, 'center');
+      tsh(g, info.tip,  C.VIEW_W / 2, 45, '#dfe6ff', '#000', 1, 'center');
       g.restore();
     },
 
     drawPause: function (g) {
-      g.fillStyle = 'rgba(6,6,16,0.78)'; g.fillRect(0, 0, 320, 180);
-      tsh(g, 'PAUSED', 160, 32, '#ffd23a', '#a8631a', 3, 'center');
+      g.fillStyle = 'rgba(6,6,16,0.78)'; g.fillRect(0, 0, C.VIEW_W, 180);
+      var pcx = C.VIEW_W / 2;
+      tsh(g, 'PAUSED', pcx, 32, '#ffd23a', '#a8631a', 3, 'center');
       var opts = ['RESUME', 'RESTART LEVEL', 'OPTIONS', 'QUIT TO MAP'];
       for (var i = 0; i < opts.length; i++) {
         var y = 78 + i * 16, sel = i === this.pauseIdx;
-        // Keep both at size:1 (size 2 was too big per Mark). Selected
-        // pops via the yellow arrow + a yellow tinted text-shadow that
-        // gives it weight without enlarging.
         if (sel) {
-          text(g, '>', 110, y, '#ffd23a', 1, 'left');
-          tsh(g, opts[i], 160, y, '#ffffff', '#806020', 1, 'center');
+          text(g, '>', pcx - 50, y, '#ffd23a', 1, 'left');
+          tsh(g, opts[i], pcx, y, '#ffffff', '#806020', 1, 'center');
         } else {
-          text(g, opts[i], 160, y, '#9aa0c4', 1, 'center');
+          text(g, opts[i], pcx, y, '#9aa0c4', 1, 'center');
         }
       }
     }

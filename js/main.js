@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.14';
+  SDD.VERSION = 'v1.0.15';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -67,10 +67,38 @@ window.SDD = window.SDD || {};
     // + dialog box (Mark's screenshots, v0.50). Reverted: accept the
     // small black side bars in the browser; an installed PWA has no
     // chrome and gets a tighter fit naturally.
-    var sc = Math.min(vw / 960, vh / 540);
+    // v1.0.15: DYNAMIC VIEW_W. The game world height stays 180; the
+    // width is recalculated to match the viewport's aspect ratio so the
+    // canvas fills the screen without letterbox bars. Game stays 16:9
+    // when WIDE_VIEW is false (revert switch).
+    var WORLD_H = 180;
+    var VIEW_W;
+    if (SDD.C.WIDE_VIEW && vw > 0 && vh > 0) {
+      VIEW_W = Math.round(WORLD_H * vw / vh);
+      VIEW_W = Math.max(VIEW_W, 320);    // never narrower than the 16:9 original
+      VIEW_W = Math.min(VIEW_W, 420);    // safety cap on ultra-wide
+      VIEW_W = VIEW_W & ~1;              // round DOWN to even px so 3x scale aligns
+    } else {
+      VIEW_W = 320;
+    }
+    SDD.C.VIEW_W = VIEW_W;
+
+    var SCALE = RENDER_SCALE;
+    var canvasInternalW = VIEW_W * SCALE;
+    var canvasInternalH = WORLD_H * SCALE;
+    if (canvas.width !== canvasInternalW || canvas.height !== canvasInternalH) {
+      canvas.width  = canvasInternalW;
+      canvas.height = canvasInternalH;
+      ctx.imageSmoothingEnabled = false;       // gets reset by canvas resize
+    }
+
+    // CSS-fit the canvas inside the available viewport. The internal
+    // aspect (VIEW_W : 180) matches the viewport aspect closely, so the
+    // letterbox is tiny (~rounding-error pixels only).
+    var sc = Math.min(vw / canvasInternalW, vh / canvasInternalH);
     if (sc <= 0) sc = 0.1;
-    canvas.style.width = (960 * sc) + 'px';
-    canvas.style.height = (540 * sc) + 'px';
+    canvas.style.width  = (canvasInternalW * sc) + 'px';
+    canvas.style.height = (canvasInternalH * sc) + 'px';
 
     // v1.0.10/12: anchor the touch buttons (pause + A/B) to the CANVAS
     // rect, not the viewport edges. Without this the buttons floated in
@@ -123,7 +151,19 @@ window.SDD = window.SDD || {};
     }
     if (guard >= 5) acc = 0;
     if (SDD.scene && SDD.scene.render) {
-      ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+      // v1.0.15: clear the wider canvas first (dark slate). Scenes that
+      // don't fill the full VIEW_W (menus, cinematics, lessons, etc.)
+      // get an X-translate to keep their 320-wide content centered in
+      // the wider canvas. The `level` scene opts in to wide rendering
+      // via `wideView: true` and draws across the full VIEW_W.
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = '#05060d';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      var viewW = SDD.C.VIEW_W;
+      var useWide = !!SDD.scene.wideView;
+      var dx = useWide ? 0 : Math.round((viewW - 320) / 2);
+      ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, dx * RENDER_SCALE, 0);
       SDD.scene.render(ctx);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
