@@ -317,13 +317,23 @@ body.touch #touch-controls { display: block; }
    Hidden by default; shown only while the 'level' scene is active
    (data-scene set in main.js setScene). Safe-area insets push it off the
    notch / rounded corner (Mark: "too high in the corner sometimes"). */
-.tc-pause { right: calc(max(3vmin, 50px) + env(safe-area-inset-right));
-            top: calc(max(3vmin, 14px) + env(safe-area-inset-top));
-            width: 8vmin; height: 8vmin;
-            border-radius: 50%; font-size: 5vmin; line-height: 1;
-            background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
-            border-color: rgba(255, 255, 255, 0.22);
+/* v1.0.10 (Mark): the pause button is now a small SEMI-TRANSPARENT
+   pause icon (⏸ rendered as the two-bar ❚❚) tucked BELOW the right-side
+   HUD column (TIME + power-timer). Its exact `top` and `right` are set
+   from JS in main.js resize() so it always anchors to the live canvas
+   rect across iPhone/iPad sizes - CSS just controls its size/visual. */
+.tc-pause { width: 6vmin; height: 6vmin;
+            border-radius: 50%; font-size: 2.6vmin; line-height: 1;
+            letter-spacing: -0.4vmin;          /* the two bars sit tight */
+            color: rgba(255,255,255,0.55);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 0.3vmin 0.6vmin rgba(0,0,0,0.30);
             display: none; }
+.tc-pause.pressed, .tc-pause:active {
+            color: #ffffff;
+            background: rgba(255,255,255,0.22);
+            border-color: rgba(255,255,255,0.45); }
 body[data-scene="level"] .tc-pause { display: flex; }
 
 /* ---- Level editor (dev tool) ---- */
