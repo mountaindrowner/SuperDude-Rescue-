@@ -10,7 +10,7 @@ window.SDD = window.SDD || {};
   // service-worker CACHE_NAME (vNN). One of the three dev-kit items to
   // strip before public release (god mode + level editor + this
   // version display) - see CLAUDE.md "Dev-kit removal list".
-  SDD.VERSION = 'v1.0.7';
+  SDD.VERSION = 'v1.0.8';
 
   var canvas, ctx;
   var STEP = 1 / 60;
@@ -45,6 +45,19 @@ window.SDD = window.SDD || {};
   // still get more detail than the old 320x180 buffer ever could.
   function resize() {
     var vw = window.innerWidth, vh = window.innerHeight;
+    // v1.0.8: subtract the #game-container safe-area padding (notch
+    // insets + the 14px top/bottom HUD breathing room) so the canvas
+    // actually fits INSIDE the padded area instead of overflowing past
+    // it. Without this, the JS-set canvas size ignored the CSS padding
+    // and the HUD ("LIVES") rendered at the rounded-corner edge.
+    var gc = document.getElementById('game-container');
+    if (gc) {
+      var cs = getComputedStyle(gc);
+      var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      vw = Math.max(0, vw - padX);
+      vh = Math.max(0, vh - padY);
+    }
     // Letterbox-to-fit: keep the 16:9 canvas fully inside the viewport.
     //
     // We tried a "fill width on touch landscape" mode (v0.46) but on

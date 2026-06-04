@@ -279,6 +279,12 @@ window.SDD = window.SDD || {};
     }
     function move(e) {
       if (e.pointerId !== activePtr) return;
+      // Suppress iOS Safari's text-selection magnifier loupe that
+      // pops up during drag (Mark: "when I'm jumping the phone thinks
+      // I'm trying to highlight something"). Without preventDefault on
+      // pointermove, iOS interprets the drag as a long-press selection
+      // and shows the yellow magnifier blob.
+      e.preventDefault();
       var dx = e.clientX - baseX;
       var dy = e.clientY - baseY;
       applyDelta(dx, dy);
