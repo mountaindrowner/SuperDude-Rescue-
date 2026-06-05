@@ -143,7 +143,7 @@ window.SDD = window.SDD || {};
   // "ADVENTURE CITY UNLOCKED" menu item with a small glowing AW badge.
   // Player navigates right to focus, A to enter Adventure City.
   function drawAWBadge(g, scene) {
-    var bx = 254, by = 112, w = 30, h = 30;
+    var bx = 230, by = 110, w = 30, h = 30;
     var focused = scene.focusAW;
     var pulse = (Math.sin(scene.awPulseT * 0.08) + 1) * 0.5;          // 0..1
 
@@ -200,6 +200,11 @@ window.SDD = window.SDD || {};
       g.fillStyle = 'rgba(255,255,255,' + (a * (focused ? 0.95 : 0.55)).toFixed(2) + ')';
       g.fillRect(s.x, s.y, 1, 1);
     }
+
+    // "SECRET LEVEL" label underneath the badge.
+    var labelColor = focused ? '#ffe070' : '#ffd23a';
+    var labelShadow = focused ? '#7a4a10' : '#0a0518';
+    tsh(g, 'SECRET LEVEL', bx + w / 2, by + h + 4, labelColor, labelShadow, 1, 'center');
   }
 
   // simple vertical-list menu helper
