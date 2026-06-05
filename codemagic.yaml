@@ -50,7 +50,7 @@ workflows:
         BUNDLE_ID: "org.thecrossroads.superdudeadventures"
         # Marketing version shown on the store. Keep in step with
         # SDD.VERSION in js/main.js (strip the leading "v").
-        MARKETING_VERSION: "1.0.21"
+        MARKETING_VERSION: "1.0.22"
 
     scripts:
       - name: Install npm dependencies
@@ -67,7 +67,66 @@ workflows:
           npx cap sync ios
 
       - name: Generate the app icon + splash from resources/
-        script: npx @capacitor/assets generate --ios
+        script: npx @capacitor/assets generate --ios || true
+
+      - name: BULLETPROOF iOS app icon generation (sips fallback)
+        script: |
+          # v1.0.22: @capacitor/assets@3 has been unreliable - sometimes
+          # it produces no icons at all (silently), leaving the .ipa with
+          # Capacitor's default placeholder. This step uses macOS-builtin
+          # `sips` to manually regenerate EVERY required iOS app-icon size
+          # from resources/icon.png + write a correct Contents.json.
+          # Idempotent: overwrites whatever the previous step did.
+          set -e
+          APPICON_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          mkdir -p "$APPICON_DIR"
+          SRC="resources/icon.png"
+          if [ ! -f "$SRC" ]; then
+            echo "FATAL: $SRC missing"; exit 1
+          fi
+          echo "Generating iOS app icons from $SRC (using sips)..."
+          sips -s format png -z 40    40    "$SRC" --out "$APPICON_DIR/AppIcon-20x20@2x.png"
+          sips -s format png -z 60    60    "$SRC" --out "$APPICON_DIR/AppIcon-20x20@3x.png"
+          sips -s format png -z 58    58    "$SRC" --out "$APPICON_DIR/AppIcon-29x29@2x.png"
+          sips -s format png -z 87    87    "$SRC" --out "$APPICON_DIR/AppIcon-29x29@3x.png"
+          sips -s format png -z 80    80    "$SRC" --out "$APPICON_DIR/AppIcon-40x40@2x.png"
+          sips -s format png -z 120   120   "$SRC" --out "$APPICON_DIR/AppIcon-40x40@3x.png"
+          sips -s format png -z 120   120   "$SRC" --out "$APPICON_DIR/AppIcon-60x60@2x.png"
+          sips -s format png -z 180   180   "$SRC" --out "$APPICON_DIR/AppIcon-60x60@3x.png"
+          sips -s format png -z 152   152   "$SRC" --out "$APPICON_DIR/AppIcon-76x76@2x.png"
+          sips -s format png -z 167   167   "$SRC" --out "$APPICON_DIR/AppIcon-83.5x83.5@2x.png"
+          sips -s format png -z 1024  1024  "$SRC" --out "$APPICON_DIR/AppIcon-1024x1024.png"
+          # Write Contents.json mapping every required size -> the files above.
+          # Modern (iOS 14+) AppIcon catalog format.
+          cat > "$APPICON_DIR/Contents.json" <<'JSON'
+          {
+            "images" : [
+              { "size" : "20x20",       "idiom" : "iphone", "filename" : "AppIcon-20x20@2x.png",     "scale" : "2x" },
+              { "size" : "20x20",       "idiom" : "iphone", "filename" : "AppIcon-20x20@3x.png",     "scale" : "3x" },
+              { "size" : "29x29",       "idiom" : "iphone", "filename" : "AppIcon-29x29@2x.png",     "scale" : "2x" },
+              { "size" : "29x29",       "idiom" : "iphone", "filename" : "AppIcon-29x29@3x.png",     "scale" : "3x" },
+              { "size" : "40x40",       "idiom" : "iphone", "filename" : "AppIcon-40x40@2x.png",     "scale" : "2x" },
+              { "size" : "40x40",       "idiom" : "iphone", "filename" : "AppIcon-40x40@3x.png",     "scale" : "3x" },
+              { "size" : "60x60",       "idiom" : "iphone", "filename" : "AppIcon-60x60@2x.png",     "scale" : "2x" },
+              { "size" : "60x60",       "idiom" : "iphone", "filename" : "AppIcon-60x60@3x.png",     "scale" : "3x" },
+              { "size" : "20x20",       "idiom" : "ipad",   "filename" : "AppIcon-20x20@2x.png",     "scale" : "2x" },
+              { "size" : "29x29",       "idiom" : "ipad",   "filename" : "AppIcon-29x29@2x.png",     "scale" : "2x" },
+              { "size" : "40x40",       "idiom" : "ipad",   "filename" : "AppIcon-40x40@2x.png",     "scale" : "2x" },
+              { "size" : "76x76",       "idiom" : "ipad",   "filename" : "AppIcon-76x76@2x.png",     "scale" : "2x" },
+              { "size" : "83.5x83.5",   "idiom" : "ipad",   "filename" : "AppIcon-83.5x83.5@2x.png", "scale" : "2x" },
+              { "size" : "1024x1024",   "idiom" : "ios-marketing",                                    "filename" : "AppIcon-1024x1024.png", "scale" : "1x" }
+            ],
+            "info" : { "version" : 1, "author" : "xcode" }
+          }
+          JSON
+          echo "=== Contents of $APPICON_DIR (verify all PNGs are present + sized): ==="
+          ls -la "$APPICON_DIR/"
+          echo "=== Verify the 1024 App Store icon exists + dimensions ==="
+          if [ ! -f "$APPICON_DIR/AppIcon-1024x1024.png" ]; then
+            echo "FATAL: 1024 App Store icon missing"; exit 1
+          fi
+          sips -g pixelWidth -g pixelHeight "$APPICON_DIR/AppIcon-1024x1024.png"
+          echo "=== iOS app icons successfully generated ==="
 
       - name: Lock the iOS app to landscape-only orientation
         script: |
