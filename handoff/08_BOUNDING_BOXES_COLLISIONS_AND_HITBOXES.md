@@ -166,6 +166,38 @@ For every new sprite (character, enemy, prop) added to the game:
 
 4. **Forgetting collision box on visual-only entities.** Particles and decorations got `w` and `h` defaulted to something nonzero, and accidentally collided. **Fix:** decorations get `e.collidable = false` flag, collision system skips them.
 
+## Case study: the flappy-mode hitbox bug (mode-behavior-in-data)
+
+A specific bug worth memorizing because it generalizes.
+
+**Day 5-1** is the "flappy mode" stage — the player flaps continuously, hits feel different because the player's pose is different. The flappy hitbox needs different dimensions than the standing hitbox.
+
+**What we did first:** hardcoded the flappy hitbox override inside `scenes.js` (around line 2160 at the time). It was applied during the level's update tick. It worked.
+
+**What broke it:** when Danny grew from `small` → `big` via the power-up, the engine's standard hitbox swap kicked in mid-stage and overwrote our flappy-specific override. The bigger collision box meant brushing past obstacles started registering as hits. *Felt* like a difficulty spike. *Was* an unintentional bug.
+
+**The real fix:** move the per-size, per-mode hitbox config out of code and into the level data:
+
+```js
+SDD.levels['5-1'] = {
+  // ... usual fields ...
+  flappySmallHitbox: { dx: 2, w: 9, h: 19 },
+  flappyBigHitbox:   { dx: 0, w: 11, h: 26 }
+};
+```
+
+The engine now reads the override from the level data at the right moment (after the size swap), so it can never be clobbered by the standard logic.
+
+### The generalized lesson
+
+**Any per-mode, per-size, or per-stage tunable belongs in level data, not code.**
+
+- Hardcode it once → designers can't iterate without a developer.
+- Hardcode it twice → you'll have a sync bug.
+- Put it in data → the editor can expose sliders, the designer can tune in-browser, no code change required.
+
+This is one of those rules that sounds obvious in retrospect but bites you at every game project until you internalize it. The check before writing any "magic number" inside an engine function: *would a designer ever want to tweak this per-level?* If yes — level data, not code.
+
 ## Recommendation
 
 Build a small **`HitboxDebug` overlay** mode early in the project. When active, every entity renders its collision box (red outline), hurtbox (yellow), and hitbox (orange). One keypress toggles it.

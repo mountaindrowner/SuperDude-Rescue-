@@ -128,6 +128,8 @@ We did this lightly. Could have done it more.
 
 About 10 tile codes covered every mechanic we built. Don't over-design tile types up front. 5 is enough to start.
 
+Full tile code reference (including the render-only and special codes) is in `22_REFERENCE_PROJECT_SPECIFICS.md`. Use it as the canonical list when extending the tile set.
+
 ## Slopes
 
 We didn't implement slopes. AABB-on-grid collision doesn't handle slopes natively. Adding them would have required a rewrite of `moveAndCollide`.
@@ -212,6 +214,8 @@ SDD.levels['1-1'] = {
 ```
 
 Plain JS object. Easy to read, easy to edit by hand for small fixes. The editor produces this format.
+
+**Full level file schema** (every field the engine actually reads, including the render-only fields the editor's serializer drops on Adventure City) is documented in `22_REFERENCE_PROJECT_SPECIFICS.md`. Re-attach those fields by hand after every editor save of `level_8_1.js`.
 
 ## Recommendation for next project
 

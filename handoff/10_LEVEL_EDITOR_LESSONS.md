@@ -126,6 +126,45 @@ Our pattern:
 
 For the next project, prefer JSON files in a `levels/` directory over JS files. They're easier to load, easier to validate, easier to merge.
 
+## The "editor mutates the same object the engine reads" pattern
+
+The single architectural choice that made this editor work reliably:
+
+> *The editor mutates `SDD.levels[key]` directly. The engine reads the same object when entering a level. No parallel data structure. No file I/O at runtime. No sync layer.*
+
+Sounds obvious; easy to violate accidentally. Many editor designs put the "current edit" in a separate object that you copy back to the live data on "save." That copy step is where bugs live — off-by-one indices, missed fields, version drift. Sharing the same object eliminates the entire bug class.
+
+The flow:
+- Click "EDIT" on a stage → editor takes a reference to `SDD.levels['3-2']`.
+- Paint a tile → the editor writes directly into that object's `tiles` array.
+- Click "TEST" → scene-switch to the level scene, which reads the same object. Your edit is live, no save needed.
+- Click "SAVE" → serializer reads the same object, writes JSON to disk.
+
+When all three (edit, play-test, save) read and write the same in-memory object, drift cannot happen. The downside is small: the object is mutated even if you "discard" — handled by reloading the original file from disk if needed.
+
+## The COPY MAINS / EXPORT round-trip pattern (designer-in-browser + AI-in-terminal)
+
+A specific solution to a real workflow problem in this project: **Mark edits levels in his browser; the AI session edits files in a terminal; how do those two stay in sync?**
+
+The naive approach — File System Access API directly writes `level_X_Y.js` — works only on desktop Chrome/Edge. It silently fails on Safari, Firefox, and mobile. And Mark wanted to edit on a laptop sometimes too.
+
+The robust pattern:
+
+1. Editor exposes a **`COPY MAINS`** button. Clicking it emits all MAIN-flagged levels as a single JSON blob to the clipboard.
+2. Mark pastes the blob into a chat message.
+3. The AI session writes the JSON to the proper level files and commits.
+4. Mark pulls the commit; his next browser load sees the updated levels.
+
+A complementary **`IMPORT`** button accepts a JSON paste so Mark can apply someone else's level pack without a git pull.
+
+Why this works:
+- Clipboard-based handoff works in every browser. No FSAPI required.
+- The blob is human-readable JSON. The AI can validate and pretty-print it before writing.
+- The git commit gives the change a permanent record and a way to roll back.
+- It cleanly separates "I'm designing" (browser) from "I'm shipping" (terminal/CI) without any sync layer.
+
+For the next project, build the COPY/IMPORT pair on day 1 of the editor. It's ~30 lines of code and saves the entire "how do I sync edits back to the repo" question.
+
 ## Mistakes to avoid
 
 1. **Editor save dropping fields.** Our serializer only wrote `width/height/tiles/spawns/movers/name/theme/themeZones`. It dropped `hint`, `startSign`, `towerEntrance`. Every editor save on Day 8-1 required manual re-attachment of those three fields. **Fix:** serializer copies all top-level fields, not a hardcoded subset.

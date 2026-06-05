@@ -1,5 +1,28 @@
 # 05 — Art Direction and Style Bible
 
+## A theme is a TRIPLE (load-bearing architecture rule)
+
+Before anything else about pretty backgrounds: **a theme in a tile-based platformer is not one thing. It is three things, locked together:**
+
+1. **Tile family** — the visual tileset (ground, walls, decoration) that defines what the world is built from.
+2. **Sky painter** — the parallax background function (`drawSky_<theme>` in this project) that paints the depth layers.
+3. **Entity variant map** — which walker / wisp / thrower visual variants spawn (e.g. forest walker = mushroom, savanna walker = porcupine, bugscale walker = goliath beetle).
+
+**If any one of the three is missing or mismatched, the stage looks borrowed from another level.** We learned this the hard way when Day 6-2 first launched with a forest sky painter, savanna walker variants, and bugscale tiles. Mark's exact verdict: *"borrowed from the savanna level."* All three legs of the triple have to match before a theme reads as its own place.
+
+### The rule for adding a new theme
+
+1. Pick the **theme name** (a single token like `bugscale`, `cyber`).
+2. Build the **tile family**: ground, brick, one-way, plus 1–2 decoratives.
+3. Write the **sky painter**: `drawSky_<theme>(g, camx, camy, prog, t)`.
+4. Add the **variant map**: tell every enemy class which sub-art to use under this theme (`THEME_VARIANT.walker.bugscale = 'beetle'` etc.).
+5. Register the theme in your `THEMES` table.
+6. Verify with a screenshot pre-flight: spawn each enemy class on a one-tile bare stage and check the right variant rendered.
+
+Don't ship a new theme that's missing any leg of the triple. The per-stage triple table is in `22_REFERENCE_PROJECT_SPECIFICS.md`.
+
+---
+
 ## The shift that changed everything
 
 For the first 9 stages, the game's backgrounds were **procedural** — drawn entirely by JS functions like `drawSky_sky`, `drawSky_forest`, `drawSky_cosmic_night`. They worked. They were on-brand. They were also kind of flat.

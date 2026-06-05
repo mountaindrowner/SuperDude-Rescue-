@@ -20,6 +20,8 @@ It is not a casual journal. It is the document **you should read before writing 
 3. **Read `14` and `15` if you're working with an AI assistant.** They explain how to prompt well, how to recover from session loss, and how to keep the AI honest.
 4. **Use `19` as a copy-paste library** when you need to write prompts.
 5. **Read `20` last** — it's the senior-designer-to-junior pep talk that ties everything together.
+6. **Read `21` for the integration story** — this handoff was assembled in two passes by two different AI sessions. `21` documents where they converged (high-signal lessons), where they overrode each other (the wisdom), and what each session contributed. Read it before doing real work — it's the meta-context for everything else.
+7. **Reference `22` for project-specific data shapes** — the 12-stage map, theme triple table, signature catalog, level file format, editor anatomy, key code locations. Useful when you need exact details.
 
 ## The top 10 lessons (TL;DR for impatient readers)
 
@@ -42,6 +44,10 @@ It is not a casual journal. It is the document **you should read before writing 
 9. **AI sessions die, fill up, and forget.** Without a persistent handover file (`CLAUDE.md` in our case), every session reinvents the wheel. Write the handover *first*, edit it *often*, treat it as the source of truth.
 
 10. **Ship one tiny thing end-to-end before building anything else.** A black canvas with a moving square that you got onto a real iPhone via TestFlight teaches you more than four weeks of feature work. We didn't do this first. We learned every pipeline bug at v0.85.
+
+11. **A theme is a TRIPLE — tile family + sky painter + entity variant map.** If any one of the three is missing, the stage looks "borrowed from another level." All three must ship together, every time. (See `05` and `22` for the per-stage triple table.) This bit us when stage 6-2 launched with a forest sky, savanna walker variants, and bugscale tiles — Mark's exact complaint was "looks like the savanna level."
+
+12. **Per-mode, per-size, per-stage tunables belong in level data, not code.** The flappy-mode hitbox was hardcoded in `scenes.js`; when Danny grew small→big the engine overwrote the flappy override, and brushing past obstacles started registering as hits. Fix: move hitbox config into level data (`flappySmallHitbox`, `flappyBigHitbox`). Generalizes: **if a designer might want to tweak it, it's data**.
 
 ## ⚠️ Do not repeat these mistakes
 
