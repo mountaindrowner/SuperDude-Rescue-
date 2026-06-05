@@ -143,12 +143,12 @@ window.SDD = window.SDD || {};
   // "ADVENTURE CITY UNLOCKED" menu item with a small glowing AW badge.
   // Player navigates right to focus, A to enter Adventure City.
   function drawAWBadge(g, scene) {
-    var bx = 268, by = 92, w = 38, h = 38;
+    var bx = 254, by = 112, w = 30, h = 30;
     var focused = scene.focusAW;
     var pulse = (Math.sin(scene.awPulseT * 0.08) + 1) * 0.5;          // 0..1
 
     // Pulsing outer halo - draws attention even when not focused.
-    var haloR = (focused ? 5 : 2) + Math.round(pulse * 3);
+    var haloR = (focused ? 4 : 2) + Math.round(pulse * 2);
     g.fillStyle = 'rgba(255,210,58,' + ((focused ? 0.22 : 0.10) + pulse * 0.08).toFixed(3) + ')';
     g.fillRect(bx - haloR, by - haloR, w + haloR * 2, h + haloR * 2);
 
@@ -171,27 +171,27 @@ window.SDD = window.SDD || {};
 
     // Top sheen for embossed-metal feel.
     g.fillStyle = 'rgba(255,255,255,' + (focused ? 0.40 : 0.22) + ')';
-    g.fillRect(bx + 2, by + 2, w - 4, 2);
+    g.fillRect(bx + 2, by + 2, w - 4, 1);
 
     // "AW" letters - bold + dark.
     var letterColor = focused ? '#1a0a08' : '#0a0a14';
     var shadowColor = focused ? '#7a4a10' : '#5a3110';
-    tsh(g, 'AW', bx + w / 2, by + 7, letterColor, shadowColor, 2, 'center');
+    tsh(g, 'AW', bx + w / 2, by + 5, letterColor, shadowColor, 2, 'center');
     // "2026" subtitle.
-    tsh(g, '2026', bx + w / 2, by + 26, letterColor, shadowColor, 1, 'center');
+    tsh(g, '2026', bx + w / 2, by + 20, letterColor, shadowColor, 1, 'center');
 
     // Animated focus arrow pointing at the badge.
     if (focused) {
-      var ax = bx - 4 + Math.round(Math.sin(scene.awPulseT * 0.2) * 2);
+      var ax = bx - 3 + Math.round(Math.sin(scene.awPulseT * 0.2) * 2);
       text(g, '>', ax, by + h / 2 - 3, '#ffd23a', 1, 'right');
     }
 
     // Sparkle particles - tiny pixel glints orbiting the badge.
     var sparkles = [
-      { x: bx - 3, y: by - 3, ph: 0 },
-      { x: bx + w + 3, y: by + 8, ph: 25 },
-      { x: bx + w + 5, y: by + h, ph: 50 },
-      { x: bx - 5, y: by + h + 2, ph: 75 }
+      { x: bx - 3, y: by - 2, ph: 0 },
+      { x: bx + w + 2, y: by + 6, ph: 25 },
+      { x: bx + w + 3, y: by + h, ph: 50 },
+      { x: bx - 4, y: by + h + 1, ph: 75 }
     ];
     for (var i = 0; i < sparkles.length; i++) {
       var s = sparkles[i];
