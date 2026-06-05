@@ -138,6 +138,70 @@ window.SDD = window.SDD || {};
     g.restore();
   }
 
+  // v1.0.23: Adventure Week unlock badge - drawn on the right side of
+  // the main menu when secretUnlocked is true. Replaces the old text-row
+  // "ADVENTURE CITY UNLOCKED" menu item with a small glowing AW badge.
+  // Player navigates right to focus, A to enter Adventure City.
+  function drawAWBadge(g, scene) {
+    var bx = 268, by = 92, w = 38, h = 38;
+    var focused = scene.focusAW;
+    var pulse = (Math.sin(scene.awPulseT * 0.08) + 1) * 0.5;          // 0..1
+
+    // Pulsing outer halo - draws attention even when not focused.
+    var haloR = (focused ? 5 : 2) + Math.round(pulse * 3);
+    g.fillStyle = 'rgba(255,210,58,' + ((focused ? 0.22 : 0.10) + pulse * 0.08).toFixed(3) + ')';
+    g.fillRect(bx - haloR, by - haloR, w + haloR * 2, h + haloR * 2);
+
+    // Gold gradient background plate.
+    var bg = g.createLinearGradient(0, by, 0, by + h);
+    if (focused) {
+      bg.addColorStop(0, '#ffe070'); bg.addColorStop(0.5, '#ffd23a'); bg.addColorStop(1, '#a8631a');
+    } else {
+      bg.addColorStop(0, '#ffd23a'); bg.addColorStop(0.5, '#a8631a'); bg.addColorStop(1, '#5a3110');
+    }
+    g.fillStyle = bg;
+    g.fillRect(bx, by, w, h);
+
+    // Border (brighter when focused).
+    g.fillStyle = focused ? '#ffffff' : '#7a4a10';
+    g.fillRect(bx - 1, by - 1, w + 2, 1);
+    g.fillRect(bx - 1, by + h, w + 2, 1);
+    g.fillRect(bx - 1, by - 1, 1, h + 2);
+    g.fillRect(bx + w, by - 1, 1, h + 2);
+
+    // Top sheen for embossed-metal feel.
+    g.fillStyle = 'rgba(255,255,255,' + (focused ? 0.40 : 0.22) + ')';
+    g.fillRect(bx + 2, by + 2, w - 4, 2);
+
+    // "AW" letters - bold + dark.
+    var letterColor = focused ? '#1a0a08' : '#0a0a14';
+    var shadowColor = focused ? '#7a4a10' : '#5a3110';
+    tsh(g, 'AW', bx + w / 2, by + 7, letterColor, shadowColor, 2, 'center');
+    // "2026" subtitle.
+    tsh(g, '2026', bx + w / 2, by + 26, letterColor, shadowColor, 1, 'center');
+
+    // Animated focus arrow pointing at the badge.
+    if (focused) {
+      var ax = bx - 4 + Math.round(Math.sin(scene.awPulseT * 0.2) * 2);
+      text(g, '>', ax, by + h / 2 - 3, '#ffd23a', 1, 'right');
+    }
+
+    // Sparkle particles - tiny pixel glints orbiting the badge.
+    var sparkles = [
+      { x: bx - 3, y: by - 3, ph: 0 },
+      { x: bx + w + 3, y: by + 8, ph: 25 },
+      { x: bx + w + 5, y: by + h, ph: 50 },
+      { x: bx - 5, y: by + h + 2, ph: 75 }
+    ];
+    for (var i = 0; i < sparkles.length; i++) {
+      var s = sparkles[i];
+      var p = ((scene.awPulseT + s.ph) % 100) / 100;
+      var a = Math.sin(p * Math.PI);
+      g.fillStyle = 'rgba(255,255,255,' + (a * (focused ? 0.95 : 0.55)).toFixed(2) + ')';
+      g.fillRect(s.x, s.y, 1, 1);
+    }
+  }
+
   // simple vertical-list menu helper
   function listNav(state, count) {
     if (In.pressed('up')) { state.idx = (state.idx - 1 + count) % count; A.sfx('select'); }
@@ -440,13 +504,12 @@ window.SDD = window.SDD || {};
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
-      // Secret stage (v0.98): the ADVENTURE CITY UNLOCKED button only
-      // appears once the player has finished the whole game on ANY
-      // difficulty. `secretUnlocked` is a global (cross-slot) flag set
-      // by the finale, so the unlock sticks from then on.
-      if (SDD.save.data.options.secretUnlocked) {
-        this.items.push({ label: 'ADVENTURE CITY UNLOCKED', act: 'adventurecity' });
-      }
+      // v1.0.23 (Mark): Adventure Week unlock now appears as a small
+      // glowing AW badge on the right side instead of a text row in the
+      // menu list. Player navigates right to focus it, A to enter.
+      this.awAvailable = !!SDD.save.data.options.secretUnlocked;
+      this.focusAW = false;
+      this.awPulseT = 0;
       // Dev tools: the level + decor editors only show when their
       // scripts are loaded. The <script> tags are commented out of
       // index.html for the public build, so these stay hidden. Re-add
@@ -459,7 +522,20 @@ window.SDD = window.SDD || {};
     },
     update: function () {
       this.t++;
+      this.awPulseT++;
+      // AW badge focus: right arrow puts focus on the badge; left/up/down
+      // returns to the main menu list. A while focused = enter city.
+      if (this.focusAW) {
+        if (In.pressed('left') || In.pressed('up') || In.pressed('down')) {
+          this.focusAW = false; A.sfx('select'); return;
+        }
+        if (In.confirm()) { A.sfx('confirm'); go('cityIntro'); return; }
+        return;
+      }
       listNav(this, this.items.length);
+      if (this.awAvailable && In.pressed('right')) {
+        this.focusAW = true; A.sfx('select'); return;
+      }
       if (In.confirm()) {
         var act = this.items[this.idx].act;
         A.sfx('confirm');
@@ -467,7 +543,6 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
-        else if (act === 'adventurecity') { go('cityIntro'); }
         else if (act === 'decoredit') { go('decorEdit', { day: 8, stage: 1 }); }
         else if (act === 'editor') { go('editor'); }
       }
@@ -488,12 +563,12 @@ window.SDD = window.SDD || {};
       var mpFrame = Math.floor(this.t / 18) % 4;
       drawDannyScaled(g, 'big', 'idle', 'east', mpFrame, 54, 138, 1.5);
 
+      // Menu items - dim the highlight when AW badge is focused so the
+      // selection ambiguity is visually clear.
       for (var i = 0; i < this.items.length; i++) {
         var y = 104 + i * 14;
-        var sel = i === this.idx;
+        var sel = i === this.idx && !this.focusAW;
         if (sel) text(g, '>', 108, y, '#ffd23a', 1, 'left');
-        // Mark's request: selection should be brighter but not 2x bigger.
-        // Keep size:1 for both; brighter colour + arrow signals selection.
         text(g, this.items[i].label, 160, y, sel ? '#ffffff' : '#9aa0c4', 1, 'center');
       }
       // Tagline reads "CROSSROADS FOUNDATION ADVENTURE" per Mark.
@@ -503,6 +578,8 @@ window.SDD = window.SDD || {};
       // Build version (DEV-KIT) - bottom-right, subtle. Lets us tell at
       // a glance which build is live. Remove before public release.
       text(g, SDD.VERSION || '', 316, 173, '#6d7398', 1, 'right');
+      // Adventure Week badge on the right side - only when unlocked.
+      if (this.awAvailable) drawAWBadge(g, this);
     }
   };
 
