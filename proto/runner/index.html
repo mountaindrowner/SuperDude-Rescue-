@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v10 — 3D Lab Escape</title>
+<title>Super Dude Runner v11 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v10 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v11 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -150,7 +150,7 @@ scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v10: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v11: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -207,6 +207,146 @@ function updateCamera(dt) {
 // Expose for DevTools tweaking on the phone via Safari Web Inspector
 window.CAMERA = CAMERA;
 
+// ============ AUDIO ===================================================
+// SFX are synthesized inline via Web Audio API (no asset files, instant).
+// Music streams the Adventure City tracks from the SDA assets folder.
+// iOS Safari blocks all audio until a user gesture — init lazy-loads on
+// the first input event.
+const AUDIO = {
+  ctx: null, master: null, sfxGain: null,
+  musicEl: null, musicFadeIv: null,
+  initialized: false, unlocked: false,
+  master_vol: 0.7, sfx_vol: 0.65, music_vol: 0.42,
+  lastStepSin: 0
+};
+function initAudio() {
+  if (AUDIO.initialized) return;
+  try {
+    AUDIO.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    AUDIO.master = AUDIO.ctx.createGain();
+    AUDIO.master.gain.value = AUDIO.master_vol;
+    AUDIO.master.connect(AUDIO.ctx.destination);
+    AUDIO.sfxGain = AUDIO.ctx.createGain();
+    AUDIO.sfxGain.gain.value = AUDIO.sfx_vol;
+    AUDIO.sfxGain.connect(AUDIO.master);
+    AUDIO.initialized = true;
+  } catch (e) { console.warn('audio init failed', e); }
+}
+function unlockAudio() {
+  if (AUDIO.unlocked) return;
+  initAudio();
+  if (AUDIO.ctx && AUDIO.ctx.state === 'suspended') {
+    AUDIO.ctx.resume().catch(() => {});
+  }
+  // play a silent buffer to fully unlock iOS WebAudio (the AVAudioSession
+  // warmup trick from the SDA audio system).
+  if (AUDIO.ctx) {
+    const buf = AUDIO.ctx.createBuffer(1, 1, 22050);
+    const src = AUDIO.ctx.createBufferSource();
+    src.buffer = buf; src.connect(AUDIO.ctx.destination); src.start(0);
+  }
+  AUDIO.unlocked = true;
+  startMusic();
+}
+function startMusic() {
+  if (AUDIO.musicEl) return;
+  // Reuse the Adventure City music from the SDA bundle. Relative path
+  // from proto/runner/index.html.
+  const tracks = [
+    encodeURI('../../assets/New Assets/Adventure city Music/SDDG city.mp3'),
+    encodeURI('../../assets/New Assets/Adventure city Music/SDDG city 2.mp3'),
+    encodeURI('../../assets/New Assets/Adventure city Music/AW City remix.mp3')
+  ];
+  const url = tracks[Math.floor(Math.random() * tracks.length)];
+  const el = new Audio(url);
+  el.loop = true; el.volume = 0; el.preload = 'auto';
+  el.crossOrigin = 'anonymous';
+  el.play().then(() => {
+    // smooth fade-in over ~1.4s
+    let t = 0;
+    AUDIO.musicFadeIv = setInterval(() => {
+      t += 0.06;
+      el.volume = Math.min(AUDIO.music_vol, t * AUDIO.music_vol);
+      if (el.volume >= AUDIO.music_vol) {
+        el.volume = AUDIO.music_vol;
+        clearInterval(AUDIO.musicFadeIv); AUDIO.musicFadeIv = null;
+      }
+    }, 80);
+  }).catch(e => console.warn('music play() failed (expected on first call before gesture):', e.message));
+  AUDIO.musicEl = el;
+}
+function fadeMusic(toVol, ms) {
+  if (!AUDIO.musicEl) return;
+  if (AUDIO.musicFadeIv) clearInterval(AUDIO.musicFadeIv);
+  const el = AUDIO.musicEl;
+  const start = el.volume; const dur = ms / 80; let step = 0;
+  AUDIO.musicFadeIv = setInterval(() => {
+    step++;
+    el.volume = Math.max(0, Math.min(1, start + (toVol - start) * (step / dur)));
+    if (step >= dur) {
+      el.volume = toVol;
+      clearInterval(AUDIO.musicFadeIv); AUDIO.musicFadeIv = null;
+    }
+  }, 80);
+}
+function sfx(name) {
+  if (!AUDIO.initialized || !AUDIO.unlocked) return;
+  const ctx = AUDIO.ctx, now = ctx.currentTime, out = AUDIO.sfxGain;
+  function tone(freq, dur, type, gainPeak, ramp) {
+    const osc = ctx.createOscillator(), env = ctx.createGain();
+    osc.type = type || 'sine';
+    if (Array.isArray(freq)) {
+      osc.frequency.setValueAtTime(freq[0], now);
+      if (ramp === 'exp') osc.frequency.exponentialRampToValueAtTime(freq[1], now + dur);
+      else osc.frequency.linearRampToValueAtTime(freq[1], now + dur);
+    } else osc.frequency.value = freq;
+    env.gain.setValueAtTime(0.0001, now);
+    env.gain.linearRampToValueAtTime(gainPeak, now + 0.008);
+    env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.connect(env).connect(out);
+    osc.start(now); osc.stop(now + dur + 0.02);
+  }
+  function noise(dur, lpFreq, gainPeak) {
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() - 0.5) * 2;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    if (Array.isArray(lpFreq)) {
+      filter.frequency.setValueAtTime(lpFreq[0], now);
+      filter.frequency.exponentialRampToValueAtTime(lpFreq[1], now + dur);
+    } else filter.frequency.value = lpFreq;
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(gainPeak, now);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    src.connect(filter).connect(env).connect(out);
+    src.start(now); src.stop(now + dur + 0.02);
+  }
+  switch (name) {
+    case 'jump':     tone([400, 800], 0.12, 'sine', 0.35, 'exp'); break;
+    case 'slide':    noise(0.4, [800, 200], 0.20); break;
+    case 'crystal':
+      tone(523, 0.18, 'sine', 0.28);
+      setTimeout(() => tone(659, 0.18, 'sine', 0.26), 30);
+      break;
+    case 'powerup':
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.12, 'square', 0.18), i * 60));
+      break;
+    case 'hit':
+      tone([200, 50], 0.18, 'square', 0.40, 'exp');
+      noise(0.10, 1200, 0.28);
+      break;
+    case 'goal':
+      [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.35, 'triangle', 0.32), i * 100));
+      break;
+    case 'step':     noise(0.06, 600, 0.05); break;
+    case 'gameover': tone([440, 110], 0.7, 'sawtooth', 0.28, 'exp'); break;
+    case 'select':   tone(880, 0.06, 'square', 0.18); break;
+  }
+}
+window.AUDIO = AUDIO; window.sfx = sfx;
+
 // Bulletproof resize: visualViewport (correct on iOS Safari w/ URL bar)
 // fallback to innerWidth/innerHeight. Force inline canvas size in CSS
 // pixels so the layout can't get fooled by 100vh quirks.
@@ -253,7 +393,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v10: DARK NAVY palette to match Mark's new reference image
+  // v11: DARK NAVY palette to match Mark's new reference image
   // (deep blue stone panels with cyan/yellow accents, NOT white).
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#1a2540');   // top: deep navy
@@ -809,7 +949,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v10 (Mark: 'less stuff less often'): density dropped further
+// v11 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -854,7 +994,7 @@ const matCap   = new THREE.MeshLambertMaterial({ color: 0xd33a3a });   // red ba
 const matCapDk = new THREE.MeshLambertMaterial({ color: 0x7a1b1b });
 const matBackpack = new THREE.MeshLambertMaterial({ color: 0x2a3144 });
 
-// v10 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v11 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1706,20 +1846,28 @@ let stridePhase = 0;
 let shake = 0;
 
 // ============ input ==================================================
-function moveLane(d) { if (state==='play') lane = Math.max(-1, Math.min(1, lane + d)); }
+function moveLane(d) {
+  if (state==='play') {
+    const before = lane;
+    lane = Math.max(-1, Math.min(1, lane + d));
+    if (lane !== before) sfx('select');
+  }
+}
 function doJump() {
   if (state !== 'play') return;
   // Slide cancels into jump if you tap up while sliding
   if (slideT > 0) slideT = 0;
-  if (onGround) { jumpV = 7.0; onGround = false; }
+  if (onGround) { jumpV = 7.0; onGround = false; sfx('jump'); }
 }
 function doSlide() {
   if (state !== 'play') return;
   // mid-air slide drops you to ground for a slide
   if (!onGround) { jumpY = 0; jumpV = 0; onGround = true; }
   slideT = SLIDE_DURATION;
+  sfx('slide');
 }
 window.addEventListener('keydown', e => {
+  unlockAudio();
   if (state !== 'play' && (e.key === ' ' || e.key === 'Enter')) { reset(); return; }
   if (e.key === 'ArrowLeft' || e.key === 'a') moveLane(-1);
   else if (e.key === 'ArrowRight' || e.key === 'd') moveLane(1);
@@ -1727,7 +1875,7 @@ window.addEventListener('keydown', e => {
   else if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); doSlide(); }
 });
 let tsx = 0, tsy = 0, tracking = false;
-canvas.addEventListener('pointerdown', e => { tsx = e.clientX; tsy = e.clientY; tracking = true; });
+canvas.addEventListener('pointerdown', e => { unlockAudio(); tsx = e.clientX; tsy = e.clientY; tracking = true; });
 canvas.addEventListener('pointerup', e => {
   if (!tracking) return; tracking = false;
   if (state !== 'play') { reset(); return; }
@@ -1747,6 +1895,8 @@ function reset() {
   lane = 0; laneF = 0; jumpV = 0; jumpY = 0; onGround = true;
   slideT = 0;
   shield = 0; magnet = 0; spawnAcc = 0; runT = 0; stridePhase = 0; shake = 0;
+  AUDIO.lastStepSin = 0;
+  fadeMusic(AUDIO.music_vol, 600);                      // restore music after death/win
   document.getElementById('overlay').classList.remove('on');
   for (let i = 0; i < 6; i++) {
     spawnObj('crystal', Math.floor(Math.random()*3) - 1, -25 - i * 8);
@@ -1785,7 +1935,7 @@ function tick() {
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
     // texture scroll = illusion of forward motion (no ceiling — skipped)
     floorTex.offset.y -= dt * speed * 0.018;
-    // v10: flipped both signs from v10. Walls now flow toward camera
+    // v11: flipped both signs from v11. Walls now flow toward camera
     // (Danny moving past wall content) instead of away from it.
     wallTex.offset.x  += dt * speed * 0.0085;
     wallTexR.offset.x -= dt * speed * 0.0085;
@@ -1821,7 +1971,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v10: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v11: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -1891,16 +2041,21 @@ function tick() {
       if (o.z > 4.0 && o.z < 6.5 && Math.abs(o.mesh.position.x - px) < 1.0) {
         if (o.kind === 'crystal') {
           o.got = true; crystals++; pickGroup.remove(o.mesh);
+          sfx('crystal');
           if (crystals >= CRYSTAL_GOAL && !goalDone) {
             goalDone = true; state = 'won';
             if (score() > best) { best = score(); localStorage.setItem('sdr_best', best); }
             if (crystals > bestC)  { bestC = crystals; localStorage.setItem('sdr_bestC', bestC); }
+            sfx('goal');
+            fadeMusic(0.18, 600);
             showOverlay('YOU DID IT!', 'won');
           }
         } else if (o.kind === 'shield') {
           o.got = true; shield = 6; pickGroup.remove(o.mesh);
+          sfx('powerup');
         } else if (o.kind === 'magnet') {
           o.got = true; magnet = 6; pickGroup.remove(o.mesh);
+          sfx('powerup');
         } else {
           // HAZARD — check clear method
           let cleared = false;
@@ -1917,11 +2072,16 @@ function tick() {
             if (!cleared && jumpY > 1.2) cleared = true;
           }
           if (!cleared) {
-            if (shield > 0) { o.got = true; shield = 0; shake = 0.25; pickGroup.remove(o.mesh); }
-            else {
+            if (shield > 0) {
+              o.got = true; shield = 0; shake = 0.25; pickGroup.remove(o.mesh);
+              sfx('hit');
+            } else {
               state = 'dead'; shake = 0.4;
               if (score() > best) { best = score(); localStorage.setItem('sdr_best', best); }
               if (crystals > bestC)  { bestC = crystals; localStorage.setItem('sdr_bestC', bestC); }
+              sfx('hit');
+              setTimeout(() => sfx('gameover'), 220);
+              fadeMusic(0.10, 500);
               showOverlay('CAUGHT!', 'dead');
             }
           }
@@ -1939,7 +2099,17 @@ function tick() {
     // ---- Danny run animation — every joint driven separately --------
     // Stride cadence: ~1.7 cycles/sec at base, ~2.7 at top speed.
     const sliding = slideT > 0;
-    if (onGround && !sliding) stridePhase += dt * (10 + speed * 0.2);
+    if (onGround && !sliding) {
+      stridePhase += dt * (10 + speed * 0.2);
+      // Fire footstep sfx on each sin(stridePhase) zero-crossing (twice
+      // per cycle = one tap per foot strike).
+      const s = Math.sin(stridePhase);
+      const sign = s >= 0 ? 1 : -1;
+      if (AUDIO.lastStepSin && sign !== AUDIO.lastStepSin) sfx('step');
+      AUDIO.lastStepSin = sign;
+    } else {
+      AUDIO.lastStepSin = 0;       // reset so no spurious step on landing
+    }
     const phase  = sliding ? 0 : stridePhase;
     const phaseR = phase + Math.PI;          // right leg/arm 180° out of phase
     const lerp   = Math.min(1, dt * 14);
