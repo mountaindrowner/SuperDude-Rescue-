@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v8 — 3D Lab Escape</title>
+<title>Super Dude Runner v9 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v8 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v9 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -150,14 +150,16 @@ scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
+// Defaults locked from Mark's in-game tuning (screenshot v8.520x932).
+// He pronounced these 'perfect.' Live ⚙ panel still works on top.
 const CAMERA = {
-  height:     4.0,   // y of camera (above floor) — was 3.5
-  back:       6.5,   // z behind Danny
-  lookAhead:  5.0,   // how far ahead of Danny the camera looks (looking down + forward = Subway-Surfers angle ~22°)
-  lookHeight: 0.8,   // y of the look target (low = camera looks at floor ahead)
-  fov:        65,    // wider FOV for more visible context — was 62
-  laneSway:   0.40,  // how much the camera follows Danny's lane (0=fixed, 1=fully tracks)
-  smoothing:  10     // higher = snappier camera; lower = laggier
+  height:     6.75,
+  back:       8.00,
+  lookAhead:  15.50,
+  lookHeight: -0.20,
+  fov:        55,
+  laneSway:   1.85,
+  smoothing:  10
 };
 (function applyURLParams() {
   const p = new URLSearchParams(location.search);
@@ -228,14 +230,15 @@ if (window.visualViewport) {
 resize();
 
 // ============ lighting (moody industrial) =============================
-scene.add(new THREE.AmbientLight(0x6a7a90, 0.5));
-const sun = new THREE.DirectionalLight(0xa0b8d0, 0.55);
+// Mark: 'too dark'. Boosted ambient + key light considerably.
+scene.add(new THREE.AmbientLight(0xc8d8e8, 0.95));
+const sun = new THREE.DirectionalLight(0xfff8e8, 0.85);
 sun.position.set(2, 10, 4);
 scene.add(sun);
 
 const ceilLights = [];
 for (let i = 0; i < 8; i++) {
-  const pl = new THREE.PointLight(0xfff1c8, 0.85, 12, 1.8);
+  const pl = new THREE.PointLight(0xfff1c8, 1.3, 16, 1.6);
   pl.position.set(0, 4.2, -i * 14);
   scene.add(pl); ceilLights.push(pl);
 }
@@ -249,37 +252,46 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // dark industrial base
+  // WHITE + METALLIC-GREY palette (Mark: 'walls should be white and
+  // metallic grey'). Brushed-metal vibe with subtle vertical sheen.
   const bg = g.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0a0e1a');
-  bg.addColorStop(0.30, '#1a2030');
-  bg.addColorStop(0.70, '#2a3144');
-  bg.addColorStop(1, '#15192a');
+  bg.addColorStop(0,    '#b8c0cc');   // top: metallic shadow
+  bg.addColorStop(0.20, '#dde2eb');
+  bg.addColorStop(0.50, '#f4f6fa');   // bright middle ('white')
+  bg.addColorStop(0.85, '#dde2eb');
+  bg.addColorStop(1,    '#a8b0bc');   // bottom shadow
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
 
-  // ceiling girder
-  g.fillStyle = '#0a0e1a'; g.fillRect(0, 0, W, 28);
-  // cyan LED accent strip
-  g.fillStyle = '#1ab3ff'; g.fillRect(0, 28, W, 2);
-  g.fillStyle = 'rgba(70,240,255,0.35)'; g.fillRect(0, 30, W, 4);
+  // subtle vertical brushed-metal lines
+  for (let x = 0; x < W; x += 3) {
+    g.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.04) + ')';
+    g.fillRect(x, 36, 1, H - 60);
+  }
 
-  // baseboard
-  g.fillStyle = '#05070d'; g.fillRect(0, H - 22, W, 22);
-  g.fillStyle = '#2a3144'; g.fillRect(0, H - 24, W, 2);
-  // floor warning stripe
+  // ceiling girder (metallic grey)
+  g.fillStyle = '#5a6378'; g.fillRect(0, 0, W, 28);
+  g.fillStyle = '#3a4d75'; g.fillRect(0, 26, W, 2);
+  // cyan LED accent strip just below
+  g.fillStyle = '#1ab3ff'; g.fillRect(0, 30, W, 2);
+  g.fillStyle = 'rgba(70,240,255,0.35)'; g.fillRect(0, 32, W, 4);
+
+  // baseboard (metallic, dark-ish for ground contact)
+  g.fillStyle = '#5a6378'; g.fillRect(0, H - 22, W, 22);
+  g.fillStyle = '#8a93a8'; g.fillRect(0, H - 24, W, 2);
+  // floor warning stripe (yellow/dark)
   for (let x = 0; x < W; x += 22) {
-    g.fillStyle = (x / 22) % 2 < 1 ? '#ffd23a' : '#1a2030';
+    g.fillStyle = (x / 22) % 2 < 1 ? '#ffd23a' : '#2a3144';
     g.fillRect(x, H - 10, 22, 4);
   }
 
-  // panel seams
+  // panel seams (silver-grey with highlight edge)
   for (let x = 0; x < W; x += 256) {
-    g.fillStyle = '#0a0e1a'; g.fillRect(x - 2, 32, 4, H - 56);
-    g.fillStyle = '#3a4d75'; g.fillRect(x, 32, 1, H - 56);
+    g.fillStyle = '#8a93a8'; g.fillRect(x - 1, 36, 2, H - 60);
+    g.fillStyle = '#ffffff'; g.fillRect(x, 36, 1, H - 60);
   }
   // horizontal mid-rail
-  g.fillStyle = '#0a0e1a'; g.fillRect(0, H * 0.50, W, 4);
-  g.fillStyle = '#3a4d75'; g.fillRect(0, H * 0.50 + 4, W, 1);
+  g.fillStyle = '#8a93a8'; g.fillRect(0, H * 0.50, W, 3);
+  g.fillStyle = '#ffffff'; g.fillRect(0, H * 0.50 - 1, W, 1);
 
   // helpers
   function bracketBox(px, py, w, h, tint, label) {
@@ -420,7 +432,7 @@ function makeFloorTexture() {
   const g = c.getContext('2d');
   // base concrete floor (slightly noisy gray)
   const bg = g.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#3e4453'); bg.addColorStop(1, '#5a6378');
+  bg.addColorStop(0, '#6a7388'); bg.addColorStop(1, '#8a93a8');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
   // noise
   for (let i = 0; i < 1400; i++) {
@@ -900,67 +912,139 @@ const glassEarL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.20), matSol
 glassEarL.position.set(-0.38, 2.36, -0.04); danny.add(glassEarL);
 const glassEarR = glassEarL.clone(); glassEarR.position.x = 0.38; danny.add(glassEarR);
 
-// ARMS — LONGER and CARTOONY (thin upper, larger hand sphere)
+// ARMS — built as separate UPPER + LOWER pieces around an ELBOW pivot.
+// Returns { shoulder, elbow } so the run animator can drive each joint.
+// Hierarchy: shoulder → upper arm → elbow → forearm → hand
 function makeArm(side) {
-  const grp = new THREE.Group();
-  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.50, 12), matCoat);
-  upper.position.y = -0.25; grp.add(upper);
-  // sleeve cuff
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.04, 12), matCoatShd);
-  cuff.position.y = -0.48; grp.add(cuff);
-  // forearm (slightly thinner, skin)
-  const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.065, 0.40, 12), matSkin);
-  fore.position.y = -0.70; grp.add(fore);
-  // hand (cartoony big sphere)
-  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 12), matSkin);
-  hand.position.y = -0.95; grp.add(hand);
-  grp.position.set(side * 0.50, 1.95, 0);
-  return grp;
-}
-const armL = makeArm(-1); danny.add(armL);
-const armR = makeArm( 1); danny.add(armR);
+  // Shoulder pivot — sits at the shoulder joint position. Rotating it
+  // swings the WHOLE arm (upper + elbow + forearm + hand) forward/back.
+  const shoulder = new THREE.Group();
+  shoulder.position.set(side * 0.50, 1.95, 0);
 
-// LEGS — LONGER and CARTOONY
+  // Shoulder ball (visual cap that makes the joint feel volumetric)
+  const shoulderBall = new THREE.Mesh(
+    new THREE.SphereGeometry(0.13, 14, 12), matCoatShd
+  );
+  shoulder.add(shoulderBall);
+
+  // Upper arm — hangs DOWN from shoulder pivot
+  const upper = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.085, 0.075, 0.45, 12), matCoat
+  );
+  upper.position.y = -0.225;
+  shoulder.add(upper);
+
+  // Sleeve cuff (where coat meets skin)
+  const cuff = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.085, 0.085, 0.04, 12), matCoatShd
+  );
+  cuff.position.y = -0.46;
+  shoulder.add(cuff);
+
+  // Elbow pivot — sits at end of upper arm. Rotating it bends the
+  // forearm under the upper arm.
+  const elbow = new THREE.Group();
+  elbow.position.y = -0.48;
+  shoulder.add(elbow);
+
+  // Forearm — hangs DOWN from elbow pivot
+  const fore = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.065, 0.40, 12), matSkin
+  );
+  fore.position.y = -0.20;
+  elbow.add(fore);
+
+  // Hand
+  const hand = new THREE.Mesh(
+    new THREE.SphereGeometry(0.13, 14, 12), matSkin
+  );
+  hand.position.y = -0.46;
+  elbow.add(hand);
+  // tiny thumb hint
+  const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), matSkin);
+  thumb.position.set(side * 0.10, -0.46, 0.08);
+  elbow.add(thumb);
+
+  return { root: shoulder, shoulder: shoulder, elbow: elbow };
+}
+const armL = makeArm(-1); danny.add(armL.root);
+const armR = makeArm( 1); danny.add(armR.root);
+
+// LEGS — built as separate THIGH + SHIN + FOOT around HIP, KNEE, ANKLE
+// pivots. Returns { hip, knee, ankle } so animation can drive each joint
+// independently for a real run cycle (forward thigh swing, knee bend on
+// recovery, foot plant).
 function makeLeg(side) {
-  const grp = new THREE.Group();
-  // upper (pants)
-  const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.55, 12), matPants);
-  thigh.position.y = -0.28; grp.add(thigh);
-  // knee accent
-  const knee = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), matPantsLt);
-  knee.position.y = -0.55; grp.add(knee);
-  // shin
-  const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.085, 0.50, 12), matPants);
-  shin.position.y = -0.80; grp.add(shin);
-  // sneaker
+  // Hip pivot — sits at the hip joint position.
+  const hip = new THREE.Group();
+  hip.position.set(side * 0.20, 0.90, 0);
+
+  // Thigh — hangs DOWN from hip
+  const thigh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.13, 0.11, 0.50, 12), matPants
+  );
+  thigh.position.y = -0.25;
+  hip.add(thigh);
+
+  // Knee pivot — at the end of the thigh
+  const knee = new THREE.Group();
+  knee.position.y = -0.50;
+  hip.add(knee);
+
+  // Knee accent ball (visual)
+  const kneeBall = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 12, 10), matPantsLt
+  );
+  knee.add(kneeBall);
+
+  // Shin — hangs DOWN from knee
+  const shin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.10, 0.085, 0.45, 12), matPants
+  );
+  shin.position.y = -0.225;
+  knee.add(shin);
+
+  // Ankle pivot — at the bottom of the shin
+  const ankle = new THREE.Group();
+  ankle.position.y = -0.45;
+  knee.add(ankle);
+
+  // Sneaker (relative to ankle)
   const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.52), matShoe);
-  shoe.position.set(0, -1.08, -0.10); grp.add(shoe);
-  // toe cap
+  shoe.position.set(0, -0.06, -0.10);
+  ankle.add(shoe);
   const toe = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.18, 0.16), matCoatShd);
-  toe.position.set(0, -1.08, -0.30); grp.add(toe);
-  // sole
+  toe.position.set(0, -0.06, -0.30);
+  ankle.add(toe);
   const sole = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.06, 0.54), matSole);
-  sole.position.set(0, -1.18, -0.10); grp.add(sole);
-  // shoe stripe (red accent on side)
+  sole.position.set(0, -0.16, -0.10);
+  ankle.add(sole);
   const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, 0.10), matCap);
-  stripe.position.set(0, -1.08, 0.05); grp.add(stripe);
-  // laces
+  stripe.position.set(0, -0.06, 0.05);
+  ankle.add(stripe);
   for (let li = 0; li < 3; li++) {
     const lace = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.18),
                                 new THREE.MeshLambertMaterial({ color: 0x0a0e1a }));
-    lace.position.set(0, -1.00, -0.05 + li * 0.06); grp.add(lace);
+    lace.position.set(0, 0.02, -0.05 + li * 0.06);
+    ankle.add(lace);
   }
-  grp.position.set(side * 0.20, 0.90, 0);
-  return grp;
-}
-const legL = makeLeg(-1); danny.add(legL);
-const legR = makeLeg( 1); danny.add(legR);
 
-// store smoothed animation values for smoother running
-danny.userData.legAngL = 0;
-danny.userData.legAngR = 0;
-danny.userData.armAngL = 0;
-danny.userData.armAngR = 0;
+  return { root: hip, hip: hip, knee: knee, ankle: ankle };
+}
+const legL = makeLeg(-1); danny.add(legL.root);
+const legR = makeLeg( 1); danny.add(legR.root);
+
+// Smoothed joint angles for run animation (lerped each frame toward
+// the target sine-wave pose so motion is fluid, not snappy).
+danny.userData.hipL  = 0; danny.userData.hipR  = 0;
+danny.userData.kneeL = 0; danny.userData.kneeR = 0;
+danny.userData.anklL = 0; danny.userData.anklR = 0;
+danny.userData.shldL = 0; danny.userData.shldR = 0;
+danny.userData.elbwL = 0; danny.userData.elbwR = 0;
+danny.userData.spine = 0;
+// Legacy compatibility — kept so unrelated read sites don't crash.
+danny.userData.legAngL = 0; danny.userData.legAngR = 0;
+danny.userData.armAngL = 0; danny.userData.armAngR = 0;
 
 // shadow blob (kept on the ground in world space)
 const shadow = new THREE.Mesh(
@@ -1627,12 +1711,16 @@ function tick() {
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
     // texture scroll = illusion of forward motion (no ceiling — skipped)
     floorTex.offset.y -= dt * speed * 0.018;
+    // The two walls are mirrored (rotation.y = ±π/2), so their texture
+    // U axes point in OPPOSITE world directions. To make them appear to
+    // scroll the same world direction as Danny runs (which is what Mark
+    // wanted), they need OPPOSITE U offsets, not the same.
     wallTex.offset.x  -= dt * speed * 0.0085;
-    wallTexR.offset.x -= dt * speed * 0.0085;
+    wallTexR.offset.x += dt * speed * 0.0085;
 
     // ceiling lights cycle z position to feel like fixtures passing
     for (let i = 0; i < ceilLights.length; i++) {
-      ceilLights[i].intensity = 0.7 + 0.15 * Math.sin(runT * 2.0 + i);
+      ceilLights[i].intensity = 1.15 + 0.15 * Math.sin(runT * 2.0 + i);
       ceilLights[i].position.z += dt * speed * 1.2;
       if (ceilLights[i].position.z > 12) ceilLights[i].position.z -= 14 * ceilLights.length;
     }
@@ -1776,31 +1864,83 @@ function tick() {
       }
     }
 
-    // Danny run animation — smoother, larger amplitude, easeOut on each pose
-    // Advance stride phase at a real run cadence: ~1.7 cycles/sec at
-    // base speed, ramping to ~2.3 cycles/sec at top speed. NOT tied to
-    // runT (which scales with world speed and was way too fast).
+    // ---- Danny run animation — every joint driven separately --------
+    // Stride cadence: ~1.7 cycles/sec at base, ~2.7 at top speed.
     const sliding = slideT > 0;
     if (onGround && !sliding) stridePhase += dt * (10 + speed * 0.2);
-    const targetStride = sliding ? 0.2 : (onGround ? Math.sin(stridePhase) : 0.2);
-    const targetStride2 = sliding ? 0.0 : (onGround ? Math.cos(stridePhase) : -0.2);
-    const lerp = Math.min(1, dt * 12);
-    // legs: while sliding, both legs out front
-    const tLegL = sliding ? 1.0 : (targetStride * 0.90);
-    const tLegR = sliding ? 0.8 : (-targetStride * 0.90);
-    const tArmL = sliding ? 0.4 : (-targetStride * 0.70);
-    const tArmR = sliding ? 0.4 : (targetStride * 0.70);
-    danny.userData.legAngL += (tLegL - danny.userData.legAngL) * lerp;
-    danny.userData.legAngR += (tLegR - danny.userData.legAngR) * lerp;
-    danny.userData.armAngL += (tArmL - danny.userData.armAngL) * lerp;
-    danny.userData.armAngR += (tArmR - danny.userData.armAngR) * lerp;
-    legL.rotation.x = danny.userData.legAngL;
-    legR.rotation.x = danny.userData.legAngR;
-    armL.rotation.x = danny.userData.armAngL;
-    armR.rotation.x = danny.userData.armAngR;
-    // shoulder lift on swing (more dynamic feel)
-    armL.position.y = 1.95 + Math.abs(danny.userData.armAngL) * 0.04;
-    armR.position.y = 1.95 + Math.abs(danny.userData.armAngR) * 0.04;
+    const phase  = sliding ? 0 : stridePhase;
+    const phaseR = phase + Math.PI;          // right leg/arm 180° out of phase
+    const lerp   = Math.min(1, dt * 14);
+
+    // Target poses per joint. Each is a single trig expression of the
+    // stride phase, then lerped into the current angle for smoothness.
+    function legPose(p) {
+      const hipAngle  = Math.sin(p) * 0.65;                 // forward/back swing
+      // knee bends most on the BACK swing (heel toward butt) and least
+      // on the FORWARD reach (leg extends).
+      const back      = Math.max(0, -Math.cos(p));          // 0..1, peaks when leg is back
+      const kneeAngle = -(0.2 + back * 0.9);                 // 0.2..1.1 rad bend (negative = bend backward)
+      // ankle: dorsiflex on reach, plantarflex on push-off
+      const anklAngle = Math.cos(p + 0.6) * 0.25;
+      return { hip: hipAngle, knee: kneeAngle, ankl: anklAngle };
+    }
+    function armPose(p) {
+      // arms swing OPPOSITE to legs (right arm forward when left leg forward)
+      const shldAngle = -Math.sin(p) * 0.55;
+      // elbow stays partly bent always (~0.7 rad), bending more when arm is back
+      const back      = Math.max(0, Math.cos(p));
+      const elbwAngle = -(0.6 + back * 0.5);
+      return { shld: shldAngle, elbw: elbwAngle };
+    }
+    // Compose targets — slide overrides with a forward-tucked pose.
+    let tHipL, tHipR, tKneeL, tKneeR, tAnklL, tAnklR;
+    let tShldL, tShldR, tElbwL, tElbwR, tSpine;
+    if (sliding) {
+      tHipL  = 1.0;  tHipR  = 0.8;
+      tKneeL = -0.6; tKneeR = -0.6;
+      tAnklL = 0.3;  tAnklR = 0.3;
+      tShldL = 0.5;  tShldR = 0.5;
+      tElbwL = -1.0; tElbwR = -1.0;
+      tSpine = 0;
+    } else {
+      const lp = legPose(phase),  rp = legPose(phaseR);
+      const la = armPose(phaseR), ra = armPose(phase);     // arms inverted vs legs
+      tHipL  = lp.hip;  tHipR  = rp.hip;
+      tKneeL = lp.knee; tKneeR = rp.knee;
+      tAnklL = lp.ankl; tAnklR = rp.ankl;
+      tShldL = la.shld; tShldR = ra.shld;
+      tElbwL = la.elbw; tElbwR = ra.elbw;
+      tSpine = Math.sin(phase) * 0.12;                     // counter-rotate torso to hips
+    }
+
+    const ud = danny.userData;
+    ud.hipL  += (tHipL  - ud.hipL)  * lerp;
+    ud.hipR  += (tHipR  - ud.hipR)  * lerp;
+    ud.kneeL += (tKneeL - ud.kneeL) * lerp;
+    ud.kneeR += (tKneeR - ud.kneeR) * lerp;
+    ud.anklL += (tAnklL - ud.anklL) * lerp;
+    ud.anklR += (tAnklR - ud.anklR) * lerp;
+    ud.shldL += (tShldL - ud.shldL) * lerp;
+    ud.shldR += (tShldR - ud.shldR) * lerp;
+    ud.elbwL += (tElbwL - ud.elbwL) * lerp;
+    ud.elbwR += (tElbwR - ud.elbwR) * lerp;
+    ud.spine += (tSpine - ud.spine) * lerp;
+
+    legL.hip.rotation.x   = ud.hipL;
+    legL.knee.rotation.x  = ud.kneeL;
+    legL.ankle.rotation.x = ud.anklL;
+    legR.hip.rotation.x   = ud.hipR;
+    legR.knee.rotation.x  = ud.kneeR;
+    legR.ankle.rotation.x = ud.anklR;
+    armL.shoulder.rotation.x = ud.shldL;
+    armL.elbow.rotation.x    = ud.elbwL;
+    armR.shoulder.rotation.x = ud.shldR;
+    armR.elbow.rotation.x    = ud.elbwR;
+    // spine twist — read by torso (we don't have a spine pivot Object
+    // but we can rotate the head's parent group, which is danny itself.
+    // Apply as a tiny Y rotation of the torso pieces by re-rotating
+    // the head + cap + backpack only. Cheaper: apply to body via
+    // existing danny.rotation.z lean below.
     // smooth lane lerp
     danny.position.x += (lanePosX(laneF) - danny.position.x) * Math.min(1, dt * 18);
     // base Y: jump height when in air; while sliding, drop the body lower
@@ -1809,12 +1949,13 @@ function tick() {
     danny.position.y += (targetY - danny.position.y) * Math.min(1, dt * 18);
     // body lean while running (side twist only — keep X stable to avoid fighting the 180° face flip)
     // While sliding, body tilts forward strongly
-    const targetZRot = sliding ? 0 : (targetStride * 0.05);
+    const sinP = Math.sin(phase), cosP = Math.cos(phase);
+    const targetZRot = sliding ? 0 : (sinP * 0.05);
     const targetXRot = sliding ? -0.85 : 0;
     danny.rotation.z = targetZRot;
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
-    // head bob
-    head.position.y = 2.35 + Math.abs(targetStride2) * 0.025;
+    // head bob — head dips slightly each stride
+    head.position.y = 2.35 + Math.abs(cosP) * 0.04;
     // shadow follows in world-space (stays on the floor)
     shadow.position.x = danny.position.x;
     shadow.position.z = danny.position.z;
