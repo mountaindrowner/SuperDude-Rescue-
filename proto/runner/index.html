@@ -87,10 +87,10 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c0f1a);
 scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 
-// Over-shoulder Subway-Surfers camera (pulled back to see Danny fully)
+// 45° elevated camera looking down at Danny — no roof needed
 const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
-camera.position.set(0, 3.8, 9.5);
-camera.lookAt(0, 1.5, -3);
+camera.position.set(0, 9.0, 11.0);
+camera.lookAt(0, 0.5, 1.0);
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
@@ -391,13 +391,9 @@ floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, CORR_CENTER_Z);
 scene.add(floor);
 
-const ceil = new THREE.Mesh(
-  new THREE.PlaneGeometry(CORR_HALF_W * 2, CORR_LEN),
-  new THREE.MeshLambertMaterial({ map: ceilTex })
-);
-ceil.rotation.x = Math.PI / 2;
-ceil.position.set(0, CORR_H, CORR_CENTER_Z);
-scene.add(ceil);
+// Mark's note: "the game doesn't need a roof" — ceiling removed.
+// Ceiling point lights kept (they still illuminate from above) so the
+// corridor doesn't go dark.
 
 const wallGeo = new THREE.PlaneGeometry(CORR_LEN, CORR_H);
 const wallMatL = new THREE.MeshLambertMaterial({ map: wallTex });
@@ -633,23 +629,25 @@ function makeConsole() {
 
 // place props alongside the corridor walls
 const sideProps = [];
+// Mark: "less clutter." Halved the prop density (26→13) and doubled
+// the spacing (9→18) so the corridor breathes. Skewed the prop mix
+// toward the iconic specimen tubes; dropped barrel + caution-sign
+// frequency since they read as visual noise from above.
+const PROP_COUNT = 13;
+const PROP_SPACING = 18;
 function placeSideProps() {
-  const z0 = -10;
-  for (let i = 0; i < 26; i++) {
-    const z = z0 - i * 9 - Math.random() * 2;
+  const z0 = -16;
+  for (let i = 0; i < PROP_COUNT; i++) {
+    const z = z0 - i * PROP_SPACING - Math.random() * 3;
     const side = (i % 2 === 0) ? -1 : 1;
     const pick = Math.random();
     let p;
-    if (pick < 0.35) {
+    if (pick < 0.55) {
       p = makeSpecimenTube([0x7a3aff, 0xff6a4a, 0x1ab3ff, 0xff39c5, 0x39e36e][Math.floor(Math.random()*5)]);
-    } else if (pick < 0.55) {
+    } else if (pick < 0.80) {
       p = makeConsole();
-    } else if (pick < 0.72) {
-      p = makeBench();
-    } else if (pick < 0.88) {
-      p = makeBarrel();
     } else {
-      p = makeCautionSign();
+      p = makeBench();
     }
     p.position.set(side * (CORR_HALF_W - 0.55), 0, z);
     if (side > 0) p.rotation.y = Math.PI;
@@ -1413,6 +1411,13 @@ const SLIDE_DURATION = 0.6;
 let shield = 0, magnet = 0;
 let spawnAcc = 0;
 let runT = 0;
+// Mark: "right now he's just shaking." Bug was driving stride animation
+// from runT (which advances by dt*speed = ~0.27/frame at speed 16),
+// times the 6.5 stride multiplier = 1.74 rad/frame — faster than the
+// lerp can chase, so limbs vibrated near zero. Stride now drives off
+// a dedicated wall-clock phase that advances at a real-world cadence
+// (~1.7 cycles/sec at base speed, ramping with run speed).
+let stridePhase = 0;
 let shake = 0;
 
 // ============ input ==================================================
@@ -1456,7 +1461,7 @@ function reset() {
   state = 'play'; dist = 0; speed = 16.0; crystals = 0; goalDone = false;
   lane = 0; laneF = 0; jumpV = 0; jumpY = 0; onGround = true;
   slideT = 0;
-  shield = 0; magnet = 0; spawnAcc = 0; runT = 0; shake = 0;
+  shield = 0; magnet = 0; spawnAcc = 0; runT = 0; stridePhase = 0; shake = 0;
   document.getElementById('overlay').classList.remove('on');
   for (let i = 0; i < 6; i++) {
     spawnObj('crystal', Math.floor(Math.random()*3) - 1, -25 - i * 8);
@@ -1493,9 +1498,8 @@ function tick() {
     }
     // slide timer countdown
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
-    // texture scroll = illusion of forward motion
+    // texture scroll = illusion of forward motion (no ceiling — skipped)
     floorTex.offset.y -= dt * speed * 0.018;
-    ceilTex.offset.y  -= dt * speed * 0.018;
     wallTex.offset.x  -= dt * speed * 0.0085;
     wallTexR.offset.x -= dt * speed * 0.0085;
 
@@ -1512,7 +1516,7 @@ function tick() {
       sp.mesh.position.z += speed * dt;
       sp.z = sp.mesh.position.z;
       if (sp.z > 10) {
-        sp.mesh.position.z -= 26 * 9;
+        sp.mesh.position.z -= PROP_COUNT * PROP_SPACING;
         sp.z = sp.mesh.position.z;
         // randomize the specimen tube creature color when recycled (variety)
         const al = sp.mesh.userData && sp.mesh.userData.alien;
@@ -1646,10 +1650,13 @@ function tick() {
     }
 
     // Danny run animation — smoother, larger amplitude, easeOut on each pose
-    const strideSpeed = 6.5;
+    // Advance stride phase at a real run cadence: ~1.7 cycles/sec at
+    // base speed, ramping to ~2.3 cycles/sec at top speed. NOT tied to
+    // runT (which scales with world speed and was way too fast).
     const sliding = slideT > 0;
-    const targetStride = sliding ? 0.2 : (onGround ? Math.sin(runT * strideSpeed) : 0.2);
-    const targetStride2 = sliding ? 0.0 : (onGround ? Math.cos(runT * strideSpeed) : -0.2);
+    if (onGround && !sliding) stridePhase += dt * (10 + speed * 0.2);
+    const targetStride = sliding ? 0.2 : (onGround ? Math.sin(stridePhase) : 0.2);
+    const targetStride2 = sliding ? 0.0 : (onGround ? Math.cos(stridePhase) : -0.2);
     const lerp = Math.min(1, dt * 12);
     // legs: while sliding, both legs out front
     const tLegL = sliding ? 1.0 : (targetStride * 0.90);
