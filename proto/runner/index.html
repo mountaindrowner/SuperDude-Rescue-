@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v11 — 3D Lab Escape</title>
+<title>Super Dude Runner v12 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v11 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v12 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -89,6 +89,9 @@
   <div data-cam="lookHeight" data-step="0.25" data-label="Look Y"></div>
   <div data-cam="fov"       data-step="2"    data-label="FOV"></div>
   <div data-cam="laneSway"  data-step="0.05" data-label="Lane Sway"></div>
+  <div style="font-weight:700;color:#ffd23a;margin:8px 0 4px;letter-spacing:1px">GRAPHICS</div>
+  <div data-gfx="toneExposure" data-step="0.05" data-label="Brightness"></div>
+  <div data-gfx="envIntensity" data-step="0.1"  data-label="Reflection"></div>
   <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(70,240,255,0.3)">
     <div style="font-size:11px;color:#9aa0c4">Copy this URL to lock the config:</div>
     <input id="cam-url" readonly style="width:100%;background:#0a0c14;color:#e8ecf3;border:1px solid #3a4d75;border-radius:4px;padding:4px;font-size:10px;font-family:monospace;margin-top:2px" />
@@ -99,25 +102,31 @@
   const panel = document.getElementById('cam-panel');
   const tog = document.getElementById('cam-toggle');
   const urlBox = document.getElementById('cam-url');
+  function wireRow(row, store, key, step) {
+    if (!row.firstChild) {
+      const lbl = row.dataset.label;
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;margin:4px 0';
+      row.innerHTML = '<span style="flex:1">' + lbl + '</span>' +
+        '<button class="cm-btn" data-delta="-1" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a4d75;background:#0a0c14;color:#e8ecf3;font-size:16px;cursor:pointer">−</button>' +
+        '<span class="cm-val" style="min-width:42px;text-align:center;color:#ffd23a;font-weight:700"></span>' +
+        '<button class="cm-btn" data-delta="1" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a4d75;background:#0a0c14;color:#e8ecf3;font-size:16px;cursor:pointer">+</button>';
+      row.querySelectorAll('.cm-btn').forEach(b => b.addEventListener('click', () => {
+        store[key] += parseInt(b.dataset.delta, 10) * step;
+        render();
+      }));
+    }
+    row.querySelector('.cm-val').textContent = (+store[key]).toFixed(2);
+  }
   function render() {
-    panel.querySelectorAll('[data-cam]').forEach(row => {
-      const key = row.dataset.cam, step = parseFloat(row.dataset.step), lbl = row.dataset.label;
-      if (!row.firstChild) {
-        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;margin:4px 0';
-        row.innerHTML = '<span style="flex:1">' + lbl + '</span>' +
-          '<button class="cm-btn" data-delta="-1" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a4d75;background:#0a0c14;color:#e8ecf3;font-size:16px;cursor:pointer">−</button>' +
-          '<span class="cm-val" style="min-width:42px;text-align:center;color:#ffd23a;font-weight:700"></span>' +
-          '<button class="cm-btn" data-delta="1" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a4d75;background:#0a0c14;color:#e8ecf3;font-size:16px;cursor:pointer">+</button>';
-        row.querySelectorAll('.cm-btn').forEach(b => b.addEventListener('click', () => {
-          window.CAMERA[key] += parseInt(b.dataset.delta, 10) * step;
-          render();
-        }));
-      }
-      row.querySelector('.cm-val').textContent = (+window.CAMERA[key]).toFixed(2);
-    });
-    const params = ['height=h','back=b','fov=fov','lookAhead=la','lookHeight=lh','laneSway=sway']
+    panel.querySelectorAll('[data-cam]').forEach(row =>
+      wireRow(row, window.CAMERA, row.dataset.cam, parseFloat(row.dataset.step)));
+    panel.querySelectorAll('[data-gfx]').forEach(row =>
+      wireRow(row, window.GFX, row.dataset.gfx, parseFloat(row.dataset.step)));
+    const camP = ['height=h','back=b','fov=fov','lookAhead=la','lookHeight=lh','laneSway=sway']
       .map(s => { const [k, p] = s.split('='); return p + '=' + (+window.CAMERA[k]).toFixed(2); }).join('&');
-    urlBox.value = location.origin + location.pathname + '?' + params;
+    const gfxP = ['toneExposure','envIntensity']
+      .map(k => k + '=' + (+window.GFX[k]).toFixed(2)).join('&');
+    urlBox.value = location.origin + location.pathname + '?' + camP + '&' + gfxP;
   }
   tog.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
@@ -138,10 +147,62 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+// v12: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+const GFX = { toneExposure: 1.25, envIntensity: 0.9, fogNear: 18, fogFar: 90 };
+(function applyGfxURL() {
+  const p = new URLSearchParams(location.search);
+  ['toneExposure', 'envIntensity', 'fogNear', 'fogFar'].forEach(k => {
+    const v = parseFloat(p.get(k));
+    if (!Number.isNaN(v)) GFX[k] = v;
+  });
+})();
+window.GFX = GFX;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = GFX.toneExposure;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c0f1a);
-scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
+scene.fog = new THREE.Fog(0x0c0f1a, GFX.fogNear, GFX.fogFar);
+
+// ============ ENVIRONMENT MAP (for PBR reflections) ==================
+// Procedural equirectangular 'lab ambience' → PMREM → scene.environment.
+// Gives MeshStandardMaterials something to reflect so metal reads as
+// metal instead of going flat-dark. All core three, no extra CDN.
+(function buildEnvironment() {
+  const ec = document.createElement('canvas');
+  ec.width = 512; ec.height = 256;
+  const eg = ec.getContext('2d');
+  // dark blue gradient floor-to-ceiling
+  const grad = eg.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0,   '#243450');   // ceiling-ish (brighter)
+  grad.addColorStop(0.5, '#10182a');   // horizon
+  grad.addColorStop(1,   '#05070d');   // floor (dark)
+  eg.fillStyle = grad; eg.fillRect(0, 0, 512, 256);
+  // bright ceiling light bands (reflect as highlights on metal)
+  for (let i = 0; i < 6; i++) {
+    eg.fillStyle = 'rgba(255,245,210,0.85)';
+    eg.fillRect(i * 90 + 20, 18, 50, 14);
+  }
+  // cyan accent glow line near top
+  eg.fillStyle = 'rgba(70,240,255,0.4)';
+  eg.fillRect(0, 40, 512, 6);
+  // a couple of green specimen-tank glows at horizon
+  ['#39e36e', '#7a3aff', '#ff39c5'].forEach((c, i) => {
+    eg.fillStyle = c;
+    eg.globalAlpha = 0.35;
+    eg.beginPath(); eg.arc(120 + i * 150, 150, 30, 0, 7); eg.fill();
+    eg.globalAlpha = 1;
+  });
+  const envTex = new THREE.CanvasTexture(ec);
+  envTex.mapping = THREE.EquirectangularReflectionMapping;
+  envTex.colorSpace = THREE.SRGBColorSpace;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const envRT = pmrem.fromEquirectangular(envTex);
+  scene.environment = envRT.texture;
+  envTex.dispose();
+  pmrem.dispose();
+})();
 
 // ============ CAMERA CONFIG (live-tunable, decoupled from gameplay) ===
 // Gameplay space lives at world origin: Danny runs in z; lanes in x.
@@ -150,7 +211,7 @@ scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v11: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v12: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -372,8 +433,9 @@ resize();
 
 // ============ lighting (moody industrial) =============================
 // Mark: 'too dark'. Boosted ambient + key light considerably.
-scene.add(new THREE.AmbientLight(0xc8d8e8, 0.95));
-const sun = new THREE.DirectionalLight(0xfff8e8, 0.85);
+// v12: lights nudged up to compensate for ACES tone-mapping rolloff.
+scene.add(new THREE.AmbientLight(0xc8d8e8, 1.25));
+const sun = new THREE.DirectionalLight(0xfff8e8, 1.15);
 sun.position.set(2, 10, 4);
 scene.add(sun);
 
@@ -393,7 +455,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v11: DARK NAVY palette to match Mark's new reference image
+  // v12: DARK NAVY palette to match Mark's new reference image
   // (deep blue stone panels with cyan/yellow accents, NOT white).
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#1a2540');   // top: deep navy
@@ -665,7 +727,7 @@ const ceilTex = makeCeilTexture();
 
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(CORR_HALF_W * 2, CORR_LEN),
-  new THREE.MeshLambertMaterial({ map: floorTex })
+  new THREE.MeshStandardMaterial({ map: floorTex, metalness: 0.45, roughness: 0.42, envMapIntensity: GFX.envIntensity })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, CORR_CENTER_Z);
@@ -676,9 +738,9 @@ scene.add(floor);
 // corridor doesn't go dark.
 
 const wallGeo = new THREE.PlaneGeometry(CORR_LEN, CORR_H);
-const wallMatL = new THREE.MeshLambertMaterial({ map: wallTex });
+const wallMatL = new THREE.MeshStandardMaterial({ map: wallTex, metalness: 0.55, roughness: 0.5, envMapIntensity: GFX.envIntensity });
 const wallTexR = wallTex.clone(); wallTexR.needsUpdate = true; wallTexR.offset.x = 0.5;
-const wallMatR = new THREE.MeshLambertMaterial({ map: wallTexR });
+const wallMatR = new THREE.MeshStandardMaterial({ map: wallTexR, metalness: 0.55, roughness: 0.5, envMapIntensity: GFX.envIntensity });
 const wallL = new THREE.Mesh(wallGeo, wallMatL);
 wallL.rotation.y = Math.PI / 2;
 wallL.position.set(-CORR_HALF_W, CORR_H/2, CORR_CENTER_Z);
@@ -913,10 +975,10 @@ function makeConsole() {
 function makeWallPipes() {
   const grp = new THREE.Group();
   const colors = [0xd33a3a, 0x1ab3ff, 0xffd23a];
-  const matBand = new THREE.MeshLambertMaterial({ color: 0x0a0e1a });
-  const matSilver = new THREE.MeshLambertMaterial({ color: 0x8a93a8 });
+  const matBand = new THREE.MeshStandardMaterial({ color: 0x0a0e1a, metalness: 0.7, roughness: 0.35 });
+  const matSilver = new THREE.MeshStandardMaterial({ color: 0x8a93a8, metalness: 0.85, roughness: 0.3 });
   for (let i = 0; i < 3; i++) {
-    const mat = new THREE.MeshLambertMaterial({ color: colors[i] });
+    const mat = new THREE.MeshStandardMaterial({ color: colors[i], metalness: 0.75, roughness: 0.28, envMapIntensity: 1.1 });
     // Long pipe section
     const pipe = new THREE.Mesh(
       new THREE.CylinderGeometry(0.08, 0.08, 3.6, 12), mat
@@ -949,7 +1011,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v11 (Mark: 'less stuff less often'): density dropped further
+// v12 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -981,20 +1043,23 @@ placeSideProps();
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-const matSkin  = new THREE.MeshLambertMaterial({ color: 0xf1c19a });
-const matSkinShd = new THREE.MeshLambertMaterial({ color: 0xc89770 });
-const matCoat  = new THREE.MeshLambertMaterial({ color: 0xffffff });
-const matCoatShd = new THREE.MeshLambertMaterial({ color: 0xc8d2e3 });
-const matPants = new THREE.MeshLambertMaterial({ color: 0x1a3a6f });
-const matPantsLt = new THREE.MeshLambertMaterial({ color: 0x2a5090 });
-const matShoe  = new THREE.MeshLambertMaterial({ color: 0xffffff });
-const matSole  = new THREE.MeshLambertMaterial({ color: 0x1a2540 });
-const matHair  = new THREE.MeshLambertMaterial({ color: 0x6a3a18 });
-const matCap   = new THREE.MeshLambertMaterial({ color: 0xd33a3a });   // red ball cap
-const matCapDk = new THREE.MeshLambertMaterial({ color: 0x7a1b1b });
-const matBackpack = new THREE.MeshLambertMaterial({ color: 0x2a3144 });
+// v12 — Danny on PBR materials so he picks up the env reflections + tone
+// mapping like the rest of the scene. Fabric = matte (high roughness),
+// backpack = slightly metallic, shoes a touch glossy.
+const matSkin  = new THREE.MeshStandardMaterial({ color: 0xf1c19a, roughness: 0.85, metalness: 0.0 });
+const matSkinShd = new THREE.MeshStandardMaterial({ color: 0xc89770, roughness: 0.85, metalness: 0.0 });
+const matCoat  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.78, metalness: 0.0 });
+const matCoatShd = new THREE.MeshStandardMaterial({ color: 0xc8d2e3, roughness: 0.8, metalness: 0.0 });
+const matPants = new THREE.MeshStandardMaterial({ color: 0x1a3a6f, roughness: 0.9, metalness: 0.0 });
+const matPantsLt = new THREE.MeshStandardMaterial({ color: 0x2a5090, roughness: 0.9, metalness: 0.0 });
+const matShoe  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55, metalness: 0.05 });
+const matSole  = new THREE.MeshStandardMaterial({ color: 0x1a2540, roughness: 0.65, metalness: 0.1 });
+const matHair  = new THREE.MeshStandardMaterial({ color: 0x6a3a18, roughness: 0.85, metalness: 0.0 });
+const matCap   = new THREE.MeshStandardMaterial({ color: 0xd33a3a, roughness: 0.6, metalness: 0.0 });   // red ball cap
+const matCapDk = new THREE.MeshStandardMaterial({ color: 0x7a1b1b, roughness: 0.65, metalness: 0.0 });
+const matBackpack = new THREE.MeshStandardMaterial({ color: 0x2a3144, roughness: 0.5, metalness: 0.35 });
 
-// v11 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v12 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1009,6 +1074,23 @@ const hem = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.10, 0.46), matCoat);
 hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
+
+// v12: FLAPPING COAT TAIL — a back panel pivoted at the waist that
+// swings with the run cadence so the lab coat billows behind Danny.
+// (Very readable from the behind-camera; sells the running motion.)
+const coatTail = new THREE.Group();
+coatTail.position.set(0, 0.98, -0.20);     // pivot at waist, behind
+danny.add(coatTail);
+const tailPanel = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.55, 0.05), matCoat);
+tailPanel.position.set(0, -0.26, 0);       // hangs DOWN from the pivot
+coatTail.add(tailPanel);
+const tailShd = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.50, 0.04), matCoatShd);
+tailShd.position.set(0, -0.26, -0.03);
+coatTail.add(tailShd);
+// split vent at the bottom of the tail (two flaps)
+const ventGap = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.30, 0.06), matCoatShd);
+ventGap.position.set(0, -0.38, 0.01);
+coatTail.add(ventGap);
 // belt
 const belt = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.08, 0.50), matSole);
 belt.position.set(0, 0.93, 0); danny.add(belt);
@@ -1052,15 +1134,21 @@ const earL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), matSkin);
 earL.position.set(-0.40, 2.30, 0); danny.add(earL);
 const earR = earL.clone(); earR.position.x = 0.40; danny.add(earR);
 
-// HAIR poking out front and sides under cap (only visible bits)
-const hairFront = new THREE.Mesh(new THREE.SphereGeometry(0.36, 18, 14, 0, Math.PI*2, 0, Math.PI*0.42), matHair);
-hairFront.position.set(0, 2.36, 0.04); danny.add(hairFront);
-// spiky hair tufts sticking out the back BELOW the cap
-for (let i = 0; i < 4; i++) {
-  const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 6), matHair);
-  tuft.position.set(-0.18 + i * 0.12, 2.30, -0.32);
-  tuft.rotation.x = -0.4;
-  tuft.rotation.z = (Math.random() - 0.5) * 0.3;
+// HAIR — fuller base cap under the hat + lots of spiky tufts
+const hairFront = new THREE.Mesh(new THREE.SphereGeometry(0.37, 18, 14, 0, Math.PI*2, 0, Math.PI*0.46), matHair);
+hairFront.position.set(0, 2.34, 0.03); danny.add(hairFront);
+// v12: spiky tufts all the way around the back + sides (not just 4)
+const tuftSpots = [
+  [-0.26, 2.28, -0.30, -0.5, -0.3], [-0.13, 2.26, -0.34, -0.45, 0.0],
+  [0.00, 2.25, -0.35, -0.4, 0.1],   [0.13, 2.26, -0.34, -0.45, -0.1],
+  [0.26, 2.28, -0.30, -0.5, 0.3],   [-0.34, 2.30, -0.12, -0.2, -0.6],
+  [0.34, 2.30, -0.12, -0.2, 0.6],   [-0.30, 2.26, 0.08, 0.1, -0.5],
+  [0.30, 2.26, 0.08, 0.1, 0.5]
+];
+for (const [x, y, z, rx, rz] of tuftSpots) {
+  const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.20, 6), matHair);
+  tuft.position.set(x, y, z);
+  tuft.rotation.x = rx; tuft.rotation.z = rz;
   danny.add(tuft);
 }
 
@@ -1096,8 +1184,29 @@ capBand.position.y = 2.20;
 capBand.rotation.x = Math.PI / 2;
 danny.add(capBand);
 // "SD" patch on the back of the cap (visible square)
-const patch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.02), new THREE.MeshLambertMaterial({ color: 0xffd23a }));
+const patch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.02), new THREE.MeshStandardMaterial({ color: 0xffd23a, roughness: 0.5, metalness: 0.2 }));
 patch.position.set(0, 2.34, -0.42); danny.add(patch);
+
+// v12: SAFETY GOGGLES pushed up on top of the cap (classic scientist).
+// Dark rubber strap wraps around the cap; two glowing cyan lens housings
+// sit on the crown, tilted up. Strap is visible from the behind-camera.
+const matGoggleStrap = new THREE.MeshStandardMaterial({ color: 0x1a1a26, roughness: 0.6, metalness: 0.1 });
+const matGoggleLens  = new THREE.MeshStandardMaterial({ color: 0x39e3ff, roughness: 0.15, metalness: 0.0, emissive: 0x0a4a55, emissiveIntensity: 0.6, transparent: true, opacity: 0.85 });
+const goggleStrap = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 24), matGoggleStrap);
+goggleStrap.position.set(0, 2.42, -0.02);
+goggleStrap.rotation.x = Math.PI / 2 - 0.25;   // tilt so it sits over the crown
+danny.add(goggleStrap);
+// two lens cups on top-front of the cap
+for (let i = -1; i <= 1; i += 2) {
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.07, 16), matGoggleStrap);
+  cup.position.set(i * 0.13, 2.62, 0.20);
+  cup.rotation.x = Math.PI / 2 - 0.5;
+  danny.add(cup);
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.03, 16), matGoggleLens);
+  lens.position.set(i * 0.13, 2.645, 0.235);
+  lens.rotation.x = Math.PI / 2 - 0.5;
+  danny.add(lens);
+}
 
 // GLASSES — visible peeking around head sides from camera (round earpieces visible)
 const glassEarL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.20), matSole);
@@ -1935,7 +2044,7 @@ function tick() {
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
     // texture scroll = illusion of forward motion (no ceiling — skipped)
     floorTex.offset.y -= dt * speed * 0.018;
-    // v11: flipped both signs from v11. Walls now flow toward camera
+    // v12: flipped both signs from v12. Walls now flow toward camera
     // (Danny moving past wall content) instead of away from it.
     wallTex.offset.x  += dt * speed * 0.0085;
     wallTexR.offset.x -= dt * speed * 0.0085;
@@ -1971,7 +2080,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v11: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v12: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -2198,6 +2307,11 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
+    // v12: coat tail flaps — swings up behind on each stride, with a lag
+    // so it trails the body. Lifts higher at speed. Settles flat on slide.
+    const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
+    ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
+    coatTail.rotation.x = ud.tail;
     // shadow follows in world-space (stays on the floor)
     shadow.position.x = danny.position.x;
     shadow.position.z = danny.position.z;
@@ -2206,6 +2320,16 @@ function tick() {
     shadow.scale.set(sScale, 1, sScale);
   }
 
+  // live GFX tuning
+  if (renderer.toneMappingExposure !== GFX.toneExposure) {
+    renderer.toneMappingExposure = GFX.toneExposure;
+  }
+  if (GFX._lastEnv !== GFX.envIntensity) {
+    GFX._lastEnv = GFX.envIntensity;
+    scene.traverse(o => {
+      if (o.material && 'envMapIntensity' in o.material) o.material.envMapIntensity = GFX.envIntensity;
+    });
+  }
   updateCamera(dt);
   if (shake > 0) {
     // Add shake on top of the smoothed camera follow position.
