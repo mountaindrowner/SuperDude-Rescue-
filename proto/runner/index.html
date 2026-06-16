@@ -19,12 +19,12 @@
   .row { display: flex; justify-content: space-between; align-items: center; color: #e8ecf3; }
   .row + .row { margin-top: 4px; }
   .lbl { font-weight: 700; font-size: 16px; }
-  .lbl.big { font-size: 22px; color: #ffd23a; text-shadow: 0 0 8px rgba(255,210,58,0.3); }
+  .lbl.big { font-size: 22px; color: #b8a8ff; text-shadow: 0 0 10px rgba(184,168,255,0.45); }
   .lbl.dim { color: #9aa0c4; font-weight: 600; font-size: 13px; }
   .lbl.cyan { color: #46f0ff; }
-  .bar { height: 4px; background: rgba(255,210,58,0.20); border-radius: 2px; overflow: hidden; margin-top: 6px; }
-  .bar > div { height: 100%; background: linear-gradient(to right, #e8a516, #ffd23a); transition: width .12s linear;
-               box-shadow: 0 0 8px rgba(255,210,58,0.4); }
+  .bar { height: 4px; background: rgba(155,108,255,0.20); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .bar > div { height: 100%; background: linear-gradient(to right, #6a1880, #b8a8ff, #46f0ff); transition: width .12s linear;
+               box-shadow: 0 0 10px rgba(184,168,255,0.5); }
   #powers { position: absolute; left: 14px; top: 88px; display: flex; gap: 8px; pointer-events: none; }
   .pwr { padding: 5px 12px; border-radius: 18px; color: #fff; font-weight: 800; font-size: 12px;
          box-shadow: 0 2px 12px rgba(0,0,0,0.4); display: none; letter-spacing: 1px; }
@@ -51,8 +51,8 @@
 <div id="ui">
   <div id="topbar">
     <div class="row">
-      <span class="lbl big">⚙ <span id="ui-gears">0</span> / <span id="ui-goal">50</span></span>
-      <span class="lbl"><span style="color:#9aa0c4">BEST</span> <span id="ui-best" style="color:#ffd23a">0</span></span>
+      <span class="lbl big">💎 <span id="ui-gears">0</span> / <span id="ui-goal">50</span></span>
+      <span class="lbl"><span style="color:#9aa0c4">BEST</span> <span id="ui-best" style="color:#b8a8ff">0</span></span>
     </div>
     <div class="row">
       <span class="lbl cyan">SCORE <span id="ui-score">0</span></span>
@@ -72,7 +72,7 @@
     <div class="blink" id="ov-cta">TAP TO RUN AGAIN</div>
   </div>
 </div>
-<div id="hint">← → swap lane &nbsp;•&nbsp; ↑ / SPACE jump &nbsp;•&nbsp; swipe on touch</div>
+<div id="hint">← → swap &nbsp;•&nbsp; ↑ jump &nbsp;•&nbsp; ↓ slide &nbsp;•&nbsp; swipe on touch</div>
 
 <script type="module">
 import * as THREE from 'three';
@@ -246,8 +246,11 @@ function makeWallTexture() {
     const x = px + 12, y = 38, w = 232, h = 60;
     g.fillStyle = '#05070d'; g.fillRect(x, y, w, h);
     g.fillStyle = color; g.fillRect(x + 4, y + 4, w - 8, h - 8);
-    g.fillStyle = '#0a0e1a'; g.font = 'bold 28px system-ui'; g.textAlign = 'center';
-    g.fillText(label, x + w/2, y + h - 18);
+    // adaptive font size — scale down for long labels so they fit
+    const fontSize = label.length <= 8 ? 28 : label.length <= 14 ? 22 : 18;
+    g.fillStyle = '#0a0e1a'; g.font = 'bold ' + fontSize + 'px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(label, x + w/2, y + h/2);
+    g.textBaseline = 'alphabetic';
     g.fillStyle = '#ffd23a';
     g.fillRect(x + 8, y + 8, 4, 4); g.fillRect(x + w - 12, y + 8, 4, 4);
     g.fillRect(x + 8, y + h - 12, 4, 4); g.fillRect(x + w - 12, y + h - 12, 4, 4);
@@ -263,10 +266,15 @@ function makeWallTexture() {
   for (let i = 0, x = 0; x < W; i++, x += 256) {
     features[i % features.length](x);
   }
-  bigsign(20,   '#1b9fb3', 'BIO LAB');
-  bigsign(540,  '#d33a3a', 'CAUTION');
-  bigsign(1080, '#10b981', 'CHEM');
-  bigsign(1600, '#f59e0b', 'SECTOR 7');
+  // 8 funny signs (rotated through Mark's list)
+  bigsign(20,   '#1b9fb3', "DANNY'S LAB");
+  bigsign(280,  '#d33a3a', 'DO NOT PRESS');
+  bigsign(540,  '#f59e0b', 'CAUTION');
+  bigsign(810,  '#10b981', 'WET FLOOR');
+  bigsign(1080, '#1b9fb3', 'EXPERIMENT IN PROGRESS');
+  bigsign(1340, '#d33a3a', 'NOT THAT EMERGENCY');
+  bigsign(1600, '#f59e0b', 'RUNNING DETECTED');
+  bigsign(1860, '#10b981', 'SLIPPERY SCIENCE');
 
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = THREE.RepeatWrapping;
@@ -846,35 +854,47 @@ const pickGroup = new THREE.Group(); scene.add(pickGroup);
 const objects = [];
 function lanePosX(lane) { return lane * LANE_X; }
 
-function makeGear() {
+function makeChronoCrystal() {
+  // Faceted purple/cyan crystal — the chrono fragment pickup.
   const grp = new THREE.Group();
+  // outer faceted crystal (octahedron, sharper than icosahedron)
+  const outer = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.36, 0),
+    new THREE.MeshLambertMaterial({
+      color: 0x9b6cff,
+      emissive: 0x3a1080,
+      emissiveIntensity: 0.85,
+      transparent: true,
+      opacity: 0.85
+    })
+  );
+  outer.scale.set(1, 1.4, 1);
+  grp.add(outer);
+  // inner core (cyan, more intense)
+  const inner = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.20, 0),
+    new THREE.MeshLambertMaterial({
+      color: 0x46f0ff,
+      emissive: 0x46f0ff,
+      emissiveIntensity: 1.2
+    })
+  );
+  inner.scale.set(1, 1.4, 1);
+  grp.add(inner);
+  // halo ring
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.32, 0.10, 10, 20),
-    new THREE.MeshLambertMaterial({ color: 0xe8a516, emissive: 0x6a3a10, emissiveIntensity: 0.5 })
+    new THREE.TorusGeometry(0.42, 0.025, 8, 24),
+    new THREE.MeshBasicMaterial({ color: 0xb8a8ff, transparent: true, opacity: 0.7 })
   );
   ring.rotation.x = Math.PI / 2;
   grp.add(ring);
-  const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.10, 0.10, 0.18, 12),
-    new THREE.MeshLambertMaterial({ color: 0x7a4f0d })
-  );
-  grp.add(hub);
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    const t = new THREE.Mesh(
-      new THREE.BoxGeometry(0.16, 0.12, 0.18),
-      new THREE.MeshLambertMaterial({ color: 0xe8a516, emissive: 0x6a3a10, emissiveIntensity: 0.4 })
-    );
-    t.position.set(Math.cos(a) * 0.38, 0, Math.sin(a) * 0.38);
-    grp.add(t);
-  }
-  // glow disc behind
+  // glow disc on the floor below
   const glow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.5, 24),
-    new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.18 })
+    new THREE.CircleGeometry(0.55, 24),
+    new THREE.MeshBasicMaterial({ color: 0x9b6cff, transparent: true, opacity: 0.22 })
   );
-  glow.rotation.x = Math.PI / 2;
-  glow.position.y = -0.01;
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.y = -1.0;
   grp.add(glow);
   return grp;
 }
@@ -909,128 +929,451 @@ function makeMagnet() {
   const cap2 = cap.clone(); cap2.position.x = 0.20; grp.add(cap2);
   return grp;
 }
-function makeAlien() {
+// ===== HAZARDS: Mark's MVP-10 =========================================
+// Clearance: 'jump' (over the top), 'slide' (under), 'lane' (must dodge),
+// 'timed' (hazard cycles on/off — jump or pass during off-window).
+
+// 1. RED X CRATE — LANE DODGE
+function makeRedXCrate() {
   const grp = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 18, 14),
-                              new THREE.MeshLambertMaterial({ color: 0x7a3aff, emissive: 0x2a0e6a, emissiveIntensity: 0.4 }));
-  body.scale.set(1, 1.1, 1); grp.add(body);
-  for (let i = 0; i < 3; i++) {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 10),
-                             new THREE.MeshLambertMaterial({ color: 0xffffff }));
-    e.position.set(-0.22 + i * 0.22, 0.08, 0.46); grp.add(e);
-    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6),
-                               new THREE.MeshLambertMaterial({ color: 0x000000 }));
-    pup.position.set(-0.22 + i * 0.22, 0.08, 0.54); grp.add(pup);
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 1.2, 1.2),
+    new THREE.MeshLambertMaterial({ color: 0x6a3220 })
+  );
+  body.position.y = 0.6; grp.add(body);
+  // dark inset
+  const dark = new THREE.Mesh(
+    new THREE.BoxGeometry(1.10, 1.10, 1.21),
+    new THREE.MeshLambertMaterial({ color: 0x3a1f12 })
+  );
+  dark.position.y = 0.6; grp.add(dark);
+  // red X (two crossed boxes on the visible faces — front and sides)
+  const xMat = new THREE.MeshLambertMaterial({ color: 0xd33a3a, emissive: 0x6a1818, emissiveIntensity: 0.7 });
+  function bigX(zOff, yRot) {
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.05, 0.04), xMat);
+    b1.position.set(0, 0.6, zOff); b1.rotation.z = Math.PI / 4; b1.rotation.y = yRot; grp.add(b1);
+    const b2 = b1.clone(); b2.rotation.z = -Math.PI / 4; grp.add(b2);
   }
-  for (let i = 0; i < 4; i++) {
-    const t = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.13, 6),
-                             new THREE.MeshLambertMaterial({ color: 0xffffff }));
-    t.position.set(-0.18 + i * 0.12, -0.18, 0.50);
-    t.rotation.x = Math.PI;
-    grp.add(t);
-  }
+  bigX(0.62, 0);          // front
+  bigX(-0.62, 0);         // back
+  // yellow corner stripes (top edge)
+  const stripeTop = new THREE.Mesh(
+    new THREE.BoxGeometry(1.22, 0.10, 1.22),
+    new THREE.MeshLambertMaterial({ color: 0xffd23a })
+  );
+  stripeTop.position.y = 1.20; grp.add(stripeTop);
   return grp;
 }
-function makeTox() {
+
+// 2. LOW LASER — JUMP
+function makeLowLaser() {
   const grp = new THREE.Group();
-  const puddle = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.12, 24),
-                                new THREE.MeshLambertMaterial({ color: 0x79e336, emissive: 0x224a08, emissiveIntensity: 0.7 }));
-  puddle.position.y = 0.06; grp.add(puddle);
-  for (let i = 0; i < 4; i++) {
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.10 + Math.random()*0.05, 10, 8),
-                             new THREE.MeshLambertMaterial({ color: 0xb8ff70, transparent: true, opacity: 0.85 }));
+  // pylons (short)
+  const pMat = new THREE.MeshLambertMaterial({ color: 0x3a4d75 });
+  const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.65, 0.20), pMat);
+  p1.position.set(-0.65, 0.325, 0); grp.add(p1);
+  const p2 = p1.clone(); p2.position.x = 0.65; grp.add(p2);
+  // top emitter caps
+  const cap1 = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.10, 0.26),
+                              new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
+  cap1.position.set(-0.65, 0.70, 0); grp.add(cap1);
+  const cap2 = cap1.clone(); cap2.position.x = 0.65; grp.add(cap2);
+  // emitter LEDs
+  const led1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6),
+                              new THREE.MeshBasicMaterial({ color: 0xd33a3a }));
+  led1.position.set(-0.65, 0.62, 0); grp.add(led1);
+  const led2 = led1.clone(); led2.position.x = 0.65; grp.add(led2);
+  // beam (horizontal cylinder along X)
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.30, 8),
+                              new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.95 }));
+  beam.rotation.z = Math.PI / 2;
+  beam.position.y = 0.62;
+  grp.add(beam);
+  // outer glow
+  const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 1.30, 8),
+                              new THREE.MeshBasicMaterial({ color: 0xff5050, transparent: true, opacity: 0.30 }));
+  glow.rotation.z = Math.PI / 2;
+  glow.position.y = 0.62;
+  grp.add(glow);
+  grp.userData.beam = beam;
+  return grp;
+}
+
+// 3. HIGH LASER — SLIDE
+function makeHighLaser() {
+  const grp = new THREE.Group();
+  const pMat = new THREE.MeshLambertMaterial({ color: 0x3a4d75 });
+  // tall pylons reaching ceiling area
+  const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.80, 0.20), pMat);
+  p1.position.set(-0.65, 0.90, 0); grp.add(p1);
+  const p2 = p1.clone(); p2.position.x = 0.65; grp.add(p2);
+  // emitter blocks at top
+  const e1 = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.18, 0.26),
+                            new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
+  e1.position.set(-0.65, 1.85, 0); grp.add(e1);
+  const e2 = e1.clone(); e2.position.x = 0.65; grp.add(e2);
+  // LEDs
+  const led1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6),
+                              new THREE.MeshBasicMaterial({ color: 0xd33a3a }));
+  led1.position.set(-0.65, 1.74, 0); grp.add(led1);
+  const led2 = led1.clone(); led2.position.x = 0.65; grp.add(led2);
+  // beam at ~1.6m (slide under)
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.30, 8),
+                              new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.95 }));
+  beam.rotation.z = Math.PI / 2;
+  beam.position.y = 1.60;
+  grp.add(beam);
+  const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.30, 8),
+                              new THREE.MeshBasicMaterial({ color: 0xff5050, transparent: true, opacity: 0.30 }));
+  glow.rotation.z = Math.PI / 2;
+  glow.position.y = 1.60;
+  grp.add(glow);
+  grp.userData.beam = beam;
+  return grp;
+}
+
+// 4. ELECTRIC FENCE — LANE DODGE (full-lane wide)
+function makeElecFence() {
+  const grp = new THREE.Group();
+  // two post sections
+  const pMat = new THREE.MeshLambertMaterial({ color: 0x3a4d75 });
+  const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.6, 0.22), pMat);
+  p1.position.set(-0.62, 0.80, 0); grp.add(p1);
+  const p2 = p1.clone(); p2.position.x = 0.62; grp.add(p2);
+  // post caps (insulator domes)
+  const cap1 = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10),
+                              new THREE.MeshLambertMaterial({ color: 0x46f0ff, emissive: 0x1a76b0, emissiveIntensity: 0.6 }));
+  cap1.position.set(-0.62, 1.65, 0); grp.add(cap1);
+  const cap2 = cap1.clone(); cap2.position.x = 0.62; grp.add(cap2);
+  // zig-zag arcs (4 horizontal segments at different heights)
+  const arcMat = new THREE.MeshBasicMaterial({ color: 0x46f0ff, transparent: true, opacity: 0.9 });
+  for (let i = 0; i < 5; i++) {
+    const arc = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 0.06), arcMat);
+    arc.position.set(0, 0.3 + i * 0.3, 0);
+    arc.rotation.z = (i % 2 === 0) ? 0.10 : -0.10;
+    grp.add(arc);
+  }
+  // outer glow plane
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 1.7),
+                              new THREE.MeshBasicMaterial({ color: 0x46f0ff, transparent: true, opacity: 0.18 }));
+  glow.position.y = 0.85; grp.add(glow);
+  grp.userData.arcs = grp.children.filter(c => c.geometry && c.geometry.type === 'PlaneGeometry');
+  return grp;
+}
+
+// 5. ROLLING LAB CART — LANE DODGE
+function makeLabCart() {
+  const grp = new THREE.Group();
+  // top surface (with beakers)
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.10, 0.70),
+                             new THREE.MeshLambertMaterial({ color: 0xaab4c4 }));
+  top.position.y = 0.80; grp.add(top);
+  // bottom shelf
+  const bot = top.clone(); bot.position.y = 0.40; grp.add(bot);
+  // legs
+  const legMat = new THREE.MeshLambertMaterial({ color: 0x3a4d75 });
+  for (let i = -1; i <= 1; i += 2) {
+    for (let j = -1; j <= 1; j += 2) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.80, 0.06), legMat);
+      leg.position.set(i * 0.50, 0.40, j * 0.30);
+      grp.add(leg);
+    }
+  }
+  // wheels
+  for (let i = -1; i <= 1; i += 2) {
+    for (let j = -1; j <= 1; j += 2) {
+      const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 12),
+                                new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
+      wh.rotation.z = Math.PI / 2;
+      wh.position.set(i * 0.50, 0.05, j * 0.30);
+      grp.add(wh);
+    }
+  }
+  // beakers on top
+  const beakerColors = [0x10b981, 0xd33a3a, 0xffd23a];
+  for (let i = 0; i < 3; i++) {
+    const beaker = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.10, 0.22, 12),
+      new THREE.MeshLambertMaterial({
+        color: beakerColors[i], emissive: beakerColors[i],
+        emissiveIntensity: 0.4, transparent: true, opacity: 0.75
+      })
+    );
+    beaker.position.set(-0.40 + i * 0.40, 0.96, 0);
+    grp.add(beaker);
+  }
+  // handle bar at the back
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.06, 0.06), legMat);
+  handle.position.set(0, 1.30, -0.30);
+  grp.add(handle);
+  const hL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.50, 0.06), legMat);
+  hL.position.set(-0.40, 1.05, -0.30); grp.add(hL);
+  const hR = hL.clone(); hR.position.x = 0.40; grp.add(hR);
+  return grp;
+}
+
+// 6. STEAM VENT — TIMED (jump when off, hit when steam is up)
+function makeSteamVent() {
+  const grp = new THREE.Group();
+  // floor grate
+  const grate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.80, 0.10, 0.80),
+    new THREE.MeshLambertMaterial({ color: 0x1a2540 })
+  );
+  grate.position.y = 0.05; grp.add(grate);
+  // grate stripes
+  for (let i = -1; i <= 1; i += 1) {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.02, 0.10),
+                             new THREE.MeshLambertMaterial({ color: 0x5a6378 }));
+    s.position.set(0, 0.11, i * 0.22);
+    grp.add(s);
+  }
+  // steam column (3 stacked cone-cylinders, scale Y animated)
+  const steamMat = new THREE.MeshBasicMaterial({
+    color: 0xeef2f8, transparent: true, opacity: 0.65
+  });
+  const steam1 = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.35, 0.6, 12), steamMat);
+  steam1.position.y = 0.40; grp.add(steam1);
+  const steam2 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.28, 0.7, 12), steamMat);
+  steam2.position.y = 0.95; grp.add(steam2);
+  const steam3 = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.40, 0.8, 12), steamMat);
+  steam3.position.y = 1.60; grp.add(steam3);
+  // outer glow
+  const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.50, 2.0, 12),
+                              new THREE.MeshBasicMaterial({ color: 0xeef2f8, transparent: true, opacity: 0.15 }));
+  glow.position.y = 1.00; grp.add(glow);
+  grp.userData.steam = [steam1, steam2, steam3, glow];
+  // warning corner stripes around grate
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.03, 0.95),
+                                new THREE.MeshLambertMaterial({ color: 0xffd23a }));
+  stripe.position.y = 0.01; grp.add(stripe);
+  return grp;
+}
+
+// 7. SLIME PUDDLE — JUMP (re-skin of the old toxic puddle)
+function makeSlimePuddle() {
+  const grp = new THREE.Group();
+  const puddle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.90, 0.90, 0.10, 24),
+    new THREE.MeshLambertMaterial({ color: 0x79e336, emissive: 0x224a08, emissiveIntensity: 0.7 })
+  );
+  puddle.position.y = 0.05; grp.add(puddle);
+  // brighter inner ring
+  const inner = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.55, 0.12, 20),
+    new THREE.MeshLambertMaterial({ color: 0xb8ff70, emissive: 0x2a6a18, emissiveIntensity: 0.9 })
+  );
+  inner.position.y = 0.06; grp.add(inner);
+  // bubbles
+  for (let i = 0; i < 5; i++) {
+    const b = new THREE.Mesh(
+      new THREE.SphereGeometry(0.10 + Math.random() * 0.06, 10, 8),
+      new THREE.MeshLambertMaterial({ color: 0xb8ff70, transparent: true, opacity: 0.85 })
+    );
     b.userData.phase = Math.random() * Math.PI * 2;
-    b.position.set(Math.cos(i)*0.3, 0.20, Math.sin(i)*0.3);
+    const a = (i / 5) * Math.PI * 2;
+    b.position.set(Math.cos(a) * 0.4, 0.20, Math.sin(a) * 0.4);
     grp.add(b);
   }
   return grp;
 }
-function makeFire() {
+
+// 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from the ceiling)
+function makeRobotArm() {
   const grp = new THREE.Group();
-  const noz = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.20, 0.30),
-                             new THREE.MeshLambertMaterial({ color: 0x3a4d75 }));
-  noz.position.y = 0.10; grp.add(noz);
-  const flame1 = new THREE.Mesh(new THREE.ConeGeometry(0.30, 0.95, 12),
-                                new THREE.MeshLambertMaterial({ color: 0xff6a1a, emissive: 0xc01818, emissiveIntensity: 0.8 }));
-  flame1.position.y = 0.70; grp.add(flame1);
-  const flame2 = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.70, 12),
-                                new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0xc06a1a, emissiveIntensity: 1.0 }));
-  flame2.position.y = 0.55; grp.add(flame2);
+  // base mount on ceiling-ish (visible top)
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(0.40, 0.30, 0.40),
+    new THREE.MeshLambertMaterial({ color: 0x1a2540 })
+  );
+  base.position.y = 2.30; grp.add(base);
+  // pivot ring
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.16, 0.04, 8, 18),
+    new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0x6a4a10, emissiveIntensity: 0.5 })
+  );
+  ring.position.y = 2.15; ring.rotation.x = Math.PI / 2;
+  grp.add(ring);
+  // arm assembly group (so we can swing it)
+  const armG = new THREE.Group();
+  armG.position.y = 2.15;
+  grp.add(armG);
+  // vertical down-arm
+  const down = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.85, 0.18),
+    new THREE.MeshLambertMaterial({ color: 0xaab4c4 })
+  );
+  down.position.y = -0.42; armG.add(down);
+  // dark joint stripes
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.06, 0.19),
+                                new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
+  stripe.position.y = -0.30; armG.add(stripe);
+  const stripe2 = stripe.clone(); stripe2.position.y = -0.55; armG.add(stripe2);
+  // horizontal sweep bar (this is what hits the player at chest height)
+  const bar = new THREE.Mesh(
+    new THREE.BoxGeometry(1.40, 0.18, 0.20),
+    new THREE.MeshLambertMaterial({ color: 0xd33a3a, emissive: 0x6a1818, emissiveIntensity: 0.5 })
+  );
+  bar.position.y = -0.92; armG.add(bar);
+  // claw at the end
+  const claw = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.30, 0.18),
+                              new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
+  claw.position.set(0.70, -1.00, 0); armG.add(claw);
+  // hazard stripe on the bar
+  const haz = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.06, 0.21),
+                             new THREE.MeshLambertMaterial({ color: 0xffd23a }));
+  haz.position.y = -0.92; armG.add(haz);
+  grp.userData.armG = armG;
   return grp;
 }
-function makeElec() {
+
+// 9. SPECIMEN TANK IN LANE — LANE DODGE (smaller than side-decoration tubes)
+function makeSpecimenTankBlock() {
   const grp = new THREE.Group();
-  const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.2, 0.20),
-                            new THREE.MeshLambertMaterial({ color: 0x3a4d75 }));
-  p1.position.set(-0.50, 0.60, 0); grp.add(p1);
-  const p2 = p1.clone(); p2.position.x = 0.50; grp.add(p2);
-  const arc = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5),
-                             new THREE.MeshBasicMaterial({ color: 0xa466ff, transparent: true, opacity: 0.85 }));
-  arc.position.set(0, 0.85, 0); grp.add(arc);
-  grp.userData.arc = arc;
+  // base
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.65, 0.35, 16),
+    new THREE.MeshLambertMaterial({ color: 0x2a3144 })
+  );
+  base.position.y = 0.175; grp.add(base);
+  const rim = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.58, 0.58, 0.10, 16),
+    new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0x6a4a10, emissiveIntensity: 0.5 })
+  );
+  rim.position.y = 0.38; grp.add(rim);
+  // glass tube
+  const glass = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.50, 0.50, 1.60, 18, 1, true),
+    new THREE.MeshLambertMaterial({
+      color: 0x39e36e, emissive: 0x0e6a2a, emissiveIntensity: 0.8,
+      transparent: true, opacity: 0.55, side: THREE.DoubleSide
+    })
+  );
+  glass.position.y = 1.25; grp.add(glass);
+  // inner liquid
+  const liquid = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.46, 0.46, 1.5, 18),
+    new THREE.MeshLambertMaterial({
+      color: 0x39e36e, emissive: 0x1aa040, emissiveIntensity: 1.2,
+      transparent: true, opacity: 0.5
+    })
+  );
+  liquid.position.y = 1.25; grp.add(liquid);
+  // creature inside
+  const alien = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 14, 12),
+    new THREE.MeshLambertMaterial({ color: 0x9b3aff, emissive: 0x6a1880, emissiveIntensity: 0.4 })
+  );
+  alien.scale.set(1, 1.2, 1);
+  alien.position.y = 1.10; grp.add(alien);
+  grp.userData.alien = alien;
+  // top cap
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.54, 0.54, 0.20, 16),
+    new THREE.MeshLambertMaterial({ color: 0x05070d })
+  );
+  cap.position.y = 2.15; grp.add(cap);
+  // hazard X marking on the side of the base
+  const x1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.20, 0.04),
+                            new THREE.MeshLambertMaterial({ color: 0xd33a3a }));
+  x1.position.set(0, 0.18, 0.60); x1.rotation.z = Math.PI / 4; grp.add(x1);
+  const x2 = x1.clone(); x2.rotation.z = -Math.PI / 4; grp.add(x2);
   return grp;
 }
-function makeCrystal() {
+
+// 10. PORTAL CRACK — JUMP (glowing purple-cyan crack on the floor)
+function makePortalCrack() {
   const grp = new THREE.Group();
+  // base oval — purple
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.95, 0.95, 0.04, 22),
+    new THREE.MeshLambertMaterial({ color: 0x6a1880, emissive: 0x6a1880, emissiveIntensity: 0.8 })
+  );
+  base.position.y = 0.02; grp.add(base);
+  // jagged inner crack — cyan
+  const inner = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.55, 0.06, 16),
+    new THREE.MeshLambertMaterial({ color: 0x46f0ff, emissive: 0x46f0ff, emissiveIntensity: 1.1 })
+  );
+  inner.position.y = 0.03; grp.add(inner);
+  // jagged shards radiating outward
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const shard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.10, 0.05, 0.40),
+      new THREE.MeshLambertMaterial({ color: 0xa466ff, emissive: 0x6a1880, emissiveIntensity: 0.8 })
+    );
+    shard.position.set(Math.cos(a) * 0.55, 0.04, Math.sin(a) * 0.55);
+    shard.rotation.y = a;
+    grp.add(shard);
+  }
+  // floating glow particles (just a few small cubes hovering)
   for (let i = 0; i < 3; i++) {
-    const c = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.2 - i*0.18, 6),
-                             new THREE.MeshLambertMaterial({ color: 0x7a3aff, emissive: 0x3a1080, emissiveIntensity: 0.8 }));
-    c.position.set((i - 1) * 0.24, 0.6 - i*0.09, 0);
-    grp.add(c);
-  }
-  return grp;
-}
-function makeDrone() {
-  const grp = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.30, 16, 12),
-                              new THREE.MeshLambertMaterial({ color: 0x3a4d75 }));
-  body.scale.set(1.4, 0.55, 1.1);
-  grp.add(body);
-  const cano = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10),
-                              new THREE.MeshLambertMaterial({ color: 0x0a1c2a }));
-  cano.position.set(0, 0.05, 0.16);
-  grp.add(cano);
-  for (let i = -1; i <= 1; i += 2) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.04),
-                               new THREE.MeshLambertMaterial({ color: 0x9bb1d6 }));
-    arm.position.set(i * 0.45, 0.16, 0); grp.add(arm);
-    const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.02, 18),
-                               new THREE.MeshBasicMaterial({ color: 0x1ab3ff, transparent: true, opacity: 0.45 }));
-    rot.position.set(i * 0.45, 0.20, 0);
-    grp.add(rot); grp.userData['rot'+i] = rot;
-  }
-  return grp;
-}
-function makeEnergyWall() {
-  const grp = new THREE.Group();
-  const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.0, 0.20),
-                            new THREE.MeshLambertMaterial({ color: 0x3a4d75 }));
-  p1.position.set(-0.6, 0.5, 0); grp.add(p1);
-  const p2 = p1.clone(); p2.position.x = 0.6; grp.add(p2);
-  for (let i = 0; i < 4; i++) {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.08),
-                               new THREE.MeshBasicMaterial({ color: 0x1ab3ff, transparent: true, opacity: 0.85 }));
-    bar.position.set(0, 0.18 + i * 0.22, 0);
-    grp.add(bar);
+    const p = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.06, 0.06),
+      new THREE.MeshBasicMaterial({ color: 0x46f0ff, transparent: true, opacity: 0.85 })
+    );
+    p.position.set((Math.random() - 0.5) * 0.6, 0.25 + Math.random() * 0.3, (Math.random() - 0.5) * 0.6);
+    p.userData.phase = Math.random() * Math.PI * 2;
+    p.userData.baseY = p.position.y;
+    grp.add(p);
   }
   return grp;
 }
 
 const FACTORIES = {
-  gear: makeGear, shield: makeShield, magnet: makeMagnet,
-  alien: makeAlien, tox: makeTox, fire: makeFire,
-  elec: makeElec, crystal: makeCrystal, drone: makeDrone, energy: makeEnergyWall
+  crystal: makeChronoCrystal, shield: makeShield, magnet: makeMagnet,
+  // Mark's MVP-10:
+  redx: makeRedXCrate, lowlaser: makeLowLaser, highlaser: makeHighLaser,
+  efence: makeElecFence, labcart: makeLabCart, steamvent: makeSteamVent,
+  slime: makeSlimePuddle, robotarm: makeRobotArm, spectank: makeSpecimenTankBlock,
+  portalcrack: makePortalCrack
 };
-function spawnObj(kind, lane, z, jumpable) {
+// clearance metadata: how each hazard is cleared by the player
+const HAZARD_META = {
+  redx:        { clear: 'lane',  height: 1.2 },
+  lowlaser:    { clear: 'jump',  height: 0.7 },
+  highlaser:   { clear: 'slide', height: 1.6 },
+  efence:      { clear: 'lane',  height: 1.7 },
+  labcart:     { clear: 'lane',  height: 1.0 },
+  steamvent:   { clear: 'timed', height: 2.0 },   // jump during off-cycle
+  slime:       { clear: 'jump',  height: 0.3 },
+  robotarm:    { clear: 'slide', height: 1.3 },
+  spectank:    { clear: 'lane',  height: 2.2 },
+  portalcrack: { clear: 'jump',  height: 0.1 }
+};
+const HAZARDS_BY_CLEAR = {
+  jump:  ['lowlaser','slime','portalcrack'],
+  slide: ['highlaser','robotarm'],
+  lane:  ['redx','efence','labcart','spectank'],
+  timed: ['steamvent']
+};
+function pickHazardByWeights() {
+  // 30% jump / 20% slide / 40% lane / 10% timed
+  const r = Math.random();
+  let bucket;
+  if      (r < 0.30) bucket = 'jump';
+  else if (r < 0.50) bucket = 'slide';
+  else if (r < 0.90) bucket = 'lane';
+  else               bucket = 'timed';
+  const opts = HAZARDS_BY_CLEAR[bucket];
+  return opts[Math.floor(Math.random() * opts.length)];
+}
+function spawnObj(kind, lane, z) {
   const m = FACTORIES[kind]();
   m.position.set(lanePosX(lane), 0, z);
-  if (kind === 'gear' || kind === 'shield' || kind === 'magnet') m.position.y = 1.1;
-  if (kind === 'alien') m.position.y = 0.6;
-  if (kind === 'drone') m.position.y = 1.8;
+  if (kind === 'crystal' || kind === 'shield' || kind === 'magnet') m.position.y = 1.1;
   pickGroup.add(m);
-  objects.push({ kind, lane, z, mesh: m, jumpable: !!jumpable, got: false, phase: Math.random()*Math.PI*2 });
+  const meta = HAZARD_META[kind] || null;
+  objects.push({
+    kind, lane, z, mesh: m, got: false,
+    phase: Math.random() * Math.PI * 2,
+    clear: meta ? meta.clear : null,
+    height: meta ? meta.height : 0,
+    // timed-hazard cycle state (steam vent)
+    cycleT: Math.random() * 1.4
+  });
 }
-const HAZARD_KINDS = ['alien','tox','fire','elec','crystal','drone','energy'];
 const FAR_Z = -110;
 function trySpawn() {
   const r = Math.random();
@@ -1038,30 +1381,35 @@ function trySpawn() {
   if      (r < 0.06) spawnObj('shield', lane, FAR_Z);
   else if (r < 0.10) spawnObj('magnet', lane, FAR_Z);
   else if (r < 0.46) {
-    const pick = HAZARD_KINDS[Math.floor(Math.random()*HAZARD_KINDS.length)];
-    spawnObj(pick, lane, FAR_Z, pick==='tox' || pick==='energy');
+    // single hazard
+    const pick = pickHazardByWeights();
+    spawnObj(pick, lane, FAR_Z);
+    // 22% chance to double up in another lane (forces a swap or right input)
     if (Math.random() < 0.22) {
       const opts = [-1,0,1].filter(L => L !== lane);
       const lane2 = opts[Math.floor(Math.random()*opts.length)];
-      const pick2 = HAZARD_KINDS[Math.floor(Math.random()*HAZARD_KINDS.length)];
-      spawnObj(pick2, lane2, FAR_Z - 1.2, pick2==='tox' || pick2==='energy');
+      const pick2 = pickHazardByWeights();
+      spawnObj(pick2, lane2, FAR_Z - 1.2);
     }
   } else if (r < 0.62) {
+    // crystal string (3-5 in a lane)
     const n = 3 + Math.floor(Math.random()*3);
-    for (let k = 0; k < n; k++) spawnObj('gear', lane, FAR_Z - k * 2.0);
+    for (let k = 0; k < n; k++) spawnObj('crystal', lane, FAR_Z - k * 2.0);
   } else {
-    spawnObj('gear', lane, FAR_Z);
+    spawnObj('crystal', lane, FAR_Z);
   }
 }
 
 // ============ game state =============================================
-const GEAR_GOAL = 50;
+const CRYSTAL_GOAL = 50;
 let state = 'play';
-let dist = 0, speed = 16.0, gears = 0, goalDone = false;
+let dist = 0, speed = 16.0, crystals = 0, goalDone = false;
 let best = parseInt(localStorage.getItem('sdr_best') || '0', 10) || 0;
-let bestG = parseInt(localStorage.getItem('sdr_bestG') || '0', 10) || 0;
+let bestC = parseInt(localStorage.getItem('sdr_bestC') || '0', 10) || 0;
 let lane = 0, laneF = 0;
 let jumpV = 0, jumpY = 0, onGround = true;
+let slideT = 0;                                    // seconds remaining in slide
+const SLIDE_DURATION = 0.6;
 let shield = 0, magnet = 0;
 let spawnAcc = 0;
 let runT = 0;
@@ -1069,12 +1417,24 @@ let shake = 0;
 
 // ============ input ==================================================
 function moveLane(d) { if (state==='play') lane = Math.max(-1, Math.min(1, lane + d)); }
-function doJump() { if (state==='play' && onGround) { jumpV = 7.0; onGround = false; } }
+function doJump() {
+  if (state !== 'play') return;
+  // Slide cancels into jump if you tap up while sliding
+  if (slideT > 0) slideT = 0;
+  if (onGround) { jumpV = 7.0; onGround = false; }
+}
+function doSlide() {
+  if (state !== 'play') return;
+  // mid-air slide drops you to ground for a slide
+  if (!onGround) { jumpY = 0; jumpV = 0; onGround = true; }
+  slideT = SLIDE_DURATION;
+}
 window.addEventListener('keydown', e => {
   if (state !== 'play' && (e.key === ' ' || e.key === 'Enter')) { reset(); return; }
   if (e.key === 'ArrowLeft' || e.key === 'a') moveLane(-1);
   else if (e.key === 'ArrowRight' || e.key === 'd') moveLane(1);
   else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') { e.preventDefault(); doJump(); }
+  else if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); doSlide(); }
 });
 let tsx = 0, tsy = 0, tracking = false;
 canvas.addEventListener('pointerdown', e => { tsx = e.clientX; tsy = e.clientY; tracking = true; });
@@ -1085,6 +1445,7 @@ canvas.addEventListener('pointerup', e => {
   if (Math.abs(dx) < 24 && Math.abs(dy) < 24) { doJump(); return; }
   if (Math.abs(dx) > Math.abs(dy)) moveLane(dx > 0 ? 1 : -1);
   else if (dy < 0) doJump();
+  else doSlide();                                  // swipe DOWN = slide
 });
 document.getElementById('overlay').addEventListener('click', () => { if (state !== 'play') reset(); });
 
@@ -1092,21 +1453,22 @@ document.getElementById('overlay').addEventListener('click', () => { if (state !
 function reset() {
   for (const o of objects) pickGroup.remove(o.mesh);
   objects.length = 0;
-  state = 'play'; dist = 0; speed = 16.0; gears = 0; goalDone = false;
+  state = 'play'; dist = 0; speed = 16.0; crystals = 0; goalDone = false;
   lane = 0; laneF = 0; jumpV = 0; jumpY = 0; onGround = true;
+  slideT = 0;
   shield = 0; magnet = 0; spawnAcc = 0; runT = 0; shake = 0;
   document.getElementById('overlay').classList.remove('on');
   for (let i = 0; i < 6; i++) {
-    spawnObj('gear', Math.floor(Math.random()*3) - 1, -25 - i * 8);
+    spawnObj('crystal', Math.floor(Math.random()*3) - 1, -25 - i * 8);
   }
 }
-function score() { return Math.floor(dist * 3) + gears * 20; }
+function score() { return Math.floor(dist * 3) + crystals * 20; }
 function showOverlay(title, kind) {
   const ov = document.getElementById('overlay');
   document.getElementById('ov-h1').textContent = title;
-  document.getElementById('ov-h2').textContent = kind === 'won' ? 'TIME MACHINE REPAIRED!' : '';
-  document.getElementById('ov-h1').style.color = kind === 'won' ? '#e8a516' : '#d33a3a';
-  document.getElementById('ov-p1').textContent = '⚙ ' + gears + ' / ' + GEAR_GOAL;
+  document.getElementById('ov-h2').textContent = kind === 'won' ? 'TIMELINE STABILIZED!' : '';
+  document.getElementById('ov-h1').style.color = kind === 'won' ? '#b8a8ff' : '#d33a3a';
+  document.getElementById('ov-p1').textContent = '💎 ' + crystals + ' / ' + CRYSTAL_GOAL;
   document.getElementById('ov-p2').textContent = 'SCORE ' + score() + '   •   ' + Math.floor(dist * 3) + ' m';
   ov.classList.add('on');
 }
@@ -1129,6 +1491,8 @@ function tick() {
       jumpV -= 18 * dt;
       if (jumpY <= 0) { jumpY = 0; onGround = true; jumpV = 0; }
     }
+    // slide timer countdown
+    if (slideT > 0) slideT = Math.max(0, slideT - dt);
     // texture scroll = illusion of forward motion
     floorTex.offset.y -= dt * speed * 0.018;
     ceilTex.offset.y  -= dt * speed * 0.018;
@@ -1172,49 +1536,74 @@ function tick() {
       const o = objects[i];
       if (o.got) continue;
       o.z += speed * dt;
-      if (magnet > 0 && o.kind === 'gear' && o.z > -30 && o.z < 5) {
+      // magnet pulls chrono crystals
+      if (magnet > 0 && o.kind === 'crystal' && o.z > -30 && o.z < 5) {
         if (o.lane !== Math.round(laneF)) o.lane = Math.round(laneF);
       }
       o.mesh.position.x += (lanePosX(o.lane) - o.mesh.position.x) * Math.min(1, dt * 14);
       o.mesh.position.z = o.z;
-      // animations
-      if (o.kind === 'gear') {
-        o.mesh.rotation.z = runT * 1.5 + o.phase;
-        o.mesh.position.y = 1.0 + Math.sin(runT * 2 + o.phase) * 0.08;
+      // per-kind animations
+      if (o.kind === 'crystal') {
+        o.mesh.rotation.y = runT * 1.8 + o.phase;
+        o.mesh.rotation.z = Math.sin(runT * 1.2 + o.phase) * 0.10;
+        o.mesh.position.y = 1.0 + Math.sin(runT * 2 + o.phase) * 0.10;
       } else if (o.kind === 'shield' || o.kind === 'magnet') {
         o.mesh.rotation.y = runT * 1.2;
         o.mesh.position.y = 1.1 + Math.sin(runT*2 + o.phase) * 0.08;
-      } else if (o.kind === 'alien') {
-        o.mesh.position.y = 0.6 + Math.abs(Math.sin(runT*3 + o.phase)) * 0.18;
-        o.mesh.rotation.y = Math.sin(runT*2 + o.phase) * 0.15;
-      } else if (o.kind === 'drone') {
-        o.mesh.position.y = 1.8 + Math.sin(runT*2 + o.phase) * 0.15;
-        const r1 = o.mesh.userData['rot-1'], r2 = o.mesh.userData['rot1'];
-        if (r1) r1.rotation.y += dt * 60;
-        if (r2) r2.rotation.y -= dt * 60;
-      } else if (o.kind === 'fire') {
-        const fchild = o.mesh.children[1];
-        if (fchild) fchild.scale.y = 1 + Math.sin(runT * 6 + o.phase) * 0.15;
-      } else if (o.kind === 'elec') {
-        const arc = o.mesh.userData.arc;
-        if (arc) arc.material.opacity = 0.4 + 0.5 * Math.abs(Math.sin(runT * 8 + o.phase));
-      } else if (o.kind === 'tox') {
+      } else if (o.kind === 'robotarm') {
+        // swing the arm back and forth horizontally
+        const armG = o.mesh.userData.armG;
+        if (armG) armG.rotation.z = Math.sin(runT * 3 + o.phase) * 0.55;
+      } else if (o.kind === 'efence') {
+        // pulse arc opacity
+        const arcs = o.mesh.userData.arcs;
+        if (arcs) for (const a of arcs) a.material.opacity = 0.5 + 0.5 * Math.abs(Math.sin(runT * 9 + o.phase));
+      } else if (o.kind === 'lowlaser' || o.kind === 'highlaser') {
+        // subtle beam flicker
+        const beam = o.mesh.userData.beam;
+        if (beam) beam.material.opacity = 0.85 + 0.15 * Math.sin(runT * 14 + o.phase);
+      } else if (o.kind === 'slime') {
         for (const b of o.mesh.children) {
           if (b.userData && b.userData.phase != null) {
-            b.position.y = 0.15 + 0.18 * Math.abs(Math.sin(runT*3 + b.userData.phase));
+            b.position.y = 0.18 + 0.18 * Math.abs(Math.sin(runT*3 + b.userData.phase));
           }
+        }
+      } else if (o.kind === 'spectank') {
+        const al = o.mesh.userData.alien;
+        if (al) al.position.y = 1.10 + Math.sin(runT * 2 + o.phase) * 0.10;
+      } else if (o.kind === 'labcart') {
+        // slight horizontal sway
+        o.mesh.rotation.y = Math.sin(runT * 3 + o.phase) * 0.05;
+      } else if (o.kind === 'portalcrack') {
+        // floating glow particles bob
+        for (const c of o.mesh.children) {
+          if (c.userData && c.userData.baseY != null) {
+            c.position.y = c.userData.baseY + Math.sin(runT * 4 + c.userData.phase) * 0.05;
+          }
+        }
+      } else if (o.kind === 'steamvent') {
+        // 1.4s cycle: 0.7s on, 0.7s off. Active when (cycleT % 1.4) < 0.7.
+        o.cycleT += dt;
+        const on = (o.cycleT % 1.4) < 0.7;
+        const sList = o.mesh.userData.steam || [];
+        for (const s of sList) s.visible = on;
+        o.steamOn = on;
+        // pulse steam scale during the on phase
+        if (on) {
+          const ph = (o.cycleT % 1.4) / 0.7;
+          for (const s of sList) s.scale.y = 0.6 + 1.2 * Math.sin(ph * Math.PI);
         }
       }
 
-      // collision window
+      // collision window — player is around z=5
       const px = lanePosX(Math.round(laneF));
       if (o.z > 4.0 && o.z < 6.5 && Math.abs(o.mesh.position.x - px) < 1.0) {
-        if (o.kind === 'gear') {
-          o.got = true; gears++; pickGroup.remove(o.mesh);
-          if (gears >= GEAR_GOAL && !goalDone) {
+        if (o.kind === 'crystal') {
+          o.got = true; crystals++; pickGroup.remove(o.mesh);
+          if (crystals >= CRYSTAL_GOAL && !goalDone) {
             goalDone = true; state = 'won';
             if (score() > best) { best = score(); localStorage.setItem('sdr_best', best); }
-            if (gears > bestG)  { bestG = gears; localStorage.setItem('sdr_bestG', bestG); }
+            if (crystals > bestC)  { bestC = crystals; localStorage.setItem('sdr_bestC', bestC); }
             showOverlay('YOU DID IT!', 'won');
           }
         } else if (o.kind === 'shield') {
@@ -1222,13 +1611,26 @@ function tick() {
         } else if (o.kind === 'magnet') {
           o.got = true; magnet = 6; pickGroup.remove(o.mesh);
         } else {
-          const cleared = o.jumpable && jumpY > 0.6;
+          // HAZARD — check clear method
+          let cleared = false;
+          if (o.clear === 'jump') {
+            cleared = jumpY > 0.6;
+          } else if (o.clear === 'slide') {
+            cleared = slideT > 0;
+          } else if (o.clear === 'lane') {
+            cleared = false;        // must be in a different lane (already filtered by x-check)
+          } else if (o.clear === 'timed') {
+            // steam vent: cleared if steam is currently OFF
+            cleared = !o.steamOn;
+            // also cleared if you jump over it during the on-phase
+            if (!cleared && jumpY > 1.2) cleared = true;
+          }
           if (!cleared) {
             if (shield > 0) { o.got = true; shield = 0; shake = 0.25; pickGroup.remove(o.mesh); }
             else {
               state = 'dead'; shake = 0.4;
               if (score() > best) { best = score(); localStorage.setItem('sdr_best', best); }
-              if (gears > bestG)  { bestG = gears; localStorage.setItem('sdr_bestG', bestG); }
+              if (crystals > bestC)  { bestC = crystals; localStorage.setItem('sdr_bestC', bestC); }
               showOverlay('CAUGHT!', 'dead');
             }
           }
@@ -1245,13 +1647,19 @@ function tick() {
 
     // Danny run animation — smoother, larger amplitude, easeOut on each pose
     const strideSpeed = 6.5;
-    const targetStride = onGround ? Math.sin(runT * strideSpeed) : 0.2;
-    const targetStride2 = onGround ? Math.cos(runT * strideSpeed) : -0.2;
+    const sliding = slideT > 0;
+    const targetStride = sliding ? 0.2 : (onGround ? Math.sin(runT * strideSpeed) : 0.2);
+    const targetStride2 = sliding ? 0.0 : (onGround ? Math.cos(runT * strideSpeed) : -0.2);
     const lerp = Math.min(1, dt * 12);
-    danny.userData.legAngL += (targetStride * 0.90 - danny.userData.legAngL) * lerp;
-    danny.userData.legAngR += (-targetStride * 0.90 - danny.userData.legAngR) * lerp;
-    danny.userData.armAngL += (-targetStride * 0.70 - danny.userData.armAngL) * lerp;
-    danny.userData.armAngR += (targetStride * 0.70 - danny.userData.armAngR) * lerp;
+    // legs: while sliding, both legs out front
+    const tLegL = sliding ? 1.0 : (targetStride * 0.90);
+    const tLegR = sliding ? 0.8 : (-targetStride * 0.90);
+    const tArmL = sliding ? 0.4 : (-targetStride * 0.70);
+    const tArmR = sliding ? 0.4 : (targetStride * 0.70);
+    danny.userData.legAngL += (tLegL - danny.userData.legAngL) * lerp;
+    danny.userData.legAngR += (tLegR - danny.userData.legAngR) * lerp;
+    danny.userData.armAngL += (tArmL - danny.userData.armAngL) * lerp;
+    danny.userData.armAngR += (tArmR - danny.userData.armAngR) * lerp;
     legL.rotation.x = danny.userData.legAngL;
     legR.rotation.x = danny.userData.legAngR;
     armL.rotation.x = danny.userData.armAngL;
@@ -1261,9 +1669,16 @@ function tick() {
     armR.position.y = 1.95 + Math.abs(danny.userData.armAngR) * 0.04;
     // smooth lane lerp
     danny.position.x += (lanePosX(laneF) - danny.position.x) * Math.min(1, dt * 18);
-    danny.position.y = jumpY;
+    // base Y: jump height when in air; while sliding, drop the body lower
+    const slideDip = sliding ? -0.4 : 0;
+    const targetY = jumpY + slideDip;
+    danny.position.y += (targetY - danny.position.y) * Math.min(1, dt * 18);
     // body lean while running (side twist only — keep X stable to avoid fighting the 180° face flip)
-    danny.rotation.z = targetStride * 0.05;
+    // While sliding, body tilts forward strongly
+    const targetZRot = sliding ? 0 : (targetStride * 0.05);
+    const targetXRot = sliding ? -0.85 : 0;
+    danny.rotation.z = targetZRot;
+    danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob
     head.position.y = 2.35 + Math.abs(targetStride2) * 0.025;
     // shadow follows in world-space (stays on the floor)
@@ -1282,11 +1697,11 @@ function tick() {
     camera.position.y += (3.0 - camera.position.y) * 0.15;
   }
 
-  document.getElementById('ui-gears').textContent = gears;
+  document.getElementById('ui-gears').textContent = crystals;
   document.getElementById('ui-score').textContent = score();
   document.getElementById('ui-dist').textContent = Math.floor(dist * 3);
   document.getElementById('ui-best').textContent  = best;
-  document.getElementById('ui-prog').style.width = (Math.min(1, gears / GEAR_GOAL) * 100) + '%';
+  document.getElementById('ui-prog').style.width = (Math.min(1, crystals / CRYSTAL_GOAL) * 100) + '%';
   document.getElementById('pwr-shield').classList.toggle('on', shield > 0);
   document.getElementById('pwr-magnet').classList.toggle('on', magnet > 0);
 
