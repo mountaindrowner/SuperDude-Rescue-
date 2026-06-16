@@ -4,17 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a1a">
-<title>Super Dude Runner — Proof of Concept</title>
+<title>Super Dude Runner — Lab Escape</title>
 <style>
   html, body {
-    margin: 0; padding: 0; height: 100%; background: #0a0a1a; overflow: hidden;
+    margin: 0; padding: 0; height: 100%; background: #06060d; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
     touch-action: none;
   }
   #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-  canvas { image-rendering: pixelated; image-rendering: crisp-edges; background: #0a0a1a;
-           max-width: 100vw; max-height: 100vh; }
+  canvas { background: #06060d; max-width: 100vw; max-height: 100vh; }
   #hint { position: fixed; bottom: 8px; left: 0; right: 0; text-align: center;
           color: #6d7398; font-size: 12px; pointer-events: none; }
 </style>
@@ -29,76 +28,129 @@
   var g = cv.getContext('2d');
   var W = cv.width, H = cv.height;
 
-  // ---- palette (Super Dude Adventures) -------------------------------
+  // ---- palette --------------------------------------------------------
   var C = {
-    sky0: '#1a1640', sky1: '#4a3a78',
-    road: '#15131f', roadEdge: '#2a2540', lane: '#3b3563',
-    gold: '#ffd23a', goldDk: '#a8631a',
-    red: '#ff5d4a', redDk: '#7a1f16',
-    cyan: '#46f0ff', white: '#f4f4ff',
-    coat: '#eef1ff', hair: '#7a4a2a', skin: '#f1c19a', pants: '#26324f'
+    // lab
+    floor0: '#0a0c14', floor1: '#141826', floorEdge: '#22273b',
+    wall0: '#15182a',  wall1: '#1f2538', wallSeam: '#2b3450',
+    ceil:  '#0c0e18',
+    light: '#9fe6ff', lightGlow: 'rgba(159,230,255,0.4)',
+    laneCool: 'rgba(70,240,255,0.18)',
+    // gold gear
+    gold: '#ffd23a', goldDk: '#a8631a', goldLt: '#fff0a8',
+    // hazards
+    tox0: '#9bff5a', tox1: '#5fbf2a', toxDk: '#244a0e',
+    fire0: '#ffd23a', fire1: '#ff7a1a', fire2: '#ff2a2a',
+    elec: '#aef0ff', elecDk: '#46c8ff',
+    crystal: '#a466ff', crystalLt: '#e0c4ff',
+    drone: '#46f0ff', droneDk: '#2a90a0',
+    alien: '#9b6cff', alienLt: '#d8b8ff', alienDk: '#3a1f6e',
+    enemy: '#ff5d4a', enemyDk: '#7a1f16',
+    // danny
+    coat: '#eef1ff', hair: '#7a4a2a', skin: '#f1c19a', pants: '#26324f',
+    cyan: '#46f0ff', white: '#f4f4ff'
   };
 
   // ---- pseudo-3D projection ------------------------------------------
-  // z = distance into the screen (0 = at player's feet, big = horizon).
-  // Returns {x, y, s} screen position + scale for a lane (-1,0,1) at depth z.
-  var HORIZON = H * 0.40;
-  var NEAR_Y  = H * 0.86;
-  var CAM     = 320;          // camera depth constant (tunes the fov)
-  var SPREAD  = W * 0.46;     // full lane spread at the near plane
+  var HORIZON = H * 0.34;        // lower horizon = more 3D depth
+  var NEAR_Y  = H * 0.88;
+  var CAM     = 280;
+  var SPREAD  = W * 0.42;
+  var WALL_Y_TOP = H * 0.04;     // ceiling near-plane y
   function project(lane, z) {
-    var p = CAM / (CAM + z);            // 1 near -> 0 far
+    var p = CAM / (CAM + z);
     return {
       x: W / 2 + lane * SPREAD * p,
       y: HORIZON + (NEAR_Y - HORIZON) * p,
       s: p
     };
   }
+  // for walls: ceiling y at depth z
+  function ceilY(z) {
+    var p = CAM / (CAM + z);
+    return WALL_Y_TOP + (HORIZON - WALL_Y_TOP) * (1 - p) * 0 + HORIZON - (HORIZON - WALL_Y_TOP) * p;
+  }
+  function wallX(side, z) {
+    var p = CAM / (CAM + z);
+    var nearX = (side < 0) ? 0 : W;
+    var farX  = W / 2;
+    return farX + (nearX - farX) * p;
+  }
 
   // ---- game state -----------------------------------------------------
   var S;
+  var GEAR_GOAL = 50;
   function reset() {
     S = {
-      state: 'play',                 // play | dead
+      state: 'play',
       t: 0,
       dist: 0,
-      cores: 0,
-      speed: 7.0,                    // world units per frame
-      lane: 0,                       // current logical lane
-      laneF: 0,                      // smoothed visual lane
-      jump: 0,                       // jump height (px)
+      gears: S ? 0 : 0,
+      goalDone: false,
+      speed: 11.0,
+      lane: 0,
+      laneF: 0,
+      jump: 0,
       jumpV: 0,
       onGround: true,
-      shield: 0,                     // frames of shield remaining
-      objs: [],                      // {kind, lane, z, got}
-      spawnZ: 0,                     // accumulator for spacing
-      stars: [],
-      runT: 0,
+      shield: 0,
+      magnet: 0,
+      objs: [],
+      props: [],          // ambient lab props (light strips, doorway frames)
+      spawnZ: 0,
+      propZ: 0,
       shake: 0,
-      best: S ? S.best : 0
+      runT: 0,
+      best: S ? S.best : 0,
+      bestGears: S ? S.bestGears : 0
     };
-    for (var i = 0; i < 70; i++)
-      S.stars.push({ x: Math.random() * W, y: Math.random() * HORIZON, s: Math.random() < 0.3 ? 2 : 1 });
   }
 
-  var FAR = 2600;                    // spawn distance
+  var FAR = 2800;
   function spawn() {
-    // choose a row of obstacles/cores at the far plane
     var r = Math.random();
     var lane = (Math.floor(Math.random() * 3) - 1);
-    if (r < 0.34) {
-      // obstacle barrier
-      S.objs.push({ kind: 'obst', lane: lane, z: FAR, jumpable: Math.random() < 0.5 });
-    } else if (r < 0.42) {
-      // power core string (3 cores in a lane)
-      for (var k = 0; k < 3; k++)
-        S.objs.push({ kind: 'core', lane: lane, z: FAR + k * 90 });
+    if (r < 0.06) {
+      // shield powerup (rare)
+      S.objs.push({ kind: 'shield', lane: lane, z: FAR });
+    } else if (r < 0.10) {
+      // magnet powerup (rare)
+      S.objs.push({ kind: 'magnet', lane: lane, z: FAR });
     } else if (r < 0.46) {
-      // shield power-up (rare) — the "B-button becomes a power" idea, runner-style
-      S.objs.push({ kind: 'pow', lane: lane, z: FAR });
+      // hazard — pick a type
+      var types = ['alien', 'tox', 'fire', 'elec', 'crystal', 'drone', 'energy'];
+      var pick = types[Math.floor(Math.random() * types.length)];
+      var jumpable = (pick === 'tox' || pick === 'energy');
+      S.objs.push({ kind: pick, lane: lane, z: FAR, jumpable: jumpable });
+      // sometimes double-up a hazard in another lane to force the swap
+      if (Math.random() < 0.22) {
+        var lane2 = ((lane + 1 + Math.floor(Math.random() * 2)) % 3) - 1;
+        if (lane2 !== lane) {
+          var pick2 = types[Math.floor(Math.random() * types.length)];
+          var jumpable2 = (pick2 === 'tox' || pick2 === 'energy');
+          S.objs.push({ kind: pick2, lane: lane2, z: FAR + 30, jumpable: jumpable2 });
+        }
+      }
+    } else if (r < 0.62) {
+      // gear string (3-5 in a lane)
+      var n = 3 + Math.floor(Math.random() * 3);
+      for (var k = 0; k < n; k++)
+        S.objs.push({ kind: 'gear', lane: lane, z: FAR + k * 90 });
     } else {
-      // single core
-      S.objs.push({ kind: 'core', lane: lane, z: FAR });
+      // single gear
+      S.objs.push({ kind: 'gear', lane: lane, z: FAR });
+    }
+  }
+  function spawnProp() {
+    // ambient — periodic ceiling light + doorway frames so the corridor
+    // reads as moving past architecture
+    S.props.push({ kind: 'light', z: FAR });
+    if (Math.random() < 0.45) {
+      S.props.push({ kind: 'frame', z: FAR + 80 });
+    }
+    if (Math.random() < 0.3) {
+      var side = Math.random() < 0.5 ? -1 : 1;
+      S.props.push({ kind: 'sign', side: side, z: FAR + 60, color: Math.random() < 0.5 ? C.tox0 : C.fire0 });
     }
   }
 
@@ -109,22 +161,22 @@
   }
   function doJump() {
     if (S.state !== 'play') return;
-    if (S.onGround) { S.jumpV = 15.5; S.onGround = false; }
+    if (S.onGround) { S.jumpV = 16.0; S.onGround = false; }
   }
   window.addEventListener('keydown', function (e) {
     if (S.state === 'dead' && (e.key === ' ' || e.key === 'Enter')) { reset(); return; }
+    if (S.state === 'won' && (e.key === ' ' || e.key === 'Enter')) { reset(); return; }
     if (e.key === 'ArrowLeft' || e.key === 'a') moveLane(-1);
     else if (e.key === 'ArrowRight' || e.key === 'd') moveLane(1);
     else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') { e.preventDefault(); doJump(); }
   });
-  // touch swipe
   var tsx = 0, tsy = 0, tracking = false;
   cv.addEventListener('pointerdown', function (e) { tsx = e.clientX; tsy = e.clientY; tracking = true; });
   cv.addEventListener('pointerup', function (e) {
     if (!tracking) return; tracking = false;
-    if (S.state === 'dead') { reset(); return; }
+    if (S.state !== 'play') { reset(); return; }
     var dx = e.clientX - tsx, dy = e.clientY - tsy;
-    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) { doJump(); return; }   // tap = jump
+    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) { doJump(); return; }
     if (Math.abs(dx) > Math.abs(dy)) moveLane(dx > 0 ? 1 : -1);
     else if (dy < 0) doJump();
   });
@@ -132,286 +184,671 @@
   // ---- update ---------------------------------------------------------
   function update() {
     if (S.state !== 'play') return;
-    S.t++; S.runT += S.speed * 0.04;
-    S.speed = Math.min(20, 7.0 + S.dist * 0.00018);   // ramp
+    S.t++; S.runT += S.speed * 0.05;
+    S.speed = Math.min(28, 11.0 + S.dist * 0.00028);
     S.dist += S.speed;
     if (S.shield > 0) S.shield--;
+    if (S.magnet > 0) S.magnet--;
     if (S.shake > 0) S.shake--;
 
-    // smooth lane + jump
-    S.laneF += (S.lane - S.laneF) * 0.30;
+    S.laneF += (S.lane - S.laneF) * 0.32;
     if (!S.onGround) {
-      S.jump += S.jumpV; S.jumpV -= 1.15;
+      S.jump += S.jumpV; S.jumpV -= 1.18;
       if (S.jump <= 0) { S.jump = 0; S.onGround = true; S.jumpV = 0; }
     }
 
-    // spawn pacing
     S.spawnZ -= S.speed;
-    if (S.spawnZ <= 0) { spawn(); S.spawnZ = 360 + Math.random() * 240; }
+    if (S.spawnZ <= 0) { spawn(); S.spawnZ = 280 + Math.random() * 220; }
+    S.propZ -= S.speed;
+    if (S.propZ <= 0) { spawnProp(); S.propZ = 220 + Math.random() * 80; }
 
-    // advance objects toward player
     for (var i = 0; i < S.objs.length; i++) {
       var o = S.objs[i];
       o.z -= S.speed;
       if (o.got) continue;
-      // collision window near z=0
+
+      // magnet: pull gears toward the player's lane
+      if (S.magnet > 0 && o.kind === 'gear' && o.z < 600 && o.z > 0) {
+        if (o.lane !== Math.round(S.laneF)) o.lane = Math.round(S.laneF);
+      }
+
       if (o.z < 40 && o.z > -40 && Math.round(S.laneF) === o.lane) {
-        if (o.kind === 'core') {
-          o.got = true; S.cores++;
-        } else if (o.kind === 'pow') {
-          o.got = true; S.shield = 60 * 7;   // 7s shield
-        } else if (o.kind === 'obst') {
-          var cleared = o.jumpable && S.jump > 42;
+        if (o.kind === 'gear') {
+          o.got = true; S.gears++;
+          if (S.gears >= GEAR_GOAL && !S.goalDone) {
+            S.goalDone = true; S.state = 'won';
+            S.best = Math.max(S.best, score());
+            S.bestGears = Math.max(S.bestGears, S.gears);
+          }
+        } else if (o.kind === 'shield') {
+          o.got = true; S.shield = 60 * 6;
+        } else if (o.kind === 'magnet') {
+          o.got = true; S.magnet = 60 * 6;
+        } else {
+          // hazard
+          var cleared = o.jumpable && S.jump > 44;
           if (!cleared) {
-            if (S.shield > 0) { o.got = true; S.shield = 0; S.shake = 16; }
-            else { S.state = 'dead'; S.shake = 24; S.best = Math.max(S.best, score()); }
+            if (S.shield > 0) { o.got = true; S.shield = 0; S.shake = 14; }
+            else {
+              S.state = 'dead'; S.shake = 22;
+              S.best = Math.max(S.best, score());
+              S.bestGears = Math.max(S.bestGears, S.gears);
+            }
           }
         }
       }
     }
-    // cull passed objects
     var w = 0;
     for (var j = 0; j < S.objs.length; j++) if (S.objs[j].z > -120) S.objs[w++] = S.objs[j];
     S.objs.length = w;
-  }
 
-  function score() { return Math.floor(S.dist / 10) + S.cores * 15; }
-
-  // ---- render ---------------------------------------------------------
-  function drawSky() {
-    var grd = g.createLinearGradient(0, 0, 0, HORIZON);
-    grd.addColorStop(0, C.sky0); grd.addColorStop(1, C.sky1);
-    g.fillStyle = grd; g.fillRect(0, 0, W, HORIZON);
-    for (var i = 0; i < S.stars.length; i++) {
-      var st = S.stars[i];
-      g.fillStyle = i % 7 === 0 ? C.gold : 'rgba(255,255,255,0.8)';
-      g.fillRect(st.x | 0, st.y | 0, st.s, st.s);
+    var pw = 0;
+    for (var k = 0; k < S.props.length; k++) {
+      S.props[k].z -= S.speed;
+      if (S.props[k].z > -200) S.props[pw++] = S.props[k];
     }
-    // distant glow / sun
-    var sg = g.createRadialGradient(W * 0.72, HORIZON * 0.5, 4, W * 0.72, HORIZON * 0.5, 90);
-    sg.addColorStop(0, 'rgba(255,210,58,0.55)'); sg.addColorStop(1, 'rgba(255,210,58,0)');
-    g.fillStyle = sg; g.fillRect(0, 0, W, HORIZON);
+    S.props.length = pw;
   }
+  function score() { return Math.floor(S.dist / 8) + S.gears * 20; }
 
-  function drawRoad() {
-    // road body — a trapezoid from horizon to near
-    var L0 = project(-1.5, 0), R0 = project(1.5, 0);
-    var Lh = project(-1.5, 4000), Rh = project(1.5, 4000);
-    g.fillStyle = C.road;
+  // ---- render: lab corridor ------------------------------------------
+  function drawCorridor() {
+    // sky / vanishing point area
+    g.fillStyle = C.ceil; g.fillRect(0, 0, W, HORIZON + 1);
+
+    // ceiling (drawn as gradient strip + side panels)
+    var ceilGrad = g.createLinearGradient(0, 0, 0, HORIZON);
+    ceilGrad.addColorStop(0, '#0a0c18'); ceilGrad.addColorStop(1, '#181d33');
+    g.fillStyle = ceilGrad; g.fillRect(0, 0, W, HORIZON);
+
+    // SIDE WALLS — projected trapezoids from horizon outward
+    // LEFT wall
+    g.fillStyle = C.wall0;
     g.beginPath();
-    g.moveTo(Lh.x, Lh.y); g.lineTo(Rh.x, Rh.y);
-    g.lineTo(R0.x, R0.y); g.lineTo(L0.x, L0.y); g.closePath(); g.fill();
+    g.moveTo(0, 0); g.lineTo(W / 2, HORIZON);
+    g.lineTo(W / 2, HORIZON); g.lineTo(0, HORIZON);
+    g.closePath(); g.fill();
+    // mirror right
+    g.beginPath();
+    g.moveTo(W, 0); g.lineTo(W / 2, HORIZON);
+    g.lineTo(W / 2, HORIZON); g.lineTo(W, HORIZON);
+    g.closePath(); g.fill();
 
-    // edges
-    g.strokeStyle = C.roadEdge; g.lineWidth = 3;
-    g.beginPath(); g.moveTo(Lh.x, Lh.y); g.lineTo(L0.x, L0.y);
-    g.moveTo(Rh.x, Rh.y); g.lineTo(R0.x, R0.y); g.stroke();
+    // wall panel seams — perspective lines from horizon to viewer
+    g.strokeStyle = C.wallSeam; g.lineWidth = 1;
+    for (var ly = 1; ly < 8; ly++) {
+      var yL = (ly / 8) * HORIZON;
+      var yR = yL;
+      g.beginPath();
+      g.moveTo(0, yL); g.lineTo(W / 2, HORIZON); g.stroke();
+      g.beginPath();
+      g.moveTo(W, yR); g.lineTo(W / 2, HORIZON); g.stroke();
+    }
 
-    // lane dividers between lanes (-0.5, 0.5)
+    // FLOOR — perspective grid
+    var floorGrad = g.createLinearGradient(0, HORIZON, 0, NEAR_Y);
+    floorGrad.addColorStop(0, C.floor0); floorGrad.addColorStop(1, C.floor1);
+    g.fillStyle = floorGrad; g.fillRect(0, HORIZON, W, H - HORIZON);
+
+    // lane glow stripes (between lanes -0.5, 0.5)
     [-0.5, 0.5].forEach(function (ln) {
-      var a = project(ln, 4000), b = project(ln, 0);
-      g.strokeStyle = 'rgba(70,240,255,0.20)'; g.lineWidth = 2;
+      var a = project(ln, 5000), b = project(ln, 0);
+      g.strokeStyle = C.laneCool; g.lineWidth = 2;
       g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
     });
+    // road edges
+    var Le0 = project(-1.5, 0), Re0 = project(1.5, 0);
+    var Leh = project(-1.5, 5000), Reh = project(1.5, 5000);
+    g.strokeStyle = '#3b4a7a'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(Leh.x, Leh.y); g.lineTo(Le0.x, Le0.y);
+    g.moveTo(Reh.x, Reh.y); g.lineTo(Re0.x, Re0.y); g.stroke();
 
-    // moving stripes for speed sensation
-    var phase = (S.dist * 0.5) % 200;
-    for (var z = 0; z < 4000; z += 200) {
+    // floor "tile" lines moving forward — gives strong speed sensation
+    var phase = (S.dist * 0.6) % 240;
+    for (var z = 0; z < 4500; z += 240) {
       var zz = z - phase;
-      if (zz < 0) continue;
-      var p1 = project(0, zz), p2 = project(0, zz + 60);
-      var wTop = (project(1.5, zz + 60).x - project(-1.5, zz + 60).x);
-      var wBot = (project(1.5, zz).x - project(-1.5, zz).x);
-      g.fillStyle = 'rgba(255,255,255,0.05)';
-      g.beginPath();
-      g.moveTo(p2.x - wTop / 2, p2.y); g.lineTo(p2.x + wTop / 2, p2.y);
-      g.lineTo(p1.x + wBot / 2, p1.y); g.lineTo(p1.x - wBot / 2, p1.y);
-      g.closePath(); g.fill();
+      if (zz < 10) continue;
+      var p1 = project(-1.5, zz), p2 = project(1.5, zz);
+      g.strokeStyle = (Math.floor((z + S.dist) / 240) % 2 === 0)
+        ? 'rgba(70,240,255,0.10)' : 'rgba(70,240,255,0.05)';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(p1.x, p1.y); g.lineTo(p2.x, p2.y); g.stroke();
     }
   }
 
-  function drawCore(o) {
+  // periodic props (ceiling lights, doorways, wall signs) — gives corridor a sense of architecture passing
+  function drawProps() {
+    // sort far-to-near
+    var ps = S.props.slice().sort(function (a, b) { return b.z - a.z; });
+    for (var i = 0; i < ps.length; i++) {
+      var p = ps[i];
+      if (p.z < 0) continue;
+      var pr = project(0, p.z);
+      var s = pr.s;
+      if (p.kind === 'light') {
+        // wide horizontal light strip at ceiling
+        var lx0 = wallX(-1, p.z), lx1 = wallX(1, p.z);
+        var ly = pr.y - (H * 0.18) * s;
+        // glow halo
+        var rad = 60 * s;
+        var gg = g.createRadialGradient((lx0 + lx1) / 2, ly + 4 * s, 1, (lx0 + lx1) / 2, ly + 4 * s, rad);
+        gg.addColorStop(0, 'rgba(159,230,255,' + Math.min(0.65, 0.8 * s) + ')');
+        gg.addColorStop(1, 'rgba(159,230,255,0)');
+        g.fillStyle = gg; g.fillRect((lx0 + lx1) / 2 - rad, ly - rad / 2, rad * 2, rad);
+        // bar
+        g.fillStyle = C.light;
+        var bw = (lx1 - lx0) * 0.55, bx = (lx0 + lx1) / 2 - bw / 2;
+        g.fillRect(bx, ly, bw, Math.max(2, 4 * s));
+        g.fillStyle = '#ffffff';
+        g.fillRect(bx + 2, ly + 1, bw - 4, Math.max(1, 1.5 * s));
+      } else if (p.kind === 'frame') {
+        // doorway frame on each side
+        var fx0 = wallX(-1, p.z), fx1 = wallX(1, p.z);
+        var topY = pr.y - (H * 0.30) * s;
+        var botY = pr.y - 2 * s;
+        // left frame
+        g.fillStyle = '#1a2038';
+        g.fillRect(fx0 - 14 * s, topY, 14 * s, botY - topY);
+        g.fillStyle = C.wallSeam;
+        g.fillRect(fx0 - 14 * s, topY, 14 * s, 6 * s);
+        // right
+        g.fillStyle = '#1a2038';
+        g.fillRect(fx1, topY, 14 * s, botY - topY);
+        g.fillStyle = C.wallSeam;
+        g.fillRect(fx1, topY, 14 * s, 6 * s);
+      } else if (p.kind === 'sign') {
+        var sx = wallX(p.side, p.z);
+        var sy = pr.y - (H * 0.18) * s;
+        var sw = 24 * s, sh = 12 * s;
+        g.fillStyle = '#0a0c14';
+        g.fillRect(sx - (p.side < 0 ? 0 : sw), sy, sw, sh);
+        g.fillStyle = p.color;
+        g.fillRect(sx - (p.side < 0 ? -2 * s : sw - 2 * s), sy + 2 * s, sw - 4 * s, sh - 4 * s);
+      }
+    }
+  }
+
+  // ---- gear (pickup) -------------------------------------------------
+  function drawGear(o) {
     var pr = project(o.lane, Math.max(0, o.z));
-    var s = pr.s, r = 16 * s;
-    var bob = Math.sin((S.t + o.z) * 0.12) * 4 * s;
-    var cx = pr.x, cy = pr.y - 28 * s + bob;
-    g.save();
-    g.translate(cx, cy);
+    var s = pr.s, r = 22 * s;
+    var bob = Math.sin((S.t + o.z) * 0.12) * 5 * s;
+    var cx = pr.x, cy = pr.y - 32 * s + bob;
+    var ang = (S.t + o.z * 0.4) * 0.07;
+    g.save(); g.translate(cx, cy);
     // glow
-    var gg = g.createRadialGradient(0, 0, 1, 0, 0, r * 1.8);
-    gg.addColorStop(0, 'rgba(70,240,255,0.5)'); gg.addColorStop(1, 'rgba(70,240,255,0)');
+    var gg = g.createRadialGradient(0, 0, 1, 0, 0, r * 2);
+    gg.addColorStop(0, 'rgba(255,210,58,0.55)'); gg.addColorStop(1, 'rgba(255,210,58,0)');
     g.fillStyle = gg; g.fillRect(-r * 2, -r * 2, r * 4, r * 4);
-    // diamond
-    g.fillStyle = C.cyan;
-    g.beginPath(); g.moveTo(0, -r); g.lineTo(r * 0.7, 0); g.lineTo(0, r); g.lineTo(-r * 0.7, 0); g.closePath(); g.fill();
-    g.fillStyle = '#bff7ff';
-    g.beginPath(); g.moveTo(0, -r); g.lineTo(r * 0.35, -r * 0.2); g.lineTo(0, 0); g.lineTo(-r * 0.35, -r * 0.2); g.closePath(); g.fill();
+    // gear teeth
+    g.fillStyle = C.gold;
+    var teeth = 8;
+    for (var i = 0; i < teeth; i++) {
+      var a = ang + i * (Math.PI * 2 / teeth);
+      var tx = Math.cos(a) * r, ty = Math.sin(a) * r;
+      g.save(); g.translate(tx, ty); g.rotate(a);
+      g.fillRect(-r * 0.18, -r * 0.18, r * 0.36, r * 0.36);
+      g.restore();
+    }
+    // gear body
+    g.beginPath(); g.arc(0, 0, r * 0.78, 0, 7); g.fill();
+    // rim
+    g.strokeStyle = C.goldDk; g.lineWidth = Math.max(1, 2 * s);
+    g.beginPath(); g.arc(0, 0, r * 0.78, 0, 7); g.stroke();
+    // center hole
+    g.fillStyle = C.goldDk;
+    g.beginPath(); g.arc(0, 0, r * 0.28, 0, 7); g.fill();
+    // shine
+    g.fillStyle = C.goldLt;
+    g.beginPath(); g.arc(-r * 0.25, -r * 0.30, r * 0.16, 0, 7); g.fill();
     g.restore();
   }
 
-  function drawPow(o) {
+  function drawShieldPower(o) {
     var pr = project(o.lane, Math.max(0, o.z));
-    var s = pr.s, r = 20 * s;
-    var cx = pr.x, cy = pr.y - 30 * s + Math.sin(S.t * 0.2) * 4 * s;
-    var pulse = 0.6 + 0.4 * Math.sin(S.t * 0.3);
+    var s = pr.s, r = 22 * s;
+    var cx = pr.x, cy = pr.y - 34 * s + Math.sin(S.t * 0.18) * 4 * s;
+    var pulse = 0.5 + 0.5 * Math.sin(S.t * 0.25);
+    g.save(); g.translate(cx, cy);
+    var gg = g.createRadialGradient(0, 0, 1, 0, 0, r * 2.2);
+    gg.addColorStop(0, 'rgba(70,240,255,' + (0.6 * pulse) + ')'); gg.addColorStop(1, 'rgba(70,240,255,0)');
+    g.fillStyle = gg; g.fillRect(-r * 2.4, -r * 2.4, r * 4.8, r * 4.8);
+    // shield shape
+    g.fillStyle = C.cyan;
+    g.beginPath();
+    g.moveTo(0, -r); g.lineTo(r * 0.8, -r * 0.5);
+    g.lineTo(r * 0.7, r * 0.6); g.lineTo(0, r);
+    g.lineTo(-r * 0.7, r * 0.6); g.lineTo(-r * 0.8, -r * 0.5);
+    g.closePath(); g.fill();
+    g.strokeStyle = '#bff7ff'; g.lineWidth = 2 * s; g.stroke();
+    g.fillStyle = '#bff7ff';
+    g.fillRect(-r * 0.1, -r * 0.4, r * 0.2, r * 0.7);
+    g.fillRect(-r * 0.35, -r * 0.1, r * 0.7, r * 0.2);
+    g.restore();
+  }
+
+  function drawMagnetPower(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s, r = 22 * s;
+    var cx = pr.x, cy = pr.y - 34 * s + Math.sin(S.t * 0.2) * 4 * s;
+    var pulse = 0.5 + 0.5 * Math.sin(S.t * 0.3);
     g.save(); g.translate(cx, cy);
     var gg = g.createRadialGradient(0, 0, 1, 0, 0, r * 2);
-    gg.addColorStop(0, 'rgba(255,210,58,' + (0.6 * pulse) + ')'); gg.addColorStop(1, 'rgba(255,210,58,0)');
-    g.fillStyle = gg; g.fillRect(-r * 2.2, -r * 2.2, r * 4.4, r * 4.4);
-    // star
-    g.fillStyle = C.gold; g.strokeStyle = C.goldDk; g.lineWidth = 2 * s;
-    g.beginPath();
-    for (var i = 0; i < 10; i++) {
-      var ang = -Math.PI / 2 + i * Math.PI / 5;
-      var rad = (i % 2 === 0) ? r : r * 0.45;
-      var fx = Math.cos(ang) * rad, fy = Math.sin(ang) * rad;
-      if (i === 0) g.moveTo(fx, fy); else g.lineTo(fx, fy);
-    }
-    g.closePath(); g.fill(); g.stroke();
+    gg.addColorStop(0, 'rgba(255,93,74,' + (0.55 * pulse) + ')'); gg.addColorStop(1, 'rgba(255,93,74,0)');
+    g.fillStyle = gg; g.fillRect(-r * 2, -r * 2, r * 4, r * 4);
+    // U-magnet
+    g.fillStyle = C.enemy;
+    g.fillRect(-r * 0.7, -r * 0.7, r * 0.4, r * 1.2);
+    g.fillRect(r * 0.3, -r * 0.7, r * 0.4, r * 1.2);
+    g.fillRect(-r * 0.7, r * 0.3, r * 1.4, r * 0.4);
+    g.fillStyle = '#bff7ff';
+    g.fillRect(-r * 0.7, -r * 0.7, r * 0.4, r * 0.3);
+    g.fillRect(r * 0.3, -r * 0.7, r * 0.4, r * 0.3);
     g.restore();
   }
 
-  function drawObst(o) {
+  // ---- hazards --------------------------------------------------------
+  function drawAlien(o) {
     var pr = project(o.lane, Math.max(0, o.z));
-    var s = pr.s;
-    var w = 64 * s, h = 50 * s;
-    var x = pr.x - w / 2, y = pr.y - h;
-    if (o.jumpable) {
-      // low hurdle — clearly jumpable
-      g.fillStyle = C.redDk; g.fillRect(x, pr.y - 22 * s, w, 22 * s);
-      g.fillStyle = C.red; g.fillRect(x, pr.y - 22 * s, w, 8 * s);
-      // hazard stripes
-      g.fillStyle = C.gold;
-      for (var i = 0; i < 5; i++) g.fillRect(x + i * (w / 5), pr.y - 18 * s, (w / 5) * 0.5, 6 * s);
-      // up-arrow hint
-      g.fillStyle = 'rgba(255,255,255,0.85)';
+    var s = pr.s, r = 36 * s;
+    var bob = Math.abs(Math.sin(S.t * 0.18 + o.z * 0.01)) * 10 * s;
+    var cx = pr.x, cy = pr.y - 18 * s - bob;
+    // shadow
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    g.beginPath(); g.ellipse(cx, pr.y - 2 * s, r * 0.7, 6 * s, 0, 0, 7); g.fill();
+    // body blob
+    g.fillStyle = C.alienDk;
+    g.beginPath(); g.ellipse(cx, cy, r, r * 1.05, 0, 0, 7); g.fill();
+    g.fillStyle = C.alien;
+    g.beginPath(); g.ellipse(cx, cy - r * 0.05, r * 0.9, r * 0.95, 0, 0, 7); g.fill();
+    g.fillStyle = C.alienLt;
+    g.beginPath(); g.ellipse(cx - r * 0.25, cy - r * 0.35, r * 0.3, r * 0.35, 0, 0, 7); g.fill();
+    // 3 eyes
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(cx - r * 0.35, cy - r * 0.05, r * 0.18, 0, 7); g.fill();
+    g.beginPath(); g.arc(cx,            cy - r * 0.18, r * 0.20, 0, 7); g.fill();
+    g.beginPath(); g.arc(cx + r * 0.35, cy - r * 0.05, r * 0.18, 0, 7); g.fill();
+    g.fillStyle = '#000';
+    g.beginPath(); g.arc(cx - r * 0.35, cy - r * 0.02, r * 0.09, 0, 7); g.fill();
+    g.beginPath(); g.arc(cx,            cy - r * 0.15, r * 0.10, 0, 7); g.fill();
+    g.beginPath(); g.arc(cx + r * 0.35, cy - r * 0.02, r * 0.09, 0, 7); g.fill();
+    // sharp teeth
+    g.fillStyle = '#fff';
+    for (var ti = 0; ti < 4; ti++) {
+      var tx = cx + (ti - 1.5) * r * 0.18;
       g.beginPath();
-      g.moveTo(pr.x, pr.y - 40 * s); g.lineTo(pr.x + 8 * s, pr.y - 30 * s);
-      g.lineTo(pr.x - 8 * s, pr.y - 30 * s); g.closePath(); g.fill();
-    } else {
-      // tall barrier — must change lane
-      g.fillStyle = C.redDk; g.fillRect(x, y, w, h);
-      g.fillStyle = C.red; g.fillRect(x, y, w, 10 * s);
-      g.strokeStyle = C.gold; g.lineWidth = 3 * s; g.strokeRect(x, y, w, h);
-      g.fillStyle = C.gold;
-      for (var j = 0; j < 4; j++) g.fillRect(x + 6 * s, y + (12 + j * 11) * s, w - 12 * s, 4 * s);
+      g.moveTo(tx - r * 0.07, cy + r * 0.3);
+      g.lineTo(tx + r * 0.07, cy + r * 0.3);
+      g.lineTo(tx, cy + r * 0.5);
+      g.closePath(); g.fill();
+    }
+    // tentacles
+    g.fillStyle = C.alien;
+    for (var w = -2; w <= 2; w++) {
+      var ww = Math.sin(S.t * 0.18 + w) * 4 * s;
+      g.fillRect(cx + w * r * 0.25 - r * 0.07, cy + r * 0.5, r * 0.14, r * 0.5 + ww);
     }
   }
 
+  function drawTox(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s, w = 70 * s, h = 22 * s;
+    var cx = pr.x, cy = pr.y - 2 * s;
+    // base puddle
+    g.fillStyle = C.toxDk;
+    g.beginPath(); g.ellipse(cx, cy + h * 0.2, w * 0.62, h * 0.6, 0, 0, 7); g.fill();
+    g.fillStyle = C.tox1;
+    g.beginPath(); g.ellipse(cx, cy, w * 0.6, h * 0.5, 0, 0, 7); g.fill();
+    g.fillStyle = C.tox0;
+    g.beginPath(); g.ellipse(cx, cy - h * 0.05, w * 0.45, h * 0.35, 0, 0, 7); g.fill();
+    // bubbles
+    for (var i = 0; i < 6; i++) {
+      var bx = cx + ((S.t * 0.3 + i * 1.7) % 1 - 0.5) * w * 0.6;
+      var by = cy - ((S.t * 1.0 + i * 23) % 36) * s * 0.4;
+      var br = (3 + (i % 3) * 1.2) * s;
+      g.fillStyle = 'rgba(155,255,90,0.55)';
+      g.beginPath(); g.arc(bx, by, br, 0, 7); g.fill();
+    }
+    // hazard arrow up (jumpable)
+    var armY = cy - 60 * s;
+    g.fillStyle = 'rgba(255,255,255,0.85)';
+    g.beginPath();
+    g.moveTo(cx, armY); g.lineTo(cx + 10 * s, armY + 10 * s);
+    g.lineTo(cx - 10 * s, armY + 10 * s); g.closePath(); g.fill();
+  }
+
+  function drawFire(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s;
+    var cx = pr.x, baseY = pr.y - 2 * s;
+    // nozzle
+    g.fillStyle = '#555';
+    g.fillRect(cx - 14 * s, baseY - 8 * s, 28 * s, 12 * s);
+    g.fillStyle = '#333';
+    g.fillRect(cx - 10 * s, baseY - 14 * s, 20 * s, 8 * s);
+    // flame columns
+    var flick = Math.sin(S.t * 0.6) * 6 * s;
+    var hgt = (70 + flick) * s;
+    // outer
+    g.fillStyle = C.fire2;
+    g.beginPath();
+    g.moveTo(cx - 22 * s, baseY - 12 * s);
+    g.quadraticCurveTo(cx, baseY - hgt * 1.2, cx + 22 * s, baseY - 12 * s);
+    g.closePath(); g.fill();
+    // mid
+    g.fillStyle = C.fire1;
+    g.beginPath();
+    g.moveTo(cx - 15 * s, baseY - 14 * s);
+    g.quadraticCurveTo(cx, baseY - hgt * 1.05, cx + 15 * s, baseY - 14 * s);
+    g.closePath(); g.fill();
+    // inner
+    g.fillStyle = C.fire0;
+    g.beginPath();
+    g.moveTo(cx - 8 * s, baseY - 16 * s);
+    g.quadraticCurveTo(cx, baseY - hgt * 0.85, cx + 8 * s, baseY - 16 * s);
+    g.closePath(); g.fill();
+    // sparks
+    for (var i = 0; i < 4; i++) {
+      var sx = cx + (Math.sin(S.t * 0.5 + i) * 18 * s);
+      var sy = baseY - hgt * 0.7 - ((S.t * 2 + i * 7) % 30) * s * 0.5;
+      g.fillStyle = C.fire0;
+      g.fillRect(sx, sy, 2 * s, 2 * s);
+    }
+  }
+
+  function drawElec(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s;
+    var cx = pr.x, baseY = pr.y - 2 * s;
+    // two pylons
+    g.fillStyle = '#3a3f55';
+    g.fillRect(cx - 24 * s, baseY - 50 * s, 8 * s, 50 * s);
+    g.fillRect(cx + 16 * s, baseY - 50 * s, 8 * s, 50 * s);
+    g.fillStyle = '#5d6680';
+    g.fillRect(cx - 26 * s, baseY - 54 * s, 12 * s, 6 * s);
+    g.fillRect(cx + 14 * s, baseY - 54 * s, 12 * s, 6 * s);
+    // arc — jagged lightning between them
+    g.strokeStyle = C.elec; g.lineWidth = Math.max(2, 3 * s);
+    g.shadowColor = C.elec; g.shadowBlur = 12 * s;
+    g.beginPath();
+    var x = cx - 20 * s, y = baseY - 30 * s;
+    g.moveTo(x, y);
+    for (var i = 0; i < 5; i++) {
+      x += 8 * s;
+      y += (Math.sin(S.t * 0.7 + i * 2.3) * 8 * s);
+      g.lineTo(x, y);
+    }
+    g.stroke();
+    g.shadowBlur = 0;
+    // sparks
+    for (var j = 0; j < 5; j++) {
+      var sx = cx - 18 * s + j * 9 * s + Math.sin(S.t * 0.3 + j) * 2 * s;
+      var sy = baseY - 30 * s + Math.sin(S.t * 0.5 + j * 2) * 6 * s;
+      g.fillStyle = '#fff'; g.fillRect(sx, sy, 2 * s, 2 * s);
+    }
+  }
+
+  function drawCrystal(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s;
+    var cx = pr.x, baseY = pr.y;
+    var hgt = 70 * s, wd = 22 * s;
+    // shadow
+    g.fillStyle = 'rgba(0,0,0,0.4)';
+    g.beginPath(); g.ellipse(cx, baseY, wd, 6 * s, 0, 0, 7); g.fill();
+    // tall crystal cluster — three shards
+    function shard(ox, w, h, color, lt) {
+      g.fillStyle = color;
+      g.beginPath();
+      g.moveTo(cx + ox, baseY - h);
+      g.lineTo(cx + ox + w / 2, baseY - h * 0.3);
+      g.lineTo(cx + ox + w * 0.2, baseY);
+      g.lineTo(cx + ox - w * 0.2, baseY);
+      g.lineTo(cx + ox - w / 2, baseY - h * 0.3);
+      g.closePath(); g.fill();
+      g.fillStyle = lt;
+      g.beginPath();
+      g.moveTo(cx + ox, baseY - h);
+      g.lineTo(cx + ox + w * 0.1, baseY - h * 0.3);
+      g.lineTo(cx + ox + w * 0.05, baseY);
+      g.lineTo(cx + ox - w * 0.05, baseY);
+      g.lineTo(cx + ox - w * 0.18, baseY - h * 0.3);
+      g.closePath(); g.fill();
+    }
+    shard(-12 * s, wd * 0.7, hgt * 0.8, C.crystal, C.crystalLt);
+    shard(0, wd, hgt, C.crystal, C.crystalLt);
+    shard(12 * s, wd * 0.7, hgt * 0.7, C.crystal, C.crystalLt);
+    // glow
+    var glow = 0.5 + 0.5 * Math.sin(S.t * 0.1);
+    var gg = g.createRadialGradient(cx, baseY - hgt * 0.5, 1, cx, baseY - hgt * 0.5, hgt * 1.2);
+    gg.addColorStop(0, 'rgba(164,102,255,' + (0.35 * glow) + ')');
+    gg.addColorStop(1, 'rgba(164,102,255,0)');
+    g.fillStyle = gg; g.fillRect(cx - hgt, baseY - hgt * 1.5, hgt * 2, hgt * 1.5);
+  }
+
+  function drawDrone(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s;
+    var cx = pr.x, baseY = pr.y - 48 * s + Math.sin(S.t * 0.25 + o.z * 0.01) * 6 * s;
+    var w = 50 * s, h = 18 * s;
+    // shadow on floor
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    g.beginPath(); g.ellipse(cx, pr.y - 2 * s, w * 0.45, 5 * s, 0, 0, 7); g.fill();
+    // body
+    g.fillStyle = C.droneDk;
+    g.beginPath(); g.ellipse(cx, baseY, w / 2, h * 0.7, 0, 0, 7); g.fill();
+    g.fillStyle = C.drone;
+    g.beginPath(); g.ellipse(cx, baseY - h * 0.15, w * 0.45, h * 0.55, 0, 0, 7); g.fill();
+    // canopy
+    g.fillStyle = '#0a1c2a';
+    g.beginPath(); g.ellipse(cx, baseY - h * 0.1, w * 0.25, h * 0.35, 0, 0, 7); g.fill();
+    g.fillStyle = C.elec;
+    g.beginPath(); g.arc(cx + w * 0.05, baseY - h * 0.2, w * 0.05, 0, 7); g.fill();
+    // rotors
+    var sp = (S.t * 1.4) % 1;
+    g.strokeStyle = 'rgba(70,240,255,0.7)'; g.lineWidth = 2 * s;
+    g.beginPath(); g.moveTo(cx - w * 0.5, baseY - h * 0.6); g.lineTo(cx - w * 0.5 + 14 * s * (1 - sp), baseY - h * 0.7); g.stroke();
+    g.beginPath(); g.moveTo(cx + w * 0.5, baseY - h * 0.6); g.lineTo(cx + w * 0.5 - 14 * s * (1 - sp), baseY - h * 0.7); g.stroke();
+    // red blink under
+    if (Math.floor(S.t / 12) % 2 === 0) {
+      g.fillStyle = C.enemy;
+      g.beginPath(); g.arc(cx, baseY + h * 0.4, 3 * s, 0, 7); g.fill();
+    }
+  }
+
+  function drawEnergyWall(o) {
+    var pr = project(o.lane, Math.max(0, o.z));
+    var s = pr.s;
+    var cx = pr.x, baseY = pr.y - 2 * s;
+    var w = 64 * s, h = 24 * s;
+    // posts
+    g.fillStyle = '#3a3f55';
+    g.fillRect(cx - w / 2, baseY - h, 6 * s, h + 4 * s);
+    g.fillRect(cx + w / 2 - 6 * s, baseY - h, 6 * s, h + 4 * s);
+    // energy bars
+    var pulse = 0.5 + 0.5 * Math.sin(S.t * 0.4);
+    g.fillStyle = 'rgba(70,240,255,' + (0.7 + 0.3 * pulse) + ')';
+    g.shadowColor = C.elec; g.shadowBlur = 10 * s;
+    for (var i = 0; i < 4; i++) {
+      g.fillRect(cx - w / 2 + 6 * s, baseY - h + i * (h / 4), w - 12 * s, 3 * s);
+    }
+    g.shadowBlur = 0;
+    // up arrow (jumpable)
+    g.fillStyle = 'rgba(255,255,255,0.85)';
+    g.beginPath();
+    g.moveTo(cx, baseY - h - 16 * s); g.lineTo(cx + 9 * s, baseY - h - 6 * s);
+    g.lineTo(cx - 9 * s, baseY - h - 6 * s); g.closePath(); g.fill();
+  }
+
+  // ---- Danny ----------------------------------------------------------
   function drawDanny() {
     var pr = project(S.laneF, 0);
-    var s = pr.s * 1.0;
+    var s = pr.s * 1.05;
     var cx = pr.x, baseY = pr.y - S.jump;
-    var run = Math.sin(S.runT) ;
-    var legA = run * 8 * s, legB = -run * 8 * s;
+    var run = Math.sin(S.runT);
     g.save();
     // shadow
-    g.fillStyle = 'rgba(0,0,0,0.35)';
-    var shW = 40 * s * (1 - S.jump / 260);
+    g.fillStyle = 'rgba(0,0,0,0.45)';
+    var shW = 42 * s * Math.max(0.3, 1 - S.jump / 280);
     g.beginPath(); g.ellipse(cx, pr.y + 2, shW, 8 * s, 0, 0, 7); g.fill();
-
     // shield aura
     if (S.shield > 0) {
       var sp = 0.5 + 0.5 * Math.sin(S.t * 0.3);
-      g.strokeStyle = 'rgba(70,240,255,' + (0.5 + 0.4 * sp) + ')'; g.lineWidth = 3 * s;
-      g.beginPath(); g.ellipse(cx, baseY - 28 * s, 34 * s, 44 * s, 0, 0, 7); g.stroke();
+      g.strokeStyle = 'rgba(70,240,255,' + (0.6 + 0.3 * sp) + ')'; g.lineWidth = 3 * s;
+      g.beginPath(); g.ellipse(cx, baseY - 32 * s, 36 * s, 50 * s, 0, 0, 7); g.stroke();
+    }
+    // magnet aura
+    if (S.magnet > 0) {
+      var mp = 0.5 + 0.5 * Math.sin(S.t * 0.4);
+      g.strokeStyle = 'rgba(255,93,74,' + (0.5 + 0.3 * mp) + ')'; g.lineWidth = 2 * s;
+      g.beginPath(); g.ellipse(cx, baseY - 32 * s, 44 * s, 56 * s, 0, 0, 7); g.stroke();
     }
 
     var U = function (n) { return n * s; };
+    var legA = (S.onGround) ? run * 8 * s : -10 * s;
+    var legB = (S.onGround) ? -run * 8 * s : -8 * s;
     // legs
     g.fillStyle = C.pants;
-    g.fillRect(cx - U(12), baseY - U(20) + legA * 0.0, U(8), U(20) + (S.onGround ? legA : 0));
-    g.fillRect(cx + U(4),  baseY - U(20),            U(8), U(20) + (S.onGround ? legB : 0));
+    g.fillRect(cx - U(12), baseY - U(22), U(8), U(22) + Math.max(0, legA));
+    g.fillRect(cx + U(4),  baseY - U(22), U(8), U(22) + Math.max(0, legB));
     // shoes
     g.fillStyle = C.white;
-    g.fillRect(cx - U(13), baseY - U(2) + (S.onGround ? legA : 0), U(11), U(5));
-    g.fillRect(cx + U(3),  baseY - U(2) + (S.onGround ? legB : 0), U(11), U(5));
-    // lab coat body
+    g.fillRect(cx - U(13), baseY - U(2) + Math.max(0, legA), U(11), U(5));
+    g.fillRect(cx + U(3),  baseY - U(2) + Math.max(0, legB), U(11), U(5));
+    // coat
     g.fillStyle = C.coat;
-    g.fillRect(cx - U(15), baseY - U(54), U(30), U(36));
+    g.fillRect(cx - U(16), baseY - U(58), U(32), U(38));
     g.fillStyle = '#d6dcf5';
-    g.fillRect(cx - U(2), baseY - U(54), U(4), U(36));   // coat seam
-    // arms (swing)
+    g.fillRect(cx - U(2), baseY - U(58), U(4), U(38));
+    // arms
     g.fillStyle = C.coat;
-    g.fillRect(cx - U(19), baseY - U(52) + (S.onGround ? -legA : -10 * s), U(6), U(22));
-    g.fillRect(cx + U(13), baseY - U(52) + (S.onGround ? -legB : -10 * s), U(6), U(22));
+    g.fillRect(cx - U(20), baseY - U(56) + Math.min(0, -legA), U(6), U(24));
+    g.fillRect(cx + U(14), baseY - U(56) + Math.min(0, -legB), U(6), U(24));
+    // skin hands
+    g.fillStyle = C.skin;
+    g.fillRect(cx - U(20), baseY - U(34) + Math.min(0, -legA), U(6), U(5));
+    g.fillRect(cx + U(14), baseY - U(34) + Math.min(0, -legB), U(6), U(5));
     // head
     g.fillStyle = C.skin;
-    g.fillRect(cx - U(10), baseY - U(74), U(20), U(20));
+    g.fillRect(cx - U(10), baseY - U(78), U(20), U(20));
     // hair
     g.fillStyle = C.hair;
-    g.fillRect(cx - U(11), baseY - U(78), U(22), U(8));
-    g.fillRect(cx - U(11), baseY - U(74), U(4), U(8));
-    g.fillRect(cx + U(7),  baseY - U(74), U(4), U(8));
+    g.fillRect(cx - U(11), baseY - U(82), U(22), U(8));
+    g.fillRect(cx - U(11), baseY - U(78), U(4), U(8));
+    g.fillRect(cx + U(7),  baseY - U(78), U(4), U(8));
     // glasses
     g.fillStyle = '#1a1a2a';
-    g.fillRect(cx - U(8), baseY - U(66), U(6), U(5));
-    g.fillRect(cx + U(2), baseY - U(66), U(6), U(5));
-    g.fillRect(cx - U(2), baseY - U(64), U(4), U(2));
+    g.fillRect(cx - U(8), baseY - U(70), U(6), U(5));
+    g.fillRect(cx + U(2), baseY - U(70), U(6), U(5));
+    g.fillRect(cx - U(2), baseY - U(68), U(4), U(2));
     g.restore();
   }
 
+  // ---- HUD ------------------------------------------------------------
   function drawHUD() {
-    // top bar
-    g.fillStyle = 'rgba(10,10,26,0.55)'; g.fillRect(0, 0, W, 54);
-    g.fillStyle = C.gold; g.font = 'bold 22px system-ui'; g.textBaseline = 'middle';
-    g.textAlign = 'left';
-    g.fillText('SCORE ' + score(), 14, 20);
-    g.fillStyle = C.cyan; g.font = 'bold 18px system-ui';
-    g.fillText('CORES ' + S.cores, 14, 42);
+    g.fillStyle = 'rgba(6,6,13,0.6)'; g.fillRect(0, 0, W, 64);
+    g.fillStyle = C.gold; g.font = 'bold 22px system-ui'; g.textBaseline = 'middle'; g.textAlign = 'left';
+    g.fillText('GEARS ' + S.gears + ' / ' + GEAR_GOAL, 14, 22);
+    g.fillStyle = C.cyan; g.font = 'bold 16px system-ui';
+    g.fillText('SCORE ' + score(), 14, 46);
     g.textAlign = 'right';
     g.fillStyle = C.white; g.font = 'bold 16px system-ui';
-    g.fillText('BEST ' + S.best, W - 14, 20);
+    g.fillText('BEST ' + S.best, W - 14, 22);
     g.fillStyle = '#9aa0c4';
-    g.fillText((S.dist / 10 | 0) + ' m', W - 14, 42);
-    // shield indicator (the "active power" idea)
+    g.fillText((S.dist / 8 | 0) + ' m', W - 14, 46);
+    // goal progress bar
+    var bw = W - 28, by = 60;
+    g.fillStyle = 'rgba(255,210,58,0.15)'; g.fillRect(14, by, bw, 4);
+    g.fillStyle = C.gold; g.fillRect(14, by, bw * Math.min(1, S.gears / GEAR_GOAL), 4);
+
+    // active powers row
+    var by2 = 74;
     if (S.shield > 0) {
-      var bw = 120, bx = W / 2 - bw / 2, by = 64;
-      g.fillStyle = 'rgba(70,240,255,0.2)'; g.fillRect(bx, by, bw, 8);
-      g.fillStyle = C.cyan; g.fillRect(bx, by, bw * (S.shield / (60 * 7)), 8);
-      g.fillStyle = C.cyan; g.font = 'bold 12px system-ui'; g.textAlign = 'center'; g.textBaseline = 'top';
-      g.fillText('ENERGY SHIELD', W / 2, by + 12);
+      var w1 = 110; var x1 = 14;
+      g.fillStyle = 'rgba(70,240,255,0.2)'; g.fillRect(x1, by2, w1, 16);
+      g.fillStyle = C.cyan; g.fillRect(x1, by2, w1 * (S.shield / (60 * 6)), 16);
+      g.fillStyle = '#06060d'; g.font = 'bold 11px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('SHIELD', x1 + w1 / 2, by2 + 8);
+    }
+    if (S.magnet > 0) {
+      var w2 = 110; var x2 = 14 + (S.shield > 0 ? 118 : 0);
+      g.fillStyle = 'rgba(255,93,74,0.25)'; g.fillRect(x2, by2, w2, 16);
+      g.fillStyle = C.enemy; g.fillRect(x2, by2, w2 * (S.magnet / (60 * 6)), 16);
+      g.fillStyle = '#06060d'; g.font = 'bold 11px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('MAGNET', x2 + w2 / 2, by2 + 8);
     }
   }
 
   function drawDead() {
-    g.fillStyle = 'rgba(10,10,26,0.74)'; g.fillRect(0, 0, W, H);
+    g.fillStyle = 'rgba(6,6,13,0.78)'; g.fillRect(0, 0, W, H);
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = C.red; g.font = 'bold 44px system-ui';
-    g.fillText('CAUGHT!', W / 2, H * 0.36);
-    g.fillStyle = C.gold; g.font = 'bold 30px system-ui';
-    g.fillText('SCORE ' + score(), W / 2, H * 0.46);
-    g.fillStyle = C.cyan; g.font = 'bold 20px system-ui';
-    g.fillText(S.cores + ' CORES • ' + (S.dist / 10 | 0) + ' m', W / 2, H * 0.52);
+    g.fillStyle = C.enemy; g.font = 'bold 44px system-ui';
+    g.fillText('CAUGHT!', W / 2, H * 0.34);
+    g.fillStyle = C.gold; g.font = 'bold 28px system-ui';
+    g.fillText('GEARS ' + S.gears + ' / ' + GEAR_GOAL, W / 2, H * 0.44);
+    g.fillStyle = C.cyan; g.font = 'bold 22px system-ui';
+    g.fillText('SCORE ' + score(), W / 2, H * 0.50);
+    g.fillStyle = '#9aa0c4'; g.font = 'bold 16px system-ui';
+    g.fillText((S.dist / 8 | 0) + ' m', W / 2, H * 0.56);
     g.fillStyle = C.white; g.font = 'bold 22px system-ui';
     var blink = (S.t % 60 < 40);
-    if (blink) g.fillText('TAP / SPACE TO RUN AGAIN', W / 2, H * 0.64);
+    if (blink) g.fillText('TAP / SPACE TO RUN AGAIN', W / 2, H * 0.66);
+  }
+
+  function drawWon() {
+    g.fillStyle = 'rgba(6,6,13,0.78)'; g.fillRect(0, 0, W, H);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    var pulse = 0.5 + 0.5 * Math.sin(S.t * 0.15);
+    g.fillStyle = C.gold; g.font = 'bold 42px system-ui';
+    g.fillText('TIME MACHINE', W / 2, H * 0.30);
+    g.fillStyle = 'rgba(255,210,58,' + (0.5 + 0.5 * pulse) + ')'; g.font = 'bold 42px system-ui';
+    g.fillText('REPAIRED!', W / 2, H * 0.37);
+    g.fillStyle = C.cyan; g.font = 'bold 22px system-ui';
+    g.fillText('ALL ' + GEAR_GOAL + ' GEARS COLLECTED', W / 2, H * 0.47);
+    g.fillStyle = C.white; g.font = 'bold 20px system-ui';
+    g.fillText('SCORE ' + score(), W / 2, H * 0.54);
+    g.fillStyle = '#9aa0c4'; g.font = 'bold 16px system-ui';
+    g.fillText('Distance: ' + (S.dist / 8 | 0) + ' m', W / 2, H * 0.59);
+    if ((S.t % 60 < 40)) {
+      g.fillStyle = C.white; g.font = 'bold 22px system-ui';
+      g.fillText('TAP / SPACE FOR NEW RUN', W / 2, H * 0.70);
+    }
   }
 
   // ---- main loop ------------------------------------------------------
   function frame() {
     update();
-    if (S.state === 'dead') S.t++;
-    // camera shake
+    if (S.state !== 'play') S.t++;
     var sx = 0, sy = 0;
     if (S.shake > 0) { sx = (Math.random() - 0.5) * S.shake; sy = (Math.random() - 0.5) * S.shake; }
     g.setTransform(1, 0, 0, 1, sx, sy);
-    g.clearRect(-20, -20, W + 40, H + 40);
-    drawSky();
-    drawRoad();
-    // draw objects far-to-near so near overlaps far
+    g.clearRect(-30, -30, W + 60, H + 60);
+    drawCorridor();
+    drawProps();
+    // sort objects (props + pickups + hazards) far-to-near
     var sorted = S.objs.slice().sort(function (a, b) { return b.z - a.z; });
     for (var i = 0; i < sorted.length; i++) {
       var o = sorted[i];
       if (o.got) continue;
-      if (o.kind === 'core') drawCore(o);
-      else if (o.kind === 'pow') drawPow(o);
-      else drawObst(o);
+      if (o.z > FAR + 50) continue;
+      switch (o.kind) {
+        case 'gear':    drawGear(o); break;
+        case 'shield':  drawShieldPower(o); break;
+        case 'magnet':  drawMagnetPower(o); break;
+        case 'alien':   drawAlien(o); break;
+        case 'tox':     drawTox(o); break;
+        case 'fire':    drawFire(o); break;
+        case 'elec':    drawElec(o); break;
+        case 'crystal': drawCrystal(o); break;
+        case 'drone':   drawDrone(o); break;
+        case 'energy':  drawEnergyWall(o); break;
+      }
     }
     drawDanny();
     g.setTransform(1, 0, 0, 1, 0, 0);
     drawHUD();
     if (S.state === 'dead') drawDead();
+    if (S.state === 'won')  drawWon();
     requestAnimationFrame(frame);
   }
 
