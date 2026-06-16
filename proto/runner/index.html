@@ -74,6 +74,59 @@
 </div>
 <div id="hint">← → swap &nbsp;•&nbsp; ↑ jump &nbsp;•&nbsp; ↓ slide &nbsp;•&nbsp; swipe on touch</div>
 
+<!-- LIVE CAMERA TUNING PANEL — toggle with the ⚙ button (bottom-right).
+     Each row has a label, − button, current value, + button.
+     URL copy at bottom so Mark can share a tuned config. -->
+<button id="cam-toggle" style="position:fixed;right:10px;bottom:34px;width:42px;height:42px;border-radius:21px;border:1px solid #46f0ff;background:rgba(20,24,38,0.85);color:#46f0ff;font-size:20px;cursor:pointer;z-index:20;pointer-events:auto">⚙</button>
+<div id="cam-panel" style="position:fixed;right:10px;bottom:84px;background:rgba(20,24,38,0.92);color:#e8ecf3;font-family:system-ui;font-size:13px;padding:10px 12px;border-radius:10px;border:1px solid #46f0ff;display:none;z-index:20;pointer-events:auto;min-width:200px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+  <div style="font-weight:700;color:#46f0ff;margin-bottom:6px;letter-spacing:1px">CAMERA</div>
+  <div data-cam="height"    data-step="0.25" data-label="Height"></div>
+  <div data-cam="back"      data-step="0.5"  data-label="Back"></div>
+  <div data-cam="lookAhead" data-step="0.5"  data-label="Look Ahead"></div>
+  <div data-cam="lookHeight" data-step="0.25" data-label="Look Y"></div>
+  <div data-cam="fov"       data-step="2"    data-label="FOV"></div>
+  <div data-cam="laneSway"  data-step="0.05" data-label="Lane Sway"></div>
+  <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(70,240,255,0.3)">
+    <div style="font-size:11px;color:#9aa0c4">Copy this URL to lock the config:</div>
+    <input id="cam-url" readonly style="width:100%;background:#0a0c14;color:#e8ecf3;border:1px solid #3a4d75;border-radius:4px;padding:4px;font-size:10px;font-family:monospace;margin-top:2px" />
+  </div>
+</div>
+<script>
+(function () {
+  const panel = document.getElementById('cam-panel');
+  const tog = document.getElementById('cam-toggle');
+  const urlBox = document.getElementById('cam-url');
+  function render() {
+    panel.querySelectorAll('[data-cam]').forEach(row => {
+      const key = row.dataset.cam, step = parseFloat(row.dataset.step), lbl = row.dataset.label;
+      if (!row.firstChild) {
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;margin:4px 0';
+        row.innerHTML = '<span style="flex:1">' + lbl + '</span>' +
+          '<button class="cm-btn" data-delta="-1" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a4d75;background:#0a0c14;color:#e8ecf3;font-size:16px;cursor:pointer">−</button>' +
+          '<span class="cm-val" style="min-width:42px;text-align:center;color:#ffd23a;font-weight:700"></span>' +
+          '<button class="cm-btn" data-delta="1" style="width:26px;height:26px;border-radius:6px;border:1px solid #3a4d75;background:#0a0c14;color:#e8ecf3;font-size:16px;cursor:pointer">+</button>';
+        row.querySelectorAll('.cm-btn').forEach(b => b.addEventListener('click', () => {
+          window.CAMERA[key] += parseInt(b.dataset.delta, 10) * step;
+          render();
+        }));
+      }
+      row.querySelector('.cm-val').textContent = (+window.CAMERA[key]).toFixed(2);
+    });
+    const params = ['height=h','back=b','fov=fov','lookAhead=la','lookHeight=lh','laneSway=sway']
+      .map(s => { const [k, p] = s.split('='); return p + '=' + (+window.CAMERA[k]).toFixed(2); }).join('&');
+    urlBox.value = location.origin + location.pathname + '?' + params;
+  }
+  tog.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : 'block';
+    if (!open) render();
+  });
+  // Re-render so the values stay live if changed elsewhere
+  setInterval(() => { if (panel.style.display !== 'none') render(); }, 250);
+})();
+</script>
+
 <script type="module">
 import * as THREE from 'three';
 
@@ -87,10 +140,66 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0c0f1a);
 scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 
-// 45° elevated camera looking down at Danny — no roof needed
-const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
-camera.position.set(0, 9.0, 11.0);
-camera.lookAt(0, 0.5, 1.0);
+// ============ CAMERA CONFIG (live-tunable, decoupled from gameplay) ===
+// Gameplay space lives at world origin: Danny runs in z; lanes in x.
+// The camera is a separate object framing that space. Adjust freely
+// here, via URL params, on-screen panel, or keyboard shortcuts —
+// gameplay stays put.
+//
+// URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
+const CAMERA = {
+  height:     3.5,   // y of camera (units above floor)
+  back:       6.0,   // z behind Danny
+  lookAhead:  4.0,   // how far ahead of Danny the camera looks
+  lookHeight: 1.5,   // y of the look target
+  fov:        62,    // field of view (degrees)
+  laneSway:   0.35,  // how much the camera follows Danny's lane (0=fixed, 1=fully tracks)
+  smoothing:  10     // higher = snappier camera; lower = laggier
+};
+(function applyURLParams() {
+  const p = new URLSearchParams(location.search);
+  const map = { h:'height', b:'back', fov:'fov', la:'lookAhead', lh:'lookHeight', sway:'laneSway', sm:'smoothing' };
+  for (const k in map) {
+    const v = parseFloat(p.get(k));
+    if (!Number.isNaN(v)) CAMERA[map[k]] = v;
+  }
+})();
+
+const camera = new THREE.PerspectiveCamera(CAMERA.fov, 1, 0.1, 200);
+// Initial placement — updateCamera() will re-set every frame.
+camera.position.set(0, CAMERA.height, CAMERA.back);
+camera.lookAt(0, CAMERA.lookHeight, -CAMERA.lookAhead);
+
+// Smoothed camera target so adjustments don't snap.
+const _camPos = new THREE.Vector3(0, CAMERA.height, CAMERA.back);
+const _camLook = new THREE.Vector3(0, CAMERA.lookHeight, -CAMERA.lookAhead);
+
+function updateCamera(dt) {
+  if (typeof danny === 'undefined') return;
+  // Desired position: a fixed offset behind + above Danny.
+  // Lane sway: optionally drift sideways with Danny's lane shift for life.
+  const targetX = danny.position.x * CAMERA.laneSway;
+  const targetY = CAMERA.height;
+  const targetZ = danny.position.z + CAMERA.back;
+  const lookX = danny.position.x * (CAMERA.laneSway * 0.6);
+  const lookY = CAMERA.lookHeight;
+  const lookZ = danny.position.z - CAMERA.lookAhead;
+  const k = Math.min(1, dt * CAMERA.smoothing);
+  _camPos.x += (targetX - _camPos.x) * k;
+  _camPos.y += (targetY - _camPos.y) * k;
+  _camPos.z += (targetZ - _camPos.z) * k;
+  _camLook.x += (lookX - _camLook.x) * k;
+  _camLook.y += (lookY - _camLook.y) * k;
+  _camLook.z += (lookZ - _camLook.z) * k;
+  camera.position.copy(_camPos);
+  camera.lookAt(_camLook);
+  if (camera.fov !== CAMERA.fov) {
+    camera.fov = CAMERA.fov; camera.updateProjectionMatrix();
+  }
+}
+
+// Expose for DevTools tweaking on the phone via Safari Web Inspector
+window.CAMERA = CAMERA;
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
@@ -1696,12 +1805,11 @@ function tick() {
     shadow.scale.set(sScale, 1, sScale);
   }
 
+  updateCamera(dt);
   if (shake > 0) {
-    camera.position.x = (Math.random() - 0.5) * shake * 0.6;
-    camera.position.y = 3.0 + (Math.random() - 0.5) * shake * 0.4;
-  } else {
-    camera.position.x += (0 - camera.position.x) * 0.15;
-    camera.position.y += (3.0 - camera.position.y) * 0.15;
+    // Add shake on top of the smoothed camera follow position.
+    camera.position.x += (Math.random() - 0.5) * shake * 0.6;
+    camera.position.y += (Math.random() - 0.5) * shake * 0.4;
   }
 
   document.getElementById('ui-gears').textContent = crystals;
