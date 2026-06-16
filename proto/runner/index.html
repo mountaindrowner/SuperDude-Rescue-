@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner — 3D Lab Escape</title>
+<title>Super Dude Runner v8 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -59,6 +59,9 @@
       <span class="lbl dim"><span id="ui-dist">0</span> m</span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
+    <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
+      v8 &nbsp;•&nbsp; <span id="vsize">—</span>
+    </div>
   </div>
   <div id="powers">
     <span class="pwr shield" id="pwr-shield">🛡 SHIELD</span>
@@ -148,12 +151,12 @@ scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
 const CAMERA = {
-  height:     3.5,   // y of camera (units above floor)
-  back:       6.0,   // z behind Danny
-  lookAhead:  4.0,   // how far ahead of Danny the camera looks
-  lookHeight: 1.5,   // y of the look target
-  fov:        62,    // field of view (degrees)
-  laneSway:   0.35,  // how much the camera follows Danny's lane (0=fixed, 1=fully tracks)
+  height:     4.0,   // y of camera (above floor) — was 3.5
+  back:       6.5,   // z behind Danny
+  lookAhead:  5.0,   // how far ahead of Danny the camera looks (looking down + forward = Subway-Surfers angle ~22°)
+  lookHeight: 0.8,   // y of the look target (low = camera looks at floor ahead)
+  fov:        65,    // wider FOV for more visible context — was 62
+  laneSway:   0.40,  // how much the camera follows Danny's lane (0=fixed, 1=fully tracks)
   smoothing:  10     // higher = snappier camera; lower = laggier
 };
 (function applyURLParams() {
@@ -201,13 +204,28 @@ function updateCamera(dt) {
 // Expose for DevTools tweaking on the phone via Safari Web Inspector
 window.CAMERA = CAMERA;
 
+// Bulletproof resize: visualViewport (correct on iOS Safari w/ URL bar)
+// fallback to innerWidth/innerHeight. Force inline canvas size in CSS
+// pixels so the layout can't get fooled by 100vh quirks.
 function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h, false);
+  const vv = window.visualViewport;
+  const w = Math.round((vv && vv.width)  || window.innerWidth);
+  const h = Math.round((vv && vv.height) || window.innerHeight);
+  renderer.setSize(w, h, true);            // updateStyle=true → set canvas.style w/h directly
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  // Surface the actual size for diagnostics
+  const vs = document.getElementById('vsize');
+  if (vs) vs.textContent = w + '×' + h;
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resize);
+}
+resize();
 
 // ============ lighting (moody industrial) =============================
 scene.add(new THREE.AmbientLight(0x6a7a90, 0.5));
