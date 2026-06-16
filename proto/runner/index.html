@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v9 — 3D Lab Escape</title>
+<title>Super Dude Runner v10 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v9 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v10 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -150,15 +150,16 @@ scene.fog = new THREE.Fog(0x0c0f1a, 18, 80);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning (screenshot v8.520x932).
-// He pronounced these 'perfect.' Live ⚙ panel still works on top.
+// Defaults locked from Mark's in-game tuning. v10: laneSway = 0 so
+// when Danny moves, only he moves (no camera follow). The world feels
+// static; he runs through it.
 const CAMERA = {
   height:     6.75,
   back:       8.00,
   lookAhead:  15.50,
   lookHeight: -0.20,
   fov:        55,
-  laneSway:   1.85,
+  laneSway:   0.0,          // was 1.85 — camera locked horizontally now
   smoothing:  10
 };
 (function applyURLParams() {
@@ -252,46 +253,46 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // WHITE + METALLIC-GREY palette (Mark: 'walls should be white and
-  // metallic grey'). Brushed-metal vibe with subtle vertical sheen.
+  // v10: DARK NAVY palette to match Mark's new reference image
+  // (deep blue stone panels with cyan/yellow accents, NOT white).
   const bg = g.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0,    '#b8c0cc');   // top: metallic shadow
-  bg.addColorStop(0.20, '#dde2eb');
-  bg.addColorStop(0.50, '#f4f6fa');   // bright middle ('white')
-  bg.addColorStop(0.85, '#dde2eb');
-  bg.addColorStop(1,    '#a8b0bc');   // bottom shadow
+  bg.addColorStop(0,    '#1a2540');   // top: deep navy
+  bg.addColorStop(0.25, '#2a3a55');
+  bg.addColorStop(0.55, '#3a4a68');   // mid: slate blue
+  bg.addColorStop(0.85, '#2a3a55');
+  bg.addColorStop(1,    '#15203a');   // bottom: deeper
+
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
 
-  // subtle vertical brushed-metal lines
-  for (let x = 0; x < W; x += 3) {
-    g.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.04) + ')';
-    g.fillRect(x, 36, 1, H - 60);
+  // panel surface texture — subtle noise
+  for (let i = 0; i < 600; i++) {
+    g.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.025) + ')';
+    g.fillRect(Math.random() * W, 36 + Math.random() * (H - 60), 1, 1);
   }
 
-  // ceiling girder (metallic grey)
-  g.fillStyle = '#5a6378'; g.fillRect(0, 0, W, 28);
-  g.fillStyle = '#3a4d75'; g.fillRect(0, 26, W, 2);
-  // cyan LED accent strip just below
-  g.fillStyle = '#1ab3ff'; g.fillRect(0, 30, W, 2);
-  g.fillStyle = 'rgba(70,240,255,0.35)'; g.fillRect(0, 32, W, 4);
+  // top ceiling beam (dark with cyan glow)
+  g.fillStyle = '#0a0e1a'; g.fillRect(0, 0, W, 22);
+  g.fillStyle = '#1a2540'; g.fillRect(0, 22, W, 4);
+  // cyan LED accent strip
+  g.fillStyle = '#46f0ff'; g.fillRect(0, 26, W, 3);
+  g.fillStyle = 'rgba(70,240,255,0.55)'; g.fillRect(0, 29, W, 8);
 
-  // baseboard (metallic, dark-ish for ground contact)
-  g.fillStyle = '#5a6378'; g.fillRect(0, H - 22, W, 22);
-  g.fillStyle = '#8a93a8'; g.fillRect(0, H - 24, W, 2);
-  // floor warning stripe (yellow/dark)
+  // baseboard (dark + yellow safety stripe)
+  g.fillStyle = '#0a0e1a'; g.fillRect(0, H - 22, W, 22);
+  g.fillStyle = '#1a2540'; g.fillRect(0, H - 24, W, 2);
   for (let x = 0; x < W; x += 22) {
-    g.fillStyle = (x / 22) % 2 < 1 ? '#ffd23a' : '#2a3144';
+    g.fillStyle = (x / 22) % 2 < 1 ? '#ffd23a' : '#0a0e1a';
     g.fillRect(x, H - 10, 22, 4);
   }
 
-  // panel seams (silver-grey with highlight edge)
+  // panel seams (subtle slate)
   for (let x = 0; x < W; x += 256) {
-    g.fillStyle = '#8a93a8'; g.fillRect(x - 1, 36, 2, H - 60);
-    g.fillStyle = '#ffffff'; g.fillRect(x, 36, 1, H - 60);
+    g.fillStyle = '#0a0e1a'; g.fillRect(x - 1, 36, 2, H - 60);
+    g.fillStyle = '#5a6890'; g.fillRect(x, 36, 1, H - 60);
   }
   // horizontal mid-rail
-  g.fillStyle = '#8a93a8'; g.fillRect(0, H * 0.50, W, 3);
-  g.fillStyle = '#ffffff'; g.fillRect(0, H * 0.50 - 1, W, 1);
+  g.fillStyle = '#0a0e1a'; g.fillRect(0, H * 0.50, W, 3);
+  g.fillStyle = '#5a6890'; g.fillRect(0, H * 0.50 - 1, W, 1);
 
   // helpers
   function bracketBox(px, py, w, h, tint, label) {
@@ -432,7 +433,7 @@ function makeFloorTexture() {
   const g = c.getContext('2d');
   // base concrete floor (slightly noisy gray)
   const bg = g.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#6a7388'); bg.addColorStop(1, '#8a93a8');
+  bg.addColorStop(0, '#3a4660'); bg.addColorStop(1, '#5a6890');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
   // noise
   for (let i = 0; i < 1400; i++) {
@@ -766,29 +767,70 @@ function makeConsole() {
   return grp;
 }
 
+// 3D WALL PIPES — vertical colored pipes that hug the wall surface.
+// Per Mark's reference image: red + blue pipes running vertically with
+// metal joint bands. Sit FLAT against the wall (low z offset).
+function makeWallPipes() {
+  const grp = new THREE.Group();
+  const colors = [0xd33a3a, 0x1ab3ff, 0xffd23a];
+  const matBand = new THREE.MeshLambertMaterial({ color: 0x0a0e1a });
+  const matSilver = new THREE.MeshLambertMaterial({ color: 0x8a93a8 });
+  for (let i = 0; i < 3; i++) {
+    const mat = new THREE.MeshLambertMaterial({ color: colors[i] });
+    // Long pipe section
+    const pipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 3.6, 12), mat
+    );
+    pipe.position.set(-0.20 + i * 0.20, 2.0, 0);
+    grp.add(pipe);
+    // Joint bands at top + middle + bottom of each pipe
+    for (let by = 0; by < 3; by++) {
+      const band = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.10, 0.10, 0.10, 12), matBand
+      );
+      band.position.set(-0.20 + i * 0.20, 0.4 + by * 1.55, 0);
+      grp.add(band);
+    }
+    // Pipe top elbow (horizontal joint going TO the ceiling)
+    const elbow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.10, 10, 8), mat
+    );
+    elbow.position.set(-0.20 + i * 0.20, 3.85, 0);
+    grp.add(elbow);
+  }
+  // Mount bracket plate behind the pipes
+  const plate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 4.0, 0.06), matSilver
+  );
+  plate.position.set(-0.05, 2.0, -0.08);
+  grp.add(plate);
+  return grp;
+}
+
 // place props alongside the corridor walls
 const sideProps = [];
-// Mark: "less clutter." Halved the prop density (26→13) and doubled
-// the spacing (9→18) so the corridor breathes. Skewed the prop mix
-// toward the iconic specimen tubes; dropped barrel + caution-sign
-// frequency since they read as visual noise from above.
-const PROP_COUNT = 13;
-const PROP_SPACING = 18;
+// v10 (Mark: 'less stuff less often'): density dropped further
+// from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
+// at high weight since the reference is full of them.
+const PROP_COUNT = 8;
+const PROP_SPACING = 26;
 function placeSideProps() {
-  const z0 = -16;
+  const z0 = -22;
   for (let i = 0; i < PROP_COUNT; i++) {
-    const z = z0 - i * PROP_SPACING - Math.random() * 3;
+    const z = z0 - i * PROP_SPACING - Math.random() * 5;
     const side = (i % 2 === 0) ? -1 : 1;
     const pick = Math.random();
     let p;
-    if (pick < 0.55) {
+    if (pick < 0.40) {
+      p = makeWallPipes();                                   // NEW (40%)
+    } else if (pick < 0.70) {
       p = makeSpecimenTube([0x7a3aff, 0xff6a4a, 0x1ab3ff, 0xff39c5, 0x39e36e][Math.floor(Math.random()*5)]);
-    } else if (pick < 0.80) {
+    } else if (pick < 0.88) {
       p = makeConsole();
     } else {
       p = makeBench();
     }
-    p.position.set(side * (CORR_HALF_W - 0.55), 0, z);
+    p.position.set(side * (CORR_HALF_W - 0.45), 0, z);
     if (side > 0) p.rotation.y = Math.PI;
     scene.add(p);
     sideProps.push({ mesh: p, z: z });
@@ -812,20 +854,21 @@ const matCap   = new THREE.MeshLambertMaterial({ color: 0xd33a3a });   // red ba
 const matCapDk = new THREE.MeshLambertMaterial({ color: 0x7a1b1b });
 const matBackpack = new THREE.MeshLambertMaterial({ color: 0x2a3144 });
 
-// torso (lab coat) — slim cartoon proportions, longer
-const torso = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.10, 0.48), matCoat);
-torso.position.y = 1.45; danny.add(torso);
+// v10 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// arms hang at the body, not from a barrel chest. Coat slightly longer.
+const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
+torso.position.y = 1.48; danny.add(torso);
 // chamfer torso edges with a slightly smaller darker box behind for depth
-const torsoShd = new THREE.Mesh(new THREE.BoxGeometry(0.80, 1.12, 0.30), matCoatShd);
-torsoShd.position.set(0, 1.45, -0.10); danny.add(torsoShd);
+const torsoShd = new THREE.Mesh(new THREE.BoxGeometry(0.64, 1.18, 0.26), matCoatShd);
+torsoShd.position.set(0, 1.48, -0.10); danny.add(torsoShd);
 // coat back vent
 const ventBack = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.06), matCoatShd);
 ventBack.position.set(0, 1.18, -0.245); danny.add(ventBack);
-// coat hem flare
-const hem = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.10, 0.52), matCoat);
-hem.position.set(0, 0.95, 0); danny.add(hem);
-const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.04, 0.54), matCoatShd);
-hemShd.position.set(0, 0.90, 0); danny.add(hemShd);
+// coat hem flare — narrower in proportion to slimmer torso
+const hem = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.10, 0.46), matCoat);
+hem.position.set(0, 0.92, 0); danny.add(hem);
+const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
+hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 // belt
 const belt = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.08, 0.50), matSole);
 belt.position.set(0, 0.93, 0); danny.add(belt);
@@ -891,13 +934,22 @@ capCrown.position.set(0, 2.38, 0); danny.add(capCrown);
 const capBtn = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), matCapDk);
 capBtn.position.set(0, 2.60, 0); danny.add(capBtn);
 // cap brim — flat, sticking out the BACK (toward camera since Danny faces away)
+// Brim sticks out further so it's a clear silhouette from above/behind
 const capBrim = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.32, 0.32, 0.04, 18, 1, false, -Math.PI/2.2, Math.PI/1.1),
+  new THREE.CylinderGeometry(0.36, 0.36, 0.04, 20, 1, false, -Math.PI/2.2, Math.PI/1.1),
   matCap
 );
-capBrim.position.set(0, 2.30, -0.32); // -Z local = behind Danny = TOWARD camera
-capBrim.rotation.x = -0.18; // brim tilts slightly up
+capBrim.position.set(0, 2.26, -0.40); // pushed back more (was -0.32)
+capBrim.rotation.x = -0.12;            // slight upward tilt
 danny.add(capBrim);
+// Brim underside shadow plate (subtle dark band under the brim)
+const brimShade = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.32, 0.32, 0.01, 16, 1, false, -Math.PI/2.4, Math.PI/1.2),
+  matCapDk
+);
+brimShade.position.set(0, 2.24, -0.40);
+brimShade.rotation.x = -0.12;
+danny.add(brimShade);
 // cap front band (visible peeking around the top of the head from the back)
 const capBand = new THREE.Mesh(new THREE.TorusGeometry(0.40, 0.04, 8, 24), matCapDk);
 capBand.position.y = 2.20;
@@ -1009,19 +1061,41 @@ function makeLeg(side) {
   ankle.position.y = -0.45;
   knee.add(ankle);
 
-  // Sneaker (relative to ankle)
-  const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.52), matShoe);
-  shoe.position.set(0, -0.06, -0.10);
-  ankle.add(shoe);
-  const toe = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.18, 0.16), matCoatShd);
-  toe.position.set(0, -0.06, -0.30);
+  // SNEAKER — chunky, layered: upper + midsole (white) + outsole (dark)
+  // + toe cap + red side stripe + laces. Reads as a real sneaker
+  // silhouette instead of a flat box.
+  const matMidsole = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const matOutsole = new THREE.MeshLambertMaterial({ color: 0x1a1a26 });
+  // upper (the body of the shoe — white)
+  const shoeUpper = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.56), matShoe);
+  shoeUpper.position.set(0, -0.02, -0.12);
+  ankle.add(shoeUpper);
+  // ankle collar (slightly higher cuff)
+  const collar = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.10, 0.18), matShoe);
+  collar.position.set(0, 0.06, 0.10);
+  ankle.add(collar);
+  // midsole (white, prominent — the iconic sneaker look)
+  const midsole = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.60), matMidsole);
+  midsole.position.set(0, -0.12, -0.14);
+  ankle.add(midsole);
+  // outsole (dark rubber)
+  const outsole = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.05, 0.62), matOutsole);
+  outsole.position.set(0, -0.18, -0.14);
+  ankle.add(outsole);
+  // toe cap (slightly darker than upper)
+  const toe = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.16, 0.18), matCoatShd);
+  toe.position.set(0, -0.02, -0.34);
   ankle.add(toe);
-  const sole = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.06, 0.54), matSole);
-  sole.position.set(0, -0.16, -0.10);
-  ankle.add(sole);
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, 0.10), matCap);
-  stripe.position.set(0, -0.06, 0.05);
-  ankle.add(stripe);
+  // RED side stripes (Nike-swoosh-like — accent the sneaker)
+  const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.30), matCap);
+  stripeL.position.set(-0.19, -0.03, -0.10);
+  ankle.add(stripeL);
+  const stripeR = stripeL.clone(); stripeR.position.x = 0.19;
+  ankle.add(stripeR);
+  // tongue
+  const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.04, 0.18), matShoe);
+  tongue.position.set(0, 0.05, -0.02);
+  ankle.add(tongue);
   for (let li = 0; li < 3; li++) {
     const lace = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.18),
                                 new THREE.MeshLambertMaterial({ color: 0x0a0e1a }));
@@ -1711,12 +1785,10 @@ function tick() {
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
     // texture scroll = illusion of forward motion (no ceiling — skipped)
     floorTex.offset.y -= dt * speed * 0.018;
-    // The two walls are mirrored (rotation.y = ±π/2), so their texture
-    // U axes point in OPPOSITE world directions. To make them appear to
-    // scroll the same world direction as Danny runs (which is what Mark
-    // wanted), they need OPPOSITE U offsets, not the same.
-    wallTex.offset.x  -= dt * speed * 0.0085;
-    wallTexR.offset.x += dt * speed * 0.0085;
+    // v10: flipped both signs from v10. Walls now flow toward camera
+    // (Danny moving past wall content) instead of away from it.
+    wallTex.offset.x  += dt * speed * 0.0085;
+    wallTexR.offset.x -= dt * speed * 0.0085;
 
     // ceiling lights cycle z position to feel like fixtures passing
     for (let i = 0; i < ceilLights.length; i++) {
@@ -1749,7 +1821,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 14) { trySpawn(); spawnAcc = 0; }
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v10: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
