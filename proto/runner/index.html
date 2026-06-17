@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v25 — 3D Lab Escape</title>
+<title>Super Dude Runner v26 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v25 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v26 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -268,21 +268,10 @@ function updateCamera(dt) {
   _camLook.y += (lookY - _camLook.y) * k;
   _camLook.z += (lookZ - _camLook.z) * k;
   camera.position.copy(_camPos);
-
-  // v25: during a cinematic turn, swing the look direction so the camera
-  // pans sideways briefly. Combined with the flash overlay (which hides
-  // the swap-cut), this fakes a left/right hallway turn.
-  const swing = (typeof turnLookAngle === 'function') ? turnLookAngle() : 0;
-  if (swing !== 0) {
-    const dx = _camLook.x - _camPos.x;
-    const dz = _camLook.z - _camPos.z;
-    const cosS = Math.cos(swing), sinS = Math.sin(swing);
-    const rx = dx * cosS - dz * sinS;
-    const rz = dx * sinS + dz * cosS;
-    camera.lookAt(_camPos.x + rx, _camLook.y, _camPos.z + rz);
-  } else {
-    camera.lookAt(_camLook);
-  }
+  // v26: camera + character stay axis-aligned to -Z; the WORLD swings
+  // around the character during a turn (see applyWorldTransform).
+  // No look-angle swing needed — the rotating corridor sells the turn.
+  camera.lookAt(_camLook);
 
   if (camera.fov !== CAMERA.fov) {
     camera.fov = CAMERA.fov; camera.updateProjectionMatrix();
@@ -823,27 +812,31 @@ const floor = new THREE.Mesh(
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, CORR_CENTER_Z);
 
-// ============ v25: WORLD GROUP (rotatable for hallway turns) =========
+// ============ v26: WORLD GROUP (rotates around character for turns) ===
 // Everything corridor-related goes into worldGrp instead of scene root,
-// so we can rotate the whole corridor around the camera during a turn.
-// Excluded: Danny (he stays put visually), camera, ambient + sun lights
-// (so lighting stays consistent during the rotation), HUD.
+// so we can rotate the whole corridor around the character during a
+// hallway turn. The character + camera stay in their own frames; the
+// corridor swings around the character so the new direction stays
+// visually ahead. Excluded from worldGrp: Danny (he stays put visually),
+// camera, ambient + sun lights, HUD.
 const worldGrp = new THREE.Group();
 scene.add(worldGrp);
-// Don't auto-update matrix — we'll set it manually during turns to
-// pivot around the camera position.
+// Don't auto-update matrix — we set it manually each frame to pivot
+// around the character's position.
 worldGrp.matrixAutoUpdate = false;
 worldGrp.matrix.identity();
 worldGrp.matrixWorld.copy(worldGrp.matrix);
 function applyWorldTransform(angle) {
-  // Set worldGrp.matrix = T(camPos) * Ry(angle) * T(-camPos) so the
-  // rotation pivots around the camera's vertical axis.
-  const cx = camera.position.x;
-  const cz = camera.position.z;
+  // worldGrp.matrix = T(pivot) * Ry(angle) * T(-pivot) so the rotation
+  // pivots around the CHARACTER's vertical axis. As playerHeading
+  // accumulates across turns, the corridor stays in front of the camera.
+  // Pivot at danny.position so the character feels like the rotation
+  // anchor (subway-surfers-style "the world swings around me").
+  const cx = (typeof danny !== 'undefined') ? danny.position.x : 0;
+  const cz = (typeof danny !== 'undefined') ? danny.position.z : 0;
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
   const m = worldGrp.matrix.elements;
-  // 4x4 matrix in column-major form
   m[0] = cosA;  m[1] = 0;  m[2] = -sinA; m[3] = 0;
   m[4] = 0;     m[5] = 1;  m[6] = 0;     m[7] = 0;
   m[8] = sinA;  m[9] = 0;  m[10]= cosA;  m[11]= 0;
@@ -2562,20 +2555,28 @@ function applyZoneTint() {
   zoneTargetTint = new THREE.Color(ZONES[currentZone].tint);
 }
 
-// ============ v25: REAL WORLD-ROTATION TURN ==========================
-// When a side-doorway is picked, the entire worldGrp rotates ±90° around
-// the camera's vertical axis. Player sees the corridor swing around them
-// — a real hallway turn, not a cinematic cut. A flash at peak rotation
-// hides the snap-back to identity (where the world geometry resets to
-// its straight orientation, ready for the new zone visuals).
+// ============ v26: HEADING-BASED NAVIGATION ==========================
+// Mark: 'the camera is following the character as he changes directions
+// down another hallway.' The character has a persistent HEADING (the
+// world direction they're facing/running). Camera locks behind them in
+// that direction. The world rotates so the corridor stays in front of
+// the character. A turn = a smooth LERP of playerHeading that PERSISTS
+// (not a fake animation that snaps back).
+let playerHeading = 0;   // radians: 0 = facing -Z (initial)
+
 let turning = null;        // null | 'left' | 'right'
-let turnT = 0;             // seconds remaining
-const TURN_DURATION = 1.10;
-const TURN_PEAK = Math.PI / 2;   // 90° rotation amount
+let turnT = 0;
+let turnFromHeading = 0;
+let turnToHeading = 0;
+const TURN_DURATION = 0.85;
 
 function startTurn(direction, tintHex) {
   turning = direction;
   turnT = TURN_DURATION;
+  turnFromHeading = playerHeading;
+  // LEFT turn: heading rotates -90° (player turns left = CW from above).
+  // RIGHT turn: heading rotates +90°.
+  turnToHeading = playerHeading + (direction === 'left' ? -Math.PI / 2 : +Math.PI / 2);
   // Ensure the flash overlay element exists, tinted in destination color
   let fl = document.getElementById('turn-flash');
   if (!fl) {
@@ -2589,54 +2590,30 @@ function startTurn(direction, tintHex) {
 }
 
 function tickTurn(dt) {
-  // Default: no world rotation, no flash
-  let angle = 0;
   let flashAlpha = 0;
-
   if (turning) {
     turnT = Math.max(0, turnT - dt);
-    const phase = 1 - (turnT / TURN_DURATION);       // 0 → 1
-    // 3 phases:
-    //   0   → 0.50  : rotate from 0 to ±90° (smooth ease-out, visible)
-    //   0.50 → 0.55 : hold at ±90°, flash spikes 0 → 1 (very fast)
-    //   0.55 → 1.00 : world snapped back to identity, flash fades 1 → 0
-    // LEFT turn → world rotates CW from above (objects swing rightward
-    // around the player → player perceives turning LEFT). In right-handed
-    // coords CW from above = NEGATIVE Y rotation.
-    const dir = (turning === 'left' ? -1 : +1);
-    if (phase < 0.50) {
-      const t = phase / 0.50;                        // 0 → 1
-      const eased = 1 - Math.pow(1 - t, 2);          // ease-out quad
-      angle = dir * TURN_PEAK * eased;
-      // Flash starts ramping up in the last 20% of the rotation
-      flashAlpha = Math.max(0, (t - 0.6) / 0.4);
-    } else if (phase < 0.55) {
-      // Brief hold at peak rotation while flash spikes to full
-      angle = dir * TURN_PEAK;
-      flashAlpha = 1;
-    } else {
-      // Snap world to identity (rotation = 0) while flash fades.
-      // The flash hides the snap-cut; player sees a 'new' hallway emerge.
-      angle = 0;
-      const t = (phase - 0.55) / 0.45;               // 0 → 1
-      flashAlpha = 1 - t;
-    }
+    const phase = 1 - (turnT / TURN_DURATION);
+    // ease-out quad
+    const eased = 1 - Math.pow(1 - phase, 2);
+    playerHeading = turnFromHeading + (turnToHeading - turnFromHeading) * eased;
+    // Subtle flash that peaks at mid-turn (so the world swing feels
+    // momentum-y without obscuring the actual motion)
+    flashAlpha = Math.sin(phase * Math.PI) * 0.45;
     if (turnT <= 0) {
       turning = null;
-      angle = 0;
-      flashAlpha = 0;
+      playerHeading = turnToHeading;        // lock to final, no snap-back
     }
   }
-
-  applyWorldTransform(angle);
+  // Always apply the world transform based on current playerHeading.
+  // World rotates by -playerHeading around the character's position so
+  // the corridor stays in front of them after any heading change.
+  applyWorldTransform(-playerHeading);
 
   const fl = document.getElementById('turn-flash');
-  if (fl) fl.style.opacity = Math.max(0, Math.min(1, flashAlpha)).toFixed(3);
+  if (fl) fl.style.opacity = flashAlpha.toFixed(3);
 }
 
-// v25 legacy stub — the camera no longer applies a look-angle swing;
-// the rotation is now applied to the world via applyWorldTransform().
-function turnLookAngle() { return 0; }
 let runT = 0;
 // Mark: "right now he's just shaking." Bug was driving stride animation
 // from runT (which advances by dt*speed = ~0.27/frame at speed 16),
@@ -2705,8 +2682,10 @@ function reset() {
   zoneTint = new THREE.Color(0xffffff);
   zoneTargetTint = new THREE.Color(0xffffff);
   refreshZoneHUD();
-  // Stop any cinematic-turn in progress
+  // v26: stop any turn in progress and reset persistent heading + world.
   turning = null; turnT = 0;
+  playerHeading = 0;
+  applyWorldTransform(0);
   const fl = document.getElementById('turn-flash');
   if (fl) fl.style.opacity = '0';
   // Clear splat scale on Danny
