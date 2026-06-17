@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v20.1 — 3D Lab Escape</title>
+<title>Super Dude Runner v22 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -59,8 +59,11 @@
       <span class="lbl dim"><span id="ui-dist">0</span> m</span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
+    <div class="row" style="margin-top:6px;justify-content:center">
+      <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
+    </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v20.1 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v22 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -147,8 +150,8 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// v20.1: filmic tone mapping for a graded, 'real game' look. Live-tunable.
-// v20.1 (Subway Surfers vibe): bright atmosphere, less fog, warmer tone.
+// v22: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+// v22 (Subway Surfers vibe): bright atmosphere, less fog, warmer tone.
 const GFX = { toneExposure: 1.15, envIntensity: 1.1, fogNear: 45, fogFar: 160 };
 (function applyGfxURL() {
   const p = new URLSearchParams(location.search);
@@ -162,7 +165,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = GFX.toneExposure;
 
 const scene = new THREE.Scene();
-// v20.1.1: Mark: 'I don't think the sky will work' — the lab corridor
+// v22.1: Mark: 'I don't think the sky will work' — the lab corridor
 // shouldn't have an outdoor sky beyond the walls. Background reverts to
 // a bright neutral off-white so distance fades to ambient interior tone.
 scene.background = new THREE.Color(0xe8eef5);
@@ -176,9 +179,9 @@ scene.fog = new THREE.Fog(0xe8eef5, GFX.fogNear, GFX.fogFar);
   const ec = document.createElement('canvas');
   ec.width = 512; ec.height = 256;
   const eg = ec.getContext('2d');
-  // v20.1 white-lab env: bright top, soft white middle, light grey floor
+  // v22 white-lab env: bright top, soft white middle, light grey floor
   const grad = eg.createLinearGradient(0, 0, 0, 256);
-  // v20.1.1: neutral bright interior gradient (no sky)
+  // v22.1: neutral bright interior gradient (no sky)
   grad.addColorStop(0,   '#f4f6fa');   // bright ceiling tone
   grad.addColorStop(0.4, '#dde2eb');
   grad.addColorStop(0.7, '#b8c0cc');
@@ -217,7 +220,7 @@ scene.fog = new THREE.Fog(0xe8eef5, GFX.fogNear, GFX.fogFar);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v20.1: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v22: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -274,12 +277,12 @@ function updateCamera(dt) {
 // Expose for DevTools tweaking on the phone via Safari Web Inspector
 window.CAMERA = CAMERA;
 
-// ============ v20.1: ROUNDED-BOX HELPER ================================
+// ============ v22: ROUNDED-BOX HELPER ================================
 // Returns a BufferGeometry that's like BoxGeometry but with chamfered/
 // rounded corners. Used for obstacle shapes to lose the harsh
 // industrial right-angles and pick up the cartoon vibe.
 function roundedBox(w, h, d, r) {
-  // v20.1.1 FIX: clamp r against ALL three dimensions including depth.
+  // v22.1 FIX: clamp r against ALL three dimensions including depth.
   // Was only clamping w/h → thin panels with depth < 2r produced
   // negative ExtrudeGeometry depth → page crash on load.
   r = Math.max(0.001, Math.min(r, w/2 - 0.001, h/2 - 0.001, d/2 - 0.001));
@@ -470,7 +473,7 @@ if (window.visualViewport) {
 resize();
 
 // ============ lighting (Subway-Surfers bright cartoon) ================
-// v20.1: WHITE ambient (was tinted cool blue), brighter warm sun. Total
+// v22: WHITE ambient (was tinted cool blue), brighter warm sun. Total
 // shift from 'moody industrial lab' to 'sunny cartoon playground.'
 scene.add(new THREE.AmbientLight(0xffffff, 1.55));
 const sun = new THREE.DirectionalLight(0xfff4d8, 1.55);
@@ -493,7 +496,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v20.1: WHITE LAB palette (Mark: 'make the lab walls white').
+  // v22: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
@@ -635,7 +638,7 @@ function makeWallTexture() {
     g.fillRect(x + 8, y + 8, 4, 4); g.fillRect(x + w - 12, y + 8, 4, 4);
     g.fillRect(x + 8, y + h - 12, 4, 4); g.fillRect(x + w - 12, y + h - 12, 4, 4);
   }
-  // v20.1: Mark: 'too many signs being spammed on the side walls.'
+  // v22: Mark: 'too many signs being spammed on the side walls.'
   // Replaced 6-features-out-of-8-panels with sparse feature placement:
   // mostly clean brushed-metal panels with the occasional subtle accent
   // panel (light strip, conduit hatch, monitor). Only 2 signs across the
@@ -1022,7 +1025,7 @@ function makeBench() {
 
 // COMPUTER CONSOLE on the wall
 function makeConsole() {
-  // v20.1: now PROPERLY GROUNDED. Was floating 90cm above the floor.
+  // v22: now PROPERLY GROUNDED. Was floating 90cm above the floor.
   // Total height 1.5m: pedestal 0-0.6, body 0.6-1.6, top cap 1.6-1.65.
   const grp = new THREE.Group();
   // Pedestal base (so it reads as installed on the floor)
@@ -1058,7 +1061,7 @@ function makeConsole() {
 // Per Mark's reference image: red + blue pipes running vertically with
 // metal joint bands. Sit FLAT against the wall (low z offset).
 function makeWallPipes() {
-  // v20.1 — Mark: 'redraw pipes and such on the wall decoration assets to
+  // v22 — Mark: 'redraw pipes and such on the wall decoration assets to
   // improve decorations.' Rebuilt as a proper lab MANIFOLD: 3 vertical
   // pipes with 90° elbows at the top connecting to a horizontal header,
   // a gauge dial centered on the header, a valve wheel mid-height, and
@@ -1195,7 +1198,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v20.1 (Mark: 'less stuff less often'): density dropped further
+// v22 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -1224,10 +1227,217 @@ function placeSideProps() {
 }
 placeSideProps();
 
+// ============ v22: FAR BACKGROUND SCENERY ============================
+// Mark: 'elements of stage building beyond the immediate space, like
+// behind walls and stuff.' The 5m-tall walls + 6.75m-high camera means
+// anything taller than 5m at x ≈ ±11 is visible ABOVE the wall tops.
+// So we add giant 3D background props (specimen towers, gantries,
+// consoles, power towers) — the player sees their tops marching past
+// and feels the lab extends FAR beyond the corridor. No engine refactor
+// needed; they scroll-recycle exactly like side props.
+
+const FAR_X_BASE = 11;       // base distance from corridor center
+const FAR_COUNT = 14;
+const FAR_SPACING = 32;      // distance between scenery items along Z
+const farScenery = [];
+
+// Tall glowing specimen vat — visible tower of colored liquid
+function makeFarSpecTank() {
+  const grp = new THREE.Group();
+  const colors = [0x39e36e, 0xff39c5, 0x1ab3ff, 0xffd23a, 0xff6a3a, 0x9b6cff];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  // Pedestal base
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.6, 1.9, 0.7, 14),
+    new THREE.MeshStandardMaterial({ color: 0x3a4d75, metalness: 0.65, roughness: 0.42 })
+  );
+  base.position.y = 0.35; grp.add(base);
+  // Tank base ring (with emissive accent)
+  const baseRing = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.5, 1.5, 0.18, 14),
+    new THREE.MeshStandardMaterial({
+      color: color, metalness: 0.4, roughness: 0.4,
+      emissive: color, emissiveIntensity: 0.7
+    })
+  );
+  baseRing.position.y = 0.78; grp.add(baseRing);
+  // Glass shell
+  const glass = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.35, 1.35, 6.2, 18, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: color, metalness: 0.0, roughness: 0.15,
+      transparent: true, opacity: 0.45,
+      emissive: color, emissiveIntensity: 0.7,
+      side: THREE.DoubleSide
+    })
+  );
+  glass.position.y = 4.0; grp.add(glass);
+  // Inner liquid
+  const liquid = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.30, 1.30, 5.8, 18),
+    new THREE.MeshStandardMaterial({
+      color: color, transparent: true, opacity: 0.42,
+      emissive: color, emissiveIntensity: 1.1
+    })
+  );
+  liquid.position.y = 4.0; grp.add(liquid);
+  // Dark top cap
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.5, 1.5, 0.5, 14),
+    new THREE.MeshStandardMaterial({ color: 0x1a2540, metalness: 0.65, roughness: 0.45 })
+  );
+  cap.position.y = 7.35; grp.add(cap);
+  // Top vent pipe sticking up
+  const vent = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.16, 0.9, 10),
+    new THREE.MeshStandardMaterial({ color: 0x6a7388, metalness: 0.8, roughness: 0.35 })
+  );
+  vent.position.y = 8.05; grp.add(vent);
+  // Atmospheric point light
+  const pl = new THREE.PointLight(color, 1.8, 22, 2);
+  pl.position.y = 4.0;
+  grp.add(pl);
+  return grp;
+}
+
+// Giant control console — bright cyan screen towering above
+function makeFarConsole() {
+  const grp = new THREE.Group();
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(3.4, 4.2, 1.6),
+    new THREE.MeshStandardMaterial({ color: 0x4a5570, metalness: 0.55, roughness: 0.4 })
+  );
+  body.position.y = 2.1; grp.add(body);
+  // Big screen
+  const screenColor = [0x46f0ff, 0x39e36e, 0xff39c5][Math.floor(Math.random() * 3)];
+  const screen = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 2.4, 0.1),
+    new THREE.MeshBasicMaterial({ color: screenColor })
+  );
+  screen.position.set(0, 3.0, 0.86); grp.add(screen);
+  // Dark bezel inset
+  const bezel = new THREE.Mesh(
+    new THREE.BoxGeometry(3.0, 2.6, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x0a1230 })
+  );
+  bezel.position.set(0, 3.0, 0.82); grp.add(bezel);
+  // Pedestal base
+  const ped = new THREE.Mesh(
+    new THREE.BoxGeometry(3.6, 0.45, 1.8),
+    new THREE.MeshStandardMaterial({ color: 0x2a3144, metalness: 0.5, roughness: 0.5 })
+  );
+  ped.position.y = 0.225; grp.add(ped);
+  // Atmospheric point light
+  const pl = new THREE.PointLight(screenColor, 1.4, 18, 2);
+  pl.position.set(0, 3.0, 1.5);
+  grp.add(pl);
+  return grp;
+}
+
+// Overhead gantry — beam structure crossing high above
+function makeFarGantry() {
+  const grp = new THREE.Group();
+  const matCol = new THREE.MeshStandardMaterial({ color: 0x4a5570, metalness: 0.75, roughness: 0.35 });
+  // Two support columns
+  for (const x of [-2.2, 2.2]) {
+    const col = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 7.5, 0.45), matCol
+    );
+    col.position.set(x, 3.75, 0); grp.add(col);
+    // Base plate
+    const plate = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.2, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0x2a3144, metalness: 0.6, roughness: 0.5 })
+    );
+    plate.position.set(x, 0.1, 0); grp.add(plate);
+  }
+  // Horizontal beam connecting them
+  const beam = new THREE.Mesh(
+    new THREE.BoxGeometry(5.2, 0.55, 0.55), matCol
+  );
+  beam.position.y = 7.5; grp.add(beam);
+  // Yellow caution stripe along the beam
+  const stripe = new THREE.Mesh(
+    new THREE.BoxGeometry(5.3, 0.12, 0.58),
+    new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.2, roughness: 0.5 })
+  );
+  stripe.position.y = 7.5; grp.add(stripe);
+  // Hanging red warning sign
+  const sign = new THREE.Mesh(
+    new THREE.BoxGeometry(1.6, 1.0, 0.08),
+    new THREE.MeshStandardMaterial({
+      color: 0xff3030, emissive: 0xff1010, emissiveIntensity: 0.7
+    })
+  );
+  sign.position.y = 6.4; grp.add(sign);
+  return grp;
+}
+
+// Power tower — tall thin vertical with red beacon
+function makeFarTower() {
+  const grp = new THREE.Group();
+  const matSteel = new THREE.MeshStandardMaterial({ color: 0x6a7388, metalness: 0.78, roughness: 0.35 });
+  // Tapered tower
+  const tower = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.4, 0.75, 9.5, 10), matSteel
+  );
+  tower.position.y = 4.75; grp.add(tower);
+  // 3 horizontal disc bands
+  for (let i = 0; i < 3; i++) {
+    const band = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.6, 0.6, 0.18, 12),
+      new THREE.MeshStandardMaterial({ color: 0x3a4d75, metalness: 0.7, roughness: 0.4 })
+    );
+    band.position.y = 2.5 + i * 2.2;
+    grp.add(band);
+  }
+  // Red beacon ball
+  const beacon = new THREE.Mesh(
+    new THREE.SphereGeometry(0.45, 14, 10),
+    new THREE.MeshStandardMaterial({
+      color: 0xff3030, emissive: 0xff3030, emissiveIntensity: 1.8,
+      metalness: 0.1, roughness: 0.2
+    })
+  );
+  beacon.position.y = 9.8;
+  grp.add(beacon);
+  // Antenna spike
+  const antenna = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6), matSteel
+  );
+  antenna.position.y = 10.7;
+  grp.add(antenna);
+  // Beacon point light
+  const pl = new THREE.PointLight(0xff3030, 1.2, 14, 2);
+  pl.position.y = 9.8;
+  grp.add(pl);
+  grp.userData.beacon = beacon;       // animator pulses this
+  return grp;
+}
+
+const FAR_TYPES = [makeFarSpecTank, makeFarConsole, makeFarGantry, makeFarTower];
+
+function placeFarScenery() {
+  const z0 = -20;
+  for (let i = 0; i < FAR_COUNT; i++) {
+    const side = (i % 2 === 0) ? -1 : 1;
+    const x = side * (FAR_X_BASE + Math.random() * 5);
+    const z = z0 - i * FAR_SPACING - Math.random() * 8;
+    const fn = FAR_TYPES[Math.floor(Math.random() * FAR_TYPES.length)];
+    const item = fn();
+    item.position.set(x, 0, z);
+    if (side > 0) item.rotation.y = Math.PI;
+    scene.add(item);
+    farScenery.push({ mesh: item, z });
+  }
+}
+placeFarScenery();
+
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-// v20.1 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
+// v22 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
 // that explains why the proportions are blocky. Variable names kept
 // (matCoat/matSkin/matPants etc.) so the arm/leg builders + run animation
 // don't need a refactor — only the colors + finish change.
@@ -1252,7 +1462,7 @@ const matLEDCyan = new THREE.MeshStandardMaterial({ color: 0x46f0ff, emissive: 0
 const matLEDGreen = new THREE.MeshStandardMaterial({ color: 0x39e36e, emissive: 0x39e36e, emissiveIntensity: 1.2, metalness: 0.0, roughness: 0.2 });
 const matLEDAmber = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 1.0, metalness: 0.0, roughness: 0.2 });
 
-// v20.1 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v22 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1268,7 +1478,7 @@ hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 
-// v20.1: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
+// v22: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
 // animation curve, but now reads as power cords hanging off the back of
 // the Computer character that swing with the run.
 const coatTail = new THREE.Group();
@@ -1345,7 +1555,7 @@ for (const [sx, sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]) {
   head.add(cap);
 }
 
-// v20.1 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
+// v22 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
 // up at world -Z (away from camera). The BACK panel needs to be at LOCAL
 // -Z so it ends up world +Z = camera-facing. All face elements moved to
 // local +Z so they face away (correct for Danny running forward).
@@ -1599,7 +1809,7 @@ scene.add(shadow);
 
 // CRITICAL: face Danny down the corridor (away from camera at +Z)
 danny.rotation.y = Math.PI;
-// v20.1: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
+// v22: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
 // instead of clipping ~25cm into it. The original leg hierarchy puts
 // the outsole bottom at y=-0.255 with danny.y=0; +0.26 zeroes it out.
 const BASE_Y = 0.26;
@@ -1610,7 +1820,7 @@ const pickGroup = new THREE.Group(); scene.add(pickGroup);
 const objects = [];
 function lanePosX(lane) { return lane * LANE_X; }
 
-// v20.1: pickups rebuilt for unambiguous readability.
+// v22: pickups rebuilt for unambiguous readability.
 // Mark: 'I tried right now and couldn't tell if it was obstacle or power up.'
 //
 // New convention so players never confuse pickups with threats:
@@ -1765,7 +1975,7 @@ function makeMagnet() {
 
 // 1. RED X CRATE — LANE DODGE
 function makeRedXCrate() {
-  // v20.1: rounded chamfered corners, brighter primary palette
+  // v22: rounded chamfered corners, brighter primary palette
   const grp = new THREE.Group();
   // Body — bright orange (more cartoon than dark brown)
   const body = new THREE.Mesh(
@@ -1898,7 +2108,7 @@ function makeElecFence() {
 
 // 5. ROLLING LAB CART — LANE DODGE
 function makeLabCart() {
-  // v20.1: rounded shelves + brighter primary palette
+  // v22: rounded shelves + brighter primary palette
   const grp = new THREE.Group();
   const shelfMat = new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.1, roughness: 0.5 });
   const top = new THREE.Mesh(roundedBox(1.10, 0.12, 0.70, 0.04), shelfMat);
@@ -1949,7 +2159,7 @@ function makeLabCart() {
 function makeSteamVent() {
   const grp = new THREE.Group();
   // floor grate
-  // v20.1: rounded grate with bright cartoon top color
+  // v22: rounded grate with bright cartoon top color
   const grate = new THREE.Mesh(
     roundedBox(0.80, 0.10, 0.80, 0.04),
     new THREE.MeshStandardMaterial({ color: 0x2a3a55, metalness: 0.7, roughness: 0.4 })
@@ -2015,7 +2225,7 @@ function makeSlimePuddle() {
 // 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from a tower)
 function makeRobotArm() {
   const grp = new THREE.Group();
-  // v20.1 audit: arm used to float at y=2.30 with no visible support
+  // v22 audit: arm used to float at y=2.30 with no visible support
   // (ceiling was removed in v6). Now built as a floor-mounted tower
   // with a solid base plate + vertical column so it reads as "industrial
   // installation" instead of "hovering in mid-air."
@@ -2058,7 +2268,7 @@ function makeRobotArm() {
                                 new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
   stripe.position.y = -0.30; armG.add(stripe);
   const stripe2 = stripe.clone(); stripe2.position.y = -0.55; armG.add(stripe2);
-  // v20.1: ICONIC SUBWAY-SURFERS RED+WHITE STRIPED SWEEP POLE.
+  // v22: ICONIC SUBWAY-SURFERS RED+WHITE STRIPED SWEEP POLE.
   // Rounded box + 7 vertical stripe slats alternating bright red/white.
   const matRed   = new THREE.MeshStandardMaterial({
     color: 0xff2020, metalness: 0.0, roughness: 0.45,
@@ -2185,7 +2395,7 @@ function makePortalCrack() {
 }
 
 const FACTORIES = {
-  // v20.1: 'crystal' kind kept for save-data compat, factory now returns a gold coin
+  // v22: 'crystal' kind kept for save-data compat, factory now returns a gold coin
   crystal: makeCoin, shield: makeShield, magnet: makeMagnet,
   // Mark's MVP-10:
   redx: makeRedXCrate, lowlaser: makeLowLaser, highlaser: makeHighLaser,
@@ -2276,6 +2486,132 @@ let slideT = 0;                                    // seconds remaining in slide
 const SLIDE_DURATION = 0.6;
 let shield = 0, magnet = 0;
 let spawnAcc = 0;
+
+// ============ v22: BRANCHING ZONES ===================================
+// Mark: 'I'd also like it if at a certain point the level branches left
+// or right and then takes us down other directions of the route. This
+// game is meant to be an explore-as-many-paths-and-survive type of game.'
+//
+// Tier 2 implementation: Y-junction archways spawn every ~150 distance.
+// The player's LANE when crossing the archway determines which ZONE the
+// corridor transitions to. Each zone has its own color tint and prop
+// weighting. The visual transition is smooth (material color lerp over
+// ~3 sec). The set of zones visited is tracked in localStorage so the
+// player can explore the map.
+const ZONES = {
+  MAIN:  { tint: 0xffffff, name: 'MAIN LAB',   nextWeight: 1.0, propBias: { specimen: 0.55, console: 0.25, pipes: 0.40, bench: 0.20 } },
+  POWER: { tint: 0xffe4a0, name: 'POWER WING', nextWeight: 1.0, propBias: { specimen: 0.10, console: 0.30, pipes: 0.85, bench: 0.10 } },
+  BIO:   { tint: 0xc8ffd0, name: 'BIO WING',   nextWeight: 1.0, propBias: { specimen: 1.00, console: 0.15, pipes: 0.25, bench: 0.35 } },
+  CRYO:  { tint: 0xc0e8ff, name: 'CRYO WING',  nextWeight: 1.0, propBias: { specimen: 0.40, console: 0.20, pipes: 0.50, bench: 0.50 } }
+};
+const ZONE_LIST = Object.keys(ZONES);
+let currentZone = 'MAIN';
+let zoneTint = new THREE.Color(0xffffff);
+let zoneTargetTint = new THREE.Color(0xffffff);
+let nextBranchAt = 220;            // first branch at ~220m
+const BRANCH_INTERVAL = 220;       // ~one branch per 220 distance units
+const branches = [];               // active YJunction props in the world
+let zonesVisited = new Set(JSON.parse(localStorage.getItem('sdr_zones') || '["MAIN"]'));
+zonesVisited.add('MAIN');
+
+// HUD zone readout — show current zone in the topbar
+function refreshZoneHUD() {
+  const el = document.getElementById('ui-zone');
+  if (el) {
+    el.textContent = ZONES[currentZone].name;
+    el.style.color = '#' + ZONES[currentZone].tint.toString(16).padStart(6, '0');
+  }
+}
+function pickBranchZones() {
+  // 3 lane choices: left / center / right. Each leads to a different zone.
+  // Center is always the CURRENT zone (continue forward). Left + right
+  // pick two NEW zones (preferring unvisited ones for exploration).
+  const others = ZONE_LIST.filter(z => z !== currentZone);
+  // Bias toward zones not yet visited
+  others.sort((a, b) => {
+    const av = zonesVisited.has(a) ? 1 : 0;
+    const bv = zonesVisited.has(b) ? 1 : 0;
+    return (av - bv) + (Math.random() - 0.5) * 0.3;
+  });
+  return [others[0], currentZone, others[1]];   // [left, center, right]
+}
+
+// Build a Y-JUNCTION ARCHWAY prop — a 3D arch across the corridor with
+// three colored signs hovering above each lane labeling the destinations.
+function makeYJunction(zoneChoices) {
+  const grp = new THREE.Group();
+  const matFrame = new THREE.MeshStandardMaterial({ color: 0x2a3144, metalness: 0.7, roughness: 0.35 });
+  const matStripe = new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.3, roughness: 0.45, emissive: 0xffd23a, emissiveIntensity: 0.4 });
+
+  // Two side columns
+  for (const x of [-CORR_HALF_W + 0.1, CORR_HALF_W - 0.1]) {
+    const col = new THREE.Mesh(roundedBox(0.45, 5.0, 0.45, 0.08), matFrame);
+    col.position.set(x, 2.5, 0);
+    grp.add(col);
+    // Bright yellow caution stripe wrapping the column
+    const stripe = new THREE.Mesh(roundedBox(0.52, 0.20, 0.52, 0.06), matStripe);
+    stripe.position.set(x, 0.4, 0);
+    grp.add(stripe);
+  }
+  // Horizontal top beam spanning the corridor
+  const beam = new THREE.Mesh(roundedBox(CORR_HALF_W * 2.05, 0.55, 0.55, 0.10), matFrame);
+  beam.position.y = 4.85; grp.add(beam);
+  // Bright caution-stripe band along the beam underside
+  const beamStripe = new THREE.Mesh(roundedBox(CORR_HALF_W * 2.08, 0.12, 0.6, 0.05), matStripe);
+  beamStripe.position.y = 4.55; grp.add(beamStripe);
+
+  // Three lane-signs hanging from the beam (left/center/right)
+  for (let lane = -1; lane <= 1; lane++) {
+    const zoneKey = zoneChoices[lane + 1];
+    const tint = ZONES[zoneKey].tint;
+    const name = ZONES[zoneKey].name;
+    const isCenter = (lane === 0);
+    // Sign back board (dark frame)
+    const back = new THREE.Mesh(
+      roundedBox(1.7, 0.7, 0.08, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x0a0e1a })
+    );
+    back.position.set(lane * LANE_X, 3.7, 0.10); grp.add(back);
+    // Bright glowing face
+    const face = new THREE.Mesh(
+      roundedBox(1.55, 0.55, 0.05, 0.07),
+      new THREE.MeshStandardMaterial({
+        color: tint, emissive: tint, emissiveIntensity: 0.85,
+        metalness: 0.2, roughness: 0.4
+      })
+    );
+    face.position.set(lane * LANE_X, 3.7, 0.16); grp.add(face);
+    // Cyan arrow on the sign pointing DOWN to the lane
+    const arrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.20, 0.30, 4),
+      new THREE.MeshBasicMaterial({ color: 0x46f0ff })
+    );
+    arrow.position.set(lane * LANE_X, 3.05, 0.20);
+    arrow.rotation.x = Math.PI;
+    grp.add(arrow);
+    // Floor-paint arrow on the lane below the sign (translucent cyan)
+    const floorMark = new THREE.Mesh(
+      new THREE.PlaneGeometry(LANE_X * 0.7, 4.0),
+      new THREE.MeshBasicMaterial({
+        color: isCenter ? 0xffd23a : 0x46f0ff,
+        transparent: true, opacity: 0.30
+      })
+    );
+    floorMark.rotation.x = -Math.PI / 2;
+    floorMark.position.set(lane * LANE_X, 0.015, -1.5);
+    grp.add(floorMark);
+  }
+
+  grp.userData.choices = zoneChoices;
+  grp.userData.resolved = false;
+  return grp;
+}
+
+function applyZoneTint() {
+  // Lerp wall + floor material color toward zone tint each frame.
+  // Updated in the tick.
+  zoneTargetTint = new THREE.Color(ZONES[currentZone].tint);
+}
 let runT = 0;
 // Mark: "right now he's just shaking." Bug was driving stride animation
 // from runT (which advances by dt*speed = ~0.27/frame at speed 16),
@@ -2336,6 +2672,14 @@ function reset() {
   lane = 0; laneF = 0; jumpV = 0; jumpY = 0; onGround = true;
   slideT = 0;
   shield = 0; magnet = 0; spawnAcc = 0; runT = 0; stridePhase = 0; shake = 0;
+  // v22: clear any active branches + reset zone state
+  for (const b of branches) scene.remove(b.mesh);
+  branches.length = 0;
+  nextBranchAt = 220;
+  currentZone = 'MAIN';
+  zoneTint = new THREE.Color(0xffffff);
+  zoneTargetTint = new THREE.Color(0xffffff);
+  refreshZoneHUD();
   AUDIO.lastStepSin = 0;
   fadeMusic(AUDIO.music_vol, 600);                      // restore music after death/win
   document.getElementById('overlay').classList.remove('on');
@@ -2374,7 +2718,7 @@ function tick() {
     }
     // slide timer countdown
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
-    // v20.1: floor scroll FLIPPED + speed-locked to the actual world speed
+    // v22: floor scroll FLIPPED + speed-locked to the actual world speed
     // that the side props translate at. Derivation:
     //   PlaneGeometry length CORR_LEN=240, repeat.y=24 → 1 V cycle covers
     //   240/24 = 10 world units. To make floor texture pass at the same
@@ -2419,8 +2763,67 @@ function tick() {
       }
     }
 
+    // v22: far background scenery — recycles like side props
+    for (let i = 0; i < farScenery.length; i++) {
+      const fs = farScenery[i];
+      fs.mesh.position.z += speed * dt;
+      fs.z = fs.mesh.position.z;
+      if (fs.z > 18) {
+        fs.mesh.position.z -= FAR_COUNT * FAR_SPACING;
+        fs.z = fs.mesh.position.z;
+      }
+      // beacon-towers pulse their red ball
+      const beacon = fs.mesh.userData && fs.mesh.userData.beacon;
+      if (beacon) {
+        beacon.material.emissiveIntensity = 1.2 + 0.8 * Math.abs(Math.sin(runT * 1.2 + i));
+      }
+    }
+
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v20.1: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v22: 14 → 24 = less stuff less often
+
+    // v22: BRANCH SPAWN + RESOLVE + TINT LERP -----------------------
+    // Spawn a Y-junction archway when we pass the next-branch distance.
+    if (dist > nextBranchAt) {
+      const choices = pickBranchZones();
+      const yJunc = makeYJunction(choices);
+      yJunc.position.set(0, 0, FAR_Z);
+      scene.add(yJunc);
+      branches.push({ mesh: yJunc, z: FAR_Z, choices, resolved: false });
+      nextBranchAt = dist + BRANCH_INTERVAL;
+    }
+    // Move + recycle + resolve each active branch
+    for (let i = branches.length - 1; i >= 0; i--) {
+      const b = branches[i];
+      b.mesh.position.z += speed * dt;
+      b.z = b.mesh.position.z;
+      // When the player crosses the archway (z ~ Danny's z ~ 5), lock in
+      // their lane choice and update the zone.
+      if (!b.resolved && b.z > 5) {
+        const choiceIdx = Math.round(laneF) + 1;        // -1 → 0, 0 → 1, +1 → 2
+        const newZone = b.choices[Math.max(0, Math.min(2, choiceIdx))];
+        if (newZone !== currentZone) {
+          currentZone = newZone;
+          zonesVisited.add(newZone);
+          localStorage.setItem('sdr_zones', JSON.stringify([...zonesVisited]));
+          applyZoneTint();
+          refreshZoneHUD();
+          sfx('powerup');                                // mini fanfare on zone change
+        }
+        b.resolved = true;
+      }
+      // Despawn once well past the camera
+      if (b.z > 25) {
+        scene.remove(b.mesh);
+        branches.splice(i, 1);
+      }
+    }
+    // Smoothly lerp the global zoneTint toward zoneTargetTint
+    zoneTint.lerp(zoneTargetTint, Math.min(1, dt * 0.6));
+    // Apply tint to wall + floor materials (multiplies their albedo)
+    if (wallMatL && wallMatL.color) wallMatL.color.copy(zoneTint);
+    if (wallMatR && wallMatR.color) wallMatR.color.copy(zoneTint);
+    if (floor && floor.material && floor.material.color) floor.material.color.copy(zoneTint);
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -2434,13 +2837,13 @@ function tick() {
       o.mesh.position.z = o.z;
       // per-kind animations
       if (o.kind === 'crystal') {
-        // v20.1: COIN spins around its Y axis at ~1 cycle/sec at base speed
+        // v22: COIN spins around its Y axis at ~1 cycle/sec at base speed
         // — slow enough for the face/edge alternation to read as a coin.
         // Was runT * 1.8 (~4.6 cycles/sec) → way too fast to register.
         o.mesh.rotation.y = runT * 0.40 + o.phase;
         o.mesh.position.y = 1.0 + Math.sin(runT * 0.8 + o.phase) * 0.08;
       } else if (o.kind === 'shield' || o.kind === 'magnet') {
-        // v20.1: power-up orb gently rotates + PULSES so the wrapper reads
+        // v22: power-up orb gently rotates + PULSES so the wrapper reads
         // as 'pickup me' clearly distinct from any hazard.
         o.mesh.rotation.y = runT * 0.25 + o.phase;
         o.mesh.position.y = 1.1 + Math.sin(runT * 0.8 + o.phase) * 0.08;
@@ -2449,7 +2852,7 @@ function tick() {
       } else if (o.kind === 'robotarm') {
         // swing the arm back and forth horizontally
         const armG = o.mesh.userData.armG;
-        // v20.1: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
+        // v22: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
         // Now ~1.0 cycles/sec at base + wider swing arc so it threats the
         // full lane visually but reads as a slow sweep.
         if (armG) armG.rotation.z = Math.sin(runT * 0.45 + o.phase) * 0.75;
@@ -2656,7 +3059,7 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
-    // v20.1: CRT power LEDs blink with the run; antenna ball pulses
+    // v22: CRT power LEDs blink with the run; antenna ball pulses
     if (head.userData.antBall) {
       const pulse = 0.6 + 0.4 * Math.sin(stridePhase * 2);
       head.userData.antBall.material.emissiveIntensity = 0.8 + pulse * 0.8;
@@ -2665,7 +3068,7 @@ function tick() {
       head.userData.powerLED.material.emissiveIntensity =
         ((stridePhase * 0.5) | 0) % 2 === 0 ? 1.6 : 0.3;
     }
-    // v20.1: coat tail flaps — swings up behind on each stride, with a lag
+    // v22: coat tail flaps — swings up behind on each stride, with a lag
     // so it trails the body. Lifts higher at speed. Settles flat on slide.
     const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
     ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
