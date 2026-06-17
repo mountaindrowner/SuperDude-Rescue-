@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v16 — 3D Lab Escape</title>
+<title>Super Dude Runner v17 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -51,7 +51,7 @@
 <div id="ui">
   <div id="topbar">
     <div class="row">
-      <span class="lbl big">💎 <span id="ui-gears">0</span> / <span id="ui-goal">50</span></span>
+      <span class="lbl big" style="color:#ffd23a">🪙 <span id="ui-gears">0</span> / <span id="ui-goal">50</span></span>
       <span class="lbl"><span style="color:#9aa0c4">BEST</span> <span id="ui-best" style="color:#b8a8ff">0</span></span>
     </div>
     <div class="row">
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v16 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v17 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -147,7 +147,7 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// v16: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+// v17: filmic tone mapping for a graded, 'real game' look. Live-tunable.
 const GFX = { toneExposure: 1.05, envIntensity: 1.0, fogNear: 22, fogFar: 110 };
 (function applyGfxURL() {
   const p = new URLSearchParams(location.search);
@@ -172,7 +172,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
   const ec = document.createElement('canvas');
   ec.width = 512; ec.height = 256;
   const eg = ec.getContext('2d');
-  // v16 white-lab env: bright top, soft white middle, light grey floor
+  // v17 white-lab env: bright top, soft white middle, light grey floor
   const grad = eg.createLinearGradient(0, 0, 0, 256);
   grad.addColorStop(0,   '#f8fafd');   // ceiling: very bright
   grad.addColorStop(0.4, '#dde2eb');
@@ -212,7 +212,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v16: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v17: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -434,7 +434,7 @@ resize();
 
 // ============ lighting (moody industrial) =============================
 // Mark: 'too dark'. Boosted ambient + key light considerably.
-// v16: lights nudged up to compensate for ACES tone-mapping rolloff.
+// v17: lights nudged up to compensate for ACES tone-mapping rolloff.
 scene.add(new THREE.AmbientLight(0xc8d8e8, 1.25));
 const sun = new THREE.DirectionalLight(0xfff8e8, 1.15);
 sun.position.set(2, 10, 4);
@@ -456,7 +456,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v16: WHITE LAB palette (Mark: 'make the lab walls white').
+  // v17: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
@@ -950,7 +950,7 @@ function makeBench() {
 
 // COMPUTER CONSOLE on the wall
 function makeConsole() {
-  // v16: now PROPERLY GROUNDED. Was floating 90cm above the floor.
+  // v17: now PROPERLY GROUNDED. Was floating 90cm above the floor.
   // Total height 1.5m: pedestal 0-0.6, body 0.6-1.6, top cap 1.6-1.65.
   const grp = new THREE.Group();
   // Pedestal base (so it reads as installed on the floor)
@@ -1024,7 +1024,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v16 (Mark: 'less stuff less often'): density dropped further
+// v17 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -1056,7 +1056,7 @@ placeSideProps();
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-// v16 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
+// v17 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
 // that explains why the proportions are blocky. Variable names kept
 // (matCoat/matSkin/matPants etc.) so the arm/leg builders + run animation
 // don't need a refactor — only the colors + finish change.
@@ -1081,7 +1081,7 @@ const matLEDCyan = new THREE.MeshStandardMaterial({ color: 0x46f0ff, emissive: 0
 const matLEDGreen = new THREE.MeshStandardMaterial({ color: 0x39e36e, emissive: 0x39e36e, emissiveIntensity: 1.2, metalness: 0.0, roughness: 0.2 });
 const matLEDAmber = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 1.0, metalness: 0.0, roughness: 0.2 });
 
-// v16 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v17 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1097,7 +1097,7 @@ hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 
-// v16: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
+// v17: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
 // animation curve, but now reads as power cords hanging off the back of
 // the Computer character that swing with the run.
 const coatTail = new THREE.Group();
@@ -1174,7 +1174,7 @@ for (const [sx, sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]) {
   head.add(cap);
 }
 
-// v16 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
+// v17 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
 // up at world -Z (away from camera). The BACK panel needs to be at LOCAL
 // -Z so it ends up world +Z = camera-facing. All face elements moved to
 // local +Z so they face away (correct for Danny running forward).
@@ -1428,7 +1428,7 @@ scene.add(shadow);
 
 // CRITICAL: face Danny down the corridor (away from camera at +Z)
 danny.rotation.y = Math.PI;
-// v16: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
+// v17: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
 // instead of clipping ~25cm into it. The original leg hierarchy puts
 // the outsole bottom at y=-0.255 with danny.y=0; +0.26 zeroes it out.
 const BASE_Y = 0.26;
@@ -1439,79 +1439,153 @@ const pickGroup = new THREE.Group(); scene.add(pickGroup);
 const objects = [];
 function lanePosX(lane) { return lane * LANE_X; }
 
-function makeChronoCrystal() {
-  // Faceted purple/cyan crystal — the chrono fragment pickup.
+// v17: pickups rebuilt for unambiguous readability.
+// Mark: 'I tried right now and couldn't tell if it was obstacle or power up.'
+//
+// New convention so players never confuse pickups with threats:
+//   COLLECTIBLE = a golden spinning COIN (universally readable as 'get me')
+//   POWER-UP    = the icon (shield / magnet) WRAPPED in a GOLDEN PULSING ORB.
+// Hazards in this game are never gold + glowing — so anything golden = good.
+
+function makeCoin() {
+  // Classic spinning gold coin with a subtle gear-coin face for the
+  // 'Time Machine' theme.
   const grp = new THREE.Group();
-  // outer faceted crystal (octahedron, sharper than icosahedron)
-  const outer = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.36, 0),
-    new THREE.MeshLambertMaterial({
-      color: 0x9b6cff,
-      emissive: 0x3a1080,
-      emissiveIntensity: 0.85,
-      transparent: true,
-      opacity: 0.85
-    })
+  // Main disc — laid flat with rotation.x = π/2 so it stands UPRIGHT
+  // facing the camera; animator spins it around Y.
+  const matGold = new THREE.MeshStandardMaterial({
+    color: 0xffd23a, metalness: 0.95, roughness: 0.18,
+    emissive: 0xa86a10, emissiveIntensity: 0.4
+  });
+  const matGoldDk = new THREE.MeshStandardMaterial({
+    color: 0xa86a10, metalness: 0.9, roughness: 0.3
+  });
+  const matGoldLt = new THREE.MeshStandardMaterial({
+    color: 0xfff0a0, metalness: 0.85, roughness: 0.22
+  });
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.07, 32), matGold);
+  disc.rotation.x = Math.PI / 2;
+  grp.add(disc);
+  // Recessed inner face (darker, slightly inset)
+  const inset = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.072, 32), matGoldDk);
+  inset.rotation.x = Math.PI / 2;
+  grp.add(inset);
+  // Gear teeth around the rim
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.08), matGold);
+    t.position.set(Math.cos(a) * 0.36, Math.sin(a) * 0.36, 0);
+    t.rotation.z = a;
+    grp.add(t);
+  }
+  // Engraved SD-cross on the face (visible from both sides via depth)
+  const symV = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 0.075), matGoldLt);
+  grp.add(symV);
+  const symH = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.075), matGoldLt);
+  grp.add(symH);
+  // Glow halo behind the coin
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(0.46, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.16 })
   );
-  outer.scale.set(1, 1.4, 1);
+  grp.add(halo);
+  return grp;
+}
+
+// POWER-UP WRAPPER — every power-up sits inside a translucent golden orb
+// with a brighter inner core glow. This wrapper is the universal 'good
+// thing' signal — distinct from any hazard color in the game.
+function powerOrb() {
+  const grp = new THREE.Group();
+  const orbMat = new THREE.MeshStandardMaterial({
+    color: 0xfff0a0, transparent: true, opacity: 0.32,
+    emissive: 0xffd23a, emissiveIntensity: 0.85,
+    metalness: 0.0, roughness: 0.2,
+    side: THREE.DoubleSide
+  });
+  const outer = new THREE.Mesh(new THREE.SphereGeometry(0.52, 20, 16), orbMat);
   grp.add(outer);
-  // inner core (cyan, more intense)
+  // Inner soft glow
   const inner = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.20, 0),
-    new THREE.MeshLambertMaterial({
-      color: 0x46f0ff,
-      emissive: 0x46f0ff,
-      emissiveIntensity: 1.2
+    new THREE.SphereGeometry(0.42, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0xfff8d8, transparent: true, opacity: 0.18 })
+  );
+  grp.add(inner);
+  // Gold ring band (equator) — visual cue this is a 'container'
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.52, 0.04, 8, 28),
+    new THREE.MeshStandardMaterial({
+      color: 0xffd23a, metalness: 0.95, roughness: 0.18,
+      emissive: 0xa86a10, emissiveIntensity: 0.5
     })
   );
-  inner.scale.set(1, 1.4, 1);
-  grp.add(inner);
-  // halo ring
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.42, 0.025, 8, 24),
-    new THREE.MeshBasicMaterial({ color: 0xb8a8ff, transparent: true, opacity: 0.7 })
-  );
-  ring.rotation.x = Math.PI / 2;
   grp.add(ring);
-  // glow disc on the floor below
-  const glow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.55, 24),
-    new THREE.MeshBasicMaterial({ color: 0x9b6cff, transparent: true, opacity: 0.22 })
+  // Vertical ring for spherical cage feel
+  const ring2 = new THREE.Mesh(
+    new THREE.TorusGeometry(0.52, 0.025, 8, 28),
+    new THREE.MeshStandardMaterial({
+      color: 0xffd23a, metalness: 0.9, roughness: 0.2,
+      emissive: 0xa86a10, emissiveIntensity: 0.4
+    })
   );
-  glow.rotation.x = -Math.PI / 2;
-  glow.position.y = -1.0;
-  grp.add(glow);
+  ring2.rotation.x = Math.PI / 2;
+  grp.add(ring2);
   return grp;
 }
+
 function makeShield() {
-  const grp = new THREE.Group();
-  const m = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.36, 0),
-    new THREE.MeshLambertMaterial({ color: 0x0fb8d0, emissive: 0x06434d, emissiveIntensity: 0.8 })
+  const grp = powerOrb();
+  // Icon: cyan heraldic shield with a white cross
+  const shield = new THREE.Mesh(
+    new THREE.BoxGeometry(0.28, 0.34, 0.06),
+    new THREE.MeshStandardMaterial({
+      color: 0x0fb8d0, metalness: 0.5, roughness: 0.3,
+      emissive: 0x06434d, emissiveIntensity: 0.9
+    })
   );
-  grp.add(m);
-  // ring
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.46, 0.03, 8, 24),
-    new THREE.MeshBasicMaterial({ color: 0x46f0ff })
+  grp.add(shield);
+  // Bevel on shield bottom (small triangle below the box to hint at chevron)
+  const tip = new THREE.Mesh(
+    new THREE.ConeGeometry(0.16, 0.14, 4),
+    new THREE.MeshStandardMaterial({
+      color: 0x0fb8d0, metalness: 0.5, roughness: 0.3,
+      emissive: 0x06434d, emissiveIntensity: 0.9
+    })
   );
-  ring.rotation.x = Math.PI / 2;
-  grp.add(ring);
+  tip.position.y = -0.21;
+  tip.rotation.y = Math.PI / 4;
+  grp.add(tip);
+  // White cross emblem
+  const cV = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 0.075),
+    new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  cV.position.z = 0.04;
+  grp.add(cV);
+  const cH = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, 0.075),
+    new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  cH.position.z = 0.04;
+  grp.add(cH);
   return grp;
 }
+
 function makeMagnet() {
-  const grp = new THREE.Group();
-  const a = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.18),
-                           new THREE.MeshLambertMaterial({ color: 0xd33a3a, emissive: 0x6a1818, emissiveIntensity: 0.4 }));
-  a.position.x = -0.20; grp.add(a);
-  const b = a.clone(); b.position.x = 0.20; grp.add(b);
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 0.18),
-                             new THREE.MeshLambertMaterial({ color: 0xd33a3a, emissive: 0x6a1818, emissiveIntensity: 0.4 }));
-  top.position.y = 0.28; grp.add(top);
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.14, 0.22),
-                             new THREE.MeshLambertMaterial({ color: 0xeeeeee }));
-  cap.position.set(-0.20, -0.32, 0); grp.add(cap);
-  const cap2 = cap.clone(); cap2.position.x = 0.20; grp.add(cap2);
+  const grp = powerOrb();
+  // Icon: U-shaped horseshoe magnet (red prongs + silver caps)
+  const matRed = new THREE.MeshStandardMaterial({
+    color: 0xd33a3a, metalness: 0.5, roughness: 0.32,
+    emissive: 0x6a1818, emissiveIntensity: 0.5
+  });
+  const matSilver = new THREE.MeshStandardMaterial({
+    color: 0xeeeeee, metalness: 0.85, roughness: 0.2
+  });
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.40, 0.13), matRed);
+  left.position.set(-0.13, -0.05, 0); grp.add(left);
+  const right = left.clone(); right.position.x = 0.13; grp.add(right);
+  const yoke = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.11, 0.13), matRed);
+  yoke.position.set(0, 0.20, 0); grp.add(yoke);
+  // Silver pole caps
+  const capL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.15), matSilver);
+  capL.position.set(-0.13, -0.30, 0); grp.add(capL);
+  const capR = capL.clone(); capR.position.x = 0.13; grp.add(capR);
   return grp;
 }
 // ===== HAZARDS: Mark's MVP-10 =========================================
@@ -1766,7 +1840,7 @@ function makeSlimePuddle() {
 // 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from a tower)
 function makeRobotArm() {
   const grp = new THREE.Group();
-  // v16 audit: arm used to float at y=2.30 with no visible support
+  // v17 audit: arm used to float at y=2.30 with no visible support
   // (ceiling was removed in v6). Now built as a floor-mounted tower
   // with a solid base plate + vertical column so it reads as "industrial
   // installation" instead of "hovering in mid-air."
@@ -1922,7 +1996,8 @@ function makePortalCrack() {
 }
 
 const FACTORIES = {
-  crystal: makeChronoCrystal, shield: makeShield, magnet: makeMagnet,
+  // v17: 'crystal' kind kept for save-data compat, factory now returns a gold coin
+  crystal: makeCoin, shield: makeShield, magnet: makeMagnet,
   // Mark's MVP-10:
   redx: makeRedXCrate, lowlaser: makeLowLaser, highlaser: makeHighLaser,
   efence: makeElecFence, labcart: makeLabCart, steamvent: makeSteamVent,
@@ -2083,9 +2158,9 @@ function score() { return Math.floor(dist * 3) + crystals * 20; }
 function showOverlay(title, kind) {
   const ov = document.getElementById('overlay');
   document.getElementById('ov-h1').textContent = title;
-  document.getElementById('ov-h2').textContent = kind === 'won' ? 'TIMELINE STABILIZED!' : '';
+  document.getElementById('ov-h2').textContent = kind === 'won' ? 'TIME MACHINE REPAIRED!' : '';
   document.getElementById('ov-h1').style.color = kind === 'won' ? '#b8a8ff' : '#d33a3a';
-  document.getElementById('ov-p1').textContent = '💎 ' + crystals + ' / ' + CRYSTAL_GOAL;
+  document.getElementById('ov-p1').textContent = '🪙 ' + crystals + ' / ' + CRYSTAL_GOAL;
   document.getElementById('ov-p2').textContent = 'SCORE ' + score() + '   •   ' + Math.floor(dist * 3) + ' m';
   ov.classList.add('on');
 }
@@ -2110,7 +2185,7 @@ function tick() {
     }
     // slide timer countdown
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
-    // v16: floor scroll FLIPPED + speed-locked to the actual world speed
+    // v17: floor scroll FLIPPED + speed-locked to the actual world speed
     // that the side props translate at. Derivation:
     //   PlaneGeometry length CORR_LEN=240, repeat.y=24 → 1 V cycle covers
     //   240/24 = 10 world units. To make floor texture pass at the same
@@ -2156,7 +2231,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v16: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v17: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -2170,16 +2245,22 @@ function tick() {
       o.mesh.position.z = o.z;
       // per-kind animations
       if (o.kind === 'crystal') {
-        o.mesh.rotation.y = runT * 1.8 + o.phase;
-        o.mesh.rotation.z = Math.sin(runT * 1.2 + o.phase) * 0.10;
-        o.mesh.position.y = 1.0 + Math.sin(runT * 2 + o.phase) * 0.10;
+        // v17: COIN spins around its Y axis at ~1 cycle/sec at base speed
+        // — slow enough for the face/edge alternation to read as a coin.
+        // Was runT * 1.8 (~4.6 cycles/sec) → way too fast to register.
+        o.mesh.rotation.y = runT * 0.40 + o.phase;
+        o.mesh.position.y = 1.0 + Math.sin(runT * 0.8 + o.phase) * 0.08;
       } else if (o.kind === 'shield' || o.kind === 'magnet') {
-        o.mesh.rotation.y = runT * 1.2;
-        o.mesh.position.y = 1.1 + Math.sin(runT*2 + o.phase) * 0.08;
+        // v17: power-up orb gently rotates + PULSES so the wrapper reads
+        // as 'pickup me' clearly distinct from any hazard.
+        o.mesh.rotation.y = runT * 0.25 + o.phase;
+        o.mesh.position.y = 1.1 + Math.sin(runT * 0.8 + o.phase) * 0.08;
+        const pulse = 1.0 + 0.08 * Math.sin(runT * 1.4 + o.phase);
+        o.mesh.scale.set(pulse, pulse, pulse);
       } else if (o.kind === 'robotarm') {
         // swing the arm back and forth horizontally
         const armG = o.mesh.userData.armG;
-        // v16: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
+        // v17: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
         // Now ~1.0 cycles/sec at base + wider swing arc so it threats the
         // full lane visually but reads as a slow sweep.
         if (armG) armG.rotation.z = Math.sin(runT * 0.45 + o.phase) * 0.75;
@@ -2386,7 +2467,7 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
-    // v16: CRT power LEDs blink with the run; antenna ball pulses
+    // v17: CRT power LEDs blink with the run; antenna ball pulses
     if (head.userData.antBall) {
       const pulse = 0.6 + 0.4 * Math.sin(stridePhase * 2);
       head.userData.antBall.material.emissiveIntensity = 0.8 + pulse * 0.8;
@@ -2395,7 +2476,7 @@ function tick() {
       head.userData.powerLED.material.emissiveIntensity =
         ((stridePhase * 0.5) | 0) % 2 === 0 ? 1.6 : 0.3;
     }
-    // v16: coat tail flaps — swings up behind on each stride, with a lag
+    // v17: coat tail flaps — swings up behind on each stride, with a lag
     // so it trails the body. Lifts higher at speed. Settles flat on slide.
     const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
     ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
