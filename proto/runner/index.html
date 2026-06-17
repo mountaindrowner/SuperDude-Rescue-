@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v24 — 3D Lab Escape</title>
+<title>Super Dude Runner v25 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v24 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v25 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -150,8 +150,8 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// v24: filmic tone mapping for a graded, 'real game' look. Live-tunable.
-// v24 (Subway Surfers vibe): bright atmosphere, less fog, warmer tone.
+// v25: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+// v25 (Subway Surfers vibe): bright atmosphere, less fog, warmer tone.
 const GFX = { toneExposure: 1.15, envIntensity: 1.1, fogNear: 45, fogFar: 160 };
 (function applyGfxURL() {
   const p = new URLSearchParams(location.search);
@@ -165,7 +165,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = GFX.toneExposure;
 
 const scene = new THREE.Scene();
-// v24.1: Mark: 'I don't think the sky will work' — the lab corridor
+// v25.1: Mark: 'I don't think the sky will work' — the lab corridor
 // shouldn't have an outdoor sky beyond the walls. Background reverts to
 // a bright neutral off-white so distance fades to ambient interior tone.
 scene.background = new THREE.Color(0xe8eef5);
@@ -179,9 +179,9 @@ scene.fog = new THREE.Fog(0xe8eef5, GFX.fogNear, GFX.fogFar);
   const ec = document.createElement('canvas');
   ec.width = 512; ec.height = 256;
   const eg = ec.getContext('2d');
-  // v24 white-lab env: bright top, soft white middle, light grey floor
+  // v25 white-lab env: bright top, soft white middle, light grey floor
   const grad = eg.createLinearGradient(0, 0, 0, 256);
-  // v24.1: neutral bright interior gradient (no sky)
+  // v25.1: neutral bright interior gradient (no sky)
   grad.addColorStop(0,   '#f4f6fa');   // bright ceiling tone
   grad.addColorStop(0.4, '#dde2eb');
   grad.addColorStop(0.7, '#b8c0cc');
@@ -220,7 +220,7 @@ scene.fog = new THREE.Fog(0xe8eef5, GFX.fogNear, GFX.fogFar);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v24: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v25: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -269,7 +269,7 @@ function updateCamera(dt) {
   _camLook.z += (lookZ - _camLook.z) * k;
   camera.position.copy(_camPos);
 
-  // v24: during a cinematic turn, swing the look direction so the camera
+  // v25: during a cinematic turn, swing the look direction so the camera
   // pans sideways briefly. Combined with the flash overlay (which hides
   // the swap-cut), this fakes a left/right hallway turn.
   const swing = (typeof turnLookAngle === 'function') ? turnLookAngle() : 0;
@@ -292,12 +292,12 @@ function updateCamera(dt) {
 // Expose for DevTools tweaking on the phone via Safari Web Inspector
 window.CAMERA = CAMERA;
 
-// ============ v24: ROUNDED-BOX HELPER ================================
+// ============ v25: ROUNDED-BOX HELPER ================================
 // Returns a BufferGeometry that's like BoxGeometry but with chamfered/
 // rounded corners. Used for obstacle shapes to lose the harsh
 // industrial right-angles and pick up the cartoon vibe.
 function roundedBox(w, h, d, r) {
-  // v24.1 FIX: clamp r against ALL three dimensions including depth.
+  // v25.1 FIX: clamp r against ALL three dimensions including depth.
   // Was only clamping w/h → thin panels with depth < 2r produced
   // negative ExtrudeGeometry depth → page crash on load.
   r = Math.max(0.001, Math.min(r, w/2 - 0.001, h/2 - 0.001, d/2 - 0.001));
@@ -488,7 +488,7 @@ if (window.visualViewport) {
 resize();
 
 // ============ lighting (Subway-Surfers bright cartoon) ================
-// v24: WHITE ambient (was tinted cool blue), brighter warm sun. Total
+// v25: WHITE ambient (was tinted cool blue), brighter warm sun. Total
 // shift from 'moody industrial lab' to 'sunny cartoon playground.'
 scene.add(new THREE.AmbientLight(0xffffff, 1.55));
 const sun = new THREE.DirectionalLight(0xfff4d8, 1.55);
@@ -511,7 +511,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v24: WHITE LAB palette (Mark: 'make the lab walls white').
+  // v25: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
@@ -653,7 +653,7 @@ function makeWallTexture() {
     g.fillRect(x + 8, y + 8, 4, 4); g.fillRect(x + w - 12, y + 8, 4, 4);
     g.fillRect(x + 8, y + h - 12, 4, 4); g.fillRect(x + w - 12, y + h - 12, 4, 4);
   }
-  // v24: Mark: 'too many signs being spammed on the side walls.'
+  // v25: Mark: 'too many signs being spammed on the side walls.'
   // Replaced 6-features-out-of-8-panels with sparse feature placement:
   // mostly clean brushed-metal panels with the occasional subtle accent
   // panel (light strip, conduit hatch, monitor). Only 2 signs across the
@@ -822,7 +822,38 @@ const floor = new THREE.Mesh(
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, CORR_CENTER_Z);
-scene.add(floor);
+
+// ============ v25: WORLD GROUP (rotatable for hallway turns) =========
+// Everything corridor-related goes into worldGrp instead of scene root,
+// so we can rotate the whole corridor around the camera during a turn.
+// Excluded: Danny (he stays put visually), camera, ambient + sun lights
+// (so lighting stays consistent during the rotation), HUD.
+const worldGrp = new THREE.Group();
+scene.add(worldGrp);
+// Don't auto-update matrix — we'll set it manually during turns to
+// pivot around the camera position.
+worldGrp.matrixAutoUpdate = false;
+worldGrp.matrix.identity();
+worldGrp.matrixWorld.copy(worldGrp.matrix);
+function applyWorldTransform(angle) {
+  // Set worldGrp.matrix = T(camPos) * Ry(angle) * T(-camPos) so the
+  // rotation pivots around the camera's vertical axis.
+  const cx = camera.position.x;
+  const cz = camera.position.z;
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+  const m = worldGrp.matrix.elements;
+  // 4x4 matrix in column-major form
+  m[0] = cosA;  m[1] = 0;  m[2] = -sinA; m[3] = 0;
+  m[4] = 0;     m[5] = 1;  m[6] = 0;     m[7] = 0;
+  m[8] = sinA;  m[9] = 0;  m[10]= cosA;  m[11]= 0;
+  m[12]= cx - cx * cosA - cz * sinA;
+  m[13]= 0;
+  m[14]= cz + cx * sinA - cz * cosA;
+  m[15]= 1;
+  worldGrp.matrixWorld.copy(worldGrp.matrix);
+}
+worldGrp.add(floor);
 
 // Mark's note: "the game doesn't need a roof" — ceiling removed.
 // Ceiling point lights kept (they still illuminate from above) so the
@@ -835,11 +866,11 @@ const wallMatR = new THREE.MeshStandardMaterial({ map: wallTexR, metalness: 0.55
 const wallL = new THREE.Mesh(wallGeo, wallMatL);
 wallL.rotation.y = Math.PI / 2;
 wallL.position.set(-CORR_HALF_W, CORR_H/2, CORR_CENTER_Z);
-scene.add(wallL);
+worldGrp.add(wallL);
 const wallR = new THREE.Mesh(wallGeo, wallMatR);
 wallR.rotation.y = -Math.PI / 2;
 wallR.position.set(CORR_HALF_W, CORR_H/2, CORR_CENTER_Z);
-scene.add(wallR);
+worldGrp.add(wallR);
 
 // ============ side props (3D décor) =================================
 // SPECIMEN TUBES — the iconic green-glowing alien jars from the reference
@@ -1040,7 +1071,7 @@ function makeBench() {
 
 // COMPUTER CONSOLE on the wall
 function makeConsole() {
-  // v24: now PROPERLY GROUNDED. Was floating 90cm above the floor.
+  // v25: now PROPERLY GROUNDED. Was floating 90cm above the floor.
   // Total height 1.5m: pedestal 0-0.6, body 0.6-1.6, top cap 1.6-1.65.
   const grp = new THREE.Group();
   // Pedestal base (so it reads as installed on the floor)
@@ -1076,7 +1107,7 @@ function makeConsole() {
 // Per Mark's reference image: red + blue pipes running vertically with
 // metal joint bands. Sit FLAT against the wall (low z offset).
 function makeWallPipes() {
-  // v24 — Mark: 'redraw pipes and such on the wall decoration assets to
+  // v25 — Mark: 'redraw pipes and such on the wall decoration assets to
   // improve decorations.' Rebuilt as a proper lab MANIFOLD: 3 vertical
   // pipes with 90° elbows at the top connecting to a horizontal header,
   // a gauge dial centered on the header, a valve wheel mid-height, and
@@ -1213,7 +1244,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v24 (Mark: 'less stuff less often'): density dropped further
+// v25 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -1236,7 +1267,7 @@ function placeSideProps() {
     }
     p.position.set(side * (CORR_HALF_W - 0.45), 0, z);
     if (side > 0) p.rotation.y = Math.PI;
-    scene.add(p);
+    worldGrp.add(p);
     sideProps.push({ mesh: p, z: z });
   }
 }
@@ -1245,7 +1276,7 @@ placeSideProps();
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-// v24 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
+// v25 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
 // that explains why the proportions are blocky. Variable names kept
 // (matCoat/matSkin/matPants etc.) so the arm/leg builders + run animation
 // don't need a refactor — only the colors + finish change.
@@ -1270,7 +1301,7 @@ const matLEDCyan = new THREE.MeshStandardMaterial({ color: 0x46f0ff, emissive: 0
 const matLEDGreen = new THREE.MeshStandardMaterial({ color: 0x39e36e, emissive: 0x39e36e, emissiveIntensity: 1.2, metalness: 0.0, roughness: 0.2 });
 const matLEDAmber = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 1.0, metalness: 0.0, roughness: 0.2 });
 
-// v24 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v25 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1286,7 +1317,7 @@ hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 
-// v24: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
+// v25: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
 // animation curve, but now reads as power cords hanging off the back of
 // the Computer character that swing with the run.
 const coatTail = new THREE.Group();
@@ -1363,7 +1394,7 @@ for (const [sx, sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]) {
   head.add(cap);
 }
 
-// v24 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
+// v25 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
 // up at world -Z (away from camera). The BACK panel needs to be at LOCAL
 // -Z so it ends up world +Z = camera-facing. All face elements moved to
 // local +Z so they face away (correct for Danny running forward).
@@ -1617,18 +1648,18 @@ scene.add(shadow);
 
 // CRITICAL: face Danny down the corridor (away from camera at +Z)
 danny.rotation.y = Math.PI;
-// v24: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
+// v25: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
 // instead of clipping ~25cm into it. The original leg hierarchy puts
 // the outsole bottom at y=-0.255 with danny.y=0; +0.26 zeroes it out.
 const BASE_Y = 0.26;
 danny.position.set(0, BASE_Y, 5);
 
 // ============ pickups + hazards ======================================
-const pickGroup = new THREE.Group(); scene.add(pickGroup);
+const pickGroup = new THREE.Group(); worldGrp.add(pickGroup);
 const objects = [];
 function lanePosX(lane) { return lane * LANE_X; }
 
-// v24: pickups rebuilt for unambiguous readability.
+// v25: pickups rebuilt for unambiguous readability.
 // Mark: 'I tried right now and couldn't tell if it was obstacle or power up.'
 //
 // New convention so players never confuse pickups with threats:
@@ -1783,7 +1814,7 @@ function makeMagnet() {
 
 // 1. RED X CRATE — LANE DODGE
 function makeRedXCrate() {
-  // v24: rounded chamfered corners, brighter primary palette
+  // v25: rounded chamfered corners, brighter primary palette
   const grp = new THREE.Group();
   // Body — bright orange (more cartoon than dark brown)
   const body = new THREE.Mesh(
@@ -1916,7 +1947,7 @@ function makeElecFence() {
 
 // 5. ROLLING LAB CART — LANE DODGE
 function makeLabCart() {
-  // v24: rounded shelves + brighter primary palette
+  // v25: rounded shelves + brighter primary palette
   const grp = new THREE.Group();
   const shelfMat = new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.1, roughness: 0.5 });
   const top = new THREE.Mesh(roundedBox(1.10, 0.12, 0.70, 0.04), shelfMat);
@@ -1967,7 +1998,7 @@ function makeLabCart() {
 function makeSteamVent() {
   const grp = new THREE.Group();
   // floor grate
-  // v24: rounded grate with bright cartoon top color
+  // v25: rounded grate with bright cartoon top color
   const grate = new THREE.Mesh(
     roundedBox(0.80, 0.10, 0.80, 0.04),
     new THREE.MeshStandardMaterial({ color: 0x2a3a55, metalness: 0.7, roughness: 0.4 })
@@ -2033,7 +2064,7 @@ function makeSlimePuddle() {
 // 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from a tower)
 function makeRobotArm() {
   const grp = new THREE.Group();
-  // v24 audit: arm used to float at y=2.30 with no visible support
+  // v25 audit: arm used to float at y=2.30 with no visible support
   // (ceiling was removed in v6). Now built as a floor-mounted tower
   // with a solid base plate + vertical column so it reads as "industrial
   // installation" instead of "hovering in mid-air."
@@ -2076,7 +2107,7 @@ function makeRobotArm() {
                                 new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
   stripe.position.y = -0.30; armG.add(stripe);
   const stripe2 = stripe.clone(); stripe2.position.y = -0.55; armG.add(stripe2);
-  // v24: ICONIC SUBWAY-SURFERS RED+WHITE STRIPED SWEEP POLE.
+  // v25: ICONIC SUBWAY-SURFERS RED+WHITE STRIPED SWEEP POLE.
   // Rounded box + 7 vertical stripe slats alternating bright red/white.
   const matRed   = new THREE.MeshStandardMaterial({
     color: 0xff2020, metalness: 0.0, roughness: 0.45,
@@ -2203,7 +2234,7 @@ function makePortalCrack() {
 }
 
 const FACTORIES = {
-  // v24: 'crystal' kind kept for save-data compat, factory now returns a gold coin
+  // v25: 'crystal' kind kept for save-data compat, factory now returns a gold coin
   crystal: makeCoin, shield: makeShield, magnet: makeMagnet,
   // Mark's MVP-10:
   redx: makeRedXCrate, lowlaser: makeLowLaser, highlaser: makeHighLaser,
@@ -2295,7 +2326,7 @@ const SLIDE_DURATION = 0.6;
 let shield = 0, magnet = 0;
 let spawnAcc = 0;
 
-// ============ v24: BRANCHING ZONES ===================================
+// ============ v25: BRANCHING ZONES ===================================
 // Mark: 'I'd also like it if at a certain point the level branches left
 // or right and then takes us down other directions of the route. This
 // game is meant to be an explore-as-many-paths-and-survive type of game.'
@@ -2306,7 +2337,7 @@ let spawnAcc = 0;
 // weighting. The visual transition is smooth (material color lerp over
 // ~3 sec). The set of zones visited is tracked in localStorage so the
 // player can explore the map.
-// v24: zone tints SATURATED so the corridor visibly changes color.
+// v25: zone tints SATURATED so the corridor visibly changes color.
 // Previous tints (0xffe4a0, 0xc8ffd0, 0xc0e8ff) were so pale they
 // could be confused for ambient lighting — Mark never saw the change.
 const ZONES = {
@@ -2333,7 +2364,7 @@ function refreshZoneHUD() {
   }
 }
 function pickBranchZones() {
-  // v24: NO MIDDLE OPTION. Mark: 'There shouldn't be a middle option.'
+  // v25: NO MIDDLE OPTION. Mark: 'There shouldn't be a middle option.'
   // Both choices lead to NEW zones (preferring unvisited).
   const others = ZONE_LIST.filter(z => z !== currentZone);
   others.sort((a, b) => {
@@ -2367,7 +2398,7 @@ function showZoneBanner(zoneKey) {
   showZoneBanner._t = setTimeout(() => { bn.style.opacity = '0'; }, 1600);
 }
 
-// v24: DEAD-END WALL with two doorways. The center is SOLID — running
+// v25: DEAD-END WALL with two doorways. The center is SOLID — running
 // into it splats Danny. Left/right doorways are real cutouts in the
 // wall with glowing zone-colored sign+arrow above each.
 function makeDeadEndWall(zoneChoices) {
@@ -2531,21 +2562,21 @@ function applyZoneTint() {
   zoneTargetTint = new THREE.Color(ZONES[currentZone].tint);
 }
 
-// ============ v24: CINEMATIC TURN ====================================
-// Fake-but-believable turn into a new hallway. When a side-doorway is
-// picked, camera does a brief pan in that direction while a screen-
-// covering flash (in the destination zone's color) hides the swap-cut.
-// The fade itself is the trick — like a match-cut in film.
+// ============ v25: REAL WORLD-ROTATION TURN ==========================
+// When a side-doorway is picked, the entire worldGrp rotates ±90° around
+// the camera's vertical axis. Player sees the corridor swing around them
+// — a real hallway turn, not a cinematic cut. A flash at peak rotation
+// hides the snap-back to identity (where the world geometry resets to
+// its straight orientation, ready for the new zone visuals).
 let turning = null;        // null | 'left' | 'right'
 let turnT = 0;             // seconds remaining
-const TURN_DURATION = 0.85;
-const turnState = { tintHex: 0xffffff };   // flash color (destination zone)
+const TURN_DURATION = 1.10;
+const TURN_PEAK = Math.PI / 2;   // 90° rotation amount
 
 function startTurn(direction, tintHex) {
   turning = direction;
   turnT = TURN_DURATION;
-  turnState.tintHex = tintHex;
-  // Ensure the flash overlay element exists
+  // Ensure the flash overlay element exists, tinted in destination color
   let fl = document.getElementById('turn-flash');
   if (!fl) {
     fl = document.createElement('div');
@@ -2556,27 +2587,56 @@ function startTurn(direction, tintHex) {
   }
   fl.style.background = '#' + tintHex.toString(16).padStart(6, '0');
 }
+
 function tickTurn(dt) {
-  if (!turning) return;
-  turnT = Math.max(0, turnT - dt);
-  const phase = 1 - (turnT / TURN_DURATION);       // 0 → 1
-  const flashAlpha = Math.sin(phase * Math.PI);    // 0 → 1 → 0
-  const fl = document.getElementById('turn-flash');
-  if (fl) fl.style.opacity = flashAlpha.toFixed(3);
-  if (turnT <= 0) {
-    turning = null;
-    if (fl) fl.style.opacity = '0';
+  // Default: no world rotation, no flash
+  let angle = 0;
+  let flashAlpha = 0;
+
+  if (turning) {
+    turnT = Math.max(0, turnT - dt);
+    const phase = 1 - (turnT / TURN_DURATION);       // 0 → 1
+    // 3 phases:
+    //   0   → 0.50  : rotate from 0 to ±90° (smooth ease-out, visible)
+    //   0.50 → 0.55 : hold at ±90°, flash spikes 0 → 1 (very fast)
+    //   0.55 → 1.00 : world snapped back to identity, flash fades 1 → 0
+    // LEFT turn → world rotates CW from above (objects swing rightward
+    // around the player → player perceives turning LEFT). In right-handed
+    // coords CW from above = NEGATIVE Y rotation.
+    const dir = (turning === 'left' ? -1 : +1);
+    if (phase < 0.50) {
+      const t = phase / 0.50;                        // 0 → 1
+      const eased = 1 - Math.pow(1 - t, 2);          // ease-out quad
+      angle = dir * TURN_PEAK * eased;
+      // Flash starts ramping up in the last 20% of the rotation
+      flashAlpha = Math.max(0, (t - 0.6) / 0.4);
+    } else if (phase < 0.55) {
+      // Brief hold at peak rotation while flash spikes to full
+      angle = dir * TURN_PEAK;
+      flashAlpha = 1;
+    } else {
+      // Snap world to identity (rotation = 0) while flash fades.
+      // The flash hides the snap-cut; player sees a 'new' hallway emerge.
+      angle = 0;
+      const t = (phase - 0.55) / 0.45;               // 0 → 1
+      flashAlpha = 1 - t;
+    }
+    if (turnT <= 0) {
+      turning = null;
+      angle = 0;
+      flashAlpha = 0;
+    }
   }
+
+  applyWorldTransform(angle);
+
+  const fl = document.getElementById('turn-flash');
+  if (fl) fl.style.opacity = Math.max(0, Math.min(1, flashAlpha)).toFixed(3);
 }
-// Returns the additional Y-rotation of the camera look direction this
-// frame, in radians. Positive = look LEFT, negative = look RIGHT.
-function turnLookAngle() {
-  if (!turning) return 0;
-  const phase = 1 - (turnT / TURN_DURATION);
-  // ease-out swing: peaks at mid-transition, returns to 0 at the end
-  const swing = Math.sin(phase * Math.PI) * (Math.PI / 5);   // up to ~36°
-  return (turning === 'left' ? +1 : -1) * swing;
-}
+
+// v25 legacy stub — the camera no longer applies a look-angle swing;
+// the rotation is now applied to the world via applyWorldTransform().
+function turnLookAngle() { return 0; }
 let runT = 0;
 // Mark: "right now he's just shaking." Bug was driving stride animation
 // from runT (which advances by dt*speed = ~0.27/frame at speed 16),
@@ -2637,8 +2697,8 @@ function reset() {
   lane = 0; laneF = 0; jumpV = 0; jumpY = 0; onGround = true;
   slideT = 0;
   shield = 0; magnet = 0; spawnAcc = 0; runT = 0; stridePhase = 0; shake = 0;
-  // v24: clear active dead-end walls + reset zone + turn + Danny scale
-  for (const b of branches) scene.remove(b.mesh);
+  // v25: clear active dead-end walls + reset zone + turn + Danny scale
+  for (const b of branches) worldGrp.remove(b.mesh);
   branches.length = 0;
   nextBranchAt = 180;
   currentZone = 'MAIN';
@@ -2662,7 +2722,7 @@ function score() { return Math.floor(dist * 3) + crystals * 20; }
 function showOverlay(title, kind) {
   const ov = document.getElementById('overlay');
   document.getElementById('ov-h1').textContent = title;
-  // v24: friendly secondary message for SPLAT (vs. generic 'caught')
+  // v25: friendly secondary message for SPLAT (vs. generic 'caught')
   let sub = '';
   if (kind === 'won') sub = 'TIME MACHINE REPAIRED!';
   else if (title === 'SPLAT!') sub = 'OUCH. PICK A DOORWAY NEXT TIME!';
@@ -2693,7 +2753,7 @@ function tick() {
     }
     // slide timer countdown
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
-    // v24: floor scroll FLIPPED + speed-locked to the actual world speed
+    // v25: floor scroll FLIPPED + speed-locked to the actual world speed
     // that the side props translate at. Derivation:
     //   PlaneGeometry length CORR_LEN=240, repeat.y=24 → 1 V cycle covers
     //   240/24 = 10 world units. To make floor texture pass at the same
@@ -2739,15 +2799,15 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v24: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v25: 14 → 24 = less stuff less often
 
-    // v24: DEAD-END BRANCH spawn + resolve + cinematic-turn dispatch
+    // v25: DEAD-END BRANCH spawn + resolve + cinematic-turn dispatch
     // Spawn a dead-end wall when we pass the next-branch distance.
     if (dist > nextBranchAt) {
       const choices = pickBranchZones();
       const wall = makeDeadEndWall(choices);
       wall.position.set(0, 0, FAR_Z);
-      scene.add(wall);
+      worldGrp.add(wall);
       branches.push({ mesh: wall, z: FAR_Z, choices, resolved: false });
       nextBranchAt = dist + BRANCH_INTERVAL;
     }
@@ -2791,11 +2851,11 @@ function tick() {
       }
       // Despawn once well past the camera
       if (b.z > 25) {
-        scene.remove(b.mesh);
+        worldGrp.remove(b.mesh);
         branches.splice(i, 1);
       }
     }
-    // v24: faster lerp (~1s) so the zone change feels immediate.
+    // v25: faster lerp (~1s) so the zone change feels immediate.
     zoneTint.lerp(zoneTargetTint, Math.min(1, dt * 1.6));
     // Apply tint to wall + floor materials (multiplies their albedo)
     if (wallMatL && wallMatL.color) wallMatL.color.copy(zoneTint);
@@ -2814,13 +2874,13 @@ function tick() {
       o.mesh.position.z = o.z;
       // per-kind animations
       if (o.kind === 'crystal') {
-        // v24: COIN spins around its Y axis at ~1 cycle/sec at base speed
+        // v25: COIN spins around its Y axis at ~1 cycle/sec at base speed
         // — slow enough for the face/edge alternation to read as a coin.
         // Was runT * 1.8 (~4.6 cycles/sec) → way too fast to register.
         o.mesh.rotation.y = runT * 0.40 + o.phase;
         o.mesh.position.y = 1.0 + Math.sin(runT * 0.8 + o.phase) * 0.08;
       } else if (o.kind === 'shield' || o.kind === 'magnet') {
-        // v24: power-up orb gently rotates + PULSES so the wrapper reads
+        // v25: power-up orb gently rotates + PULSES so the wrapper reads
         // as 'pickup me' clearly distinct from any hazard.
         o.mesh.rotation.y = runT * 0.25 + o.phase;
         o.mesh.position.y = 1.1 + Math.sin(runT * 0.8 + o.phase) * 0.08;
@@ -2829,7 +2889,7 @@ function tick() {
       } else if (o.kind === 'robotarm') {
         // swing the arm back and forth horizontally
         const armG = o.mesh.userData.armG;
-        // v24: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
+        // v25: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
         // Now ~1.0 cycles/sec at base + wider swing arc so it threats the
         // full lane visually but reads as a slow sweep.
         if (armG) armG.rotation.z = Math.sin(runT * 0.45 + o.phase) * 0.75;
@@ -3036,7 +3096,7 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
-    // v24: CRT power LEDs blink with the run; antenna ball pulses
+    // v25: CRT power LEDs blink with the run; antenna ball pulses
     if (head.userData.antBall) {
       const pulse = 0.6 + 0.4 * Math.sin(stridePhase * 2);
       head.userData.antBall.material.emissiveIntensity = 0.8 + pulse * 0.8;
@@ -3045,7 +3105,7 @@ function tick() {
       head.userData.powerLED.material.emissiveIntensity =
         ((stridePhase * 0.5) | 0) % 2 === 0 ? 1.6 : 0.3;
     }
-    // v24: coat tail flaps — swings up behind on each stride, with a lag
+    // v25: coat tail flaps — swings up behind on each stride, with a lag
     // so it trails the body. Lifts higher at speed. Settles flat on slide.
     const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
     ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
