@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v13 — 3D Lab Escape</title>
+<title>Super Dude Runner v14 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v13 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v14 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -147,7 +147,7 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// v13: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+// v14: filmic tone mapping for a graded, 'real game' look. Live-tunable.
 const GFX = { toneExposure: 1.05, envIntensity: 1.0, fogNear: 22, fogFar: 110 };
 (function applyGfxURL() {
   const p = new URLSearchParams(location.search);
@@ -172,7 +172,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
   const ec = document.createElement('canvas');
   ec.width = 512; ec.height = 256;
   const eg = ec.getContext('2d');
-  // v13 white-lab env: bright top, soft white middle, light grey floor
+  // v14 white-lab env: bright top, soft white middle, light grey floor
   const grad = eg.createLinearGradient(0, 0, 0, 256);
   grad.addColorStop(0,   '#f8fafd');   // ceiling: very bright
   grad.addColorStop(0.4, '#dde2eb');
@@ -212,7 +212,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v13: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v14: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -434,7 +434,7 @@ resize();
 
 // ============ lighting (moody industrial) =============================
 // Mark: 'too dark'. Boosted ambient + key light considerably.
-// v13: lights nudged up to compensate for ACES tone-mapping rolloff.
+// v14: lights nudged up to compensate for ACES tone-mapping rolloff.
 scene.add(new THREE.AmbientLight(0xc8d8e8, 1.25));
 const sun = new THREE.DirectionalLight(0xfff8e8, 1.15);
 sun.position.set(2, 10, 4);
@@ -456,7 +456,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v13: WHITE LAB palette (Mark: 'make the lab walls white').
+  // v14: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
@@ -950,7 +950,7 @@ function makeBench() {
 
 // COMPUTER CONSOLE on the wall
 function makeConsole() {
-  // v13: now PROPERLY GROUNDED. Was floating 90cm above the floor.
+  // v14: now PROPERLY GROUNDED. Was floating 90cm above the floor.
   // Total height 1.5m: pedestal 0-0.6, body 0.6-1.6, top cap 1.6-1.65.
   const grp = new THREE.Group();
   // Pedestal base (so it reads as installed on the floor)
@@ -1024,7 +1024,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v13 (Mark: 'less stuff less often'): density dropped further
+// v14 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -1056,23 +1056,32 @@ placeSideProps();
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-// v13 — Danny on PBR materials so he picks up the env reflections + tone
-// mapping like the rest of the scene. Fabric = matte (high roughness),
-// backpack = slightly metallic, shoes a touch glossy.
-const matSkin  = new THREE.MeshStandardMaterial({ color: 0xf1c19a, roughness: 0.85, metalness: 0.0 });
-const matSkinShd = new THREE.MeshStandardMaterial({ color: 0xc89770, roughness: 0.85, metalness: 0.0 });
-const matCoat  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.78, metalness: 0.0 });
-const matCoatShd = new THREE.MeshStandardMaterial({ color: 0xc8d2e3, roughness: 0.8, metalness: 0.0 });
-const matPants = new THREE.MeshStandardMaterial({ color: 0x1a3a6f, roughness: 0.9, metalness: 0.0 });
-const matPantsLt = new THREE.MeshStandardMaterial({ color: 0x2a5090, roughness: 0.9, metalness: 0.0 });
-const matShoe  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55, metalness: 0.05 });
-const matSole  = new THREE.MeshStandardMaterial({ color: 0x1a2540, roughness: 0.65, metalness: 0.1 });
-const matHair  = new THREE.MeshStandardMaterial({ color: 0x6a3a18, roughness: 0.85, metalness: 0.0 });
-const matCap   = new THREE.MeshStandardMaterial({ color: 0xd33a3a, roughness: 0.6, metalness: 0.0 });   // red ball cap
-const matCapDk = new THREE.MeshStandardMaterial({ color: 0x7a1b1b, roughness: 0.65, metalness: 0.0 });
-const matBackpack = new THREE.MeshStandardMaterial({ color: 0x2a3144, roughness: 0.5, metalness: 0.35 });
+// v14 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
+// that explains why the proportions are blocky. Variable names kept
+// (matCoat/matSkin/matPants etc.) so the arm/leg builders + run animation
+// don't need a refactor — only the colors + finish change.
+const matSkin    = new THREE.MeshStandardMaterial({ color: 0xc0c8d4, metalness: 0.85, roughness: 0.30 });
+const matSkinShd = new THREE.MeshStandardMaterial({ color: 0x8a93a8, metalness: 0.85, roughness: 0.35 });
+const matCoat    = new THREE.MeshStandardMaterial({ color: 0xc8d0dc, metalness: 0.85, roughness: 0.28 });
+const matCoatShd = new THREE.MeshStandardMaterial({ color: 0x8a93a8, metalness: 0.85, roughness: 0.35 });
+const matPants   = new THREE.MeshStandardMaterial({ color: 0x4a5570, metalness: 0.75, roughness: 0.42 });
+const matPantsLt = new THREE.MeshStandardMaterial({ color: 0x6a7388, metalness: 0.8,  roughness: 0.40 });
+const matShoe    = new THREE.MeshStandardMaterial({ color: 0x8a93a8, metalness: 0.85, roughness: 0.35 });
+const matSole    = new THREE.MeshStandardMaterial({ color: 0x1a2540, metalness: 0.6,  roughness: 0.5  });
+const matHair    = new THREE.MeshStandardMaterial({ color: 0x6a7388, metalness: 0.7,  roughness: 0.45 });
+const matCap     = new THREE.MeshStandardMaterial({ color: 0xff3030, metalness: 0.4,  roughness: 0.35, emissive: 0xff3030, emissiveIntensity: 0.3 });
+const matCapDk   = new THREE.MeshStandardMaterial({ color: 0x6a7388, metalness: 0.8,  roughness: 0.40 });
+const matBackpack = new THREE.MeshStandardMaterial({ color: 0x3a4d75, metalness: 0.7, roughness: 0.40 });
+// New CRT-specific mats:
+const matBezel  = new THREE.MeshStandardMaterial({ color: 0x3a4d75, metalness: 0.7, roughness: 0.40 });
+const matScreen = new THREE.MeshStandardMaterial({ color: 0x0a1230, metalness: 0.1, roughness: 0.18, emissive: 0x46f0ff, emissiveIntensity: 0.65 });
+const matScrFace = new THREE.MeshBasicMaterial({ color: 0x46f0ff });
+const matLEDRed = new THREE.MeshStandardMaterial({ color: 0xff3030, emissive: 0xff3030, emissiveIntensity: 1.6, metalness: 0.0, roughness: 0.2 });
+const matLEDCyan = new THREE.MeshStandardMaterial({ color: 0x46f0ff, emissive: 0x46f0ff, emissiveIntensity: 1.3, metalness: 0.0, roughness: 0.2 });
+const matLEDGreen = new THREE.MeshStandardMaterial({ color: 0x39e36e, emissive: 0x39e36e, emissiveIntensity: 1.2, metalness: 0.0, roughness: 0.2 });
+const matLEDAmber = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 1.0, metalness: 0.0, roughness: 0.2 });
 
-// v13 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v14 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1088,22 +1097,30 @@ hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 
-// v13: FLAPPING COAT TAIL — a back panel pivoted at the waist that
-// swings with the run cadence so the lab coat billows behind Danny.
-// (Very readable from the behind-camera; sells the running motion.)
+// v14: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
+// animation curve, but now reads as power cords hanging off the back of
+// the Computer character that swing with the run.
 const coatTail = new THREE.Group();
-coatTail.position.set(0, 0.98, -0.20);     // pivot at waist, behind
+coatTail.position.set(0, 1.00, -0.22);     // pivot at upper back
 danny.add(coatTail);
-const tailPanel = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.55, 0.05), matCoat);
-tailPanel.position.set(0, -0.26, 0);       // hangs DOWN from the pivot
-coatTail.add(tailPanel);
-const tailShd = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.50, 0.04), matCoatShd);
-tailShd.position.set(0, -0.26, -0.03);
-coatTail.add(tailShd);
-// split vent at the bottom of the tail (two flaps)
-const ventGap = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.30, 0.06), matCoatShd);
-ventGap.position.set(0, -0.38, 0.01);
-coatTail.add(ventGap);
+// Port plate where the cables connect to the body
+const cablePort = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.10, 0.06), matCapDk);
+cablePort.position.set(0, 0, 0);
+coatTail.add(cablePort);
+// Three thick cables (red, blue, yellow) hanging straight down
+const cableColors = [matCap, matLEDCyan, matLEDAmber];
+for (let i = 0; i < 3; i++) {
+  const cable = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.035, 0.55, 8),
+    new THREE.MeshStandardMaterial({ color: [0xd33a3a, 0x1ab3ff, 0xffd23a][i], metalness: 0.3, roughness: 0.55 })
+  );
+  cable.position.set(-0.09 + i * 0.09, -0.28, 0.01);
+  coatTail.add(cable);
+  // bare-wire tip at the end (silver)
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.025, 0.05, 6), matCoatShd);
+  tip.position.set(-0.09 + i * 0.09, -0.58, 0.01);
+  coatTail.add(tip);
+}
 // belt
 const belt = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.08, 0.50), matSole);
 belt.position.set(0, 0.93, 0); danny.add(belt);
@@ -1139,92 +1156,114 @@ for (let i = 0; i < 3; i++) {
   danny.add(cork);
 }
 
-// HEAD — bigger for cartoony proportions
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.40, 24, 18), matSkin);
+// ====== CRT V-HEAD =====================================================
+// The Computer character's defining silhouette: a chunky CRT monitor on
+// shoulders. Built as a single Group called `head` so the existing head-
+// bob in the run animator (head.position.y = 2.35 + cosP*0.04) still works.
+// Variable kept as `head` to preserve compatibility with the anim.
+const head = new THREE.Group();
 head.position.y = 2.35; danny.add(head);
-// ear hint (visible from 3/4 behind)
-const earL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), matSkin);
-earL.position.set(-0.40, 2.30, 0); danny.add(earL);
-const earR = earL.clone(); earR.position.x = 0.40; danny.add(earR);
 
-// HAIR — fuller base cap under the hat + lots of spiky tufts
-const hairFront = new THREE.Mesh(new THREE.SphereGeometry(0.37, 18, 14, 0, Math.PI*2, 0, Math.PI*0.46), matHair);
-hairFront.position.set(0, 2.34, 0.03); danny.add(hairFront);
-// v13: spiky tufts all the way around the back + sides (not just 4)
-const tuftSpots = [
-  [-0.26, 2.28, -0.30, -0.5, -0.3], [-0.13, 2.26, -0.34, -0.45, 0.0],
-  [0.00, 2.25, -0.35, -0.4, 0.1],   [0.13, 2.26, -0.34, -0.45, -0.1],
-  [0.26, 2.28, -0.30, -0.5, 0.3],   [-0.34, 2.30, -0.12, -0.2, -0.6],
-  [0.34, 2.30, -0.12, -0.2, 0.6],   [-0.30, 2.26, 0.08, 0.1, -0.5],
-  [0.30, 2.26, 0.08, 0.1, 0.5]
-];
-for (const [x, y, z, rx, rz] of tuftSpots) {
-  const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.20, 6), matHair);
-  tuft.position.set(x, y, z);
-  tuft.rotation.x = rx; tuft.rotation.z = rz;
-  danny.add(tuft);
+// MAIN BEZEL — slate metal CRT housing
+const crtBezel = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.66, 0.62), matBezel);
+head.add(crtBezel);
+// Bright silver corner caps (4 corners, top + bottom) — sells the depth
+for (const [sx, sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]) {
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.66), matCoatShd);
+  cap.position.set(sx * 0.31, sy * 0.28, 0);
+  head.add(cap);
 }
 
-// BACKWARDS RED BALL CAP — the iconic detail
-const capCrown = new THREE.Mesh(
-  new THREE.SphereGeometry(0.41, 18, 14, 0, Math.PI*2, 0, Math.PI*0.52),
-  matCap
-);
-capCrown.position.set(0, 2.38, 0); danny.add(capCrown);
-// cap top button
-const capBtn = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), matCapDk);
-capBtn.position.set(0, 2.60, 0); danny.add(capBtn);
-// cap brim — flat, sticking out the BACK (toward camera since Danny faces away)
-// Brim sticks out further so it's a clear silhouette from above/behind
-const capBrim = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.36, 0.36, 0.04, 20, 1, false, -Math.PI/2.2, Math.PI/1.1),
-  matCap
-);
-capBrim.position.set(0, 2.26, -0.40); // pushed back more (was -0.32)
-capBrim.rotation.x = -0.12;            // slight upward tilt
-danny.add(capBrim);
-// Brim underside shadow plate (subtle dark band under the brim)
-const brimShade = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.32, 0.32, 0.01, 16, 1, false, -Math.PI/2.4, Math.PI/1.2),
-  matCapDk
-);
-brimShade.position.set(0, 2.24, -0.40);
-brimShade.rotation.x = -0.12;
-danny.add(brimShade);
-// cap front band (visible peeking around the top of the head from the back)
-const capBand = new THREE.Mesh(new THREE.TorusGeometry(0.40, 0.04, 8, 24), matCapDk);
-capBand.position.y = 2.20;
-capBand.rotation.x = Math.PI / 2;
-danny.add(capBand);
-// "SD" patch on the back of the cap (visible square)
-const patch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.02), new THREE.MeshStandardMaterial({ color: 0xffd23a, roughness: 0.5, metalness: 0.2 }));
-patch.position.set(0, 2.34, -0.42); danny.add(patch);
-
-// v13: SAFETY GOGGLES pushed up on top of the cap (classic scientist).
-// Dark rubber strap wraps around the cap; two glowing cyan lens housings
-// sit on the crown, tilted up. Strap is visible from the behind-camera.
-const matGoggleStrap = new THREE.MeshStandardMaterial({ color: 0x1a1a26, roughness: 0.6, metalness: 0.1 });
-const matGoggleLens  = new THREE.MeshStandardMaterial({ color: 0x39e3ff, roughness: 0.15, metalness: 0.0, emissive: 0x0a4a55, emissiveIntensity: 0.6, transparent: true, opacity: 0.85 });
-const goggleStrap = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 24), matGoggleStrap);
-goggleStrap.position.set(0, 2.42, -0.02);
-goggleStrap.rotation.x = Math.PI / 2 - 0.25;   // tilt so it sits over the crown
-danny.add(goggleStrap);
-// two lens cups on top-front of the cap
-for (let i = -1; i <= 1; i += 2) {
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.07, 16), matGoggleStrap);
-  cup.position.set(i * 0.13, 2.62, 0.20);
-  cup.rotation.x = Math.PI / 2 - 0.5;
-  danny.add(cup);
-  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.03, 16), matGoggleLens);
-  lens.position.set(i * 0.13, 2.645, 0.235);
-  lens.rotation.x = Math.PI / 2 - 0.5;
-  danny.add(lens);
+// FRONT — facing -Z (Danny's running direction). Screen face.
+// Recessed inner bezel
+const innerBezel = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.54, 0.02), matCapDk);
+innerBezel.position.set(0, 0, -0.32);
+head.add(innerBezel);
+// The screen itself (dark glass with cyan emissive glow)
+const screen = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.46, 0.015), matScreen);
+screen.position.set(0, 0, -0.335);
+head.add(screen);
+// Face: two eye blocks + smiley mouth (cyan, basic-material so it self-lights)
+const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.10, 0.01), matScrFace);
+eyeL.position.set(-0.13, 0.07, -0.345); head.add(eyeL);
+const eyeR = eyeL.clone(); eyeR.position.x = 0.13; head.add(eyeR);
+// mouth — short horizontal bar
+const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 0.01), matScrFace);
+mouth.position.set(0, -0.10, -0.345); head.add(mouth);
+// Scanline highlight bars on the screen (faint)
+for (let i = 0; i < 3; i++) {
+  const sl = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.005, 0.005),
+    new THREE.MeshBasicMaterial({ color: 0x8af0ff, transparent: true, opacity: 0.18 }));
+  sl.position.set(0, -0.18 + i * 0.18, -0.345);
+  head.add(sl);
 }
 
-// GLASSES — visible peeking around head sides from camera (round earpieces visible)
-const glassEarL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.20), matSole);
-glassEarL.position.set(-0.38, 2.36, -0.04); danny.add(glassEarL);
-const glassEarR = glassEarL.clone(); glassEarR.position.x = 0.38; danny.add(glassEarR);
+// BACK — facing +Z (toward camera). What we see most.
+const backPanel = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.58, 0.02), matCoatShd);
+backPanel.position.set(0, 0, 0.32);
+head.add(backPanel);
+// Vent grilles (horizontal slats) on the back
+for (let i = 0; i < 5; i++) {
+  const slat = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.04, 0.02), matCapDk);
+  slat.position.set(0, 0.18 - i * 0.08, 0.34);
+  head.add(slat);
+}
+// Brand label
+const brandPlate = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.08, 0.02), matSole);
+brandPlate.position.set(-0.13, -0.21, 0.34); head.add(brandPlate);
+const brandText = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.03, 0.01), matLEDAmber);
+brandText.position.set(-0.13, -0.21, 0.355); head.add(brandText);
+// Power LED on the back (the cliché red blinker)
+const powerLED = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), matLEDRed);
+powerLED.position.set(0.22, -0.21, 0.34); head.add(powerLED);
+head.userData.powerLED = powerLED;     // animator will blink this
+
+// SIDE DETAIL — knobs + dish on the right side (visible from above/behind)
+for (let i = 0; i < 2; i++) {
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.04, 12), matCoatShd);
+  knob.position.set(0.37, -0.04 - i * 0.14, 0.20);
+  knob.rotation.z = Math.PI / 2;
+  head.add(knob);
+}
+// Small side-mounted dish antenna (left)
+const dishStem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.10, 6), matCoatShd);
+dishStem.position.set(-0.42, 0.18, 0); dishStem.rotation.z = Math.PI / 2; head.add(dishStem);
+const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.015, 16), matCoat);
+dish.position.set(-0.50, 0.18, 0); dish.rotation.z = Math.PI / 2; head.add(dish);
+const dishLED = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), matLEDGreen);
+dishLED.position.set(-0.50, 0.18, 0); head.add(dishLED);
+
+// LED INDICATOR ROW on the bottom front of the bezel
+const ledColors = [matLEDGreen, matLEDAmber, matLEDRed, matLEDCyan, matLEDGreen];
+for (let i = 0; i < ledColors.length; i++) {
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), ledColors[i]);
+  led.position.set(-0.20 + i * 0.10, -0.28, -0.32);
+  head.add(led);
+}
+
+// ANTENNA on top — bracket + rod + red blinker ball
+const antBracket = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.05, 0.10), matCoatShd);
+antBracket.position.set(0.20, 0.36, 0); head.add(antBracket);
+const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.36, 6), matCapDk);
+antRod.position.set(0.20, 0.56, 0); head.add(antRod);
+const antBall = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 8), matLEDRed);
+antBall.position.set(0.20, 0.76, 0); head.add(antBall);
+head.userData.antBall = antBall;
+// Second smaller antenna offset for variety
+const antRod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.20, 6), matCapDk);
+antRod2.position.set(-0.18, 0.46, 0); head.add(antRod2);
+const antBall2 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 6), matLEDGreen);
+antBall2.position.set(-0.18, 0.58, 0); head.add(antBall2);
+
+// NECK CONNECTOR — short cylinder linking head to torso (visible from above)
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.16, 12), matCapDk);
+neck.position.set(0, -0.42, 0); head.add(neck);
+// neck ribbed bands (cable-look)
+for (let i = 0; i < 3; i++) {
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.018, 12), matCoatShd);
+  band.position.set(0, -0.36 - i * 0.04, 0);
+  head.add(band);
+}
 
 // ARMS — built as separate UPPER + LOWER pieces around an ELBOW pivot.
 // Returns { shoulder, elbow } so the run animator can drive each joint.
@@ -1392,7 +1431,7 @@ scene.add(shadow);
 
 // CRITICAL: face Danny down the corridor (away from camera at +Z)
 danny.rotation.y = Math.PI;
-// v13: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
+// v14: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
 // instead of clipping ~25cm into it. The original leg hierarchy puts
 // the outsole bottom at y=-0.255 with danny.y=0; +0.26 zeroes it out.
 const BASE_Y = 0.26;
@@ -2061,7 +2100,7 @@ function tick() {
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
     // texture scroll = illusion of forward motion (no ceiling — skipped)
     floorTex.offset.y -= dt * speed * 0.018;
-    // v13: flipped both signs from v13. Walls now flow toward camera
+    // v14: flipped both signs from v14. Walls now flow toward camera
     // (Danny moving past wall content) instead of away from it.
     wallTex.offset.x  += dt * speed * 0.0085;
     wallTexR.offset.x -= dt * speed * 0.0085;
@@ -2097,7 +2136,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v13: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v14: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -2324,7 +2363,16 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
-    // v13: coat tail flaps — swings up behind on each stride, with a lag
+    // v14: CRT power LEDs blink with the run; antenna ball pulses
+    if (head.userData.antBall) {
+      const pulse = 0.6 + 0.4 * Math.sin(stridePhase * 2);
+      head.userData.antBall.material.emissiveIntensity = 0.8 + pulse * 0.8;
+    }
+    if (head.userData.powerLED) {
+      head.userData.powerLED.material.emissiveIntensity =
+        ((stridePhase * 0.5) | 0) % 2 === 0 ? 1.6 : 0.3;
+    }
+    // v14: coat tail flaps — swings up behind on each stride, with a lag
     // so it trails the body. Lifts higher at speed. Settles flat on slide.
     const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
     ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
