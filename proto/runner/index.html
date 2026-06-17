@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v27 — 3D Lab Escape</title>
+<title>Super Dude Runner v28 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v27 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v28 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -827,22 +827,20 @@ worldGrp.matrixAutoUpdate = false;
 worldGrp.matrix.identity();
 worldGrp.matrixWorld.copy(worldGrp.matrix);
 function applyWorldTransform(angle) {
-  // worldGrp.matrix = T(pivot) * Ry(angle) * T(-pivot) so the rotation
-  // pivots around the CHARACTER's vertical axis. As playerHeading
-  // accumulates across turns, the corridor stays in front of the camera.
-  // Pivot at danny.position so the character feels like the rotation
-  // anchor (subway-surfers-style "the world swings around me").
-  const cx = (typeof danny !== 'undefined') ? danny.position.x : 0;
-  const cz = (typeof danny !== 'undefined') ? danny.position.z : 0;
+  // v28: pivot at the ORIGIN (0,0,0) which is on the camera's view axis.
+  // After turns, the perpendicular wing geometry rotates cleanly into
+  // the camera's forward view (offset only by the player's lane width).
+  // Reasoning: pivots near the player can leave wings well-offset from
+  // the new -Z direction; origin gives the closest visual alignment.
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
   const m = worldGrp.matrix.elements;
   m[0] = cosA;  m[1] = 0;  m[2] = -sinA; m[3] = 0;
   m[4] = 0;     m[5] = 1;  m[6] = 0;     m[7] = 0;
   m[8] = sinA;  m[9] = 0;  m[10]= cosA;  m[11]= 0;
-  m[12]= cx - cx * cosA - cz * sinA;
+  m[12]= 0;
   m[13]= 0;
-  m[14]= cz + cx * sinA - cz * cosA;
+  m[14]= 0;
   m[15]= 1;
   worldGrp.matrixWorld.copy(worldGrp.matrix);
 }
@@ -853,9 +851,9 @@ worldGrp.add(floor);
 // corridor doesn't go dark.
 
 const wallGeo = new THREE.PlaneGeometry(CORR_LEN, CORR_H);
-const wallMatL = new THREE.MeshStandardMaterial({ map: wallTex, metalness: 0.55, roughness: 0.5, envMapIntensity: GFX.envIntensity });
+const wallMatL = new THREE.MeshStandardMaterial({ map: wallTex, metalness: 0.55, roughness: 0.5, envMapIntensity: GFX.envIntensity, transparent: true, opacity: 1.0 });
 const wallTexR = wallTex.clone(); wallTexR.needsUpdate = true; wallTexR.offset.x = 0.5;
-const wallMatR = new THREE.MeshStandardMaterial({ map: wallTexR, metalness: 0.55, roughness: 0.5, envMapIntensity: GFX.envIntensity });
+const wallMatR = new THREE.MeshStandardMaterial({ map: wallTexR, metalness: 0.55, roughness: 0.5, envMapIntensity: GFX.envIntensity, transparent: true, opacity: 1.0 });
 const wallL = new THREE.Mesh(wallGeo, wallMatL);
 wallL.rotation.y = Math.PI / 2;
 wallL.position.set(-CORR_HALF_W, CORR_H/2, CORR_CENTER_Z);
@@ -2391,121 +2389,75 @@ function showZoneBanner(zoneKey) {
   showZoneBanner._t = setTimeout(() => { bn.style.opacity = '0'; }, 1600);
 }
 
-// v25: DEAD-END WALL with two doorways. The center is SOLID — running
-// into it splats Danny. Left/right doorways are real cutouts in the
-// wall with glowing zone-colored sign+arrow above each.
-function makeDeadEndWall(zoneChoices) {
+// v28: REAL T-INTERSECTION JUNCTION (no doorways).
+// Mark: 'there should also not be doorways, get rid of the doorways.'
+// The main corridor opens directly into perpendicular hallways. The
+// only blocker is a narrow CENTER COLUMN at the back of the chamber
+// — center lane SPLATS, side lanes route into the open side-hallway.
+// The main corridor walls fade out as this junction approaches (see
+// update loop) so the perpendicular hallways are visible from far away.
+function makeJunction(zoneChoices) {
   const grp = new THREE.Group();
   const WALL_H = 5.0;
-  const WALL_D = 0.42;
-  const DOOR_W = 1.5;       // doorway width (player ~0.7 wide fits easily)
-  const DOOR_H = 3.4;       // doorway opening height
-  // 3-panel construction: far-left wall, center solid wall, far-right wall.
-  // Doorways are the GAPS between the panels at lane positions ±LANE_X.
+  const CHAMBER_DEPTH = 8;    // how deep the junction chamber is (z)
+  const WING_LEN = 24;        // length of each perpendicular hallway
 
   const matWall = new THREE.MeshStandardMaterial({
     color: 0x3a4d75, metalness: 0.5, roughness: 0.42
-  });
-  const matStripeY = new THREE.MeshStandardMaterial({
-    color: 0xffd23a, metalness: 0.2, roughness: 0.5,
-    emissive: 0xffd23a, emissiveIntensity: 0.5
   });
   const matStripeR = new THREE.MeshStandardMaterial({
     color: 0xff2020, metalness: 0.1, roughness: 0.45,
     emissive: 0xff1010, emissiveIntensity: 0.6
   });
   const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const matDoorTrim = new THREE.MeshStandardMaterial({
-    color: 0x1a2540, metalness: 0.65, roughness: 0.45
-  });
 
-  // ----- FAR LEFT panel (corridor edge to left doorway)
-  const leftEdge = -CORR_HALF_W;
-  const leftDoorL = -LANE_X - DOOR_W / 2;
-  const leftPanelW = leftDoorL - leftEdge;
-  const leftPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(leftPanelW, WALL_H, WALL_D), matWall
+  // ----- CENTER SPLAT COLUMN (back of the junction, blocks center lane)
+  // Just a narrow structural column with hazard stripes — NOT a wall
+  // with doorways. The side lanes flow freely around it into the wings.
+  const COL_W = 1.7;
+  const centerCol = new THREE.Mesh(
+    new THREE.BoxGeometry(COL_W, WALL_H, 0.6), matWall
   );
-  leftPanel.position.set(leftEdge + leftPanelW / 2, WALL_H / 2, 0);
-  grp.add(leftPanel);
-
-  // ----- FAR RIGHT panel (mirror)
-  const rightDoorR = LANE_X + DOOR_W / 2;
-  const rightPanelW = CORR_HALF_W - rightDoorR;
-  const rightPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(rightPanelW, WALL_H, WALL_D), matWall
-  );
-  rightPanel.position.set(rightDoorR + rightPanelW / 2, WALL_H / 2, 0);
-  grp.add(rightPanel);
-
-  // ----- CENTER SOLID panel (between the two doorways) - the SPLAT zone
-  const centerLeft = -LANE_X + DOOR_W / 2;
-  const centerRight = LANE_X - DOOR_W / 2;
-  const centerW = centerRight - centerLeft;
-  const centerPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(centerW, WALL_H, WALL_D), matWall
-  );
-  centerPanel.position.set(0, WALL_H / 2, 0);
-  grp.add(centerPanel);
-
-  // Red+white hazard stripes on the center splat-zone (so it screams "wall")
+  centerCol.position.set(0, WALL_H / 2, -CHAMBER_DEPTH);
+  grp.add(centerCol);
+  // Red+white hazard stripes (DANGER — don't run into this)
   const stripeCount = 5;
   for (let i = 0; i < stripeCount; i++) {
     const stripeMat = (i % 2 === 0) ? matStripeR : matWhite;
     const stripe = new THREE.Mesh(
-      new THREE.BoxGeometry(centerW - 0.15, (WALL_H - 1.4) / stripeCount, 0.06),
+      new THREE.BoxGeometry(COL_W - 0.15, (WALL_H - 1.4) / stripeCount, 0.06),
       stripeMat
     );
-    stripe.position.set(0, 0.7 + (i + 0.5) * ((WALL_H - 1.4) / stripeCount), WALL_D / 2 + 0.01);
+    stripe.position.set(0, 0.7 + (i + 0.5) * ((WALL_H - 1.4) / stripeCount),
+                        -CHAMBER_DEPTH + 0.31);
     grp.add(stripe);
   }
-  // 'NO ENTRY' bar across the very top of the center wall
   const noBar = new THREE.Mesh(
-    new THREE.BoxGeometry(centerW - 0.10, 0.30, 0.07),
+    new THREE.BoxGeometry(COL_W - 0.10, 0.30, 0.07),
     new THREE.MeshStandardMaterial({
       color: 0xff2020, emissive: 0xff1010, emissiveIntensity: 0.9
     })
   );
-  noBar.position.set(0, WALL_H - 0.35, WALL_D / 2 + 0.02);
+  noBar.position.set(0, WALL_H - 0.35, -CHAMBER_DEPTH + 0.32);
   grp.add(noBar);
 
-  // ----- TOP HEADER beam connecting everything (spans full corridor width)
-  const header = new THREE.Mesh(
-    new THREE.BoxGeometry(CORR_HALF_W * 2, 0.5, WALL_D + 0.05), matWall
-  );
-  header.position.set(0, WALL_H + 0.25, 0);
-  grp.add(header);
-  const headerStripe = new THREE.Mesh(
-    new THREE.BoxGeometry(CORR_HALF_W * 2.02, 0.12, WALL_D + 0.06), matStripeY
-  );
-  headerStripe.position.set(0, WALL_H + 0.06, 0);
-  grp.add(headerStripe);
-
-  // ----- DOORWAYS — perpendicular hallway WINGS visible through each.
-  // v27: each doorway now opens onto a real side-hallway extending in
-  // ±X direction. Player can SEE the hallways branch before choosing
-  // (Mark's drawing: a real T-junction, not just two dark holes).
+  // ----- PERPENDICULAR HALLWAYS (one per side, OPEN to corridor) ------
   for (let side = -1; side <= 1; side += 2) {
     const zoneKey = (side < 0) ? zoneChoices[0] : zoneChoices[1];
     const tint = ZONES[zoneKey].tint;
-    const doorX = side * LANE_X;
 
-    // ----- PERPENDICULAR WING extending in side*X direction -----
-    // Geometry sits BEHIND the dead-end wall (at z < 0 in wall-local).
-    // Visible through the doorway opening as a side-hallway with a
-    // glowing zone-colored back panel.
-    const WING_LEN = 16;     // how far the wing reaches sideways
-    const WING_D   = 4.2;    // wing depth (z-thickness, into the scene)
-    const wingFarX    = doorX + side * WING_LEN;
-    const wingCenterX = doorX + side * WING_LEN / 2;
-    const wingCenterZ = -WING_D / 2;
+    // Wing extends from x=±CORR_HALF_W outward, between z=-CHAMBER_DEPTH and z=0
+    const wingNearX   = side * CORR_HALF_W;
+    const wingFarX    = side * (CORR_HALF_W + WING_LEN);
+    const wingCenterX = side * (CORR_HALF_W + WING_LEN / 2);
+    const wingCenterZ = -CHAMBER_DEPTH / 2;
 
-    // Wing FLOOR (zone-tinted so it reads as 'the bio/cryo/power lane')
+    // Wing FLOOR — zone-tinted so it reads at distance as the colored lane.
     const wingFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(WING_LEN, WING_D),
+      new THREE.PlaneGeometry(WING_LEN, CHAMBER_DEPTH),
       new THREE.MeshStandardMaterial({
         color: tint, metalness: 0.35, roughness: 0.55,
-        emissive: tint, emissiveIntensity: 0.18
+        emissive: tint, emissiveIntensity: 0.22
       })
     );
     wingFloor.rotation.x = -Math.PI / 2;
@@ -2514,119 +2466,98 @@ function makeDeadEndWall(zoneChoices) {
 
     // Wing CEILING
     const wingCeil = new THREE.Mesh(
-      new THREE.PlaneGeometry(WING_LEN, WING_D),
+      new THREE.PlaneGeometry(WING_LEN, CHAMBER_DEPTH),
       new THREE.MeshStandardMaterial({ color: 0x1a2540, metalness: 0.3, roughness: 0.65 })
     );
     wingCeil.rotation.x = Math.PI / 2;
     wingCeil.position.set(wingCenterX, WALL_H - 0.02, wingCenterZ);
     grp.add(wingCeil);
 
-    // Wing BACK wall (runs along x at z = -WING_D). What the player
-    // sees STRAIGHT THROUGH the doorway — a parallel wall behind the
-    // dead-end wall framing the perpendicular hallway.
+    // Wing FAR-Z wall (the "back" of the wing — what closes off the
+    // hallway on the far side from the player's approach).
     const wingBack = new THREE.Mesh(
       new THREE.BoxGeometry(WING_LEN, WALL_H, 0.22), matWall
     );
-    wingBack.position.set(wingCenterX, WALL_H / 2, -WING_D);
+    wingBack.position.set(wingCenterX, WALL_H / 2, -CHAMBER_DEPTH);
     grp.add(wingBack);
 
-    // Wing END-CAP (the wall at the far end of the perpendicular
-    // hallway). Tinted in zone color with a glowing signage panel so
-    // it reads as 'BIO ENTRY' / 'CRYO ENTRY' at the end of the side hall.
+    // Wing NEAR-Z wall (closer to camera — closes off the hallway on
+    // the side facing the player so the corridor visually CONTINUES
+    // past the junction into the wing).
+    const wingFront = new THREE.Mesh(
+      new THREE.BoxGeometry(WING_LEN, WALL_H, 0.22), matWall
+    );
+    wingFront.position.set(wingCenterX, WALL_H / 2, 0);
+    grp.add(wingFront);
+
+    // Wing END-CAP (the wall at the far end of the perpendicular hallway).
     const wingEnd = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, WALL_H, WING_D), matWall
+      new THREE.BoxGeometry(0.3, WALL_H, CHAMBER_DEPTH), matWall
     );
     wingEnd.position.set(wingFarX, WALL_H / 2, wingCenterZ);
     grp.add(wingEnd);
 
+    // ZONE-COLOR signage panel on the end-cap so the wing reads as
+    // 'BIO/CRYO/POWER' from a distance
     const wingEndPanel = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, WALL_H * 0.7, WING_D * 0.85),
+      new THREE.BoxGeometry(0.08, WALL_H * 0.72, CHAMBER_DEPTH * 0.82),
       new THREE.MeshStandardMaterial({
-        color: tint, emissive: tint, emissiveIntensity: 1.5,
+        color: tint, emissive: tint, emissiveIntensity: 1.6,
         metalness: 0.15, roughness: 0.4
       })
     );
-    wingEndPanel.position.set(wingFarX - side * 0.14, WALL_H * 0.55, wingCenterZ);
+    wingEndPanel.position.set(wingFarX - side * 0.18, WALL_H * 0.55, wingCenterZ);
     grp.add(wingEndPanel);
 
-    // Wing AMBIENT GLOW (zone-tinted point light inside the side hall
-    // so the floor + back wall pick up the zone color and read at
-    // distance through the doorway)
-    const wingLight = new THREE.PointLight(tint, 3.0, 24, 2);
+    // Ambient GLOW inside the wing (zone-tinted point light)
+    const wingLight = new THREE.PointLight(tint, 3.4, 26, 2);
     wingLight.position.set(wingCenterX, WALL_H * 0.62, wingCenterZ);
     grp.add(wingLight);
 
-    // Door trim (frame around the opening, including a top lintel)
-    const topLintel = new THREE.Mesh(
-      new THREE.BoxGeometry(DOOR_W + 0.20, 0.3, WALL_D + 0.06), matDoorTrim
-    );
-    topLintel.position.set(doorX, DOOR_H + 0.15, 0);
-    grp.add(topLintel);
-
-    // ZONE COLORED SIGN above the doorway
-    const signBack = new THREE.Mesh(
-      new THREE.BoxGeometry(DOOR_W + 0.10, 0.6, 0.06),
-      new THREE.MeshStandardMaterial({ color: 0x0a0e1a })
-    );
-    signBack.position.set(doorX, DOOR_H + 0.7, WALL_D / 2 + 0.03);
-    grp.add(signBack);
-    const signFace = new THREE.Mesh(
-      new THREE.BoxGeometry(DOOR_W - 0.05, 0.50, 0.05),
-      new THREE.MeshStandardMaterial({
-        color: tint, emissive: tint, emissiveIntensity: 1.4,
-        metalness: 0.15, roughness: 0.35
-      })
-    );
-    signFace.position.set(doorX, DOOR_H + 0.7, WALL_D / 2 + 0.07);
-    grp.add(signFace);
-
-    // BIG WHITE DIRECTIONAL ARROW pointing OUT of the doorway
-    const arrow = new THREE.Mesh(
-      new THREE.ConeGeometry(0.40, 0.65, 4), matWhite
-    );
-    arrow.position.set(doorX, DOOR_H + 0.7, WALL_D / 2 + 0.12);
-    arrow.rotation.z = side < 0 ? Math.PI / 2 : -Math.PI / 2;   // point left or right
-    grp.add(arrow);
-
-    // Floor paint guiding into the doorway
-    const floorMark = new THREE.Mesh(
-      new THREE.PlaneGeometry(DOOR_W * 0.95, 5.0),
-      new THREE.MeshBasicMaterial({
-        color: tint, transparent: true, opacity: 0.55
-      })
-    );
-    floorMark.rotation.x = -Math.PI / 2;
-    floorMark.position.set(doorX, 0.015, -2.2);
-    grp.add(floorMark);
-
-    // Soft point light AT the doorway lip so it pulses with the zone color
-    const pl = new THREE.PointLight(tint, 1.8, 10, 2);
-    pl.position.set(doorX, 1.6, -0.4);
-    grp.add(pl);
-
-    // ----- TALL ZONE-TINTED BEACON pole at the wing's entrance ------
-    // Visible peeking over the corridor's side walls from far down
-    // the main corridor — so the player sees 'a hallway branches off
-    // here' from a long approach distance, not just at the doorway.
-    const BEACON_H = 11.5;
+    // ----- TALL ZONE-TINTED BEACON at the wing entry (visible from far
+    // down the main corridor — pokes above the corridor walls)
+    const BEACON_H = 12.5;
+    const beaconX = side * (CORR_HALF_W - 0.12);
     const beaconPole = new THREE.Mesh(
       new THREE.CylinderGeometry(0.12, 0.16, BEACON_H, 8),
       new THREE.MeshStandardMaterial({ color: 0x1a2540, metalness: 0.7, roughness: 0.35 })
     );
-    beaconPole.position.set(doorX + side * (DOOR_W / 2 + 0.15), BEACON_H / 2, -0.6);
+    beaconPole.position.set(beaconX, BEACON_H / 2, -0.4);
     grp.add(beaconPole);
     const beaconBall = new THREE.Mesh(
-      new THREE.SphereGeometry(0.55, 16, 12),
+      new THREE.SphereGeometry(0.6, 16, 12),
       new THREE.MeshStandardMaterial({
-        color: tint, emissive: tint, emissiveIntensity: 2.2,
+        color: tint, emissive: tint, emissiveIntensity: 2.4,
         metalness: 0.1, roughness: 0.4
       })
     );
-    beaconBall.position.set(doorX + side * (DOOR_W / 2 + 0.15), BEACON_H + 0.2, -0.6);
+    beaconBall.position.set(beaconX, BEACON_H + 0.25, -0.4);
     grp.add(beaconBall);
-    const beaconHalo = new THREE.PointLight(tint, 3.0, 30, 2);
-    beaconHalo.position.set(doorX + side * (DOOR_W / 2 + 0.15), BEACON_H + 0.2, -0.6);
+    const beaconHalo = new THREE.PointLight(tint, 3.5, 34, 2);
+    beaconHalo.position.set(beaconX, BEACON_H + 0.25, -0.4);
     grp.add(beaconHalo);
+
+    // ZONE-TINTED FLOOR PAINT inside the main-corridor chamber (the
+    // 'turn here' arrow on the floor leading into this wing)
+    const floorMark = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.6, CHAMBER_DEPTH * 0.85),
+      new THREE.MeshBasicMaterial({
+        color: tint, transparent: true, opacity: 0.6
+      })
+    );
+    floorMark.rotation.x = -Math.PI / 2;
+    floorMark.position.set(side * LANE_X, 0.018, -CHAMBER_DEPTH / 2);
+    grp.add(floorMark);
+
+    // Big DIRECTIONAL ARROW on the floor at the player's lane,
+    // pointing OUTWARD into the wing
+    const arrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.55, 0.95, 4), matWhite
+    );
+    arrow.position.set(side * LANE_X, 0.04, -CHAMBER_DEPTH / 2);
+    arrow.rotation.x = -Math.PI / 2;
+    arrow.rotation.z = side < 0 ? -Math.PI / 2 : Math.PI / 2;
+    grp.add(arrow);
   }
 
   grp.userData.choices = zoneChoices;
@@ -2674,24 +2605,31 @@ function startTurn(direction, tintHex) {
 
 function tickTurn(dt) {
   let flashAlpha = 0;
+  let bodyLean = 0;
   if (turning) {
     turnT = Math.max(0, turnT - dt);
     const phase = 1 - (turnT / TURN_DURATION);
-    // ease-out quad
     const eased = 1 - Math.pow(1 - phase, 2);
     playerHeading = turnFromHeading + (turnToHeading - turnFromHeading) * eased;
-    // Subtle flash that peaks at mid-turn (so the world swing feels
-    // momentum-y without obscuring the actual motion)
     flashAlpha = Math.sin(phase * Math.PI) * 0.45;
+    // v28: character LEANS into the turn (z-axis tilt). Peaks mid-turn,
+    // settles back to 0 at the end. Direction matches the turn (left
+    // turn → lean left, right turn → lean right).
+    const leanDir = (turnToHeading > turnFromHeading) ? +1 : -1;
+    bodyLean = Math.sin(phase * Math.PI) * 0.36 * leanDir;
     if (turnT <= 0) {
       turning = null;
-      playerHeading = turnToHeading;        // lock to final, no snap-back
+      playerHeading = turnToHeading;
     }
   }
-  // Always apply the world transform based on current playerHeading.
-  // World rotates by -playerHeading around the character's position so
-  // the corridor stays in front of them after any heading change.
   applyWorldTransform(-playerHeading);
+
+  // Apply the character lean (only touch rotation.z; rotation.y is the
+  // character's facing direction, kept at π so the camera sees his back).
+  if (typeof danny !== 'undefined') {
+    const cur = danny.rotation.z || 0;
+    danny.rotation.z = cur + (bodyLean - cur) * Math.min(1, dt * 12);
+  }
 
   const fl = document.getElementById('turn-flash');
   if (fl) fl.style.opacity = flashAlpha.toFixed(3);
@@ -2771,8 +2709,12 @@ function reset() {
   applyWorldTransform(0);
   const fl = document.getElementById('turn-flash');
   if (fl) fl.style.opacity = '0';
-  // Clear splat scale on Danny
+  // Clear splat scale + reset character orientation on Danny
   danny.scale.set(1, 1, 1);
+  danny.rotation.z = 0;
+  // v28: reset wall fade to fully opaque on a fresh run
+  if (typeof wallMatL !== 'undefined') wallMatL.opacity = 1.0;
+  if (typeof wallMatR !== 'undefined') wallMatR.opacity = 1.0;
   AUDIO.lastStepSin = 0;
   fadeMusic(AUDIO.music_vol, 600);                      // restore music after death/win
   document.getElementById('overlay').classList.remove('on');
@@ -2867,7 +2809,7 @@ function tick() {
     // Spawn a dead-end wall when we pass the next-branch distance.
     if (dist > nextBranchAt) {
       const choices = pickBranchZones();
-      const wall = makeDeadEndWall(choices);
+      const wall = makeJunction(choices);
       wall.position.set(0, 0, FAR_Z);
       worldGrp.add(wall);
       branches.push({ mesh: wall, z: FAR_Z, choices, resolved: false });
@@ -2875,27 +2817,34 @@ function tick() {
     }
     // Update the cinematic-turn timers
     tickTurn(dt);
-    // Move + recycle + resolve each active dead-end wall
+    // Move + recycle + resolve each active junction. Also compute
+    // wall fade: as the closest junction approaches, fade the main
+    // corridor's side walls to transparent so the perpendicular
+    // hallways are clearly visible. After the junction passes, fade
+    // the walls back in.
+    let wallTargetOpacity = 1.0;
     for (let i = branches.length - 1; i >= 0; i--) {
       const b = branches[i];
       b.mesh.position.z += speed * dt;
       b.z = b.mesh.position.z;
-      // When the wall is at the player's z (~5), resolve their choice.
-      if (!b.resolved && b.z > 5) {
+      // v28: junction has CHAMBER_DEPTH=4. Origin is the chamber's
+      // FRONT edge. When b.z=0, chamber spans [-4, 0] (ahead of player).
+      // When b.z=4, chamber spans [0, 4] — player is INSIDE the chamber.
+      // Resolve choice at the chamber middle (b.z = 2).
+      if (!b.resolved && b.z > 2) {
         const laneRounded = Math.round(laneF);
         if (laneRounded === 0) {
-          // ---- CENTER LANE: SPLAT INTO THE WALL ----
+          // ---- CENTER LANE: SPLAT INTO THE BACK COLUMN ----
           state = 'dead';
           shake = 0.8;
-          // Pancake Danny against the wall
           danny.scale.set(1.75, 0.85, 0.22);
-          danny.position.y = BASE_Y + 0.5;     // smooch up the wall a bit
+          danny.position.y = BASE_Y + 0.5;
           sfx('hit');
           setTimeout(() => sfx('gameover'), 220);
           fadeMusic(0.10, 500);
           showOverlay('SPLAT!', 'dead');
         } else {
-          // ---- LEFT or RIGHT LANE: cinematic turn into new hallway ----
+          // ---- LEFT or RIGHT LANE: TURN into new perpendicular hallway ----
           const pick = (laneRounded < 0) ? b.choices[0] : b.choices[1];
           const direction = (laneRounded < 0) ? 'left' : 'right';
           startTurn(direction, ZONES[pick].tint);
@@ -2911,12 +2860,25 @@ function tick() {
         }
         b.resolved = true;
       }
+      // Wall fade: closest junction within ~[-32, 14] world z drives
+      // a dip in opacity that peaks around b.z = -8.
+      if (b.z > -36 && b.z < 16) {
+        const peakZ = -8;
+        const dist = Math.abs(b.z - peakZ);
+        const fadeAmt = Math.max(0, 1 - dist / 22);
+        const opacityHere = 1.0 - fadeAmt * 0.88;
+        if (opacityHere < wallTargetOpacity) wallTargetOpacity = opacityHere;
+      }
       // Despawn once well past the camera
-      if (b.z > 25) {
+      if (b.z > 28) {
         worldGrp.remove(b.mesh);
         branches.splice(i, 1);
       }
     }
+    // Lerp wall opacity to the target (smooth fade in/out, ~0.4s)
+    const wallO = wallMatL.opacity + (wallTargetOpacity - wallMatL.opacity) * Math.min(1, dt * 4.5);
+    wallMatL.opacity = wallO;
+    wallMatR.opacity = wallO;
     // v25: faster lerp (~1s) so the zone change feels immediate.
     zoneTint.lerp(zoneTargetTint, Math.min(1, dt * 1.6));
     // Apply tint to wall + floor materials (multiplies their albedo)
