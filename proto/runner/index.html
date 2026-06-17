@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v28 — 3D Lab Escape</title>
+<title>Super Dude Runner v29 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v28 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v29 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -2411,35 +2411,48 @@ function makeJunction(zoneChoices) {
   });
   const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
-  // ----- CENTER SPLAT COLUMN (back of the junction, blocks center lane)
-  // Just a narrow structural column with hazard stripes — NOT a wall
-  // with doorways. The side lanes flow freely around it into the wings.
-  const COL_W = 1.7;
-  const centerCol = new THREE.Mesh(
-    new THREE.BoxGeometry(COL_W, WALL_H, 0.6), matWall
+  // ----- FULL DEAD-END BACK WALL (Mark v29: 'the wall should completely
+  // be dead end, and I only have a choice to turn right or left').
+  // Solid wall spanning the entire chamber width, perpendicular to the
+  // corridor. NO opening — center lane SLAMS into it. The side lanes
+  // are NOT blocked because the wing entries are at the sides, not
+  // through the wall.
+  const backWall = new THREE.Mesh(
+    new THREE.BoxGeometry(CORR_HALF_W * 2, WALL_H, 0.6), matWall
   );
-  centerCol.position.set(0, WALL_H / 2, -CHAMBER_DEPTH);
-  grp.add(centerCol);
-  // Red+white hazard stripes (DANGER — don't run into this)
+  backWall.position.set(0, WALL_H / 2, -CHAMBER_DEPTH);
+  grp.add(backWall);
+  // Red+white hazard stripes painted on the dead-end face
   const stripeCount = 5;
   for (let i = 0; i < stripeCount; i++) {
     const stripeMat = (i % 2 === 0) ? matStripeR : matWhite;
     const stripe = new THREE.Mesh(
-      new THREE.BoxGeometry(COL_W - 0.15, (WALL_H - 1.4) / stripeCount, 0.06),
+      new THREE.BoxGeometry(CORR_HALF_W * 1.85, (WALL_H - 1.4) / stripeCount, 0.06),
       stripeMat
     );
     stripe.position.set(0, 0.7 + (i + 0.5) * ((WALL_H - 1.4) / stripeCount),
                         -CHAMBER_DEPTH + 0.31);
     grp.add(stripe);
   }
+  // 'DEAD END' bar across the top of the dead-end wall
   const noBar = new THREE.Mesh(
-    new THREE.BoxGeometry(COL_W - 0.10, 0.30, 0.07),
+    new THREE.BoxGeometry(CORR_HALF_W * 1.95, 0.40, 0.07),
     new THREE.MeshStandardMaterial({
-      color: 0xff2020, emissive: 0xff1010, emissiveIntensity: 0.9
+      color: 0xff2020, emissive: 0xff1010, emissiveIntensity: 1.0
     })
   );
-  noBar.position.set(0, WALL_H - 0.35, -CHAMBER_DEPTH + 0.32);
+  noBar.position.set(0, WALL_H - 0.32, -CHAMBER_DEPTH + 0.32);
   grp.add(noBar);
+  // Header beam above the dead-end wall (gold stripe)
+  const matStripeY = new THREE.MeshStandardMaterial({
+    color: 0xffd23a, metalness: 0.2, roughness: 0.5,
+    emissive: 0xffd23a, emissiveIntensity: 0.55
+  });
+  const headerBeam = new THREE.Mesh(
+    new THREE.BoxGeometry(CORR_HALF_W * 2.1, 0.18, 0.65), matStripeY
+  );
+  headerBeam.position.set(0, WALL_H + 0.18, -CHAMBER_DEPTH);
+  grp.add(headerBeam);
 
   // ----- PERPENDICULAR HALLWAYS (one per side, OPEN to corridor) ------
   for (let side = -1; side <= 1; side += 2) {
@@ -2569,29 +2582,38 @@ function applyZoneTint() {
   zoneTargetTint = new THREE.Color(ZONES[currentZone].tint);
 }
 
-// ============ v26: HEADING-BASED NAVIGATION ==========================
-// Mark: 'the camera is following the character as he changes directions
-// down another hallway.' The character has a persistent HEADING (the
-// world direction they're facing/running). Camera locks behind them in
-// that direction. The world rotates so the corridor stays in front of
-// the character. A turn = a smooth LERP of playerHeading that PERSISTS
-// (not a fake animation that snaps back).
+// ============ v29: HEADING-BASED TURN CINEMATIC =======================
+// Mark v28: 'my character turned left and kept on going straight. It
+// did not walk down the right hallway.'
+//
+// Architecture: the runner is built around -Z scrolling. Persistent
+// world rotation breaks that (props drift sideways in world space, the
+// camera no longer 'sees' things approaching). For the prototype, the
+// turn is a CINEMATIC: world rotates 0 → ±π/2 over ~0.6s while the
+// character leans into the turn, the screen flashes the new zone color
+// at the peak, then the world SNAPS BACK to identity and the active
+// junction is despawned. The new corridor takes the new zone tint so
+// it visibly reads as 'a new hallway' even though physically the player
+// continues running -Z.
 let playerHeading = 0;   // radians: 0 = facing -Z (initial)
 
 let turning = null;        // null | 'left' | 'right'
 let turnT = 0;
 let turnFromHeading = 0;
 let turnToHeading = 0;
+let turnSnapped = false;
 const TURN_DURATION = 0.85;
 
 function startTurn(direction, tintHex) {
   turning = direction;
   turnT = TURN_DURATION;
+  turnSnapped = false;
   turnFromHeading = playerHeading;
-  // LEFT turn: heading rotates -90° (player turns left = CW from above).
-  // RIGHT turn: heading rotates +90°.
+  // World rotates Ry(playerHeading): for LEFT turn we want Ry(-π/2) so
+  // the -X wing comes to the -Z camera view; for RIGHT turn Ry(+π/2)
+  // brings the +X wing to view. applyWorldTransform(-playerHeading)
+  // implements Ry(playerHeading), so LEFT → -π/2, RIGHT → +π/2.
   turnToHeading = playerHeading + (direction === 'left' ? -Math.PI / 2 : +Math.PI / 2);
-  // Ensure the flash overlay element exists, tinted in destination color
   let fl = document.getElementById('turn-flash');
   if (!fl) {
     fl = document.createElement('div');
@@ -2608,24 +2630,55 @@ function tickTurn(dt) {
   let bodyLean = 0;
   if (turning) {
     turnT = Math.max(0, turnT - dt);
-    const phase = 1 - (turnT / TURN_DURATION);
-    const eased = 1 - Math.pow(1 - phase, 2);
-    playerHeading = turnFromHeading + (turnToHeading - turnFromHeading) * eased;
-    flashAlpha = Math.sin(phase * Math.PI) * 0.45;
-    // v28: character LEANS into the turn (z-axis tilt). Peaks mid-turn,
-    // settles back to 0 at the end. Direction matches the turn (left
-    // turn → lean left, right turn → lean right).
-    const leanDir = (turnToHeading > turnFromHeading) ? +1 : -1;
+    const phase = 1 - (turnT / TURN_DURATION);   // 0 → 1
+
+    // v29 phases:
+    //   0.00 → 0.65 : world rotates 0 → target (eased), flash ramps 0 → ~0.95.
+    //   0.65       : SNAP — playerHeading=0, junction despawned, zone tint locked.
+    //   0.65 → 1.00: flash fades 0.95 → 0. World stays identity.
+    if (phase < 0.65) {
+      const rPhase = phase / 0.65;
+      const eased = 1 - Math.pow(1 - rPhase, 2);
+      playerHeading = turnFromHeading + (turnToHeading - turnFromHeading) * eased;
+      flashAlpha = (phase / 0.65) * 0.95;
+    } else {
+      playerHeading = 0;
+      flashAlpha = 0.95 * (1 - (phase - 0.65) / 0.35);
+    }
+
+    // SNAP at phase 0.65 (executed once)
+    if (phase >= 0.65 && !turnSnapped) {
+      turnSnapped = true;
+      // Despawn every resolved junction (the one that started this turn)
+      for (let i = branches.length - 1; i >= 0; i--) {
+        if (branches[i].resolved) {
+          worldGrp.remove(branches[i].mesh);
+          branches.splice(i, 1);
+        }
+      }
+    }
+
+    // Character LEAN — flipped sign vs v28. Because danny.rotation.y = π
+    // is applied AFTER rotation.z (XYZ Euler order), a positive
+    // rotation.z makes the character APPEAR to lean LEFT from the
+    // camera's POV (his right shoulder lifts to camera-LEFT). For
+    // right-turn = visual-right-lean, we need negative rotation.z when
+    // turnToHeading > turnFromHeading.
+    const leanDir = (turnToHeading > turnFromHeading) ? -1 : +1;
     bodyLean = Math.sin(phase * Math.PI) * 0.36 * leanDir;
+
     if (turnT <= 0) {
       turning = null;
-      playerHeading = turnToHeading;
+      playerHeading = 0;
+      turnFromHeading = 0;
+      turnToHeading = 0;
+      turnSnapped = false;
     }
   }
+
   applyWorldTransform(-playerHeading);
 
-  // Apply the character lean (only touch rotation.z; rotation.y is the
-  // character's facing direction, kept at π so the camera sees his back).
+  // Apply character lean
   if (typeof danny !== 'undefined') {
     const cur = danny.rotation.z || 0;
     danny.rotation.z = cur + (bodyLean - cur) * Math.min(1, dt * 12);
