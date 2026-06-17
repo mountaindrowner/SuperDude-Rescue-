@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v15 — 3D Lab Escape</title>
+<title>Super Dude Runner v16 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v15 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v16 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -147,7 +147,7 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// v15: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+// v16: filmic tone mapping for a graded, 'real game' look. Live-tunable.
 const GFX = { toneExposure: 1.05, envIntensity: 1.0, fogNear: 22, fogFar: 110 };
 (function applyGfxURL() {
   const p = new URLSearchParams(location.search);
@@ -172,7 +172,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
   const ec = document.createElement('canvas');
   ec.width = 512; ec.height = 256;
   const eg = ec.getContext('2d');
-  // v15 white-lab env: bright top, soft white middle, light grey floor
+  // v16 white-lab env: bright top, soft white middle, light grey floor
   const grad = eg.createLinearGradient(0, 0, 0, 256);
   grad.addColorStop(0,   '#f8fafd');   // ceiling: very bright
   grad.addColorStop(0.4, '#dde2eb');
@@ -212,7 +212,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v15: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v16: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -434,7 +434,7 @@ resize();
 
 // ============ lighting (moody industrial) =============================
 // Mark: 'too dark'. Boosted ambient + key light considerably.
-// v15: lights nudged up to compensate for ACES tone-mapping rolloff.
+// v16: lights nudged up to compensate for ACES tone-mapping rolloff.
 scene.add(new THREE.AmbientLight(0xc8d8e8, 1.25));
 const sun = new THREE.DirectionalLight(0xfff8e8, 1.15);
 sun.position.set(2, 10, 4);
@@ -456,7 +456,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v15: WHITE LAB palette (Mark: 'make the lab walls white').
+  // v16: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
@@ -950,7 +950,7 @@ function makeBench() {
 
 // COMPUTER CONSOLE on the wall
 function makeConsole() {
-  // v15: now PROPERLY GROUNDED. Was floating 90cm above the floor.
+  // v16: now PROPERLY GROUNDED. Was floating 90cm above the floor.
   // Total height 1.5m: pedestal 0-0.6, body 0.6-1.6, top cap 1.6-1.65.
   const grp = new THREE.Group();
   // Pedestal base (so it reads as installed on the floor)
@@ -1024,7 +1024,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v15 (Mark: 'less stuff less often'): density dropped further
+// v16 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -1056,7 +1056,7 @@ placeSideProps();
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-// v15 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
+// v16 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
 // that explains why the proportions are blocky. Variable names kept
 // (matCoat/matSkin/matPants etc.) so the arm/leg builders + run animation
 // don't need a refactor — only the colors + finish change.
@@ -1081,7 +1081,7 @@ const matLEDCyan = new THREE.MeshStandardMaterial({ color: 0x46f0ff, emissive: 0
 const matLEDGreen = new THREE.MeshStandardMaterial({ color: 0x39e36e, emissive: 0x39e36e, emissiveIntensity: 1.2, metalness: 0.0, roughness: 0.2 });
 const matLEDAmber = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 1.0, metalness: 0.0, roughness: 0.2 });
 
-// v15 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v16 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1097,7 +1097,7 @@ hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 
-// v15: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
+// v16: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
 // animation curve, but now reads as power cords hanging off the back of
 // the Computer character that swing with the run.
 const coatTail = new THREE.Group();
@@ -1174,7 +1174,7 @@ for (const [sx, sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]) {
   head.add(cap);
 }
 
-// v15 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
+// v16 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
 // up at world -Z (away from camera). The BACK panel needs to be at LOCAL
 // -Z so it ends up world +Z = camera-facing. All face elements moved to
 // local +Z so they face away (correct for Danny running forward).
@@ -1428,7 +1428,7 @@ scene.add(shadow);
 
 // CRITICAL: face Danny down the corridor (away from camera at +Z)
 danny.rotation.y = Math.PI;
-// v15: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
+// v16: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
 // instead of clipping ~25cm into it. The original leg hierarchy puts
 // the outsole bottom at y=-0.255 with danny.y=0; +0.26 zeroes it out.
 const BASE_Y = 0.26;
@@ -1763,13 +1763,28 @@ function makeSlimePuddle() {
   return grp;
 }
 
-// 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from the ceiling)
+// 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from a tower)
 function makeRobotArm() {
   const grp = new THREE.Group();
-  // base mount on ceiling-ish (visible top)
+  // v16 audit: arm used to float at y=2.30 with no visible support
+  // (ceiling was removed in v6). Now built as a floor-mounted tower
+  // with a solid base plate + vertical column so it reads as "industrial
+  // installation" instead of "hovering in mid-air."
+  const matPlate = new THREE.MeshLambertMaterial({ color: 0x1a2540 });
+  // Floor-mounted base plate
+  const floorPlate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.08, 0.55), matPlate
+  );
+  floorPlate.position.y = 0.04; grp.add(floorPlate);
+  // Vertical support column from floor to mount
+  const column = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 2.22, 0.22),
+    new THREE.MeshLambertMaterial({ color: 0x3a4d75 })
+  );
+  column.position.y = 1.15; grp.add(column);
+  // Mount base on top of column
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(0.40, 0.30, 0.40),
-    new THREE.MeshLambertMaterial({ color: 0x1a2540 })
+    new THREE.BoxGeometry(0.40, 0.30, 0.40), matPlate
   );
   base.position.y = 2.30; grp.add(base);
   // pivot ring
@@ -2095,7 +2110,7 @@ function tick() {
     }
     // slide timer countdown
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
-    // v15: floor scroll FLIPPED + speed-locked to the actual world speed
+    // v16: floor scroll FLIPPED + speed-locked to the actual world speed
     // that the side props translate at. Derivation:
     //   PlaneGeometry length CORR_LEN=240, repeat.y=24 → 1 V cycle covers
     //   240/24 = 10 world units. To make floor texture pass at the same
@@ -2141,7 +2156,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v15: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v16: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -2164,7 +2179,10 @@ function tick() {
       } else if (o.kind === 'robotarm') {
         // swing the arm back and forth horizontally
         const armG = o.mesh.userData.armG;
-        if (armG) armG.rotation.z = Math.sin(runT * 3 + o.phase) * 0.55;
+        // v16: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
+        // Now ~1.0 cycles/sec at base + wider swing arc so it threats the
+        // full lane visually but reads as a slow sweep.
+        if (armG) armG.rotation.z = Math.sin(runT * 0.45 + o.phase) * 0.75;
       } else if (o.kind === 'efence') {
         // pulse arc opacity
         const arcs = o.mesh.userData.arcs;
@@ -2368,7 +2386,7 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
-    // v15: CRT power LEDs blink with the run; antenna ball pulses
+    // v16: CRT power LEDs blink with the run; antenna ball pulses
     if (head.userData.antBall) {
       const pulse = 0.6 + 0.4 * Math.sin(stridePhase * 2);
       head.userData.antBall.material.emissiveIntensity = 0.8 + pulse * 0.8;
@@ -2377,7 +2395,7 @@ function tick() {
       head.userData.powerLED.material.emissiveIntensity =
         ((stridePhase * 0.5) | 0) % 2 === 0 ? 1.6 : 0.3;
     }
-    // v15: coat tail flaps — swings up behind on each stride, with a lag
+    // v16: coat tail flaps — swings up behind on each stride, with a lag
     // so it trails the body. Lifts higher at speed. Settles flat on slide.
     const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
     ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
