@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v18 — 3D Lab Escape</title>
+<title>Super Dude Runner v20 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -60,7 +60,7 @@
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v18 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v20 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -147,8 +147,9 @@ const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// v18: filmic tone mapping for a graded, 'real game' look. Live-tunable.
-const GFX = { toneExposure: 1.05, envIntensity: 1.0, fogNear: 22, fogFar: 110 };
+// v20: filmic tone mapping for a graded, 'real game' look. Live-tunable.
+// v20 (Subway Surfers vibe): bright atmosphere, less fog, warmer tone.
+const GFX = { toneExposure: 1.15, envIntensity: 1.1, fogNear: 45, fogFar: 160 };
 (function applyGfxURL() {
   const p = new URLSearchParams(location.search);
   ['toneExposure', 'envIntensity', 'fogNear', 'fogFar'].forEach(k => {
@@ -161,8 +162,9 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = GFX.toneExposure;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xdde2eb);
-scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
+// v20: bright sky-blue background (was muted gray-blue).
+scene.background = new THREE.Color(0xb3e5fc);
+scene.fog = new THREE.Fog(0xb3e5fc, GFX.fogNear, GFX.fogFar);
 
 // ============ ENVIRONMENT MAP (for PBR reflections) ==================
 // Procedural equirectangular 'lab ambience' → PMREM → scene.environment.
@@ -172,12 +174,13 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
   const ec = document.createElement('canvas');
   ec.width = 512; ec.height = 256;
   const eg = ec.getContext('2d');
-  // v18 white-lab env: bright top, soft white middle, light grey floor
+  // v20 white-lab env: bright top, soft white middle, light grey floor
   const grad = eg.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0,   '#f8fafd');   // ceiling: very bright
-  grad.addColorStop(0.4, '#dde2eb');
-  grad.addColorStop(0.7, '#b8c0cc');
-  grad.addColorStop(1,   '#88909c');   // floor: medium grey
+  // v20: bright cartoon sky→horizon→ground gradient
+  grad.addColorStop(0,   '#b3e5fc');   // sky blue at top
+  grad.addColorStop(0.45,'#fff8e0');   // warm horizon
+  grad.addColorStop(0.7, '#e0d8b8');
+  grad.addColorStop(1,   '#a89878');   // sandy ground tone
   eg.fillStyle = grad; eg.fillRect(0, 0, 512, 256);
   // bright ceiling light bands (reflect as highlights on metal)
   for (let i = 0; i < 7; i++) {
@@ -212,7 +215,7 @@ scene.fog = new THREE.Fog(0xdde2eb, GFX.fogNear, GFX.fogFar);
 // gameplay stays put.
 //
 // URL params (override defaults): ?h=4&b=6&fov=62&la=4&lh=1.5&sway=0.4
-// Defaults locked from Mark's in-game tuning. v18: laneSway = 0 so
+// Defaults locked from Mark's in-game tuning. v20: laneSway = 0 so
 // when Danny moves, only he moves (no camera follow). The world feels
 // static; he runs through it.
 const CAMERA = {
@@ -268,6 +271,35 @@ function updateCamera(dt) {
 
 // Expose for DevTools tweaking on the phone via Safari Web Inspector
 window.CAMERA = CAMERA;
+
+// ============ v20: ROUNDED-BOX HELPER ================================
+// Returns a BufferGeometry that's like BoxGeometry but with chamfered/
+// rounded corners. Used for obstacle shapes to lose the harsh
+// industrial right-angles and pick up the cartoon vibe.
+function roundedBox(w, h, d, r) {
+  r = Math.min(r, w/2 - 0.001, h/2 - 0.001);
+  const shape = new THREE.Shape();
+  const wh = w/2, hh = h/2;
+  shape.moveTo(-wh + r, -hh);
+  shape.lineTo(wh - r, -hh);
+  shape.quadraticCurveTo(wh, -hh, wh, -hh + r);
+  shape.lineTo(wh, hh - r);
+  shape.quadraticCurveTo(wh, hh, wh - r, hh);
+  shape.lineTo(-wh + r, hh);
+  shape.quadraticCurveTo(-wh, hh, -wh, hh - r);
+  shape.lineTo(-wh, -hh + r);
+  shape.quadraticCurveTo(-wh, -hh, -wh + r, -hh);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: d - r * 2,
+    bevelEnabled: true,
+    bevelThickness: r,
+    bevelSize: r,
+    bevelSegments: 4,
+    curveSegments: 6
+  });
+  geo.translate(0, 0, -(d / 2) + r);   // center the depth around z=0
+  return geo;
+}
 
 // ============ AUDIO ===================================================
 // SFX are synthesized inline via Web Audio API (no asset files, instant).
@@ -432,11 +464,11 @@ if (window.visualViewport) {
 }
 resize();
 
-// ============ lighting (moody industrial) =============================
-// Mark: 'too dark'. Boosted ambient + key light considerably.
-// v18: lights nudged up to compensate for ACES tone-mapping rolloff.
-scene.add(new THREE.AmbientLight(0xc8d8e8, 1.25));
-const sun = new THREE.DirectionalLight(0xfff8e8, 1.15);
+// ============ lighting (Subway-Surfers bright cartoon) ================
+// v20: WHITE ambient (was tinted cool blue), brighter warm sun. Total
+// shift from 'moody industrial lab' to 'sunny cartoon playground.'
+scene.add(new THREE.AmbientLight(0xffffff, 1.55));
+const sun = new THREE.DirectionalLight(0xfff4d8, 1.55);
 sun.position.set(2, 10, 4);
 scene.add(sun);
 
@@ -456,7 +488,7 @@ function makeWallTexture() {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
 
-  // v18: WHITE LAB palette (Mark: 'make the lab walls white').
+  // v20: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
@@ -598,7 +630,7 @@ function makeWallTexture() {
     g.fillRect(x + 8, y + 8, 4, 4); g.fillRect(x + w - 12, y + 8, 4, 4);
     g.fillRect(x + 8, y + h - 12, 4, 4); g.fillRect(x + w - 12, y + h - 12, 4, 4);
   }
-  // v18: Mark: 'too many signs being spammed on the side walls.'
+  // v20: Mark: 'too many signs being spammed on the side walls.'
   // Replaced 6-features-out-of-8-panels with sparse feature placement:
   // mostly clean brushed-metal panels with the occasional subtle accent
   // panel (light strip, conduit hatch, monitor). Only 2 signs across the
@@ -985,7 +1017,7 @@ function makeBench() {
 
 // COMPUTER CONSOLE on the wall
 function makeConsole() {
-  // v18: now PROPERLY GROUNDED. Was floating 90cm above the floor.
+  // v20: now PROPERLY GROUNDED. Was floating 90cm above the floor.
   // Total height 1.5m: pedestal 0-0.6, body 0.6-1.6, top cap 1.6-1.65.
   const grp = new THREE.Group();
   // Pedestal base (so it reads as installed on the floor)
@@ -1021,7 +1053,7 @@ function makeConsole() {
 // Per Mark's reference image: red + blue pipes running vertically with
 // metal joint bands. Sit FLAT against the wall (low z offset).
 function makeWallPipes() {
-  // v18 — Mark: 'redraw pipes and such on the wall decoration assets to
+  // v20 — Mark: 'redraw pipes and such on the wall decoration assets to
   // improve decorations.' Rebuilt as a proper lab MANIFOLD: 3 vertical
   // pipes with 90° elbows at the top connecting to a horizontal header,
   // a gauge dial centered on the header, a valve wheel mid-height, and
@@ -1158,7 +1190,7 @@ function makeWallPipes() {
 
 // place props alongside the corridor walls
 const sideProps = [];
-// v18 (Mark: 'less stuff less often'): density dropped further
+// v20 (Mark: 'less stuff less often'): density dropped further
 // from 13 → 8 props, spacing 18 → 26. Wall pipes added to the rotation
 // at high weight since the reference is full of them.
 const PROP_COUNT = 8;
@@ -1190,7 +1222,7 @@ placeSideProps();
 // ============ Danny (3D, cartoony, long-limbed, BACK to camera) ======
 const danny = new THREE.Group();
 scene.add(danny);
-// v18 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
+// v20 — DANNY → THE COMPUTER. Mark: silver, computer-esque, CRT V-head
 // that explains why the proportions are blocky. Variable names kept
 // (matCoat/matSkin/matPants etc.) so the arm/leg builders + run animation
 // don't need a refactor — only the colors + finish change.
@@ -1215,7 +1247,7 @@ const matLEDCyan = new THREE.MeshStandardMaterial({ color: 0x46f0ff, emissive: 0
 const matLEDGreen = new THREE.MeshStandardMaterial({ color: 0x39e36e, emissive: 0x39e36e, emissiveIntensity: 1.2, metalness: 0.0, roughness: 0.2 });
 const matLEDAmber = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 1.0, metalness: 0.0, roughness: 0.2 });
 
-// v18 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
+// v20 — slimmer athletic torso (was 0.78 wide). Narrower shoulders so
 // arms hang at the body, not from a barrel chest. Coat slightly longer.
 const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.16, 0.42), matCoat);
 torso.position.y = 1.48; danny.add(torso);
@@ -1231,7 +1263,7 @@ hem.position.set(0, 0.92, 0); danny.add(hem);
 const hemShd = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.48), matCoatShd);
 hemShd.position.set(0, 0.87, 0); danny.add(hemShd);
 
-// v18: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
+// v20: SWINGING CABLE BUNDLE — replaces the coat tail. Same pivot, same
 // animation curve, but now reads as power cords hanging off the back of
 // the Computer character that swing with the run.
 const coatTail = new THREE.Group();
@@ -1308,7 +1340,7 @@ for (const [sx, sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]) {
   head.add(cap);
 }
 
-// v18 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
+// v20 FIX: Danny is rotated 180° (danny.rotation.y = π), so local +Z ends
 // up at world -Z (away from camera). The BACK panel needs to be at LOCAL
 // -Z so it ends up world +Z = camera-facing. All face elements moved to
 // local +Z so they face away (correct for Danny running forward).
@@ -1562,7 +1594,7 @@ scene.add(shadow);
 
 // CRITICAL: face Danny down the corridor (away from camera at +Z)
 danny.rotation.y = Math.PI;
-// v18: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
+// v20: BASE_Y lifts whole rig so the sneaker outsole sits ON the floor
 // instead of clipping ~25cm into it. The original leg hierarchy puts
 // the outsole bottom at y=-0.255 with danny.y=0; +0.26 zeroes it out.
 const BASE_Y = 0.26;
@@ -1573,7 +1605,7 @@ const pickGroup = new THREE.Group(); scene.add(pickGroup);
 const objects = [];
 function lanePosX(lane) { return lane * LANE_X; }
 
-// v18: pickups rebuilt for unambiguous readability.
+// v20: pickups rebuilt for unambiguous readability.
 // Mark: 'I tried right now and couldn't tell if it was obstacle or power up.'
 //
 // New convention so players never confuse pickups with threats:
@@ -1728,33 +1760,38 @@ function makeMagnet() {
 
 // 1. RED X CRATE — LANE DODGE
 function makeRedXCrate() {
+  // v20: rounded chamfered corners, brighter primary palette
   const grp = new THREE.Group();
+  // Body — bright orange (more cartoon than dark brown)
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 1.2, 1.2),
-    new THREE.MeshLambertMaterial({ color: 0x6a3220 })
+    roundedBox(1.2, 1.2, 1.2, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0xff6f1f, metalness: 0.0, roughness: 0.6 })
   );
   body.position.y = 0.6; grp.add(body);
-  // dark inset
-  const dark = new THREE.Mesh(
-    new THREE.BoxGeometry(1.10, 1.10, 1.21),
-    new THREE.MeshLambertMaterial({ color: 0x3a1f12 })
+  // Front panel (darker rounded inset)
+  const panel = new THREE.Mesh(
+    roundedBox(0.92, 0.92, 0.05, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0xc4400a, metalness: 0.0, roughness: 0.7 })
   );
-  dark.position.y = 0.6; grp.add(dark);
-  // red X (two crossed boxes on the visible faces — front and sides)
-  const xMat = new THREE.MeshLambertMaterial({ color: 0xd33a3a, emissive: 0x6a1818, emissiveIntensity: 0.7 });
-  function bigX(zOff, yRot) {
-    const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.05, 0.04), xMat);
-    b1.position.set(0, 0.6, zOff); b1.rotation.z = Math.PI / 4; b1.rotation.y = yRot; grp.add(b1);
+  panel.position.set(0, 0.6, 0.61); grp.add(panel);
+  const panelBack = panel.clone(); panelBack.position.z = -0.61; grp.add(panelBack);
+  // Bright RED X — fully saturated, slightly emissive
+  const xMat = new THREE.MeshStandardMaterial({
+    color: 0xff2020, metalness: 0.0, roughness: 0.4,
+    emissive: 0xff1010, emissiveIntensity: 0.5
+  });
+  function bigX(zOff) {
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.88, 0.05), xMat);
+    b1.position.set(0, 0.6, zOff); b1.rotation.z = Math.PI / 4; grp.add(b1);
     const b2 = b1.clone(); b2.rotation.z = -Math.PI / 4; grp.add(b2);
   }
-  bigX(0.62, 0);          // front
-  bigX(-0.62, 0);         // back
-  // yellow corner stripes (top edge)
-  const stripeTop = new THREE.Mesh(
-    new THREE.BoxGeometry(1.22, 0.10, 1.22),
-    new THREE.MeshLambertMaterial({ color: 0xffd23a })
+  bigX(0.65); bigX(-0.65);
+  // Bright YELLOW top cap (full saturation, cartoon style)
+  const cap = new THREE.Mesh(
+    roundedBox(1.26, 0.14, 1.26, 0.06),
+    new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.0, roughness: 0.5 })
   );
-  stripeTop.position.y = 1.20; grp.add(stripeTop);
+  cap.position.y = 1.22; grp.add(cap);
   return grp;
 }
 
@@ -1856,15 +1893,13 @@ function makeElecFence() {
 
 // 5. ROLLING LAB CART — LANE DODGE
 function makeLabCart() {
+  // v20: rounded shelves + brighter primary palette
   const grp = new THREE.Group();
-  // top surface (with beakers)
-  const top = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.10, 0.70),
-                             new THREE.MeshLambertMaterial({ color: 0xaab4c4 }));
+  const shelfMat = new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.1, roughness: 0.5 });
+  const top = new THREE.Mesh(roundedBox(1.10, 0.12, 0.70, 0.04), shelfMat);
   top.position.y = 0.80; grp.add(top);
-  // bottom shelf
   const bot = top.clone(); bot.position.y = 0.40; grp.add(bot);
-  // legs
-  const legMat = new THREE.MeshLambertMaterial({ color: 0x3a4d75 });
+  const legMat = new THREE.MeshStandardMaterial({ color: 0x2a6bd6, metalness: 0.3, roughness: 0.5 });
   for (let i = -1; i <= 1; i += 2) {
     for (let j = -1; j <= 1; j += 2) {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.80, 0.06), legMat);
@@ -1909,9 +1944,10 @@ function makeLabCart() {
 function makeSteamVent() {
   const grp = new THREE.Group();
   // floor grate
+  // v20: rounded grate with bright cartoon top color
   const grate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.80, 0.10, 0.80),
-    new THREE.MeshLambertMaterial({ color: 0x1a2540 })
+    roundedBox(0.80, 0.10, 0.80, 0.04),
+    new THREE.MeshStandardMaterial({ color: 0x2a3a55, metalness: 0.7, roughness: 0.4 })
   );
   grate.position.y = 0.05; grp.add(grate);
   // grate stripes
@@ -1974,7 +2010,7 @@ function makeSlimePuddle() {
 // 8. ROBOT ARM — SLIDE (horizontal chest-height bar swinging from a tower)
 function makeRobotArm() {
   const grp = new THREE.Group();
-  // v18 audit: arm used to float at y=2.30 with no visible support
+  // v20 audit: arm used to float at y=2.30 with no visible support
   // (ceiling was removed in v6). Now built as a floor-mounted tower
   // with a solid base plate + vertical column so it reads as "industrial
   // installation" instead of "hovering in mid-air."
@@ -2017,20 +2053,34 @@ function makeRobotArm() {
                                 new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
   stripe.position.y = -0.30; armG.add(stripe);
   const stripe2 = stripe.clone(); stripe2.position.y = -0.55; armG.add(stripe2);
-  // horizontal sweep bar (this is what hits the player at chest height)
-  const bar = new THREE.Mesh(
-    new THREE.BoxGeometry(1.40, 0.18, 0.20),
-    new THREE.MeshLambertMaterial({ color: 0xd33a3a, emissive: 0x6a1818, emissiveIntensity: 0.5 })
-  );
+  // v20: ICONIC SUBWAY-SURFERS RED+WHITE STRIPED SWEEP POLE.
+  // Rounded box + 7 vertical stripe slats alternating bright red/white.
+  const matRed   = new THREE.MeshStandardMaterial({
+    color: 0xff2020, metalness: 0.0, roughness: 0.45,
+    emissive: 0xff1010, emissiveIntensity: 0.3
+  });
+  const matWhite = new THREE.MeshStandardMaterial({
+    color: 0xffffff, metalness: 0.0, roughness: 0.45
+  });
+  // base rounded bar (red so any small gaps read as red, not slate)
+  const bar = new THREE.Mesh(roundedBox(1.40, 0.22, 0.24, 0.08), matRed);
   bar.position.y = -0.92; armG.add(bar);
-  // claw at the end
-  const claw = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.30, 0.18),
-                              new THREE.MeshLambertMaterial({ color: 0x1a2540 }));
-  claw.position.set(0.70, -1.00, 0); armG.add(claw);
-  // hazard stripe on the bar
-  const haz = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.06, 0.21),
-                             new THREE.MeshLambertMaterial({ color: 0xffd23a }));
-  haz.position.y = -0.92; armG.add(haz);
+  // 7 alternating stripe slats embedded across the bar
+  for (let i = 0; i < 7; i++) {
+    const isWhite = i % 2 === 1;
+    const slat = new THREE.Mesh(
+      roundedBox(0.18, 0.235, 0.255, 0.025),
+      isWhite ? matWhite : matRed
+    );
+    slat.position.set(-0.60 + i * 0.20, -0.92, 0);
+    armG.add(slat);
+  }
+  // rounded claw at the end
+  const claw = new THREE.Mesh(
+    roundedBox(0.28, 0.34, 0.22, 0.05),
+    new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: 0.3, roughness: 0.5 })
+  );
+  claw.position.set(0.74, -1.00, 0); armG.add(claw);
   grp.userData.armG = armG;
   return grp;
 }
@@ -2130,7 +2180,7 @@ function makePortalCrack() {
 }
 
 const FACTORIES = {
-  // v18: 'crystal' kind kept for save-data compat, factory now returns a gold coin
+  // v20: 'crystal' kind kept for save-data compat, factory now returns a gold coin
   crystal: makeCoin, shield: makeShield, magnet: makeMagnet,
   // Mark's MVP-10:
   redx: makeRedXCrate, lowlaser: makeLowLaser, highlaser: makeHighLaser,
@@ -2319,7 +2369,7 @@ function tick() {
     }
     // slide timer countdown
     if (slideT > 0) slideT = Math.max(0, slideT - dt);
-    // v18: floor scroll FLIPPED + speed-locked to the actual world speed
+    // v20: floor scroll FLIPPED + speed-locked to the actual world speed
     // that the side props translate at. Derivation:
     //   PlaneGeometry length CORR_LEN=240, repeat.y=24 → 1 V cycle covers
     //   240/24 = 10 world units. To make floor texture pass at the same
@@ -2365,7 +2415,7 @@ function tick() {
     }
 
     spawnAcc += speed * dt;
-    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v18: 14 → 24 = less stuff less often
+    if (spawnAcc > 24) { trySpawn(); spawnAcc = 0; }   // v20: 14 → 24 = less stuff less often
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
@@ -2379,13 +2429,13 @@ function tick() {
       o.mesh.position.z = o.z;
       // per-kind animations
       if (o.kind === 'crystal') {
-        // v18: COIN spins around its Y axis at ~1 cycle/sec at base speed
+        // v20: COIN spins around its Y axis at ~1 cycle/sec at base speed
         // — slow enough for the face/edge alternation to read as a coin.
         // Was runT * 1.8 (~4.6 cycles/sec) → way too fast to register.
         o.mesh.rotation.y = runT * 0.40 + o.phase;
         o.mesh.position.y = 1.0 + Math.sin(runT * 0.8 + o.phase) * 0.08;
       } else if (o.kind === 'shield' || o.kind === 'magnet') {
-        // v18: power-up orb gently rotates + PULSES so the wrapper reads
+        // v20: power-up orb gently rotates + PULSES so the wrapper reads
         // as 'pickup me' clearly distinct from any hazard.
         o.mesh.rotation.y = runT * 0.25 + o.phase;
         o.mesh.position.y = 1.1 + Math.sin(runT * 0.8 + o.phase) * 0.08;
@@ -2394,7 +2444,7 @@ function tick() {
       } else if (o.kind === 'robotarm') {
         // swing the arm back and forth horizontally
         const armG = o.mesh.userData.armG;
-        // v18: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
+        // v20: was sin(runT*3)*0.55 → ~7.6 cycles/sec at base speed, wild.
         // Now ~1.0 cycles/sec at base + wider swing arc so it threats the
         // full lane visually but reads as a slow sweep.
         if (armG) armG.rotation.z = Math.sin(runT * 0.45 + o.phase) * 0.75;
@@ -2601,7 +2651,7 @@ function tick() {
     danny.rotation.x = (danny.rotation.x || 0) + (targetXRot - (danny.rotation.x || 0)) * lerp;
     // head bob — head dips slightly each stride
     head.position.y = 2.35 + Math.abs(cosP) * 0.04;
-    // v18: CRT power LEDs blink with the run; antenna ball pulses
+    // v20: CRT power LEDs blink with the run; antenna ball pulses
     if (head.userData.antBall) {
       const pulse = 0.6 + 0.4 * Math.sin(stridePhase * 2);
       head.userData.antBall.material.emissiveIntensity = 0.8 + pulse * 0.8;
@@ -2610,7 +2660,7 @@ function tick() {
       head.userData.powerLED.material.emissiveIntensity =
         ((stridePhase * 0.5) | 0) % 2 === 0 ? 1.6 : 0.3;
     }
-    // v18: coat tail flaps — swings up behind on each stride, with a lag
+    // v20: coat tail flaps — swings up behind on each stride, with a lag
     // so it trails the body. Lifts higher at speed. Settles flat on slide.
     const tailTarget = sliding ? 0.3 : (0.35 + sinP * 0.30 + (speed - 16) * 0.012);
     ud.tail = (ud.tail || 0) + (tailTarget - (ud.tail || 0)) * Math.min(1, dt * 9);
