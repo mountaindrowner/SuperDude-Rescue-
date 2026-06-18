@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v30 — 3D Lab Escape</title>
+<title>Super Dude Runner v31 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v30 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v31 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -494,7 +494,31 @@ for (let i = 0; i < 8; i++) {
 const tubeLights = [];
 
 // ============ procedural textures =====================================
-function makeWallTexture() {
+// v31: per-zone wall texture. Each zone (MAIN/POWER/BIO/CRYO) gets a
+// distinct palette + sign set so sections look unmistakably different
+// after each turn (Mark v30: 'make each section considerably longer
+// and unique from each other').
+function makeWallTexture(palette) {
+  palette = palette || {
+    bgStops: ['#a8b4c4', '#d8dde6', '#f4f6fa', '#dde2eb', '#9aa6b8'],
+    led: '#46f0ff',
+    baseboard: '#3a4d75',
+    stripeYellow: '#ffd23a',
+    seamDark: '#aab4c4',
+    seamLight: '#ffffff',
+    panelAccent: 'rgba(70,240,255,0.15)',
+    monitorEdge: '#1ab3ff',
+    monitorScreen: '#0a1a2a',
+    monitorBar: '#46f0ff',
+    monitorOSTxt: 'LAB OS v3.4',
+    lockerLabels: ['BIO', 'CHEM', 'RAD'],
+    lockerColors: ['#1b9fb3','#10b981','#d33a3a'],
+    pipesRack: ['#d33a3a','#1ab3ff','#10b981','#e8a516'],
+    signs: [
+      { x: 540,  color: '#1b9fb3', text: "DANNY'S LAB" },
+      { x: 1340, color: '#d33a3a', text: 'CAUTION' },
+    ],
+  };
   const W = 2048, H = 512;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -503,11 +527,11 @@ function makeWallTexture() {
   // v25: WHITE LAB palette (Mark: 'make the lab walls white').
   // Clean off-white panels with cool grey shadows + cyan/yellow accents.
   const bg = g.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0,    '#a8b4c4');   // top: cool grey shadow
-  bg.addColorStop(0.20, '#d8dde6');
-  bg.addColorStop(0.50, '#f4f6fa');   // bright middle (the 'white')
-  bg.addColorStop(0.80, '#dde2eb');
-  bg.addColorStop(1,    '#9aa6b8');   // bottom: cool grey shadow
+  bg.addColorStop(0,    palette.bgStops[0]);
+  bg.addColorStop(0.20, palette.bgStops[1]);
+  bg.addColorStop(0.50, palette.bgStops[2]);
+  bg.addColorStop(0.80, palette.bgStops[3]);
+  bg.addColorStop(1,    palette.bgStops[4]);
 
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
 
@@ -517,29 +541,29 @@ function makeWallTexture() {
     g.fillRect(Math.random() * W, 36 + Math.random() * (H - 60), 1, 1);
   }
 
-  // top ceiling beam (slate contrast against white)
-  g.fillStyle = '#3a4d75'; g.fillRect(0, 0, W, 22);
-  g.fillStyle = '#5a6890'; g.fillRect(0, 22, W, 4);
-  // cyan LED accent strip
-  g.fillStyle = '#46f0ff'; g.fillRect(0, 26, W, 3);
-  g.fillStyle = 'rgba(70,240,255,0.55)'; g.fillRect(0, 29, W, 8);
+  // top ceiling beam (slate contrast)
+  g.fillStyle = palette.baseboard; g.fillRect(0, 0, W, 22);
+  g.fillStyle = palette.baseboardEdge || '#5a6890'; g.fillRect(0, 22, W, 4);
+  // LED accent strip (zone-colored)
+  g.fillStyle = palette.led; g.fillRect(0, 26, W, 3);
+  g.fillStyle = palette.ledGlow || 'rgba(70,240,255,0.55)'; g.fillRect(0, 29, W, 8);
 
-  // baseboard (slate against white, with yellow safety stripe)
-  g.fillStyle = '#3a4d75'; g.fillRect(0, H - 22, W, 22);
-  g.fillStyle = '#5a6890'; g.fillRect(0, H - 24, W, 2);
+  // baseboard with safety stripe
+  g.fillStyle = palette.baseboard; g.fillRect(0, H - 22, W, 22);
+  g.fillStyle = palette.baseboardEdge || '#5a6890'; g.fillRect(0, H - 24, W, 2);
   for (let x = 0; x < W; x += 22) {
-    g.fillStyle = (x / 22) % 2 < 1 ? '#ffd23a' : '#1a2540';
+    g.fillStyle = (x / 22) % 2 < 1 ? palette.stripeYellow : (palette.stripeDark || '#1a2540');
     g.fillRect(x, H - 10, 22, 4);
   }
 
-  // panel seams — light grey (visible on white)
+  // panel seams
   for (let x = 0; x < W; x += 256) {
-    g.fillStyle = '#aab4c4'; g.fillRect(x - 1, 36, 2, H - 60);
-    g.fillStyle = '#ffffff'; g.fillRect(x, 36, 1, H - 60);
+    g.fillStyle = palette.seamDark; g.fillRect(x - 1, 36, 2, H - 60);
+    g.fillStyle = palette.seamLight; g.fillRect(x, 36, 1, H - 60);
   }
   // horizontal mid-rail
-  g.fillStyle = '#aab4c4'; g.fillRect(0, H * 0.50, W, 2);
-  g.fillStyle = '#ffffff'; g.fillRect(0, H * 0.50 + 2, W, 1);
+  g.fillStyle = palette.seamDark; g.fillRect(0, H * 0.50, W, 2);
+  g.fillStyle = palette.seamLight; g.fillRect(0, H * 0.50 + 2, W, 1);
 
   // helpers
   function bracketBox(px, py, w, h, tint, label) {
@@ -657,7 +681,7 @@ function makeWallTexture() {
       g.fillRect(x + xi, y, 1, h);
     }
     // thin horizontal accent strip at mid
-    g.fillStyle = 'rgba(70,240,255,0.15)';
+    g.fillStyle = palette.panelAccent;
     g.fillRect(x, y + h * 0.5, w, 2);
     g.fillStyle = 'rgba(255,255,255,0.10)';
     g.fillRect(x, y + h * 0.5 + 2, w, 1);
@@ -670,10 +694,10 @@ function makeWallTexture() {
   function lightStripPanel(px) {
     // Tall vertical cyan light strip — reads as 'ambient corridor lighting'
     const x = px + 100, y = 80, w = 16, h = H - 140;
-    g.fillStyle = '#1a2540'; g.fillRect(x - 6, y - 4, w + 12, h + 8);
-    g.fillStyle = '#46f0ff'; g.fillRect(x, y, w, h);
+    g.fillStyle = palette.stripeDark || '#1a2540'; g.fillRect(x - 6, y - 4, w + 12, h + 8);
+    g.fillStyle = palette.led; g.fillRect(x, y, w, h);
     // soft glow halo
-    g.fillStyle = 'rgba(70,240,255,0.18)'; g.fillRect(x - 20, y, 60, h);
+    g.fillStyle = palette.ledGlowHalo || 'rgba(70,240,255,0.18)'; g.fillRect(x - 20, y, 60, h);
     // mounting bolts
     g.fillStyle = '#5a6890';
     g.beginPath(); g.arc(x + w/2, y, 4, 0, 7); g.fill();
@@ -694,9 +718,8 @@ function makeWallTexture() {
   for (let i = 0, x = 0; x < W; i++, x += 256) {
     features[i % features.length](x);
   }
-  // Just 2 sparse signs across the whole 2048 px (was 8).
-  bigsign(540,  '#1b9fb3', "DANNY'S LAB");
-  bigsign(1340, '#d33a3a', 'CAUTION');
+  // 2 sparse signs (zone-themed)
+  for (const s of palette.signs) bigsign(s.x, s.color, s.text);
 
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = THREE.RepeatWrapping;
@@ -708,14 +731,20 @@ function makeWallTexture() {
   return tex;
 }
 
-function makeFloorTexture() {
+function makeFloorTexture(palette) {
+  palette = palette || {
+    bgTop: '#88909c', bgBot: '#b8c0ca',
+    crack: '#2a3144',
+    stripe: '#e8ecf3', stripeChip: '#3e4453',
+    laneEdge: 'rgba(255,255,255,0.10)',
+  };
   const W = 1024, H = 1024;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const g = c.getContext('2d');
-  // base concrete floor (slightly noisy gray)
+  // base floor gradient
   const bg = g.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#88909c'); bg.addColorStop(1, '#b8c0ca');
+  bg.addColorStop(0, palette.bgTop); bg.addColorStop(1, palette.bgBot);
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
   // noise
   for (let i = 0; i < 1400; i++) {
@@ -723,25 +752,25 @@ function makeFloorTexture() {
     g.fillRect(Math.random()*W, Math.random()*H, 1.5, 1.5);
   }
   // panel cracks
-  g.strokeStyle = '#2a3144'; g.lineWidth = 2;
+  g.strokeStyle = palette.crack; g.lineWidth = 2;
   for (let x = 0; x <= W; x += 256) {
     g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
   }
   for (let y = 0; y <= H; y += 512) {
     g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
   }
-  // BOLD WHITE PAINTED CENTER STRIPE (the iconic Subway-Surfers look)
-  g.fillStyle = '#e8ecf3';
+  // BOLD PAINTED CENTER STRIPE
+  g.fillStyle = palette.stripe;
   g.fillRect(W/2 - 9, 0, 18, H);
   // chips and wear on the stripe
   for (let y = 0; y < H; y += 64) {
     if (Math.random() < 0.18) {
-      g.fillStyle = '#3e4453';
+      g.fillStyle = palette.stripeChip;
       g.fillRect(W/2 - 9 + Math.random()*18, y, 2 + Math.random()*4, 4 + Math.random()*4);
     }
   }
-  // lane edge thin lines (very subtle)
-  g.fillStyle = 'rgba(255,255,255,0.10)';
+  // lane edge thin lines
+  g.fillStyle = palette.laneEdge;
   g.fillRect(W/2 - 220, 0, 2, H);
   g.fillRect(W/2 + 218, 0, 2, H);
 
@@ -804,6 +833,34 @@ const CORR_CENTER_Z = -CORR_LEN / 2 + 6;
 const wallTex = makeWallTexture();
 const floorTex = makeFloorTexture();
 const ceilTex = makeCeilTexture();
+
+// v31: pre-bake one wall + floor texture per zone so the SNAP-back at
+// the end of a turn can swap the corridor's look in one step. (Both
+// wallMatL and wallMatR share the same map; wallMatR uses a +0.5
+// UV-offset clone for variety.)
+const ZONE_WALL_TEX  = {};
+const ZONE_FLOOR_TEX = {};
+const ZONE_WALL_TEX_R = {};   // for the right wall (offset clone)
+for (const k of Object.keys(ZONE_WALL_PALETTES)) {
+  const wTex = makeWallTexture(ZONE_WALL_PALETTES[k]);
+  ZONE_WALL_TEX[k] = wTex;
+  const wR = wTex.clone();
+  wR.offset.x = 0.5;
+  wR.needsUpdate = true;
+  ZONE_WALL_TEX_R[k] = wR;
+  ZONE_FLOOR_TEX[k] = makeFloorTexture(ZONE_FLOOR_PALETTES[k]);
+}
+function applyZoneTextures(zoneKey) {
+  const wTex = ZONE_WALL_TEX[zoneKey];
+  const wTexR = ZONE_WALL_TEX_R[zoneKey];
+  const fTex = ZONE_FLOOR_TEX[zoneKey];
+  if (wTex && wallMatL)  { wallMatL.map = wTex;  wallMatL.needsUpdate = true; }
+  if (wTexR && wallMatR) { wallMatR.map = wTexR; wallMatR.needsUpdate = true; }
+  if (fTex && floor && floor.material) {
+    floor.material.map = fTex;
+    floor.material.needsUpdate = true;
+  }
+}
 
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(CORR_HALF_W * 2, CORR_LEN),
@@ -2331,6 +2388,71 @@ let spawnAcc = 0;
 // v25: zone tints SATURATED so the corridor visibly changes color.
 // Previous tints (0xffe4a0, 0xc8ffd0, 0xc0e8ff) were so pale they
 // could be confused for ambient lighting — Mark never saw the change.
+// v31 per-zone palettes drive distinct wall + floor textures so each
+// section after a turn looks unmistakably different from the last.
+const ZONE_WALL_PALETTES = {
+  MAIN: {
+    bgStops: ['#a8b4c4', '#d8dde6', '#f4f6fa', '#dde2eb', '#9aa6b8'],
+    led: '#46f0ff', ledGlow: 'rgba(70,240,255,0.55)', ledGlowHalo: 'rgba(70,240,255,0.18)',
+    baseboard: '#3a4d75', baseboardEdge: '#5a6890',
+    stripeYellow: '#ffd23a', stripeDark: '#1a2540',
+    seamDark: '#aab4c4', seamLight: '#ffffff',
+    panelAccent: 'rgba(70,240,255,0.15)',
+    signs: [
+      { x: 540,  color: '#1b9fb3', text: "DANNY'S LAB" },
+      { x: 1340, color: '#d33a3a', text: 'CAUTION' },
+    ],
+  },
+  POWER: {
+    // Industrial copper/amber — high voltage reactor wing
+    bgStops: ['#3a1f08', '#6a3818', '#a05820', '#6a3818', '#2a1404'],
+    led: '#ffa028', ledGlow: 'rgba(255,160,40,0.55)', ledGlowHalo: 'rgba(255,160,40,0.22)',
+    baseboard: '#2a1404', baseboardEdge: '#5a3818',
+    stripeYellow: '#ffd23a', stripeDark: '#0a0604',
+    seamDark: '#3a1808', seamLight: '#a05820',
+    panelAccent: 'rgba(255,160,40,0.20)',
+    signs: [
+      { x: 540,  color: '#ffa028', text: 'REACTOR' },
+      { x: 1340, color: '#d33a3a', text: 'HIGH VOLTAGE' },
+    ],
+  },
+  BIO: {
+    // Mossy green — bio lab / specimen wing
+    bgStops: ['#0a2010', '#1a4020', '#2a6038', '#1a4020', '#051408'],
+    led: '#5cf09a', ledGlow: 'rgba(92,240,154,0.55)', ledGlowHalo: 'rgba(92,240,154,0.22)',
+    baseboard: '#0a1808', baseboardEdge: '#1a3010',
+    stripeYellow: '#aaff5c', stripeDark: '#04100a',
+    seamDark: '#1a3018', seamLight: '#3a7048',
+    panelAccent: 'rgba(92,240,154,0.20)',
+    signs: [
+      { x: 540,  color: '#5cf09a', text: 'BIO LAB' },
+      { x: 1340, color: '#ffa028', text: 'QUARANTINE' },
+    ],
+  },
+  CRYO: {
+    // Pale blue / icy — sub-zero cryo wing
+    bgStops: ['#1a3848', '#2a6088', '#5098c0', '#2a6088', '#0a1828'],
+    led: '#a8e8ff', ledGlow: 'rgba(168,232,255,0.55)', ledGlowHalo: 'rgba(168,232,255,0.22)',
+    baseboard: '#0a1828', baseboardEdge: '#1a3848',
+    stripeYellow: '#e8f4ff', stripeDark: '#040c18',
+    seamDark: '#1a3848', seamLight: '#80c0e0',
+    panelAccent: 'rgba(168,232,255,0.22)',
+    signs: [
+      { x: 540,  color: '#5cc8ff', text: 'CRYO LAB' },
+      { x: 1340, color: '#a8e8ff', text: 'SUB-ZERO' },
+    ],
+  },
+};
+const ZONE_FLOOR_PALETTES = {
+  MAIN:  { bgTop: '#88909c', bgBot: '#b8c0ca', crack: '#2a3144',
+           stripe: '#e8ecf3', stripeChip: '#3e4453', laneEdge: 'rgba(255,255,255,0.10)' },
+  POWER: { bgTop: '#3a2008', bgBot: '#6a4018', crack: '#1a0a04',
+           stripe: '#ffa028', stripeChip: '#5a3018', laneEdge: 'rgba(255,160,40,0.15)' },
+  BIO:   { bgTop: '#0a2010', bgBot: '#1a4020', crack: '#04100a',
+           stripe: '#5cf09a', stripeChip: '#1a4020', laneEdge: 'rgba(92,240,154,0.18)' },
+  CRYO:  { bgTop: '#1a3848', bgBot: '#3a6888', crack: '#0a1828',
+           stripe: '#e8f4ff', stripeChip: '#3a6888', laneEdge: 'rgba(168,232,255,0.22)' },
+};
 const ZONES = {
   MAIN:  { tint: 0xffffff, name: 'MAIN LAB',   propBias: { specimen: 0.55, console: 0.25, pipes: 0.40, bench: 0.20 } },
   POWER: { tint: 0xffb24a, name: 'POWER WING', propBias: { specimen: 0.10, console: 0.30, pipes: 0.85, bench: 0.10 } },
@@ -2342,7 +2464,7 @@ let currentZone = 'MAIN';
 let zoneTint = new THREE.Color(0xffffff);
 let zoneTargetTint = new THREE.Color(0xffffff);
 let nextBranchAt = 180;            // first branch slightly sooner
-const BRANCH_INTERVAL = 200;
+const BRANCH_INTERVAL = 520;   // v31: much longer per-zone sections (Mark)
 const branches = [];
 let zonesVisited = new Set(JSON.parse(localStorage.getItem('sdr_zones') || '["MAIN"]'));
 zonesVisited.add('MAIN');
@@ -2658,6 +2780,9 @@ function tickTurn(dt) {
           branches.splice(i, 1);
         }
       }
+      // v31: hot-swap corridor textures to the new zone's set. Hidden
+      // by the peak flash so player sees 'walked into a new zone.'
+      if (typeof applyZoneTextures === 'function') applyZoneTextures(currentZone);
     }
 
     // Character LEAN — flipped sign vs v28. Because danny.rotation.y = π
@@ -2770,6 +2895,8 @@ function reset() {
   // v28: reset wall fade to fully opaque on a fresh run
   if (typeof wallMatL !== 'undefined') wallMatL.opacity = 1.0;
   if (typeof wallMatR !== 'undefined') wallMatR.opacity = 1.0;
+  // v31: reset corridor textures to the MAIN zone
+  if (typeof applyZoneTextures === 'function') applyZoneTextures('MAIN');
   AUDIO.lastStepSin = 0;
   fadeMusic(AUDIO.music_vol, 600);                      // restore music after death/win
   document.getElementById('overlay').classList.remove('on');
@@ -2934,12 +3061,10 @@ function tick() {
     const wallO = wallMatL.opacity + (wallTargetOpacity - wallMatL.opacity) * Math.min(1, dt * 4.5);
     wallMatL.opacity = wallO;
     wallMatR.opacity = wallO;
-    // v25: faster lerp (~1s) so the zone change feels immediate.
-    zoneTint.lerp(zoneTargetTint, Math.min(1, dt * 1.6));
-    // Apply tint to wall + floor materials (multiplies their albedo)
-    if (wallMatL && wallMatL.color) wallMatL.color.copy(zoneTint);
-    if (wallMatR && wallMatR.color) wallMatR.color.copy(zoneTint);
-    if (floor && floor.material && floor.material.color) floor.material.color.copy(zoneTint);
+    // v31: textures carry the zone palette directly (applyZoneTextures
+    // swaps them at the turn snap). No multiplicative tint on wall +
+    // floor materials — they stay at color=white and let the texture do
+    // the work. zoneTint kept only for the HUD/banner styling.
 
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i];
