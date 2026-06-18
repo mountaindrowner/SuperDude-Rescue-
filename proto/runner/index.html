@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v29 — 3D Lab Escape</title>
+<title>Super Dude Runner v30 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v29 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v30 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -2609,11 +2609,13 @@ function startTurn(direction, tintHex) {
   turnT = TURN_DURATION;
   turnSnapped = false;
   turnFromHeading = playerHeading;
-  // World rotates Ry(playerHeading): for LEFT turn we want Ry(-π/2) so
-  // the -X wing comes to the -Z camera view; for RIGHT turn Ry(+π/2)
-  // brings the +X wing to view. applyWorldTransform(-playerHeading)
-  // implements Ry(playerHeading), so LEFT → -π/2, RIGHT → +π/2.
-  turnToHeading = playerHeading + (direction === 'left' ? -Math.PI / 2 : +Math.PI / 2);
+  // v30 SIGN FIX (Mark v29: 'when I turn right the character and camera
+  // go left'). The matrix coefficients (m[0]=cos, m[2]=-sin) match a
+  // standard Ry(+angle), so applyWorldTransform(-playerHeading) gives
+  // Ry(-playerHeading). For RIGHT turn we want Ry(+π/2) so that +X
+  // (right wing) maps to -Z (front view); that needs
+  // playerHeading = -π/2. Mirror for LEFT.
+  turnToHeading = playerHeading + (direction === 'left' ? +Math.PI / 2 : -Math.PI / 2);
   let fl = document.getElementById('turn-flash');
   if (!fl) {
     fl = document.createElement('div');
