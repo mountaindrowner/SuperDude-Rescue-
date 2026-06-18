@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#15182a">
-<title>Super Dude Runner v31 — 3D Lab Escape</title>
+<title>Super Dude Runner v32 — 3D Lab Escape</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0c14; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
@@ -63,7 +63,7 @@
       <span class="lbl" style="font-size:12px;letter-spacing:2px"><span id="ui-zone" style="color:#fff">MAIN LAB</span></span>
     </div>
     <div style="text-align:center;font-size:10px;color:#46f0ff;margin-top:6px;letter-spacing:1.5px;font-weight:700;opacity:0.7">
-      v31 &nbsp;•&nbsp; <span id="vsize">—</span>
+      v32 &nbsp;•&nbsp; <span id="vsize">—</span>
     </div>
   </div>
   <div id="powers">
@@ -838,18 +838,12 @@ const ceilTex = makeCeilTexture();
 // the end of a turn can swap the corridor's look in one step. (Both
 // wallMatL and wallMatR share the same map; wallMatR uses a +0.5
 // UV-offset clone for variety.)
-const ZONE_WALL_TEX  = {};
-const ZONE_FLOOR_TEX = {};
-const ZONE_WALL_TEX_R = {};   // for the right wall (offset clone)
-for (const k of Object.keys(ZONE_WALL_PALETTES)) {
-  const wTex = makeWallTexture(ZONE_WALL_PALETTES[k]);
-  ZONE_WALL_TEX[k] = wTex;
-  const wR = wTex.clone();
-  wR.offset.x = 0.5;
-  wR.needsUpdate = true;
-  ZONE_WALL_TEX_R[k] = wR;
-  ZONE_FLOOR_TEX[k] = makeFloorTexture(ZONE_FLOOR_PALETTES[k]);
-}
+// v31: per-zone texture cache + swap function (defined here only;
+// PRE-BAKING happens once ZONE_WALL_PALETTES / ZONE_FLOOR_PALETTES are
+// declared further below — see the second half of this file).
+const ZONE_WALL_TEX   = {};
+const ZONE_FLOOR_TEX  = {};
+const ZONE_WALL_TEX_R = {};
 function applyZoneTextures(zoneKey) {
   const wTex = ZONE_WALL_TEX[zoneKey];
   const wTexR = ZONE_WALL_TEX_R[zoneKey];
@@ -2460,6 +2454,19 @@ const ZONES = {
   CRYO:  { tint: 0x5cc8ff, name: 'CRYO WING',  propBias: { specimen: 0.40, console: 0.20, pipes: 0.50, bench: 0.50 } }
 };
 const ZONE_LIST = Object.keys(ZONES);
+// v31 pre-bake (deferred from earlier so the palettes exist first).
+// Builds wallTex + offset-clone rightWallTex + floorTex for each zone.
+for (const k of Object.keys(ZONE_WALL_PALETTES)) {
+  const wTex = makeWallTexture(ZONE_WALL_PALETTES[k]);
+  ZONE_WALL_TEX[k] = wTex;
+  const wR = wTex.clone();
+  wR.offset.x = 0.5;
+  wR.needsUpdate = true;
+  ZONE_WALL_TEX_R[k] = wR;
+  ZONE_FLOOR_TEX[k] = makeFloorTexture(ZONE_FLOOR_PALETTES[k]);
+}
+// Apply MAIN textures right away so the boot view matches the cache.
+applyZoneTextures('MAIN');
 let currentZone = 'MAIN';
 let zoneTint = new THREE.Color(0xffffff);
 let zoneTargetTint = new THREE.Color(0xffffff);
@@ -2756,22 +2763,32 @@ function tickTurn(dt) {
     turnT = Math.max(0, turnT - dt);
     const phase = 1 - (turnT / TURN_DURATION);   // 0 → 1
 
-    // v29 phases:
-    //   0.00 → 0.65 : world rotates 0 → target (eased), flash ramps 0 → ~0.95.
-    //   0.65       : SNAP — playerHeading=0, junction despawned, zone tint locked.
-    //   0.65 → 1.00: flash fades 0.95 → 0. World stays identity.
-    if (phase < 0.65) {
-      const rPhase = phase / 0.65;
-      const eased = 1 - Math.pow(1 - rPhase, 2);
+    // v32 phases (smoother): cubic ease-in-out rotation, sine-curve
+    //                       flash, snap centered at 0.5.
+    //   0.00 → 0.50 : world rotates 0 → target (ease-in-out cubic).
+    //                 flash ramps 0 → peak via half-sine (no abrupt edge).
+    //   0.50        : SNAP — playerHeading=0, junction despawned,
+    //                        textures swapped to new zone.
+    //   0.50 → 1.00 : flash fades peak → 0 via half-sine (smooth release).
+    const FLASH_PEAK = 0.92;
+    if (phase < 0.5) {
+      const rPhase = phase / 0.5;             // 0 → 1 over rotation half
+      // ease-in-out cubic
+      const eased = rPhase < 0.5
+        ? 4 * rPhase * rPhase * rPhase
+        : 1 - Math.pow(-2 * rPhase + 2, 3) / 2;
       playerHeading = turnFromHeading + (turnToHeading - turnFromHeading) * eased;
-      flashAlpha = (phase / 0.65) * 0.95;
+      // Half-sine flash ramp: starts at 0 with zero slope, ends at peak
+      // with zero slope — no perceived corners on the alpha curve.
+      flashAlpha = FLASH_PEAK * Math.sin(rPhase * Math.PI / 2);
     } else {
       playerHeading = 0;
-      flashAlpha = 0.95 * (1 - (phase - 0.65) / 0.35);
+      const fPhase = (phase - 0.5) / 0.5;     // 0 → 1 over flash-fade half
+      flashAlpha = FLASH_PEAK * Math.cos(fPhase * Math.PI / 2);
     }
 
-    // SNAP at phase 0.65 (executed once)
-    if (phase >= 0.65 && !turnSnapped) {
+    // SNAP at phase 0.5 (executed once)
+    if (phase >= 0.5 && !turnSnapped) {
       turnSnapped = true;
       // Despawn every resolved junction (the one that started this turn)
       for (let i = branches.length - 1; i >= 0; i--) {
@@ -3048,7 +3065,10 @@ function tick() {
         const peakZ = -8;
         const dist = Math.abs(b.z - peakZ);
         const fadeAmt = Math.max(0, 1 - dist / 22);
-        const opacityHere = 1.0 - fadeAmt * 0.88;
+        // v32: softer fade (min ~0.45 instead of 0.12) so the walls
+        // don't disappear entirely — eases the visual chaos around
+        // the junction.
+        const opacityHere = 1.0 - fadeAmt * 0.55;
         if (opacityHere < wallTargetOpacity) wallTargetOpacity = opacityHere;
       }
       // Despawn once well past the camera
