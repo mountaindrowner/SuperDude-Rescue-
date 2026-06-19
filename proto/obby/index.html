@@ -4,14 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v3 — Phase 3 first map</title>
+<title>Super Dude OBBY v4 — Pass A + E + B-lite</title>
 <style>
   :root { color-scheme: light; }
-  html, body { margin: 0; padding: 0; height: 100%; background: #9fd8ff; overflow: hidden;
+  html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
     font-family: system-ui, "Segoe UI", sans-serif;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
   #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-  canvas#game { background: #9fd8ff; width: 100vw; height: 100vh; display: block; }
+  canvas#game { background: #bfe8ff; width: 100vw; height: 100vh; display: block; }
+
+  /* v4: Checkpoint toast — slides down from the top centre on each checkpoint
+     touch, fades after 1.5s. */
+  #toast { position: fixed; top: 84px; left: 0; right: 0; text-align: center;
+           pointer-events: none; z-index: 14;
+           transform: translateY(-12px); opacity: 0; transition: opacity .25s, transform .25s; }
+  #toast.on { transform: translateY(0); opacity: 1; }
+  #toast .pill { display: inline-block; padding: 8px 16px; border-radius: 999px;
+           background: rgba(0,255,200,0.18); color: #00ffc8; font-weight: 800; letter-spacing: 2px;
+           border: 1.5px solid rgba(0,255,200,0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+           font-size: 15px; text-shadow: 0 0 8px rgba(0,255,200,0.4); }
+
+  /* v4: Debug HUD — F3 toggles. Top-right, mono, half-opacity. */
+  #debug { position: fixed; top: 80px; right: 12px; padding: 8px 10px;
+           background: rgba(10,12,20,0.65); color: #b8e0ff; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+           font-size: 11px; line-height: 1.45; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+           pointer-events: none; z-index: 15; display: none; min-width: 152px; }
+  #debug.on { display: block; }
+  #debug b { color: #ffd23a; font-weight: 700; }
 
   /* HUD overlay shell — patterned after runner v34. */
   #ui { position: fixed; inset: 0; pointer-events: none;
@@ -84,7 +103,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v3 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -95,7 +114,16 @@
     <p id="ov-p2"></p>
     <div class="blink" id="ov-cta">TAP TO PLAY AGAIN</div>
   </div>
-  <div id="hint">drag right side = look · left side = move · JUMP = jump</div>
+  <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug</div>
+</div>
+<div id="toast"><span class="pill" id="toast-text">CHECKPOINT 1</span></div>
+<div id="debug">
+  <div><b>FPS</b> <span id="dbg-fps">—</span></div>
+  <div><b>draws</b> <span id="dbg-draws">—</span></div>
+  <div><b>tris</b> <span id="dbg-tris">—</span></div>
+  <div><b>geos</b> <span id="dbg-geos">—</span></div>
+  <div><b>stage</b> <span id="dbg-stage">—</span></div>
+  <div><b>pos</b> <span id="dbg-pos">—</span></div>
 </div>
 
 <div id="touchUI">
@@ -111,21 +139,73 @@
 <script type="module">
 import * as THREE from 'three';
 
-// ============ RENDERER / SCENE / LIGHTING ============================
-// Lifted from proto/runner/index.html boot block. Trimmed for OBBY:
-// bright sky background, warm sun, no specimen-tube point lights.
+// ============================================================
+// 0. PROJECT CONSTANTS + STATE OBJECTS
+// ============================================================
+// Per proto/obby/CLAUDE.md §4 — explicit state objects rather than
+// scattered globals. Names match the manual so future passes can
+// rely on this shape.
+
+const THEMES = {
+  // Stage 1's default theme. Future passes can per-stage override.
+  lab: {
+    sky:        0xbfe8ff,
+    fogNear:    28,
+    fogFar:     95,
+    safe:       0x4fa3ff,    // bright blue main path
+    trim:       0x1f5f91,    // darker blue trim under safe blocks
+    hazard:     0xff3b1f,    // lava red
+    hazardRim:  0x771000,    // darker rim around lava
+    checkpoint: 0x00ffc8,    // cyan/green glow
+    finish:     0xffd447,    // gold
+    jumpPad:    0x46f0ff,    // electric cyan
+    moving:     0xffce6b,    // warm yellow with arrow stripes
+    disappear:  0xb89aff,    // purple/translucent
+  },
+};
+const THEME = THEMES.lab;
+
+const GRAPHICS = {
+  quality:           'high',
+  shadows:           true,
+  outlines:          false,    // defer per §18.7
+  post:              false,    // defer per §18.13
+  pixelRatioCap:     1.75,
+  decorativeDensity: 1.0,
+};
+
+// Movement-feel tuning per §9.1 (Pass B-lite values only).
+const TUNING = {
+  coyoteTime:        0.10,
+  jumpBufferTime:    0.12,
+  jumpCutMultiplier: 0.45,
+  landingSquashTime: 0.10,
+};
+
+// Game-wide state. Aliased into runtime vars so the existing code
+// keeps working; we just have a single object to read.
+const GAME = {
+  state: 'play', stage: 0, checkpoints: 0, deaths: 0, elapsed: 0,
+};
+
+// ============================================================
+// 1. RENDERER / SCENE / CAMERA / LIGHTING
+// ============================================================
+// Renderer baseline per CLAUDE.md §18.2.
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, GRAPHICS.pixelRatioCap));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
-renderer.shadowMap.enabled = true;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = GRAPHICS.shadows;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x9fd8ff);
-scene.fog = new THREE.Fog(0x9fd8ff, 35, 160);
+// Atmosphere per §18.4 — fog colour MATCHES background so distant
+// platforms fade into the sky rather than popping against a hard edge.
+scene.background = new THREE.Color(THEME.sky);
+scene.fog = new THREE.Fog(THEME.sky, THEME.fogNear, THEME.fogFar);
 
 // PMREM env — a small canvas gradient so PBR materials read correctly.
 const envCanvas = document.createElement('canvas');
@@ -134,7 +214,7 @@ envCanvas.width = 32; envCanvas.height = 32;
   const g = envCanvas.getContext('2d');
   const grad = g.createLinearGradient(0, 0, 0, 32);
   grad.addColorStop(0, '#fff5d8');
-  grad.addColorStop(0.5, '#9fd8ff');
+  grad.addColorStop(0.5, '#bfe8ff');
   grad.addColorStop(1, '#6bcf6b');
   g.fillStyle = grad; g.fillRect(0, 0, 32, 32);
 }
@@ -143,21 +223,87 @@ envTex.mapping = THREE.EquirectangularReflectionMapping;
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromEquirectangular(envTex).texture;
 
-// Lights — warm sun + cool fill (OBBY palette).
-const ambient = new THREE.AmbientLight(0xffffff, 0.85);
-scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xfff4d8, 1.55);
-sun.position.set(8, 16, 6);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
-sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
-sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 60;
-sun.shadow.bias = -0.0008;
+// Lighting stack per §18.3 — hemisphere fill + ONE directional sun.
+// Hemisphere gives sky/ground tinted ambient (much better than flat
+// AmbientLight); sun provides shape + shadows. No second fill light.
+const hemi = new THREE.HemisphereLight(0xbfe8ff, 0x6b5a45, 1.15);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2.25);
+sun.position.set(-6, 12, 8);
+sun.target.position.set(0, 0, 0);
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0x9fd8ff, 0.45);
-fill.position.set(-6, 8, -4);
-scene.add(fill);
+scene.add(sun.target);
+sun.castShadow = GRAPHICS.shadows;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 40;
+sun.shadow.camera.left = -18;
+sun.shadow.camera.right = 18;
+sun.shadow.camera.top = 18;
+sun.shadow.camera.bottom = -18;
+sun.shadow.bias = -0.0002;
+sun.shadow.normalBias = 0.02;
+
+// ============================================================
+// 2. SHARED GEOMETRY + MATERIAL CACHE
+// ============================================================
+// Per CLAUDE.md §4.2, §18.5 — semantic named materials instead of
+// inline new MeshStandardMaterial calls.
+function toyMat(color, opts = {}) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: opts.roughness ?? 0.72,
+    metalness: opts.metalness ?? 0.0,
+    flatShading: opts.flatShading ?? false,
+    emissive: opts.emissive ?? 0x000000,
+    emissiveIntensity: opts.emissiveIntensity ?? 0.0,
+    transparent: opts.transparent ?? false,
+    opacity: opts.opacity ?? 1.0,
+  });
+}
+
+// Cached geometries for repeated decorations / character parts.
+const GEO = {
+  sphereLow: new THREE.SphereGeometry(1, 12, 8),
+  sphereMed: new THREE.SphereGeometry(1, 16, 12),
+  sphereTiny: new THREE.SphereGeometry(0.18, 10, 8),
+  cyl:        new THREE.CylinderGeometry(1, 1, 1, 12),
+  ringThin:   new THREE.TorusGeometry(1.0, 0.06, 8, 28),
+};
+
+// Semantic materials — character + hazards + checkpoint + finish.
+const MAT = {
+  // Character
+  charSkin:    toyMat(0xf0c8a0, { roughness: 0.7,  metalness: 0.05 }),
+  charCoat:    toyMat(0xf8fafc, { roughness: 0.55, metalness: 0.15 }),
+  charShirt:   toyMat(0xc8d0dc, { roughness: 0.45, metalness: 0.45 }),
+  charPants:   toyMat(0x3a4a6a, { roughness: 0.55, metalness: 0.20 }),
+  charShoe:    toyMat(0x1a2030, { roughness: 0.50, metalness: 0.35 }),
+  charCap:     toyMat(0xd33a3a, { roughness: 0.45, metalness: 0.20 }),
+  charHair:    toyMat(0x3a2418),
+  charEyeW:    toyMat(0xffffff),
+  charEyeD:    toyMat(0x1a2030),
+  charStripe:  toyMat(0xffffff),
+  charPatch:   toyMat(0xffd23a, { emissive: 0xffd23a, emissiveIntensity: 0.22 }),
+  // Hazards (per §10.2)
+  lava:        toyMat(THEME.hazard,     { emissive: 0xff2200, emissiveIntensity: 0.55, roughness: 0.55 }),
+  lavaTop:     toyMat(0xffb070,         { emissive: 0xff7a20, emissiveIntensity: 1.0,  roughness: 0.35 }),
+  warningA:    toyMat(0x1a2030,         { roughness: 0.85 }),
+  warningB:    toyMat(0xffd23a,         { emissive: 0xffd23a, emissiveIntensity: 0.30 }),
+  // Checkpoint + finish
+  checkpoint:  toyMat(THEME.checkpoint, { emissive: THEME.checkpoint, emissiveIntensity: 0.45 }),
+  cpRingLit:   toyMat(THEME.checkpoint, { emissive: THEME.checkpoint, emissiveIntensity: 0.85,
+                                          transparent: true, opacity: 0.65 }),
+  pole:        toyMat(0x445566,         { roughness: 0.4, metalness: 0.6 }),
+  finishGold:  toyMat(THEME.finish,     { emissive: THEME.finish, emissiveIntensity: 0.85,
+                                          roughness: 0.30, metalness: 0.40 }),
+  finishStar:  toyMat(0xfff5b0,         { emissive: THEME.finish, emissiveIntensity: 1.4 }),
+  // Decoration
+  cloud:       toyMat(0xffffff,         { roughness: 0.95 }),
+  ground:      toyMat(0x8fc8e8,         { roughness: 0.95 }),
+  signFront:   toyMat(0xfff8e0,         { roughness: 0.85 }),
+  signPole:    toyMat(0x7a5a3a,         { roughness: 0.8 }),
+};
 
 // ============ CAMERA =================================================
 // Orbit-follow: azim/elev/radius captured from input; target = player +
@@ -203,127 +349,138 @@ function updateCamera(dt) {
   camera.lookAt(camTgt);
 }
 
-// ============ DANNY RIG ==============================================
-// v3: rebuilt with HIP and SHOULDER pivot groups for run animation, and
-// a capsule torso for a smoother body. Local origin still at sneaker
-// bottoms (y=0) so the visual sits flat on whatever surface he's on.
+// ============================================================
+// 6. CHARACTER FACTORY + RIG + COSMETIC SLOTS
+// ============================================================
+// v4 (Pass A + Pass C-lite): rig uses named slot groups per §6.2 so
+// future passes can swap a hat / hair / glasses without touching the
+// rig itself. Slots are added empty unless a default cosmetic is
+// equipped here. Hip + shoulder + head pivots preserved from v3 for
+// the run animation.
 const danny  = new THREE.Group();          // root, yaw-rotated to face wishDir
-const rigParts = {};                       // named handles for animation
+const rigParts = {};                       // named handles for animation + slots
 function buildDanny() {
-  const skin     = new THREE.MeshStandardMaterial({ color: 0xf0c8a0, metalness: 0.05, roughness: 0.7 });
-  const coat     = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.15, roughness: 0.55 });
-  const shirt    = new THREE.MeshStandardMaterial({ color: 0xc8d0dc, metalness: 0.45, roughness: 0.45 });
-  const pants    = new THREE.MeshStandardMaterial({ color: 0x3a4a6a, metalness: 0.20, roughness: 0.55 });
-  const sneaker  = new THREE.MeshStandardMaterial({ color: 0x1a2030, metalness: 0.35, roughness: 0.50 });
-  const cap      = new THREE.MeshStandardMaterial({ color: 0xd33a3a, metalness: 0.20, roughness: 0.45 });
-  const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const eyeDark  = new THREE.MeshStandardMaterial({ color: 0x1a2030 });
-
   function mesh(geom, mat) {
     const m = new THREE.Mesh(geom, mat);
     m.castShadow = true; m.receiveShadow = true;
     return m;
   }
 
-  // ---- LEGS as hip-pivot groups (so they can swing for the run) -----
-  // Hip joint sits at danny-local y=0.85 (top of the leg cylinder).
-  // Children hang DOWN from the pivot: leg cylinder + sneaker box.
+  // ---- LEGS as hip-pivot groups (so they can swing for the run) ----
   const LEG_LEN = 0.85;
   for (const side of [-1, +1]) {
     const hip = new THREE.Group();
     hip.position.set(side * 0.18, LEG_LEN, 0);
     danny.add(hip);
-    // leg cylinder hangs down from pivot
-    const leg = mesh(new THREE.CylinderGeometry(0.16, 0.16, LEG_LEN, 12), pants);
+    const leg = mesh(new THREE.CylinderGeometry(0.16, 0.16, LEG_LEN, 12), MAT.charPants);
     leg.position.y = -LEG_LEN / 2;
     hip.add(leg);
-    // sneaker box at the ankle (slightly forward in +Z so toe points fwd)
-    const shoe = mesh(new THREE.BoxGeometry(0.30, 0.16, 0.50), sneaker);
+    const shoe = mesh(new THREE.BoxGeometry(0.30, 0.16, 0.50), MAT.charShoe);
     shoe.position.set(0, -LEG_LEN + 0.08, 0.05);
     hip.add(shoe);
-    // white sneaker stripe — sits on top of the shoe
-    const stripe = mesh(new THREE.BoxGeometry(0.31, 0.04, 0.50),
-                        new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    const stripe = mesh(new THREE.BoxGeometry(0.31, 0.04, 0.50), MAT.charStripe);
     stripe.position.set(0, -LEG_LEN + 0.10, 0.05);
     hip.add(stripe);
     rigParts[side < 0 ? 'hipL' : 'hipR'] = hip;
   }
 
-  // ---- TORSO — capsule (smoother than the previous box) + coat slabs -
+  // ---- TORSO group (shirt + coat slabs) + shirtSlot -----------------
   const TORSO_Y = 1.18;
-  const torso = mesh(new THREE.CapsuleGeometry(0.32, 0.46, 6, 14), shirt);
+  const torsoGrp = new THREE.Group();
+  danny.add(torsoGrp);
+  rigParts.body = torsoGrp;
+
+  const torso = mesh(new THREE.CapsuleGeometry(0.32, 0.46, 6, 14), MAT.charShirt);
   torso.position.y = TORSO_Y;
-  danny.add(torso);
-  // white lab-coat slab over the front
-  const coatFront = mesh(new THREE.BoxGeometry(0.62, 0.78, 0.06), coat);
+  torsoGrp.add(torso);
+  const coatFront = mesh(new THREE.BoxGeometry(0.62, 0.78, 0.06), MAT.charCoat);
   coatFront.position.set(0, TORSO_Y - 0.04, 0.30);
-  danny.add(coatFront);
-  // lab-coat hem (wraps the bottom of the torso to read as a coat skirt)
-  const hem = mesh(new THREE.BoxGeometry(0.72, 0.30, 0.50), coat);
+  torsoGrp.add(coatFront);
+  const hem = mesh(new THREE.BoxGeometry(0.72, 0.30, 0.50), MAT.charCoat);
   hem.position.set(0, 0.86, 0);
-  danny.add(hem);
+  torsoGrp.add(hem);
+  // shirtSlot — empty by default; cosmetics factory can populate later
+  rigParts.shirtSlot = new THREE.Group(); torsoGrp.add(rigParts.shirtSlot);
+  // backSlot — for backpacks / capes / tool pouches
+  rigParts.backSlot  = new THREE.Group(); rigParts.backSlot.position.set(0, TORSO_Y, -0.30); torsoGrp.add(rigParts.backSlot);
+  // effectSlot — for trail / aura effects pinned to torso center
+  rigParts.effectSlot = new THREE.Group(); rigParts.effectSlot.position.set(0, TORSO_Y, 0); torsoGrp.add(rigParts.effectSlot);
 
   // ---- ARMS as shoulder-pivot groups -------------------------------
-  // Shoulder joint at danny-local y=1.59 (top of the arm cylinder).
   const ARM_LEN = 0.78;
   for (const side of [-1, +1]) {
     const sh = new THREE.Group();
     sh.position.set(side * 0.44, 1.59, 0);
     danny.add(sh);
-    const arm = mesh(new THREE.CylinderGeometry(0.10, 0.10, ARM_LEN, 10), coat);
+    const arm = mesh(new THREE.CylinderGeometry(0.10, 0.10, ARM_LEN, 10), MAT.charCoat);
     arm.position.y = -ARM_LEN / 2;
     sh.add(arm);
-    const hand = mesh(new THREE.SphereGeometry(0.13, 14, 10), skin);
+    const hand = mesh(new THREE.SphereGeometry(0.13, 14, 10), MAT.charSkin);
     hand.position.y = -ARM_LEN + 0.04;
     sh.add(hand);
     rigParts[side < 0 ? 'shoulderL' : 'shoulderR'] = sh;
   }
 
-  // ---- HEAD ---------------------------------------------------------
+  // ---- HEAD group + slots ------------------------------------------
+  // Slight proportion tweak per §6.1 — head sphere bumped 0.28 → 0.30
+  // for more readable face from the gameplay camera distance.
   const headY = 1.92;
-  // a head group so the head can subtly bob with the run cadence
   const headGrp = new THREE.Group();
   headGrp.position.y = headY;
   danny.add(headGrp);
   rigParts.headGrp = headGrp;
 
-  headGrp.add(mesh(new THREE.SphereGeometry(0.28, 18, 14), skin));
-  // eyes (whites then dark pupils, both positioned in head-local coords)
+  rigParts.head = mesh(new THREE.SphereGeometry(0.30, 18, 14), MAT.charSkin);
+  headGrp.add(rigParts.head);
+
+  // face group — eyes, mouth — kept on headGrp so glassesSlot can attach
   function eye(side, dx, dy, dz, r, mat) {
     const e = mesh(new THREE.SphereGeometry(r, 10, 8), mat);
     e.position.set(side * dx, dy, dz);
     headGrp.add(e); return e;
   }
-  eye(-1, 0.10, 0.04, 0.22, 0.055, eyeWhite);
-  eye( 1, 0.10, 0.04, 0.22, 0.055, eyeWhite);
-  eye(-1, 0.10, 0.03, 0.26, 0.028, eyeDark);
-  eye( 1, 0.10, 0.03, 0.26, 0.028, eyeDark);
-  // mouth (smirk)
-  const mouth = mesh(new THREE.BoxGeometry(0.16, 0.03, 0.04), eyeDark);
-  mouth.position.set(0, -0.10, 0.25);
+  eye(-1, 0.10, 0.04, 0.24, 0.055, MAT.charEyeW);
+  eye( 1, 0.10, 0.04, 0.24, 0.055, MAT.charEyeW);
+  eye(-1, 0.10, 0.03, 0.28, 0.028, MAT.charEyeD);
+  eye( 1, 0.10, 0.03, 0.28, 0.028, MAT.charEyeD);
+  const mouth = mesh(new THREE.BoxGeometry(0.16, 0.03, 0.04), MAT.charEyeD);
+  mouth.position.set(0, -0.10, 0.27);
   headGrp.add(mouth);
-  // hair tuft peeking out the back under the cap
-  const hair = mesh(new THREE.SphereGeometry(0.12, 10, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x3a2418 }));
-  hair.position.set(0, 0.18, -0.18);
-  headGrp.add(hair);
 
-  // ---- CAP (worn backwards, brim points -Z) ------------------------
-  const dome = mesh(new THREE.SphereGeometry(0.31, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), cap);
-  dome.position.set(0, 0.18, 0);
-  headGrp.add(dome);
-  const brim = mesh(new THREE.BoxGeometry(0.48, 0.04, 0.22), cap);
-  brim.position.set(0, 0.12, -0.28);
-  brim.rotation.x = 0.10;
-  headGrp.add(brim);
-  // gold SD patch on the front of the cap
-  const patch = mesh(new THREE.BoxGeometry(0.18, 0.10, 0.02),
-        new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.22 }));
-  patch.position.set(0, 0.18, 0.30);
-  headGrp.add(patch);
+  // glassesSlot — empty for now, attaches to head
+  rigParts.glassesSlot = new THREE.Group();
+  rigParts.glassesSlot.position.set(0, 0.04, 0.28);
+  headGrp.add(rigParts.glassesSlot);
 
-  // ---- Drop shadow (lives in the SCENE, not under danny, so it stays
-  //      pinned to the platform top when Danny is in the air). -------
+  // hairSlot — populated with the default tuft (cosmetics can swap)
+  rigParts.hairSlot = new THREE.Group();
+  headGrp.add(rigParts.hairSlot);
+  {
+    const hair = mesh(new THREE.SphereGeometry(0.12, 10, 8), MAT.charHair);
+    hair.position.set(0, 0.18, -0.18);
+    rigParts.hairSlot.add(hair);
+  }
+
+  // hatSlot — populated with the default backwards cap (cosmetics can swap)
+  rigParts.hatSlot = new THREE.Group();
+  headGrp.add(rigParts.hatSlot);
+  {
+    const dome = mesh(new THREE.SphereGeometry(0.31, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), MAT.charCap);
+    dome.position.set(0, 0.18, 0);
+    rigParts.hatSlot.add(dome);
+    const brim = mesh(new THREE.BoxGeometry(0.48, 0.04, 0.22), MAT.charCap);
+    brim.position.set(0, 0.12, -0.28);
+    brim.rotation.x = 0.10;
+    rigParts.hatSlot.add(brim);
+    // gold SD patch — referenced by rigParts so the cap can pulse on
+    // checkpoint/finish in future passes (Pass C - emotion layer).
+    const patch = mesh(new THREE.BoxGeometry(0.18, 0.10, 0.02), MAT.charPatch);
+    patch.position.set(0, 0.18, 0.30);
+    rigParts.hatSlot.add(patch);
+    rigParts.capPatch = patch;
+  }
+
+  // ---- Drop shadow (scene-pinned, stays on platform top in flight) -
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.55, 24),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32 })
@@ -362,7 +519,9 @@ function tickRig(dt, isMoving) {
   rigParts.headGrp.position.y += (1.92 + bobTarget - rigParts.headGrp.position.y) * k;
 }
 
-// ============ PLAYER STATE + PHYSICS CONSTANTS =======================
+// ============================================================
+// 8. PLAYER STATE + PHYSICS CONSTANTS
+// ============================================================
 const GRAV = 18, JUMP_V0 = 7.0, WALK_SPEED = 8.0;
 const player = {
   pos: new THREE.Vector3(0, 2, 0),
@@ -370,7 +529,13 @@ const player = {
   yaw: 0,
   onGround: false,
   radius: 0.4,
-  halfH: 0.70,           // capsule axis half-length (exclusive of radius caps)
+  halfH: 0.70,
+  // v4 Pass B-lite: movement-feel state per §6.5 + §9.1
+  coyoteTimer:    0,       // s — counts up off-ground; jump valid while < TUNING.coyoteTime
+  jumpBuffer:     0,       // s — counts down after jump press; fires on landing if > 0
+  jumpHeld:       false,   // currently holding the jump button (for variable jump cut)
+  prevOnGround:   false,   // last frame's onGround — for landing-squash trigger
+  onPlatform:     null,    // platforms[] entry the player is currently standing on
 };
 let lastCheckpointPos = player.pos.clone();
 let state = 'play';      // 'play' | 'respawning' | 'won'
@@ -378,6 +543,135 @@ let dieT = 0;
 const dieStartPos = new THREE.Vector3();
 let runT = 0;
 let timeSec = 0;
+let landSquashT = 0;     // counts down while the landing squash plays
+
+// ============================================================
+// 5. PROCEDURAL MESH FACTORIES
+// ============================================================
+// Helper: darken a hex color toward black by `amt` (0..1).
+function darkenHex(hex, amt = 0.55) {
+  const c = new THREE.Color(hex);
+  c.r *= amt; c.g *= amt; c.b *= amt;
+  return c.getHex();
+}
+function lightenHex(hex, amt = 0.15) {
+  const c = new THREE.Color(hex);
+  c.r = Math.min(1, c.r + amt);
+  c.g = Math.min(1, c.g + amt);
+  c.b = Math.min(1, c.b + amt);
+  return c.getHex();
+}
+
+// makeToyPlatform — composes a base block + slightly-inset brighter top
+// slab so platforms don't look like flat cubes (per §18.8). Returns
+// `{ group, baseMesh }`; the caller uses baseMesh for the collision
+// AABB and adds `group` to the scene.
+function makeToyPlatform({ pos, size, color, trimColor, emissive, emissiveIntensity }) {
+  const grp = new THREE.Group();
+  grp.position.set(pos[0], pos[1], pos[2]);
+  const trim = trimColor ?? darkenHex(color, 0.60);
+  // base block (carries the AABB)
+  const baseMat = new THREE.MeshStandardMaterial({
+    color: trim, roughness: 0.80, metalness: 0.0,
+    emissive: emissive ?? 0x000000,
+    emissiveIntensity: emissiveIntensity ?? 0.0,
+  });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), baseMat);
+  base.castShadow = false; base.receiveShadow = true;
+  grp.add(base);
+  // bright top inset slab — only on platforms big enough to read it
+  if (size[0] >= 1.8 && size[2] >= 1.8 && size[1] >= 0.5) {
+    const topThick = Math.max(0.10, Math.min(0.20, size[1] * 0.28));
+    const topMat = new THREE.MeshStandardMaterial({
+      color, roughness: 0.62, metalness: 0.0,
+      emissive: emissive ?? 0x000000,
+      emissiveIntensity: emissiveIntensity ?? 0.0,
+    });
+    const top = new THREE.Mesh(
+      new THREE.BoxGeometry(size[0] * 0.92, topThick, size[2] * 0.92),
+      topMat
+    );
+    top.position.y = size[1] / 2 - topThick / 2 + 0.005;
+    top.receiveShadow = true;
+    grp.add(top);
+  }
+  return { group: grp, baseMesh: base };
+}
+
+// makeCloudPuff — small Group of 3-5 overlapping spheres for a low-cost
+// background cloud. Uses cached cloud material.
+function makeCloudPuff() {
+  const g = new THREE.Group();
+  const n = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) {
+    const r = 1.0 + Math.random() * 1.2;
+    const s = new THREE.Mesh(GEO.sphereLow, MAT.cloud);
+    s.scale.set(r, r * 0.65, r);
+    s.position.set((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 2);
+    g.add(s);
+  }
+  return g;
+}
+
+// makeStageSign — paints the stage name onto a small canvas texture
+// and stacks it on a wooden-toned post. Cached by stage id so we don't
+// rebuild the canvas every reset.
+const _signCache = new Map();
+function makeStageSign(stageId, name) {
+  let tex = _signCache.get(stageId);
+  if (!tex) {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 96;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff8e0'; g.fillRect(0, 0, 256, 96);
+    g.fillStyle = '#7a5a3a'; g.fillRect(0, 0, 256, 4); g.fillRect(0, 92, 256, 4);
+    g.fillStyle = '#1a2030';
+    g.font = 'bold 22px system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const idStr = String(stageId).padStart(2, '0');
+    g.fillText(idStr + '   ' + name, 128, 48);
+    tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    _signCache.set(stageId, tex);
+  }
+  const grp = new THREE.Group();
+  const post = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.07, 1.4, 8),
+    MAT.signPole
+  );
+  post.position.y = 0.7;
+  post.castShadow = true; post.receiveShadow = true;
+  grp.add(post);
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 0.55, 0.06),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 })
+  );
+  board.position.y = 1.55;
+  board.castShadow = true;
+  grp.add(board);
+  return grp;
+}
+
+// makeWarningPost — small black/yellow post for the corners of a lava
+// volume per §10.2. Alternating chevron-style.
+function makeWarningPost(altYellow) {
+  const grp = new THREE.Group();
+  const lower = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.30, 0.18),
+    altYellow ? MAT.warningB : MAT.warningA
+  );
+  lower.position.y = 0.15;
+  lower.castShadow = false; lower.receiveShadow = true;
+  grp.add(lower);
+  const upper = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.30, 0.18),
+    altYellow ? MAT.warningA : MAT.warningB
+  );
+  upper.position.y = 0.45;
+  upper.castShadow = false; upper.receiveShadow = true;
+  grp.add(upper);
+  return grp;
+}
 
 // ============ PHASE 3: MAP DATA ======================================
 // Linear chain of stages extending in the -Z direction. Each stage
@@ -574,108 +868,243 @@ let currentStage = 0;       // most recent checkpoint stage id (0 = haven't hit 
 let checkpointCount = 0;
 let stageStarted = 1;       // the stage we're currently IN (cosmetic only)
 
+// decorations[] = non-collidable scenery (clouds, signs, warning posts,
+// ground plate, etc.). Kept separate from `platforms[]` so collision /
+// trigger code never accidentally interacts with them.
+const decorations = [];
+
 function scaffoldMap() {
   for (const stage of MAP.stages) {
+    let firstSolid = null;       // remember the first solid platform of the
+                                 // stage so we can place the stage sign on it.
     if (stage.platforms) for (const p of stage.platforms) {
-      const m = new THREE.Mesh(
-        new THREE.BoxGeometry(p.size[0], p.size[1], p.size[2]),
-        new THREE.MeshStandardMaterial({
-          color: p.color || '#6bcf6b',
-          metalness: 0.10, roughness: 0.60,
-          emissive: p.kind === 'jumpPad' ? p.color : 0x000000,
-          emissiveIntensity: p.kind === 'jumpPad' ? 0.40 : 0,
-        })
-      );
-      m.position.set(p.pos[0], p.pos[1], p.pos[2]);
-      m.castShadow = true; m.receiveShadow = true;
-      scene.add(m);
-      const box = new THREE.Box3().setFromObject(m);
+      const kind = p.kind || 'solid';
+      const color = p.color || '#6bcf6b';
+      let entryMesh, baseMesh, group = null;
+
+      if (kind === 'solid') {
+        // v4 §18.8: toy-block treatment — base + bright top inset.
+        const r = makeToyPlatform({
+          pos: p.pos, size: p.size, color,
+        });
+        scene.add(r.group);
+        group = r.group; baseMesh = r.baseMesh;
+        // The collidable mesh for AABB queries is the base block; we
+        // store the GROUP as the visible "mesh" so future toggles
+        // (visibility, scale-pulse) affect the whole thing.
+        entryMesh = r.group;
+        baseMesh.castShadow = false; baseMesh.receiveShadow = true;
+      } else {
+        // Non-solid kinds (jumpPad / disappearing / moving) stay as a
+        // single Mesh because they need per-frame visibility / position
+        // / emissive updates that the multi-mesh toy variant complicates.
+        const mat = new THREE.MeshStandardMaterial({
+          color, roughness: 0.60, metalness: 0.10,
+          emissive: kind === 'jumpPad' ? color :
+                    kind === 'moving'  ? darkenHex(color, 0.85) :
+                    0x000000,
+          emissiveIntensity: kind === 'jumpPad' ? 0.40 : 0.0,
+          transparent: kind === 'disappearing',
+          opacity:     kind === 'disappearing' ? 1.0 : 1.0,
+        });
+        const m = new THREE.Mesh(
+          new THREE.BoxGeometry(p.size[0], p.size[1], p.size[2]),
+          mat
+        );
+        m.position.set(p.pos[0], p.pos[1], p.pos[2]);
+        m.castShadow = (kind === 'moving' || kind === 'jumpPad');  // §18.3 — selective
+        m.receiveShadow = true;
+        scene.add(m);
+        entryMesh = m; baseMesh = m;
+      }
+
+      const box = new THREE.Box3().setFromObject(baseMesh);
       const entry = {
-        mesh: m, box,
-        kind: p.kind || 'solid',
+        mesh: entryMesh, baseMesh, box,
+        kind,
         data: Object.assign({ stageId: stage.id }, p),
         collidable: true,
       };
-      // initial phase offset for disappearing cycles (so a row of them is staggered)
-      if (entry.kind === 'disappearing') entry.data.cycleT = p.phase || 0;
+      if (kind === 'disappearing') entry.data.cycleT = p.phase || 0;
+      if (kind === 'moving') {
+        // v4 §9.2: store prev position for moving-platform carry.
+        entry.prevPos = new THREE.Vector3().copy(entryMesh.position);
+        entry.deltaPos = new THREE.Vector3();
+      }
       platforms.push(entry);
+
+      // First solid platform = stage entrance — anchor the stage sign here.
+      if (firstSolid === null && kind === 'solid') firstSolid = p;
     }
+
     if (stage.hazards) for (const h of stage.hazards) {
+      // Main lava slab (uses shared MAT.lava so all lava bobs in sync).
+      const lavaMat = MAT.lava.clone();
       const m = new THREE.Mesh(
         new THREE.BoxGeometry(h.size[0], h.size[1], h.size[2]),
-        new THREE.MeshStandardMaterial({
-          color: 0xff5a30, emissive: 0xff2200, emissiveIntensity: 0.55, roughness: 0.55,
-        })
+        lavaMat
       );
       m.position.set(h.pos[0], h.pos[1], h.pos[2]);
       m.receiveShadow = true;
       scene.add(m);
+      // Brighter top slab that bobs (animated in tickObstacles).
+      const topInset = new THREE.Mesh(
+        new THREE.BoxGeometry(h.size[0] * 0.95, 0.04, h.size[2] * 0.95),
+        MAT.lavaTop.clone()
+      );
+      topInset.position.set(h.pos[0], h.pos[1] + h.size[1] / 2 + 0.02, h.pos[2]);
+      scene.add(topInset);
+      // Warning posts at the four CORNERS of the hazard (per §10.2).
+      const cx = h.pos[0], cz = h.pos[2];
+      const halfW = h.size[0] / 2, halfD = h.size[2] / 2;
+      const corners = [
+        [cx - halfW, cz - halfD, false],
+        [cx + halfW, cz - halfD, true],
+        [cx - halfW, cz + halfD, true],
+        [cx + halfW, cz + halfD, false],
+      ];
+      for (const [px, pz, altY] of corners) {
+        const post = makeWarningPost(altY);
+        // Place the post AT the floor under the hazard's top edge.
+        post.position.set(px, h.pos[1] + h.size[1] / 2 + 0.01, pz);
+        scene.add(post);
+        decorations.push(post);
+      }
       const box = new THREE.Box3().setFromObject(m);
-      hazards.push({ mesh: m, box, kind: h.kind, data: h });
+      hazards.push({ mesh: m, top: topInset, box, kind: h.kind, data: h });
     }
+
     if (stage.checkpoint) buildCheckpointPad(stage.checkpoint, stage.id, false);
     if (stage.finish)     buildFinishPad(stage.finish, stage.id);
+
+    // Stage sign on the FIRST solid platform of each stage. We anchor it
+    // back-right of the platform center so it doesn't block the path.
+    if (firstSolid) {
+      const sign = makeStageSign(stage.id, stage.name);
+      sign.position.set(
+        firstSolid.pos[0] + Math.min(2.5, firstSolid.size[0] / 2 - 0.5),
+        firstSolid.pos[1] + firstSolid.size[1] / 2,    // top of platform
+        firstSolid.pos[2] + Math.min(2.5, firstSolid.size[2] / 2 - 0.5)
+      );
+      sign.rotation.y = Math.PI;  // face -Z, toward the player approach
+      scene.add(sign);
+      decorations.push(sign);
+    }
   }
-  // Patch the total-stage display.
   document.getElementById('ui-total').textContent = MAP.stages.length;
 }
 
 function buildCheckpointPad(cp, stageId, lit) {
+  // v4: checkpoint = pad disc + glow ring + pole + flag-on-pivot.
+  // The flag has its own pivot so it can wave (per §18.15).
   const grp = new THREE.Group();
   grp.position.set(cp.pos[0], cp.pos[1] - 0.02, cp.pos[2]);
-  // pad disc on the floor
+  const padCol = cp.color || THEME.checkpoint;
+  // pad disc on the floor — octagonal to read as "toy" instead of perfect circle
   const pad = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.05, 1.15, 0.10, 24),
-    new THREE.MeshStandardMaterial({ color: cp.color, emissive: cp.color, emissiveIntensity: 0.45, transparent: true, opacity: 0.92 })
+    new THREE.CylinderGeometry(1.05, 1.15, 0.10, 8),
+    new THREE.MeshStandardMaterial({
+      color: padCol, emissive: padCol, emissiveIntensity: 0.45,
+      transparent: true, opacity: 0.92
+    })
   );
   grp.add(pad);
+  // Glow ring — sits flat just above the pad. Pulses scale in tickObstacles.
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.25, 0.08, 8, 28),
+    new THREE.MeshStandardMaterial({
+      color: padCol, emissive: padCol, emissiveIntensity: 0.65,
+      transparent: true, opacity: 0.60
+    })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.08;
+  grp.add(ring);
   // pole
   const pole = new THREE.Mesh(
     new THREE.CylinderGeometry(0.07, 0.09, 1.6, 8),
-    new THREE.MeshStandardMaterial({ color: 0x445566, metalness: 0.6, roughness: 0.4 })
+    MAT.pole
   );
   pole.position.y = 0.80;
+  pole.castShadow = true;
   grp.add(pole);
-  // flag (zone-tinted)
+  // Flag pivot — rotation.y on this group makes the flag wave; the flag
+  // itself is offset +X so it swings outward from the pole.
+  const flagPivot = new THREE.Group();
+  flagPivot.position.set(0, 1.35, 0);
+  grp.add(flagPivot);
   const flag = new THREE.Mesh(
     new THREE.BoxGeometry(0.55, 0.36, 0.04),
-    new THREE.MeshStandardMaterial({ color: cp.color, emissive: cp.color, emissiveIntensity: 0.5 })
+    new THREE.MeshStandardMaterial({
+      color: padCol, emissive: padCol, emissiveIntensity: 0.5
+    })
   );
-  flag.position.set(0.32, 1.35, 0);
-  grp.add(flag);
+  flag.position.set(0.32, 0, 0);
+  flag.castShadow = true;
+  flagPivot.add(flag);
   scene.add(grp);
   triggers.push({
     mesh: grp, kind: 'checkpoint', stageId,
     pos: new THREE.Vector3(cp.pos[0], cp.pos[1], cp.pos[2]),
-    radius: 1.7, pad, flag, pole,
+    radius: 1.7, pad, ring, pole, flag, flagPivot,
     pulseT: 0, lit,
   });
 }
 
 function buildFinishPad(f, stageId) {
+  // v4: finish = gold disc + arch pillars + orbital ring of small spheres
+  // + spinning octahedron star (per §18.8, §18.12).
   const grp = new THREE.Group();
   grp.position.set(f.pos[0], f.pos[1] - 0.05, f.pos[2]);
+  // gold pad
   const pad = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.5, 1.6, 0.16, 36),
-    new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.85, roughness: 0.30, metalness: 0.40 })
+    new THREE.CylinderGeometry(1.5, 1.6, 0.16, 16),
+    MAT.finishGold
   );
+  pad.receiveShadow = true;
   grp.add(pad);
+  // Two arch pillars flanking the pad (toy-block columns with bright caps).
+  for (const sideX of [-1.7, 1.7]) {
+    const pillar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.30, 3.0, 0.30),
+      MAT.finishGold
+    );
+    pillar.position.set(sideX, 1.5, 0);
+    pillar.castShadow = true; pillar.receiveShadow = true;
+    grp.add(pillar);
+    // cap on top — slightly wider for a finished look
+    const cap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.50, 0.22, 0.50),
+      MAT.finishStar
+    );
+    cap.position.set(sideX, 3.10, 0);
+    cap.castShadow = true;
+    grp.add(cap);
+  }
+  // Orbital ring — InstancedMesh of 6 small spheres rotating around the star
+  // (per §18.12 — instancing for repeated decorations).
+  const ORBITS = 6;
+  const orbitMesh = new THREE.InstancedMesh(GEO.sphereTiny, MAT.finishStar, ORBITS);
+  orbitMesh.castShadow = false;
+  grp.add(orbitMesh);
   // a glowing octahedron floats over the pad
   const star = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.50, 0),
-    new THREE.MeshStandardMaterial({ color: 0xfff5b0, emissive: 0xffd23a, emissiveIntensity: 1.4 })
+    MAT.finishStar
   );
-  star.position.y = 1.2;
+  star.position.y = 1.5;
+  star.castShadow = true;
   grp.add(star);
   scene.add(grp);
   triggers.push({
     mesh: grp, kind: 'finish', stageId,
     pos: new THREE.Vector3(f.pos[0], f.pos[1], f.pos[2]),
-    radius: 2.0, star,
+    radius: 2.0, star, orbitMesh, orbitCount: ORBITS,
   });
 }
 
 // --------------- per-frame obstacle behaviour ------------------
+const _orbDummy = new THREE.Object3D();   // re-used matrix scratch
 function tickObstacles(dt) {
   for (const pl of platforms) {
     if (pl.kind === 'disappearing') {
@@ -703,25 +1132,45 @@ function tickObstacles(dt) {
       const period = d.period || 3.0;
       // smooth sine 0..1
       const k = 0.5 - 0.5 * Math.cos((runT % period) / period * Math.PI * 2);
+      // v4 §9.2: cache prev position so the player can be CARRIED.
+      pl.prevPos.copy(pl.mesh.position);
       pl.mesh.position.x = d.from[0] + (d.to[0] - d.from[0]) * k;
       pl.mesh.position.y = d.from[1] + (d.to[1] - d.from[1]) * k;
       pl.mesh.position.z = d.from[2] + (d.to[2] - d.from[2]) * k;
+      pl.deltaPos.subVectors(pl.mesh.position, pl.prevPos);
       pl.box.setFromObject(pl.mesh);
     } else if (pl.kind === 'jumpPad') {
-      // gentle pulse
       pl.mesh.material.emissiveIntensity = 0.30 + 0.25 * Math.sin(runT * 5);
     }
   }
+  // Hazards — lava body emissive wobble + brighter top inset bob.
   for (const h of hazards) {
     if (h.kind === 'lava') {
       h.mesh.material.emissiveIntensity = 0.55 + 0.25 * Math.sin(runT * 3);
+      if (h.top) {
+        h.top.material.emissiveIntensity = 0.80 + 0.40 * Math.sin(runT * 4);
+        h.top.position.y = (h.data.pos[1] + h.data.size[1] / 2 + 0.02)
+                         + Math.sin(runT * 2.4 + h.data.pos[0] * 0.1) * 0.05;
+      }
     }
   }
+  // Triggers — finish star + orbital ring; checkpoint pulse + glow ring + flag wave.
   for (const t of triggers) {
     if (t.kind === 'finish' && t.star) {
       t.star.rotation.y += dt * 2.0;
       t.star.rotation.x = Math.sin(runT * 1.2) * 0.20;
-      t.star.position.y = 1.2 + Math.sin(runT * 2.4) * 0.18;
+      t.star.position.y = 1.5 + Math.sin(runT * 2.4) * 0.18;
+      // Orbital ring: re-place each instance around the star.
+      if (t.orbitMesh) {
+        const R = 1.1, omega = runT * 1.2;
+        for (let i = 0; i < t.orbitCount; i++) {
+          const a = omega + (i / t.orbitCount) * Math.PI * 2;
+          _orbDummy.position.set(Math.cos(a) * R, 1.5 + Math.sin(a * 1.5) * 0.18, Math.sin(a) * R);
+          _orbDummy.updateMatrix();
+          t.orbitMesh.setMatrixAt(i, _orbDummy.matrix);
+        }
+        t.orbitMesh.instanceMatrix.needsUpdate = true;
+      }
     }
     if (t.kind === 'checkpoint') {
       // pulse on activation
@@ -733,15 +1182,55 @@ function tickObstacles(dt) {
       } else {
         t.pad.scale.set(1, 1, 1);
       }
+      // Glow ring — gentle sin-pulse on scale + opacity. Lit pads pulse stronger.
+      const ringK = t.lit ? 0.18 : 0.08;
+      const ringS = 1.0 + Math.sin(runT * 2 + t.stageId) * ringK;
+      t.ring.scale.set(ringS, ringS, 1);
+      t.ring.material.opacity = (t.lit ? 0.75 : 0.45) + Math.sin(runT * 2.3 + t.stageId) * 0.12;
+      // Flag wave — sin oscillation on the pivot's Y rotation (about the pole)
+      // + slight tilt for a more alive feel.
+      t.flagPivot.rotation.y = Math.sin(runT * 3 + t.stageId * 0.7) * 0.10;
       if (t.lit) {
-        // gentle bob on the lit flag so it reads as "claimed"
-        t.flag.position.y = 1.35 + Math.sin(runT * 2 + t.stageId) * 0.05;
+        t.flag.position.y = Math.sin(runT * 2 + t.stageId) * 0.05;
       }
     }
   }
 }
 
+// ============================================================
+//   Set dressing — clouds + distant ground plate (per §18.11)
+// ============================================================
+function buildSetDressing() {
+  // 1. HUGE faint ground plate FAR below so void reads as "haze" not
+  //    "renderer void." Uses MeshBasicMaterial so it doesn't catch the
+  //    sun and look weirdly lit.
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(600, 800),
+    new THREE.MeshBasicMaterial({ color: lightenHex(THEME.sky, -0.08), fog: true })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, -20, -200);     // centered roughly under the obby
+  scene.add(ground);
+  decorations.push(ground);
+
+  // 2. Cloud puffs scattered around / above the play volume. The whole
+  //    obby runs from z≈+5 → z≈-460. Place ~14 clouds along that range,
+  //    on either side and above.
+  const CLOUD_COUNT = Math.round(14 * GRAPHICS.decorativeDensity);
+  for (let i = 0; i < CLOUD_COUNT; i++) {
+    const c = makeCloudPuff();
+    const z = 8 - Math.random() * 480;
+    const x = (Math.random() - 0.5) * 50;
+    const y = 18 + Math.random() * 12;
+    c.position.set(x, y, z);
+    c.rotation.y = Math.random() * Math.PI;
+    scene.add(c);
+    decorations.push(c);
+  }
+}
+
 scaffoldMap();
+buildSetDressing();
 
 // ============ AUDIO ==================================================
 // Lifted/adapted from runner. Web Audio synthesis only — no MP3s for
@@ -813,13 +1302,25 @@ function sfx(name) {
 const input = { w: false, a: false, s: false, d: false };
 let pointerDown = false, lookActive = false, lookId = -1, lookLX = 0, lookLY = 0;
 
+// v4 Pass B-lite: jump uses coyote + jump-buffer + variable height per §9.1.
 function doJump() {
   if (state !== 'play') return;
-  if (player.onGround) {
+  player.jumpHeld = true;
+  if (player.onGround || player.coyoteTimer < TUNING.coyoteTime) {
     player.vel.y = JUMP_V0;
     player.onGround = false;
+    player.coyoteTimer = TUNING.coyoteTime + 1;   // disable until next landing
+    player.jumpBuffer = 0;
     sfx('jump');
+  } else {
+    // Pressed too early — buffer so it fires automatically on landing.
+    player.jumpBuffer = TUNING.jumpBufferTime;
   }
+}
+function releaseJump() {
+  player.jumpHeld = false;
+  // Variable height — release-early cuts the upward velocity.
+  if (state === 'play' && player.vel.y > 0) player.vel.y *= TUNING.jumpCutMultiplier;
 }
 
 window.addEventListener('keydown', e => {
@@ -836,6 +1337,11 @@ window.addEventListener('keyup', e => {
   else if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  input.a = false;
   else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  input.s = false;
   else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') input.d = false;
+  else if (e.key === ' '  || e.key === 'Enter') releaseJump();
+  else if (e.key === 'F3' || e.key === 'f3') {
+    e.preventDefault();
+    document.getElementById('debug').classList.toggle('on');
+  }
 });
 
 // Mouse drag on the canvas → camera orbit. Wheel → zoom.
@@ -963,8 +1469,8 @@ jumpBtn.addEventListener('pointerdown', e => {
   jumpBtn.classList.add('live');
   doJump();
 });
-jumpBtn.addEventListener('pointerup', () => { jumpBtn.classList.remove('live'); });
-jumpBtn.addEventListener('pointercancel', () => { jumpBtn.classList.remove('live'); });
+jumpBtn.addEventListener('pointerup', () => { jumpBtn.classList.remove('live'); releaseJump(); });
+jumpBtn.addEventListener('pointercancel', () => { jumpBtn.classList.remove('live'); releaseJump(); });
 
 // ============ COLLISION ==============================================
 // Resolve a vertical capsule (center=player.pos, radius=r, halfH=h)
@@ -1051,6 +1557,8 @@ function checkTriggers() {
         // progress bar = ratio of stages cleared
         document.getElementById('ui-prog').style.width =
           (Math.min(1, currentStage / MAP.stages.length) * 100) + '%';
+        // v4: HUD toast — show the cleared stage's name for 1.6s.
+        showToast(t.stageId, currentStage);
       } else if (t.kind === 'finish' && state === 'play') {
         state = 'won';
         sfx('win');
@@ -1058,6 +1566,18 @@ function checkTriggers() {
       }
     }
   }
+}
+
+// v4: small toast that slides in for ~1.6s with the just-cleared stage label.
+let _toastTimer = null;
+function showToast(stageId, justClearedId) {
+  const el = document.getElementById('toast');
+  const txt = document.getElementById('toast-text');
+  const stage = MAP.stages.find(s => s.id === stageId);
+  txt.textContent = 'CHECKPOINT ' + justClearedId + (stage ? '  ·  ' + stage.name : '');
+  el.classList.add('on');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('on'), 1600);
 }
 
 function showWinOverlay() {
@@ -1072,52 +1592,86 @@ function showWinOverlay() {
 
 // ============ STEP =================================================
 function stepPlay(dt) {
-  // 1. Build wishDir in camera-yaw space.
-  // forward direction projected onto XZ: (-sin(azim), 0, -cos(azim)) (camera looks toward -azim).
+  // ---- 0. Pre-step: moving-platform carry (§9.2). -------------------
+  // If we were standing on a moving platform at the END of last frame,
+  // hitch a ride with its delta BEFORE gravity + integration. Uses
+  // player.onGround (which still holds last frame's resolved value at
+  // this point — gets reset to false later in step 4).
+  if (player.onPlatform && player.onPlatform.kind === 'moving' && player.onGround) {
+    player.pos.add(player.onPlatform.deltaPos);
+  }
+
+  // ---- 1. wishDir in camera-yaw space ------------------------------
   const fx = -Math.sin(azim), fz = -Math.cos(azim);
   const rx =  Math.cos(azim), rz = -Math.sin(azim);
-  // Move axis combines keyboard WASD + touch joystick (whichever is non-zero).
   let mx = 0, mz = 0;
   if (input.w) mz += 1;
   if (input.s) mz -= 1;
   if (input.d) mx += 1;
   if (input.a) mx -= 1;
-  if (stickX || stickY) {
-    // stick y is screen-down +1 = into screen (forward), so mz = -stickY.
-    mx += stickX;
-    mz += -stickY;
-  }
+  if (stickX || stickY) { mx += stickX; mz += -stickY; }
   const ml = Math.hypot(mx, mz);
   if (ml > 1) { mx /= ml; mz /= ml; }
   const wishX = (fx * mz + rx * mx) * WALK_SPEED;
   const wishZ = (fz * mz + rz * mx) * WALK_SPEED;
   player.vel.x = wishX;
   player.vel.z = wishZ;
-  // 2. Gravity.
+
+  // ---- 2. Coyote timer + jump buffer tick --------------------------
+  if (player.onGround) player.coyoteTimer = 0;
+  else                  player.coyoteTimer += dt;
+  if (player.jumpBuffer > 0) player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
+
+  // ---- 3. Gravity + integrate --------------------------------------
   player.vel.y -= GRAV * dt;
-  // 3. Integrate.
   player.pos.x += player.vel.x * dt;
   player.pos.y += player.vel.y * dt;
   player.pos.z += player.vel.z * dt;
-  // 4. Reset ground flag, resolve collisions. Track the LAST top-face
-  //    contact so we can fire a jump pad's impulse if that's what we
-  //    just landed on.
+
+  // ---- 4. Reset ground flag, resolve collisions --------------------
+  player.prevOnGround = player.onGround;
   player.onGround = false;
   let topContactPad = null;
+  let landedPlatform = null;
   for (const pl of platforms) {
     if (pl.collidable === false) continue;
     const r = resolveCapsuleVsBox(pl.box);
-    if (r === 'top' && pl.kind === 'jumpPad') topContactPad = pl;
+    if (r === 'top') {
+      landedPlatform = pl;
+      if (pl.kind === 'jumpPad') topContactPad = pl;
+    }
   }
+  // Track which platform Danny is on so the next frame can carry him.
+  player.onPlatform = landedPlatform;
+
+  // ---- 5. Jump pad — top contact fires the impulse -----------------
   if (topContactPad) {
     player.vel.y = topContactPad.data.impulse || 13;
     player.onGround = false;
     sfx('jump');
   }
-  // 5. Hazards (lava) + triggers (checkpoints, finish).
+
+  // ---- 6. Buffered jump — if we just landed and buffer's still hot,
+  //         fire automatically. Subtracted out so it can't double-fire.
+  if (player.onGround && !player.prevOnGround && player.jumpBuffer > 0) {
+    player.vel.y = JUMP_V0;
+    player.onGround = false;
+    player.jumpBuffer = 0;
+    player.coyoteTimer = TUNING.coyoteTime + 1;
+    sfx('jump');
+  }
+
+  // ---- 7. Landing squash — trigger on the first frame we touched
+  //         down after time in the air.
+  if (player.onGround && !player.prevOnGround) {
+    landSquashT = TUNING.landingSquashTime;
+  }
+
+  // ---- 8. Hazards + triggers ---------------------------------------
   checkHazards();
   checkTriggers();
-  // 6. Face the wishDir if moving.
+
+  // ---- 9. Face wishDir -------------------------------------------
   if (ml > 0.05) {
     const targetYaw = Math.atan2(wishX, wishZ);
     let diff = targetYaw - player.yaw;
@@ -1125,7 +1679,8 @@ function stepPlay(dt) {
     while (diff < -Math.PI) diff += Math.PI * 2;
     player.yaw += diff * Math.min(1, dt * 14);
   }
-  // 7. Death zone (void below).
+
+  // ---- 10. Void below = respawn ------------------------------------
   if (player.pos.y < (MAP.voidY ?? -12)) startRespawn();
 }
 
@@ -1179,9 +1734,13 @@ function stepRespawn(dt) {
 
 // ============ TICK / RENDER LOOP =====================================
 const clock = new THREE.Clock();
+let dbgFrameAcc = 0, dbgFrames = 0, dbgFps = 0;   // FPS estimator
 function tick() {
   const dt = Math.min(0.05, clock.getDelta());
   runT += dt;
+  // FPS rolling estimate, updated every 0.4s.
+  dbgFrameAcc += dt; dbgFrames++;
+  if (dbgFrameAcc >= 0.4) { dbgFps = dbgFrames / dbgFrameAcc; dbgFrameAcc = 0; dbgFrames = 0; }
   tickObstacles(dt);
 
   if (state === 'play') {
@@ -1207,6 +1766,18 @@ function tick() {
   const moving = state === 'play' && player.onGround &&
                  Math.hypot(player.vel.x, player.vel.z) > 0.8;
   tickRig(dt, moving);
+
+  // v4 Pass B-lite: landing-squash decay. Owns Danny's scale only
+  // during 'play' — 'respawning' has its own scale animation.
+  if (state === 'play') {
+    if (landSquashT > 0) {
+      landSquashT = Math.max(0, landSquashT - dt);
+      const k = landSquashT / TUNING.landingSquashTime;   // 1 → 0 over the window
+      danny.scale.set(1 + 0.10 * k, 1 - 0.18 * k, 1 + 0.10 * k);
+    } else {
+      danny.scale.set(1, 1, 1);
+    }
+  }
   // Floor-shadow under the player.
   const shadow = danny.userData.shadow;
   if (shadow) {
@@ -1236,6 +1807,17 @@ function tick() {
   // HUD updates
   document.getElementById('ui-time').textContent = formatTime(timeSec);
   document.getElementById('vsize').textContent = canvas.width + '×' + canvas.height;
+  // v4 Debug overlay — only when visible (avoids DOM thrash).
+  const dbgEl = document.getElementById('debug');
+  if (dbgEl.classList.contains('on')) {
+    document.getElementById('dbg-fps').textContent   = dbgFps.toFixed(0);
+    document.getElementById('dbg-draws').textContent = renderer.info.render.calls;
+    document.getElementById('dbg-tris').textContent  = renderer.info.render.triangles;
+    document.getElementById('dbg-geos').textContent  = renderer.info.memory.geometries;
+    document.getElementById('dbg-stage').textContent = (currentStage + 1) + '/' + MAP.stages.length;
+    document.getElementById('dbg-pos').textContent   =
+      player.pos.x.toFixed(1) + ',' + player.pos.y.toFixed(1) + ',' + player.pos.z.toFixed(1);
+  }
 
   requestAnimationFrame(tick);
 }
@@ -1253,6 +1835,12 @@ function reset() {
   player.vel.set(0, 0, 0);
   player.yaw = MAP.startYaw ?? 0;
   player.onGround = false;
+  player.prevOnGround = false;
+  player.coyoteTimer = TUNING.coyoteTime + 1;
+  player.jumpBuffer = 0;
+  player.jumpHeld = false;
+  player.onPlatform = null;
+  landSquashT = 0;
   lastCheckpointPos.copy(player.pos);
   timeSec = 0;
   dieT = 0;
@@ -1263,6 +1851,7 @@ function reset() {
   danny.rotation.set(0, 0, 0);
   danny.scale.set(1, 1, 1);
   document.getElementById('overlay').classList.remove('on');
+  document.getElementById('toast').classList.remove('on');
   document.getElementById('ui-stage').textContent = '1';
   document.getElementById('ui-cp').textContent = '0';
   document.getElementById('ui-prog').style.width = '0%';
