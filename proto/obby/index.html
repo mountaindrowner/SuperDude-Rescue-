@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.6 — face fixes (smile, nose, clear eyes)</title>
+<title>Super Dude OBBY v4.7 — proper glasses prop attached to face</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -118,7 +118,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.6 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.7 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -444,6 +444,56 @@ function updateCamera(dt) {
 // the run animation.
 const danny  = new THREE.Group();          // root, yaw-rotated to face wishDir
 const rigParts = {};                       // named handles for animation + slots
+// v4.7 — PROPER GLASSES PROP
+// Standalone factory: returns a Group with rims, bridge, and full-length
+// temple arms that reach back over the ears. Origin = the BRIDGE point
+// (between the rims, sitting on the top of the nose). Attaches to
+// glassesSlot at head-local (0, eye-y, face-surface-z) so the rims sit
+// flush against the head sphere.
+function makeGlasses() {
+  function pmesh(geom, mat) {
+    const m = new THREE.Mesh(geom, mat); m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  const g = new THREE.Group();
+  const m = MAT.charGlassRim;
+
+  const RIM_R      = 0.075;   // outer radius of each lens
+  const RIM_T      = 0.016;   // tube thickness — chunky kid-glasses
+  const EYE_DX     = 0.105;   // horizontal eye separation half
+  const TEMPLE_LEN = 0.30;    // reach back past the ear line
+
+  // Two round rims facing forward.
+  for (const side of [-1, +1]) {
+    const ring = pmesh(new THREE.TorusGeometry(RIM_R, RIM_T, 10, 24), m);
+    ring.position.set(side * EYE_DX, 0, 0);
+    ring.rotation.y = Math.PI / 2;
+    g.add(ring);
+  }
+  // Bridge — sits in the gap between the two inner rim edges, slightly
+  // raised so it reads as sitting on the nose bridge.
+  const bridgeW = (EYE_DX - RIM_R) * 2 + RIM_T * 1.6;
+  const bridge = pmesh(new THREE.BoxGeometry(bridgeW, RIM_T * 1.5, RIM_T * 1.5), m);
+  bridge.position.set(0, 0.006, 0);
+  g.add(bridge);
+  // Temple arms — start at the OUTER edge of each rim, extend backward
+  // past the temple of the head. The pivot at the rim is just a slim
+  // box (no hinge sphere — keep it Roblox-blocky).
+  for (const side of [-1, +1]) {
+    const temple = pmesh(new THREE.BoxGeometry(RIM_T * 1.2, RIM_T * 1.4, TEMPLE_LEN), m);
+    // Position so the temple's FRONT face starts at the rim's outer
+    // edge (so the connection visibly meets the rim).
+    const startX = side * (EYE_DX + RIM_R - RIM_T * 0.5);
+    temple.position.set(startX, 0, -TEMPLE_LEN / 2);
+    g.add(temple);
+    // Tip cap at the far back — a small slightly-thicker block where
+    // the arm would hook behind the ear.
+    const cap = pmesh(new THREE.BoxGeometry(RIM_T * 1.4, RIM_T * 1.8, RIM_T * 1.6), m);
+    cap.position.set(startX, -0.015, -TEMPLE_LEN + RIM_T * 0.6);
+    g.add(cap);
+  }
+  return g;
+}
+
 function buildDanny() {
   function mesh(geom, mat) {
     const m = new THREE.Mesh(geom, mat);
@@ -642,34 +692,14 @@ function buildDanny() {
     headGrp.add(wing);
   }
 
-  // glassesSlot — DEFAULT EQUIPPED in v4.4 (was empty). Round black
-  // rims with a faint cyan lens hint, joined by a slim bridge across
-  // the nose. Slot still re-addressable for swap.
+  // glassesSlot — slot position is the BRIDGE POINT on the face: just
+  // above the nose, flush with the head front surface. The glasses prop
+  // is built by makeGlasses() and attached as a whole. Slot remains
+  // re-addressable for cosmetic swaps.
   rigParts.glassesSlot = new THREE.Group();
-  rigParts.glassesSlot.position.set(0, 0.04, 0.32);
+  rigParts.glassesSlot.position.set(0, 0.04, 0.318);
   headGrp.add(rigParts.glassesSlot);
-  {
-    // v4.6 — RIMS ONLY (the cyan lens cylinder was occluding the eyes;
-    // dropping it lets the white eyes + pupils read cleanly through
-    // the open frames). Rims also slightly smaller (0.08 → 0.07) so
-    // they don't dominate the face.
-    for (const side of [-1, +1]) {
-      const rim = mesh(new THREE.TorusGeometry(0.07, 0.016, 8, 18), MAT.charGlassRim);
-      rim.position.set(side * 0.10, 0, 0);
-      rim.rotation.y = Math.PI / 2;       // face forward (torus default lies in XY)
-      rigParts.glassesSlot.add(rim);
-    }
-    // Bridge across nose
-    const bridge = mesh(new THREE.BoxGeometry(0.07, 0.016, 0.018), MAT.charGlassRim);
-    bridge.position.set(0, 0.01, 0);
-    rigParts.glassesSlot.add(bridge);
-    // Small temple stubs (where arms would hinge — purely visual)
-    for (const side of [-1, +1]) {
-      const temple = mesh(new THREE.BoxGeometry(0.04, 0.016, 0.018), MAT.charGlassRim);
-      temple.position.set(side * 0.16, 0, -0.02);
-      rigParts.glassesSlot.add(temple);
-    }
-  }
+  rigParts.glassesSlot.add(makeGlasses());
 
   // hairSlot — default brown tuft peeking from under the cap. Position
   // adjusted slightly for the bigger head.
