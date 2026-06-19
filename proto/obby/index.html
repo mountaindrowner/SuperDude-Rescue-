@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.7 — proper glasses prop attached to face</title>
+<title>Super Dude OBBY v4.8 — fixed camera (lower angle, follows player)</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -118,7 +118,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.7 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.8 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -345,14 +345,24 @@ const MAT = {
 };
 
 // ============ CAMERA =================================================
-// Orbit-follow: azim/elev/radius captured from input; target = player +
-// head-height offset; lerp toward the desired position each frame.
+// v4.8 FIXED CAMERA — the camera no longer auto-chases the player's
+// facing or direction of motion. It sits at a fixed angle behind the
+// obby path (azim=0 looks down -Z, which is how every stage runs) and
+// at a lower elevation than v4.3 so more of the stage ahead is visible.
+// Position still follows the player smoothly. Manual drag still works
+// but always slowly snaps back to the fixed framing so the camera can't
+// get stuck at a weird angle.
 const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 240);
-let azim = 0.0;          // radians, around +Y
-let elev = 0.65;         // v3: raised from 0.35 → 0.65 (~37°, just under 45°
-                         //     per Mark "maybe a little lower than 45°").
-let radius = 7.8;        // v3: slight push-back for the steeper view
-let autoFollowCooldown = 0; // seconds; after user drags, pause auto-orient
+const CAM_FIXED = {
+  azim:   0.0,    // looking down -Z (the obby path direction)
+  elev:   0.32,   // ~18° down — low enough to see stage ahead, high
+                  // enough to read jumps + gaps. (was 0.65 ≈ 37°)
+  radius: 9.0,    // slight push-back so more stage fits in frame
+};
+let azim   = CAM_FIXED.azim;
+let elev   = CAM_FIXED.elev;
+let radius = CAM_FIXED.radius;
+let autoFollowCooldown = 0; // seconds; after user drags, pause snapback
                             // so manual input sticks. v4.3: 1.5 → 2.5.
 const camPos       = new THREE.Vector3();
 const camTgt       = new THREE.Vector3();
@@ -392,15 +402,19 @@ function updateCamera(dt) {
   camSmoothVel.z += (player.vel.z - camSmoothVel.z) * velLerp;
   const smoothSpeed = Math.hypot(camSmoothVel.x, camSmoothVel.z);
 
-  // Loose orientation chase — only above 1.5 m/s sustained motion, and
-  // only when the user isn't actively dragging.
-  if (state === 'play' && smoothSpeed > 1.5 && !lookActive && autoFollowCooldown === 0) {
-    const motionYaw = Math.atan2(camSmoothVel.x, camSmoothVel.z);
-    let desired = motionYaw + Math.PI;        // camera sits BEHIND direction of motion
-    let diff = desired - azim;
+  // v4.8 FIXED-ANGLE SNAPBACK — instead of chasing the player's facing
+  // or direction of motion, the camera quietly lerps azim/elev/radius
+  // back to CAM_FIXED whenever the user isn't dragging and the drag
+  // cooldown has expired. Manual drag still works; after the 2.5 s
+  // cooldown the camera glides back to the fixed obby framing.
+  if (state === 'play' && !lookActive && autoFollowCooldown === 0) {
+    const k = Math.min(1, dt * 1.4);
+    let diff = CAM_FIXED.azim - azim;
     while (diff >  Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    azim += diff * Math.min(1, dt * 0.6);     // 4× slower than v4.2
+    azim   += diff * k;
+    elev   += (CAM_FIXED.elev   - elev)   * k;
+    radius += (CAM_FIXED.radius - radius) * k;
   }
   // v4.5 review mode: slow turntable orbit so we can inspect Danny from
   // all sides. ~18 sec per full rotation. User can still drag to override.
