@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.8 — fixed camera (lower angle, follows player)</title>
+<title>Super Dude OBBY v4.9 — glasses sit on face (orientation + wrap)</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -118,7 +118,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.8 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.9 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -476,33 +476,41 @@ function makeGlasses() {
   const EYE_DX     = 0.105;   // horizontal eye separation half
   const TEMPLE_LEN = 0.30;    // reach back past the ear line
 
-  // Two round rims facing forward.
+  // Two round rims. Default TorusGeometry lies in XY plane (axis +Z),
+  // which is exactly what we want — the lens hole faces FORWARD, not
+  // sideways. v4.7/.8 had `rotation.y = Math.PI/2` which rotated the
+  // ring to be edge-on from the camera (axis along X) — that's why
+  // the glasses only read at certain side-angles in review mode.
+  // v4.9: orient each rim with a small OUTWARD tilt around Y so the
+  // ring plane matches the local curvature of the face sphere instead
+  // of being a flat plate that floats off the cheek.
   for (const side of [-1, +1]) {
     const ring = pmesh(new THREE.TorusGeometry(RIM_R, RIM_T, 10, 24), m);
     ring.position.set(side * EYE_DX, 0, 0);
-    ring.rotation.y = Math.PI / 2;
+    ring.rotation.y = side * 0.28;     // ~16° face-wrap; left rim tilts
+                                       // left-back, right rim right-back
     g.add(ring);
   }
-  // Bridge — sits in the gap between the two inner rim edges, slightly
-  // raised so it reads as sitting on the nose bridge.
+  // Bridge — pushed slightly FORWARD so it sits on top of the tilted
+  // rims' inner edges (which now project a bit forward in Z) rather
+  // than sinking behind them.
   const bridgeW = (EYE_DX - RIM_R) * 2 + RIM_T * 1.6;
   const bridge = pmesh(new THREE.BoxGeometry(bridgeW, RIM_T * 1.5, RIM_T * 1.5), m);
-  bridge.position.set(0, 0.006, 0);
+  bridge.position.set(0, 0.006, 0.010);
   g.add(bridge);
   // Temple arms — start at the OUTER edge of each rim, extend backward
   // past the temple of the head. The pivot at the rim is just a slim
-  // box (no hinge sphere — keep it Roblox-blocky).
+  // box (no hinge sphere — keep it Roblox-blocky). Start position
+  // pushed slightly BACK in Z to meet the tilted rim outer edge.
   for (const side of [-1, +1]) {
     const temple = pmesh(new THREE.BoxGeometry(RIM_T * 1.2, RIM_T * 1.4, TEMPLE_LEN), m);
-    // Position so the temple's FRONT face starts at the rim's outer
-    // edge (so the connection visibly meets the rim).
     const startX = side * (EYE_DX + RIM_R - RIM_T * 0.5);
-    temple.position.set(startX, 0, -TEMPLE_LEN / 2);
+    temple.position.set(startX, 0, -TEMPLE_LEN / 2 - 0.018);
     g.add(temple);
     // Tip cap at the far back — a small slightly-thicker block where
     // the arm would hook behind the ear.
     const cap = pmesh(new THREE.BoxGeometry(RIM_T * 1.4, RIM_T * 1.8, RIM_T * 1.6), m);
-    cap.position.set(startX, -0.015, -TEMPLE_LEN + RIM_T * 0.6);
+    cap.position.set(startX, -0.015, -TEMPLE_LEN + RIM_T * 0.6 - 0.018);
     g.add(cap);
   }
   return g;
@@ -707,11 +715,11 @@ function buildDanny() {
   }
 
   // glassesSlot — slot position is the BRIDGE POINT on the face: just
-  // above the nose, flush with the head front surface. The glasses prop
-  // is built by makeGlasses() and attached as a whole. Slot remains
-  // re-addressable for cosmetic swaps.
+  // above the nose, flush with the head front surface. v4.9 nudges
+  // the slot a touch closer to the face (z 0.318 → 0.325) so the
+  // tilted rim outer edges actually meet the cheek curve.
   rigParts.glassesSlot = new THREE.Group();
-  rigParts.glassesSlot.position.set(0, 0.04, 0.318);
+  rigParts.glassesSlot.position.set(0, 0.04, 0.325);
   headGrp.add(rigParts.glassesSlot);
   rigParts.glassesSlot.add(makeGlasses());
 
