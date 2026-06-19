@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.2 — movement smoothness</title>
+<title>Super Dude OBBY v4.3 — looser camera (path-following)</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -103,7 +103,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.2 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.3 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -320,48 +320,75 @@ let azim = 0.0;          // radians, around +Y
 let elev = 0.65;         // v3: raised from 0.35 → 0.65 (~37°, just under 45°
                          //     per Mark "maybe a little lower than 45°").
 let radius = 7.8;        // v3: slight push-back for the steeper view
-let autoFollowCooldown = 0; // seconds; after user drags, we briefly pause
-                            // auto-camera-follow so manual input isn't fought.
-const camPos  = new THREE.Vector3();
-const camTgt  = new THREE.Vector3();
-const camWish = new THREE.Vector3();
+let autoFollowCooldown = 0; // seconds; after user drags, pause auto-orient
+                            // so manual input sticks. v4.3: 1.5 → 2.5.
+const camPos       = new THREE.Vector3();
+const camTgt       = new THREE.Vector3();
+const camWish      = new THREE.Vector3();
+const camSmoothVel = new THREE.Vector3();   // v4.3 — low-pass-filtered player
+                                            // velocity, drives orientation +
+                                            // look-ahead so they don't jitter
+                                            // on direction changes.
 function updateCamera(dt) {
-  // v3: auto-follow Danny's back when he's moving and the user isn't
-  // dragging. Desired azim = player.yaw + π so the camera sits on the
-  // OPPOSITE side of Danny's facing direction. Shortest-arc lerp at a
-  // slow rate so the camera doesn't whip around behind every wiggle of
-  // the joystick.
-  const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
+  // v4.3 — "loosely follow the path AND the player" (Mark feedback).
+  // Three changes vs v4.2:
+  //
+  //  1. Orientation target is the SMOOTHED velocity direction, not
+  //     player.yaw. Yaw flips instantly when input changes — that's
+  //     what made turns feel "too sharp." Velocity has natural
+  //     momentum from v4.2's acceleration model; running it through
+  //     a low-pass filter (camSmoothVel) gives an even gentler signal
+  //     so the camera lazily drifts behind the path of motion instead
+  //     of whipping behind Danny's facing.
+  //
+  //  2. Orientation chase rate dramatically lowered (dt*2.4 → dt*0.6).
+  //     A 90° turn now takes ~1.5 s for the camera to fully follow;
+  //     before, it took ~0.4 s.
+  //
+  //  3. Speed floor for auto-orient bumped 0.6 → 1.5 m/s. Tiny
+  //     shimmies / brief course corrections no longer trigger the
+  //     orientation chase at all.
+  //
+  // Also: position lerp dt*6 → dt*4 (looser position follow); look-ahead
+  // 1.5 → 1.0 (keeps Danny more centered); drag cooldown 1.5 → 2.5 s.
   if (autoFollowCooldown > 0) autoFollowCooldown = Math.max(0, autoFollowCooldown - dt);
-  if (state === 'play' && horizSpeed > 0.6 && !lookActive && autoFollowCooldown === 0) {
-    let desired = player.yaw + Math.PI;
+
+  // Smooth the player velocity (low-pass, ~0.33 s time constant). Drives
+  // both the orientation chase AND the look-ahead.
+  const velLerp = Math.min(1, dt * 3.0);
+  camSmoothVel.x += (player.vel.x - camSmoothVel.x) * velLerp;
+  camSmoothVel.z += (player.vel.z - camSmoothVel.z) * velLerp;
+  const smoothSpeed = Math.hypot(camSmoothVel.x, camSmoothVel.z);
+
+  // Loose orientation chase — only above 1.5 m/s sustained motion, and
+  // only when the user isn't actively dragging.
+  if (state === 'play' && smoothSpeed > 1.5 && !lookActive && autoFollowCooldown === 0) {
+    const motionYaw = Math.atan2(camSmoothVel.x, camSmoothVel.z);
+    let desired = motionYaw + Math.PI;        // camera sits BEHIND direction of motion
     let diff = desired - azim;
     while (diff >  Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    azim += diff * Math.min(1, dt * 2.4);
+    azim += diff * Math.min(1, dt * 0.6);     // 4× slower than v4.2
   }
 
-  // Desired look target: head height of the player. v4.2 §18.14 — add
-  // a small forward LOOK-AHEAD so the camera target leads the player
-  // in the direction of motion, making upcoming platforms visible
-  // before they're under his feet. Only kicks in above 0.5 m/s so a
-  // standing player still has him centered.
+  // Look target: head height of the player + small forward look-ahead
+  // based on smoothed velocity. The look-ahead is shorter than v4.2
+  // (1.0 vs 1.5) so the player stays more centered and the camera
+  // lurches less when direction changes.
   let tx = player.pos.x;
   const ty = player.pos.y + 1.0;
   let tz = player.pos.z;
-  const horizSp = Math.hypot(player.vel.x, player.vel.z);
-  if (state === 'play' && horizSp > 0.5) {
-    const AHEAD = 1.5;
-    tx += (player.vel.x / horizSp) * AHEAD;
-    tz += (player.vel.z / horizSp) * AHEAD;
+  if (state === 'play' && smoothSpeed > 0.5) {
+    const AHEAD = 1.0;
+    tx += (camSmoothVel.x / smoothSpeed) * AHEAD;
+    tz += (camSmoothVel.z / smoothSpeed) * AHEAD;
   }
+
   const cx = tx + Math.cos(elev) * Math.sin(azim) * radius;
   const cy = ty + Math.sin(elev) * radius;
   const cz = tz + Math.cos(elev) * Math.cos(azim) * radius;
   camWish.set(cx, cy, cz);
-  // v4.2 — soften follow rate dt*9 → dt*6. Less twitchy on hard turns;
-  // still tight enough that jumps stay precise (§18.14).
-  const k = Math.min(1, dt * 6);
+  const k = Math.min(1, dt * 4);              // softer position follow
   camPos.lerp(camWish, k);
   camTgt.lerp({ x: tx, y: ty, z: tz }, k);
   camera.position.copy(camPos);
@@ -1400,7 +1427,7 @@ window.addEventListener('pointermove', e => {
   lookLX = e.clientX; lookLY = e.clientY;
   // v3: pause auto-follow for ~1.5s after the user drags so we don't
   // fight their input.
-  if (Math.abs(dx) + Math.abs(dy) > 1) autoFollowCooldown = 1.5;
+  if (Math.abs(dx) + Math.abs(dy) > 1) autoFollowCooldown = 2.5;
 });
 window.addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') return;
@@ -1495,7 +1522,7 @@ lookZone.addEventListener('pointermove', e => {
   azim -= dx * 0.008;
   elev = Math.max(-0.6, Math.min(1.30, elev - dy * 0.008));
   lookLX = e.clientX; lookLY = e.clientY;
-  if (Math.abs(dx) + Math.abs(dy) > 1) autoFollowCooldown = 1.5;
+  if (Math.abs(dx) + Math.abs(dy) > 1) autoFollowCooldown = 2.5;
 });
 lookZone.addEventListener('pointerup', e => {
   if (e.pointerId !== lookId) return;
