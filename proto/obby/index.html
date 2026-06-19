@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4 — Pass A + E + B-lite</title>
+<title>Super Dude OBBY v4.1 — solid-platform hotfix</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -103,7 +103,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.1 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -919,6 +919,21 @@ function scaffoldMap() {
       }
 
       const box = new THREE.Box3().setFromObject(baseMesh);
+      // v4.1 hotfix: solid platforms wrap baseMesh in a Group whose
+      // world matrix hasn't propagated yet — setFromObject above with
+      // `updateParents=false` leaves baseMesh.matrixWorld stale (parent
+      // group's matrixWorld is still the identity until the first
+      // renderer.render()), so the AABB collapses at world origin and
+      // Danny falls through every solid platform. Override the box
+      // directly from p.pos + p.size for the SOLID branch — bulletproof
+      // and matches the actual rendered position exactly. Non-solid
+      // kinds keep using setFromObject; their meshes are added directly
+      // to scene with their position set, so the parent matrix is fresh.
+      if (kind === 'solid') {
+        const hx = p.size[0] / 2, hy = p.size[1] / 2, hz = p.size[2] / 2;
+        box.min.set(p.pos[0] - hx, p.pos[1] - hy, p.pos[2] - hz);
+        box.max.set(p.pos[0] + hx, p.pos[1] + hy, p.pos[2] + hz);
+      }
       const entry = {
         mesh: entryMesh, baseMesh, box,
         kind,
