@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.1 — solid-platform hotfix</title>
+<title>Super Dude OBBY v4.2 — movement smoothness</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -103,7 +103,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.1 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.2 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -174,12 +174,19 @@ const GRAPHICS = {
   decorativeDensity: 1.0,
 };
 
-// Movement-feel tuning per §9.1 (Pass B-lite values only).
+// Movement-feel tuning per §9.1 (full Pass B values).
 const TUNING = {
+  // Pass B-lite (v4)
   coyoteTime:        0.10,
   jumpBufferTime:    0.12,
   jumpCutMultiplier: 0.45,
   landingSquashTime: 0.10,
+  // Pass B-full (v4.2) — smoothness layer per §6.5
+  acceleration:      45,     // m/s² — ground accel toward wishDir × WALK_SPEED
+  airAcceleration:   22,     // m/s² — ~50% of ground per §6.5
+  friction:          32,     // m/s² — ground decel when no input
+  maxFallSpeed:      26,     // m/s — clamp |vel.y| so long falls don't tunnel
+  joystickDeadzone:  0.12,   // normalized — iPhone touchstick noise floor
 };
 
 // Game-wide state. Aliased into runtime vars so the existing code
@@ -334,15 +341,27 @@ function updateCamera(dt) {
     azim += diff * Math.min(1, dt * 2.4);
   }
 
-  // Desired look target: head height of the player.
-  const tx = player.pos.x;
+  // Desired look target: head height of the player. v4.2 §18.14 — add
+  // a small forward LOOK-AHEAD so the camera target leads the player
+  // in the direction of motion, making upcoming platforms visible
+  // before they're under his feet. Only kicks in above 0.5 m/s so a
+  // standing player still has him centered.
+  let tx = player.pos.x;
   const ty = player.pos.y + 1.0;
-  const tz = player.pos.z;
+  let tz = player.pos.z;
+  const horizSp = Math.hypot(player.vel.x, player.vel.z);
+  if (state === 'play' && horizSp > 0.5) {
+    const AHEAD = 1.5;
+    tx += (player.vel.x / horizSp) * AHEAD;
+    tz += (player.vel.z / horizSp) * AHEAD;
+  }
   const cx = tx + Math.cos(elev) * Math.sin(azim) * radius;
   const cy = ty + Math.sin(elev) * radius;
   const cz = tz + Math.cos(elev) * Math.cos(azim) * radius;
   camWish.set(cx, cy, cz);
-  const k = Math.min(1, dt * 9);
+  // v4.2 — soften follow rate dt*9 → dt*6. Less twitchy on hard turns;
+  // still tight enough that jumps stay precise (§18.14).
+  const k = Math.min(1, dt * 6);
   camPos.lerp(camWish, k);
   camTgt.lerp({ x: tx, y: ty, z: tz }, k);
   camera.position.copy(camPos);
@@ -548,6 +567,14 @@ let landSquashT = 0;     // counts down while the landing squash plays
 // ============================================================
 // 5. PROCEDURAL MESH FACTORIES
 // ============================================================
+// approach — step `cur` toward `target` by at most `step`. Used by the
+// acceleration model in stepPlay (§6.5 "slight acceleration/deceleration,
+// not instant full-speed snap").
+function approach(cur, target, step) {
+  const d = target - cur;
+  return Math.abs(d) <= step ? target : cur + Math.sign(d) * step;
+}
+
 // Helper: darken a hex color toward black by `amt` (0..1).
 function darkenHex(hex, amt = 0.55) {
   const c = new THREE.Color(hex);
@@ -1624,13 +1651,36 @@ function stepPlay(dt) {
   if (input.s) mz -= 1;
   if (input.d) mx += 1;
   if (input.a) mx -= 1;
-  if (stickX || stickY) { mx += stickX; mz += -stickY; }
+  // v4.2 §3.2 — joystick deadzone. Tiny finger drift below the noise
+  // floor → exactly zero; above it, remap so full deflection still hits 1.0.
+  const sLen = Math.hypot(stickX, stickY);
+  if (sLen > TUNING.joystickDeadzone) {
+    const remap = (sLen - TUNING.joystickDeadzone) / (1 - TUNING.joystickDeadzone);
+    const k = remap / sLen;
+    mx += stickX * k;
+    mz += -stickY * k;
+  }
   const ml = Math.hypot(mx, mz);
   if (ml > 1) { mx /= ml; mz /= ml; }
-  const wishX = (fx * mz + rx * mx) * WALK_SPEED;
-  const wishZ = (fz * mz + rz * mx) * WALK_SPEED;
-  player.vel.x = wishX;
-  player.vel.z = wishZ;
+  const targetVX = (fx * mz + rx * mx) * WALK_SPEED;
+  const targetVZ = (fz * mz + rz * mx) * WALK_SPEED;
+
+  // ---- 1b. Acceleration-based horizontal velocity (§6.5). -----------
+  // Ramp vel.x/.z toward target instead of snapping. In the air, accel
+  // is reduced (per §6.5 "reduced but not absent") so jumps preserve
+  // committed momentum but can still be course-corrected. Friction
+  // applies only on the ground with no input — in the air with no
+  // input we keep momentum, which is critical for the OBBY jump arc.
+  const inputting = ml > 0.05;
+  if (inputting) {
+    const accel = (player.onGround ? TUNING.acceleration : TUNING.airAcceleration) * dt;
+    player.vel.x = approach(player.vel.x, targetVX, accel);
+    player.vel.z = approach(player.vel.z, targetVZ, accel);
+  } else if (player.onGround) {
+    const fric = TUNING.friction * dt;
+    player.vel.x = approach(player.vel.x, 0, fric);
+    player.vel.z = approach(player.vel.z, 0, fric);
+  }
 
   // ---- 2. Coyote timer + jump buffer tick --------------------------
   if (player.onGround) player.coyoteTimer = 0;
@@ -1639,6 +1689,8 @@ function stepPlay(dt) {
 
   // ---- 3. Gravity + integrate --------------------------------------
   player.vel.y -= GRAV * dt;
+  // §9.1 maxFallSpeed — long-drop tunneling guard.
+  if (player.vel.y < -TUNING.maxFallSpeed) player.vel.y = -TUNING.maxFallSpeed;
   player.pos.x += player.vel.x * dt;
   player.pos.y += player.vel.y * dt;
   player.pos.z += player.vel.z * dt;
@@ -1676,10 +1728,12 @@ function stepPlay(dt) {
     sfx('jump');
   }
 
-  // ---- 7. Landing squash — trigger on the first frame we touched
-  //         down after time in the air.
+  // ---- 7. Landing squash + stride reset — trigger on the first
+  //         frame we touched down after time in the air. Resetting
+  //         stridePhase keeps the run animation from popping mid-cycle.
   if (player.onGround && !player.prevOnGround) {
     landSquashT = TUNING.landingSquashTime;
+    stridePhase = 0;
   }
 
   // ---- 8. Hazards + triggers ---------------------------------------
@@ -1688,7 +1742,7 @@ function stepPlay(dt) {
 
   // ---- 9. Face wishDir -------------------------------------------
   if (ml > 0.05) {
-    const targetYaw = Math.atan2(wishX, wishZ);
+    const targetYaw = Math.atan2(targetVX, targetVZ);
     let diff = targetYaw - player.yaw;
     while (diff >  Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
