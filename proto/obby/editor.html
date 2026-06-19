@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>OBBY Character Editor v1 — Super Dude</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #0f1320; color: #e8ecf3;
+    font-family: system-ui, "Segoe UI", sans-serif; overflow: hidden; -webkit-user-select: none; user-select: none; }
+  #wrap { position: fixed; inset: 0; display: flex; }
+  #view { flex: 1 1 auto; position: relative; background: #1a1f33; }
+  #view canvas { display: block; width: 100%; height: 100%; }
+  #panel { flex: 0 0 340px; background: #15192a; border-left: 1px solid #2a3144;
+    display: flex; flex-direction: column; overflow: hidden; }
+  .ph { padding: 14px 16px 6px; }
+  h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: #b8a8ff; }
+  h1 .v { color: #46f0ff; font-size: 11px; letter-spacing: 2px; margin-left: 6px; }
+  h2 { margin: 16px 0 6px; padding: 0 16px; font-size: 11px; letter-spacing: 2px; color: #6d7398; text-transform: uppercase; }
+  #scroll { overflow-y: auto; flex: 1 1 auto; }
+  #partsList { list-style: none; margin: 0; padding: 0 8px; }
+  #partsList li { padding: 6px 8px; margin: 2px 0; border-radius: 4px; cursor: pointer;
+    background: #1f2336; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+  #partsList li:hover { background: #2a3050; }
+  #partsList li.sel { background: #3a3568; color: #fff; font-weight: 600; }
+  #partsList li small { color: #6d7398; font-size: 11px; }
+  .ctrl { padding: 4px 14px; }
+  .grp { background: #1a1f33; border: 1px solid #2a3144; border-radius: 4px;
+    padding: 8px 10px; margin: 6px 0; }
+  .grp .head { font-size: 11px; letter-spacing: 1px; color: #9aa0c4; margin-bottom: 4px; text-transform: uppercase; }
+  .row { display: grid; grid-template-columns: 18px 1fr 60px; gap: 6px; align-items: center; margin: 3px 0; }
+  .row label { font-size: 12px; color: #9aa0c4; font-weight: 600; }
+  .row input[type=range] { width: 100%; }
+  .row input[type=number] { width: 60px; box-sizing: border-box; background: #0f1320; color: #e8ecf3;
+    border: 1px solid #2a3144; border-radius: 3px; padding: 2px 4px; font-size: 12px; }
+  .row input[type=color] { width: 100%; height: 28px; padding: 0; border: 1px solid #2a3144;
+    background: #0f1320; border-radius: 3px; }
+  button { background: #2a3050; color: #e8ecf3; border: 1px solid #3a3568; border-radius: 4px;
+    padding: 6px 10px; cursor: pointer; font-size: 12px; }
+  button:hover { background: #3a3568; }
+  button.primary { background: #5a3568; }
+  button.danger { background: #5a2530; border-color: #7a3540; }
+  button.danger:hover { background: #7a3540; }
+  select, textarea { background: #0f1320; color: #e8ecf3; border: 1px solid #2a3144; border-radius: 3px;
+    padding: 4px 6px; font-family: inherit; font-size: 12px; }
+  textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 80px; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 14px 12px; }
+  #hint { position: absolute; bottom: 8px; left: 8px; color: #6d7398; font-size: 11px;
+    background: rgba(15,19,32,0.78); padding: 4px 8px; border-radius: 3px; }
+  #floatStatus { position: absolute; top: 8px; left: 8px; color: #b8a8ff; font-size: 12px;
+    background: rgba(15,19,32,0.78); padding: 4px 8px; border-radius: 3px; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="wrap">
+  <div id="view">
+    <div id="floatStatus">No selection</div>
+    <div id="hint">drag = orbit · wheel = zoom · click part to select</div>
+  </div>
+  <div id="panel">
+    <div class="ph">
+      <h1>CHARACTER EDITOR <span class="v">v1</span></h1>
+    </div>
+    <div id="scroll">
+      <h2>Parts <span id="partCount" style="color:#46f0ff"></span></h2>
+      <ul id="partsList"></ul>
+
+      <h2>Add part</h2>
+      <div class="ctrl">
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="addType" style="flex:1">
+            <option value="box">Box</option>
+            <option value="sphere">Sphere</option>
+            <option value="cylinder">Cylinder</option>
+            <option value="cone">Cone (hat)</option>
+            <option value="torus">Torus (ring)</option>
+            <option value="capsule">Capsule</option>
+          </select>
+          <button id="addBtn" class="primary">+ Add</button>
+        </div>
+      </div>
+
+      <h2>Selected part</h2>
+      <div id="xform" class="ctrl">
+        <div style="color:#6d7398;font-size:12px;padding:4px 0">No part selected. Click a part in the list or in the 3D view.</div>
+      </div>
+
+      <h2>Export / Import JSON</h2>
+      <div class="ctrl">
+        <textarea id="json" placeholder="character JSON appears here on Copy; paste in to Load"></textarea>
+      </div>
+      <div class="actions">
+        <button id="copyBtn" class="primary">Copy JSON</button>
+        <button id="loadBtn">Load from textarea</button>
+        <button id="resetBtn">Reset character</button>
+        <button id="saveBtn">Save (local)</button>
+        <button id="restoreBtn">Restore (local)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// =================== SCENE =====================
+const viewEl = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+viewEl.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1f33);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
+
+// lighting
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+sun.position.set(4, 6, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -3; sun.shadow.camera.right = 3;
+sun.shadow.camera.top = 3; sun.shadow.camera.bottom = -3;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 14;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x8aa0ff, 0.35);
+fill.position.set(-3, 2, -3);
+scene.add(fill);
+
+// ground (display pedestal — visible reference only)
+const pedestal = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.6, 1.7, 0.18, 36),
+  new THREE.MeshStandardMaterial({ color: 0x2a3144, metalness: 0.3, roughness: 0.7 })
+);
+pedestal.position.y = -0.09;
+pedestal.receiveShadow = true;
+scene.add(pedestal);
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(1.6, 1.65, 64),
+  new THREE.MeshBasicMaterial({ color: 0x46f0ff, side: THREE.DoubleSide })
+);
+ring.rotation.x = -Math.PI / 2;
+ring.position.y = 0.001;
+scene.add(ring);
+// grid + axis tripod at origin (helps Mark see where parts sit)
+const grid = new THREE.GridHelper(3.2, 16, 0x2a3144, 0x232940);
+grid.position.y = 0.002;
+scene.add(grid);
+
+// =================== CHARACTER DATA MODEL =====================
+// Each part is one Three.js primitive mesh. Position/rotation are
+// raw values in world units (so what you see on the slider is
+// exactly what gets copied into the eventual gameplay code).
+const DEFAULT = {
+  name: 'Computer',
+  parts: [
+    // BODY
+    { id: 'torso',   type: 'box',      pos: [0, 1.10, 0.00], rot: [0, 0, 0],   scale: [0.85, 1.10, 0.50], color: '#c0c8d4' },
+    // HEAD (CRT V-head — narrow box on top of torso)
+    { id: 'head',    type: 'box',      pos: [0, 2.05, 0.00], rot: [0, 0, 0],   scale: [0.85, 0.78, 0.55], color: '#c0c8d4' },
+    // SCREEN (cyan emissive face)
+    { id: 'screen',  type: 'box',      pos: [0, 2.05, 0.30], rot: [0, 0, 0],   scale: [0.70, 0.60, 0.04], color: '#0a1230', emissive: '#46f0ff', emInt: 0.6 },
+    // ARMS
+    { id: 'armL',    type: 'cylinder', pos: [-0.62, 1.30, 0.00], rot: [0, 0,  0.15], scale: [0.16, 0.85, 0.16], color: '#c0c8d4' },
+    { id: 'armR',    type: 'cylinder', pos: [ 0.62, 1.30, 0.00], rot: [0, 0, -0.15], scale: [0.16, 0.85, 0.16], color: '#c0c8d4' },
+    // LEGS
+    { id: 'legL',    type: 'cylinder', pos: [-0.22, 0.32, 0.00], rot: [0, 0, 0],   scale: [0.20, 0.65, 0.20], color: '#4a5570' },
+    { id: 'legR',    type: 'cylinder', pos: [ 0.22, 0.32, 0.00], rot: [0, 0, 0],   scale: [0.20, 0.65, 0.20], color: '#4a5570' },
+    // HAT (red ball cap) — top dome
+    { id: 'capTop',  type: 'sphere',   pos: [0, 2.50, -0.04], rot: [0, 0, 0],   scale: [0.46, 0.32, 0.48], color: '#ff3030' },
+    // CAP BRIM
+    { id: 'capBrim', type: 'box',      pos: [0, 2.38, 0.30], rot: [-0.12, 0, 0], scale: [0.62, 0.05, 0.32], color: '#ff3030' },
+    // ANTENNA stalk + ball (so Mark sees the additive part pattern)
+    { id: 'antStalk',type: 'cylinder', pos: [0, 2.85, -0.08], rot: [0, 0, 0],   scale: [0.04, 0.30, 0.04], color: '#aab4c4' },
+    { id: 'antBall', type: 'sphere',   pos: [0, 3.10, -0.08], rot: [0, 0, 0],   scale: [0.10, 0.10, 0.10], color: '#46f0ff', emissive: '#46f0ff', emInt: 1.2 },
+  ],
+};
+
+const character = JSON.parse(JSON.stringify(DEFAULT));
+const meshById = {};
+let selectedId = null;
+
+function geometryFor(type) {
+  switch (type) {
+    case 'box':      return new THREE.BoxGeometry(1, 1, 1);
+    case 'sphere':   return new THREE.SphereGeometry(0.5, 24, 16);
+    case 'cylinder': return new THREE.CylinderGeometry(0.5, 0.5, 1, 24);
+    case 'cone':     return new THREE.ConeGeometry(0.5, 1, 24);
+    case 'torus':    return new THREE.TorusGeometry(0.4, 0.12, 14, 32);
+    case 'capsule':  return new THREE.CapsuleGeometry(0.4, 0.6, 8, 16);
+    default:         return new THREE.BoxGeometry(1, 1, 1);
+  }
+}
+
+function buildMesh(part) {
+  const matOpts = { color: part.color, metalness: 0.35, roughness: 0.45 };
+  if (part.emissive) { matOpts.emissive = part.emissive; matOpts.emissiveIntensity = part.emInt || 0.5; }
+  const mesh = new THREE.Mesh(geometryFor(part.type), new THREE.MeshStandardMaterial(matOpts));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  applyXform(mesh, part);
+  mesh.userData.partId = part.id;
+  scene.add(mesh);
+  meshById[part.id] = mesh;
+}
+
+function applyXform(mesh, part) {
+  mesh.position.set(part.pos[0], part.pos[1], part.pos[2]);
+  mesh.rotation.set(part.rot[0], part.rot[1], part.rot[2]);
+  mesh.scale.set(part.scale[0], part.scale[1], part.scale[2]);
+}
+
+function rebuildAll() {
+  for (const id of Object.keys(meshById)) {
+    const m = meshById[id];
+    scene.remove(m);
+    m.geometry.dispose();
+    m.material.dispose();
+    delete meshById[id];
+  }
+  for (const part of character.parts) buildMesh(part);
+}
+
+// =================== CAMERA ORBIT =====================
+let azim = 0.5, elev = 0.32, radius = 6.0;
+const camTarget = new THREE.Vector3(0, 1.4, 0);
+function syncCamera() {
+  const x = Math.cos(elev) * Math.sin(azim) * radius;
+  const z = Math.cos(elev) * Math.cos(azim) * radius;
+  const y = Math.sin(elev) * radius;
+  camera.position.set(camTarget.x + x, camTarget.y + y, camTarget.z + z);
+  camera.lookAt(camTarget);
+}
+syncCamera();
+
+let dragging = false, lx = 0, ly = 0, dragDist = 0;
+renderer.domElement.addEventListener('pointerdown', e => {
+  dragging = true; lx = e.clientX; ly = e.clientY; dragDist = 0;
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lx, dy = e.clientY - ly;
+  azim -= dx * 0.008;
+  elev = Math.max(-0.5, Math.min(1.3, elev + dy * 0.008));
+  dragDist += Math.abs(dx) + Math.abs(dy);
+  lx = e.clientX; ly = e.clientY;
+  syncCamera();
+});
+renderer.domElement.addEventListener('pointerup', e => {
+  dragging = false;
+  // Only treat as a click if the cursor barely moved
+  if (dragDist < 5) onCanvasClick(e);
+});
+renderer.domElement.addEventListener('wheel', e => {
+  e.preventDefault();
+  radius = Math.max(2.4, Math.min(16, radius + e.deltaY * 0.004));
+  syncCamera();
+}, { passive: false });
+
+// =================== CLICK-TO-SELECT =====================
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+function onCanvasClick(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const objs = Object.values(meshById);
+  const hits = raycaster.intersectObjects(objs, false);
+  if (hits.length > 0) {
+    const id = hits[0].object.userData.partId;
+    setSelection(id);
+  } else {
+    setSelection(null);
+  }
+}
+
+function setSelection(id) {
+  // Restore previous selection's emissive
+  if (selectedId && meshById[selectedId]) {
+    const m = meshById[selectedId].material;
+    const part = character.parts.find(p => p.id === selectedId);
+    if (part) {
+      if (part.emissive) { m.emissive = new THREE.Color(part.emissive); m.emissiveIntensity = part.emInt || 0.5; }
+      else { m.emissive = new THREE.Color(0x000000); m.emissiveIntensity = 0; }
+    }
+  }
+  selectedId = id;
+  // Boost selected emissive (visual highlight)
+  if (selectedId && meshById[selectedId]) {
+    const m = meshById[selectedId].material;
+    m.emissive = new THREE.Color(0xffffff);
+    m.emissiveIntensity = 0.35;
+  }
+  refreshUI();
+}
+
+// =================== UI =====================
+const partsListEl  = document.getElementById('partsList');
+const partCountEl  = document.getElementById('partCount');
+const xformEl      = document.getElementById('xform');
+const floatStatus  = document.getElementById('floatStatus');
+
+function refreshPartsList() {
+  partsListEl.innerHTML = '';
+  partCountEl.textContent = '(' + character.parts.length + ')';
+  for (const part of character.parts) {
+    const li = document.createElement('li');
+    if (part.id === selectedId) li.classList.add('sel');
+    const lbl = document.createElement('span');
+    lbl.textContent = part.id;
+    const tag = document.createElement('small');
+    tag.textContent = part.type;
+    li.appendChild(lbl);
+    li.appendChild(tag);
+    li.addEventListener('click', () => setSelection(part.id));
+    partsListEl.appendChild(li);
+  }
+}
+
+function makeAxisRow(part, group, axisIdx, min, max, step) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const lbl = document.createElement('label'); lbl.textContent = 'XYZ'[axisIdx];
+  const slider = document.createElement('input');
+  slider.type = 'range'; slider.min = min; slider.max = max; slider.step = step;
+  slider.value = part[group][axisIdx];
+  const num = document.createElement('input');
+  num.type = 'number'; num.step = step; num.value = part[group][axisIdx].toFixed(3);
+  function commit(v) {
+    const f = parseFloat(v);
+    if (Number.isNaN(f)) return;
+    part[group][axisIdx] = f;
+    if (meshById[part.id]) applyXform(meshById[part.id], part);
+    slider.value = f;
+    num.value = f.toFixed(3);
+    autosave();
+  }
+  slider.addEventListener('input', () => commit(slider.value));
+  num.addEventListener('input', () => commit(num.value));
+  row.appendChild(lbl); row.appendChild(slider); row.appendChild(num);
+  return row;
+}
+
+function refreshXform() {
+  xformEl.innerHTML = '';
+  if (!selectedId) {
+    xformEl.innerHTML = '<div style="color:#6d7398;font-size:12px;padding:4px 0">No part selected. Click a part in the list or in the 3D view.</div>';
+    floatStatus.textContent = 'No selection';
+    return;
+  }
+  const part = character.parts.find(p => p.id === selectedId);
+  if (!part) { selectedId = null; refreshXform(); return; }
+  floatStatus.textContent = part.id + ' · ' + part.type;
+
+  // ID rename
+  const idGrp = document.createElement('div'); idGrp.className = 'grp';
+  idGrp.innerHTML = '<div class="head">Part ID</div>';
+  const idInput = document.createElement('input');
+  idInput.type = 'text'; idInput.value = part.id;
+  idInput.style.cssText = 'width:100%;box-sizing:border-box;background:#0f1320;color:#e8ecf3;border:1px solid #2a3144;border-radius:3px;padding:4px 6px;font-size:12px';
+  idInput.addEventListener('change', () => {
+    const newId = idInput.value.trim();
+    if (!newId || newId === part.id) return;
+    if (character.parts.some(p => p.id === newId)) { idInput.value = part.id; alert('That ID is already taken.'); return; }
+    meshById[newId] = meshById[part.id]; delete meshById[part.id];
+    meshById[newId].userData.partId = newId;
+    part.id = newId;
+    selectedId = newId;
+    refreshUI();
+  });
+  idGrp.appendChild(idInput);
+  xformEl.appendChild(idGrp);
+
+  // Position group
+  const posGrp = document.createElement('div'); posGrp.className = 'grp';
+  posGrp.innerHTML = '<div class="head">Position (world units)</div>';
+  for (let i = 0; i < 3; i++) posGrp.appendChild(makeAxisRow(part, 'pos', i, -3, 3, 0.005));
+  xformEl.appendChild(posGrp);
+
+  // Rotation group
+  const rotGrp = document.createElement('div'); rotGrp.className = 'grp';
+  rotGrp.innerHTML = '<div class="head">Rotation (radians, ±π)</div>';
+  for (let i = 0; i < 3; i++) rotGrp.appendChild(makeAxisRow(part, 'rot', i, -Math.PI, Math.PI, 0.01));
+  xformEl.appendChild(rotGrp);
+
+  // Scale group
+  const sclGrp = document.createElement('div'); sclGrp.className = 'grp';
+  sclGrp.innerHTML = '<div class="head">Scale</div>';
+  for (let i = 0; i < 3; i++) sclGrp.appendChild(makeAxisRow(part, 'scale', i, 0.02, 3, 0.005));
+  xformEl.appendChild(sclGrp);
+
+  // Color group
+  const colGrp = document.createElement('div'); colGrp.className = 'grp';
+  colGrp.innerHTML = '<div class="head">Color</div>';
+  const colRow = document.createElement('div'); colRow.className = 'row';
+  colRow.style.gridTemplateColumns = '1fr';
+  const colorInput = document.createElement('input');
+  colorInput.type = 'color';
+  colorInput.value = part.color || '#cccccc';
+  colorInput.addEventListener('input', () => {
+    part.color = colorInput.value;
+    if (meshById[part.id]) meshById[part.id].material.color.set(part.color);
+    autosave();
+  });
+  colRow.appendChild(colorInput);
+  colGrp.appendChild(colRow);
+
+  // Emissive toggle
+  const emRow = document.createElement('div'); emRow.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:6px';
+  const emChk = document.createElement('input');
+  emChk.type = 'checkbox'; emChk.checked = !!part.emissive;
+  const emLbl = document.createElement('span'); emLbl.textContent = 'Emissive (glow)'; emLbl.style.fontSize = '12px';
+  const emColor = document.createElement('input'); emColor.type = 'color'; emColor.value = part.emissive || part.color;
+  emColor.style.width = '40px';
+  emColor.addEventListener('input', () => {
+    if (!part.emissive) return;
+    part.emissive = emColor.value;
+    meshById[part.id].material.emissive.set(part.emissive);
+    autosave();
+  });
+  emChk.addEventListener('change', () => {
+    if (emChk.checked) {
+      part.emissive = part.emissive || emColor.value;
+      part.emInt = part.emInt || 0.6;
+      meshById[part.id].material.emissive = new THREE.Color(part.emissive);
+      meshById[part.id].material.emissiveIntensity = part.emInt;
+    } else {
+      delete part.emissive; delete part.emInt;
+      meshById[part.id].material.emissive = new THREE.Color(0x000000);
+      meshById[part.id].material.emissiveIntensity = 0;
+    }
+    autosave();
+    refreshXform();
+  });
+  emRow.appendChild(emChk); emRow.appendChild(emLbl); emRow.appendChild(emColor);
+  colGrp.appendChild(emRow);
+  xformEl.appendChild(colGrp);
+
+  // Action buttons
+  const actGrp = document.createElement('div'); actGrp.className = 'grp';
+  actGrp.style.background = 'transparent'; actGrp.style.border = 'none'; actGrp.style.padding = '4px 0';
+  const dupBtn = document.createElement('button'); dupBtn.textContent = 'Duplicate';
+  dupBtn.style.marginRight = '6px';
+  dupBtn.addEventListener('click', () => {
+    const copy = JSON.parse(JSON.stringify(part));
+    copy.id = part.id + '_copy';
+    let i = 1;
+    while (character.parts.some(p => p.id === copy.id)) { copy.id = part.id + '_copy' + (++i); }
+    copy.pos[0] += 0.15;
+    character.parts.push(copy);
+    buildMesh(copy);
+    setSelection(copy.id);
+    autosave();
+  });
+  const delBtn = document.createElement('button'); delBtn.className = 'danger'; delBtn.textContent = 'Delete';
+  delBtn.addEventListener('click', () => {
+    if (!confirm('Delete part ' + part.id + '?')) return;
+    const idx = character.parts.findIndex(p => p.id === part.id);
+    if (idx >= 0) character.parts.splice(idx, 1);
+    if (meshById[part.id]) {
+      scene.remove(meshById[part.id]);
+      meshById[part.id].geometry.dispose();
+      meshById[part.id].material.dispose();
+      delete meshById[part.id];
+    }
+    selectedId = null;
+    refreshUI();
+    autosave();
+  });
+  actGrp.appendChild(dupBtn); actGrp.appendChild(delBtn);
+  xformEl.appendChild(actGrp);
+}
+
+function refreshUI() {
+  refreshPartsList();
+  refreshXform();
+}
+
+// =================== ADD / EXPORT / RESET =====================
+document.getElementById('addBtn').addEventListener('click', () => {
+  const type = document.getElementById('addType').value;
+  let i = 1;
+  let id = type;
+  while (character.parts.some(p => p.id === id)) id = type + (++i);
+  const part = {
+    id, type,
+    pos: [0, 1.5, 0],
+    rot: [0, 0, 0],
+    scale: [0.3, 0.3, 0.3],
+    color: '#ffd23a',
+  };
+  character.parts.push(part);
+  buildMesh(part);
+  setSelection(id);
+  autosave();
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const out = JSON.stringify(character, null, 2);
+  document.getElementById('json').value = out;
+  try { navigator.clipboard.writeText(out); } catch (_) {}
+});
+
+document.getElementById('loadBtn').addEventListener('click', () => {
+  try {
+    const txt = document.getElementById('json').value;
+    if (!txt.trim()) return;
+    const data = JSON.parse(txt);
+    if (!Array.isArray(data.parts)) throw new Error('JSON must have a "parts" array');
+    character.name = data.name || 'Custom';
+    character.parts = data.parts;
+    rebuildAll();
+    selectedId = null;
+    refreshUI();
+    autosave();
+  } catch (e) {
+    alert('Could not load JSON: ' + e.message);
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Reset to default character? Local-saved changes will be lost.')) return;
+  character.name = DEFAULT.name;
+  character.parts = JSON.parse(JSON.stringify(DEFAULT.parts));
+  rebuildAll();
+  selectedId = null;
+  refreshUI();
+  autosave();
+});
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  try {
+    localStorage.setItem('obby_character', JSON.stringify(character));
+    document.getElementById('saveBtn').textContent = 'Saved ✓';
+    setTimeout(() => { document.getElementById('saveBtn').textContent = 'Save (local)'; }, 900);
+  } catch (e) { alert('Could not save: ' + e.message); }
+});
+document.getElementById('restoreBtn').addEventListener('click', () => {
+  const raw = localStorage.getItem('obby_character');
+  if (!raw) { alert('No saved character.'); return; }
+  try {
+    const data = JSON.parse(raw);
+    character.name = data.name || 'Restored';
+    character.parts = data.parts;
+    rebuildAll();
+    selectedId = null;
+    refreshUI();
+  } catch (e) { alert('Saved data was invalid: ' + e.message); }
+});
+
+// silent autosave on every change
+function autosave() {
+  try { localStorage.setItem('obby_character_auto', JSON.stringify(character)); } catch (_) {}
+}
+
+// =================== INIT =====================
+function resize() {
+  const w = viewEl.clientWidth, h = viewEl.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+// Load autosaved character if present, else default.
+try {
+  const raw = localStorage.getItem('obby_character_auto');
+  if (raw) {
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.parts)) {
+      character.name = data.name || 'Computer';
+      character.parts = data.parts;
+    }
+  }
+} catch (_) {}
+
+rebuildAll();
+refreshUI();
+resize();
+
+function loop() {
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

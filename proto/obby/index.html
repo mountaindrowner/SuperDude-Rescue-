@@ -3,597 +3,780 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>OBBY Character Editor v1 — Super Dude</title>
+<meta name="theme-color" content="#9fd8ff">
+<title>Super Dude OBBY v2 — Phase 2 Scaffold</title>
 <style>
-  :root { color-scheme: dark; }
-  html, body { margin: 0; padding: 0; height: 100%; background: #0f1320; color: #e8ecf3;
-    font-family: system-ui, "Segoe UI", sans-serif; overflow: hidden; -webkit-user-select: none; user-select: none; }
-  #wrap { position: fixed; inset: 0; display: flex; }
-  #view { flex: 1 1 auto; position: relative; background: #1a1f33; }
-  #view canvas { display: block; width: 100%; height: 100%; }
-  #panel { flex: 0 0 340px; background: #15192a; border-left: 1px solid #2a3144;
-    display: flex; flex-direction: column; overflow: hidden; }
-  .ph { padding: 14px 16px 6px; }
-  h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: #b8a8ff; }
-  h1 .v { color: #46f0ff; font-size: 11px; letter-spacing: 2px; margin-left: 6px; }
-  h2 { margin: 16px 0 6px; padding: 0 16px; font-size: 11px; letter-spacing: 2px; color: #6d7398; text-transform: uppercase; }
-  #scroll { overflow-y: auto; flex: 1 1 auto; }
-  #partsList { list-style: none; margin: 0; padding: 0 8px; }
-  #partsList li { padding: 6px 8px; margin: 2px 0; border-radius: 4px; cursor: pointer;
-    background: #1f2336; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-  #partsList li:hover { background: #2a3050; }
-  #partsList li.sel { background: #3a3568; color: #fff; font-weight: 600; }
-  #partsList li small { color: #6d7398; font-size: 11px; }
-  .ctrl { padding: 4px 14px; }
-  .grp { background: #1a1f33; border: 1px solid #2a3144; border-radius: 4px;
-    padding: 8px 10px; margin: 6px 0; }
-  .grp .head { font-size: 11px; letter-spacing: 1px; color: #9aa0c4; margin-bottom: 4px; text-transform: uppercase; }
-  .row { display: grid; grid-template-columns: 18px 1fr 60px; gap: 6px; align-items: center; margin: 3px 0; }
-  .row label { font-size: 12px; color: #9aa0c4; font-weight: 600; }
-  .row input[type=range] { width: 100%; }
-  .row input[type=number] { width: 60px; box-sizing: border-box; background: #0f1320; color: #e8ecf3;
-    border: 1px solid #2a3144; border-radius: 3px; padding: 2px 4px; font-size: 12px; }
-  .row input[type=color] { width: 100%; height: 28px; padding: 0; border: 1px solid #2a3144;
-    background: #0f1320; border-radius: 3px; }
-  button { background: #2a3050; color: #e8ecf3; border: 1px solid #3a3568; border-radius: 4px;
-    padding: 6px 10px; cursor: pointer; font-size: 12px; }
-  button:hover { background: #3a3568; }
-  button.primary { background: #5a3568; }
-  button.danger { background: #5a2530; border-color: #7a3540; }
-  button.danger:hover { background: #7a3540; }
-  select, textarea { background: #0f1320; color: #e8ecf3; border: 1px solid #2a3144; border-radius: 3px;
-    padding: 4px 6px; font-family: inherit; font-size: 12px; }
-  textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 80px; }
-  .actions { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 14px 12px; }
-  #hint { position: absolute; bottom: 8px; left: 8px; color: #6d7398; font-size: 11px;
-    background: rgba(15,19,32,0.78); padding: 4px 8px; border-radius: 3px; }
-  #floatStatus { position: absolute; top: 8px; left: 8px; color: #b8a8ff; font-size: 12px;
-    background: rgba(15,19,32,0.78); padding: 4px 8px; border-radius: 3px; pointer-events: none; }
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #9fd8ff; overflow: hidden;
+    font-family: system-ui, "Segoe UI", sans-serif;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  canvas#game { background: #9fd8ff; width: 100vw; height: 100vh; display: block; }
+
+  /* HUD overlay shell — patterned after runner v34. */
+  #ui { position: fixed; inset: 0; pointer-events: none;
+        font-family: system-ui, "Segoe UI", sans-serif; }
+  #topbar { position: absolute; top: 8px; left: 8px; right: 8px;
+            background: rgba(20,24,38,0.74); border-radius: 10px; padding: 8px 12px;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .row { display: flex; justify-content: space-between; align-items: center; color: #e8ecf3; }
+  .row + .row { margin-top: 4px; }
+  .lbl { font-weight: 700; font-size: 16px; }
+  .lbl.big { font-size: 22px; color: #ffd23a; text-shadow: 0 0 10px rgba(255,210,58,0.45); }
+  .lbl.dim { color: #9aa0c4; font-weight: 600; font-size: 13px; }
+  .lbl.cyan { color: #46f0ff; }
+  .bar { height: 4px; background: rgba(255,210,58,0.20); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .bar > div { height: 100%; background: linear-gradient(to right, #46f0ff, #ffd23a); transition: width .2s linear;
+               box-shadow: 0 0 10px rgba(255,210,58,0.5); }
+  #overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+             flex-direction: column; background: rgba(10,12,20,0.86); color: #fff; pointer-events: auto; cursor: pointer; }
+  #overlay.on { display: flex; }
+  #overlay h1 { margin: 0; font-size: 48px; letter-spacing: 2px; color: #ffd23a;
+                text-shadow: 0 0 16px rgba(255,210,58,0.5); }
+  #overlay h2 { margin: 6px 0 12px; font-size: 28px; color: #e8a516; }
+  #overlay p  { margin: 4px 0; color: #cfd6e4; }
+  #overlay .blink { margin-top: 24px; font-size: 18px; opacity: .9; }
+  #hint { position: fixed; bottom: 8px; left: 0; right: 0; text-align: center;
+          color: #15192a; font-size: 12px; pointer-events: none; opacity: 0.85; }
+
+  /* ---------- mobile touch controls (only shown on touch-capable) ---------- */
+  body:not([data-touch]) #touchUI { display: none; }
+  #touchUI { position: fixed; inset: 0; pointer-events: none; z-index: 12; }
+  #stickZone { position: absolute; left: 0; bottom: 0; width: 50vw; height: 55vh;
+               pointer-events: auto; }
+  #stickBase, #stickKnob { position: absolute; border-radius: 50%;
+               background: rgba(20,24,38,0.30); border: 2px solid rgba(255,255,255,0.45);
+               box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+               transition: opacity .15s; opacity: 0.45; }
+  #stickBase { width: 110px; height: 110px; }
+  #stickKnob { width: 56px; height: 56px; background: rgba(255,255,255,0.85); border: 2px solid rgba(20,24,38,0.6); }
+  #stickZone.live #stickBase, #stickZone.live #stickKnob { opacity: 1.0; }
+  #jumpBtn { position: absolute; right: 22px; bottom: 28px; width: 92px; height: 92px;
+             border-radius: 50%; background: rgba(70,240,255,0.78); border: 3px solid #fff;
+             color: #15192a; font-weight: 900; font-size: 18px; letter-spacing: 2px;
+             box-shadow: 0 4px 14px rgba(0,0,0,0.35); pointer-events: auto;
+             display: flex; align-items: center; justify-content: center; user-select: none;
+             touch-action: none; -webkit-touch-callout: none; }
+  #jumpBtn:active, #jumpBtn.live { background: #ffd23a; transform: scale(0.94); }
+  #lookZone { position: absolute; right: 0; top: 0; width: 50vw; bottom: 0; pointer-events: auto; }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
 </script>
 </head>
 <body>
-<div id="wrap">
-  <div id="view">
-    <div id="floatStatus">No selection</div>
-    <div id="hint">drag = orbit · wheel = zoom · click part to select</div>
-  </div>
-  <div id="panel">
-    <div class="ph">
-      <h1>CHARACTER EDITOR <span class="v">v1</span></h1>
+<div id="wrap"><canvas id="game"></canvas></div>
+<div id="ui">
+  <div id="topbar">
+    <div class="row">
+      <span class="lbl big">STAGE <span id="ui-stage">1</span><span style="color:#9aa0c4"> / </span><span id="ui-total" style="color:#9aa0c4">1</span></span>
+      <span class="lbl"><span style="color:#9aa0c4">CHECKPOINT</span> <span id="ui-cp" class="cyan">0</span></span>
     </div>
-    <div id="scroll">
-      <h2>Parts <span id="partCount" style="color:#46f0ff"></span></h2>
-      <ul id="partsList"></ul>
-
-      <h2>Add part</h2>
-      <div class="ctrl">
-        <div style="display:flex;gap:6px;align-items:center">
-          <select id="addType" style="flex:1">
-            <option value="box">Box</option>
-            <option value="sphere">Sphere</option>
-            <option value="cylinder">Cylinder</option>
-            <option value="cone">Cone (hat)</option>
-            <option value="torus">Torus (ring)</option>
-            <option value="capsule">Capsule</option>
-          </select>
-          <button id="addBtn" class="primary">+ Add</button>
-        </div>
-      </div>
-
-      <h2>Selected part</h2>
-      <div id="xform" class="ctrl">
-        <div style="color:#6d7398;font-size:12px;padding:4px 0">No part selected. Click a part in the list or in the 3D view.</div>
-      </div>
-
-      <h2>Export / Import JSON</h2>
-      <div class="ctrl">
-        <textarea id="json" placeholder="character JSON appears here on Copy; paste in to Load"></textarea>
-      </div>
-      <div class="actions">
-        <button id="copyBtn" class="primary">Copy JSON</button>
-        <button id="loadBtn">Load from textarea</button>
-        <button id="resetBtn">Reset character</button>
-        <button id="saveBtn">Save (local)</button>
-        <button id="restoreBtn">Restore (local)</button>
-      </div>
+    <div class="row">
+      <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
+      <span class="lbl dim">v2 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
+    <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
+  <div id="overlay">
+    <h1 id="ov-h1">YOU MADE IT!</h1>
+    <h2 id="ov-h2"></h2>
+    <p id="ov-p1"></p>
+    <p id="ov-p2"></p>
+    <div class="blink" id="ov-cta">TAP TO PLAY AGAIN</div>
+  </div>
+  <div id="hint">drag right side = look · left side = move · JUMP = jump</div>
+</div>
+
+<div id="touchUI">
+  <div id="stickZone">
+    <div id="stickBase"></div>
+    <div id="stickKnob"></div>
+  </div>
+  <div id="lookZone"></div>
+  <button id="jumpBtn" type="button">JUMP</button>
 </div>
 
 <script type="module">
 import * as THREE from 'three';
 
-// =================== SCENE =====================
-const viewEl = document.getElementById('view');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// ============ RENDERER / SCENE / LIGHTING ============================
+// Lifted from proto/runner/index.html boot block. Trimmed for OBBY:
+// bright sky background, warm sun, no specimen-tube point lights.
+const canvas = document.getElementById('game');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
-viewEl.appendChild(renderer.domElement);
+renderer.toneMappingExposure = 1.15;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1f33);
+scene.background = new THREE.Color(0x9fd8ff);
+scene.fog = new THREE.Fog(0x9fd8ff, 35, 160);
 
-const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
+// PMREM env — a small canvas gradient so PBR materials read correctly.
+const envCanvas = document.createElement('canvas');
+envCanvas.width = 32; envCanvas.height = 32;
+{
+  const g = envCanvas.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 32);
+  grad.addColorStop(0, '#fff5d8');
+  grad.addColorStop(0.5, '#9fd8ff');
+  grad.addColorStop(1, '#6bcf6b');
+  g.fillStyle = grad; g.fillRect(0, 0, 32, 32);
+}
+const envTex = new THREE.CanvasTexture(envCanvas);
+envTex.mapping = THREE.EquirectangularReflectionMapping;
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromEquirectangular(envTex).texture;
 
-// lighting
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const sun = new THREE.DirectionalLight(0xffffff, 1.1);
-sun.position.set(4, 6, 4);
+// Lights — warm sun + cool fill (OBBY palette).
+const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff4d8, 1.55);
+sun.position.set(8, 16, 6);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.left = -3; sun.shadow.camera.right = 3;
-sun.shadow.camera.top = 3; sun.shadow.camera.bottom = -3;
-sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 14;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
+sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 60;
+sun.shadow.bias = -0.0008;
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0x8aa0ff, 0.35);
-fill.position.set(-3, 2, -3);
+const fill = new THREE.DirectionalLight(0x9fd8ff, 0.45);
+fill.position.set(-6, 8, -4);
 scene.add(fill);
 
-// ground (display pedestal — visible reference only)
-const pedestal = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.6, 1.7, 0.18, 36),
-  new THREE.MeshStandardMaterial({ color: 0x2a3144, metalness: 0.3, roughness: 0.7 })
-);
-pedestal.position.y = -0.09;
-pedestal.receiveShadow = true;
-scene.add(pedestal);
-const ring = new THREE.Mesh(
-  new THREE.RingGeometry(1.6, 1.65, 64),
-  new THREE.MeshBasicMaterial({ color: 0x46f0ff, side: THREE.DoubleSide })
-);
-ring.rotation.x = -Math.PI / 2;
-ring.position.y = 0.001;
-scene.add(ring);
-// grid + axis tripod at origin (helps Mark see where parts sit)
-const grid = new THREE.GridHelper(3.2, 16, 0x2a3144, 0x232940);
-grid.position.y = 0.002;
-scene.add(grid);
+// ============ CAMERA =================================================
+// Orbit-follow: azim/elev/radius captured from input; target = player +
+// head-height offset; lerp toward the desired position each frame.
+const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 240);
+let azim = 0.0;          // radians, around +Y
+let elev = 0.35;         // radians, above horizon
+let radius = 7.0;        // distance from target
+const camPos  = new THREE.Vector3();
+const camTgt  = new THREE.Vector3();
+const camWish = new THREE.Vector3();
+function updateCamera(dt) {
+  // Desired look target: head height of the player.
+  const tx = player.pos.x;
+  const ty = player.pos.y + 1.0;
+  const tz = player.pos.z;
+  // Desired camera position from spherical coords.
+  const cx = tx + Math.cos(elev) * Math.sin(azim) * radius;
+  const cy = ty + Math.sin(elev) * radius;
+  const cz = tz + Math.cos(elev) * Math.cos(azim) * radius;
+  camWish.set(cx, cy, cz);
+  const k = Math.min(1, dt * 9);
+  camPos.lerp(camWish, k);
+  camTgt.lerp({ x: tx, y: ty, z: tz }, k);
+  camera.position.copy(camPos);
+  camera.lookAt(camTgt);
+}
 
-// =================== CHARACTER DATA MODEL =====================
-// Each part is one Three.js primitive mesh. Position/rotation are
-// raw values in world units (so what you see on the slider is
-// exactly what gets copied into the eventual gameplay code).
-const DEFAULT = {
-  name: 'Computer',
-  parts: [
-    // BODY
-    { id: 'torso',   type: 'box',      pos: [0, 1.10, 0.00], rot: [0, 0, 0],   scale: [0.85, 1.10, 0.50], color: '#c0c8d4' },
-    // HEAD (CRT V-head — narrow box on top of torso)
-    { id: 'head',    type: 'box',      pos: [0, 2.05, 0.00], rot: [0, 0, 0],   scale: [0.85, 0.78, 0.55], color: '#c0c8d4' },
-    // SCREEN (cyan emissive face)
-    { id: 'screen',  type: 'box',      pos: [0, 2.05, 0.30], rot: [0, 0, 0],   scale: [0.70, 0.60, 0.04], color: '#0a1230', emissive: '#46f0ff', emInt: 0.6 },
-    // ARMS
-    { id: 'armL',    type: 'cylinder', pos: [-0.62, 1.30, 0.00], rot: [0, 0,  0.15], scale: [0.16, 0.85, 0.16], color: '#c0c8d4' },
-    { id: 'armR',    type: 'cylinder', pos: [ 0.62, 1.30, 0.00], rot: [0, 0, -0.15], scale: [0.16, 0.85, 0.16], color: '#c0c8d4' },
-    // LEGS
-    { id: 'legL',    type: 'cylinder', pos: [-0.22, 0.32, 0.00], rot: [0, 0, 0],   scale: [0.20, 0.65, 0.20], color: '#4a5570' },
-    { id: 'legR',    type: 'cylinder', pos: [ 0.22, 0.32, 0.00], rot: [0, 0, 0],   scale: [0.20, 0.65, 0.20], color: '#4a5570' },
-    // HAT (red ball cap) — top dome
-    { id: 'capTop',  type: 'sphere',   pos: [0, 2.50, -0.04], rot: [0, 0, 0],   scale: [0.46, 0.32, 0.48], color: '#ff3030' },
-    // CAP BRIM
-    { id: 'capBrim', type: 'box',      pos: [0, 2.38, 0.30], rot: [-0.12, 0, 0], scale: [0.62, 0.05, 0.32], color: '#ff3030' },
-    // ANTENNA stalk + ball (so Mark sees the additive part pattern)
-    { id: 'antStalk',type: 'cylinder', pos: [0, 2.85, -0.08], rot: [0, 0, 0],   scale: [0.04, 0.30, 0.04], color: '#aab4c4' },
-    { id: 'antBall', type: 'sphere',   pos: [0, 3.10, -0.08], rot: [0, 0, 0],   scale: [0.10, 0.10, 0.10], color: '#46f0ff', emissive: '#46f0ff', emInt: 1.2 },
-  ],
+// ============ DANNY RIG ==============================================
+// Hand-built from primitives. Wrapped in a yaw group so we can rotate
+// the whole figure to face wishDir.
+const danny = new THREE.Group();    // visual root, rotated to face wishDir
+function buildDanny() {
+  const skin     = new THREE.MeshStandardMaterial({ color: 0xf0c8a0, metalness: 0.05, roughness: 0.7 });
+  const coat     = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.15, roughness: 0.55 });
+  const shirt    = new THREE.MeshStandardMaterial({ color: 0xc8d0dc, metalness: 0.45, roughness: 0.45 });
+  const pants    = new THREE.MeshStandardMaterial({ color: 0x3a4a6a, metalness: 0.20, roughness: 0.55 });
+  const sneaker  = new THREE.MeshStandardMaterial({ color: 0x1a2030, metalness: 0.35, roughness: 0.50 });
+  const cap      = new THREE.MeshStandardMaterial({ color: 0xd33a3a, metalness: 0.20, roughness: 0.45 });
+  const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const eyeDark  = new THREE.MeshStandardMaterial({ color: 0x1a2030 });
+
+  // helper to add a mesh
+  function add(geom, mat, x, y, z, rx=0, ry=0, rz=0) {
+    const m = new THREE.Mesh(geom, mat);
+    m.position.set(x, y, z); m.rotation.set(rx, ry, rz);
+    m.castShadow = true; m.receiveShadow = true;
+    danny.add(m); return m;
+  }
+
+  // LEGS (cylinders + sneaker boxes)
+  add(new THREE.CylinderGeometry(0.16, 0.16, 0.85, 12), pants,   -0.18, 0.42, 0);
+  add(new THREE.CylinderGeometry(0.16, 0.16, 0.85, 12), pants,    0.18, 0.42, 0);
+  add(new THREE.BoxGeometry(0.30, 0.16, 0.50), sneaker,           -0.18, 0.08, 0.05);
+  add(new THREE.BoxGeometry(0.30, 0.16, 0.50), sneaker,            0.18, 0.08, 0.05);
+  // sneaker stripes
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  add(new THREE.BoxGeometry(0.31, 0.04, 0.50), stripeMat, -0.18, 0.10, 0.05);
+  add(new THREE.BoxGeometry(0.31, 0.04, 0.50), stripeMat,  0.18, 0.10, 0.05);
+
+  // TORSO — silver undershirt + white lab coat slab over front
+  add(new THREE.BoxGeometry(0.62, 0.85, 0.42), shirt, 0, 1.18, 0);
+  add(new THREE.BoxGeometry(0.66, 0.85, 0.05), coat,  0, 1.18, 0.22);
+  // lab-coat hem
+  add(new THREE.BoxGeometry(0.74, 0.32, 0.46), coat,  0, 0.84, 0);
+
+  // ARMS — cylinder + small hand sphere
+  const armGeom = new THREE.CylinderGeometry(0.10, 0.10, 0.78, 10);
+  add(armGeom, coat, -0.44, 1.20, 0);
+  add(armGeom, coat,  0.44, 1.20, 0);
+  const handGeom = new THREE.SphereGeometry(0.13, 14, 10);
+  add(handGeom, skin, -0.44, 0.75, 0);
+  add(handGeom, skin,  0.44, 0.75, 0);
+
+  // HEAD — sphere with skin tone
+  const headY = 1.92;
+  add(new THREE.SphereGeometry(0.28, 18, 14), skin, 0, headY, 0);
+  // eyes
+  add(new THREE.SphereGeometry(0.055, 10, 8), eyeWhite, -0.10, headY + 0.04, 0.22);
+  add(new THREE.SphereGeometry(0.055, 10, 8), eyeWhite,  0.10, headY + 0.04, 0.22);
+  add(new THREE.SphereGeometry(0.028, 8, 6),  eyeDark,  -0.10, headY + 0.03, 0.26);
+  add(new THREE.SphereGeometry(0.028, 8, 6),  eyeDark,   0.10, headY + 0.03, 0.26);
+  // mouth (small dark box for a smirk)
+  add(new THREE.BoxGeometry(0.16, 0.03, 0.04), eyeDark, 0, headY - 0.10, 0.25);
+  // hair tuft (small dark sphere on the back-top, peeking out from under the cap)
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x3a2418 });
+  add(new THREE.SphereGeometry(0.12, 10, 8), hairMat, 0, headY + 0.18, -0.18);
+
+  // CAP — worn BACKWARDS (brim behind). Dome = squashed sphere; brim = thin box behind.
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.31, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), cap);
+  dome.position.set(0, headY + 0.18, 0);
+  dome.castShadow = true; danny.add(dome);
+  const brim = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.22), cap);
+  brim.position.set(0, headY + 0.12, -0.28);
+  brim.rotation.x = 0.10;
+  brim.castShadow = true; danny.add(brim);
+  // gold SD patch on the front of the cap
+  const patchMat = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.18 });
+  const patch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.10, 0.02), patchMat);
+  patch.position.set(0, headY + 0.18, 0.30);
+  danny.add(patch);
+
+  // Drop shadow under feet
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.55, 24),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32 })
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.02;
+  shadow.renderOrder = -1;
+  danny.userData.shadow = shadow;
+  scene.add(shadow);
+}
+buildDanny();
+scene.add(danny);
+
+// ============ PLAYER STATE + PHYSICS CONSTANTS =======================
+const GRAV = 18, JUMP_V0 = 7.0, WALK_SPEED = 8.0;
+const player = {
+  pos: new THREE.Vector3(0, 2, 0),
+  vel: new THREE.Vector3(0, 0, 0),
+  yaw: 0,
+  onGround: false,
+  radius: 0.4,
+  halfH: 0.70,           // capsule axis half-length (exclusive of radius caps)
 };
+let lastCheckpointPos = player.pos.clone();
+let state = 'play';      // 'play' | 'respawning' | 'won'
+let dieT = 0;
+const dieStartPos = new THREE.Vector3();
+let runT = 0;
+let timeSec = 0;
 
-const character = JSON.parse(JSON.stringify(DEFAULT));
-const meshById = {};
-let selectedId = null;
-
-function geometryFor(type) {
-  switch (type) {
-    case 'box':      return new THREE.BoxGeometry(1, 1, 1);
-    case 'sphere':   return new THREE.SphereGeometry(0.5, 24, 16);
-    case 'cylinder': return new THREE.CylinderGeometry(0.5, 0.5, 1, 24);
-    case 'cone':     return new THREE.ConeGeometry(0.5, 1, 24);
-    case 'torus':    return new THREE.TorusGeometry(0.4, 0.12, 14, 32);
-    case 'capsule':  return new THREE.CapsuleGeometry(0.4, 0.6, 8, 16);
-    default:         return new THREE.BoxGeometry(1, 1, 1);
-  }
-}
-
-function buildMesh(part) {
-  const matOpts = { color: part.color, metalness: 0.35, roughness: 0.45 };
-  if (part.emissive) { matOpts.emissive = part.emissive; matOpts.emissiveIntensity = part.emInt || 0.5; }
-  const mesh = new THREE.Mesh(geometryFor(part.type), new THREE.MeshStandardMaterial(matOpts));
-  mesh.castShadow = true;
+// ============ PLATFORMS (Phase 2 = single test platform) =============
+// platforms[] is the source of truth for collision. Each entry:
+// { mesh, box: THREE.Box3, kind: 'solid' | ... , data: {...} }
+const platforms = [];
+function addBoxPlatform(cx, cy, cz, sx, sy, sz, color, kind = 'solid') {
+  const geom = new THREE.BoxGeometry(sx, sy, sz);
+  const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.10, roughness: 0.65 });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.position.set(cx, cy, cz);
   mesh.receiveShadow = true;
-  applyXform(mesh, part);
-  mesh.userData.partId = part.id;
+  mesh.castShadow = true;
   scene.add(mesh);
-  meshById[part.id] = mesh;
+  const box = new THREE.Box3().setFromObject(mesh);
+  platforms.push({ mesh, box, kind, data: {} });
+  return mesh;
 }
 
-function applyXform(mesh, part) {
-  mesh.position.set(part.pos[0], part.pos[1], part.pos[2]);
-  mesh.rotation.set(part.rot[0], part.rot[1], part.rot[2]);
-  mesh.scale.set(part.scale[0], part.scale[1], part.scale[2]);
+// Phase 2 test platform — 8×1×8 green slab, top face at y=0.
+addBoxPlatform(0, -0.5, 0, 8, 1, 8, 0x6bcf6b, 'solid');
+// "START" decal — small yellow box near the +Z edge to indicate the spawn.
+{
+  const decal = new THREE.Mesh(
+    new THREE.BoxGeometry(2.0, 0.06, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.20 })
+  );
+  decal.position.set(0, 0.03, 2.5);
+  decal.receiveShadow = true;
+  scene.add(decal);
 }
 
-function rebuildAll() {
-  for (const id of Object.keys(meshById)) {
-    const m = meshById[id];
-    scene.remove(m);
-    m.geometry.dispose();
-    m.material.dispose();
-    delete meshById[id];
+// ============ AUDIO ==================================================
+// Lifted/adapted from runner. Web Audio synthesis only — no MP3s for
+// Phase 2. Lazy init on first user gesture (iOS Safari).
+const AUDIO = { ctx: null, master: null, sfxGain: null, initialized: false, unlocked: false,
+                master_vol: 0.7, sfx_vol: 0.65 };
+function initAudio() {
+  if (AUDIO.initialized) return;
+  try {
+    AUDIO.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    AUDIO.master = AUDIO.ctx.createGain(); AUDIO.master.gain.value = AUDIO.master_vol;
+    AUDIO.master.connect(AUDIO.ctx.destination);
+    AUDIO.sfxGain = AUDIO.ctx.createGain(); AUDIO.sfxGain.gain.value = AUDIO.sfx_vol;
+    AUDIO.sfxGain.connect(AUDIO.master);
+    AUDIO.initialized = true;
+  } catch (e) { console.warn('audio init failed', e); }
+}
+function unlockAudio() {
+  if (AUDIO.unlocked) return;
+  initAudio();
+  if (!AUDIO.ctx) return;
+  if (AUDIO.ctx.state === 'suspended') AUDIO.ctx.resume().catch(()=>{});
+  // warm the iOS AVAudioSession with a 1-frame silent buffer
+  try {
+    const buf = AUDIO.ctx.createBuffer(1, 1, 22050);
+    const src = AUDIO.ctx.createBufferSource();
+    src.buffer = buf; src.connect(AUDIO.master); src.start(0);
+  } catch (_) {}
+  AUDIO.unlocked = true;
+}
+function tone(freq, dur, type = 'sine', vol = 0.5, attack = 0.005, decay = 0.06) {
+  if (!AUDIO.unlocked) return;
+  const ctx = AUDIO.ctx, t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(); osc.type = type; osc.frequency.value = freq;
+  const g = ctx.createGain(); g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  osc.connect(g); g.connect(AUDIO.sfxGain);
+  osc.start(t0); osc.stop(t0 + dur + 0.02);
+}
+function noise(dur, vol = 0.3, hp = 800) {
+  if (!AUDIO.unlocked) return;
+  const ctx = AUDIO.ctx, sr = ctx.sampleRate;
+  const buf = ctx.createBuffer(1, Math.floor(sr * dur), sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const g = ctx.createGain(); g.gain.value = vol;
+  const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
+  src.connect(f); f.connect(g); g.connect(AUDIO.sfxGain);
+  src.start(0);
+}
+function sfx(name) {
+  switch (name) {
+    case 'jump':     tone(540, 0.10, 'square', 0.30); tone(720, 0.10, 'sine', 0.18, 0.02); break;
+    case 'land':     noise(0.08, 0.18, 400); tone(180, 0.06, 'sine', 0.18); break;
+    case 'checkpoint': tone(720, 0.10, 'triangle', 0.35); setTimeout(() => tone(1080, 0.16, 'triangle', 0.32), 90); break;
+    case 'respawn': tone(720, 0.08, 'sine', 0.30); setTimeout(() => tone(540, 0.08, 'sine', 0.28), 80);
+                     setTimeout(() => tone(360, 0.18, 'sine', 0.30), 160); break;
+    case 'hit':      noise(0.18, 0.35, 200); tone(120, 0.12, 'sawtooth', 0.40); break;
+    case 'gameover': tone(220, 0.30, 'sawtooth', 0.30); setTimeout(() => tone(110, 0.40, 'sawtooth', 0.35), 220); break;
+    case 'win':      tone(540, 0.10, 'triangle', 0.35); setTimeout(() => tone(720, 0.10, 'triangle', 0.35), 110);
+                     setTimeout(() => tone(900, 0.10, 'triangle', 0.35), 220);
+                     setTimeout(() => tone(1200, 0.30, 'triangle', 0.35), 330); break;
   }
-  for (const part of character.parts) buildMesh(part);
 }
 
-// =================== CAMERA ORBIT =====================
-let azim = 0.5, elev = 0.32, radius = 6.0;
-const camTarget = new THREE.Vector3(0, 1.4, 0);
-function syncCamera() {
-  const x = Math.cos(elev) * Math.sin(azim) * radius;
-  const z = Math.cos(elev) * Math.cos(azim) * radius;
-  const y = Math.sin(elev) * radius;
-  camera.position.set(camTarget.x + x, camTarget.y + y, camTarget.z + z);
-  camera.lookAt(camTarget);
-}
-syncCamera();
+// ============ INPUT — keyboard + mouse ===============================
+const input = { w: false, a: false, s: false, d: false };
+let pointerDown = false, lookActive = false, lookId = -1, lookLX = 0, lookLY = 0;
 
-let dragging = false, lx = 0, ly = 0, dragDist = 0;
-renderer.domElement.addEventListener('pointerdown', e => {
-  dragging = true; lx = e.clientX; ly = e.clientY; dragDist = 0;
-  renderer.domElement.setPointerCapture(e.pointerId);
+function doJump() {
+  if (state !== 'play') return;
+  if (player.onGround) {
+    player.vel.y = JUMP_V0;
+    player.onGround = false;
+    sfx('jump');
+  }
+}
+
+window.addEventListener('keydown', e => {
+  unlockAudio();
+  if (state !== 'play') return;
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    input.w = true;
+  else if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  input.a = true;
+  else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  input.s = true;
+  else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') input.d = true;
+  else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); doJump(); }
 });
-renderer.domElement.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  const dx = e.clientX - lx, dy = e.clientY - ly;
-  azim -= dx * 0.008;
-  elev = Math.max(-0.5, Math.min(1.3, elev + dy * 0.008));
-  dragDist += Math.abs(dx) + Math.abs(dy);
-  lx = e.clientX; ly = e.clientY;
-  syncCamera();
+window.addEventListener('keyup', e => {
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    input.w = false;
+  else if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  input.a = false;
+  else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  input.s = false;
+  else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') input.d = false;
 });
-renderer.domElement.addEventListener('pointerup', e => {
-  dragging = false;
-  // Only treat as a click if the cursor barely moved
-  if (dragDist < 5) onCanvasClick(e);
+
+// Mouse drag on the canvas → camera orbit. Wheel → zoom.
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch') return;     // touch is handled separately
+  pointerDown = true; lookActive = true; lookLX = e.clientX; lookLY = e.clientY;
+  unlockAudio();
 });
-renderer.domElement.addEventListener('wheel', e => {
+window.addEventListener('pointermove', e => {
+  if (!pointerDown || e.pointerType === 'touch') return;
+  const dx = e.clientX - lookLX, dy = e.clientY - lookLY;
+  azim -= dx * 0.006;
+  elev = Math.max(-0.6, Math.min(1.30, elev - dy * 0.006));
+  lookLX = e.clientX; lookLY = e.clientY;
+});
+window.addEventListener('pointerup', e => {
+  if (e.pointerType === 'touch') return;
+  pointerDown = false; lookActive = false;
+});
+canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  radius = Math.max(2.4, Math.min(16, radius + e.deltaY * 0.004));
-  syncCamera();
+  radius = Math.max(3.5, Math.min(16, radius + e.deltaY * 0.005));
 }, { passive: false });
 
-// =================== CLICK-TO-SELECT =====================
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-function onCanvasClick(e) {
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const objs = Object.values(meshById);
-  const hits = raycaster.intersectObjects(objs, false);
-  if (hits.length > 0) {
-    const id = hits[0].object.userData.partId;
-    setSelection(id);
+// On overlay tap (won state): restart.
+document.getElementById('overlay').addEventListener('click', () => {
+  if (state === 'won') reset();
+});
+
+// ============ INPUT — mobile touch controls ==========================
+// Detect touch and turn on the touch UI. Stick: left half. Look: right half.
+// Jump: bottom-right button.
+let stickX = 0, stickY = 0;        // normalized [-1, +1]
+let stickActive = false, stickId = -1, stickCX = 0, stickCY = 0;
+
+const stickZone = document.getElementById('stickZone');
+const stickBase = document.getElementById('stickBase');
+const stickKnob = document.getElementById('stickKnob');
+const lookZone  = document.getElementById('lookZone');
+const jumpBtn   = document.getElementById('jumpBtn');
+
+function placeStickAt(clientX, clientY) {
+  // Anchor the base where the finger touched down, and put the knob centered.
+  const rect = stickZone.getBoundingClientRect();
+  stickCX = clientX - rect.left;
+  stickCY = clientY - rect.top;
+  stickBase.style.left = (stickCX - 55) + 'px';
+  stickBase.style.top  = (stickCY - 55) + 'px';
+  stickKnob.style.left = (stickCX - 28) + 'px';
+  stickKnob.style.top  = (stickCY - 28) + 'px';
+}
+function updateStickAt(clientX, clientY) {
+  const rect = stickZone.getBoundingClientRect();
+  const x = clientX - rect.left - stickCX;
+  const y = clientY - rect.top  - stickCY;
+  const maxR = 55;
+  const r = Math.min(maxR, Math.sqrt(x*x + y*y));
+  const ang = Math.atan2(y, x);
+  const kx = Math.cos(ang) * r, ky = Math.sin(ang) * r;
+  stickKnob.style.left = (stickCX + kx - 28) + 'px';
+  stickKnob.style.top  = (stickCY + ky - 28) + 'px';
+  stickX = kx / maxR;
+  stickY = ky / maxR;
+}
+function resetStick() {
+  stickActive = false; stickId = -1; stickX = 0; stickY = 0;
+  stickZone.classList.remove('live');
+  // hide knob/base by leaving in place at low opacity
+}
+
+stickZone.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+  e.preventDefault();
+  document.body.dataset.touch = '1';
+  unlockAudio();
+  stickActive = true; stickId = e.pointerId;
+  stickZone.classList.add('live');
+  placeStickAt(e.clientX, e.clientY);
+  try { stickZone.setPointerCapture(e.pointerId); } catch (_) {}
+});
+stickZone.addEventListener('pointermove', e => {
+  if (!stickActive || e.pointerId !== stickId) return;
+  e.preventDefault();
+  updateStickAt(e.clientX, e.clientY);
+});
+stickZone.addEventListener('pointerup', e => {
+  if (e.pointerId !== stickId) return;
+  e.preventDefault();
+  resetStick();
+});
+stickZone.addEventListener('pointercancel', () => resetStick());
+
+// look-drag — right half
+lookZone.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+  e.preventDefault();
+  document.body.dataset.touch = '1';
+  unlockAudio();
+  lookActive = true; lookId = e.pointerId; lookLX = e.clientX; lookLY = e.clientY;
+  try { lookZone.setPointerCapture(e.pointerId); } catch (_) {}
+});
+lookZone.addEventListener('pointermove', e => {
+  if (!lookActive || e.pointerId !== lookId) return;
+  e.preventDefault();
+  const dx = e.clientX - lookLX, dy = e.clientY - lookLY;
+  azim -= dx * 0.008;
+  elev = Math.max(-0.6, Math.min(1.30, elev - dy * 0.008));
+  lookLX = e.clientX; lookLY = e.clientY;
+});
+lookZone.addEventListener('pointerup', e => {
+  if (e.pointerId !== lookId) return;
+  e.preventDefault();
+  lookActive = false; lookId = -1;
+});
+lookZone.addEventListener('pointercancel', () => { lookActive = false; lookId = -1; });
+
+jumpBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  document.body.dataset.touch = '1';
+  unlockAudio();
+  jumpBtn.classList.add('live');
+  doJump();
+});
+jumpBtn.addEventListener('pointerup', () => { jumpBtn.classList.remove('live'); });
+jumpBtn.addEventListener('pointercancel', () => { jumpBtn.classList.remove('live'); });
+
+// ============ COLLISION ==============================================
+// Resolve a vertical capsule (center=player.pos, radius=r, halfH=h)
+// against a box AABB by post-move separating-axis correction.
+const _tmpPt = new THREE.Vector3();
+function resolveCapsuleVsBox(box) {
+  const r = player.radius;
+  const halfH = player.halfH;
+  // Capsule axis segment: from (pos - (0,h,0)) to (pos + (0,h,0)).
+  // The closest point on the capsule's axis to a box is the player's pos.x/z
+  // clamped INTO the box's xz, with y picked as the closest point on the
+  // segment to the box's y-range. For simplicity (and at our speeds), we
+  // pick the y on the axis nearest the box's y center.
+  const axisY = Math.max(box.min.y, Math.min(player.pos.y, box.max.y));
+  const ax = player.pos.x;
+  const ay = Math.max(player.pos.y - halfH, Math.min(axisY, player.pos.y + halfH));
+  const az = player.pos.z;
+  // Closest point on box to (ax, ay, az):
+  _tmpPt.set(
+    Math.max(box.min.x, Math.min(ax, box.max.x)),
+    Math.max(box.min.y, Math.min(ay, box.max.y)),
+    Math.max(box.min.z, Math.min(az, box.max.z))
+  );
+  // Vector from box-closest-point to capsule axis point.
+  const dx = ax - _tmpPt.x, dy = ay - _tmpPt.y, dz = az - _tmpPt.z;
+  const distSq = dx*dx + dy*dy + dz*dz;
+  if (distSq >= r * r) return false;
+  const dist = Math.sqrt(distSq) || 1e-6;
+  const pen = r - dist;
+  // Push the player out along the contact normal.
+  const nx = dx / dist, ny = dy / dist, nz = dz / dist;
+  player.pos.x += nx * pen;
+  player.pos.y += ny * pen;
+  player.pos.z += nz * pen;
+  // If the contact normal points mostly +Y, we landed on top.
+  if (ny > 0.6) {
+    if (player.vel.y < 0) {
+      if (!player.onGround) sfx('land');
+      player.vel.y = 0;
+    }
+    player.onGround = true;
+    return true;
+  }
+  // Side contact — kill horizontal velocity in the normal direction.
+  if (Math.abs(nx) > 0.5 || Math.abs(nz) > 0.5) {
+    const vDotN = player.vel.x * nx + player.vel.z * nz;
+    if (vDotN < 0) {
+      player.vel.x -= vDotN * nx;
+      player.vel.z -= vDotN * nz;
+    }
+  }
+  // Hit ceiling — kill upward velocity.
+  if (ny < -0.6 && player.vel.y > 0) player.vel.y = 0;
+  return true;
+}
+
+// ============ STEP =================================================
+function stepPlay(dt) {
+  // 1. Build wishDir in camera-yaw space.
+  // forward direction projected onto XZ: (-sin(azim), 0, -cos(azim)) (camera looks toward -azim).
+  const fx = -Math.sin(azim), fz = -Math.cos(azim);
+  const rx =  Math.cos(azim), rz = -Math.sin(azim);
+  // Move axis combines keyboard WASD + touch joystick (whichever is non-zero).
+  let mx = 0, mz = 0;
+  if (input.w) mz += 1;
+  if (input.s) mz -= 1;
+  if (input.d) mx += 1;
+  if (input.a) mx -= 1;
+  if (stickX || stickY) {
+    // stick y is screen-down +1 = into screen (forward), so mz = -stickY.
+    mx += stickX;
+    mz += -stickY;
+  }
+  const ml = Math.hypot(mx, mz);
+  if (ml > 1) { mx /= ml; mz /= ml; }
+  const wishX = (fx * mz + rx * mx) * WALK_SPEED;
+  const wishZ = (fz * mz + rz * mx) * WALK_SPEED;
+  player.vel.x = wishX;
+  player.vel.z = wishZ;
+  // 2. Gravity.
+  player.vel.y -= GRAV * dt;
+  // 3. Integrate.
+  player.pos.x += player.vel.x * dt;
+  player.pos.y += player.vel.y * dt;
+  player.pos.z += player.vel.z * dt;
+  // 4. Reset ground flag, resolve collisions.
+  player.onGround = false;
+  for (const pl of platforms) resolveCapsuleVsBox(pl.box);
+  // 5. Face the wishDir if moving.
+  if (ml > 0.05) {
+    const targetYaw = Math.atan2(wishX, wishZ);
+    // shortest-arc lerp
+    let diff = targetYaw - player.yaw;
+    while (diff >  Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    player.yaw += diff * Math.min(1, dt * 14);
+  }
+  // 6. Death zone (void below).
+  if (player.pos.y < -10) startRespawn();
+}
+
+function startRespawn() {
+  if (state !== 'play') return;
+  state = 'respawning';
+  dieT = 0;
+  dieStartPos.copy(player.pos);
+  sfx('hit');
+}
+
+function stepRespawn(dt) {
+  // 1.6-s LAUNCH/TUMBLE/LAND lifted from runner v34 (proto/runner/
+  // index.html lines 3367–3411), adapted to player.pos instead of
+  // danny.position.
+  dieT += dt;
+  if (dieT < 0.40) {
+    const p = dieT / 0.40;
+    player.pos.x = dieStartPos.x;
+    player.pos.y = dieStartPos.y + p * 3.4;
+    player.pos.z = dieStartPos.z + p * 1.2;
+    danny.rotation.x = -p * Math.PI * 0.9;
+    danny.rotation.z = p * 0.3;
+    danny.scale.set(1, 1, 1);
+  } else if (dieT < 1.10) {
+    const p = (dieT - 0.40) / 0.70;
+    const peak = dieStartPos.y + 3.4;
+    const land = 0.10;
+    player.pos.y = peak + (land - peak) * (p * p);
+    player.pos.z = dieStartPos.z + 1.2 + p * 1.6;
+    danny.rotation.x = -Math.PI * 0.9 - Math.PI * 2.0 * p;
+    danny.rotation.z = 0.3 + p * 1.1;
+  } else if (dieT < 1.60) {
+    const p = (dieT - 1.10) / 0.50;
+    player.pos.y = 0.10;
+    player.pos.z = dieStartPos.z + 2.8;
+    danny.rotation.x = Math.PI * 0.5;
+    danny.rotation.z = 1.4 + 0.25 * Math.sin(p * Math.PI * 4) * (1 - p);
+    const bounce = 1 - p;
+    danny.scale.set(1 + 0.25 * bounce, 1 - 0.18 * bounce, 1 + 0.25 * bounce);
   } else {
-    setSelection(null);
+    // Respawn complete.
+    state = 'play';
+    player.pos.copy(lastCheckpointPos);
+    player.vel.set(0, 0, 0);
+    danny.rotation.set(0, 0, 0);
+    danny.scale.set(1, 1, 1);
+    sfx('respawn');
   }
 }
 
-function setSelection(id) {
-  // Restore previous selection's emissive
-  if (selectedId && meshById[selectedId]) {
-    const m = meshById[selectedId].material;
-    const part = character.parts.find(p => p.id === selectedId);
-    if (part) {
-      if (part.emissive) { m.emissive = new THREE.Color(part.emissive); m.emissiveIntensity = part.emInt || 0.5; }
-      else { m.emissive = new THREE.Color(0x000000); m.emissiveIntensity = 0; }
+// ============ TICK / RENDER LOOP =====================================
+const clock = new THREE.Clock();
+function tick() {
+  const dt = Math.min(0.05, clock.getDelta());
+  runT += dt;
+
+  if (state === 'play') {
+    timeSec += dt;
+    stepPlay(dt);
+  } else if (state === 'respawning') {
+    stepRespawn(dt);
+  } // 'won' is idle.
+
+  // Sync the visual to the physics position + facing. Danny's local
+  // origin is at his sneaker bottoms (y=0), so to put his feet at the
+  // capsule's lower point (player.pos.y - halfH - radius) we offset
+  // by that full amount.
+  danny.position.set(
+    player.pos.x,
+    player.pos.y - player.halfH - player.radius,
+    player.pos.z
+  );
+  if (state === 'play') danny.rotation.y = player.yaw;
+  // Floor-shadow under the player.
+  const shadow = danny.userData.shadow;
+  if (shadow) {
+    shadow.position.set(player.pos.x, 0.02, player.pos.z);
+    // Find the highest platform under the player to anchor the shadow.
+    let topY = -Infinity;
+    for (const pl of platforms) {
+      if (player.pos.x >= pl.box.min.x - 0.3 && player.pos.x <= pl.box.max.x + 0.3 &&
+          player.pos.z >= pl.box.min.z - 0.3 && player.pos.z <= pl.box.max.z + 0.3 &&
+          pl.box.max.y <= player.pos.y + 0.5) {
+        if (pl.box.max.y > topY) topY = pl.box.max.y;
+      }
     }
-  }
-  selectedId = id;
-  // Boost selected emissive (visual highlight)
-  if (selectedId && meshById[selectedId]) {
-    const m = meshById[selectedId].material;
-    m.emissive = new THREE.Color(0xffffff);
-    m.emissiveIntensity = 0.35;
-  }
-  refreshUI();
-}
-
-// =================== UI =====================
-const partsListEl  = document.getElementById('partsList');
-const partCountEl  = document.getElementById('partCount');
-const xformEl      = document.getElementById('xform');
-const floatStatus  = document.getElementById('floatStatus');
-
-function refreshPartsList() {
-  partsListEl.innerHTML = '';
-  partCountEl.textContent = '(' + character.parts.length + ')';
-  for (const part of character.parts) {
-    const li = document.createElement('li');
-    if (part.id === selectedId) li.classList.add('sel');
-    const lbl = document.createElement('span');
-    lbl.textContent = part.id;
-    const tag = document.createElement('small');
-    tag.textContent = part.type;
-    li.appendChild(lbl);
-    li.appendChild(tag);
-    li.addEventListener('click', () => setSelection(part.id));
-    partsListEl.appendChild(li);
-  }
-}
-
-function makeAxisRow(part, group, axisIdx, min, max, step) {
-  const row = document.createElement('div');
-  row.className = 'row';
-  const lbl = document.createElement('label'); lbl.textContent = 'XYZ'[axisIdx];
-  const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = min; slider.max = max; slider.step = step;
-  slider.value = part[group][axisIdx];
-  const num = document.createElement('input');
-  num.type = 'number'; num.step = step; num.value = part[group][axisIdx].toFixed(3);
-  function commit(v) {
-    const f = parseFloat(v);
-    if (Number.isNaN(f)) return;
-    part[group][axisIdx] = f;
-    if (meshById[part.id]) applyXform(meshById[part.id], part);
-    slider.value = f;
-    num.value = f.toFixed(3);
-    autosave();
-  }
-  slider.addEventListener('input', () => commit(slider.value));
-  num.addEventListener('input', () => commit(num.value));
-  row.appendChild(lbl); row.appendChild(slider); row.appendChild(num);
-  return row;
-}
-
-function refreshXform() {
-  xformEl.innerHTML = '';
-  if (!selectedId) {
-    xformEl.innerHTML = '<div style="color:#6d7398;font-size:12px;padding:4px 0">No part selected. Click a part in the list or in the 3D view.</div>';
-    floatStatus.textContent = 'No selection';
-    return;
-  }
-  const part = character.parts.find(p => p.id === selectedId);
-  if (!part) { selectedId = null; refreshXform(); return; }
-  floatStatus.textContent = part.id + ' · ' + part.type;
-
-  // ID rename
-  const idGrp = document.createElement('div'); idGrp.className = 'grp';
-  idGrp.innerHTML = '<div class="head">Part ID</div>';
-  const idInput = document.createElement('input');
-  idInput.type = 'text'; idInput.value = part.id;
-  idInput.style.cssText = 'width:100%;box-sizing:border-box;background:#0f1320;color:#e8ecf3;border:1px solid #2a3144;border-radius:3px;padding:4px 6px;font-size:12px';
-  idInput.addEventListener('change', () => {
-    const newId = idInput.value.trim();
-    if (!newId || newId === part.id) return;
-    if (character.parts.some(p => p.id === newId)) { idInput.value = part.id; alert('That ID is already taken.'); return; }
-    meshById[newId] = meshById[part.id]; delete meshById[part.id];
-    meshById[newId].userData.partId = newId;
-    part.id = newId;
-    selectedId = newId;
-    refreshUI();
-  });
-  idGrp.appendChild(idInput);
-  xformEl.appendChild(idGrp);
-
-  // Position group
-  const posGrp = document.createElement('div'); posGrp.className = 'grp';
-  posGrp.innerHTML = '<div class="head">Position (world units)</div>';
-  for (let i = 0; i < 3; i++) posGrp.appendChild(makeAxisRow(part, 'pos', i, -3, 3, 0.005));
-  xformEl.appendChild(posGrp);
-
-  // Rotation group
-  const rotGrp = document.createElement('div'); rotGrp.className = 'grp';
-  rotGrp.innerHTML = '<div class="head">Rotation (radians, ±π)</div>';
-  for (let i = 0; i < 3; i++) rotGrp.appendChild(makeAxisRow(part, 'rot', i, -Math.PI, Math.PI, 0.01));
-  xformEl.appendChild(rotGrp);
-
-  // Scale group
-  const sclGrp = document.createElement('div'); sclGrp.className = 'grp';
-  sclGrp.innerHTML = '<div class="head">Scale</div>';
-  for (let i = 0; i < 3; i++) sclGrp.appendChild(makeAxisRow(part, 'scale', i, 0.02, 3, 0.005));
-  xformEl.appendChild(sclGrp);
-
-  // Color group
-  const colGrp = document.createElement('div'); colGrp.className = 'grp';
-  colGrp.innerHTML = '<div class="head">Color</div>';
-  const colRow = document.createElement('div'); colRow.className = 'row';
-  colRow.style.gridTemplateColumns = '1fr';
-  const colorInput = document.createElement('input');
-  colorInput.type = 'color';
-  colorInput.value = part.color || '#cccccc';
-  colorInput.addEventListener('input', () => {
-    part.color = colorInput.value;
-    if (meshById[part.id]) meshById[part.id].material.color.set(part.color);
-    autosave();
-  });
-  colRow.appendChild(colorInput);
-  colGrp.appendChild(colRow);
-
-  // Emissive toggle
-  const emRow = document.createElement('div'); emRow.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:6px';
-  const emChk = document.createElement('input');
-  emChk.type = 'checkbox'; emChk.checked = !!part.emissive;
-  const emLbl = document.createElement('span'); emLbl.textContent = 'Emissive (glow)'; emLbl.style.fontSize = '12px';
-  const emColor = document.createElement('input'); emColor.type = 'color'; emColor.value = part.emissive || part.color;
-  emColor.style.width = '40px';
-  emColor.addEventListener('input', () => {
-    if (!part.emissive) return;
-    part.emissive = emColor.value;
-    meshById[part.id].material.emissive.set(part.emissive);
-    autosave();
-  });
-  emChk.addEventListener('change', () => {
-    if (emChk.checked) {
-      part.emissive = part.emissive || emColor.value;
-      part.emInt = part.emInt || 0.6;
-      meshById[part.id].material.emissive = new THREE.Color(part.emissive);
-      meshById[part.id].material.emissiveIntensity = part.emInt;
-    } else {
-      delete part.emissive; delete part.emInt;
-      meshById[part.id].material.emissive = new THREE.Color(0x000000);
-      meshById[part.id].material.emissiveIntensity = 0;
+    if (topY > -Infinity) {
+      shadow.position.y = topY + 0.005;
+      const flight = Math.max(0, (player.pos.y - player.halfH - player.radius) - topY);
+      const k = Math.max(0.35, 1 - flight * 0.18);
+      shadow.scale.set(k, 1, k);
+      shadow.material.opacity = Math.max(0.05, 0.32 - flight * 0.04);
     }
-    autosave();
-    refreshXform();
-  });
-  emRow.appendChild(emChk); emRow.appendChild(emLbl); emRow.appendChild(emColor);
-  colGrp.appendChild(emRow);
-  xformEl.appendChild(colGrp);
-
-  // Action buttons
-  const actGrp = document.createElement('div'); actGrp.className = 'grp';
-  actGrp.style.background = 'transparent'; actGrp.style.border = 'none'; actGrp.style.padding = '4px 0';
-  const dupBtn = document.createElement('button'); dupBtn.textContent = 'Duplicate';
-  dupBtn.style.marginRight = '6px';
-  dupBtn.addEventListener('click', () => {
-    const copy = JSON.parse(JSON.stringify(part));
-    copy.id = part.id + '_copy';
-    let i = 1;
-    while (character.parts.some(p => p.id === copy.id)) { copy.id = part.id + '_copy' + (++i); }
-    copy.pos[0] += 0.15;
-    character.parts.push(copy);
-    buildMesh(copy);
-    setSelection(copy.id);
-    autosave();
-  });
-  const delBtn = document.createElement('button'); delBtn.className = 'danger'; delBtn.textContent = 'Delete';
-  delBtn.addEventListener('click', () => {
-    if (!confirm('Delete part ' + part.id + '?')) return;
-    const idx = character.parts.findIndex(p => p.id === part.id);
-    if (idx >= 0) character.parts.splice(idx, 1);
-    if (meshById[part.id]) {
-      scene.remove(meshById[part.id]);
-      meshById[part.id].geometry.dispose();
-      meshById[part.id].material.dispose();
-      delete meshById[part.id];
-    }
-    selectedId = null;
-    refreshUI();
-    autosave();
-  });
-  actGrp.appendChild(dupBtn); actGrp.appendChild(delBtn);
-  xformEl.appendChild(actGrp);
-}
-
-function refreshUI() {
-  refreshPartsList();
-  refreshXform();
-}
-
-// =================== ADD / EXPORT / RESET =====================
-document.getElementById('addBtn').addEventListener('click', () => {
-  const type = document.getElementById('addType').value;
-  let i = 1;
-  let id = type;
-  while (character.parts.some(p => p.id === id)) id = type + (++i);
-  const part = {
-    id, type,
-    pos: [0, 1.5, 0],
-    rot: [0, 0, 0],
-    scale: [0.3, 0.3, 0.3],
-    color: '#ffd23a',
-  };
-  character.parts.push(part);
-  buildMesh(part);
-  setSelection(id);
-  autosave();
-});
-
-document.getElementById('copyBtn').addEventListener('click', () => {
-  const out = JSON.stringify(character, null, 2);
-  document.getElementById('json').value = out;
-  try { navigator.clipboard.writeText(out); } catch (_) {}
-});
-
-document.getElementById('loadBtn').addEventListener('click', () => {
-  try {
-    const txt = document.getElementById('json').value;
-    if (!txt.trim()) return;
-    const data = JSON.parse(txt);
-    if (!Array.isArray(data.parts)) throw new Error('JSON must have a "parts" array');
-    character.name = data.name || 'Custom';
-    character.parts = data.parts;
-    rebuildAll();
-    selectedId = null;
-    refreshUI();
-    autosave();
-  } catch (e) {
-    alert('Could not load JSON: ' + e.message);
+    shadow.visible = topY > -Infinity;
   }
-});
 
-document.getElementById('resetBtn').addEventListener('click', () => {
-  if (!confirm('Reset to default character? Local-saved changes will be lost.')) return;
-  character.name = DEFAULT.name;
-  character.parts = JSON.parse(JSON.stringify(DEFAULT.parts));
-  rebuildAll();
-  selectedId = null;
-  refreshUI();
-  autosave();
-});
+  updateCamera(dt);
+  renderer.render(scene, camera);
 
-document.getElementById('saveBtn').addEventListener('click', () => {
-  try {
-    localStorage.setItem('obby_character', JSON.stringify(character));
-    document.getElementById('saveBtn').textContent = 'Saved ✓';
-    setTimeout(() => { document.getElementById('saveBtn').textContent = 'Save (local)'; }, 900);
-  } catch (e) { alert('Could not save: ' + e.message); }
-});
-document.getElementById('restoreBtn').addEventListener('click', () => {
-  const raw = localStorage.getItem('obby_character');
-  if (!raw) { alert('No saved character.'); return; }
-  try {
-    const data = JSON.parse(raw);
-    character.name = data.name || 'Restored';
-    character.parts = data.parts;
-    rebuildAll();
-    selectedId = null;
-    refreshUI();
-  } catch (e) { alert('Saved data was invalid: ' + e.message); }
-});
+  // HUD updates
+  document.getElementById('ui-time').textContent = formatTime(timeSec);
+  document.getElementById('vsize').textContent = canvas.width + '×' + canvas.height;
 
-// silent autosave on every change
-function autosave() {
-  try { localStorage.setItem('obby_character_auto', JSON.stringify(character)); } catch (_) {}
+  requestAnimationFrame(tick);
 }
 
-// =================== INIT =====================
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const ss = Math.floor(s - m * 60);
+  return m + ':' + String(ss).padStart(2, '0');
+}
+
+// ============ RESET ==================================================
+function reset() {
+  state = 'play';
+  player.pos.set(0, 2, 0);
+  player.vel.set(0, 0, 0);
+  player.yaw = 0;
+  player.onGround = false;
+  lastCheckpointPos.copy(player.pos);
+  timeSec = 0;
+  dieT = 0;
+  danny.rotation.set(0, 0, 0);
+  danny.scale.set(1, 1, 1);
+  document.getElementById('overlay').classList.remove('on');
+}
+
+// ============ INIT / RESIZE ==========================================
 function resize() {
-  const w = viewEl.clientWidth, h = viewEl.clientHeight;
+  const w = window.innerWidth, h = window.innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / Math.max(1, h);
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 100));
 
-// Load autosaved character if present, else default.
-try {
-  const raw = localStorage.getItem('obby_character_auto');
-  if (raw) {
-    const data = JSON.parse(raw);
-    if (Array.isArray(data.parts)) {
-      character.name = data.name || 'Computer';
-      character.parts = data.parts;
-    }
-  }
-} catch (_) {}
-
-rebuildAll();
-refreshUI();
-resize();
-
-function loop() {
-  renderer.render(scene, camera);
-  requestAnimationFrame(loop);
+// Show the touch UI on touch-capable devices.
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+  document.body.dataset.touch = '1';
 }
-loop();
+
+// Pre-position camera so the first frame isn't a hard snap.
+camPos.set(0, 4.0, 7.0);
+camTgt.set(0, 1.0, 0);
+camera.position.copy(camPos);
+camera.lookAt(camTgt);
+
+resize();
+tick();
 </script>
 </body>
 </html>
