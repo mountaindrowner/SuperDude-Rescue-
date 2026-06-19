@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.4 — base Super Dude Danny design</title>
+<title>Super Dude OBBY v4.5 — Roblox-ified Danny + review mode</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -23,6 +23,21 @@
            background: rgba(0,255,200,0.18); color: #00ffc8; font-weight: 800; letter-spacing: 2px;
            border: 1.5px solid rgba(0,255,200,0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
            font-size: 15px; text-shadow: 0 0 8px rgba(0,255,200,0.4); }
+
+  /* v4.5: Character Review HUD — C toggles. Shows when state==='review'.
+     Top-center panel with pose name + 1-5 hotkeys + exit hint. */
+  #review { position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            padding: 10px 18px;
+            background: rgba(20,24,38,0.78); color: #e8ecf3;
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+            font-size: 13px; line-height: 1.5; letter-spacing: 1px;
+            border-radius: 10px; border: 1.5px solid rgba(70,240,255,0.55);
+            box-shadow: 0 0 16px rgba(70,240,255,0.30);
+            pointer-events: none; z-index: 15; display: none; min-width: 320px;
+            text-align: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  #review.on { display: block; }
+  #review b { color: #46f0ff; font-weight: 700; }
+  #review .pose { color: #ffd23a; font-weight: 800; letter-spacing: 2px; }
 
   /* v4: Debug HUD — F3 toggles. Top-right, mono, half-opacity. */
   #debug { position: fixed; top: 80px; right: 12px; padding: 8px 10px;
@@ -103,7 +118,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.4 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.5 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -117,6 +132,12 @@
   <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug</div>
 </div>
 <div id="toast"><span class="pill" id="toast-text">CHECKPOINT 1</span></div>
+<div id="review">
+  <div><b>CHARACTER REVIEW</b> &nbsp; · &nbsp; <span class="pose" id="rev-pose">1 IDLE</span></div>
+  <div style="opacity:0.78; font-size:11px; margin-top:4px;">
+    1 idle · 2 run · 3 jump · 4 fall · 5 land &nbsp;|&nbsp; <b>C</b> or <b>Esc</b> to exit
+  </div>
+</div>
 <div id="debug">
   <div><b>FPS</b> <span id="dbg-fps">—</span></div>
   <div><b>draws</b> <span id="dbg-draws">—</span></div>
@@ -381,13 +402,20 @@ function updateCamera(dt) {
     while (diff < -Math.PI) diff += Math.PI * 2;
     azim += diff * Math.min(1, dt * 0.6);     // 4× slower than v4.2
   }
+  // v4.5 review mode: slow turntable orbit so we can inspect Danny from
+  // all sides. ~18 sec per full rotation. User can still drag to override.
+  if (state === 'review' && !lookActive && autoFollowCooldown === 0) {
+    azim += dt * 0.35;
+  }
 
   // Look target: head height of the player + small forward look-ahead
   // based on smoothed velocity. The look-ahead is shorter than v4.2
   // (1.0 vs 1.5) so the player stays more centered and the camera
-  // lurches less when direction changes.
+  // lurches less when direction changes. In review mode we target the
+  // torso center instead of the head so glasses + coat + belt all sit
+  // in the middle of the frame.
   let tx = player.pos.x;
-  const ty = player.pos.y + 1.0;
+  const ty = state === 'review' ? player.pos.y + 0.3 : player.pos.y + 1.0;
   let tz = player.pos.z;
   if (state === 'play' && smoothSpeed > 0.5) {
     const AHEAD = 1.0;
@@ -458,7 +486,8 @@ function buildDanny() {
     const hip = new THREE.Group();
     hip.position.set(side * 0.18, LEG_LEN, 0);
     danny.add(hip);
-    const leg = mesh(new THREE.CylinderGeometry(0.18, 0.18, LEG_LEN, 12), MAT.charPants);
+    // v4.5 Roblox-ify — was CylinderGeometry; box reads as blocky toy
+    const leg = mesh(new THREE.BoxGeometry(0.26, LEG_LEN, 0.26), MAT.charPants);
     leg.position.y = -LEG_LEN / 2;
     hip.add(leg);
     // CHUNKY SNEAKER — 20% wider, 12% taller, 12% deeper than v4.
@@ -490,7 +519,10 @@ function buildDanny() {
   danny.add(torsoGrp);
   rigParts.body = torsoGrp;
 
-  const torso = mesh(new THREE.CapsuleGeometry(0.32, 0.46, 6, 14), MAT.charShirt);
+  // v4.5 Roblox-ify — was CapsuleGeometry; box reads as blocky toy.
+  // Bounding matches the old capsule (0.64 × 1.10 × 0.64) but trimmed
+  // to 0.92 tall + 0.44 deep so it feels Roblox-flat at the back.
+  const torso = mesh(new THREE.BoxGeometry(0.64, 0.92, 0.44), MAT.charShirt);
   torso.position.y = TORSO_Y;
   torsoGrp.add(torso);
   const coatFront = mesh(new THREE.BoxGeometry(0.62, 0.78, 0.06), MAT.charCoat);
@@ -544,7 +576,8 @@ function buildDanny() {
     const sh = new THREE.Group();
     sh.position.set(side * 0.44, 1.59, 0);
     danny.add(sh);
-    const arm = mesh(new THREE.CylinderGeometry(0.11, 0.11, ARM_LEN, 10), MAT.charCoat);
+    // v4.5 Roblox-ify — was CylinderGeometry; box reads as blocky toy
+    const arm = mesh(new THREE.BoxGeometry(0.22, ARM_LEN, 0.22), MAT.charCoat);
     arm.position.y = -ARM_LEN / 2;
     sh.add(arm);
     const hand = mesh(new THREE.SphereGeometry(0.15, 14, 10), MAT.charSkin);
@@ -670,6 +703,89 @@ scene.add(danny);
 // Stride phase accumulates while moving; lerps everything back to a
 // neutral pose when stopped (or while respawning).
 let stridePhase = 0;
+
+// ============================================================
+// CHARACTER REVIEW MODE — press C in game to enter
+// ============================================================
+// Lets us inspect Danny from all angles + flip through poses to
+// iterate the design without leaving the game. Camera auto-orbits
+// at ~18 sec/rotation; 1-5 set the pose; ESC or C exits.
+let reviewPose = 1;          // 1 idle / 2 run / 3 jump / 4 fall / 5 land
+const REVIEW_POSE_NAMES = { 1: '1 IDLE', 2: '2 RUN', 3: '3 JUMP', 4: '4 FALL', 5: '5 LAND' };
+function enterReview() {
+  if (state === 'review') return;
+  state = 'review';
+  reviewPose = 1;
+  document.getElementById('review').classList.add('on');
+  document.getElementById('rev-pose').textContent = REVIEW_POSE_NAMES[reviewPose];
+}
+function exitReview() {
+  if (state !== 'review') return;
+  state = 'play';
+  document.getElementById('review').classList.remove('on');
+  danny.rotation.x = 0;
+  danny.rotation.z = 0;
+  danny.scale.set(1, 1, 1);
+}
+function setReviewPose(n) {
+  reviewPose = n;
+  document.getElementById('rev-pose').textContent = REVIEW_POSE_NAMES[n] || ('? ' + n);
+}
+// Drives Danny's rig while in review mode. Smoothly lerps every
+// joint toward the target pose so toggling 1→2→3 reads cleanly.
+function tickRigReview(dt) {
+  const k = Math.min(1, dt * 8);
+  let tHipL = 0, tHipR = 0, tShoL = 0, tShoR = 0;
+  let tSholZ = 0, tShoRZ = 0;
+  let tBodyTiltX = 0, tHeadTiltX = 0;
+  let tScaleY = 1, tScaleXZ = 1;
+  switch (reviewPose) {
+    case 1: /* idle — all zero (defaults above) */ break;
+    case 2: {
+      // Run cycle — increment stridePhase and pose limbs from the sine
+      stridePhase += dt * 6;
+      const swing    = Math.sin(stridePhase) * 0.65;
+      const armSwing = Math.sin(stridePhase) * 0.55;
+      tHipL =  swing;  tHipR = -swing;
+      tShoL = -armSwing; tShoR = armSwing;
+      break;
+    }
+    case 3: {
+      // Jump — knees tucked back, arms up
+      tHipL = -0.55; tHipR = -0.55;
+      tShoL =  1.30; tShoR =  1.30;
+      tBodyTiltX = -0.08;
+      break;
+    }
+    case 4: {
+      // Fall — arms out to sides, slight backward lean
+      tHipL =  0.30; tHipR = -0.30;
+      tShoL = -0.40; tShoR = -0.40;
+      tSholZ = -0.65; tShoRZ = 0.65;
+      tBodyTiltX = -0.18;
+      break;
+    }
+    case 5: {
+      // Land — squash + slight forward lean
+      tScaleY = 0.78; tScaleXZ = 1.18;
+      tBodyTiltX = 0.10;
+      tHeadTiltX = 0.10;
+      break;
+    }
+  }
+  rigParts.hipL.rotation.x += (tHipL - rigParts.hipL.rotation.x) * k;
+  rigParts.hipR.rotation.x += (tHipR - rigParts.hipR.rotation.x) * k;
+  rigParts.shoulderL.rotation.x += (tShoL - rigParts.shoulderL.rotation.x) * k;
+  rigParts.shoulderR.rotation.x += (tShoR - rigParts.shoulderR.rotation.x) * k;
+  rigParts.shoulderL.rotation.z += (tSholZ - rigParts.shoulderL.rotation.z) * k;
+  rigParts.shoulderR.rotation.z += (tShoRZ - rigParts.shoulderR.rotation.z) * k;
+  rigParts.headGrp.rotation.x += (tHeadTiltX - rigParts.headGrp.rotation.x) * k;
+  danny.rotation.x += (tBodyTiltX - danny.rotation.x) * k;
+  danny.scale.y += (tScaleY - danny.scale.y) * k;
+  const sx = (tScaleXZ - danny.scale.x) * k;
+  danny.scale.x += sx; danny.scale.z += sx;
+}
+
 function tickRig(dt, isMoving) {
   const speed = Math.hypot(player.vel.x, player.vel.z);
   if (isMoving) {
@@ -1520,6 +1636,17 @@ function releaseJump() {
 
 window.addEventListener('keydown', e => {
   unlockAudio();
+  // v4.5: review mode toggle / pose hotkeys must run BEFORE the state
+  // guard below (so they work even when state !== 'play').
+  if (e.key === 'c' || e.key === 'C') {
+    if (state === 'review') exitReview(); else enterReview();
+    return;
+  }
+  if (state === 'review') {
+    if (e.key === 'Escape') { exitReview(); return; }
+    if (/^[1-5]$/.test(e.key)) { setReviewPose(parseInt(e.key, 10)); return; }
+    return;     // swallow everything else while reviewing
+  }
   if (state !== 'play') return;
   if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    input.w = true;
   else if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  input.a = true;
@@ -1970,24 +2097,30 @@ function tick() {
     stepPlay(dt);
   } else if (state === 'respawning') {
     stepRespawn(dt);
+  } else if (state === 'review') {
+    // v4.5: review mode — physics paused, Danny holds the selected
+    // pose. The camera auto-orbits (handled in updateCamera).
+    tickRigReview(dt);
   } // 'won' is idle.
 
-  // Sync the visual to the physics position + facing. Danny's local
-  // origin is at his sneaker bottoms (y=0), so to put his feet at the
-  // capsule's lower point (player.pos.y - halfH - radius) we offset
-  // by that full amount.
-  danny.position.set(
-    player.pos.x,
-    player.pos.y - player.halfH - player.radius,
-    player.pos.z
-  );
+  // Sync the visual to the physics position + facing. In 'review' we
+  // freeze Danny exactly where he was when C was pressed, so the camera
+  // can orbit him cleanly.
+  if (state !== 'review') {
+    danny.position.set(
+      player.pos.x,
+      player.pos.y - player.halfH - player.radius,
+      player.pos.z
+    );
+  }
   if (state === 'play') danny.rotation.y = player.yaw;
 
   // v3: run/idle animation — only when on the ground in play state so
-  // limbs don't flap mid-air or mid-tumble.
+  // limbs don't flap mid-air or mid-tumble. Review mode runs its own
+  // pose rig above, so skip the standard rig tick there.
   const moving = state === 'play' && player.onGround &&
                  Math.hypot(player.vel.x, player.vel.z) > 0.8;
-  tickRig(dt, moving);
+  if (state !== 'review') tickRig(dt, moving);
 
   // v4 Pass B-lite: landing-squash decay. Owns Danny's scale only
   // during 'play' — 'respawning' has its own scale animation.
