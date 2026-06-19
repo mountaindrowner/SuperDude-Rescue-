@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.3 — looser camera (path-following)</title>
+<title>Super Dude OBBY v4.4 — base Super Dude Danny design</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -103,7 +103,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.3 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v4.4 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -292,6 +292,17 @@ const MAT = {
   charEyeD:    toyMat(0x1a2030),
   charStripe:  toyMat(0xffffff),
   charPatch:   toyMat(0xffd23a, { emissive: 0xffd23a, emissiveIntensity: 0.22 }),
+  // v4.4 base-Danny additions — glasses + scientist details + shoe trim.
+  charGlassRim:  toyMat(0x1a2030, { roughness: 0.35, metalness: 0.55 }),
+  charGlassLens: toyMat(0x88ccff, { roughness: 0.20, metalness: 0.05,
+                                     transparent: true, opacity: 0.35 }),
+  charLapel:     toyMat(0xdfe6f0, { roughness: 0.55, metalness: 0.10 }),  // slightly cool slab
+  charPocket:    toyMat(0xeaeef4, { roughness: 0.65, metalness: 0.05 }),  // slightly darker than coat
+  charPen:       toyMat(0xffd23a, { emissive: 0xffd23a, emissiveIntensity: 0.55,
+                                     roughness: 0.3, metalness: 0.6 }),
+  charBelt:      toyMat(0x3a2418, { roughness: 0.7,  metalness: 0.25 }),  // brown leather
+  charSideTrim:  toyMat(0x46f0ff, { emissive: 0x46f0ff, emissiveIntensity: 0.30,
+                                     roughness: 0.4, metalness: 0.3 }),  // cyan sneaker accent
   // Hazards (per §10.2)
   lava:        toyMat(THEME.hazard,     { emissive: 0xff2200, emissiveIntensity: 0.55, roughness: 0.55 }),
   lavaTop:     toyMat(0xffb070,         { emissive: 0xff7a20, emissiveIntensity: 1.0,  roughness: 0.35 }),
@@ -412,25 +423,68 @@ function buildDanny() {
     return m;
   }
 
-  // ---- LEGS as hip-pivot groups (so they can swing for the run) ----
+  // ============================================================
+  // v4.4 — BASE SUPER DUDE DANNY DESIGN
+  // ============================================================
+  // Per CLAUDE.md §6.1 ("blocky and toy-like, big readable face,
+  // distinct cap / hair / glasses, chunky shoes, scientist identity")
+  // and §18.8 ("big shapes first, asymmetry via cap patch, hair tuft,
+  // coat lapels, chest pocket"). This is the CANONICAL Danny that all
+  // future cosmetics build on top of via the slot system.
+  //
+  // Changes vs v4 (which had the slot scaffolding but used the v3
+  // prototype proportions):
+  //  • Head 0.30 → 0.34 (more iconic toy proportions)
+  //  • Cap dome 0.31 → 0.35, brim 0.48 → 0.52 (re-fit to bigger head)
+  //  • Eyes 0.055 / 0.028 → 0.065 / 0.035 (readable at gameplay cam dist)
+  //  • Mouth 0.16 → 0.18 wide
+  //  • + Eyebrows (NEW — expression layer)
+  //  • + Default round glasses equipped in glassesSlot (NEW — was empty)
+  //  • + Coat lapels (NEW — asymmetry per §18.8)
+  //  • + Chest pocket + gold pen tip (NEW — scientist identity)
+  //  • + Brown tool belt at hip line (NEW — adventurer detail)
+  //  • Arms 0.10 → 0.11 radius, hands 0.13 → 0.15 (chunkier)
+  //  • Legs 0.16 → 0.18 radius (chunkier)
+  //  • Shoes 0.30/0.16/0.50 → 0.36/0.18/0.56 (chunky toy sneakers)
+  //  • + Cyan side trim on each shoe (NEW — signature accent color)
+  //  • + Dark crisscross laces on shoes (NEW — sneaker detail)
+  //
+  // The cosmetic slots (hatSlot / hairSlot / glassesSlot / shirtSlot /
+  // backSlot / effectSlot) all remain usable for later customization.
+
+  // ---- LEGS as hip-pivot groups (chunkier per §6.1) ----------------
   const LEG_LEN = 0.85;
   for (const side of [-1, +1]) {
     const hip = new THREE.Group();
     hip.position.set(side * 0.18, LEG_LEN, 0);
     danny.add(hip);
-    const leg = mesh(new THREE.CylinderGeometry(0.16, 0.16, LEG_LEN, 12), MAT.charPants);
+    const leg = mesh(new THREE.CylinderGeometry(0.18, 0.18, LEG_LEN, 12), MAT.charPants);
     leg.position.y = -LEG_LEN / 2;
     hip.add(leg);
-    const shoe = mesh(new THREE.BoxGeometry(0.30, 0.16, 0.50), MAT.charShoe);
-    shoe.position.set(0, -LEG_LEN + 0.08, 0.05);
+    // CHUNKY SNEAKER — 20% wider, 12% taller, 12% deeper than v4.
+    const shoe = mesh(new THREE.BoxGeometry(0.36, 0.18, 0.56), MAT.charShoe);
+    shoe.position.set(0, -LEG_LEN + 0.09, 0.05);
     hip.add(shoe);
-    const stripe = mesh(new THREE.BoxGeometry(0.31, 0.04, 0.50), MAT.charStripe);
+    // White Velcro-style stripe wrapping the shoe (midsole accent)
+    const stripe = mesh(new THREE.BoxGeometry(0.37, 0.04, 0.56), MAT.charStripe);
     stripe.position.set(0, -LEG_LEN + 0.10, 0.05);
     hip.add(stripe);
+    // v4.4 — cyan side accent on the OUTER face of each shoe (signature
+    // Super Dude color). Outer side is in the direction of `side` in
+    // hip-local coords (left hip outer = -X, right hip outer = +X).
+    const sideTrim = mesh(new THREE.BoxGeometry(0.025, 0.06, 0.42), MAT.charSideTrim);
+    sideTrim.position.set(side * 0.19, -LEG_LEN + 0.10, 0.05);
+    hip.add(sideTrim);
+    // v4.4 — sneaker laces (dark crisscross on top of shoe)
+    for (let i = 0; i < 3; i++) {
+      const lace = mesh(new THREE.BoxGeometry(0.20, 0.018, 0.025), MAT.charEyeD);
+      lace.position.set(0, -LEG_LEN + 0.18, 0.05 + (i - 1) * 0.10);
+      hip.add(lace);
+    }
     rigParts[side < 0 ? 'hipL' : 'hipR'] = hip;
   }
 
-  // ---- TORSO group (shirt + coat slabs) + shirtSlot -----------------
+  // ---- TORSO group (shirt + coat) + scientist details + slots ------
   const TORSO_Y = 1.18;
   const torsoGrp = new THREE.Group();
   danny.add(torsoGrp);
@@ -445,83 +499,155 @@ function buildDanny() {
   const hem = mesh(new THREE.BoxGeometry(0.72, 0.30, 0.50), MAT.charCoat);
   hem.position.set(0, 0.86, 0);
   torsoGrp.add(hem);
-  // shirtSlot — empty by default; cosmetics factory can populate later
+
+  // v4.4 — COAT LAPELS — two small slabs flaring outward from the
+  // collar (top corners of the coat front). Reads as a lab-coat collar
+  // per §18.8 asymmetry guidance.
+  for (const side of [-1, +1]) {
+    const lapel = mesh(new THREE.BoxGeometry(0.14, 0.22, 0.04), MAT.charLapel);
+    lapel.position.set(side * 0.20, TORSO_Y + 0.28, 0.33);
+    lapel.rotation.z = side * 0.30;     // V shape — outer edges flare up
+    torsoGrp.add(lapel);
+  }
+
+  // v4.4 — CHEST POCKET on viewer-left of the coat (Danny's right) +
+  // gold PEN TIP sticking out the top. Scientist identity per §6.1.
+  const pocket = mesh(new THREE.BoxGeometry(0.14, 0.12, 0.03), MAT.charPocket);
+  pocket.position.set(-0.16, TORSO_Y + 0.04, 0.34);
+  torsoGrp.add(pocket);
+  const penBody = mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.14, 8), MAT.charPen);
+  penBody.position.set(-0.16, TORSO_Y + 0.16, 0.35);
+  torsoGrp.add(penBody);
+  const penClip = mesh(new THREE.BoxGeometry(0.02, 0.06, 0.005), MAT.charPen);
+  penClip.position.set(-0.155, TORSO_Y + 0.14, 0.36);
+  torsoGrp.add(penClip);
+
+  // v4.4 — TOOL BELT — thin brown band wrapping the bottom of the torso
+  // just above the hem. Adventurer detail.
+  const belt = mesh(new THREE.BoxGeometry(0.74, 0.07, 0.52), MAT.charBelt);
+  belt.position.set(0, 1.02, 0);
+  torsoGrp.add(belt);
+  // little gold buckle on the belt front
+  const buckle = mesh(new THREE.BoxGeometry(0.10, 0.06, 0.02), MAT.charPatch);
+  buckle.position.set(0, 1.02, 0.27);
+  torsoGrp.add(buckle);
+
+  // shirtSlot / backSlot / effectSlot — empty by default; cosmetics
+  // factory can populate later.
   rigParts.shirtSlot = new THREE.Group(); torsoGrp.add(rigParts.shirtSlot);
-  // backSlot — for backpacks / capes / tool pouches
   rigParts.backSlot  = new THREE.Group(); rigParts.backSlot.position.set(0, TORSO_Y, -0.30); torsoGrp.add(rigParts.backSlot);
-  // effectSlot — for trail / aura effects pinned to torso center
   rigParts.effectSlot = new THREE.Group(); rigParts.effectSlot.position.set(0, TORSO_Y, 0); torsoGrp.add(rigParts.effectSlot);
 
-  // ---- ARMS as shoulder-pivot groups -------------------------------
+  // ---- ARMS as shoulder-pivot groups (chunkier) --------------------
   const ARM_LEN = 0.78;
   for (const side of [-1, +1]) {
     const sh = new THREE.Group();
     sh.position.set(side * 0.44, 1.59, 0);
     danny.add(sh);
-    const arm = mesh(new THREE.CylinderGeometry(0.10, 0.10, ARM_LEN, 10), MAT.charCoat);
+    const arm = mesh(new THREE.CylinderGeometry(0.11, 0.11, ARM_LEN, 10), MAT.charCoat);
     arm.position.y = -ARM_LEN / 2;
     sh.add(arm);
-    const hand = mesh(new THREE.SphereGeometry(0.13, 14, 10), MAT.charSkin);
+    const hand = mesh(new THREE.SphereGeometry(0.15, 14, 10), MAT.charSkin);
     hand.position.y = -ARM_LEN + 0.04;
     sh.add(hand);
     rigParts[side < 0 ? 'shoulderL' : 'shoulderR'] = sh;
   }
 
   // ---- HEAD group + slots ------------------------------------------
-  // Slight proportion tweak per §6.1 — head sphere bumped 0.28 → 0.30
-  // for more readable face from the gameplay camera distance.
+  // v4.4 — head bumped 0.30 → 0.34 for an iconic toy proportion (per
+  // §6.1 "big head, readable face"). Cap dome / brim re-fit; eyes,
+  // mouth, glasses positions re-tuned for the bigger head sphere.
   const headY = 1.92;
   const headGrp = new THREE.Group();
   headGrp.position.y = headY;
   danny.add(headGrp);
   rigParts.headGrp = headGrp;
 
-  rigParts.head = mesh(new THREE.SphereGeometry(0.30, 18, 14), MAT.charSkin);
+  rigParts.head = mesh(new THREE.SphereGeometry(0.34, 18, 14), MAT.charSkin);
   headGrp.add(rigParts.head);
 
-  // face group — eyes, mouth — kept on headGrp so glassesSlot can attach
+  // EYES — bigger whites + bigger dark pupils so they read from
+  // gameplay camera distance (anti-pattern §18.8: tiny features).
   function eye(side, dx, dy, dz, r, mat) {
     const e = mesh(new THREE.SphereGeometry(r, 10, 8), mat);
     e.position.set(side * dx, dy, dz);
     headGrp.add(e); return e;
   }
-  eye(-1, 0.10, 0.04, 0.24, 0.055, MAT.charEyeW);
-  eye( 1, 0.10, 0.04, 0.24, 0.055, MAT.charEyeW);
-  eye(-1, 0.10, 0.03, 0.28, 0.028, MAT.charEyeD);
-  eye( 1, 0.10, 0.03, 0.28, 0.028, MAT.charEyeD);
-  const mouth = mesh(new THREE.BoxGeometry(0.16, 0.03, 0.04), MAT.charEyeD);
-  mouth.position.set(0, -0.10, 0.27);
+  eye(-1, 0.11, 0.04, 0.27, 0.065, MAT.charEyeW);
+  eye( 1, 0.11, 0.04, 0.27, 0.065, MAT.charEyeW);
+  eye(-1, 0.11, 0.03, 0.31, 0.035, MAT.charEyeD);
+  eye( 1, 0.11, 0.03, 0.31, 0.035, MAT.charEyeD);
+
+  // v4.4 — EYEBROWS — small dark slabs above each eye, tilted at the
+  // outer edge for a friendly/alert expression.
+  for (const side of [-1, +1]) {
+    const brow = mesh(new THREE.BoxGeometry(0.11, 0.025, 0.035), MAT.charHair);
+    brow.position.set(side * 0.11, 0.14, 0.30);
+    brow.rotation.z = side * -0.18;     // outer ends raised
+    headGrp.add(brow);
+  }
+
+  // MOUTH — slightly bigger smirk so it reads from gameplay distance.
+  const mouth = mesh(new THREE.BoxGeometry(0.18, 0.035, 0.04), MAT.charEyeD);
+  mouth.position.set(0, -0.10, 0.31);
   headGrp.add(mouth);
 
-  // glassesSlot — empty for now, attaches to head
+  // glassesSlot — DEFAULT EQUIPPED in v4.4 (was empty). Round black
+  // rims with a faint cyan lens hint, joined by a slim bridge across
+  // the nose. Slot still re-addressable for swap.
   rigParts.glassesSlot = new THREE.Group();
-  rigParts.glassesSlot.position.set(0, 0.04, 0.28);
+  rigParts.glassesSlot.position.set(0, 0.04, 0.32);
   headGrp.add(rigParts.glassesSlot);
+  {
+    // Frames — flat torus per eye (rim only); lens = a slim disk inset.
+    for (const side of [-1, +1]) {
+      const rim = mesh(new THREE.TorusGeometry(0.08, 0.018, 8, 18), MAT.charGlassRim);
+      rim.position.set(side * 0.11, 0, 0);
+      rim.rotation.y = Math.PI / 2;       // face forward (torus default lies in XY)
+      rigParts.glassesSlot.add(rim);
+      const lens = mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 14), MAT.charGlassLens);
+      lens.position.set(side * 0.11, 0, -0.01);
+      lens.rotation.x = Math.PI / 2;      // face forward (cylinder default is Y-axis)
+      rigParts.glassesSlot.add(lens);
+    }
+    // Bridge across nose
+    const bridge = mesh(new THREE.BoxGeometry(0.08, 0.018, 0.018), MAT.charGlassRim);
+    bridge.position.set(0, 0.01, 0);
+    rigParts.glassesSlot.add(bridge);
+    // Small temple stubs (where arms would hinge — purely visual)
+    for (const side of [-1, +1]) {
+      const temple = mesh(new THREE.BoxGeometry(0.04, 0.018, 0.018), MAT.charGlassRim);
+      temple.position.set(side * 0.18, 0, -0.02);
+      rigParts.glassesSlot.add(temple);
+    }
+  }
 
-  // hairSlot — populated with the default tuft (cosmetics can swap)
+  // hairSlot — default brown tuft peeking from under the cap. Position
+  // adjusted slightly for the bigger head.
   rigParts.hairSlot = new THREE.Group();
   headGrp.add(rigParts.hairSlot);
   {
-    const hair = mesh(new THREE.SphereGeometry(0.12, 10, 8), MAT.charHair);
-    hair.position.set(0, 0.18, -0.18);
+    const hair = mesh(new THREE.SphereGeometry(0.13, 10, 8), MAT.charHair);
+    hair.position.set(0, 0.18, -0.22);
     rigParts.hairSlot.add(hair);
   }
 
-  // hatSlot — populated with the default backwards cap (cosmetics can swap)
+  // hatSlot — default backwards red cap with gold SD patch. Cap dome
+  // and brim resized to fit the bigger head.
   rigParts.hatSlot = new THREE.Group();
   headGrp.add(rigParts.hatSlot);
   {
-    const dome = mesh(new THREE.SphereGeometry(0.31, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), MAT.charCap);
+    const dome = mesh(new THREE.SphereGeometry(0.35, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), MAT.charCap);
     dome.position.set(0, 0.18, 0);
     rigParts.hatSlot.add(dome);
-    const brim = mesh(new THREE.BoxGeometry(0.48, 0.04, 0.22), MAT.charCap);
-    brim.position.set(0, 0.12, -0.28);
+    const brim = mesh(new THREE.BoxGeometry(0.52, 0.04, 0.24), MAT.charCap);
+    brim.position.set(0, 0.12, -0.32);
     brim.rotation.x = 0.10;
     rigParts.hatSlot.add(brim);
     // gold SD patch — referenced by rigParts so the cap can pulse on
-    // checkpoint/finish in future passes (Pass C - emotion layer).
-    const patch = mesh(new THREE.BoxGeometry(0.18, 0.10, 0.02), MAT.charPatch);
-    patch.position.set(0, 0.18, 0.30);
+    // checkpoint / finish in future passes (Pass C - emotion layer).
+    const patch = mesh(new THREE.BoxGeometry(0.20, 0.11, 0.02), MAT.charPatch);
+    patch.position.set(0, 0.18, 0.32);
     rigParts.hatSlot.add(patch);
     rigParts.capPatch = patch;
   }
