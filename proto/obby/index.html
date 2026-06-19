@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v2 — Phase 2 Scaffold</title>
+<title>Super Dude OBBY v3 — Phase 3 first map</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #9fd8ff; overflow: hidden;
@@ -39,26 +39,36 @@
   #hint { position: fixed; bottom: 8px; left: 0; right: 0; text-align: center;
           color: #15192a; font-size: 12px; pointer-events: none; opacity: 0.85; }
 
-  /* ---------- mobile touch controls (only shown on touch-capable) ---------- */
+  /* ---------- mobile touch controls (only shown on touch-capable) ----------
+     Layout per Mark v3 request: gameplay = top 80% of screen, controls = bottom
+     ~20% strip. Stick on the left side of the strip, JUMP button on the right.
+     The look-drag area spans the entire top 80% so the player can orbit anywhere
+     above the strip. */
   body:not([data-touch]) #touchUI { display: none; }
   #touchUI { position: fixed; inset: 0; pointer-events: none; z-index: 12; }
-  #stickZone { position: absolute; left: 0; bottom: 0; width: 50vw; height: 55vh;
+  /* Top 80% — anywhere you drag here = orbit the camera */
+  #lookZone { position: absolute; left: 0; right: 0; top: 0; height: 80vh; pointer-events: auto; }
+  /* Bottom 20% strip — translucent dark band for control affordance */
+  #ctrlBar { position: absolute; left: 0; right: 0; bottom: 0; height: 20vh; min-height: 140px;
+             pointer-events: none;
+             background: linear-gradient(180deg, rgba(20,24,38,0.0), rgba(20,24,38,0.45) 60%, rgba(20,24,38,0.60));
+             border-top: 1px solid rgba(255,255,255,0.10); }
+  #stickZone { position: absolute; left: 0; right: 50%; bottom: 0; height: 20vh; min-height: 140px;
                pointer-events: auto; }
   #stickBase, #stickKnob { position: absolute; border-radius: 50%;
-               background: rgba(20,24,38,0.30); border: 2px solid rgba(255,255,255,0.45);
-               box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-               transition: opacity .15s; opacity: 0.45; }
+               background: rgba(20,24,38,0.30); border: 2px solid rgba(255,255,255,0.55);
+               box-shadow: 0 2px 12px rgba(0,0,0,0.30);
+               transition: opacity .12s; opacity: 0.55; pointer-events: none; }
   #stickBase { width: 110px; height: 110px; }
-  #stickKnob { width: 56px; height: 56px; background: rgba(255,255,255,0.85); border: 2px solid rgba(20,24,38,0.6); }
+  #stickKnob { width: 56px; height: 56px; background: rgba(255,255,255,0.92); border: 2px solid rgba(20,24,38,0.65); }
   #stickZone.live #stickBase, #stickZone.live #stickKnob { opacity: 1.0; }
-  #jumpBtn { position: absolute; right: 22px; bottom: 28px; width: 92px; height: 92px;
+  #jumpBtn { position: absolute; right: 24px; bottom: 22px; width: 96px; height: 96px;
              border-radius: 50%; background: rgba(70,240,255,0.78); border: 3px solid #fff;
              color: #15192a; font-weight: 900; font-size: 18px; letter-spacing: 2px;
              box-shadow: 0 4px 14px rgba(0,0,0,0.35); pointer-events: auto;
              display: flex; align-items: center; justify-content: center; user-select: none;
-             touch-action: none; -webkit-touch-callout: none; }
+             touch-action: none; -webkit-touch-callout: none; z-index: 13; }
   #jumpBtn:active, #jumpBtn.live { background: #ffd23a; transform: scale(0.94); }
-  #lookZone { position: absolute; right: 0; top: 0; width: 50vw; bottom: 0; pointer-events: auto; }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -74,7 +84,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v2 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v3 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -89,11 +99,12 @@
 </div>
 
 <div id="touchUI">
+  <div id="lookZone"></div>
+  <div id="ctrlBar"></div>
   <div id="stickZone">
     <div id="stickBase"></div>
     <div id="stickKnob"></div>
   </div>
-  <div id="lookZone"></div>
   <button id="jumpBtn" type="button">JUMP</button>
 </div>
 
@@ -153,17 +164,34 @@ scene.add(fill);
 // head-height offset; lerp toward the desired position each frame.
 const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 240);
 let azim = 0.0;          // radians, around +Y
-let elev = 0.35;         // radians, above horizon
-let radius = 7.0;        // distance from target
+let elev = 0.65;         // v3: raised from 0.35 → 0.65 (~37°, just under 45°
+                         //     per Mark "maybe a little lower than 45°").
+let radius = 7.8;        // v3: slight push-back for the steeper view
+let autoFollowCooldown = 0; // seconds; after user drags, we briefly pause
+                            // auto-camera-follow so manual input isn't fought.
 const camPos  = new THREE.Vector3();
 const camTgt  = new THREE.Vector3();
 const camWish = new THREE.Vector3();
 function updateCamera(dt) {
+  // v3: auto-follow Danny's back when he's moving and the user isn't
+  // dragging. Desired azim = player.yaw + π so the camera sits on the
+  // OPPOSITE side of Danny's facing direction. Shortest-arc lerp at a
+  // slow rate so the camera doesn't whip around behind every wiggle of
+  // the joystick.
+  const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
+  if (autoFollowCooldown > 0) autoFollowCooldown = Math.max(0, autoFollowCooldown - dt);
+  if (state === 'play' && horizSpeed > 0.6 && !lookActive && autoFollowCooldown === 0) {
+    let desired = player.yaw + Math.PI;
+    let diff = desired - azim;
+    while (diff >  Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    azim += diff * Math.min(1, dt * 2.4);
+  }
+
   // Desired look target: head height of the player.
   const tx = player.pos.x;
   const ty = player.pos.y + 1.0;
   const tz = player.pos.z;
-  // Desired camera position from spherical coords.
   const cx = tx + Math.cos(elev) * Math.sin(azim) * radius;
   const cy = ty + Math.sin(elev) * radius;
   const cz = tz + Math.cos(elev) * Math.cos(azim) * radius;
@@ -176,9 +204,11 @@ function updateCamera(dt) {
 }
 
 // ============ DANNY RIG ==============================================
-// Hand-built from primitives. Wrapped in a yaw group so we can rotate
-// the whole figure to face wishDir.
-const danny = new THREE.Group();    // visual root, rotated to face wishDir
+// v3: rebuilt with HIP and SHOULDER pivot groups for run animation, and
+// a capsule torso for a smoother body. Local origin still at sneaker
+// bottoms (y=0) so the visual sits flat on whatever surface he's on.
+const danny  = new THREE.Group();          // root, yaw-rotated to face wishDir
+const rigParts = {};                       // named handles for animation
 function buildDanny() {
   const skin     = new THREE.MeshStandardMaterial({ color: 0xf0c8a0, metalness: 0.05, roughness: 0.7 });
   const coat     = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.15, roughness: 0.55 });
@@ -189,67 +219,111 @@ function buildDanny() {
   const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
   const eyeDark  = new THREE.MeshStandardMaterial({ color: 0x1a2030 });
 
-  // helper to add a mesh
-  function add(geom, mat, x, y, z, rx=0, ry=0, rz=0) {
+  function mesh(geom, mat) {
     const m = new THREE.Mesh(geom, mat);
-    m.position.set(x, y, z); m.rotation.set(rx, ry, rz);
     m.castShadow = true; m.receiveShadow = true;
-    danny.add(m); return m;
+    return m;
   }
 
-  // LEGS (cylinders + sneaker boxes)
-  add(new THREE.CylinderGeometry(0.16, 0.16, 0.85, 12), pants,   -0.18, 0.42, 0);
-  add(new THREE.CylinderGeometry(0.16, 0.16, 0.85, 12), pants,    0.18, 0.42, 0);
-  add(new THREE.BoxGeometry(0.30, 0.16, 0.50), sneaker,           -0.18, 0.08, 0.05);
-  add(new THREE.BoxGeometry(0.30, 0.16, 0.50), sneaker,            0.18, 0.08, 0.05);
-  // sneaker stripes
-  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  add(new THREE.BoxGeometry(0.31, 0.04, 0.50), stripeMat, -0.18, 0.10, 0.05);
-  add(new THREE.BoxGeometry(0.31, 0.04, 0.50), stripeMat,  0.18, 0.10, 0.05);
+  // ---- LEGS as hip-pivot groups (so they can swing for the run) -----
+  // Hip joint sits at danny-local y=0.85 (top of the leg cylinder).
+  // Children hang DOWN from the pivot: leg cylinder + sneaker box.
+  const LEG_LEN = 0.85;
+  for (const side of [-1, +1]) {
+    const hip = new THREE.Group();
+    hip.position.set(side * 0.18, LEG_LEN, 0);
+    danny.add(hip);
+    // leg cylinder hangs down from pivot
+    const leg = mesh(new THREE.CylinderGeometry(0.16, 0.16, LEG_LEN, 12), pants);
+    leg.position.y = -LEG_LEN / 2;
+    hip.add(leg);
+    // sneaker box at the ankle (slightly forward in +Z so toe points fwd)
+    const shoe = mesh(new THREE.BoxGeometry(0.30, 0.16, 0.50), sneaker);
+    shoe.position.set(0, -LEG_LEN + 0.08, 0.05);
+    hip.add(shoe);
+    // white sneaker stripe — sits on top of the shoe
+    const stripe = mesh(new THREE.BoxGeometry(0.31, 0.04, 0.50),
+                        new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    stripe.position.set(0, -LEG_LEN + 0.10, 0.05);
+    hip.add(stripe);
+    rigParts[side < 0 ? 'hipL' : 'hipR'] = hip;
+  }
 
-  // TORSO — silver undershirt + white lab coat slab over front
-  add(new THREE.BoxGeometry(0.62, 0.85, 0.42), shirt, 0, 1.18, 0);
-  add(new THREE.BoxGeometry(0.66, 0.85, 0.05), coat,  0, 1.18, 0.22);
-  // lab-coat hem
-  add(new THREE.BoxGeometry(0.74, 0.32, 0.46), coat,  0, 0.84, 0);
+  // ---- TORSO — capsule (smoother than the previous box) + coat slabs -
+  const TORSO_Y = 1.18;
+  const torso = mesh(new THREE.CapsuleGeometry(0.32, 0.46, 6, 14), shirt);
+  torso.position.y = TORSO_Y;
+  danny.add(torso);
+  // white lab-coat slab over the front
+  const coatFront = mesh(new THREE.BoxGeometry(0.62, 0.78, 0.06), coat);
+  coatFront.position.set(0, TORSO_Y - 0.04, 0.30);
+  danny.add(coatFront);
+  // lab-coat hem (wraps the bottom of the torso to read as a coat skirt)
+  const hem = mesh(new THREE.BoxGeometry(0.72, 0.30, 0.50), coat);
+  hem.position.set(0, 0.86, 0);
+  danny.add(hem);
 
-  // ARMS — cylinder + small hand sphere
-  const armGeom = new THREE.CylinderGeometry(0.10, 0.10, 0.78, 10);
-  add(armGeom, coat, -0.44, 1.20, 0);
-  add(armGeom, coat,  0.44, 1.20, 0);
-  const handGeom = new THREE.SphereGeometry(0.13, 14, 10);
-  add(handGeom, skin, -0.44, 0.75, 0);
-  add(handGeom, skin,  0.44, 0.75, 0);
+  // ---- ARMS as shoulder-pivot groups -------------------------------
+  // Shoulder joint at danny-local y=1.59 (top of the arm cylinder).
+  const ARM_LEN = 0.78;
+  for (const side of [-1, +1]) {
+    const sh = new THREE.Group();
+    sh.position.set(side * 0.44, 1.59, 0);
+    danny.add(sh);
+    const arm = mesh(new THREE.CylinderGeometry(0.10, 0.10, ARM_LEN, 10), coat);
+    arm.position.y = -ARM_LEN / 2;
+    sh.add(arm);
+    const hand = mesh(new THREE.SphereGeometry(0.13, 14, 10), skin);
+    hand.position.y = -ARM_LEN + 0.04;
+    sh.add(hand);
+    rigParts[side < 0 ? 'shoulderL' : 'shoulderR'] = sh;
+  }
 
-  // HEAD — sphere with skin tone
+  // ---- HEAD ---------------------------------------------------------
   const headY = 1.92;
-  add(new THREE.SphereGeometry(0.28, 18, 14), skin, 0, headY, 0);
-  // eyes
-  add(new THREE.SphereGeometry(0.055, 10, 8), eyeWhite, -0.10, headY + 0.04, 0.22);
-  add(new THREE.SphereGeometry(0.055, 10, 8), eyeWhite,  0.10, headY + 0.04, 0.22);
-  add(new THREE.SphereGeometry(0.028, 8, 6),  eyeDark,  -0.10, headY + 0.03, 0.26);
-  add(new THREE.SphereGeometry(0.028, 8, 6),  eyeDark,   0.10, headY + 0.03, 0.26);
-  // mouth (small dark box for a smirk)
-  add(new THREE.BoxGeometry(0.16, 0.03, 0.04), eyeDark, 0, headY - 0.10, 0.25);
-  // hair tuft (small dark sphere on the back-top, peeking out from under the cap)
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x3a2418 });
-  add(new THREE.SphereGeometry(0.12, 10, 8), hairMat, 0, headY + 0.18, -0.18);
+  // a head group so the head can subtly bob with the run cadence
+  const headGrp = new THREE.Group();
+  headGrp.position.y = headY;
+  danny.add(headGrp);
+  rigParts.headGrp = headGrp;
 
-  // CAP — worn BACKWARDS (brim behind). Dome = squashed sphere; brim = thin box behind.
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.31, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), cap);
-  dome.position.set(0, headY + 0.18, 0);
-  dome.castShadow = true; danny.add(dome);
-  const brim = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.22), cap);
-  brim.position.set(0, headY + 0.12, -0.28);
+  headGrp.add(mesh(new THREE.SphereGeometry(0.28, 18, 14), skin));
+  // eyes (whites then dark pupils, both positioned in head-local coords)
+  function eye(side, dx, dy, dz, r, mat) {
+    const e = mesh(new THREE.SphereGeometry(r, 10, 8), mat);
+    e.position.set(side * dx, dy, dz);
+    headGrp.add(e); return e;
+  }
+  eye(-1, 0.10, 0.04, 0.22, 0.055, eyeWhite);
+  eye( 1, 0.10, 0.04, 0.22, 0.055, eyeWhite);
+  eye(-1, 0.10, 0.03, 0.26, 0.028, eyeDark);
+  eye( 1, 0.10, 0.03, 0.26, 0.028, eyeDark);
+  // mouth (smirk)
+  const mouth = mesh(new THREE.BoxGeometry(0.16, 0.03, 0.04), eyeDark);
+  mouth.position.set(0, -0.10, 0.25);
+  headGrp.add(mouth);
+  // hair tuft peeking out the back under the cap
+  const hair = mesh(new THREE.SphereGeometry(0.12, 10, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x3a2418 }));
+  hair.position.set(0, 0.18, -0.18);
+  headGrp.add(hair);
+
+  // ---- CAP (worn backwards, brim points -Z) ------------------------
+  const dome = mesh(new THREE.SphereGeometry(0.31, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), cap);
+  dome.position.set(0, 0.18, 0);
+  headGrp.add(dome);
+  const brim = mesh(new THREE.BoxGeometry(0.48, 0.04, 0.22), cap);
+  brim.position.set(0, 0.12, -0.28);
   brim.rotation.x = 0.10;
-  brim.castShadow = true; danny.add(brim);
+  headGrp.add(brim);
   // gold SD patch on the front of the cap
-  const patchMat = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.18 });
-  const patch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.10, 0.02), patchMat);
-  patch.position.set(0, headY + 0.18, 0.30);
-  danny.add(patch);
+  const patch = mesh(new THREE.BoxGeometry(0.18, 0.10, 0.02),
+        new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.22 }));
+  patch.position.set(0, 0.18, 0.30);
+  headGrp.add(patch);
 
-  // Drop shadow under feet
+  // ---- Drop shadow (lives in the SCENE, not under danny, so it stays
+  //      pinned to the platform top when Danny is in the air). -------
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.55, 24),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32 })
@@ -262,6 +336,31 @@ function buildDanny() {
 }
 buildDanny();
 scene.add(danny);
+
+// ============ RUN / IDLE ANIMATION ===================================
+// Stride phase accumulates while moving; lerps everything back to a
+// neutral pose when stopped (or while respawning).
+let stridePhase = 0;
+function tickRig(dt, isMoving) {
+  const speed = Math.hypot(player.vel.x, player.vel.z);
+  if (isMoving) {
+    // Cadence ramps with movement speed so the run reads fast at high
+    // speed and natural at base speed.
+    stridePhase += dt * (3.5 + speed * 0.55);
+  }
+  const swing = isMoving ? Math.sin(stridePhase) * 0.65 : 0;
+  const armSwing = isMoving ? Math.sin(stridePhase) * 0.55 : 0;
+  const k = Math.min(1, dt * 14);
+  // Hips swing opposite to each other.
+  rigParts.hipL.rotation.x += ( swing - rigParts.hipL.rotation.x) * k;
+  rigParts.hipR.rotation.x += (-swing - rigParts.hipR.rotation.x) * k;
+  // Arms swing opposite to hips, ~85% amplitude.
+  rigParts.shoulderL.rotation.x += (-armSwing - rigParts.shoulderL.rotation.x) * k;
+  rigParts.shoulderR.rotation.x += ( armSwing - rigParts.shoulderR.rotation.x) * k;
+  // Head bob — small up/down on every footfall (twice per stride cycle).
+  const bobTarget = isMoving ? Math.abs(Math.sin(stridePhase * 2)) * 0.05 : 0;
+  rigParts.headGrp.position.y += (1.92 + bobTarget - rigParts.headGrp.position.y) * k;
+}
 
 // ============ PLAYER STATE + PHYSICS CONSTANTS =======================
 const GRAV = 18, JUMP_V0 = 7.0, WALK_SPEED = 8.0;
@@ -280,35 +379,369 @@ const dieStartPos = new THREE.Vector3();
 let runT = 0;
 let timeSec = 0;
 
-// ============ PLATFORMS (Phase 2 = single test platform) =============
-// platforms[] is the source of truth for collision. Each entry:
-// { mesh, box: THREE.Box3, kind: 'solid' | ... , data: {...} }
+// ============ PHASE 3: MAP DATA ======================================
+// Linear chain of stages extending in the -Z direction. Each stage
+// teaches a new verb (per OBBY genre-research rule: one new mechanic
+// per stage), and the difficulty escalates with the occasional easier
+// breather. Mark's note: "big nice extensive logical map" — 12 stages,
+// ~25 z-units each, ~300-unit total run.
+//
+// Coordinate convention: platform `pos` is the CENTER, `size` is full
+// extents (width, height, depth). Players walk in -Z direction.
+//
+// Obstacle kinds:
+//   'solid'         standard platform
+//   'disappearing'  HOLD → flash → GONE → HOLD cycle (tHold,tFade,tCool)
+//   'moving'        oscillates between `from` and `to` over `period`
+//   'jumpPad'       on top-face contact, sets vel.y = impulse
+// Hazards:
+//   'lava'          touch = die + respawn at last checkpoint
+// Triggers:
+//   checkpoint:     small flag pad, lights up on first touch, saves
+//                   respawn position, advances stage counter.
+//   finish:         big gold star pad — touch = WIN overlay.
+const MAP = {
+  start: [0, 2, 0],
+  startYaw: Math.PI,     // face -Z (away from camera, INTO the obstacle course)
+  voidY: -12,
+  stages: [
+    // -------- 1. WARMUP — plain gap jumps. Teaches walk + jump. -------
+    { id: 1, name: 'WARMUP',
+      platforms: [
+        { pos:[ 0,  0,    0],  size:[10, 1, 10], color:'#6bcf6b', kind:'solid' },
+        { pos:[ 0,  0,  -10],  size:[ 4, 1,  4], color:'#6bcf6b', kind:'solid' },
+        { pos:[ 0,  0,  -18],  size:[ 4, 1,  4], color:'#6bcf6b', kind:'solid' },
+        { pos:[ 0,  0,  -28],  size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -28], color:'#46f0ff' } },
+
+    // -------- 2. STAIRWAY — vertical reach. Combines gaps + height. ---
+    { id: 2, name: 'STAIRWAY',
+      platforms: [
+        { pos:[ 0,  0.6, -36], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
+        { pos:[ 0,  1.6, -42], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
+        { pos:[ 0,  2.6, -48], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
+        { pos:[ 0,  1.6, -54], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
+        { pos:[ 0,  0,   -62], size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -62], color:'#46f0ff' } },
+
+    // -------- 3. STEPPING STONES — lateral planning. -----------------
+    { id: 3, name: 'STEPPING STONES',
+      platforms: [
+        { pos:[-2,  0, -70], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
+        { pos:[ 2,  0, -76], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
+        { pos:[-2,  0, -82], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
+        { pos:[ 2,  0, -88], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
+        { pos:[ 0,  0, -96], size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -96], color:'#46f0ff' } },
+
+    // -------- 4. NOW YOU DON'T — disappearing tiles. -----------------
+    { id: 4, name: 'NOW YOU DON\'T',
+      platforms: [
+        { pos:[ 0,  0, -104], size:[ 4, 1, 4], color:'#b89aff', kind:'solid' },
+        { pos:[ 0,  0, -110], size:[ 3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.4, tFade:0.30, tCool:1.0 },
+        { pos:[ 0,  0, -116], size:[ 3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.4, tFade:0.30, tCool:1.0, phase:0.9 },
+        { pos:[ 0,  0, -122], size:[ 3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.4, tFade:0.30, tCool:1.0, phase:1.6 },
+        { pos:[ 0,  0, -130], size:[ 8, 1, 6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -130], color:'#46f0ff' } },
+
+    // -------- 5. LAVA RIVER — narrow walkway hugged by lava. ---------
+    { id: 5, name: 'LAVA RIVER',
+      platforms: [
+        { pos:[ 0,  0, -140], size:[ 6, 1,  6], color:'#a8e87a', kind:'solid' },
+        { pos:[ 0,  0, -150], size:[ 2.4, 1, 12], color:'#7acf90', kind:'solid' },
+        { pos:[ 0,  0, -164], size:[ 2.4, 1,  4], color:'#7acf90', kind:'solid' },
+        { pos:[ 0,  0, -172], size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+      ],
+      hazards: [
+        // lava strip on the LEFT of the narrow walkway
+        { pos:[-3,  0.55, -150], size:[2.6, 0.10, 12], kind:'lava' },
+        // lava strip on the RIGHT
+        { pos:[ 3,  0.55, -150], size:[2.6, 0.10, 12], kind:'lava' },
+        // lava puddle in the middle of the gap between the two walkway pieces
+        { pos:[ 0,  0.10, -159], size:[2.4, 0.10, 4], kind:'lava' },
+      ],
+      checkpoint: { pos:[0, 1.0, -172], color:'#46f0ff' } },
+
+    // -------- 6. MOVING TARGETS — sliding platforms over void. -------
+    { id: 6, name: 'MOVING TARGETS',
+      platforms: [
+        // sliding LEFT-RIGHT
+        { pos:[-3,  0, -182], size:[3, 1, 3], color:'#ffa050', kind:'moving',
+          from:[-3, 0, -182], to:[ 3, 0, -182], period:3.2 },
+        { pos:[ 0,  0, -190], size:[3, 1, 3], color:'#ffce6b', kind:'solid' },
+        // sliding FRONT-BACK on Z
+        { pos:[ 0,  0, -198], size:[3, 1, 3], color:'#ffa050', kind:'moving',
+          from:[ 0, 0, -198], to:[ 0, 0, -204], period:2.6 },
+        { pos:[ 0,  0, -210], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -210], color:'#46f0ff' } },
+
+    // -------- 7. PAD HOPS — jump pads launch you onto upper tier. ----
+    { id: 7, name: 'PAD HOPS',
+      platforms: [
+        { pos:[ 0,  0,   -218], size:[3, 0.4, 3], color:'#46f0ff', kind:'jumpPad', impulse: 13.5 },
+        { pos:[ 0,  3.6, -228], size:[3, 1,   3], color:'#46f0ff', kind:'solid' },
+        { pos:[ 0,  3.6, -236], size:[3, 0.4, 3], color:'#ff5ec8', kind:'jumpPad', impulse: 11.5 },
+        { pos:[ 0,  6.5, -246], size:[3, 1,   3], color:'#46f0ff', kind:'solid' },
+        { pos:[ 0,  0,   -256], size:[8, 1,   6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -256], color:'#46f0ff' } },
+
+    // -------- 8. COMBO — combines pads + disappearing. ---------------
+    { id: 8, name: 'COMBO',
+      platforms: [
+        { pos:[ 0,  0,   -264], size:[3, 0.4, 3], color:'#46f0ff', kind:'jumpPad', impulse: 12.5 },
+        { pos:[-2,  3.8, -272], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.5, tFade:0.3, tCool:1.0 },
+        { pos:[ 2,  3.8, -278], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.5, tFade:0.3, tCool:1.0, phase:0.8 },
+        { pos:[ 0,  3.8, -286], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.5, tFade:0.3, tCool:1.0, phase:1.6 },
+        { pos:[ 0,  0,   -296], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
+      ],
+      checkpoint: { pos:[0, 1.0, -296], color:'#46f0ff' } },
+
+    // -------- 9. THE GAUNTLET — peak challenge: moving + lava + gaps -
+    { id: 9, name: 'THE GAUNTLET',
+      platforms: [
+        { pos:[ 0,  0, -306], size:[4, 1, 4], color:'#a8e87a', kind:'solid' },
+        { pos:[-3,  0, -314], size:[3, 1, 3], color:'#ffa050', kind:'moving',
+          from:[-3, 0, -314], to:[3, 0, -314], period:2.6 },
+        { pos:[ 0,  0, -322], size:[3, 1, 3], color:'#7acf90', kind:'solid' },
+        { pos:[ 3,  0, -330], size:[3, 1, 3], color:'#ffa050', kind:'moving',
+          from:[3, 0, -330], to:[-3, 0, -330], period:2.6 },
+        { pos:[ 0,  0, -342], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
+      ],
+      hazards: [
+        // sea of lava between the moving platforms, around y=0 floor
+        { pos:[ 0, -0.40, -322], size:[14, 0.20, 16], kind:'lava' },
+      ],
+      checkpoint: { pos:[0, 1.0, -342], color:'#46f0ff' } },
+
+    // -------- 10. SKY HOPS — height + disappearing + lava floor. -----
+    { id: 10, name: 'SKY HOPS',
+      platforms: [
+        { pos:[ 0,  0,   -352], size:[6, 1, 4], color:'#a8e87a', kind:'solid' },
+        // launch up to y=4 tier
+        { pos:[ 0,  0,   -358], size:[3, 0.4, 3], color:'#46f0ff', kind:'jumpPad', impulse: 14.0 },
+        { pos:[ 0,  4,   -366], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0 },
+        { pos:[ 0,  4,   -374], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0, phase:0.7 },
+        // launch from y=4 to y=7 tier
+        { pos:[ 0,  4,   -382], size:[3, 0.4, 3], color:'#ff5ec8', kind:'jumpPad', impulse: 12.0 },
+        { pos:[ 0,  7,   -390], size:[5, 1, 5], color:'#a8e87a', kind:'solid' },
+      ],
+      hazards: [
+        // lava sea under this whole stage to make the disappearing tiles count
+        { pos:[ 0, -0.40, -372], size:[16, 0.20, 32], kind:'lava' },
+      ],
+      checkpoint: { pos:[0, 8.0, -390], color:'#46f0ff' } },
+
+    // -------- 11. PRESSURE — sustained moving + disappearing combo. --
+    { id: 11, name: 'PRESSURE',
+      platforms: [
+        { pos:[ 0,  7,   -396], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.3, tFade:0.3, tCool:1.0 },
+        { pos:[-2,  7,   -404], size:[3, 1, 3], color:'#ffa050', kind:'moving',
+          from:[-2, 7, -404], to:[2, 7, -404], period:2.4 },
+        { pos:[ 0,  7,   -412], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.3, tFade:0.3, tCool:1.0, phase:0.6 },
+        { pos:[ 2,  7,   -420], size:[3, 1, 3], color:'#ffa050', kind:'moving',
+          from:[2, 7, -420], to:[-2, 7, -420], period:2.4 },
+        { pos:[ 0,  7,   -430], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
+      ],
+      hazards: [
+        { pos:[ 0, -0.40, -413], size:[20, 0.20, 40], kind:'lava' },
+      ],
+      checkpoint: { pos:[0, 8.0, -430], color:'#46f0ff' } },
+
+    // -------- 12. VICTORY ROAD — easy walkway → gold finish pad. -----
+    { id: 12, name: 'VICTORY ROAD',
+      platforms: [
+        { pos:[ 0,  7,   -442], size:[6, 1, 14], color:'#ffd23a', kind:'solid' },
+        { pos:[ 0,  7,   -456], size:[8, 1,  6], color:'#a8e87a', kind:'solid' },
+      ],
+      finish: { pos:[0, 8.0, -456], color:'#ffd23a' } },
+  ],
+};
+
+// platforms[] = collidable scenery. Each entry:
+//   { mesh, box: Box3 (live), kind, data, collidable: true|false }
 const platforms = [];
-function addBoxPlatform(cx, cy, cz, sx, sy, sz, color, kind = 'solid') {
-  const geom = new THREE.BoxGeometry(sx, sy, sz);
-  const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.10, roughness: 0.65 });
-  const mesh = new THREE.Mesh(geom, mat);
-  mesh.position.set(cx, cy, cz);
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
-  scene.add(mesh);
-  const box = new THREE.Box3().setFromObject(mesh);
-  platforms.push({ mesh, box, kind, data: {} });
-  return mesh;
+// hazards[] = death triggers (lava). Each entry: { mesh, box, kind, data }
+const hazards = [];
+// triggers[] = checkpoint + finish pads. Each: { mesh, kind, stageId, pos, radius }
+const triggers = [];
+let currentStage = 0;       // most recent checkpoint stage id (0 = haven't hit one yet)
+let checkpointCount = 0;
+let stageStarted = 1;       // the stage we're currently IN (cosmetic only)
+
+function scaffoldMap() {
+  for (const stage of MAP.stages) {
+    if (stage.platforms) for (const p of stage.platforms) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(p.size[0], p.size[1], p.size[2]),
+        new THREE.MeshStandardMaterial({
+          color: p.color || '#6bcf6b',
+          metalness: 0.10, roughness: 0.60,
+          emissive: p.kind === 'jumpPad' ? p.color : 0x000000,
+          emissiveIntensity: p.kind === 'jumpPad' ? 0.40 : 0,
+        })
+      );
+      m.position.set(p.pos[0], p.pos[1], p.pos[2]);
+      m.castShadow = true; m.receiveShadow = true;
+      scene.add(m);
+      const box = new THREE.Box3().setFromObject(m);
+      const entry = {
+        mesh: m, box,
+        kind: p.kind || 'solid',
+        data: Object.assign({ stageId: stage.id }, p),
+        collidable: true,
+      };
+      // initial phase offset for disappearing cycles (so a row of them is staggered)
+      if (entry.kind === 'disappearing') entry.data.cycleT = p.phase || 0;
+      platforms.push(entry);
+    }
+    if (stage.hazards) for (const h of stage.hazards) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(h.size[0], h.size[1], h.size[2]),
+        new THREE.MeshStandardMaterial({
+          color: 0xff5a30, emissive: 0xff2200, emissiveIntensity: 0.55, roughness: 0.55,
+        })
+      );
+      m.position.set(h.pos[0], h.pos[1], h.pos[2]);
+      m.receiveShadow = true;
+      scene.add(m);
+      const box = new THREE.Box3().setFromObject(m);
+      hazards.push({ mesh: m, box, kind: h.kind, data: h });
+    }
+    if (stage.checkpoint) buildCheckpointPad(stage.checkpoint, stage.id, false);
+    if (stage.finish)     buildFinishPad(stage.finish, stage.id);
+  }
+  // Patch the total-stage display.
+  document.getElementById('ui-total').textContent = MAP.stages.length;
 }
 
-// Phase 2 test platform — 8×1×8 green slab, top face at y=0.
-addBoxPlatform(0, -0.5, 0, 8, 1, 8, 0x6bcf6b, 'solid');
-// "START" decal — small yellow box near the +Z edge to indicate the spawn.
-{
-  const decal = new THREE.Mesh(
-    new THREE.BoxGeometry(2.0, 0.06, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.20 })
+function buildCheckpointPad(cp, stageId, lit) {
+  const grp = new THREE.Group();
+  grp.position.set(cp.pos[0], cp.pos[1] - 0.02, cp.pos[2]);
+  // pad disc on the floor
+  const pad = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.05, 1.15, 0.10, 24),
+    new THREE.MeshStandardMaterial({ color: cp.color, emissive: cp.color, emissiveIntensity: 0.45, transparent: true, opacity: 0.92 })
   );
-  decal.position.set(0, 0.03, 2.5);
-  decal.receiveShadow = true;
-  scene.add(decal);
+  grp.add(pad);
+  // pole
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.09, 1.6, 8),
+    new THREE.MeshStandardMaterial({ color: 0x445566, metalness: 0.6, roughness: 0.4 })
+  );
+  pole.position.y = 0.80;
+  grp.add(pole);
+  // flag (zone-tinted)
+  const flag = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.36, 0.04),
+    new THREE.MeshStandardMaterial({ color: cp.color, emissive: cp.color, emissiveIntensity: 0.5 })
+  );
+  flag.position.set(0.32, 1.35, 0);
+  grp.add(flag);
+  scene.add(grp);
+  triggers.push({
+    mesh: grp, kind: 'checkpoint', stageId,
+    pos: new THREE.Vector3(cp.pos[0], cp.pos[1], cp.pos[2]),
+    radius: 1.7, pad, flag, pole,
+    pulseT: 0, lit,
+  });
 }
+
+function buildFinishPad(f, stageId) {
+  const grp = new THREE.Group();
+  grp.position.set(f.pos[0], f.pos[1] - 0.05, f.pos[2]);
+  const pad = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.5, 1.6, 0.16, 36),
+    new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffd23a, emissiveIntensity: 0.85, roughness: 0.30, metalness: 0.40 })
+  );
+  grp.add(pad);
+  // a glowing octahedron floats over the pad
+  const star = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.50, 0),
+    new THREE.MeshStandardMaterial({ color: 0xfff5b0, emissive: 0xffd23a, emissiveIntensity: 1.4 })
+  );
+  star.position.y = 1.2;
+  grp.add(star);
+  scene.add(grp);
+  triggers.push({
+    mesh: grp, kind: 'finish', stageId,
+    pos: new THREE.Vector3(f.pos[0], f.pos[1], f.pos[2]),
+    radius: 2.0, star,
+  });
+}
+
+// --------------- per-frame obstacle behaviour ------------------
+function tickObstacles(dt) {
+  for (const pl of platforms) {
+    if (pl.kind === 'disappearing') {
+      const d = pl.data;
+      const tHold = d.tHold ?? 1.4, tFade = d.tFade ?? 0.3, tCool = d.tCool ?? 1.0;
+      const total = tHold + tFade + tCool;
+      d.cycleT = (d.cycleT + dt) % total;
+      if (d.cycleT < tHold) {
+        pl.mesh.visible = true;
+        pl.mesh.material.emissive.setHex(0x000000);
+        pl.mesh.material.emissiveIntensity = 0;
+        pl.collidable = true;
+      } else if (d.cycleT < tHold + tFade) {
+        // about-to-vanish flash
+        pl.mesh.visible = true;
+        pl.mesh.material.emissive.setHex(0xff5530);
+        pl.mesh.material.emissiveIntensity = 0.3 + 0.5 * Math.sin(d.cycleT * 30);
+        pl.collidable = true;
+      } else {
+        pl.mesh.visible = false;
+        pl.collidable = false;
+      }
+    } else if (pl.kind === 'moving') {
+      const d = pl.data;
+      const period = d.period || 3.0;
+      // smooth sine 0..1
+      const k = 0.5 - 0.5 * Math.cos((runT % period) / period * Math.PI * 2);
+      pl.mesh.position.x = d.from[0] + (d.to[0] - d.from[0]) * k;
+      pl.mesh.position.y = d.from[1] + (d.to[1] - d.from[1]) * k;
+      pl.mesh.position.z = d.from[2] + (d.to[2] - d.from[2]) * k;
+      pl.box.setFromObject(pl.mesh);
+    } else if (pl.kind === 'jumpPad') {
+      // gentle pulse
+      pl.mesh.material.emissiveIntensity = 0.30 + 0.25 * Math.sin(runT * 5);
+    }
+  }
+  for (const h of hazards) {
+    if (h.kind === 'lava') {
+      h.mesh.material.emissiveIntensity = 0.55 + 0.25 * Math.sin(runT * 3);
+    }
+  }
+  for (const t of triggers) {
+    if (t.kind === 'finish' && t.star) {
+      t.star.rotation.y += dt * 2.0;
+      t.star.rotation.x = Math.sin(runT * 1.2) * 0.20;
+      t.star.position.y = 1.2 + Math.sin(runT * 2.4) * 0.18;
+    }
+    if (t.kind === 'checkpoint') {
+      // pulse on activation
+      if (t.pulseT > 0) {
+        t.pulseT = Math.max(0, t.pulseT - dt);
+        const k = t.pulseT / 0.6;
+        const scale = 1.0 + k * 0.6;
+        t.pad.scale.set(scale, 1, scale);
+      } else {
+        t.pad.scale.set(1, 1, 1);
+      }
+      if (t.lit) {
+        // gentle bob on the lit flag so it reads as "claimed"
+        t.flag.position.y = 1.35 + Math.sin(runT * 2 + t.stageId) * 0.05;
+      }
+    }
+  }
+}
+
+scaffoldMap();
 
 // ============ AUDIO ==================================================
 // Lifted/adapted from runner. Web Audio synthesis only — no MP3s for
@@ -417,6 +850,9 @@ window.addEventListener('pointermove', e => {
   azim -= dx * 0.006;
   elev = Math.max(-0.6, Math.min(1.30, elev - dy * 0.006));
   lookLX = e.clientX; lookLY = e.clientY;
+  // v3: pause auto-follow for ~1.5s after the user drags so we don't
+  // fight their input.
+  if (Math.abs(dx) + Math.abs(dy) > 1) autoFollowCooldown = 1.5;
 });
 window.addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') return;
@@ -511,6 +947,7 @@ lookZone.addEventListener('pointermove', e => {
   azim -= dx * 0.008;
   elev = Math.max(-0.6, Math.min(1.30, elev - dy * 0.008));
   lookLX = e.clientX; lookLY = e.clientY;
+  if (Math.abs(dx) + Math.abs(dy) > 1) autoFollowCooldown = 1.5;
 });
 lookZone.addEventListener('pointerup', e => {
   if (e.pointerId !== lookId) return;
@@ -531,57 +968,106 @@ jumpBtn.addEventListener('pointercancel', () => { jumpBtn.classList.remove('live
 
 // ============ COLLISION ==============================================
 // Resolve a vertical capsule (center=player.pos, radius=r, halfH=h)
-// against a box AABB by post-move separating-axis correction.
+// against a box AABB. Returns 'top', 'side', 'ceiling', or null (no
+// contact). The caller uses 'top' to detect jump-pad activations.
 const _tmpPt = new THREE.Vector3();
 function resolveCapsuleVsBox(box) {
   const r = player.radius;
   const halfH = player.halfH;
-  // Capsule axis segment: from (pos - (0,h,0)) to (pos + (0,h,0)).
-  // The closest point on the capsule's axis to a box is the player's pos.x/z
-  // clamped INTO the box's xz, with y picked as the closest point on the
-  // segment to the box's y-range. For simplicity (and at our speeds), we
-  // pick the y on the axis nearest the box's y center.
   const axisY = Math.max(box.min.y, Math.min(player.pos.y, box.max.y));
   const ax = player.pos.x;
   const ay = Math.max(player.pos.y - halfH, Math.min(axisY, player.pos.y + halfH));
   const az = player.pos.z;
-  // Closest point on box to (ax, ay, az):
   _tmpPt.set(
     Math.max(box.min.x, Math.min(ax, box.max.x)),
     Math.max(box.min.y, Math.min(ay, box.max.y)),
     Math.max(box.min.z, Math.min(az, box.max.z))
   );
-  // Vector from box-closest-point to capsule axis point.
   const dx = ax - _tmpPt.x, dy = ay - _tmpPt.y, dz = az - _tmpPt.z;
   const distSq = dx*dx + dy*dy + dz*dz;
-  if (distSq >= r * r) return false;
+  if (distSq >= r * r) return null;
   const dist = Math.sqrt(distSq) || 1e-6;
   const pen = r - dist;
-  // Push the player out along the contact normal.
   const nx = dx / dist, ny = dy / dist, nz = dz / dist;
   player.pos.x += nx * pen;
   player.pos.y += ny * pen;
   player.pos.z += nz * pen;
-  // If the contact normal points mostly +Y, we landed on top.
   if (ny > 0.6) {
+    // top — landed on the platform
     if (player.vel.y < 0) {
       if (!player.onGround) sfx('land');
       player.vel.y = 0;
     }
     player.onGround = true;
-    return true;
+    return 'top';
   }
-  // Side contact — kill horizontal velocity in the normal direction.
   if (Math.abs(nx) > 0.5 || Math.abs(nz) > 0.5) {
     const vDotN = player.vel.x * nx + player.vel.z * nz;
     if (vDotN < 0) {
       player.vel.x -= vDotN * nx;
       player.vel.z -= vDotN * nz;
     }
+    return 'side';
   }
-  // Hit ceiling — kill upward velocity.
-  if (ny < -0.6 && player.vel.y > 0) player.vel.y = 0;
-  return true;
+  if (ny < -0.6 && player.vel.y > 0) { player.vel.y = 0; return 'ceiling'; }
+  return null;
+}
+
+// ============ HAZARDS / TRIGGERS =====================================
+function checkHazards() {
+  if (state !== 'play') return;
+  for (const h of hazards) {
+    // capsule-vs-AABB overlap (approximate: use capsule's vertical
+    // extents + radius pad in X/Z).
+    const r = player.radius;
+    if (player.pos.x > h.box.min.x - r && player.pos.x < h.box.max.x + r &&
+        player.pos.z > h.box.min.z - r && player.pos.z < h.box.max.z + r &&
+        (player.pos.y - player.halfH - r) < h.box.max.y + 0.05 &&
+        (player.pos.y + player.halfH + r) > h.box.min.y - 0.05) {
+      startRespawn();
+      return;
+    }
+  }
+}
+
+function checkTriggers() {
+  if (state !== 'play') return;
+  for (const t of triggers) {
+    const dx = player.pos.x - t.pos.x;
+    const dz = player.pos.z - t.pos.z;
+    const dy = (player.pos.y - player.halfH - player.radius) - t.pos.y;
+    const horizDist = Math.hypot(dx, dz);
+    if (horizDist < t.radius && Math.abs(dy) < 2.0) {
+      if (t.kind === 'checkpoint' && !t.lit) {
+        t.lit = true;
+        t.pulseT = 0.6;
+        if (t.stageId > currentStage) currentStage = t.stageId;
+        checkpointCount++;
+        // respawn position: above the pad, well clear of any moving parts
+        lastCheckpointPos.set(t.pos.x, t.pos.y + 1.4, t.pos.z);
+        sfx('checkpoint');
+        document.getElementById('ui-stage').textContent = currentStage + 1 > MAP.stages.length ? MAP.stages.length : currentStage + 1;
+        document.getElementById('ui-cp').textContent = checkpointCount;
+        // progress bar = ratio of stages cleared
+        document.getElementById('ui-prog').style.width =
+          (Math.min(1, currentStage / MAP.stages.length) * 100) + '%';
+      } else if (t.kind === 'finish' && state === 'play') {
+        state = 'won';
+        sfx('win');
+        showWinOverlay();
+      }
+    }
+  }
+}
+
+function showWinOverlay() {
+  document.getElementById('ov-h1').textContent = 'YOU MADE IT!';
+  document.getElementById('ov-h2').textContent = 'TIMELINE STABILIZED';
+  document.getElementById('ov-h1').style.color = '#ffd23a';
+  document.getElementById('ov-h2').style.color = '#46f0ff';
+  document.getElementById('ov-p1').textContent = '⏱ ' + formatTime(timeSec) + '   •   🚩 ' + checkpointCount + ' checkpoints';
+  document.getElementById('ov-p2').textContent = MAP.stages.length + ' stages cleared';
+  document.getElementById('overlay').classList.add('on');
 }
 
 // ============ STEP =================================================
@@ -613,20 +1099,34 @@ function stepPlay(dt) {
   player.pos.x += player.vel.x * dt;
   player.pos.y += player.vel.y * dt;
   player.pos.z += player.vel.z * dt;
-  // 4. Reset ground flag, resolve collisions.
+  // 4. Reset ground flag, resolve collisions. Track the LAST top-face
+  //    contact so we can fire a jump pad's impulse if that's what we
+  //    just landed on.
   player.onGround = false;
-  for (const pl of platforms) resolveCapsuleVsBox(pl.box);
-  // 5. Face the wishDir if moving.
+  let topContactPad = null;
+  for (const pl of platforms) {
+    if (pl.collidable === false) continue;
+    const r = resolveCapsuleVsBox(pl.box);
+    if (r === 'top' && pl.kind === 'jumpPad') topContactPad = pl;
+  }
+  if (topContactPad) {
+    player.vel.y = topContactPad.data.impulse || 13;
+    player.onGround = false;
+    sfx('jump');
+  }
+  // 5. Hazards (lava) + triggers (checkpoints, finish).
+  checkHazards();
+  checkTriggers();
+  // 6. Face the wishDir if moving.
   if (ml > 0.05) {
     const targetYaw = Math.atan2(wishX, wishZ);
-    // shortest-arc lerp
     let diff = targetYaw - player.yaw;
     while (diff >  Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
     player.yaw += diff * Math.min(1, dt * 14);
   }
-  // 6. Death zone (void below).
-  if (player.pos.y < -10) startRespawn();
+  // 7. Death zone (void below).
+  if (player.pos.y < (MAP.voidY ?? -12)) startRespawn();
 }
 
 function startRespawn() {
@@ -682,6 +1182,7 @@ const clock = new THREE.Clock();
 function tick() {
   const dt = Math.min(0.05, clock.getDelta());
   runT += dt;
+  tickObstacles(dt);
 
   if (state === 'play') {
     timeSec += dt;
@@ -700,6 +1201,12 @@ function tick() {
     player.pos.z
   );
   if (state === 'play') danny.rotation.y = player.yaw;
+
+  // v3: run/idle animation — only when on the ground in play state so
+  // limbs don't flap mid-air or mid-tumble.
+  const moving = state === 'play' && player.onGround &&
+                 Math.hypot(player.vel.x, player.vel.z) > 0.8;
+  tickRig(dt, moving);
   // Floor-shadow under the player.
   const shadow = danny.userData.shadow;
   if (shadow) {
@@ -742,17 +1249,31 @@ function formatTime(s) {
 // ============ RESET ==================================================
 function reset() {
   state = 'play';
-  player.pos.set(0, 2, 0);
+  player.pos.set(MAP.start[0], MAP.start[1], MAP.start[2]);
   player.vel.set(0, 0, 0);
-  player.yaw = 0;
+  player.yaw = MAP.startYaw ?? 0;
   player.onGround = false;
   lastCheckpointPos.copy(player.pos);
   timeSec = 0;
   dieT = 0;
+  currentStage = 0;
+  checkpointCount = 0;
+  // Clear all checkpoint "lit" flags so they reactivate on the new run.
+  for (const t of triggers) if (t.kind === 'checkpoint') { t.lit = false; t.pulseT = 0; }
   danny.rotation.set(0, 0, 0);
   danny.scale.set(1, 1, 1);
   document.getElementById('overlay').classList.remove('on');
+  document.getElementById('ui-stage').textContent = '1';
+  document.getElementById('ui-cp').textContent = '0';
+  document.getElementById('ui-prog').style.width = '0%';
 }
+// Set the initial player position + yaw to the map's spawn now that
+// MAP is defined (this overrides the earlier placeholder defaults).
+player.pos.set(MAP.start[0], MAP.start[1], MAP.start[2]);
+player.yaw = MAP.startYaw ?? 0;
+lastCheckpointPos.copy(player.pos);
+document.getElementById('ui-stage').textContent = '1';
+document.getElementById('ui-total').textContent = MAP.stages.length;
 
 // ============ INIT / RESIZE ==========================================
 function resize() {
@@ -769,11 +1290,19 @@ if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
   document.body.dataset.touch = '1';
 }
 
-// Pre-position camera so the first frame isn't a hard snap.
-camPos.set(0, 4.0, 7.0);
-camTgt.set(0, 1.0, 0);
-camera.position.copy(camPos);
-camera.lookAt(camTgt);
+// Pre-position camera so the first frame isn't a hard snap. Compute
+// the spawn camera pos from the live elev/azim/radius defaults.
+{
+  const tx = MAP.start[0], ty = MAP.start[1] + 1.0, tz = MAP.start[2];
+  camPos.set(
+    tx + Math.cos(elev) * Math.sin(azim) * radius,
+    ty + Math.sin(elev) * radius,
+    tz + Math.cos(elev) * Math.cos(azim) * radius
+  );
+  camTgt.set(tx, ty, tz);
+  camera.position.copy(camPos);
+  camera.lookAt(camTgt);
+}
 
 resize();
 tick();
