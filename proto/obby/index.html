@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v5.0 — full lab coat + polygon bump</title>
+<title>Super Dude OBBY v5.1 — Lego skeleton (knees, elbows, rounded shoes)</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -118,7 +118,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v5.0 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v5.1 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -328,6 +328,10 @@ const MAT = {
   charCoatTrim:  toyMat(0xdde3ec, { roughness: 0.55, metalness: 0.15 }),  // slightly cool/dark coat shade for cuffs, collar
   charButton:    toyMat(0xffd23a, { emissive: 0xffd23a, emissiveIntensity: 0.30,
                                      roughness: 0.35, metalness: 0.65 }),  // small gold buttons down chest
+  // v5.1 joint colors — slightly darker than the limb they connect, so
+  // the ball joint reads as a distinct hinge piece (Lego-inspired).
+  charLegJoint:  toyMat(0x2a3550, { roughness: 0.55, metalness: 0.25 }),  // darker than pants
+  charArmJoint:  toyMat(0xdde3ec, { roughness: 0.55, metalness: 0.15 }),  // matches coat trim
   // Hazards (per §10.2)
   lava:        toyMat(THEME.hazard,     { emissive: 0xff2200, emissiveIntensity: 0.55, roughness: 0.55 }),
   lavaTop:     toyMat(0xffb070,         { emissive: 0xff7a20, emissiveIntensity: 1.0,  roughness: 0.35 }),
@@ -557,37 +561,67 @@ function buildDanny() {
   // The cosmetic slots (hatSlot / hairSlot / glassesSlot / shirtSlot /
   // backSlot / effectSlot) all remain usable for later customization.
 
-  // ---- LEGS as hip-pivot groups (chunkier per §6.1) ----------------
-  const LEG_LEN = 0.85;
+  // ---- LEGS — v5.1 LEGO SKELETON ----------------------------------
+  // Hip pivot → upper-leg cylinder → knee pivot → lower-leg cylinder →
+  // rounded shoe. Visible joint spheres at hip + knee (Lego ball-joint
+  // look). Cylindrical limbs replace v4.5's Roblox box limbs.
+  const LEG_LEN   = 0.85;
+  const UPPER_LEG = 0.42;
+  const LOWER_LEG = LEG_LEN - UPPER_LEG;   // 0.43
   for (const side of [-1, +1]) {
     const hip = new THREE.Group();
     hip.position.set(side * 0.18, LEG_LEN, 0);
     danny.add(hip);
-    // v4.5 Roblox-ify — was CylinderGeometry; box reads as blocky toy
-    const leg = mesh(new THREE.BoxGeometry(0.26, LEG_LEN, 0.26), MAT.charPants);
-    leg.position.y = -LEG_LEN / 2;
-    hip.add(leg);
-    // CHUNKY SNEAKER — 20% wider, 12% taller, 12% deeper than v4.
-    const shoe = mesh(new THREE.BoxGeometry(0.36, 0.18, 0.56), MAT.charShoe);
-    shoe.position.set(0, -LEG_LEN + 0.09, 0.05);
-    hip.add(shoe);
-    // White Velcro-style stripe wrapping the shoe (midsole accent)
-    const stripe = mesh(new THREE.BoxGeometry(0.37, 0.04, 0.56), MAT.charStripe);
-    stripe.position.set(0, -LEG_LEN + 0.10, 0.05);
-    hip.add(stripe);
-    // v4.4 — cyan side accent on the OUTER face of each shoe (signature
-    // Super Dude color). Outer side is in the direction of `side` in
-    // hip-local coords (left hip outer = -X, right hip outer = +X).
-    const sideTrim = mesh(new THREE.BoxGeometry(0.025, 0.06, 0.42), MAT.charSideTrim);
-    sideTrim.position.set(side * 0.19, -LEG_LEN + 0.10, 0.05);
-    hip.add(sideTrim);
-    // v4.4 — sneaker laces (dark crisscross on top of shoe)
+    // Hip joint sphere (Lego ball-joint at the top of the leg)
+    const hipJoint = mesh(new THREE.SphereGeometry(0.14, 16, 12), MAT.charLegJoint);
+    hipJoint.position.y = 0;
+    hip.add(hipJoint);
+    // Upper leg — cylinder (Lego-style)
+    const upper = mesh(new THREE.CylinderGeometry(0.12, 0.13, UPPER_LEG, 16), MAT.charPants);
+    upper.position.y = -UPPER_LEG / 2;
+    hip.add(upper);
+    // Knee pivot — children hang from here so the lower leg can bend
+    const knee = new THREE.Group();
+    knee.position.y = -UPPER_LEG;
+    hip.add(knee);
+    // Knee joint sphere (visible kneecap)
+    const kneeJoint = mesh(new THREE.SphereGeometry(0.13, 16, 12), MAT.charLegJoint);
+    knee.add(kneeJoint);
+    // Lower leg — cylinder, slightly tapered toward the ankle
+    const lower = mesh(new THREE.CylinderGeometry(0.11, 0.115, LOWER_LEG, 16), MAT.charPants);
+    lower.position.y = -LOWER_LEG / 2;
+    knee.add(lower);
+    // ---- ROUNDED SHOE — box body + sphere toe/heel for Lego soft-corner feel
+    const SHOE_Y = -LOWER_LEG + 0.09;
+    const shoe = mesh(new THREE.BoxGeometry(0.32, 0.18, 0.40), MAT.charShoe);
+    shoe.position.set(0, SHOE_Y, 0.06);
+    knee.add(shoe);
+    // Rounded toe sphere — flattened so it sits on the ground
+    const toe = mesh(new THREE.SphereGeometry(0.16, 18, 14), MAT.charShoe);
+    toe.scale.set(1, 0.6, 0.85);
+    toe.position.set(0, SHOE_Y, 0.06 + 0.20);
+    knee.add(toe);
+    // Smaller rounded heel for a softer back edge
+    const heel = mesh(new THREE.SphereGeometry(0.14, 16, 12), MAT.charShoe);
+    heel.scale.set(1, 0.55, 0.85);
+    heel.position.set(0, SHOE_Y, 0.06 - 0.18);
+    knee.add(heel);
+    // Midsole stripe wrapping the box body
+    const stripe = mesh(new THREE.BoxGeometry(0.33, 0.04, 0.40), MAT.charStripe);
+    stripe.position.set(0, SHOE_Y + 0.01, 0.06);
+    knee.add(stripe);
+    // Cyan side accent — outer face of the shoe
+    const sideTrim = mesh(new THREE.BoxGeometry(0.025, 0.06, 0.34), MAT.charSideTrim);
+    sideTrim.position.set(side * 0.17, SHOE_Y + 0.01, 0.06);
+    knee.add(sideTrim);
+    // Sneaker laces (dark crisscross on top of shoe)
     for (let i = 0; i < 3; i++) {
-      const lace = mesh(new THREE.BoxGeometry(0.20, 0.018, 0.025), MAT.charEyeD);
-      lace.position.set(0, -LEG_LEN + 0.18, 0.05 + (i - 1) * 0.10);
-      hip.add(lace);
+      const lace = mesh(new THREE.BoxGeometry(0.18, 0.018, 0.025), MAT.charEyeD);
+      lace.position.set(0, SHOE_Y + 0.10, 0.06 + (i - 1) * 0.08);
+      knee.add(lace);
     }
-    rigParts[side < 0 ? 'hipL' : 'hipR'] = hip;
+    rigParts[side < 0 ? 'hipL'  : 'hipR']  = hip;
+    rigParts[side < 0 ? 'kneeL' : 'kneeR'] = knee;
   }
 
   // ---- TORSO group (shirt + coat) + scientist details + slots ------
@@ -678,27 +712,45 @@ function buildDanny() {
   rigParts.backSlot  = new THREE.Group(); rigParts.backSlot.position.set(0, TORSO_Y, -0.30); torsoGrp.add(rigParts.backSlot);
   rigParts.effectSlot = new THREE.Group(); rigParts.effectSlot.position.set(0, TORSO_Y, 0); torsoGrp.add(rigParts.effectSlot);
 
-  // ---- ARMS as shoulder-pivot groups (chunkier) --------------------
-  const ARM_LEN = 0.78;
+  // ---- ARMS — v5.1 LEGO SKELETON ----------------------------------
+  // Shoulder pivot → upper-arm cylinder → elbow pivot → forearm cylinder
+  // → cuff + hand sphere. Visible joint spheres at shoulder + elbow.
+  const ARM_LEN     = 0.78;
+  const UPPER_ARM   = 0.40;
+  const FOREARM_LEN = ARM_LEN - UPPER_ARM;  // 0.38
   for (const side of [-1, +1]) {
     const sh = new THREE.Group();
     sh.position.set(side * 0.44, 1.59, 0);
     danny.add(sh);
-    // v4.5 Roblox-ify — was CylinderGeometry; box reads as blocky toy
-    const arm = mesh(new THREE.BoxGeometry(0.22, ARM_LEN, 0.22), MAT.charCoat);
-    arm.position.y = -ARM_LEN / 2;
-    sh.add(arm);
-    // v5.0 — coat CUFF — slightly wider band at the very bottom of the
-    // sleeve in the cooler coat trim shade. Sits just above the hand so
-    // the sleeve has a visible end before the wrist.
+    // Shoulder joint sphere (Lego ball-joint at the top of the arm)
+    const shJoint = mesh(new THREE.SphereGeometry(0.13, 16, 12), MAT.charArmJoint);
+    shJoint.position.y = 0;
+    sh.add(shJoint);
+    // Upper arm — cylinder (coat sleeve)
+    const upper = mesh(new THREE.CylinderGeometry(0.10, 0.11, UPPER_ARM, 16), MAT.charCoat);
+    upper.position.y = -UPPER_ARM / 2;
+    sh.add(upper);
+    // Elbow pivot — forearm hangs from here so it can bend
+    const elbow = new THREE.Group();
+    elbow.position.y = -UPPER_ARM;
+    sh.add(elbow);
+    // Elbow joint sphere (visible)
+    const elbowJoint = mesh(new THREE.SphereGeometry(0.12, 16, 12), MAT.charArmJoint);
+    elbow.add(elbowJoint);
+    // Forearm — cylinder
+    const forearm = mesh(new THREE.CylinderGeometry(0.095, 0.105, FOREARM_LEN, 16), MAT.charCoat);
+    forearm.position.y = -FOREARM_LEN / 2;
+    elbow.add(forearm);
+    // Coat cuff — slightly wider band at the very bottom of the sleeve
     const cuff = mesh(new THREE.BoxGeometry(0.26, 0.07, 0.26), MAT.charCoatTrim);
-    cuff.position.y = -ARM_LEN + 0.08;
-    sh.add(cuff);
-    // v5.0 polygon bump — hand sphere segs 14/10 → 22/16 for smoother hands
+    cuff.position.y = -FOREARM_LEN + 0.04;
+    elbow.add(cuff);
+    // Hand sphere (smoother per v5.0 bump)
     const hand = mesh(new THREE.SphereGeometry(0.15, 22, 16), MAT.charSkin);
-    hand.position.y = -ARM_LEN + 0.04;
-    sh.add(hand);
+    hand.position.y = -FOREARM_LEN - 0.02;
+    elbow.add(hand);
     rigParts[side < 0 ? 'shoulderL' : 'shoulderR'] = sh;
+    rigParts[side < 0 ? 'elbowL'    : 'elbowR']    = elbow;
   }
 
   // ---- HEAD group + slots ------------------------------------------
@@ -852,51 +904,69 @@ function setReviewPose(n) {
 function tickRigReview(dt) {
   const k = Math.min(1, dt * 8);
   let tHipL = 0, tHipR = 0, tShoL = 0, tShoR = 0;
+  let tKneeL = 0.08, tKneeR = 0.08;        // v5.1 — slight idle knee bend
+  let tElbL = 0.18, tElbR = 0.18;          // v5.1 — slight idle elbow bend
   let tSholZ = 0, tShoRZ = 0;
   let tBodyTiltX = 0, tHeadTiltX = 0;
   let tScaleY = 1, tScaleXZ = 1;
   switch (reviewPose) {
-    case 1: /* idle — all zero (defaults above) */ break;
+    case 1: /* idle — defaults above */ break;
     case 2: {
       // Run cycle — increment stridePhase and pose limbs from the sine
       stridePhase += dt * 6;
-      const swing    = Math.sin(stridePhase) * 0.65;
-      const armSwing = Math.sin(stridePhase) * 0.55;
-      tHipL =  swing;  tHipR = -swing;
-      tShoL = -armSwing; tShoR = armSwing;
+      const sP       = Math.sin(stridePhase);
+      const swing    = sP * 0.65;
+      const armSwing = sP * 0.55;
+      tHipL =  swing;     tHipR = -swing;
+      tShoL = -armSwing;  tShoR = armSwing;
+      tKneeL = Math.max(0,  sP) * 0.85;
+      tKneeR = Math.max(0, -sP) * 0.85;
+      tElbL  = 0.55 + Math.max(0, -sP) * 0.35;
+      tElbR  = 0.55 + Math.max(0,  sP) * 0.35;
       break;
     }
     case 3: {
-      // Jump — knees tucked back, arms up
+      // Jump — tucked knees pulled back + arms up
       tHipL = -0.55; tHipR = -0.55;
+      tKneeL = 1.30; tKneeR = 1.30;
       tShoL =  1.30; tShoR =  1.30;
+      tElbL = 0.40;  tElbR = 0.40;
       tBodyTiltX = -0.08;
       break;
     }
     case 4: {
-      // Fall — arms out to sides, slight backward lean
+      // Fall — arms out to sides, legs spread, slight backward lean
       tHipL =  0.30; tHipR = -0.30;
+      tKneeL = 0.35; tKneeR = 0.35;
       tShoL = -0.40; tShoR = -0.40;
       tSholZ = -0.65; tShoRZ = 0.65;
+      tElbL = 0.50;  tElbR = 0.50;
       tBodyTiltX = -0.18;
       break;
     }
     case 5: {
-      // Land — squash + slight forward lean
+      // Land — squash + bent knees absorbing impact
       tScaleY = 0.78; tScaleXZ = 1.18;
+      tKneeL = 0.60; tKneeR = 0.60;
+      tHipL = -0.10; tHipR = -0.10;
+      tElbL = 0.35;  tElbR = 0.35;
       tBodyTiltX = 0.10;
       tHeadTiltX = 0.10;
       break;
     }
   }
-  rigParts.hipL.rotation.x += (tHipL - rigParts.hipL.rotation.x) * k;
-  rigParts.hipR.rotation.x += (tHipR - rigParts.hipR.rotation.x) * k;
+  rigParts.hipL.rotation.x      += (tHipL - rigParts.hipL.rotation.x)      * k;
+  rigParts.hipR.rotation.x      += (tHipR - rigParts.hipR.rotation.x)      * k;
+  rigParts.kneeL.rotation.x     += (tKneeL - rigParts.kneeL.rotation.x)    * k;
+  rigParts.kneeR.rotation.x     += (tKneeR - rigParts.kneeR.rotation.x)    * k;
   rigParts.shoulderL.rotation.x += (tShoL - rigParts.shoulderL.rotation.x) * k;
   rigParts.shoulderR.rotation.x += (tShoR - rigParts.shoulderR.rotation.x) * k;
+  rigParts.elbowL.rotation.x    += (tElbL - rigParts.elbowL.rotation.x)    * k;
+  rigParts.elbowR.rotation.x    += (tElbR - rigParts.elbowR.rotation.x)    * k;
   rigParts.shoulderL.rotation.z += (tSholZ - rigParts.shoulderL.rotation.z) * k;
   rigParts.shoulderR.rotation.z += (tShoRZ - rigParts.shoulderR.rotation.z) * k;
-  rigParts.headGrp.rotation.x += (tHeadTiltX - rigParts.headGrp.rotation.x) * k;
-  danny.rotation.x += (tBodyTiltX - danny.rotation.x) * k;
+  rigParts.headGrp.rotation.x   += (tHeadTiltX - rigParts.headGrp.rotation.x) * k;
+  danny.rotation.x              += (tBodyTiltX - danny.rotation.x) * k;
   danny.scale.y += (tScaleY - danny.scale.y) * k;
   const sx = (tScaleXZ - danny.scale.x) * k;
   danny.scale.x += sx; danny.scale.z += sx;
@@ -905,20 +975,33 @@ function tickRigReview(dt) {
 function tickRig(dt, isMoving) {
   const speed = Math.hypot(player.vel.x, player.vel.z);
   if (isMoving) {
-    // Cadence ramps with movement speed so the run reads fast at high
-    // speed and natural at base speed.
     stridePhase += dt * (3.5 + speed * 0.55);
   }
-  const swing = isMoving ? Math.sin(stridePhase) * 0.65 : 0;
-  const armSwing = isMoving ? Math.sin(stridePhase) * 0.55 : 0;
+  const sP       = Math.sin(stridePhase);
+  const swing    = isMoving ? sP * 0.65 : 0;
+  const armSwing = isMoving ? sP * 0.55 : 0;
   const k = Math.min(1, dt * 14);
-  // Hips swing opposite to each other.
+  // Hips swing opposite.
   rigParts.hipL.rotation.x += ( swing - rigParts.hipL.rotation.x) * k;
   rigParts.hipR.rotation.x += (-swing - rigParts.hipR.rotation.x) * k;
-  // Arms swing opposite to hips, ~85% amplitude.
+  // v5.1 — KNEES bend on the FORWARD-swinging leg only (the back-swing
+  // leg stays mostly straight). Idle = slight bend so the legs don't
+  // look stiff-locked.
+  const knL = isMoving ? Math.max(0, sP) * 0.85 : 0.08;
+  const knR = isMoving ? Math.max(0, -sP) * 0.85 : 0.08;
+  rigParts.kneeL.rotation.x += (knL - rigParts.kneeL.rotation.x) * k;
+  rigParts.kneeR.rotation.x += (knR - rigParts.kneeR.rotation.x) * k;
+  // Shoulders swing opposite to the same-side hip (180° out of phase
+  // — left arm swings forward when right leg swings forward).
   rigParts.shoulderL.rotation.x += (-armSwing - rigParts.shoulderL.rotation.x) * k;
   rigParts.shoulderR.rotation.x += ( armSwing - rigParts.shoulderR.rotation.x) * k;
-  // Head bob — small up/down on every footfall (twice per stride cycle).
+  // v5.1 — ELBOWS held bent during run (~30° baseline + small bob with
+  // the swing); barely bent when idle.
+  const elL = isMoving ? 0.55 + Math.max(0, -sP) * 0.35 : 0.18;
+  const elR = isMoving ? 0.55 + Math.max(0,  sP) * 0.35 : 0.18;
+  rigParts.elbowL.rotation.x += (elL - rigParts.elbowL.rotation.x) * k;
+  rigParts.elbowR.rotation.x += (elR - rigParts.elbowR.rotation.x) * k;
+  // Head bob — small up/down on every footfall.
   const bobTarget = isMoving ? Math.abs(Math.sin(stridePhase * 2)) * 0.05 : 0;
   rigParts.headGrp.position.y += (1.92 + bobTarget - rigParts.headGrp.position.y) * k;
 }
