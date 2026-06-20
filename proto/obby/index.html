@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v4.9 — glasses sit on face (orientation + wrap)</title>
+<title>Super Dude OBBY v5.0 — full lab coat + polygon bump</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -118,7 +118,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v4.9 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v5.0 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -324,6 +324,10 @@ const MAT = {
   charBelt:      toyMat(0x3a2418, { roughness: 0.7,  metalness: 0.25 }),  // brown leather
   charSideTrim:  toyMat(0x46f0ff, { emissive: 0x46f0ff, emissiveIntensity: 0.30,
                                      roughness: 0.4, metalness: 0.3 }),  // cyan sneaker accent
+  // v5.0 lab-coat additions
+  charCoatTrim:  toyMat(0xdde3ec, { roughness: 0.55, metalness: 0.15 }),  // slightly cool/dark coat shade for cuffs, collar
+  charButton:    toyMat(0xffd23a, { emissive: 0xffd23a, emissiveIntensity: 0.30,
+                                     roughness: 0.35, metalness: 0.65 }),  // small gold buttons down chest
   // Hazards (per §10.2)
   lava:        toyMat(THEME.hazard,     { emissive: 0xff2200, emissiveIntensity: 0.55, roughness: 0.55 }),
   lavaTop:     toyMat(0xffb070,         { emissive: 0xff7a20, emissiveIntensity: 1.0,  roughness: 0.35 }),
@@ -476,6 +480,7 @@ function makeGlasses() {
   const EYE_DX     = 0.105;   // horizontal eye separation half
   const TEMPLE_LEN = 0.30;    // reach back past the ear line
 
+  // v5.0 polygon bump — torus segs 10/24 → 16/40 for visibly smoother lenses
   // Two round rims. Default TorusGeometry lies in XY plane (axis +Z),
   // which is exactly what we want — the lens hole faces FORWARD, not
   // sideways. v4.7/.8 had `rotation.y = Math.PI/2` which rotated the
@@ -485,7 +490,7 @@ function makeGlasses() {
   // ring plane matches the local curvature of the face sphere instead
   // of being a flat plate that floats off the cheek.
   for (const side of [-1, +1]) {
-    const ring = pmesh(new THREE.TorusGeometry(RIM_R, RIM_T, 10, 24), m);
+    const ring = pmesh(new THREE.TorusGeometry(RIM_R, RIM_T, 16, 40), m);
     ring.position.set(side * EYE_DX, 0, 0);
     ring.rotation.y = side * 0.28;     // ~16° face-wrap; left rim tilts
                                        // left-back, right rim right-back
@@ -591,27 +596,58 @@ function buildDanny() {
   danny.add(torsoGrp);
   rigParts.body = torsoGrp;
 
-  // v4.5 Roblox-ify — was CapsuleGeometry; box reads as blocky toy.
-  // Bounding matches the old capsule (0.64 × 1.10 × 0.64) but trimmed
-  // to 0.92 tall + 0.44 deep so it feels Roblox-flat at the back.
-  const torso = mesh(new THREE.BoxGeometry(0.64, 0.92, 0.44), MAT.charShirt);
+  // v5.0 — TORSO IS NOW THE COAT. The whole body is coat-colored (was
+  // silver shirt) so the lab coat WRAPS Danny instead of being a flap
+  // only visible from the front. The silver shirt now only peeks out
+  // at the V-neck opening below the collar — that's the only place it
+  // reads. Pass C-lite §6.1 "scientist identity" gains real weight.
+  const torso = mesh(new THREE.BoxGeometry(0.64, 0.92, 0.44), MAT.charCoat);
   torso.position.y = TORSO_Y;
   torsoGrp.add(torso);
+  // Front overlay slab — adds a touch of forward depth so the coat
+  // doesn't look like a single floating block from the front.
   const coatFront = mesh(new THREE.BoxGeometry(0.62, 0.78, 0.06), MAT.charCoat);
   coatFront.position.set(0, TORSO_Y - 0.04, 0.30);
   torsoGrp.add(coatFront);
+  // Hem — the coat skirt around the bottom of the torso.
   const hem = mesh(new THREE.BoxGeometry(0.72, 0.30, 0.50), MAT.charCoat);
   hem.position.set(0, 0.86, 0);
   torsoGrp.add(hem);
 
+  // v5.0 — V-NECK OPENING — small silver shirt panel visible in the gap
+  // between the lapels at the upper chest. Sits proud of the coat front
+  // so it reads as a "behind the coat" inset.
+  const shirtV = mesh(new THREE.BoxGeometry(0.20, 0.24, 0.03), MAT.charShirt);
+  shirtV.position.set(0, TORSO_Y + 0.22, 0.34);
+  torsoGrp.add(shirtV);
+
+  // v5.0 — STAND-UP COLLAR — wraps the back/sides of the neck so the
+  // coat reads as having a real collar instead of an open hole at the
+  // top. Higher than the torso top.
+  const collar = mesh(new THREE.BoxGeometry(0.46, 0.10, 0.40), MAT.charCoatTrim);
+  collar.position.set(0, TORSO_Y + 0.50, 0);
+  torsoGrp.add(collar);
+  // The back of the collar steps up slightly (classic lab-coat back collar).
+  const collarBack = mesh(new THREE.BoxGeometry(0.40, 0.14, 0.10), MAT.charCoatTrim);
+  collarBack.position.set(0, TORSO_Y + 0.54, -0.18);
+  torsoGrp.add(collarBack);
+
   // v4.4 — COAT LAPELS — two small slabs flaring outward from the
-  // collar (top corners of the coat front). Reads as a lab-coat collar
-  // per §18.8 asymmetry guidance.
+  // collar (top corners of the coat front). v5.0 — sized slightly
+  // bigger so they frame the V-neck shirt insert.
   for (const side of [-1, +1]) {
-    const lapel = mesh(new THREE.BoxGeometry(0.14, 0.22, 0.04), MAT.charLapel);
-    lapel.position.set(side * 0.20, TORSO_Y + 0.28, 0.33);
-    lapel.rotation.z = side * 0.30;     // V shape — outer edges flare up
+    const lapel = mesh(new THREE.BoxGeometry(0.16, 0.30, 0.04), MAT.charLapel);
+    lapel.position.set(side * 0.18, TORSO_Y + 0.26, 0.345);
+    lapel.rotation.z = side * 0.32;     // V shape — outer edges flare up
     torsoGrp.add(lapel);
+  }
+
+  // v5.0 — BUTTONS — three small gold spheres down the chest centerline
+  // below the V-neck, suggesting a button-up coat.
+  for (let i = 0; i < 3; i++) {
+    const button = mesh(new THREE.SphereGeometry(0.020, 14, 10), MAT.charButton);
+    button.position.set(0, TORSO_Y + 0.02 - i * 0.16, 0.345);
+    torsoGrp.add(button);
   }
 
   // v4.4 — CHEST POCKET on viewer-left of the coat (Danny's right) +
@@ -652,7 +688,14 @@ function buildDanny() {
     const arm = mesh(new THREE.BoxGeometry(0.22, ARM_LEN, 0.22), MAT.charCoat);
     arm.position.y = -ARM_LEN / 2;
     sh.add(arm);
-    const hand = mesh(new THREE.SphereGeometry(0.15, 14, 10), MAT.charSkin);
+    // v5.0 — coat CUFF — slightly wider band at the very bottom of the
+    // sleeve in the cooler coat trim shade. Sits just above the hand so
+    // the sleeve has a visible end before the wrist.
+    const cuff = mesh(new THREE.BoxGeometry(0.26, 0.07, 0.26), MAT.charCoatTrim);
+    cuff.position.y = -ARM_LEN + 0.08;
+    sh.add(cuff);
+    // v5.0 polygon bump — hand sphere segs 14/10 → 22/16 for smoother hands
+    const hand = mesh(new THREE.SphereGeometry(0.15, 22, 16), MAT.charSkin);
     hand.position.y = -ARM_LEN + 0.04;
     sh.add(hand);
     rigParts[side < 0 ? 'shoulderL' : 'shoulderR'] = sh;
@@ -668,13 +711,16 @@ function buildDanny() {
   danny.add(headGrp);
   rigParts.headGrp = headGrp;
 
-  rigParts.head = mesh(new THREE.SphereGeometry(0.34, 18, 14), MAT.charSkin);
+  // v5.0 polygon bump — head sphere segs 18/14 → 32/22 for noticeably
+  // smoother silhouette at close-up review-camera distance.
+  rigParts.head = mesh(new THREE.SphereGeometry(0.34, 32, 22), MAT.charSkin);
   headGrp.add(rigParts.head);
 
   // EYES — bigger whites + bigger dark pupils so they read from
   // gameplay camera distance (anti-pattern §18.8: tiny features).
+  // v5.0 polygon bump — eye sphere segs 10/8 → 20/14.
   function eye(side, dx, dy, dz, r, mat) {
-    const e = mesh(new THREE.SphereGeometry(r, 10, 8), mat);
+    const e = mesh(new THREE.SphereGeometry(r, 20, 14), mat);
     e.position.set(side * dx, dy, dz);
     headGrp.add(e); return e;
   }
@@ -728,7 +774,8 @@ function buildDanny() {
   rigParts.hairSlot = new THREE.Group();
   headGrp.add(rigParts.hairSlot);
   {
-    const hair = mesh(new THREE.SphereGeometry(0.13, 10, 8), MAT.charHair);
+    // v5.0 polygon bump — hair sphere segs 10/8 → 22/16
+    const hair = mesh(new THREE.SphereGeometry(0.13, 22, 16), MAT.charHair);
     hair.position.set(0, 0.18, -0.22);
     rigParts.hairSlot.add(hair);
   }
@@ -738,7 +785,8 @@ function buildDanny() {
   rigParts.hatSlot = new THREE.Group();
   headGrp.add(rigParts.hatSlot);
   {
-    const dome = mesh(new THREE.SphereGeometry(0.35, 18, 14, 0, Math.PI*2, 0, Math.PI*0.55), MAT.charCap);
+    // v5.0 polygon bump — cap dome segs 18/14 → 30/20 for smoother top of head
+    const dome = mesh(new THREE.SphereGeometry(0.35, 30, 20, 0, Math.PI*2, 0, Math.PI*0.55), MAT.charCap);
     dome.position.set(0, 0.18, 0);
     rigParts.hatSlot.add(dome);
     const brim = mesh(new THREE.BoxGeometry(0.52, 0.04, 0.24), MAT.charCap);
