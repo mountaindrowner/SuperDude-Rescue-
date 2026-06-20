@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v5.1 — Lego skeleton (knees, elbows, rounded shoes)</title>
+<title>Super Dude OBBY v6.0 — Level Editor</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -103,6 +103,57 @@
              display: flex; align-items: center; justify-content: center; user-select: none;
              touch-action: none; -webkit-touch-callout: none; z-index: 13; }
   #jumpBtn:active, #jumpBtn.live { background: #ffd23a; transform: scale(0.94); }
+
+/* ============================================================
+   LEVEL EDITOR
+   ============================================================ */
+#edPanel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+           background: rgba(10,14,26,0.94); border-top: 2px solid rgba(70,240,255,0.45);
+           backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+           display: none; flex-direction: column; overflow: hidden; }
+#edPanel.on { display: flex; }
+#edBar { display: flex; align-items: center; gap: 6px; padding: 8px 10px 8px;
+          border-bottom: 1px solid rgba(255,255,255,0.10); flex-shrink: 0; overflow-x: auto; }
+.ed-btn { height: 40px; min-width: 44px; padding: 0 12px; border-radius: 8px;
+           border: 1.5px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.09);
+           color: #e8ecf3; font-weight: 700; font-size: 13px; cursor: pointer;
+           touch-action: manipulation; white-space: nowrap; flex-shrink: 0;
+           transition: background .12s; font-family: inherit; }
+.ed-btn:active { background: rgba(70,240,255,0.22); }
+.ed-btn.danger { border-color: rgba(255,80,80,0.55); color: #ff9090; }
+.ed-btn.primary { border-color: rgba(70,240,255,0.60); color: #46f0ff; }
+#edStageLbl { color: #ffd23a; font-weight: 800; font-size: 13px; flex: 1; text-align: center;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+#edProps { padding: 8px 10px 10px; display: none; flex-direction: column; gap: 7px; overflow-y: auto; }
+#edProps.on { display: flex; }
+#edSelLbl { color: #ffd23a; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+             text-overflow: ellipsis; overflow: hidden; white-space: nowrap; margin-bottom: 2px; }
+.ed-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ed-label { color: #9aa0c4; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+             min-width: 16px; text-align: right; flex-shrink: 0; }
+.ed-nudge { display: inline-flex; align-items: center; gap: 2px; }
+.ed-nudge button { width: 34px; height: 34px; border-radius: 6px;
+                    border: 1.5px solid rgba(255,255,255,0.20);
+                    background: rgba(255,255,255,0.08); color: #e8ecf3;
+                    font-size: 20px; line-height: 1; font-weight: 700; cursor: pointer;
+                    touch-action: manipulation; flex-shrink: 0; font-family: inherit; }
+.ed-nudge button:active { background: rgba(70,240,255,0.22); }
+.ed-val { min-width: 46px; text-align: center; color: #e8ecf3; font-size: 12px;
+           font-family: ui-monospace, "SF Mono", monospace; }
+#edColor { width: 42px; height: 34px; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.22);
+            background: none; cursor: pointer; padding: 2px; flex-shrink: 0; }
+#edKind { height: 34px; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.22);
+           background: rgba(10,14,26,0.90); color: #e8ecf3; font-size: 13px; padding: 0 6px;
+           flex-shrink: 0; }
+#edExportPanel { display: none; position: fixed; inset: 0; z-index: 25;
+                  background: rgba(10,14,26,0.96); padding: 16px; box-sizing: border-box;
+                  flex-direction: column; gap: 10px; }
+#edExportText { flex: 1; background: rgba(255,255,255,0.06); color: #b8d8ff;
+                 border: 1px solid rgba(70,240,255,0.30); border-radius: 8px; padding: 10px;
+                 font-family: ui-monospace, monospace; font-size: 10px; resize: none;
+                 width: 100%; box-sizing: border-box; min-height: 160px; }
+#edCopyBtn { height: 48px; font-size: 16px; width: 100%; }
+#edExportNote { color: #9aa0c4; font-size: 12px; text-align: center; margin: 0; }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -118,7 +169,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v5.1 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v6.0 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -129,7 +180,7 @@
     <p id="ov-p2"></p>
     <div class="blink" id="ov-cta">TAP TO PLAY AGAIN</div>
   </div>
-  <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug</div>
+  <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug · E = editor</div>
 </div>
 <div id="toast"><span class="pill" id="toast-text">CHECKPOINT 1</span></div>
 <div id="review">
@@ -155,6 +206,54 @@
     <div id="stickKnob"></div>
   </div>
   <button id="jumpBtn" type="button">JUMP</button>
+</div>
+
+<!-- LEVEL EDITOR — bottom panel, shown when state==='edit' -->
+<div id="edPanel">
+  <div id="edBar">
+    <button class="ed-btn primary" id="edClose">✕ PLAY</button>
+    <span id="edStageLbl">STAGE 1/12</span>
+    <button class="ed-btn" id="edPrev" title="Previous stage">◀</button>
+    <button class="ed-btn" id="edNext" title="Next stage">▶</button>
+    <button class="ed-btn" id="edAdd">+ ADD</button>
+    <button class="ed-btn" id="edExportBtn">EXPORT</button>
+  </div>
+  <div id="edProps">
+    <div id="edSelLbl">— tap a platform to select it —</div>
+    <div class="ed-row">
+      <span class="ed-label">X</span><div class="ed-nudge" id="ed-nx"></div>
+      <span class="ed-label">Y</span><div class="ed-nudge" id="ed-ny"></div>
+      <span class="ed-label">Z</span><div class="ed-nudge" id="ed-nz"></div>
+    </div>
+    <div class="ed-row">
+      <span class="ed-label">W</span><div class="ed-nudge" id="ed-nw"></div>
+      <span class="ed-label">H</span><div class="ed-nudge" id="ed-nh"></div>
+      <span class="ed-label">D</span><div class="ed-nudge" id="ed-nd"></div>
+    </div>
+    <div class="ed-row">
+      <span class="ed-label">CLR</span>
+      <input type="color" id="edColor" value="#79c8ff" />
+      <span class="ed-label">KIND</span>
+      <select id="edKind">
+        <option value="solid">solid</option>
+        <option value="disappearing">disappearing</option>
+        <option value="moving">moving</option>
+        <option value="jumpPad">jumpPad</option>
+        <option value="lava">lava (hazard)</option>
+      </select>
+      <button class="ed-btn danger" id="edDeleteBtn">🗑 DEL</button>
+    </div>
+  </div>
+</div>
+<!-- EXPORT panel — fullscreen, shows JSON, copy to clipboard -->
+<div id="edExportPanel">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span style="color:#ffd23a; font-weight:800; font-size:16px;">EXPORT MAP JSON</span>
+    <button class="ed-btn" id="edExportClose">✕ CLOSE</button>
+  </div>
+  <textarea id="edExportText" readonly></textarea>
+  <button class="ed-btn primary" id="edCopyBtn">COPY TO CLIPBOARD</button>
+  <p id="edExportNote">Paste this into the <code>stages:</code> array in MAP to save your edits.</p>
 </div>
 
 <script type="module">
@@ -1841,6 +1940,10 @@ window.addEventListener('keydown', e => {
     if (state === 'review') exitReview(); else enterReview();
     return;
   }
+  if (e.key === 'e' || e.key === 'E') {
+    if (state === 'edit') exitEditor(); else if (state === 'play') enterEditor();
+    return;
+  }
   if (state === 'review') {
     if (e.key === 'Escape') { exitReview(); return; }
     if (/^[1-5]$/.test(e.key)) { setReviewPose(parseInt(e.key, 10)); return; }
@@ -2289,7 +2392,7 @@ function tick() {
   // FPS rolling estimate, updated every 0.4s.
   dbgFrameAcc += dt; dbgFrames++;
   if (dbgFrameAcc >= 0.4) { dbgFps = dbgFrames / dbgFrameAcc; dbgFrameAcc = 0; dbgFrames = 0; }
-  tickObstacles(dt);
+  if (state !== 'edit') tickObstacles(dt);
 
   if (state === 'play') {
     timeSec += dt;
@@ -2300,6 +2403,8 @@ function tick() {
     // v4.5: review mode — physics paused, Danny holds the selected
     // pose. The camera auto-orbits (handled in updateCamera).
     tickRigReview(dt);
+  } else if (state === 'edit') {
+    tickRig(dt, false);   // idle animation while paused
   } // 'won' is idle.
 
   // Sync the visual to the physics position + facing. In 'review' we
@@ -2410,6 +2515,409 @@ function reset() {
   document.getElementById('ui-cp').textContent = '0';
   document.getElementById('ui-prog').style.width = '0%';
 }
+// ============================================================
+// 14. LEVEL EDITOR
+// ============================================================
+let edCurrentStage = 0;
+let edSelected = null;   // platforms[] entry currently selected
+
+const edRaycaster = new THREE.Raycaster();
+const edMeshMap   = new Map(); // mesh uuid → platforms[] entry
+
+// Build the mesh→entry lookup after scaffoldMap() finishes.
+function edBuildMeshMap() {
+  edMeshMap.clear();
+  for (const entry of platforms) {
+    entry.mesh.traverse(o => {
+      if (o.isMesh) edMeshMap.set(o.uuid, entry);
+    });
+  }
+}
+
+function enterEditor() {
+  if (state === 'review') exitReview();
+  state = 'edit';
+  edBuildMeshMap();
+  // Disable normal touch game controls so touch events fall through to canvas.
+  document.getElementById('lookZone').style.pointerEvents  = 'none';
+  document.getElementById('stickZone').style.pointerEvents = 'none';
+  document.getElementById('jumpBtn').style.pointerEvents   = 'none';
+  document.getElementById('edPanel').classList.add('on');
+  document.getElementById('edProps').classList.add('on');
+  document.getElementById('overlay').classList.remove('on');
+  edCurrentStage = 0;
+  edUpdateStageLabel();
+  edSelect(null);
+}
+
+function exitEditor() {
+  edSelect(null);
+  state = 'play';
+  document.getElementById('lookZone').style.pointerEvents  = '';
+  document.getElementById('stickZone').style.pointerEvents = '';
+  document.getElementById('jumpBtn').style.pointerEvents   = '';
+  document.getElementById('edPanel').classList.remove('on');
+}
+
+function edUpdateStageLabel() {
+  const stage = MAP.stages[edCurrentStage];
+  document.getElementById('edStageLbl').textContent =
+    'S' + (edCurrentStage + 1) + '/' + MAP.stages.length + ' ' + (stage?.name ?? '');
+}
+
+// ---- Highlight / unhighlight ----
+const ED_GLOW = 0xffee22;
+function edHighlight(entry, on) {
+  if (!entry) return;
+  entry.mesh.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const mat = o.material;
+    if (on) {
+      if (o.userData._edEm === undefined && mat.emissive) {
+        o.userData._edEm = mat.emissive.getHex();
+        o.userData._edEI = mat.emissiveIntensity ?? 0;
+      }
+      if (mat.emissive) mat.emissive.setHex(ED_GLOW);
+      if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0.7;
+    } else {
+      if (o.userData._edEm !== undefined && mat.emissive) {
+        mat.emissive.setHex(o.userData._edEm);
+        if ('emissiveIntensity' in mat) mat.emissiveIntensity = o.userData._edEI;
+        delete o.userData._edEm;
+        delete o.userData._edEI;
+      }
+    }
+  });
+}
+
+function edSelect(entry) {
+  if (edSelected && edSelected !== entry) edHighlight(edSelected, false);
+  edSelected = entry;
+  if (entry) {
+    edHighlight(entry, true);
+    document.getElementById('edSelLbl').textContent =
+      entry.kind.toUpperCase() + '  pos(' +
+      entry.data.pos.map(v => v.toFixed(1)).join(', ') + ')  sz(' +
+      entry.data.size.map(v => v.toFixed(1)).join(', ') + ')';
+  } else {
+    document.getElementById('edSelLbl').textContent = '— tap a platform to select it —';
+  }
+  edRefreshPanel();
+}
+
+// ---- Property panel ----
+const NUDGE_STEP = 0.5;
+
+function makeNudgeWidget(containerId, getVal, setVal) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  const minus = document.createElement('button');
+  minus.textContent = '−';
+  minus.addEventListener('click', () => { setVal(getVal() - NUDGE_STEP); edRefreshPanel(); });
+  const vsp = document.createElement('span');
+  vsp.className = 'ed-val';
+  vsp.textContent = getVal().toFixed(1);
+  const plus = document.createElement('button');
+  plus.textContent = '+';
+  plus.addEventListener('click', () => { setVal(getVal() + NUDGE_STEP); edRefreshPanel(); });
+  el.appendChild(minus); el.appendChild(vsp); el.appendChild(plus);
+}
+
+function edRefreshPanel() {
+  const s = edSelected;
+  const ids = ['ed-nx','ed-ny','ed-nz','ed-nw','ed-nh','ed-nd'];
+  if (!s) {
+    for (const id of ids) { const el = document.getElementById(id); if (el) el.innerHTML = '<span class="ed-val">—</span>'; }
+    document.getElementById('edColor').value = '#79c8ff';
+    return;
+  }
+  // Position
+  makeNudgeWidget('ed-nx', () => s.data.pos[0], v => edSetPos(0, v));
+  makeNudgeWidget('ed-ny', () => s.data.pos[1], v => edSetPos(1, v));
+  makeNudgeWidget('ed-nz', () => s.data.pos[2], v => edSetPos(2, v));
+  // Size
+  makeNudgeWidget('ed-nw', () => s.data.size[0], v => edSetSize(0, Math.max(0.5, v)));
+  makeNudgeWidget('ed-nh', () => s.data.size[1], v => edSetSize(1, Math.max(0.2, v)));
+  makeNudgeWidget('ed-nd', () => s.data.size[2], v => edSetSize(2, Math.max(0.5, v)));
+  document.getElementById('edColor').value = s.data.color || '#79c8ff';
+  document.getElementById('edKind').value  = s.kind;
+  // Refresh label
+  document.getElementById('edSelLbl').textContent =
+    s.kind.toUpperCase() + '  pos(' +
+    s.data.pos.map(v => v.toFixed(1)).join(', ') + ')  sz(' +
+    s.data.size.map(v => v.toFixed(1)).join(', ') + ')';
+}
+
+// ---- Mutation helpers ----
+function edSetPos(axis, val) {
+  if (!edSelected) return;
+  edSelected.data.pos[axis] = val;
+  edSelected.mesh.position.setComponent(axis, val);
+  edRecomputeBox(edSelected);
+}
+
+function edSetSize(axis, val) {
+  if (!edSelected) return;
+  const clamped = Math.max(axis === 1 ? 0.2 : 0.5, val);
+  edSelected.data.size[axis] = clamped;
+  edRebuildPlatform(edSelected);
+}
+
+function edRecomputeBox(entry) {
+  const [x, y, z] = entry.data.pos;
+  const [w, h, d] = entry.data.size;
+  entry.box.min.set(x - w/2, y - h/2, z - d/2);
+  entry.box.max.set(x + w/2, y + h/2, z + d/2);
+}
+
+function edRebuildPlatform(entry) {
+  // Remove old mesh from scene.
+  edHighlight(entry, false);
+  scene.remove(entry.mesh);
+  entry.mesh.traverse(o => {
+    if (o.isMesh) { edMeshMap.delete(o.uuid); if (o.geometry) o.geometry.dispose(); }
+  });
+
+  const p = entry.data;
+  const color = p.color || '#79c8ff';
+  if (entry.kind === 'solid') {
+    const r = makeToyPlatform({ pos: p.pos, size: p.size, color });
+    r.baseMesh.receiveShadow = true;
+    scene.add(r.group);
+    entry.mesh = r.group; entry.baseMesh = r.baseMesh;
+  } else {
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.60, metalness: 0.10,
+      emissive: entry.kind === 'jumpPad' ? new THREE.Color(color) : new THREE.Color(0),
+      emissiveIntensity: entry.kind === 'jumpPad' ? 0.40 : 0,
+      transparent: entry.kind === 'disappearing',
+      opacity: 1.0,
+    });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(p.size[0], p.size[1], p.size[2]), mat);
+    m.position.set(p.pos[0], p.pos[1], p.pos[2]);
+    m.receiveShadow = true;
+    scene.add(m);
+    entry.mesh = m; entry.baseMesh = m;
+  }
+  // Register new meshes in the map and re-apply highlight.
+  entry.mesh.traverse(o => { if (o.isMesh) edMeshMap.set(o.uuid, entry); });
+  edRecomputeBox(entry);
+  edHighlight(entry, true);
+  edRefreshPanel();
+}
+
+// ---- Add / Delete ----
+function edAddPlatform() {
+  // Place in front of the camera target, aligned to 0.5-unit grid.
+  const snap = v => Math.round(v * 2) / 2;
+  const pos  = [ snap(camTgt.x), snap(player.pos.y - player.halfH - player.radius), snap(camTgt.z - 5) ];
+  const newP = { pos, size: [4, 1, 4], color: '#79c8ff', kind: 'solid' };
+  const stage = MAP.stages[edCurrentStage];
+  if (!stage.platforms) stage.platforms = [];
+  stage.platforms.push(newP);
+
+  const r = makeToyPlatform({ pos: newP.pos, size: newP.size, color: newP.color });
+  r.baseMesh.receiveShadow = true;
+  scene.add(r.group);
+  const box = new THREE.Box3();
+  const entry = {
+    mesh: r.group, baseMesh: r.baseMesh, box,
+    kind: 'solid',
+    data: Object.assign({ stageId: stage.id }, newP),
+    collidable: true,
+  };
+  // entry.data.pos IS newP.pos (same reference via Object.assign shallow copy)
+  edRecomputeBox(entry);
+  platforms.push(entry);
+  r.group.traverse(o => { if (o.isMesh) edMeshMap.set(o.uuid, entry); });
+  sfx('checkpoint');
+  edSelect(entry);
+}
+
+function edDeletePlatform() {
+  if (!edSelected) return;
+  edHighlight(edSelected, false);
+  scene.remove(edSelected.mesh);
+  edSelected.mesh.traverse(o => {
+    if (o.isMesh) { edMeshMap.delete(o.uuid); if (o.geometry) o.geometry.dispose(); }
+  });
+  const idx = platforms.indexOf(edSelected);
+  if (idx >= 0) platforms.splice(idx, 1);
+  // Remove from MAP (entry.data.pos === p.pos reference)
+  for (const stage of MAP.stages) {
+    if (!stage.platforms) continue;
+    const pi = stage.platforms.findIndex(p => p.pos === edSelected.data.pos);
+    if (pi >= 0) { stage.platforms.splice(pi, 1); break; }
+  }
+  edSelected = null;
+  edSelect(null);
+}
+
+// ---- Export ----
+function edBuildExportJSON() {
+  const stages = MAP.stages.map(stage => {
+    const s = { id: stage.id, name: stage.name };
+    if (stage.platforms) s.platforms = stage.platforms.map(p => {
+      const o = { pos: p.pos.map(v => Math.round(v * 100) / 100),
+                  size: p.size.map(v => Math.round(v * 100) / 100) };
+      if (p.color) o.color = p.color;
+      o.kind = p.kind || 'solid';
+      if (p.kind === 'disappearing') {
+        ['tHold','tFade','tCool','phase'].forEach(k => { if (p[k] !== undefined) o[k] = p[k]; });
+      }
+      if (p.kind === 'moving') {
+        ['from','to','period'].forEach(k => { if (p[k] !== undefined) o[k] = p[k]; });
+      }
+      if (p.kind === 'jumpPad' && p.impulse !== undefined) o.impulse = p.impulse;
+      return o;
+    });
+    if (stage.hazards)    s.hazards    = stage.hazards;
+    if (stage.checkpoint) s.checkpoint = stage.checkpoint;
+    if (stage.finish)     s.finish     = stage.finish;
+    return s;
+  });
+  return JSON.stringify(stages, null, 2);
+}
+
+// ---- Raycaster pick ----
+function edPickPlatform(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const nx = ((clientX - rect.left) / rect.width)  * 2 - 1;
+  const ny = -((clientY - rect.top)  / rect.height) * 2 + 1;
+  edRaycaster.setFromCamera({ x: nx, y: ny }, camera);
+  const meshList = [];
+  const seen = new Set();
+  for (const entry of platforms) {
+    entry.mesh.traverse(o => {
+      if (o.isMesh && !seen.has(o.uuid)) { seen.add(o.uuid); meshList.push(o); }
+    });
+  }
+  const hits = edRaycaster.intersectObjects(meshList, false);
+  if (hits.length > 0) {
+    const entry = edMeshMap.get(hits[0].object.uuid);
+    if (entry) { edSelect(entry); return; }
+  }
+  edSelect(null);
+}
+
+// ---- Touch handling for editor (orbit + tap-to-select) ----
+let _edTouchId = -1, _edTouchSX = 0, _edTouchSY = 0, _edTouchMoved = false;
+let _edMouseSX = 0, _edMouseSY = 0;
+
+canvas.addEventListener('mousedown', e => {
+  if (state !== 'edit') return;
+  _edMouseSX = e.clientX; _edMouseSY = e.clientY;
+});
+canvas.addEventListener('click', e => {
+  if (state !== 'edit') return;
+  if (Math.hypot(e.clientX - _edMouseSX, e.clientY - _edMouseSY) > 10) return;
+  edPickPlatform(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointerdown', e => {
+  if (state !== 'edit') return;
+  if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+  if (_edTouchId !== -1) return;
+  e.preventDefault();
+  _edTouchId = e.pointerId; _edTouchSX = e.clientX; _edTouchSY = e.clientY; _edTouchMoved = false;
+  lookActive = true; lookLX = e.clientX; lookLY = e.clientY;
+  try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+}, { passive: false });
+
+canvas.addEventListener('pointermove', e => {
+  if (state !== 'edit' || e.pointerId !== _edTouchId) return;
+  e.preventDefault();
+  const dx = e.clientX - lookLX, dy = e.clientY - lookLY;
+  if (Math.abs(dx) + Math.abs(dy) > 4) _edTouchMoved = true;
+  azim -= dx * 0.008;
+  elev = Math.max(-0.6, Math.min(1.30, elev - dy * 0.008));
+  lookLX = e.clientX; lookLY = e.clientY;
+  autoFollowCooldown = 2.5;
+}, { passive: false });
+
+canvas.addEventListener('pointerup', e => {
+  if (state !== 'edit' || e.pointerId !== _edTouchId) return;
+  e.preventDefault();
+  _edTouchId = -1; lookActive = false;
+  if (!_edTouchMoved) edPickPlatform(e.clientX, e.clientY);
+}, { passive: false });
+
+canvas.addEventListener('pointercancel', e => {
+  if (e.pointerId === _edTouchId) { _edTouchId = -1; lookActive = false; }
+});
+
+// ---- Button wiring ----
+document.getElementById('edClose').addEventListener('click', exitEditor);
+
+document.getElementById('edPrev').addEventListener('click', () => {
+  edCurrentStage = Math.max(0, edCurrentStage - 1);
+  edUpdateStageLabel(); edSelect(null);
+});
+document.getElementById('edNext').addEventListener('click', () => {
+  edCurrentStage = Math.min(MAP.stages.length - 1, edCurrentStage + 1);
+  edUpdateStageLabel(); edSelect(null);
+});
+
+document.getElementById('edAdd').addEventListener('click', edAddPlatform);
+document.getElementById('edDeleteBtn').addEventListener('click', edDeletePlatform);
+
+document.getElementById('edColor').addEventListener('input', e => {
+  if (!edSelected) return;
+  edSelected.data.color = e.target.value;
+  edRebuildPlatform(edSelected);
+});
+document.getElementById('edKind').addEventListener('change', e => {
+  if (!edSelected) return;
+  edSelected.data.kind = e.target.value;
+  edSelected.kind      = e.target.value;
+  edRebuildPlatform(edSelected);
+});
+
+document.getElementById('edExportBtn').addEventListener('click', () => {
+  const panel = document.getElementById('edExportPanel');
+  panel.style.display = 'flex';
+  document.getElementById('edExportText').value = edBuildExportJSON();
+});
+document.getElementById('edExportClose').addEventListener('click', () => {
+  document.getElementById('edExportPanel').style.display = 'none';
+});
+document.getElementById('edCopyBtn').addEventListener('click', () => {
+  const text = document.getElementById('edExportText').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('edCopyBtn').textContent = 'COPIED ✓';
+      setTimeout(() => { document.getElementById('edCopyBtn').textContent = 'COPY TO CLIPBOARD'; }, 2000);
+    }).catch(() => {});
+  } else {
+    document.getElementById('edExportText').select();
+    document.execCommand('copy');
+    document.getElementById('edCopyBtn').textContent = 'COPIED ✓';
+    setTimeout(() => { document.getElementById('edCopyBtn').textContent = 'COPY TO CLIPBOARD'; }, 2000);
+  }
+});
+
+// Add EDIT MAP button to the play-again overlay so it's accessible on mobile.
+{
+  const btn = document.createElement('button');
+  btn.textContent = 'EDIT MAP';
+  btn.style.cssText = 'margin-top:14px; padding:10px 22px; border-radius:8px; ' +
+    'border:2px solid rgba(70,240,255,0.55); background:rgba(70,240,255,0.10); ' +
+    'color:#46f0ff; font-weight:800; font-size:15px; cursor:pointer; touch-action:manipulation; ' +
+    'font-family:inherit; display:block;';
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('overlay').classList.remove('on');
+    if (state === 'won') reset();
+    enterEditor();
+  });
+  document.getElementById('overlay').appendChild(btn);
+}
+
+// Build the initial mesh→entry map once scaffoldMap() has run.
+edBuildMeshMap();
+
 // Set the initial player position + yaw to the map's spawn now that
 // MAP is defined (this overrides the earlier placeholder defaults).
 player.pos.set(MAP.start[0], MAP.start[1], MAP.start[2]);
