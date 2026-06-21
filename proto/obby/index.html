@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v6.2 — Kenney coins</title>
+<title>Super Dude OBBY v6.3 — Kenney landing dust</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -169,7 +169,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v6.2 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v6.3 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -1873,6 +1873,8 @@ function tickObstacles(dt) {
       }
     }
   }
+
+  tickDust(dt);
 }
 
 // ============================================================
@@ -1946,7 +1948,7 @@ function buildSetDressing() {
 // Loaded once, cached as templates, then cloned per use. Falls back to
 // the procedural primitives if any GLB fails to load (e.g. local file://
 // hosting blocks fetch).
-const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null };
+const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null };
 async function loadKenneyAssets() {
   const loader = new GLTFLoader();
   const one = path => new Promise(res => {
@@ -1955,31 +1957,73 @@ async function loadKenneyAssets() {
       undefined,
       err => { console.warn('Kenney load failed:', path, err); res(null); });
   });
-  const [cloud, grass, grassSmall, flag, coin] = await Promise.all([
+  const [cloud, grass, grassSmall, flag, coin, dust] = await Promise.all([
     one('./assets/kenney/cloud.glb'),
     one('./assets/kenney/grass.glb'),
     one('./assets/kenney/grass-small.glb'),
     one('./assets/kenney/flag.glb'),
     one('./assets/kenney/coin.glb'),
+    one('./assets/kenney/dust.glb'),
   ]);
   KENNEY.cloud = cloud;
   KENNEY.grass = grass;
   KENNEY.grassSmall = grassSmall;
   KENNEY.flag = flag;
   KENNEY.coin = coin;
+  KENNEY.dust = dust;
   // Default shadow casting on every Kenney mesh: cast on flag (vertical),
   // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
-  for (const root of [cloud, grass, grassSmall, flag, coin]) {
+  for (const root of [cloud, grass, grassSmall, flag, coin, dust]) {
     if (!root) continue;
     root.traverse(o => {
       if (!o.isMesh) return;
       o.castShadow    = (root === flag || root === coin);
-      o.receiveShadow = (root !== cloud && root !== coin);
+      o.receiveShadow = (root !== cloud && root !== coin && root !== dust);
       if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
     });
   }
 }
 await loadKenneyAssets();
+
+// ============ LANDING DUST (v6.3) ====================================
+// Pool of Kenney dust meshes spawned each time Danny lands. Each puff
+// scales up + fades over ~0.45s, then returns to the pool.
+const dustPool = [];
+const dustActive = [];
+function spawnLandingDust() {
+  if (!KENNEY.dust) return;
+  // Only spawn dust on a hard landing (downward velocity > 4 m/s) so
+  // tiny ledge-drops don't kick up unnecessary visual chatter.
+  if (player.vel.y > -4 && player.prevOnGround) return;
+  const m = dustPool.pop() || KENNEY.dust.clone(true);
+  m.position.set(player.pos.x, player.pos.y - player.halfH - player.radius + 0.02, player.pos.z);
+  m.rotation.y = Math.random() * Math.PI * 2;
+  m.scale.setScalar(0.4);
+  m.visible = true;
+  // Reset opacity in case this is a recycled mesh.
+  m.traverse(o => { if (o.isMesh && o.material) { o.material.transparent = true; o.material.opacity = 0.85; } });
+  scene.add(m);
+  dustActive.push({ mesh: m, t: 0, dur: 0.45 });
+}
+function tickDust(dt) {
+  for (let i = dustActive.length - 1; i >= 0; i--) {
+    const d = dustActive[i];
+    d.t += dt;
+    const k = d.t / d.dur;
+    if (k >= 1) {
+      d.mesh.visible = false;
+      scene.remove(d.mesh);
+      dustPool.push(d.mesh);
+      dustActive.splice(i, 1);
+      continue;
+    }
+    // grow from 0.4 to 1.4 with fast ease-out, opacity 0.85 -> 0
+    const grow = 0.4 + (1 - Math.pow(1 - k, 2)) * 1.0;
+    d.mesh.scale.setScalar(grow);
+    d.mesh.position.y += dt * 0.6;
+    d.mesh.traverse(o => { if (o.isMesh && o.material) o.material.opacity = 0.85 * (1 - k); });
+  }
+}
 
 // ============ COINS (v6.2) ===========================================
 // One coin per non-floor platform + one above every checkpoint pad.
@@ -2303,7 +2347,7 @@ function resolveCapsuleVsBox(box) {
   if (ny > 0.6) {
     // top — landed on the platform
     if (player.vel.y < 0) {
-      if (!player.onGround) sfx('land');
+      if (!player.onGround) { sfx('land'); spawnLandingDust(); }
       player.vel.y = 0;
     }
     player.onGround = true;
