@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v6.1 — Kenney prop pack (clouds, grass, flags)</title>
+<title>Super Dude OBBY v6.2 — Kenney coins</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -165,11 +165,11 @@
   <div id="topbar">
     <div class="row">
       <span class="lbl big">STAGE <span id="ui-stage">1</span><span style="color:#9aa0c4"> / </span><span id="ui-total" style="color:#9aa0c4">1</span></span>
-      <span class="lbl"><span style="color:#9aa0c4">CHECKPOINT</span> <span id="ui-cp" class="cyan">0</span></span>
+      <span class="lbl"><span style="color:#9aa0c4">CHECKPOINT</span> <span id="ui-cp" class="cyan">0</span> &nbsp;<span style="color:#9aa0c4">COINS</span> <span id="ui-coin" style="color:#ffd23a">0</span><span style="color:#9aa0c4">/</span><span id="ui-cointot" style="color:#9aa0c4">0</span></span>
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v6.1 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v6.2 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -1833,6 +1833,46 @@ function tickObstacles(dt) {
       }
     }
   }
+
+  // v6.2 — coins: spin + bob, follow moving platforms, collect on touch.
+  for (const c of coins) {
+    if (c.collected) {
+      // shrink-and-fade animation after pickup, then fully hide.
+      if (c.mesh.visible) {
+        c.mesh.rotation.y += dt * 12;
+        const s = Math.max(0, c.mesh.scale.x - dt * 3.2);
+        c.mesh.scale.setScalar(s);
+        c.mesh.position.y += dt * 2.5;
+        if (s <= 0.001) c.mesh.visible = false;
+      }
+      continue;
+    }
+    c.mesh.rotation.y += dt * 2.2;
+    let bx, bz;
+    if (c.attach) {
+      // follow the attached platform (handles moving + disappearing).
+      bx = c.attach.mesh.position.x;
+      bz = c.attach.mesh.position.z;
+      c.mesh.position.x = bx;
+      c.mesh.position.z = bz;
+      c.baseY = c.attach.mesh.position.y + c.offset.y;
+    } else {
+      bx = c.mesh.position.x; bz = c.mesh.position.z;
+    }
+    c.mesh.position.y = c.baseY + Math.sin(runT * 2.4 + c.phase) * 0.10;
+    // Collection: capsule-vs-coin proximity test (player.pos = center).
+    if (state === 'play') {
+      const dx = player.pos.x - bx;
+      const dz = player.pos.z - bz;
+      const dy = player.pos.y - c.mesh.position.y;
+      if (Math.hypot(dx, dy, dz) < 1.0) {
+        c.collected = true;
+        coinsCollected++;
+        document.getElementById('ui-coin').textContent = coinsCollected;
+        sfx('coin');
+      }
+    }
+  }
 }
 
 // ============================================================
@@ -1906,7 +1946,7 @@ function buildSetDressing() {
 // Loaded once, cached as templates, then cloned per use. Falls back to
 // the procedural primitives if any GLB fails to load (e.g. local file://
 // hosting blocks fetch).
-const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null };
+const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null };
 async function loadKenneyAssets() {
   const loader = new GLTFLoader();
   const one = path => new Promise(res => {
@@ -1915,31 +1955,67 @@ async function loadKenneyAssets() {
       undefined,
       err => { console.warn('Kenney load failed:', path, err); res(null); });
   });
-  const [cloud, grass, grassSmall, flag] = await Promise.all([
+  const [cloud, grass, grassSmall, flag, coin] = await Promise.all([
     one('./assets/kenney/cloud.glb'),
     one('./assets/kenney/grass.glb'),
     one('./assets/kenney/grass-small.glb'),
     one('./assets/kenney/flag.glb'),
+    one('./assets/kenney/coin.glb'),
   ]);
   KENNEY.cloud = cloud;
   KENNEY.grass = grass;
   KENNEY.grassSmall = grassSmall;
   KENNEY.flag = flag;
+  KENNEY.coin = coin;
   // Default shadow casting on every Kenney mesh: cast on flag (vertical),
   // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
-  for (const root of [cloud, grass, grassSmall, flag]) {
+  for (const root of [cloud, grass, grassSmall, flag, coin]) {
     if (!root) continue;
     root.traverse(o => {
       if (!o.isMesh) return;
-      o.castShadow    = (root === flag);
-      o.receiveShadow = (root !== cloud);
+      o.castShadow    = (root === flag || root === coin);
+      o.receiveShadow = (root !== cloud && root !== coin);
       if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
     });
   }
 }
 await loadKenneyAssets();
 
+// ============ COINS (v6.2) ===========================================
+// One coin per non-floor platform + one above every checkpoint pad.
+// Coins spin + bob in tickObstacles, follow moving platforms, and are
+// collected on proximity to the player.
+const coins = [];
+let coinsCollected = 0;
+let coinsTotal = 0;
+function scatterCoins() {
+  if (!KENNEY.coin) return;
+  for (const pl of platforms) {
+    // skip the big green floor/start pads — coins should mark jumps
+    if (pl.kind === 'solid' && pl.data.size[0] >= 6 && pl.data.size[2] >= 6) continue;
+    addCoin(pl.data.pos[0], pl.data.pos[1] + pl.data.size[1] / 2 + 1.0, pl.data.pos[2], pl);
+  }
+  for (const t of triggers) {
+    if (t.kind === 'checkpoint') addCoin(t.pos.x, t.pos.y + 1.8, t.pos.z, null);
+  }
+  coinsTotal = coins.length;
+  document.getElementById('ui-coin').textContent   = '0';
+  document.getElementById('ui-cointot').textContent = coinsTotal;
+}
+function addCoin(x, y, z, attach) {
+  const m = KENNEY.coin.clone(true);
+  m.scale.setScalar(0.85);
+  m.position.set(x, y, z);
+  scene.add(m);
+  coins.push({
+    mesh: m, baseY: y, attach,
+    offset: attach ? new THREE.Vector3(0, y - attach.data.pos[1], 0) : null,
+    collected: false, phase: Math.random() * Math.PI * 2,
+  });
+}
+
 scaffoldMap();
+scatterCoins();
 buildSetDressing();
 
 // ============ AUDIO ==================================================
@@ -1998,6 +2074,7 @@ function sfx(name) {
     case 'jump':     tone(540, 0.10, 'square', 0.30); tone(720, 0.10, 'sine', 0.18, 0.02); break;
     case 'land':     noise(0.08, 0.18, 400); tone(180, 0.06, 'sine', 0.18); break;
     case 'checkpoint': tone(720, 0.10, 'triangle', 0.35); setTimeout(() => tone(1080, 0.16, 'triangle', 0.32), 90); break;
+    case 'coin':     tone(1200, 0.06, 'triangle', 0.22); setTimeout(() => tone(1800, 0.10, 'triangle', 0.20), 45); break;
     case 'respawn': tone(720, 0.08, 'sine', 0.30); setTimeout(() => tone(540, 0.08, 'sine', 0.28), 80);
                      setTimeout(() => tone(360, 0.18, 'sine', 0.30), 160); break;
     case 'hit':      noise(0.18, 0.35, 200); tone(120, 0.12, 'sawtooth', 0.40); break;
@@ -2608,12 +2685,21 @@ function reset() {
   checkpointCount = 0;
   // Clear all checkpoint "lit" flags so they reactivate on the new run.
   for (const t of triggers) if (t.kind === 'checkpoint') { t.lit = false; t.pulseT = 0; }
+  // Restore every coin to its spawn state.
+  coinsCollected = 0;
+  for (const c of coins) {
+    c.collected = false;
+    c.mesh.visible = true;
+    c.mesh.scale.setScalar(0.85);
+    if (c.attach) c.mesh.position.set(c.attach.data.pos[0], c.attach.data.pos[1] + c.offset.y, c.attach.data.pos[2]);
+  }
   danny.rotation.set(0, 0, 0);
   danny.scale.set(1, 1, 1);
   document.getElementById('overlay').classList.remove('on');
   document.getElementById('toast').classList.remove('on');
   document.getElementById('ui-stage').textContent = '1';
   document.getElementById('ui-cp').textContent = '0';
+  document.getElementById('ui-coin').textContent = '0';
   document.getElementById('ui-prog').style.width = '0%';
 }
 // ============================================================
