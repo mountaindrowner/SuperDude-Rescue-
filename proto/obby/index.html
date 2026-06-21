@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v6.4 — Kenney-only alternate map (K to toggle)</title>
+<title>Super Dude OBBY v6.5 — tappable map button + Kenney character</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -169,7 +169,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v6.4 &nbsp;•&nbsp; <span id="mapLbl">DEFAULT MAP</span> &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v6.5 &nbsp;•&nbsp; <button id="mapBtn" type="button" style="background:rgba(70,240,255,0.18); color:#46f0ff; border:1.5px solid rgba(70,240,255,0.55); border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; letter-spacing:1px; cursor:pointer; pointer-events:auto; touch-action:manipulation; font-family:inherit;"><span id="mapLbl">DEFAULT MAP</span> &nbsp;⇄</button></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -2082,6 +2082,8 @@ const KENNEY = {
   // v6.4 — alternate-map platform templates + a brick decoration block.
   platformSmall: null, platformMedium: null, platformLarge: null,
   platformFalling: null, platformRound: null, brick: null,
+  // v6.5 — alternate character for the Kenney map.
+  character: null,
 };
 async function loadKenneyAssets() {
   const loader = new GLTFLoader();
@@ -2093,7 +2095,7 @@ async function loadKenneyAssets() {
   });
   const [cloud, grass, grassSmall, flag, coin, dust,
          platformSmall, platformMedium, platformLarge,
-         platformFalling, platformRound, brick] = await Promise.all([
+         platformFalling, platformRound, brick, character] = await Promise.all([
     one('./assets/kenney/cloud.glb'),
     one('./assets/kenney/grass.glb'),
     one('./assets/kenney/grass-small.glb'),
@@ -2106,6 +2108,7 @@ async function loadKenneyAssets() {
     one('./assets/kenney/platform-falling.glb'),
     one('./assets/kenney/platform-grass-large-round.glb'),
     one('./assets/kenney/brick.glb'),
+    one('./assets/kenney/character.glb'),
   ]);
   KENNEY.cloud = cloud;
   KENNEY.grass = grass;
@@ -2119,6 +2122,7 @@ async function loadKenneyAssets() {
   KENNEY.platformFalling = platformFalling;
   KENNEY.platformRound = platformRound;
   KENNEY.brick = brick;
+  KENNEY.character = character;
   // Default shadow casting on every Kenney mesh: cast on flag (vertical),
   // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
   for (const root of [cloud, grass, grassSmall, flag, coin, dust]) {
@@ -2262,7 +2266,50 @@ function switchMap(id) {
   if (typeof edBuildMeshMap === 'function') edBuildMeshMap();
   document.getElementById('ui-total').textContent = MAP.stages.length;
   document.getElementById('mapLbl').textContent = id === 'kenney' ? 'KENNEY MAP' : 'DEFAULT MAP';
+  // v6.5 — swap the visible character to match the map: Kenney's blocky
+  // dude on his own course, Lego Danny on ours.
+  swapCharacter(id);
   reset();
+}
+function swapMapToggle() {
+  if (state === 'edit') exitEditor();
+  switchMap(activeMapId === 'kenney' ? 'default' : 'kenney');
+}
+// Wire the on-screen map button. Touch + click both work on iOS thanks
+// to pointer-events:auto in the inline style + touch-action:manipulation.
+{
+  const btn = document.getElementById('mapBtn');
+  if (btn) btn.addEventListener('click', e => { e.stopPropagation(); swapMapToggle(); });
+}
+
+// v6.5 — Kenney character swap. Procedural Danny is the default; when
+// the player toggles to the Kenney map, hide Danny + show a scaled
+// Kenney character.glb clone that follows player.pos every frame.
+let kenneyDanny = null;
+function setupKenneyCharacter() {
+  if (!KENNEY.character || kenneyDanny) return;
+  kenneyDanny = new THREE.Group();
+  const inst = KENNEY.character.clone(true);
+  // The Kenney character is ~1m tall in its native units. Danny's
+  // collision capsule is roughly 1.6m (radius 0.4 + halfH 0.4 * 2),
+  // so scale ~1.6 to match.
+  inst.scale.setScalar(1.6);
+  inst.position.y = 0;
+  inst.traverse(o => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
+  });
+  kenneyDanny.add(inst);
+  kenneyDanny.visible = false;
+  scene.add(kenneyDanny);
+}
+function swapCharacter(id) {
+  setupKenneyCharacter();
+  if (!kenneyDanny) return;       // GLB failed to load — keep Danny
+  const useKenney = (id === 'kenney');
+  danny.visible = !useKenney;
+  kenneyDanny.visible = useKenney;
 }
 
 scaffoldMap();
@@ -2379,7 +2426,7 @@ window.addEventListener('keydown', e => {
   // about to wipe.
   if (e.key === 'k' || e.key === 'K') {
     if (state === 'edit') exitEditor();
-    switchMap(activeMapId === 'kenney' ? 'default' : 'kenney');
+    swapMapToggle();
     return;
   }
   if (state === 'review') {
@@ -2854,6 +2901,11 @@ function tick() {
       player.pos.y - player.halfH - player.radius,
       player.pos.z
     );
+    // v6.5 — when the Kenney character is the active visual, follow + face same as Danny.
+    if (kenneyDanny && kenneyDanny.visible) {
+      kenneyDanny.position.copy(danny.position);
+      kenneyDanny.rotation.y = player.yaw;
+    }
   }
   if (state === 'play') danny.rotation.y = player.yaw;
 
