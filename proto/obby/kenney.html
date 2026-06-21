@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v6.3 — Kenney landing dust</title>
+<title>Super Dude OBBY — KENNEY EDITION</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -169,7 +169,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v6.3 &nbsp;•&nbsp; <span id="vsize">—</span> &nbsp;•&nbsp; <a href="./kenney.html" style="display:inline-block; padding:6px 14px; border-radius:999px; background:rgba(70,240,255,0.18); color:#46f0ff; border:1.5px solid rgba(70,240,255,0.55); font-weight:800; font-size:13px; letter-spacing:1px; text-decoration:none; pointer-events:auto; touch-action:manipulation;">TRY KENNEY EDITION →</a></span>
+      <span class="lbl dim">KENNEY EDITION &nbsp;•&nbsp; <span id="vsize">—</span> &nbsp;•&nbsp; <a href="./index.html" style="display:inline-block; padding:6px 14px; border-radius:999px; background:rgba(70,240,255,0.18); color:#46f0ff; border:1.5px solid rgba(70,240,255,0.55); font-weight:800; font-size:13px; letter-spacing:1px; text-decoration:none; pointer-events:auto; touch-action:manipulation;">← BACK</a></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -180,7 +180,7 @@
     <p id="ov-p2"></p>
     <div class="blink" id="ov-cta">TAP TO PLAY AGAIN</div>
   </div>
-  <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug · E = editor</div>
+  <div id="hint">drag right side = look · left side = move · JUMP = jump</div>
 </div>
 <div id="toast"><span class="pill" id="toast-text">CHECKPOINT 1</span></div>
 <div id="review">
@@ -1193,6 +1193,33 @@ function makeToyPlatform({ pos, size, color, trimColor, emissive, emissiveIntens
   return { group: grp, baseMesh: base };
 }
 
+// makeKenneyPlatform — Kenney edition: scale a cloned Kenney platform
+// GLB template so its bbox matches the MAP's requested `size`. Falls back
+// to a plain colored cube if the template failed to load.
+function makeKenneyPlatform({ pos, size, template }) {
+  const grp = new THREE.Group();
+  grp.position.set(pos[0], pos[1], pos[2]);
+  if (!template || !template.userData || !template.userData.bbox) {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(size[0], size[1], size[2]),
+      new THREE.MeshStandardMaterial({ color: '#79c8ff', roughness: 0.7 })
+    );
+    m.castShadow = true; m.receiveShadow = true;
+    grp.add(m);
+    return { group: grp, baseMesh: m };
+  }
+  const bb = template.userData.bbox;
+  const inst = template.clone(true);
+  inst.scale.set(size[0] / bb.sx, size[1] / bb.sy, size[2] / bb.sz);
+  // Recenter so the bbox center sits at the group origin (Kenney
+  // platforms are usually anchored at their top face).
+  const centerYLocal = bb.minY + bb.sy / 2;
+  inst.position.y = -centerYLocal * (size[1] / bb.sy);
+  inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  grp.add(inst);
+  return { group: grp, baseMesh: inst };
+}
+
 // makeCloudPuff — v6.1: Kenney cloud GLB (cloned + random rotation/scale).
 // Falls back to the original sphere-cluster puff if the GLB didn't load.
 function makeCloudPuff() {
@@ -1298,164 +1325,47 @@ function makeWarningPost(altYellow) {
 //   finish:         big gold star pad — touch = WIN overlay.
 const MAP = {
   start: [0, 2, 0],
-  startYaw: Math.PI,     // face -Z (away from camera, INTO the obstacle course)
+  startYaw: Math.PI,
   voidY: -12,
   stages: [
-    // -------- 1. WARMUP — plain gap jumps. Teaches walk + jump. -------
     { id: 1, name: 'WARMUP',
       platforms: [
-        { pos:[ 0,  0,    0],  size:[10, 1, 10], color:'#6bcf6b', kind:'solid' },
-        { pos:[ 0,  0,  -10],  size:[ 4, 1,  4], color:'#6bcf6b', kind:'solid' },
-        { pos:[ 0,  0,  -18],  size:[ 4, 1,  4], color:'#6bcf6b', kind:'solid' },
-        { pos:[ 0,  0,  -28],  size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+        { pos:[ 0, 0,   0], size:[8, 1, 8], kind:'kenneyRound' },
+        { pos:[ 0, 0, -14], size:[6, 1, 6], kind:'kenneyRound' },
+        { pos:[ 0, 0, -28], size:[8, 1, 8], kind:'kenneyRound' },
       ],
       checkpoint: { pos:[0, 1.0, -28], color:'#46f0ff' } },
-
-    // -------- 2. STAIRWAY — vertical reach. Combines gaps + height. ---
-    { id: 2, name: 'STAIRWAY',
+    { id: 2, name: 'JUMP TEST',
       platforms: [
-        { pos:[ 0,  0.6, -36], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
-        { pos:[ 0,  1.6, -42], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
-        { pos:[ 0,  2.6, -48], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
-        { pos:[ 0,  1.6, -54], size:[ 4, 1,  4], color:'#79c8ff', kind:'solid' },
-        { pos:[ 0,  0,   -62], size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+        { pos:[ 0, 0, -38], size:[4, 1, 4], kind:'kenneySolid' },
+        { pos:[ 0, 0, -46], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 0, -54], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 0, -64], size:[8, 1, 8], kind:'kenneyRound' },
       ],
-      checkpoint: { pos:[0, 1.0, -62], color:'#46f0ff' } },
-
-    // -------- 3. STEPPING STONES — lateral planning. -----------------
-    { id: 3, name: 'STEPPING STONES',
+      checkpoint: { pos:[0, 1.0, -64], color:'#46f0ff' } },
+    { id: 3, name: 'STAIRS',
       platforms: [
-        { pos:[-2,  0, -70], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
-        { pos:[ 2,  0, -76], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
-        { pos:[-2,  0, -82], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
-        { pos:[ 2,  0, -88], size:[2.4, 1, 2.4], color:'#ff8aa0', kind:'solid' },
-        { pos:[ 0,  0, -96], size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+        { pos:[ 0, 0.6, -74], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 1.6, -80], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 2.6, -86], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 1.6, -94], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 0,  -104], size:[8, 1, 8], kind:'kenneyRound' },
       ],
-      checkpoint: { pos:[0, 1.0, -96], color:'#46f0ff' } },
-
-    // -------- 4. NOW YOU DON'T — disappearing tiles. -----------------
-    { id: 4, name: 'NOW YOU DON\'T',
+      checkpoint: { pos:[0, 1.0, -104], color:'#46f0ff' } },
+    { id: 4, name: 'DROPOUT',
       platforms: [
-        { pos:[ 0,  0, -104], size:[ 4, 1, 4], color:'#b89aff', kind:'solid' },
-        { pos:[ 0,  0, -110], size:[ 3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.4, tFade:0.30, tCool:1.0 },
-        { pos:[ 0,  0, -116], size:[ 3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.4, tFade:0.30, tCool:1.0, phase:0.9 },
-        { pos:[ 0,  0, -122], size:[ 3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.4, tFade:0.30, tCool:1.0, phase:1.6 },
-        { pos:[ 0,  0, -130], size:[ 8, 1, 6], color:'#a8e87a', kind:'solid' },
+        { pos:[ 0, 0, -114], size:[3, 1, 3], kind:'kenneyFalling', tHold:1.4, tFade:0.3, tCool:1.0 },
+        { pos:[ 0, 0, -120], size:[3, 1, 3], kind:'kenneyFalling', tHold:1.4, tFade:0.3, tCool:1.0, phase:0.7 },
+        { pos:[ 0, 0, -126], size:[3, 1, 3], kind:'kenneyFalling', tHold:1.4, tFade:0.3, tCool:1.0, phase:1.4 },
+        { pos:[ 0, 0, -136], size:[8, 1, 8], kind:'kenneyRound' },
       ],
-      checkpoint: { pos:[0, 1.0, -130], color:'#46f0ff' } },
-
-    // -------- 5. LAVA RIVER — narrow walkway hugged by lava. ---------
-    { id: 5, name: 'LAVA RIVER',
+      checkpoint: { pos:[0, 1.0, -136], color:'#46f0ff' } },
+    { id: 5, name: 'FINISH',
       platforms: [
-        { pos:[ 0,  0, -140], size:[ 6, 1,  6], color:'#a8e87a', kind:'solid' },
-        { pos:[ 0,  0, -150], size:[ 2.4, 1, 12], color:'#7acf90', kind:'solid' },
-        { pos:[ 0,  0, -164], size:[ 2.4, 1,  4], color:'#7acf90', kind:'solid' },
-        { pos:[ 0,  0, -172], size:[ 8, 1,  6], color:'#a8e87a', kind:'solid' },
+        { pos:[ 0, 0, -146], size:[5, 1, 14], kind:'kenneySolid' },
+        { pos:[ 0, 0, -162], size:[8, 1, 8], kind:'kenneyRound' },
       ],
-      hazards: [
-        // lava strip on the LEFT of the narrow walkway
-        { pos:[-3,  0.55, -150], size:[2.6, 0.10, 12], kind:'lava' },
-        // lava strip on the RIGHT
-        { pos:[ 3,  0.55, -150], size:[2.6, 0.10, 12], kind:'lava' },
-        // lava puddle in the middle of the gap between the two walkway pieces
-        { pos:[ 0,  0.10, -159], size:[2.4, 0.10, 4], kind:'lava' },
-      ],
-      checkpoint: { pos:[0, 1.0, -172], color:'#46f0ff' } },
-
-    // -------- 6. MOVING TARGETS — sliding platforms over void. -------
-    { id: 6, name: 'MOVING TARGETS',
-      platforms: [
-        // sliding LEFT-RIGHT
-        { pos:[-3,  0, -182], size:[3, 1, 3], color:'#ffa050', kind:'moving',
-          from:[-3, 0, -182], to:[ 3, 0, -182], period:3.2 },
-        { pos:[ 0,  0, -190], size:[3, 1, 3], color:'#ffce6b', kind:'solid' },
-        // sliding FRONT-BACK on Z
-        { pos:[ 0,  0, -198], size:[3, 1, 3], color:'#ffa050', kind:'moving',
-          from:[ 0, 0, -198], to:[ 0, 0, -204], period:2.6 },
-        { pos:[ 0,  0, -210], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
-      ],
-      checkpoint: { pos:[0, 1.0, -210], color:'#46f0ff' } },
-
-    // -------- 7. PAD HOPS — jump pads launch you onto upper tier. ----
-    { id: 7, name: 'PAD HOPS',
-      platforms: [
-        { pos:[ 0,  0,   -218], size:[3, 0.4, 3], color:'#46f0ff', kind:'jumpPad', impulse: 13.5 },
-        { pos:[ 0,  3.6, -228], size:[3, 1,   3], color:'#46f0ff', kind:'solid' },
-        { pos:[ 0,  3.6, -236], size:[3, 0.4, 3], color:'#ff5ec8', kind:'jumpPad', impulse: 11.5 },
-        { pos:[ 0,  6.5, -246], size:[3, 1,   3], color:'#46f0ff', kind:'solid' },
-        { pos:[ 0,  0,   -256], size:[8, 1,   6], color:'#a8e87a', kind:'solid' },
-      ],
-      checkpoint: { pos:[0, 1.0, -256], color:'#46f0ff' } },
-
-    // -------- 8. COMBO — combines pads + disappearing. ---------------
-    { id: 8, name: 'COMBO',
-      platforms: [
-        { pos:[ 0,  0,   -264], size:[3, 0.4, 3], color:'#46f0ff', kind:'jumpPad', impulse: 12.5 },
-        { pos:[-2,  3.8, -272], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.5, tFade:0.3, tCool:1.0 },
-        { pos:[ 2,  3.8, -278], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.5, tFade:0.3, tCool:1.0, phase:0.8 },
-        { pos:[ 0,  3.8, -286], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.5, tFade:0.3, tCool:1.0, phase:1.6 },
-        { pos:[ 0,  0,   -296], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
-      ],
-      checkpoint: { pos:[0, 1.0, -296], color:'#46f0ff' } },
-
-    // -------- 9. THE GAUNTLET — peak challenge: moving + lava + gaps -
-    { id: 9, name: 'THE GAUNTLET',
-      platforms: [
-        { pos:[ 0,  0, -306], size:[4, 1, 4], color:'#a8e87a', kind:'solid' },
-        { pos:[-3,  0, -314], size:[3, 1, 3], color:'#ffa050', kind:'moving',
-          from:[-3, 0, -314], to:[3, 0, -314], period:2.6 },
-        { pos:[ 0,  0, -322], size:[3, 1, 3], color:'#7acf90', kind:'solid' },
-        { pos:[ 3,  0, -330], size:[3, 1, 3], color:'#ffa050', kind:'moving',
-          from:[3, 0, -330], to:[-3, 0, -330], period:2.6 },
-        { pos:[ 0,  0, -342], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
-      ],
-      hazards: [
-        // sea of lava between the moving platforms, around y=0 floor
-        { pos:[ 0, -0.40, -322], size:[14, 0.20, 16], kind:'lava' },
-      ],
-      checkpoint: { pos:[0, 1.0, -342], color:'#46f0ff' } },
-
-    // -------- 10. SKY HOPS — height + disappearing + lava floor. -----
-    { id: 10, name: 'SKY HOPS',
-      platforms: [
-        { pos:[ 0,  0,   -352], size:[6, 1, 4], color:'#a8e87a', kind:'solid' },
-        // launch up to y=4 tier
-        { pos:[ 0,  0,   -358], size:[3, 0.4, 3], color:'#46f0ff', kind:'jumpPad', impulse: 14.0 },
-        { pos:[ 0,  4,   -366], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0 },
-        { pos:[ 0,  4,   -374], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0, phase:0.7 },
-        // launch from y=4 to y=7 tier
-        { pos:[ 0,  4,   -382], size:[3, 0.4, 3], color:'#ff5ec8', kind:'jumpPad', impulse: 12.0 },
-        { pos:[ 0,  7,   -390], size:[5, 1, 5], color:'#a8e87a', kind:'solid' },
-      ],
-      hazards: [
-        // lava sea under this whole stage to make the disappearing tiles count
-        { pos:[ 0, -0.40, -372], size:[16, 0.20, 32], kind:'lava' },
-      ],
-      checkpoint: { pos:[0, 8.0, -390], color:'#46f0ff' } },
-
-    // -------- 11. PRESSURE — sustained moving + disappearing combo. --
-    { id: 11, name: 'PRESSURE',
-      platforms: [
-        { pos:[ 0,  7,   -396], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.3, tFade:0.3, tCool:1.0 },
-        { pos:[-2,  7,   -404], size:[3, 1, 3], color:'#ffa050', kind:'moving',
-          from:[-2, 7, -404], to:[2, 7, -404], period:2.4 },
-        { pos:[ 0,  7,   -412], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.3, tFade:0.3, tCool:1.0, phase:0.6 },
-        { pos:[ 2,  7,   -420], size:[3, 1, 3], color:'#ffa050', kind:'moving',
-          from:[2, 7, -420], to:[-2, 7, -420], period:2.4 },
-        { pos:[ 0,  7,   -430], size:[8, 1, 6], color:'#a8e87a', kind:'solid' },
-      ],
-      hazards: [
-        { pos:[ 0, -0.40, -413], size:[20, 0.20, 40], kind:'lava' },
-      ],
-      checkpoint: { pos:[0, 8.0, -430], color:'#46f0ff' } },
-
-    // -------- 12. VICTORY ROAD — easy walkway → gold finish pad. -----
-    { id: 12, name: 'VICTORY ROAD',
-      platforms: [
-        { pos:[ 0,  7,   -442], size:[6, 1, 14], color:'#ffd23a', kind:'solid' },
-        { pos:[ 0,  7,   -456], size:[8, 1,  6], color:'#a8e87a', kind:'solid' },
-      ],
-      finish: { pos:[0, 8.0, -456], color:'#ffd23a' } },
+      finish: { pos:[0, 1.0, -162], color:'#ffd23a' } },
   ],
 };
 
@@ -1484,7 +1394,16 @@ function scaffoldMap() {
       const color = p.color || '#6bcf6b';
       let entryMesh, baseMesh, group = null;
 
-      if (kind === 'solid') {
+      const KENNEY_KINDS = { kenneySolid:'platformMedium', kenneyRound:'platformRound', kenneyFalling:'platformFalling' };
+      let isKenney = false;
+      if (KENNEY_KINDS[kind]) {
+        const template = KENNEY[KENNEY_KINDS[kind]];
+        const r = makeKenneyPlatform({ pos: p.pos, size: p.size, template });
+        scene.add(r.group);
+        group = r.group; baseMesh = r.baseMesh; entryMesh = r.group;
+        isKenney = true;
+        if (kind === 'kenneyFalling') kind = 'disappearing';
+      } else if (kind === 'solid') {
         // v4 §18.8: toy-block treatment — base + bright top inset.
         const r = makeToyPlatform({
           pos: p.pos, size: p.size, color,
@@ -1531,7 +1450,7 @@ function scaffoldMap() {
       // and matches the actual rendered position exactly. Non-solid
       // kinds keep using setFromObject; their meshes are added directly
       // to scene with their position set, so the parent matrix is fresh.
-      if (kind === 'solid') {
+      if (kind === 'solid' || isKenney) {
         const hx = p.size[0] / 2, hy = p.size[1] / 2, hz = p.size[2] / 2;
         box.min.set(p.pos[0] - hx, p.pos[1] - hy, p.pos[2] - hz);
         box.max.set(p.pos[0] + hx, p.pos[1] + hy, p.pos[2] + hz);
@@ -1752,14 +1671,14 @@ function tickObstacles(dt) {
       d.cycleT = (d.cycleT + dt) % total;
       if (d.cycleT < tHold) {
         pl.mesh.visible = true;
-        pl.mesh.material.emissive.setHex(0x000000);
-        pl.mesh.material.emissiveIntensity = 0;
+        { const mat = pl.mesh.material;
+          if (mat && mat.emissive) { mat.emissive.setHex(0x000000); mat.emissiveIntensity = 0; } }
         pl.collidable = true;
       } else if (d.cycleT < tHold + tFade) {
         // about-to-vanish flash
         pl.mesh.visible = true;
-        pl.mesh.material.emissive.setHex(0xff5530);
-        pl.mesh.material.emissiveIntensity = 0.3 + 0.5 * Math.sin(d.cycleT * 30);
+        { const mat = pl.mesh.material;
+          if (mat && mat.emissive) { mat.emissive.setHex(0xff5530); mat.emissiveIntensity = 0.3 + 0.5 * Math.sin(d.cycleT * 30); } }
         pl.collidable = true;
       } else {
         pl.mesh.visible = false;
@@ -1948,7 +1867,8 @@ function buildSetDressing() {
 // Loaded once, cached as templates, then cloned per use. Falls back to
 // the procedural primitives if any GLB fails to load (e.g. local file://
 // hosting blocks fetch).
-const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null };
+const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null,
+                 platformMedium: null, platformRound: null, platformFalling: null, character: null };
 async function loadKenneyAssets() {
   const loader = new GLTFLoader();
   const one = path => new Promise(res => {
@@ -1957,13 +1877,18 @@ async function loadKenneyAssets() {
       undefined,
       err => { console.warn('Kenney load failed:', path, err); res(null); });
   });
-  const [cloud, grass, grassSmall, flag, coin, dust] = await Promise.all([
+  const [cloud, grass, grassSmall, flag, coin, dust,
+         platformMedium, platformRound, platformFalling, character] = await Promise.all([
     one('./assets/kenney/cloud.glb'),
     one('./assets/kenney/grass.glb'),
     one('./assets/kenney/grass-small.glb'),
     one('./assets/kenney/flag.glb'),
     one('./assets/kenney/coin.glb'),
     one('./assets/kenney/dust.glb'),
+    one('./assets/kenney/platform-medium.glb'),
+    one('./assets/kenney/platform-grass-large-round.glb'),
+    one('./assets/kenney/platform-falling.glb'),
+    one('./assets/kenney/character.glb'),
   ]);
   KENNEY.cloud = cloud;
   KENNEY.grass = grass;
@@ -1971,6 +1896,10 @@ async function loadKenneyAssets() {
   KENNEY.flag = flag;
   KENNEY.coin = coin;
   KENNEY.dust = dust;
+  KENNEY.platformMedium = platformMedium;
+  KENNEY.platformRound = platformRound;
+  KENNEY.platformFalling = platformFalling;
+  KENNEY.character = character;
   // Default shadow casting on every Kenney mesh: cast on flag (vertical),
   // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
   for (const root of [cloud, grass, grassSmall, flag, coin, dust]) {
@@ -1982,8 +1911,44 @@ async function loadKenneyAssets() {
       if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
     });
   }
+  // Kenney edition: prepare platform templates with cached bbox so
+  // makeKenneyPlatform can scale them to the MAP's requested size.
+  for (const root of [platformMedium, platformRound, platformFalling]) {
+    if (!root) continue;
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
+    });
+    const bb = new THREE.Box3().setFromObject(root);
+    root.userData.bbox = {
+      sx: Math.max(0.001, bb.max.x - bb.min.x),
+      sy: Math.max(0.001, bb.max.y - bb.min.y),
+      sz: Math.max(0.001, bb.max.z - bb.min.z),
+      minY: bb.min.y,
+    };
+  }
+  if (character) {
+    character.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
+    });
+  }
 }
 await loadKenneyAssets();
+
+// Kenney edition: hide procedural Danny, show Kenney character.glb that
+// follows his position + facing. Falls back to Danny if the GLB fails.
+let kenneyChar = null;
+if (KENNEY.character) {
+  kenneyChar = new THREE.Group();
+  const inst = KENNEY.character.clone(true);
+  inst.scale.setScalar(1.6);
+  kenneyChar.add(inst);
+  scene.add(kenneyChar);
+  danny.visible = false;
+}
 
 // ============ LANDING DUST (v6.3) ====================================
 // Pool of Kenney dust meshes spawned each time Danny lands. Each puff
@@ -2640,6 +2605,10 @@ function tick() {
     );
   }
   if (state === 'play') danny.rotation.y = player.yaw;
+  if (kenneyChar) {
+    kenneyChar.position.copy(danny.position);
+    kenneyChar.rotation.y = player.yaw;
+  }
 
   // v3: run/idle animation — only when on the ground in play state so
   // limbs don't flap mid-air or mid-tumble. Review mode runs its own
