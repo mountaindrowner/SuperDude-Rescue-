@@ -1321,10 +1321,10 @@ const MAP = {
   stages: [
     { id: 1, name: 'KENNEY WARMUP',
       platforms: [
-        { pos:[ 0, 0,   0], size:[10, 1, 10], color:'#7acf90', kind:'solid' },
+        { pos:[ 0, 0,   0], size:[10, 1, 10], color:'#7acf90', kind:'kenneyRound' },
         { pos:[ 0, 0, -12], size:[ 4, 1,  4], color:'#a8e87a', kind:'solid' },
         { pos:[ 0, 0, -22], size:[ 4, 1,  4], color:'#a8e87a', kind:'solid' },
-        { pos:[ 0, 0, -32], size:[ 8, 1,  8], color:'#7acf90', kind:'solid' },
+        { pos:[ 0, 0, -32], size:[ 8, 1,  8], color:'#7acf90', kind:'kenneyRound' },
       ],
       checkpoint: { pos:[0, 1.0, -32], color:'#46f0ff' } },
 
@@ -1333,7 +1333,7 @@ const MAP = {
         { pos:[ 0, 0, -42], size:[3, 1, 3], color:'#a8e87a', kind:'solid' },
         { pos:[ 0, 0, -50], size:[3, 1, 3], color:'#a8e87a', kind:'solid' },
         { pos:[ 0, 0, -58], size:[3, 1, 3], color:'#a8e87a', kind:'solid' },
-        { pos:[ 0, 0, -68], size:[ 8, 1, 8], color:'#7acf90', kind:'solid' },
+        { pos:[ 0, 0, -68], size:[ 8, 1, 8], color:'#7acf90', kind:'kenneyRound' },
       ],
       checkpoint: { pos:[0, 1.0, -68], color:'#46f0ff' } },
 
@@ -1343,7 +1343,7 @@ const MAP = {
         { pos:[ 0, 1.6, -84], size:[3, 1, 3], color:'#79c8ff', kind:'solid' },
         { pos:[ 0, 2.6, -90], size:[3, 1, 3], color:'#79c8ff', kind:'solid' },
         { pos:[ 0, 1.6, -98], size:[3, 1, 3], color:'#79c8ff', kind:'solid' },
-        { pos:[ 0, 0, -108], size:[ 8, 1, 8], color:'#7acf90', kind:'solid' },
+        { pos:[ 0, 0, -108], size:[ 8, 1, 8], color:'#7acf90', kind:'kenneyRound' },
       ],
       checkpoint: { pos:[0, 1.0, -108], color:'#46f0ff' } },
 
@@ -1352,14 +1352,14 @@ const MAP = {
         { pos:[ 0, 0, -118], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0 },
         { pos:[ 0, 0, -124], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0, phase:0.8 },
         { pos:[ 0, 0, -130], size:[3, 1, 3], color:'#b89aff', kind:'disappearing', tHold:1.6, tFade:0.3, tCool:1.0, phase:1.6 },
-        { pos:[ 0, 0, -140], size:[ 8, 1, 8], color:'#7acf90', kind:'solid' },
+        { pos:[ 0, 0, -140], size:[ 8, 1, 8], color:'#7acf90', kind:'kenneyRound' },
       ],
       checkpoint: { pos:[0, 1.0, -140], color:'#46f0ff' } },
 
     { id: 5, name: 'KENNEY FINISH',
       platforms: [
         { pos:[ 0, 0, -150], size:[5, 1, 14], color:'#ffce6b', kind:'solid' },
-        { pos:[ 0, 0, -166], size:[ 8, 1, 8], color:'#7acf90', kind:'solid' },
+        { pos:[ 0, 0, -166], size:[ 8, 1, 8], color:'#7acf90', kind:'kenneyRound' },
       ],
       finish: { pos:[0, 1.0, -166], color:'#ffd23a' } },
   ],
@@ -1386,11 +1386,18 @@ function scaffoldMap() {
     let firstSolid = null;       // remember the first solid platform of the
                                  // stage so we can place the stage sign on it.
     if (stage.platforms) for (const p of stage.platforms) {
-      const kind = p.kind || 'solid';
+      let kind = p.kind || 'solid';
       const color = p.color || '#6bcf6b';
       let entryMesh, baseMesh, group = null;
+      let isKenney = false;
 
-      if (kind === 'solid') {
+      if (kind === 'kenneyRound') {
+        const r = makeKenneyPlatform({ pos: p.pos, size: p.size, template: KENNEY.platformRound });
+        scene.add(r.group);
+        group = r.group; baseMesh = r.baseMesh; entryMesh = r.group;
+        isKenney = true;
+        kind = 'solid';   // route through the rest of the engine as solid
+      } else if (kind === 'solid') {
         // v4 §18.8: toy-block treatment — base + bright top inset.
         const r = makeToyPlatform({
           pos: p.pos, size: p.size, color,
@@ -1437,7 +1444,7 @@ function scaffoldMap() {
       // and matches the actual rendered position exactly. Non-solid
       // kinds keep using setFromObject; their meshes are added directly
       // to scene with their position set, so the parent matrix is fresh.
-      if (kind === 'solid') {
+      if (kind === 'solid' || isKenney) {
         const hx = p.size[0] / 2, hy = p.size[1] / 2, hz = p.size[2] / 2;
         box.min.set(p.pos[0] - hx, p.pos[1] - hy, p.pos[2] - hz);
         box.max.set(p.pos[0] + hx, p.pos[1] + hy, p.pos[2] + hz);
@@ -1891,17 +1898,41 @@ async function loadKenneyAssets() {
     });
   }
 }
-await loadKenneyAssets();
-
-// SINGLE-ASSET TEST: drop one Kenney round grass platform next to spawn
-// as a pure visual prop (no collision). If you see it, the GLB loaded
-// and rendered fine on iOS — we can expand from here.
-if (KENNEY.platformRound) {
-  const test = KENNEY.platformRound.clone(true);
-  test.scale.setScalar(2.5);   // make it big so it's unmistakable
-  test.position.set(8, 1, -6); // right of the start pad, raised a bit
-  scene.add(test);
+// makeKenneyPlatform — build a Kenney-GLB platform group sized to fit the
+// requested AABB. The clone is scaled per-axis and recentered so its
+// bounding-box center sits at the group origin. Falls back to a green
+// box if the template didn't load.
+function makeKenneyPlatform({ pos, size, template }) {
+  const grp = new THREE.Group();
+  grp.position.set(pos[0], pos[1], pos[2]);
+  if (!template) {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(size[0], size[1], size[2]),
+      new THREE.MeshStandardMaterial({ color: 0x7acf90, roughness: 0.75 })
+    );
+    m.castShadow = true; m.receiveShadow = true;
+    grp.add(m);
+    return { group: grp, baseMesh: m };
+  }
+  const inst = template.clone(true);
+  const bb = new THREE.Box3().setFromObject(inst);
+  const sxNative = Math.max(0.001, bb.max.x - bb.min.x);
+  const syNative = Math.max(0.001, bb.max.y - bb.min.y);
+  const szNative = Math.max(0.001, bb.max.z - bb.min.z);
+  const sx = size[0] / sxNative;
+  const sy = size[1] / syNative;
+  const sz = size[2] / szNative;
+  inst.scale.set(sx, sy, sz);
+  // Recenter: the model's local bbox center should sit at grp origin.
+  const centerYLocal = (bb.min.y + bb.max.y) / 2;
+  const centerXLocal = (bb.min.x + bb.max.x) / 2;
+  const centerZLocal = (bb.min.z + bb.max.z) / 2;
+  inst.position.set(-centerXLocal * sx, -centerYLocal * sy, -centerZLocal * sz);
+  inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  grp.add(inst);
+  return { group: grp, baseMesh: inst };
 }
+await loadKenneyAssets();
 
 // ============ LANDING DUST (v6.3) ====================================
 // Pool of Kenney dust meshes spawned each time Danny lands. Each puff
