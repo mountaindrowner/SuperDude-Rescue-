@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#9fd8ff">
-<title>Super Dude OBBY v6.3 — Kenney landing dust</title>
+<title>Super Dude OBBY v6.4 — Kenney-only alternate map (K to toggle)</title>
 <style>
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; height: 100%; background: #bfe8ff; overflow: hidden;
@@ -169,7 +169,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v6.3 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v6.4 &nbsp;•&nbsp; <span id="mapLbl">DEFAULT MAP</span> &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -180,7 +180,7 @@
     <p id="ov-p2"></p>
     <div class="blink" id="ov-cta">TAP TO PLAY AGAIN</div>
   </div>
-  <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug · E = editor</div>
+  <div id="hint">drag right side = look · left side = move · JUMP = jump · F3 = debug · E = editor · K = swap map</div>
 </div>
 <div id="toast"><span class="pill" id="toast-text">CHECKPOINT 1</span></div>
 <div id="review">
@@ -1193,6 +1193,45 @@ function makeToyPlatform({ pos, size, color, trimColor, emissive, emissiveIntens
   return { group: grp, baseMesh: base };
 }
 
+// v6.4 — makeKenneyPlatform: builds a platform from a Kenney GLB template
+// scaled to fit the requested AABB (size = [w,h,d]). The template's
+// native bounding-box dimensions are pre-measured in loadKenneyAssets()
+// and stored as `template.userData.bbox = { sx, sy, sz, minY }`.
+// Returns `{ group, baseMesh }` matching makeToyPlatform's contract so
+// scaffoldMap can use the same downstream code path. Most Kenney
+// platform models are anchored near y=0 at the top face (their bbox
+// hangs below), so we ALSO shift the clone so its bbox center sits
+// exactly at the group origin — that way the visible mesh aligns with
+// the AABB collision box that scaffoldMap computes from p.pos + p.size.
+function makeKenneyPlatform({ pos, size, template }) {
+  const grp = new THREE.Group();
+  grp.position.set(pos[0], pos[1], pos[2]);
+  if (!template || !template.userData || !template.userData.bbox) {
+    // Fallback: emit a plain colored cube so the level is still playable
+    // if a Kenney GLB failed to load.
+    const mat = new THREE.MeshStandardMaterial({ color: '#79c8ff', roughness: 0.7 });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), mat);
+    m.castShadow = true; m.receiveShadow = true;
+    grp.add(m);
+    return { group: grp, baseMesh: m };
+  }
+  const bb = template.userData.bbox;
+  const inst = template.clone(true);
+  const sx = size[0] / bb.sx, sy = size[1] / bb.sy, sz = size[2] / bb.sz;
+  inst.scale.set(sx, sy, sz);
+  // Re-center the visible bbox at the group origin: in template-local
+  // coords the bbox spans [minY .. minY+sy_template]; multiply by the
+  // chosen Y-scale and offset so the center lines up with y=0.
+  const centerYLocal = bb.minY + bb.sy / 2;          // local-space center
+  inst.position.y = -centerYLocal * sy;              // shift to align
+  inst.traverse(o => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+  });
+  grp.add(inst);
+  return { group: grp, baseMesh: inst };
+}
+
 // makeCloudPuff — v6.1: Kenney cloud GLB (cloned + random rotation/scale).
 // Falls back to the original sphere-cluster puff if the GLB didn't load.
 function makeCloudPuff() {
@@ -1296,7 +1335,12 @@ function makeWarningPost(altYellow) {
 //   checkpoint:     small flag pad, lights up on first touch, saves
 //                   respawn position, advances stage counter.
 //   finish:         big gold star pad — touch = WIN overlay.
-const MAP = {
+//
+// v6.4: MAP is now SWAPPABLE. The original 12-stage course is
+// MAP_DEFAULT; an alternate 5-stage Kenney-themed course (MAP_KENNEY)
+// is defined below. Press K in-game to switch between them. The live
+// `MAP` binding is reassigned by switchMap() and the world is rebuilt.
+const MAP_DEFAULT = {
   start: [0, 2, 0],
   startYaw: Math.PI,     // face -Z (away from camera, INTO the obstacle course)
   voidY: -12,
@@ -1459,6 +1503,66 @@ const MAP = {
   ],
 };
 
+// v6.4 — MAP_KENNEY: short alternate course built entirely out of
+// Kenney's CC0 platform GLBs (KENNEY.platformMedium / platformRound /
+// platformFalling). Same data shape as MAP_DEFAULT but uses the new
+// 'kenneySolid', 'kenneyRound', and 'kenneyFalling' kinds. Press K
+// in-game to toggle.
+const MAP_KENNEY = {
+  start: [0, 2, 0],
+  startYaw: Math.PI,
+  voidY: -12,
+  stages: [
+    // Stage K1: walk-warmup — three big round grass pads in a line.
+    { id: 1, name: 'KENNEY: WARMUP',
+      platforms: [
+        { pos:[ 0, 0,   0], size:[8, 1, 8], kind:'kenneyRound' },
+        { pos:[ 0, 0, -14], size:[6, 1, 6], kind:'kenneyRound' },
+        { pos:[ 0, 0, -28], size:[8, 1, 8], kind:'kenneyRound' },
+      ],
+      checkpoint: { pos:[0, 1.0, -28], color:'#46f0ff' } },
+    // Stage K2: jump test — medium platforms with gaps.
+    { id: 2, name: 'KENNEY: JUMP TEST',
+      platforms: [
+        { pos:[ 0, 0, -38], size:[4, 1, 4], kind:'kenneySolid' },
+        { pos:[ 0, 0, -46], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 0, -54], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 0, -64], size:[8, 1, 8], kind:'kenneyRound' },
+      ],
+      checkpoint: { pos:[0, 1.0, -64], color:'#46f0ff' } },
+    // Stage K3: stairs up + over.
+    { id: 3, name: 'KENNEY: STAIRS',
+      platforms: [
+        { pos:[ 0, 0.6, -74], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 1.6, -80], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 2.6, -86], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 1.6, -94], size:[3, 1, 3], kind:'kenneySolid' },
+        { pos:[ 0, 0,  -104], size:[8, 1, 8], kind:'kenneyRound' },
+      ],
+      checkpoint: { pos:[0, 1.0, -104], color:'#46f0ff' } },
+    // Stage K4: dropouts — falling platforms.
+    { id: 4, name: 'KENNEY: DROPOUT',
+      platforms: [
+        { pos:[ 0, 0, -114], size:[3, 1, 3], kind:'kenneyFalling', tHold:1.4, tFade:0.3, tCool:1.0 },
+        { pos:[ 0, 0, -120], size:[3, 1, 3], kind:'kenneyFalling', tHold:1.4, tFade:0.3, tCool:1.0, phase:0.7 },
+        { pos:[ 0, 0, -126], size:[3, 1, 3], kind:'kenneyFalling', tHold:1.4, tFade:0.3, tCool:1.0, phase:1.4 },
+        { pos:[ 0, 0, -136], size:[8, 1, 8], kind:'kenneyRound' },
+      ],
+      checkpoint: { pos:[0, 1.0, -136], color:'#46f0ff' } },
+    // Stage K5: finish — wide path + finish pad.
+    { id: 5, name: 'KENNEY: FINISH',
+      platforms: [
+        { pos:[ 0, 0, -146], size:[5, 1, 14], kind:'kenneySolid' },
+        { pos:[ 0, 0, -162], size:[8, 1, 8], kind:'kenneyRound' },
+      ],
+      finish: { pos:[0, 1.0, -162], color:'#ffd23a' } },
+  ],
+};
+
+// Live MAP binding — swapped by switchMap() (K key). Starts on default.
+let MAP = MAP_DEFAULT;
+let activeMapId = 'default';
+
 // platforms[] = collidable scenery. Each entry:
 //   { mesh, box: Box3 (live), kind, data, collidable: true|false }
 const platforms = [];
@@ -1480,11 +1584,28 @@ function scaffoldMap() {
     let firstSolid = null;       // remember the first solid platform of the
                                  // stage so we can place the stage sign on it.
     if (stage.platforms) for (const p of stage.platforms) {
-      const kind = p.kind || 'solid';
+      let kind = p.kind || 'solid';
       const color = p.color || '#6bcf6b';
       let entryMesh, baseMesh, group = null;
-
-      if (kind === 'solid') {
+      let isKenney = false;
+      // v6.4 — Kenney-GLB platform kinds. kenneySolid / kenneyRound
+      // render the matching Kenney template scaled to fit the requested
+      // AABB. kenneyFalling is treated as a 'disappearing' platform
+      // (tickObstacles cycles its visibility) but uses the Kenney
+      // platform-falling GLB as the visual.
+      const KENNEY_KINDS = { kenneySolid: 'platformMedium', kenneyRound: 'platformRound', kenneyFalling: 'platformFalling' };
+      if (KENNEY_KINDS[kind]) {
+        const template = KENNEY[KENNEY_KINDS[kind]];
+        const r = makeKenneyPlatform({ pos: p.pos, size: p.size, template });
+        scene.add(r.group);
+        group = r.group; baseMesh = r.baseMesh; entryMesh = r.group;
+        isKenney = true;
+        // Re-key kenneyFalling onto 'disappearing' so the per-frame
+        // cycling logic in tickObstacles fires. The visual still uses
+        // the GLB; tickObstacles toggles pl.mesh.visible (works on the
+        // group) and skips the emissive flash for GLB clones.
+        if (kind === 'kenneyFalling') kind = 'disappearing';
+      } else if (kind === 'solid') {
         // v4 §18.8: toy-block treatment — base + bright top inset.
         const r = makeToyPlatform({
           pos: p.pos, size: p.size, color,
@@ -1531,7 +1652,10 @@ function scaffoldMap() {
       // and matches the actual rendered position exactly. Non-solid
       // kinds keep using setFromObject; their meshes are added directly
       // to scene with their position set, so the parent matrix is fresh.
-      if (kind === 'solid') {
+      // v6.4 — Kenney GLB platforms also live inside a parent group with
+      // an unflushed matrix, AND we recenter the clone's local position;
+      // override their AABB exactly like solid platforms do.
+      if (kind === 'solid' || isKenney) {
         const hx = p.size[0] / 2, hy = p.size[1] / 2, hz = p.size[2] / 2;
         box.min.set(p.pos[0] - hx, p.pos[1] - hy, p.pos[2] - hz);
         box.max.set(p.pos[0] + hx, p.pos[1] + hy, p.pos[2] + hz);
@@ -1550,8 +1674,10 @@ function scaffoldMap() {
       }
       platforms.push(entry);
 
-      // First solid platform = stage entrance — anchor the stage sign here.
-      if (firstSolid === null && kind === 'solid') firstSolid = p;
+      // First solid (or Kenney) platform = stage entrance — anchor the
+      // stage sign here. Disappearing/moving/jumpPad pads aren't stable
+      // ground for a sign, so they're skipped.
+      if (firstSolid === null && (kind === 'solid' || isKenney)) firstSolid = p;
     }
 
     if (stage.hazards) for (const h of stage.hazards) {
@@ -1750,16 +1876,19 @@ function tickObstacles(dt) {
       const tHold = d.tHold ?? 1.4, tFade = d.tFade ?? 0.3, tCool = d.tCool ?? 1.0;
       const total = tHold + tFade + tCool;
       d.cycleT = (d.cycleT + dt) % total;
+      // v6.4 — the emissive flash only works on the original procedural
+      // Mesh path (single mesh + single material). Kenney-GLB falling
+      // platforms are Groups with multiple child materials, so guard
+      // material access and just toggle visibility for those.
+      const mat = pl.mesh.material;
       if (d.cycleT < tHold) {
         pl.mesh.visible = true;
-        pl.mesh.material.emissive.setHex(0x000000);
-        pl.mesh.material.emissiveIntensity = 0;
+        if (mat && mat.emissive) { mat.emissive.setHex(0x000000); mat.emissiveIntensity = 0; }
         pl.collidable = true;
       } else if (d.cycleT < tHold + tFade) {
         // about-to-vanish flash
         pl.mesh.visible = true;
-        pl.mesh.material.emissive.setHex(0xff5530);
-        pl.mesh.material.emissiveIntensity = 0.3 + 0.5 * Math.sin(d.cycleT * 30);
+        if (mat && mat.emissive) { mat.emissive.setHex(0xff5530); mat.emissiveIntensity = 0.3 + 0.5 * Math.sin(d.cycleT * 30); }
         pl.collidable = true;
       } else {
         pl.mesh.visible = false;
@@ -1948,7 +2077,12 @@ function buildSetDressing() {
 // Loaded once, cached as templates, then cloned per use. Falls back to
 // the procedural primitives if any GLB fails to load (e.g. local file://
 // hosting blocks fetch).
-const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null };
+const KENNEY = {
+  cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null,
+  // v6.4 — alternate-map platform templates + a brick decoration block.
+  platformSmall: null, platformMedium: null, platformLarge: null,
+  platformFalling: null, platformRound: null, brick: null,
+};
 async function loadKenneyAssets() {
   const loader = new GLTFLoader();
   const one = path => new Promise(res => {
@@ -1957,13 +2091,21 @@ async function loadKenneyAssets() {
       undefined,
       err => { console.warn('Kenney load failed:', path, err); res(null); });
   });
-  const [cloud, grass, grassSmall, flag, coin, dust] = await Promise.all([
+  const [cloud, grass, grassSmall, flag, coin, dust,
+         platformSmall, platformMedium, platformLarge,
+         platformFalling, platformRound, brick] = await Promise.all([
     one('./assets/kenney/cloud.glb'),
     one('./assets/kenney/grass.glb'),
     one('./assets/kenney/grass-small.glb'),
     one('./assets/kenney/flag.glb'),
     one('./assets/kenney/coin.glb'),
     one('./assets/kenney/dust.glb'),
+    one('./assets/kenney/platform.glb'),
+    one('./assets/kenney/platform-medium.glb'),
+    one('./assets/kenney/platform-large.glb'),
+    one('./assets/kenney/platform-falling.glb'),
+    one('./assets/kenney/platform-grass-large-round.glb'),
+    one('./assets/kenney/brick.glb'),
   ]);
   KENNEY.cloud = cloud;
   KENNEY.grass = grass;
@@ -1971,6 +2113,12 @@ async function loadKenneyAssets() {
   KENNEY.flag = flag;
   KENNEY.coin = coin;
   KENNEY.dust = dust;
+  KENNEY.platformSmall = platformSmall;
+  KENNEY.platformMedium = platformMedium;
+  KENNEY.platformLarge = platformLarge;
+  KENNEY.platformFalling = platformFalling;
+  KENNEY.platformRound = platformRound;
+  KENNEY.brick = brick;
   // Default shadow casting on every Kenney mesh: cast on flag (vertical),
   // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
   for (const root of [cloud, grass, grassSmall, flag, coin, dust]) {
@@ -1981,6 +2129,24 @@ async function loadKenneyAssets() {
       o.receiveShadow = (root !== cloud && root !== coin && root !== dust);
       if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
     });
+  }
+  // v6.4 — platform templates: cast + receive shadows, tone-map colors,
+  // and cache native bounding-box dimensions so makeKenneyPlatform can
+  // scale each clone to the requested AABB size.
+  for (const root of [platformSmall, platformMedium, platformLarge,
+                      platformFalling, platformRound, brick]) {
+    if (!root) continue;
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow    = true;
+      o.receiveShadow = true;
+      if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
+    });
+    const bb = new THREE.Box3().setFromObject(root);
+    const sx = Math.max(0.001, bb.max.x - bb.min.x);
+    const sy = Math.max(0.001, bb.max.y - bb.min.y);
+    const sz = Math.max(0.001, bb.max.z - bb.min.z);
+    root.userData.bbox = { sx, sy, sz, minY: bb.min.y };
   }
 }
 await loadKenneyAssets();
@@ -2056,6 +2222,47 @@ function addCoin(x, y, z, attach) {
     offset: attach ? new THREE.Vector3(0, y - attach.data.pos[1], 0) : null,
     collected: false, phase: Math.random() * Math.PI * 2,
   });
+}
+
+// v6.4 — clearMap + switchMap: tear down every scaffolded scene object
+// and rebuild from the chosen MAP. Used by the K-key map toggle.
+function clearMap() {
+  for (const pl of platforms) {
+    scene.remove(pl.mesh);
+    pl.mesh.traverse(o => { if (o.isMesh && o.geometry) o.geometry.dispose(); });
+  }
+  platforms.length = 0;
+  for (const h of hazards) {
+    scene.remove(h.mesh);
+    if (h.top) scene.remove(h.top);
+  }
+  hazards.length = 0;
+  for (const t of triggers) {
+    scene.remove(t.mesh);
+  }
+  triggers.length = 0;
+  for (const d of decorations) {
+    scene.remove(d);
+  }
+  decorations.length = 0;
+  for (const c of coins) {
+    scene.remove(c.mesh);
+  }
+  coins.length = 0;
+}
+
+function switchMap(id) {
+  clearMap();
+  MAP = (id === 'kenney') ? MAP_KENNEY : MAP_DEFAULT;
+  activeMapId = id;
+  scaffoldMap();
+  scatterCoins();
+  buildSetDressing();
+  // Refresh the editor's mesh→entry lookup against the new platforms.
+  if (typeof edBuildMeshMap === 'function') edBuildMeshMap();
+  document.getElementById('ui-total').textContent = MAP.stages.length;
+  document.getElementById('mapLbl').textContent = id === 'kenney' ? 'KENNEY MAP' : 'DEFAULT MAP';
+  reset();
 }
 
 scaffoldMap();
@@ -2164,6 +2371,15 @@ window.addEventListener('keydown', e => {
   }
   if (e.key === 'e' || e.key === 'E') {
     if (state === 'edit') exitEditor(); else if (state === 'play') enterEditor();
+    return;
+  }
+  // v6.4 — K swaps between the default 12-stage map and the all-Kenney
+  // alternate. Exits the editor cleanly first if it's open, since the
+  // editor holds references to the old platforms[] that switchMap is
+  // about to wipe.
+  if (e.key === 'k' || e.key === 'K') {
+    if (state === 'edit') exitEditor();
+    switchMap(activeMapId === 'kenney' ? 'default' : 'kenney');
     return;
   }
   if (state === 'review') {
