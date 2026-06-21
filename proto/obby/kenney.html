@@ -1854,7 +1854,7 @@ function buildSetDressing() {
 // Loaded once, cached as templates, then cloned per use. Falls back to
 // the procedural primitives if any GLB fails to load (e.g. local file://
 // hosting blocks fetch).
-const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null };
+const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null, coin: null, dust: null, platformRound: null };
 async function loadKenneyAssets() {
   const loader = new GLTFLoader();
   const one = path => new Promise(res => {
@@ -1863,13 +1863,14 @@ async function loadKenneyAssets() {
       undefined,
       err => { console.warn('Kenney load failed:', path, err); res(null); });
   });
-  const [cloud, grass, grassSmall, flag, coin, dust] = await Promise.all([
+  const [cloud, grass, grassSmall, flag, coin, dust, platformRound] = await Promise.all([
     one('./assets/kenney/cloud.glb'),
     one('./assets/kenney/grass.glb'),
     one('./assets/kenney/grass-small.glb'),
     one('./assets/kenney/flag.glb'),
     one('./assets/kenney/coin.glb'),
     one('./assets/kenney/dust.glb'),
+    one('./assets/kenney/platform-grass-large-round.glb'),
   ]);
   KENNEY.cloud = cloud;
   KENNEY.grass = grass;
@@ -1877,19 +1878,30 @@ async function loadKenneyAssets() {
   KENNEY.flag = flag;
   KENNEY.coin = coin;
   KENNEY.dust = dust;
+  KENNEY.platformRound = platformRound;
   // Default shadow casting on every Kenney mesh: cast on flag (vertical),
   // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
-  for (const root of [cloud, grass, grassSmall, flag, coin, dust]) {
+  for (const root of [cloud, grass, grassSmall, flag, coin, dust, platformRound]) {
     if (!root) continue;
     root.traverse(o => {
       if (!o.isMesh) return;
-      o.castShadow    = (root === flag || root === coin);
+      o.castShadow    = (root === flag || root === coin || root === platformRound);
       o.receiveShadow = (root !== cloud && root !== coin && root !== dust);
       if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
     });
   }
 }
 await loadKenneyAssets();
+
+// SINGLE-ASSET TEST: drop one Kenney round grass platform next to spawn
+// as a pure visual prop (no collision). If you see it, the GLB loaded
+// and rendered fine on iOS — we can expand from here.
+if (KENNEY.platformRound) {
+  const test = KENNEY.platformRound.clone(true);
+  test.scale.setScalar(2.5);   // make it big so it's unmistakable
+  test.position.set(8, 1, -6); // right of the start pad, raised a bit
+  scene.add(test);
+}
 
 // ============ LANDING DUST (v6.3) ====================================
 // Pool of Kenney dust meshes spawned each time Danny lands. Each puff
