@@ -169,7 +169,7 @@
     </div>
     <div class="row">
       <span class="lbl dim">TIME <span id="ui-time">0:00</span></span>
-      <span class="lbl dim">v6.0 &nbsp;•&nbsp; <span id="vsize">—</span></span>
+      <span class="lbl dim">v6.1 &nbsp;•&nbsp; <span id="vsize">—</span></span>
     </div>
     <div class="bar"><div id="ui-prog" style="width:0%"></div></div>
   </div>
@@ -258,6 +258,7 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
 // ============================================================
 // 0. PROJECT CONSTANTS + STATE OBJECTS
@@ -1192,9 +1193,16 @@ function makeToyPlatform({ pos, size, color, trimColor, emissive, emissiveIntens
   return { group: grp, baseMesh: base };
 }
 
-// makeCloudPuff — small Group of 3-5 overlapping spheres for a low-cost
-// background cloud. Uses cached cloud material.
+// makeCloudPuff — v6.1: Kenney cloud GLB (cloned + random rotation/scale).
+// Falls back to the original sphere-cluster puff if the GLB didn't load.
 function makeCloudPuff() {
+  if (KENNEY.cloud) {
+    const c = KENNEY.cloud.clone(true);
+    const s = 2.0 + Math.random() * 1.8;
+    c.scale.setScalar(s);
+    c.rotation.y = Math.random() * Math.PI * 2;
+    return c;
+  }
   const g = new THREE.Group();
   const n = 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) {
@@ -1642,14 +1650,35 @@ function buildCheckpointPad(cp, stageId, lit) {
   const flagPivot = new THREE.Group();
   flagPivot.position.set(0, 1.35, 0);
   grp.add(flagPivot);
-  const flag = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.36, 0.04),
-    new THREE.MeshStandardMaterial({
-      color: padCol, emissive: padCol, emissiveIntensity: 0.5
-    })
-  );
-  flag.position.set(0.32, 0, 0);
-  flag.castShadow = true;
+  let flag;
+  if (KENNEY.flag) {
+    // v6.1 — Kenney flag GLB. Recolor its cloth material to match the
+    // checkpoint color so it still reads "this checkpoint is yours."
+    flag = KENNEY.flag.clone(true);
+    flag.scale.setScalar(0.85);
+    flag.position.set(-0.04, -0.32, 0);
+    flag.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      // Recolor cloth — the GLB has a pole + cloth; tint everything to
+      // the checkpoint color so the cyan vs gold contrast is preserved.
+      if (o.material) {
+        o.material = o.material.clone();
+        o.material.color = new THREE.Color(padCol);
+        o.material.emissive = new THREE.Color(padCol);
+        o.material.emissiveIntensity = 0.30;
+      }
+    });
+  } else {
+    flag = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.36, 0.04),
+      new THREE.MeshStandardMaterial({
+        color: padCol, emissive: padCol, emissiveIntensity: 0.5
+      })
+    );
+    flag.position.set(0.32, 0, 0);
+    flag.castShadow = true;
+  }
   flagPivot.add(flag);
   scene.add(grp);
   triggers.push({
@@ -1836,7 +1865,79 @@ function buildSetDressing() {
     scene.add(c);
     decorations.push(c);
   }
+
+  // 3. v6.1 — Kenney grass tufts on every green safe-floor platform.
+  //    We detect "safe" platforms by color (greens) and scatter 3-5
+  //    grass models along the rear edge so they don't block jumping.
+  if (KENNEY.grass || KENNEY.grassSmall) {
+    for (const pl of platforms) {
+      if (pl.kind !== 'solid') continue;
+      const col = pl.data.color || '';
+      // crude green test: hex with G channel > R and > B
+      const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(col);
+      if (!m) continue;
+      const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+      if (!(g > r + 20 && g > b + 10 && g > 120)) continue;
+      const cx = pl.data.pos[0], cy = pl.data.pos[1], cz = pl.data.pos[2];
+      const w  = pl.data.size[0], h = pl.data.size[1], d = pl.data.size[2];
+      const topY = cy + h / 2 - 0.02;
+      const count = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        const tpl = (i % 2 === 0 && KENNEY.grassSmall) ? KENNEY.grassSmall :
+                    (KENNEY.grass || KENNEY.grassSmall);
+        if (!tpl) continue;
+        const t = tpl.clone(true);
+        // Hug the rear edge (negative Z = forward into the obby), random X jitter.
+        const rx = cx + (Math.random() - 0.5) * (w * 0.85);
+        const rz = cz + (d / 2 - 0.2 - Math.random() * 0.4);
+        t.position.set(rx, topY, rz);
+        t.rotation.y = Math.random() * Math.PI * 2;
+        t.scale.setScalar(0.55 + Math.random() * 0.40);
+        scene.add(t);
+        decorations.push(t);
+      }
+    }
+  }
 }
+
+// ============ KENNEY PROP PACK (CC0) =================================
+// v6.1 — pull a tiny set of GLB models from Kenney's CC0 Godot
+// platformer kit (downloaded from KenneyNL/Starter-Kit-3D-Platformer).
+// Loaded once, cached as templates, then cloned per use. Falls back to
+// the procedural primitives if any GLB fails to load (e.g. local file://
+// hosting blocks fetch).
+const KENNEY = { cloud: null, grass: null, grassSmall: null, flag: null };
+async function loadKenneyAssets() {
+  const loader = new GLTFLoader();
+  const one = path => new Promise(res => {
+    loader.load(path,
+      gltf => res(gltf.scene),
+      undefined,
+      err => { console.warn('Kenney load failed:', path, err); res(null); });
+  });
+  const [cloud, grass, grassSmall, flag] = await Promise.all([
+    one('./assets/kenney/cloud.glb'),
+    one('./assets/kenney/grass.glb'),
+    one('./assets/kenney/grass-small.glb'),
+    one('./assets/kenney/flag.glb'),
+  ]);
+  KENNEY.cloud = cloud;
+  KENNEY.grass = grass;
+  KENNEY.grassSmall = grassSmall;
+  KENNEY.flag = flag;
+  // Default shadow casting on every Kenney mesh: cast on flag (vertical),
+  // receive on grass/cloud (flat-ish). Tone-map texture colors correctly.
+  for (const root of [cloud, grass, grassSmall, flag]) {
+    if (!root) continue;
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow    = (root === flag);
+      o.receiveShadow = (root !== cloud);
+      if (o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
+    });
+  }
+}
+await loadKenneyAssets();
 
 scaffoldMap();
 buildSetDressing();
