@@ -7,9 +7,13 @@
     "build:web": "node scripts/build-web.mjs",
     "ios:assets": "npx @capacitor/assets generate --ios",
     "ios:add": "npm run build:web && npx cap add ios && npm run ios:assets && npx cap sync ios",
-    "ios:open": "npm run build:web && npx cap sync ios && npx cap open ios"
+    "ios:open": "npm run build:web && npx cap sync ios && npx cap open ios",
+    "android:assets": "npx @capacitor/assets generate --android",
+    "android:add": "npm run build:web && npx cap add android && npm run android:assets && npx cap sync android",
+    "android:open": "npm run build:web && npx cap sync android && npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
     "@capacitor/core": "^6.1.2",
     "@capacitor/ios": "^6.1.2"
   },

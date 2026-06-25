@@ -224,3 +224,156 @@ workflows:
         # tester - no beta review needed.) Set back to true + fill in the
         # test info only if you later want to distribute EXTERNAL betas.
         submit_to_testflight: false
+
+  # ===================================================================
+  # ANDROID / GOOGLE PLAY  (added v1.0.24 - mirrors the iOS workflow)
+  # ===================================================================
+  # Builds a signed Android App Bundle (.aab) for Google Play, entirely
+  # in the cloud on a Codemagic Linux machine. One-time setup is in
+  # ANDROID_BUILD.md; the short version:
+  #   1. Generate ONE upload keystore (keytool command in ANDROID_BUILD.md)
+  #      and upload it to Codemagic: Teams/Personal settings -> Code
+  #      signing identities -> Android keystores. Give it the reference
+  #      name "superdude_upload" (or rename it below). Codemagic then
+  #      injects CM_KEYSTORE_PATH / CM_KEYSTORE_PASSWORD / CM_KEY_ALIAS /
+  #      CM_KEY_PASSWORD into the build.
+  #   2. The FIRST .aab must be uploaded to Play Console BY HAND (Google
+  #      won't let the API create an app's first release). After that we
+  #      can flip on the google_play publishing block at the bottom.
+  #   3. Connect this repo + branch in Codemagic, run "android-googleplay".
+  #
+  # Nothing here changes the game - build:web assembles the same clean web
+  # bundle Netlify ships; Capacitor wraps it.
+  android-googleplay:
+    name: Super Dude Adventures - Android Google Play
+    instance_type: linux_x2
+    max_build_duration: 60
+
+    environment:
+      # Pulls the upload keystore you stored in the Codemagic UI (see
+      # ANDROID_BUILD.md). The name MUST match the keystore reference you
+      # created. If absent, the signing step below fails loudly rather
+      # than producing an unsigned/debug-signed bundle Play would reject.
+      android_signing:
+        - superdude_upload
+      node: 20
+      java: 17
+      vars:
+        PACKAGE_NAME: "org.thecrossroads.superdudeadventures"
+        # Marketing version shown on the store listing. Keep in step with
+        # SDD.VERSION in js/main.js (strip the leading "v"). versionCode
+        # (the integer Play orders builds by) is set to $BUILD_NUMBER so
+        # it always increases.
+        MARKETING_VERSION: "1.0.24"
+
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+
+      - name: Assemble the clean web bundle (www/)
+        script: npm run build:web
+
+      - name: Add the Android platform + sync the web bundle into it
+        script: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Generate the app icon + splash from resources/
+        script: npm run android:assets || true
+
+      - name: Lock the Android app to landscape orientation
+        script: |
+          # Mark: "landscape only, no turn-phone words." Capacitor's
+          # MainActivity is the only <activity> in the generated manifest,
+          # so add screenOrientation to the first activity tag. sensorLandscape
+          # lets the player flip between the two landscape directions but
+          # never rotates to portrait.
+          python3 - <<'PY'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p).read()
+          if 'screenOrientation' not in s:
+              s = s.replace('<activity', '<activity android:screenOrientation="sensorLandscape"', 1)
+              open(p, 'w').write(s)
+          print(s)
+          PY
+
+      - name: Wire the upload keystore into the release build
+        script: |
+          # Codemagic injected the keystore + passwords from the
+          # android_signing reference above. Write them into key.properties
+          # and patch the Capacitor-generated build.gradle so the release
+          # bundle is signed with our upload key. (cap add android
+          # regenerates build.gradle every build, so we patch each run.)
+          set -e
+          cat > android/key.properties <<EOF
+          storeFile=$CM_KEYSTORE_PATH
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          keyPassword=$CM_KEY_PASSWORD
+          EOF
+          python3 - <<'PY'
+          import re
+          p = 'android/app/build.gradle'
+          s = open(p).read()
+          # 1. Load key.properties just before the `android {` block.
+          if 'keystoreProperties' not in s:
+              loader = (
+                  "def keystoreProperties = new Properties()\n"
+                  "def keystorePropertiesFile = rootProject.file('key.properties')\n"
+                  "if (keystorePropertiesFile.exists()) { keystoreProperties.load(new FileInputStream(keystorePropertiesFile)) }\n\n"
+              )
+              s = s.replace('android {', loader + 'android {', 1)
+          # 2. Add a signingConfigs.release block right inside `android {`.
+          if 'signingConfigs' not in s:
+              block = (
+                  "\n    signingConfigs {\n"
+                  "        release {\n"
+                  "            if (keystorePropertiesFile.exists()) {\n"
+                  "                storeFile file(keystoreProperties['storeFile'])\n"
+                  "                storePassword keystoreProperties['storePassword']\n"
+                  "                keyAlias keystoreProperties['keyAlias']\n"
+                  "                keyPassword keystoreProperties['keyPassword']\n"
+                  "            }\n"
+                  "        }\n"
+                  "    }\n"
+              )
+              s = s.replace('android {', 'android {' + block, 1)
+          # 3. Point the release build type at that signing config.
+          if 'signingConfig signingConfigs.release' not in s:
+              s = re.sub(r'(buildTypes\s*\{\s*release\s*\{)',
+                         r"\1\n            signingConfig signingConfigs.release",
+                         s, count=1)
+          open(p, 'w').write(s)
+          print(s)
+          PY
+
+      - name: Set versionCode (=build number) + versionName
+        script: |
+          # Capacitor defaults to `versionCode 1` / `versionName "1.0"`.
+          # Play needs an ever-increasing versionCode, so use $BUILD_NUMBER.
+          sed -i "s/versionCode 1\b/versionCode $BUILD_NUMBER/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"$MARKETING_VERSION\"/" android/app/build.gradle
+          echo "--- defaultConfig after version patch ---"
+          grep -nE "versionCode|versionName" android/app/build.gradle
+
+      - name: Build the signed release AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/**/mapping.txt
+
+    # publishing:
+    #   # FLIP THIS ON only AFTER the first .aab has been uploaded to Play
+    #   # Console by hand. Needs a Google Play service-account JSON stored
+    #   # as the Codemagic env var GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    #   # (Play Console -> Setup -> API access -> service account with
+    #   # release permission). See ANDROID_BUILD.md.
+    #   google_play:
+    #     credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    #     track: internal          # internal -> closed -> production
+    #     submit_as_draft: true
