@@ -4,13 +4,17 @@
 window.DANNYLAB = window.DANNYLAB || {};
 
 // ---- beaker geometry (portrait 540 x 960) ----
+// Beaker hugs the LEFT edge; the right strip (x > ~390) is the stats column,
+// and the top band (above the rim) is reserved for the Lab Notes card.
 DANNYLAB.GEO = {
   W: 540, H: 960,
-  bx0: 96, bx1: 444,          // interior left/right
+  bx0: 32, bx1: 380,          // interior left/right (tube scooted to the left edge)
   wall: 24,
   yRim: 300, floorTop: 884,
   fillLineY: 336, dropY: 215,
 };
+// shared helper: horizontal centre of the beaker (for tweezers / toasts / notes)
+DANNYLAB.beakerCx = function () { return (DANNYLAB.GEO.bx0 + DANNYLAB.GEO.bx1) / 2; };
 
 DANNYLAB.GameScene = function () {
   Phaser.Scene.call(this, { key: 'DANNYLAB_Game' });
@@ -108,7 +112,7 @@ GP.create = function (data) {
 
   this.nextTier = DANNYLAB.pickDroppableTier();
   this.setTweezerPreview(this.nextTier);
-  this.pointerX = GEO.W / 2;
+  this.pointerX = DANNYLAB.beakerCx();
 
   this.events.on('shutdown', function () {
     if (self.matter && self.matter.world) {
@@ -169,52 +173,54 @@ GP.buildBeaker = function () {
   }
 };
 
-// ---------- HUD: side-mounted lab readout (Brief §7) ----------
+// ---------- HUD: stats column on the RIGHT, beside the beaker ----------
 GP.buildHUD = function () {
-  var GEO = DANNYLAB.GEO, UI = DANNYLAB.UI, lang = this.lang;
-  // metallic lab readout gauge top-left, kept clear of the beaker mouth
+  var GEO = DANNYLAB.GEO, UI = DANNYLAB.UI, lang = this.lang, self = this;
+  var px = 400, pw = 132, py = 112, ph = 188, cx = px + pw / 2;
+
   var g = this.add.graphics().setDepth(40);
-  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(11, 67, 186, 102, 16);          // neon halo
-  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(14, 70, 180, 96, 14);            // metal plate
-  g.fillStyle(0x586784, 1);    g.fillRoundedRect(14, 70, 180, 30, { tl: 14, tr: 14, bl: 0, br: 0 });
-  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(14, 70, 180, 96, 14);      // neon edge
-  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(24, 80, 160, 34, 8);             // digit wells
-  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(24, 122, 160, 34, 8);
-  g.lineStyle(1, 0x4fd9ff, 0.3); g.strokeRoundedRect(24, 80, 160, 34, 8); g.strokeRoundedRect(24, 122, 160, 34, 8);
+  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(px - 3, py - 3, pw + 6, ph + 6, 16);     // neon halo
+  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(px, py, pw, ph, 14);                     // metal plate
+  g.fillStyle(0x586784, 1);    g.fillRoundedRect(px, py, pw, 34, { tl: 14, tr: 14, bl: 0, br: 0 });
+  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(px, py, pw, ph, 14);               // neon edge
+  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 12, py + 64, pw - 24, 38, 8);       // score well
+  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 12, py + 132, pw - 24, 38, 8);      // best well
+  g.lineStyle(1, 0x4fd9ff, 0.3);
+  g.strokeRoundedRect(px + 12, py + 64, pw - 24, 38, 8);
+  g.strokeRoundedRect(px + 12, py + 132, pw - 24, 38, 8);
 
-  this.add.text(30, 80, DANNYLAB.t('score', lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
-  }).setDepth(41);
-  this.scoreText = this.add.text(176, 86, '0', {
-    fontFamily: UI.FONT, fontSize: '26px', color: '#eafffb', fontStyle: 'bold',
-  }).setOrigin(1, 0).setDepth(41);
-  this.scoreText.setShadow(0, 0, '#4fd9ff', 8);
-  this.add.text(30, 122, DANNYLAB.t('best', lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
-  }).setDepth(41);
-  this.bestText = this.add.text(176, 128, String(this.best), {
-    fontFamily: UI.FONT, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
-  }).setOrigin(1, 0).setDepth(41);
-  this.bestText.setShadow(0, 0, '#e0a020', 8);
-
-  // mode badge (neon)
-  var mb = this.add.text(GEO.W / 2, 96, DANNYLAB.t(this.mode, lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '16px', color: '#7CFF6B', fontStyle: 'bold',
+  var mb = this.add.text(cx, py + 17, DANNYLAB.t(this.mode, lang).toUpperCase(), {
+    fontFamily: UI.FONT, fontSize: '15px', color: '#7CFF6B', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
   mb.setShadow(0, 0, '#7CFF6B', 10);
 
-  // pause button (top-right corner)
-  var self = this;
-  var pb = UI.button(this, GEO.W - 52, 96, 64, 56, '⏸', function () {
+  this.add.text(cx, py + 50, DANNYLAB.t('score', lang).toUpperCase(), {
+    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(41);
+  this.scoreText = this.add.text(cx, py + 83, '0', {
+    fontFamily: UI.FONT, fontSize: '24px', color: '#eafffb', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(41);
+  this.scoreText.setShadow(0, 0, '#4fd9ff', 8);
+
+  this.add.text(cx, py + 118, DANNYLAB.t('best', lang).toUpperCase(), {
+    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(41);
+  this.bestText = this.add.text(cx, py + 151, String(this.best), {
+    fontFamily: UI.FONT, fontSize: '24px', color: '#FBD38D', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(41);
+  this.bestText.setShadow(0, 0, '#e0a020', 8);
+
+  // pause button (top-right corner, above the stats column)
+  var pb = UI.button(this, GEO.W - 44, 58, 64, 52, '||', function () {
     self.openPause();
-  }, { fill: 0x46506e, fontSize: 26 });
+  }, { fill: 0x46506e, fontSize: 24 });
   pb.setDepth(45);
 };
 
 // ---------- tweezers (Brief §10.5) ----------
 GP.buildTweezers = function () {
   var GEO = DANNYLAB.GEO;
-  var c = this.add.container(GEO.W / 2, 60).setDepth(30);
+  var c = this.add.container(DANNYLAB.beakerCx(), 60).setDepth(30);
   var g = this.add.graphics();
   // draw tongs hanging down to dropY
   this.tweezerG = g;
@@ -593,9 +599,10 @@ GP.triggerFission = function (a, b) {
 GP.toast = function (text, color) {
   var GEO = DANNYLAB.GEO;
   var y = GEO.dropY + 30;
-  var t = this.add.text(GEO.W / 2, y, text, {
-    fontFamily: DANNYLAB.UI.FONT, fontSize: '30px', color: '#ffffff', fontStyle: 'bold',
+  var t = this.add.text(DANNYLAB.beakerCx(), y, text, {
+    fontFamily: DANNYLAB.UI.FONT, fontSize: '28px', color: '#ffffff', fontStyle: 'bold',
     stroke: '#0c1430', strokeThickness: 6, align: 'center',
+    wordWrap: { width: GEO.bx1 - GEO.bx0 + 40 },
   }).setOrigin(0.5).setDepth(48).setScale(0.4);
   if (color) t.setColor('#' + color.toString(16).padStart(6, '0'));
   this.tweens.add({ targets: t, scale: 1, duration: 200, ease: 'Back.out' });

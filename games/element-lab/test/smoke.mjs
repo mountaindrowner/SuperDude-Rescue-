@@ -91,7 +91,7 @@ console.log('game stats:', JSON.stringify(stats));
 await page.screenshot({ path: path.join(__dirname, 'shot-game.png') });
 
 // ---- pause overlay open/close ----
-let pbtn = mapXY(488, 96);
+let pbtn = mapXY(496, 58);   // pause button is top-right corner
 await page.mouse.click(pbtn.x, pbtn.y);
 await page.waitForTimeout(300);
 console.log('after pause click, active scenes:', await activeScenes());

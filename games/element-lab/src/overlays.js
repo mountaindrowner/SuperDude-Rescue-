@@ -211,9 +211,11 @@ window.DANNYLAB = window.DANNYLAB || {};
     var tier = 1; DANNYLAB.CONFIG.tiers.forEach(function (c) { if (c.sym === sym) tier = c.t; });
     var name = DANNYLAB.elementName(sym, lang);
 
-    var cardW = Math.min(430, W * 0.9), cardH = 168;
-    var restY = 120;                         // rests near the top, above the beaker
-    var card = this.add.container(W / 2, -cardH - 20).setDepth(70).setAngle(-2.5);
+    // sit the note over the beaker (left side), clear of the right stats column
+    var cx = (DANNYLAB.GEO.bx0 + DANNYLAB.GEO.bx1) / 2;
+    var cardW = Math.min(376, DANNYLAB.GEO.bx1 - DANNYLAB.GEO.bx0 + 44), cardH = 168;
+    var restY = 116;                         // rests near the top, above the beaker
+    var card = this.add.container(cx, -cardH - 20).setDepth(70).setAngle(-2.5);
 
     var g = this.add.graphics();
     // soft drop shadow
@@ -259,7 +261,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     card.add([g, icon, header, intro, fact, closeBg, closeX]);
 
     // big invisible hit-area over the ✕ so it's easy to tap on a phone
-    var closeZone = this.add.zone(W / 2 + cxp, restY + cyp, 52, 52).setOrigin(0.5).setDepth(71)
+    var closeZone = this.add.zone(cx + cxp, restY + cyp, 56, 56).setOrigin(0.5).setDepth(71)
       .setInteractive({ useHandCursor: true });
 
     this.tweens.add({ targets: card, y: restY, duration: 420, ease: 'Back.out' });

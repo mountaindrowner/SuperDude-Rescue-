@@ -63,11 +63,11 @@ DANNYLAB.buildLab = function (scene, opts) {
     }
   }
 
-  // soft light shaft from the top
+  // soft light shaft from the top, angled down over the beaker (left side)
   var shaft = scene.add.graphics();
   shaft.fillStyle(0xbfe3ff, 0.05);
-  shaft.fillTriangle(W * 0.42, 0, W * 0.58, 0, W * 0.78, H);
-  shaft.fillTriangle(W * 0.42, 0, W * 0.78, H, W * 0.30, H);
+  shaft.fillTriangle(W * 0.26, 0, W * 0.44, 0, W * 0.6, H);
+  shaft.fillTriangle(W * 0.26, 0, W * 0.6, H, W * 0.12, H);
   back.add(shaft);
   scene.tweens.add({ targets: shaft, alpha: 0.7, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
