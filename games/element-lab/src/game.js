@@ -87,14 +87,24 @@ GP.create = function (data) {
     }
   });
 
-  // ---- input: tweezers follow pointer; tap drops ----
-  this.input.on('pointermove', function (p) { self.pointerX = p.x; });
+  // ---- input: drag to aim along the top, lift to drop (precise on touch) ----
+  // Touch can't hover, so we let the player place a finger anywhere in the
+  // beaker, drag left/right to line up the column (tweezers + a drop guide
+  // track the finger exactly), and lift to release. A simple tap = aim+lift
+  // in the same spot, so it still drops right where you tapped.
+  this.aiming = false;
   this.input.on('pointerdown', function (p) {
     if (self.audio) self.audio.resume();
-    if (self.paused || self.gameOver) return;
-    if (p.y < GEO.dropY - 40) return;     // tap near top bar ignored (pause btn handles itself)
-    self.tryDrop(p.x);
+    if (self.paused || self.gameOver || self.dropCooling) return;
+    if (p.y < 176) return;                 // ignore the HUD / pause-button band up top
+    self.beginAim(p.x);
   });
+  this.input.on('pointermove', function (p) {
+    self.pointerX = p.x;
+    if (self.aiming) self.updateAim(p.x);
+  });
+  this.input.on('pointerup', function () { self.commitDrop(); });
+  this.input.on('pointerupoutside', function () { self.commitDrop(); });
 
   this.nextTier = DANNYLAB.pickDroppableTier();
   this.setTweezerPreview(this.nextTier);
@@ -214,6 +224,9 @@ GP.buildTweezers = function () {
   c.add(this.gripPreview);
   this.tweezers = c;
   this.drawTweezers(false);
+
+  // drop guide: a neon dashed line down the aimed column (shown while aiming)
+  this.guide = this.add.graphics().setDepth(18).setVisible(false);
 };
 
 GP.drawTweezers = function (open) {
@@ -241,34 +254,61 @@ GP.setTweezerPreview = function (tier) {
   this.gripPreview.setScale(46 / tex.width);
 };
 
-// ---------- drop ----------
-GP.tryDrop = function (px) {
-  if (this.dropCooling) return;
-  var GEO = DANNYLAB.GEO;
-  var cfg = DANNYLAB.tierCfg(this.nextTier);
-  var x = Phaser.Math.Clamp(px, GEO.bx0 + cfg.radius + 2, GEO.bx1 - cfg.radius - 2);
-  var self = this;
+// ---------- aim + drop ----------
+// clamp a desired x so the element stays fully inside the beaker walls
+GP.clampDropX = function (x) {
+  var GEO = DANNYLAB.GEO, cfg = DANNYLAB.tierCfg(this.nextTier);
+  return Phaser.Math.Clamp(x, GEO.bx0 + cfg.radius + 2, GEO.bx1 - cfg.radius - 2);
+};
 
-  // anticipation: quiver, then plink open + release
+GP.beginAim = function (x) {
+  this.aiming = true;
+  this.aimX = this.clampDropX(x);
+  this.tweezers.x = this.aimX;        // snap the tongs straight under the finger
   this.drawTweezers(false);
-  this.tweens.add({
-    targets: this.tweezers, x: x, duration: 90, ease: 'Quad.out',
-    onComplete: function () {
-      self.tweens.add({
-        targets: self.gripPreview, scaleX: self.gripPreview.scaleX * 0.85, scaleY: self.gripPreview.scaleY * 1.1,
-        duration: 60, yoyo: true,
-        onYoyo: function () {
-          self.drawTweezers(true);
-          self.gripPreview.setVisible(false);
-          if (self.audio) self.audio.drop();
-          self.spawnElement(self.nextTier, x, GEO.dropY, { dropped: true });
-        },
-        onComplete: function () { self.drawTweezers(false); }
-      });
-    }
-  });
+  this.guide.setVisible(true);
+  this.drawGuide();
+};
+
+GP.updateAim = function (x) {
+  this.aimX = this.clampDropX(x);
+  this.tweezers.x = this.aimX;        // track the finger exactly — no lag
+  this.drawGuide();
+};
+
+GP.commitDrop = function () {
+  if (!this.aiming) return;
+  this.aiming = false;
+  this.guide.setVisible(false);
+  if (this.paused || this.gameOver) return;   // released during pause → cancel, don't drop
+  this.doDrop(this.aimX);
+};
+
+// draw the neon dashed guide + landing marker down the aimed column
+GP.drawGuide = function () {
+  var GEO = DANNYLAB.GEO, g = this.guide, x = this.tweezers.x;
+  var cfg = DANNYLAB.tierCfg(this.nextTier);
+  g.clear();
+  g.lineStyle(2, 0x7CFF6B, 0.55);
+  for (var y = GEO.dropY + 12; y < GEO.floorTop - 4; y += 14) {
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 7); g.strokePath();
+  }
+  // footprint disc so you can see the exact column width you're committing to
+  var fy = GEO.floorTop - cfg.radius - 2;
+  g.fillStyle(0x7CFF6B, 0.10); g.fillCircle(x, fy, cfg.radius);
+  g.lineStyle(2, 0x7CFF6B, 0.5); g.strokeCircle(x, fy, cfg.radius);
+};
+
+GP.doDrop = function (x) {
+  var GEO = DANNYLAB.GEO, self = this;
+  // plink the tongs open and release exactly at the aimed column
+  this.drawTweezers(true);
+  this.gripPreview.setVisible(false);
+  if (this.audio) this.audio.drop();
+  this.spawnElement(this.nextTier, x, GEO.dropY, { dropped: true });
 
   this.dropCooling = true;
+  this.time.delayedCall(120, function () { self.drawTweezers(false); });
   this.time.delayedCall(DANNYLAB.CONFIG.dropCooldownMs, function () {
     self.dropCooling = false;
     self.nextTier = DANNYLAB.pickDroppableTier();
@@ -353,6 +393,8 @@ GP.squash = function (c) {
       if (c.active && c.idleTween) c.idleTween.resume();
     }
   });
+  // a little dust puff when something lands hard (cheap juice)
+  if (sp > 5) this.burst(c.x, c.y + c.radius * 0.65, 0xbfe3ff, 3, { tex: 'p_bubble', speed: 45, scale: 0.4, life: 360 });
 };
 
 GP.destroyElement = function (c) {
@@ -582,12 +624,22 @@ GP.update = function (time, delta) {
   if (this.lab) this.lab.update(delta);
   if (this.paused || this.gameOver) return;
 
-  // tweezers follow pointer along the top (between drops)
-  if (!this.dropCooling && this.pointerX != null) {
-    var GEO = DANNYLAB.GEO;
-    var cfg = DANNYLAB.tierCfg(this.nextTier);
-    var tx = Phaser.Math.Clamp(this.pointerX, GEO.bx0 + cfg.radius, GEO.bx1 - cfg.radius);
+  // desktop hover: ease the tongs toward the cursor between drops. While
+  // aiming (finger down) the move handler positions them exactly, so skip.
+  if (!this.dropCooling && !this.aiming && this.pointerX != null && this.input.activePointer.isDown === false) {
+    var tx = this.clampDropX(this.pointerX);
     this.tweezers.x += (tx - this.tweezers.x) * 0.25;
+  }
+
+  // JUICE: elements glow brighter the faster they move — so they blaze as
+  // they drop and while jostling inside, then ease to a soft resting glow.
+  // (Cheap per-frame alpha lerp; Uranium keeps its own radioactive pulse.)
+  for (var gi = 0; gi < this.elements.length; gi++) {
+    var e = this.elements[gi];
+    if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;
+    var sp = e.body.speed;
+    var target = sp > 0.4 ? Math.min(1.0, 0.5 + sp * 0.06) : 0.42;
+    e.glow.alpha += (target - e.glow.alpha) * 0.25;
   }
 
   // combo reset when the beaker settles
