@@ -631,15 +631,15 @@ GP.update = function (time, delta) {
     this.tweezers.x += (tx - this.tweezers.x) * 0.25;
   }
 
-  // JUICE: elements glow brighter the faster they move — so they blaze as
-  // they drop and while jostling inside, then ease to a soft resting glow.
+  // JUICE: elements glow only while moving, so they blaze as they drop and
+  // while jostling, then fade the glow right out once they settle inside.
   // (Cheap per-frame alpha lerp; Uranium keeps its own radioactive pulse.)
   for (var gi = 0; gi < this.elements.length; gi++) {
     var e = this.elements[gi];
     if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;
     var sp = e.body.speed;
-    var target = sp > 0.4 ? Math.min(1.0, 0.5 + sp * 0.06) : 0.42;
-    e.glow.alpha += (target - e.glow.alpha) * 0.25;
+    var target = sp > 0.7 ? Math.min(1.0, 0.35 + sp * 0.06) : 0.0;   // settled = no glow
+    e.glow.alpha += (target - e.glow.alpha) * 0.2;
   }
 
   // combo reset when the beaker settles

@@ -47,10 +47,15 @@ DANNYLAB.UI = {
     txt.setShadow(0, 0, neonStr, 8);   // neon text glow
 
     c.add([g, txt]);
-    c.setSize(w, h);
-    c.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
 
-    c.on('pointerdown', function () { paint(true); txt.y = 3; });
+    // Input is driven by a transparent interactive Rectangle child, NOT the
+    // Container's own hitArea: a Container + Geom.Rectangle hit test has a
+    // right-half dead-zone on scaled/mobile canvases. A Shape GameObject has
+    // a reliable, correctly-centered hit area.
+    var hit = scene.add.rectangle(0, 0, w, h, 0x000000, 0).setInteractive({ useHandCursor: true });
+    c.add(hit);
+
+    hit.on('pointerdown', function () { paint(true); txt.y = 3; });
     function release(fire) {
       paint(false); txt.y = 0;
       if (fire) {
@@ -59,11 +64,13 @@ DANNYLAB.UI = {
         if (onClick) onClick();
       }
     }
-    c.on('pointerup', function () { release(true); });
-    c.on('pointerout', function () { release(false); });
+    hit.on('pointerup', function () { release(true); });
+    hit.on('pointerout', function () { release(false); });
+    hit.on('pointerupoutside', function () { release(false); });
 
     c.setLabel = function (s) { txt.setText(s); };
     c.txt = txt;
+    c.hit = hit;
     return c;
   },
 
