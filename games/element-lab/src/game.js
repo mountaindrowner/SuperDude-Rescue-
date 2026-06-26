@@ -342,16 +342,15 @@ GP.spawnElement = function (tier, x, y, opts) {
   if (px) ball.setDisplaySize(cfg.radius * 2.55, cfg.radius * 2.55);
 
   var kids = [shadow, glow, ball];
-  // the procedural balls need the element symbol overlaid; the PixelLab atoms
-  // already read as characters, so we keep them clean (symbols live on the
-  // discovery cards + collection screen instead).
-  if (!px) {
-    var sym = this.add.text(0, cfg.radius * 0.62, cfg.sym, {
-      fontFamily: UI.FONT, fontSize: Math.max(11, Math.round(cfg.radius * 0.42)) + 'px',
-      color: '#10203a', fontStyle: 'bold',
-    }).setOrigin(0.5).setAlpha(0.85);
-    kids.push(sym);
-  }
+  // element symbol as a little label near the bottom of the atom. White with
+  // a dark outline so it reads on any colour (light orbs or dark), in the
+  // pixel display font to match the art.
+  var sym = this.add.text(0, cfg.radius * 0.58, cfg.sym, {
+    fontFamily: UI.DISPLAY, fontSize: Math.max(12, Math.round(cfg.radius * 0.42)) + 'px',
+    color: '#ffffff', fontStyle: 'bold',
+    stroke: '#10203a', strokeThickness: Math.max(2, Math.round(cfg.radius * 0.07)),
+  }).setOrigin(0.5).setAlpha(0.95);
+  kids.push(sym);
 
   // Inner container holds the visuals; we scale THIS for squash/pop/idle.
   // The outer container carries the Matter body and is never scaled, so the

@@ -14,13 +14,20 @@ DANNYLAB.MenuScene.prototype.create = function () {
   var UI = DANNYLAB.UI;
   this.lab = DANNYLAB.buildLab(this, { dust: 16 });
 
-  // ---- floating sample elements behind the logo (alive, on-brand) ----
-  for (var i = 0; i < 5; i++) {
-    var t = 1 + (i % 3);
-    var s = this.add.image(W * (0.15 + 0.18 * i), H * (0.20 + (i % 2) * 0.05), DANNYLAB.ballKey(this, t))
-      .setDepth(-10).setAlpha(0.9);
-    s.setDisplaySize(70, 70);
-    this.tweens.add({ targets: s, y: s.y - 14, duration: 1400 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  // ---- floating sample elements: drift in the corners + side margins,
+  // clear of the title and the buttons (never behind/on the title) ----
+  var spots = [
+    { x: 0.09, y: 0.075, t: 1 }, { x: 0.91, y: 0.095, t: 2 },
+    { x: 0.06, y: 0.50,  t: 4 }, { x: 0.94, y: 0.53,  t: 6 },
+    { x: 0.07, y: 0.74,  t: 8 }, { x: 0.93, y: 0.77,  t: 9 },
+  ];
+  for (var i = 0; i < spots.length; i++) {
+    var sp = spots[i];
+    var s = this.add.image(W * sp.x, H * sp.y, DANNYLAB.ballKey(this, sp.t))
+      .setDepth(-10).setAlpha(0.85);
+    s.setDisplaySize(56, 56);
+    this.tweens.add({ targets: s, y: s.y - 12, duration: 1500 + i * 170, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: s, x: s.x + (sp.x < 0.5 ? 9 : -9), duration: 2300 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   }
 
   // ---- logo ----
