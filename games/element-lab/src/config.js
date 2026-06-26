@@ -1,0 +1,67 @@
+// config.js — Super Dude Danny's Element Lab
+// Everything tweakable lives here (Brief §17). Edit numbers, never logic.
+window.DANNYLAB = window.DANNYLAB || {};
+
+DANNYLAB.CONFIG = {
+  // ---- gameplay ----
+  maxDroppableTier: 3,
+  dropCooldownMs: 450,
+  comboResetMs: 250,
+  overflowGraceMs: 1500,
+  fissionEnabled: true,
+  fissionRadius: 160,
+  fissionClearsTiersUpTo: 3,
+
+  // drop weighting for tiers 1..maxDroppableTier (should sum ~1)
+  dropWeights: { 1: 0.6, 2: 0.3, 3: 0.1 },
+
+  // ---- scoring ----
+  tierPoints: { 2: 2, 3: 4, 4: 8, 5: 16, 6: 32, 7: 64, 8: 128, 9: 300 },
+  discoverBonusFirstEver: 50,
+  discoverBonusThisRun: 25,
+  fissionBonus: 500,
+  fissionPerAtom: 100,
+
+  // ---- physics ----
+  restitution: 0.15,
+  friction: 0.4,
+  frictionStatic: 0.5,
+  bodySoftCap: 70,
+
+  // ---- the element chain — radius/color/symbol drive everything ----
+  // glowAlpha + faceMood let us reskin tone per element without code edits.
+  tiers: [
+    { t: 1, sym: 'H',  radius: 22,  color: 0xBEE3F8, mood: 'spark'  },
+    { t: 2, sym: 'He', radius: 30,  color: 0xFBD38D, mood: 'happy'  },
+    { t: 3, sym: 'C',  radius: 40,  color: 0x7B8A9B, mood: 'cool'   },
+    { t: 4, sym: 'O',  radius: 52,  color: 0x4FD1C5, mood: 'happy'  },
+    { t: 5, sym: 'Ne', radius: 66,  color: 0xF687B3, mood: 'wow'    },
+    { t: 6, sym: 'Na', radius: 82,  color: 0x9F7AEA, mood: 'happy'  },
+    { t: 7, sym: 'Fe', radius: 100, color: 0x8696A7, mood: 'cool'   },
+    { t: 8, sym: 'Au', radius: 120, color: 0xECC94B, mood: 'wow'    },
+    { t: 9, sym: 'U',  radius: 145, color: 0x7CFF6B, mood: 'glow'   },
+  ],
+};
+
+// Derived constants referenced by the merge logic (Brief §17).
+DANNYLAB.MAX_TIER = DANNYLAB.CONFIG.tiers.length;          // 9
+DANNYLAB.MAX_DROPPABLE_TIER = DANNYLAB.CONFIG.maxDroppableTier;
+DANNYLAB.FISSION_ENABLED = DANNYLAB.CONFIG.fissionEnabled;
+
+// Convenience lookup: tier number -> tier config object (1-indexed).
+DANNYLAB.tierCfg = function (t) {
+  return DANNYLAB.CONFIG.tiers[t - 1];
+};
+
+// Weighted random pick of a droppable tier (1..maxDroppableTier).
+DANNYLAB.pickDroppableTier = function () {
+  var w = DANNYLAB.CONFIG.dropWeights;
+  var total = 0, k;
+  for (k in w) total += w[k];
+  var r = Math.random() * total;
+  for (k = 1; k <= DANNYLAB.MAX_DROPPABLE_TIER; k++) {
+    r -= (w[k] || 0);
+    if (r <= 0) return k;
+  }
+  return 1;
+};

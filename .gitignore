@@ -1,0 +1,4 @@
+# Local dev tooling only — the game itself has no build step or npm deps.
+node_modules/
+games/element-lab/test/shot-*.png
+games/element-lab/test/diag.mjs
