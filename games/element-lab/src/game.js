@@ -99,6 +99,11 @@ GP.create = function (data) {
   this.aiming = false;
   this.input.on('pointerdown', function (p) {
     if (self.audio) self.audio.resume();
+    // tapping the Lab Notes ✕ closes the card (checked first — it sits up in
+    // the top band that drops otherwise ignore)
+    if (self._discoCard && Phaser.Math.Distance.Between(p.x, p.y, self._discoX, self._discoY) < 46) {
+      self.dismissDiscovery(); return;
+    }
     if (self.paused || self.gameOver || self.dropCooling) return;
     if (p.y < 176) return;                 // ignore the HUD / pause-button band up top
     self.beginAim(p.x);
@@ -504,8 +509,81 @@ GP.queueDiscovery = function (sym) {
 GP.showNextDiscovery = function () {
   if (!this._discoQ || !this._discoQ.length) { this._discoActive = false; return; }
   this._discoActive = true;
-  var sym = this._discoQ.shift();
-  this.scene.launch('DANNYLAB_Discovery', { parent: 'DANNYLAB_Game', sym: sym, lang: this.lang });
+  this.buildDiscoveryCard(this._discoQ.shift());
+};
+
+// Tear down any visible Lab Notes card + its timer, and reset the queue flag.
+GP.clearDiscoveryCard = function () {
+  if (this._discoAuto) { this._discoAuto.remove(false); this._discoAuto = null; }
+  if (this._discoCard) { this.tweens.killTweensOf(this._discoCard); this._discoCard.destroy(); this._discoCard = null; }
+  this._discoX = -999;
+  this._discoActive = false;
+};
+
+// The "Danny's Lab Notes" card, rendered INSIDE the game scene (not a separate
+// scene) so its ✕ shares the game's working input context. Yellow legal-pad
+// note that slides in at the top, closable by ✕ or auto-dismiss.
+GP.buildDiscoveryCard = function (sym) {
+  var GEO = DANNYLAB.GEO, UI = DANNYLAB.UI, lang = this.lang, self = this;
+  var tier = 1; DANNYLAB.CONFIG.tiers.forEach(function (c) { if (c.sym === sym) tier = c.t; });
+  var name = DANNYLAB.elementName(sym, lang);
+
+  var cx = DANNYLAB.beakerCx();
+  var cardW = Math.min(376, GEO.bx1 - GEO.bx0 + 44), cardH = 168, restY = 116;
+  var card = this.add.container(cx, -cardH - 20).setDepth(70).setAngle(-2.5);
+  this._discoCard = card;
+
+  var g = this.add.graphics();
+  g.fillStyle(0x000000, 0.28); g.fillRoundedRect(-cardW / 2 + 6, -cardH / 2 + 10, cardW, cardH, 14);
+  g.fillStyle(0xfde85a, 1);    g.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 14);
+  g.fillStyle(0xfbdf3e, 1);    g.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, 30, { tl: 14, tr: 14, bl: 0, br: 0 });
+  g.lineStyle(1.5, 0x7fa8d8, 0.55);
+  for (var ly = -cardH / 2 + 56; ly < cardH / 2 - 12; ly += 24) {
+    g.beginPath(); g.moveTo(-cardW / 2 + 70, ly); g.lineTo(cardW / 2 - 18, ly); g.strokePath();
+  }
+  g.lineStyle(2, 0xe8506a, 0.8);
+  g.beginPath(); g.moveTo(-cardW / 2 + 60, -cardH / 2 + 6); g.lineTo(-cardW / 2 + 60, cardH / 2 - 6); g.strokePath();
+  g.fillStyle(0xcdb52e, 1);
+  for (var hx = -cardW / 2 + 36; hx < cardW / 2 - 20; hx += 56) g.fillCircle(hx, -cardH / 2 + 15, 4);
+
+  var header = this.add.text(-cardW / 2 + 70, -cardH / 2 + 15, DANNYLAB.t('notes_title', lang), {
+    fontFamily: UI.FONT, fontSize: '17px', color: '#8a5a12', fontStyle: 'bold' }).setOrigin(0, 0.5);
+  var intro = this.add.text(-cardW / 2 + 70, -cardH / 2 + 44, DANNYLAB.t('discovery_intro', lang, { element: name }), {
+    fontFamily: UI.FONT, fontSize: '19px', color: '#5a3a08', fontStyle: 'bold', wordWrap: { width: cardW - 92 } }).setOrigin(0, 0);
+  var fact = this.add.text(-cardW / 2 + 70, -cardH / 2 + 78, DANNYLAB.elementFact(sym, lang), {
+    fontFamily: UI.FONT, fontSize: '15px', color: '#6a4a1a', wordWrap: { width: cardW - 92 } }).setOrigin(0, 0);
+  var icon = this.add.image(-cardW / 2 + 32, 2, DANNYLAB.ballKey(this, tier)).setDisplaySize(52, 52);
+
+  var cxp = cardW / 2 - 20, cyp = -cardH / 2 + 18;
+  var closeBg = this.add.graphics();
+  closeBg.fillStyle(0xe8506a, 1); closeBg.fillCircle(cxp, cyp, 15);
+  closeBg.lineStyle(2, 0xffffff, 0.9); closeBg.strokeCircle(cxp, cyp, 15);
+  var closeX = this.add.text(cxp, cyp, '✕', {
+    fontFamily: UI.FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+  card.add([g, icon, header, intro, fact, closeBg, closeX]);
+
+  // Remember the ✕'s real (rotated) world position. Rather than a Phaser
+  // interactive object (which hit-tests unreliably inside a tilted container),
+  // the game's own pointerdown handler checks taps against this point — that
+  // input path is proven to work for dropping.
+  var ang = Phaser.Math.DegToRad(-2.5);
+  this._discoX = cx + (cxp * Math.cos(ang) - cyp * Math.sin(ang));
+  this._discoY = restY + (cxp * Math.sin(ang) + cyp * Math.cos(ang));
+
+  this.tweens.add({ targets: card, y: restY, duration: 420, ease: 'Back.out' });
+  this._discoAuto = this.time.delayedCall(4200, function () { self.dismissDiscovery(); });
+};
+
+// close the current Lab Notes card (tapped ✕ or auto), then show any queued one
+GP.dismissDiscovery = function () {
+  if (!this._discoCard) return;
+  var card = this._discoCard, self = this;
+  this._discoCard = null; this._discoX = -999;
+  if (this._discoAuto) { this._discoAuto.remove(false); this._discoAuto = null; }
+  this.tweens.add({
+    targets: card, y: -220, angle: -8, alpha: 0, duration: 240, ease: 'Quad.in',
+    onComplete: function () { card.destroy(); self.showNextDiscovery(); }
+  });
 };
 
 // ---------- signature birth effects (Brief §3 / §10.4) ----------
@@ -630,7 +708,7 @@ GP.openPause = function () {
   this.matter.world.enabled = false;
   // clear any in-flight Lab Notes card so it doesn't sit frozen over Pause
   this._discoQ = [];
-  if (this.scene.isActive('DANNYLAB_Discovery')) this.scene.stop('DANNYLAB_Discovery');
+  this.clearDiscoveryCard();
   this.scene.launch('DANNYLAB_Pause', { parent: 'DANNYLAB_Game' });
   this.scene.pause();
 };
@@ -693,7 +771,7 @@ GP.endGame = function () {
   this.paused = true;
   // dismiss any in-flight discovery cards so they don't sit over Game Over
   this._discoQ = [];
-  if (this.scene.isActive('DANNYLAB_Discovery')) this.scene.stop('DANNYLAB_Discovery');
+  this.clearDiscoveryCard();
   if (this.audio) this.audio.aww();
   var newBest = this.score >= this.best ? this.score : this.best;
   DANNYLAB.store.setBest(newBest);

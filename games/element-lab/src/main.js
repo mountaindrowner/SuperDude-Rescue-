@@ -8,7 +8,7 @@ DANNYLAB.sceneClasses = function () {
   return [
     DANNYLAB.BootScene, DANNYLAB.PreloadScene, DANNYLAB.MenuScene, DANNYLAB.GameScene,
     DANNYLAB.PauseScene, DANNYLAB.OptionsScene, DANNYLAB.ConfirmScene,
-    DANNYLAB.GameOverScene, DANNYLAB.HowToScene, DANNYLAB.DiscoveryScene,
+    DANNYLAB.GameOverScene, DANNYLAB.HowToScene,
     DANNYLAB.CollectionScene,
   ];
 };
