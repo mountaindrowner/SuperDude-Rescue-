@@ -125,14 +125,20 @@ GP.buildBeaker = function () {
 
   // front glass overlay (rim highlight, sheen, ticks) — translucent
   var f = this.add.graphics().setDepth(20);
-  f.lineStyle(5, 0xcdeeff, 0.55);
+  // neon glass edge (wide soft pass under a crisp line)
+  f.lineStyle(9, 0x4fd9ff, 0.16);
   f.beginPath();
   f.moveTo(GEO.bx0, GEO.yRim); f.lineTo(GEO.bx0, GEO.floorTop);
   f.lineTo(GEO.bx1, GEO.floorTop); f.lineTo(GEO.bx1, GEO.yRim);
   f.strokePath();
-  // rim ellipse highlight
-  f.lineStyle(5, 0xeaffff, 0.7);
-  f.strokeEllipse((GEO.bx0 + GEO.bx1) / 2, GEO.yRim, (GEO.bx1 - GEO.bx0), 26);
+  f.lineStyle(4, 0xbfefff, 0.6);
+  f.beginPath();
+  f.moveTo(GEO.bx0, GEO.yRim); f.lineTo(GEO.bx0, GEO.floorTop);
+  f.lineTo(GEO.bx1, GEO.floorTop); f.lineTo(GEO.bx1, GEO.yRim);
+  f.strokePath();
+  // rim ellipse highlight + neon halo
+  f.lineStyle(8, 0x4fd9ff, 0.18); f.strokeEllipse((GEO.bx0 + GEO.bx1) / 2, GEO.yRim, (GEO.bx1 - GEO.bx0), 26);
+  f.lineStyle(4, 0xeaffff, 0.75); f.strokeEllipse((GEO.bx0 + GEO.bx1) / 2, GEO.yRim, (GEO.bx1 - GEO.bx0), 26);
   // vertical sheen stripe
   f.fillStyle(0xffffff, 0.08);
   f.fillRoundedRect(GEO.bx0 + 14, GEO.yRim + 18, 16, GEO.floorTop - GEO.yRim - 40, 8);
@@ -156,30 +162,36 @@ GP.buildBeaker = function () {
 // ---------- HUD: side-mounted lab readout (Brief §7) ----------
 GP.buildHUD = function () {
   var GEO = DANNYLAB.GEO, UI = DANNYLAB.UI, lang = this.lang;
-  // clipboard gauge top-left, kept clear of the beaker mouth
+  // metallic lab readout gauge top-left, kept clear of the beaker mouth
   var g = this.add.graphics().setDepth(40);
-  g.fillStyle(0x122046, 0.9); g.fillRoundedRect(14, 70, 180, 96, 14);
-  g.lineStyle(3, 0x5b8def, 0.6); g.strokeRoundedRect(14, 70, 180, 96, 14);
-  g.fillStyle(0x0c1430, 1); g.fillRoundedRect(24, 80, 160, 34, 8);
-  g.fillStyle(0x0c1430, 1); g.fillRoundedRect(24, 122, 160, 34, 8);
+  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(11, 67, 186, 102, 16);          // neon halo
+  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(14, 70, 180, 96, 14);            // metal plate
+  g.fillStyle(0x586784, 1);    g.fillRoundedRect(14, 70, 180, 30, { tl: 14, tr: 14, bl: 0, br: 0 });
+  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(14, 70, 180, 96, 14);      // neon edge
+  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(24, 80, 160, 34, 8);             // digit wells
+  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(24, 122, 160, 34, 8);
+  g.lineStyle(1, 0x4fd9ff, 0.3); g.strokeRoundedRect(24, 80, 160, 34, 8); g.strokeRoundedRect(24, 122, 160, 34, 8);
 
-  this.add.text(30, 78, DANNYLAB.t('score', lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '13px', color: '#8fb6ff', fontStyle: 'bold',
+  this.add.text(30, 80, DANNYLAB.t('score', lang).toUpperCase(), {
+    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
   }).setDepth(41);
   this.scoreText = this.add.text(176, 86, '0', {
-    fontFamily: UI.FONT, fontSize: '26px', color: '#ffffff', fontStyle: 'bold',
+    fontFamily: UI.FONT, fontSize: '26px', color: '#eafffb', fontStyle: 'bold',
   }).setOrigin(1, 0).setDepth(41);
-  this.add.text(30, 120, DANNYLAB.t('best', lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '13px', color: '#8fb6ff', fontStyle: 'bold',
+  this.scoreText.setShadow(0, 0, '#4fd9ff', 8);
+  this.add.text(30, 122, DANNYLAB.t('best', lang).toUpperCase(), {
+    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
   }).setDepth(41);
   this.bestText = this.add.text(176, 128, String(this.best), {
     fontFamily: UI.FONT, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
   }).setOrigin(1, 0).setDepth(41);
+  this.bestText.setShadow(0, 0, '#e0a020', 8);
 
-  // mode badge
-  this.add.text(GEO.W / 2, 96, DANNYLAB.t(this.mode, lang).toUpperCase(), {
+  // mode badge (neon)
+  var mb = this.add.text(GEO.W / 2, 96, DANNYLAB.t(this.mode, lang).toUpperCase(), {
     fontFamily: UI.FONT, fontSize: '16px', color: '#7CFF6B', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
+  mb.setShadow(0, 0, '#7CFF6B', 10);
 
   // pause button (top-right corner)
   var self = this;
@@ -497,6 +509,10 @@ GP.mergeBurst = function (x, y, fromTier) {
   this.burst(x, y, col, 10, { speed: 90, scale: 0.5, life: 380 });
   var flash = this.add.image(x, y, 'el_glow').setTint(0xffffff).setBlendMode('ADD').setDepth(26).setScale(0.4);
   this.tweens.add({ targets: flash, scale: 1.4, alpha: 0, duration: 240, onComplete: function () { flash.destroy(); } });
+  // expanding neon ring
+  var ring = this.add.image(x, y, 'p_ring').setTint(col).setBlendMode('ADD').setDepth(26).setScale(0.3).setAlpha(0.9);
+  this.tweens.add({ targets: ring, scale: 2.4, alpha: 0, duration: 320, ease: 'Cubic.out',
+    onComplete: function () { ring.destroy(); } });
 };
 
 // ---------- Fission (Brief §6) ----------
@@ -550,6 +566,9 @@ GP.openPause = function () {
   if (this.gameOver) return;
   this.paused = true;
   this.matter.world.enabled = false;
+  // clear any in-flight Lab Notes card so it doesn't sit frozen over Pause
+  this._discoQ = [];
+  if (this.scene.isActive('DANNYLAB_Discovery')) this.scene.stop('DANNYLAB_Discovery');
   this.scene.launch('DANNYLAB_Pause', { parent: 'DANNYLAB_Game' });
   this.scene.pause();
 };

@@ -9,6 +9,8 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
   var master, sfxGain, musicGain;
   var musicTimer = null;
   var musicStep = 0;
+  var trackBuffer = null;     // decoded mp3 (main-game song), if available
+  var trackSource = null;     // currently-playing looping source
   var state = { sfx: !!sfxOn, music: !!musicOn };
 
   function ensure() {
@@ -132,8 +134,36 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     // button press
     click: function () { tone({ type: 'square', f0: 660, f1: 880, dur: 0.05, gain: 0.14 }); },
 
-    // ---- ambient music loop: gentle lab arpeggio ----
+    // ---- load a real mp3 track (a main-game song) to use as the loop ----
+    loadTrack: function (url) {
+      if (!ensure()) return Promise.resolve(false);
+      return fetch(url)
+        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
+        .then(function (buf) { return ctx.decodeAudioData(buf); })
+        .then(function (decoded) {
+          trackBuffer = decoded;
+          if (state.music) { api.stopMusic(); api.startMusic(); }   // swap synth → song
+          return true;
+        })
+        .catch(function () { return false; });   // fall back to synth loop
+    },
+
+    // ---- start music: prefer the mp3 track, else the synth arpeggio ----
     startMusic: function () {
+      if (!state.music || !ensure()) return;
+      if (trackBuffer) {
+        if (trackSource) return;
+        trackSource = ctx.createBufferSource();
+        trackSource.buffer = trackBuffer;
+        trackSource.loop = true;
+        trackSource.connect(musicGain);
+        try { trackSource.start(0); } catch (e) {}
+        return;
+      }
+      api._startSynth();
+    },
+
+    _startSynth: function () {
       if (!state.music || !ensure() || musicTimer) return;
       // pentatonic-ish, calm
       var notes = [261.63, 311.13, 349.23, 392.00, 466.16, 392.00, 349.23, 311.13];
@@ -165,6 +195,7 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     },
     stopMusic: function () {
       if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      if (trackSource) { try { trackSource.stop(0); } catch (e) {} trackSource = null; }
     },
 
     // duck music briefly under a big SFX

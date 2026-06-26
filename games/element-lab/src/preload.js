@@ -22,6 +22,11 @@ DANNYLAB.PreloadScene.prototype.create = function () {
   // build textures now (one-time, synchronous)
   DANNYLAB.buildTextures(this);
 
+  // prefetch + decode the main-game song to use as the music loop
+  // (falls back to the synth arpeggio if it can't load)
+  var audio = this.registry.get('audio');
+  if (audio) audio.loadTrack('audio/lab-theme.mp3');
+
   var self = this;
   var go = function () { self.scene.start('DANNYLAB_Menu'); };
 

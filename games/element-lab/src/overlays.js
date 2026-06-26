@@ -201,6 +201,9 @@ window.DANNYLAB = window.DANNYLAB || {};
   });
 
   // ================= DISCOVERY CARD ("Danny's Lab Notes") =================
+  // A tilted yellow legal-pad note that slides in at the TOP (clear of the
+  // beaker), with a clear ✕ to close. Auto-dismisses, and always drains the
+  // queue so a card can never get "stuck".
   DANNYLAB.DiscoveryScene = defscene('DANNYLAB_Discovery', function (data) {
     var W = this.cameras.main.width, H = this.cameras.main.height;
     var lang = data.lang || this.registry.get('lang');
@@ -208,37 +211,64 @@ window.DANNYLAB = window.DANNYLAB || {};
     var tier = 1; DANNYLAB.CONFIG.tiers.forEach(function (c) { if (c.sym === sym) tier = c.t; });
     var name = DANNYLAB.elementName(sym, lang);
 
-    // notebook card slides in from the top — does NOT pause the game
-    var cardW = Math.min(420, W * 0.86), cardH = 200, cy = -cardH;
-    var card = this.add.container(W / 2, cy).setDepth(60);
-    var g = this.add.graphics();
-    g.fillStyle(0xfff7e6, 0.97); g.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 18);
-    g.lineStyle(4, 0xe0b35c, 0.9); g.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 18);
-    // ruled lines
-    g.lineStyle(1, 0xd9c9a0, 0.7);
-    for (var ly = -cardH / 2 + 70; ly < cardH / 2 - 10; ly += 26) { g.beginPath(); g.moveTo(-cardW / 2 + 90, ly); g.lineTo(cardW / 2 - 16, ly); g.strokePath(); }
-    var header = this.add.text(0, -cardH / 2 + 22, t('notes_title', lang), {
-      fontFamily: UI.FONT, fontSize: '20px', color: '#b8772a', fontStyle: 'bold',
-    }).setOrigin(0.5);
-    var intro = this.add.text(-cardW / 2 + 90, -cardH / 2 + 52, t('discovery_intro', lang, { element: name }), {
-      fontFamily: UI.FONT, fontSize: '20px', color: '#7a3e10', fontStyle: 'bold',
-      wordWrap: { width: cardW - 110 },
-    }).setOrigin(0, 0);
-    var fact = this.add.text(-cardW / 2 + 90, -cardH / 2 + 88, DANNYLAB.elementFact(sym, lang), {
-      fontFamily: UI.FONT, fontSize: '17px', color: '#5a4326',
-      wordWrap: { width: cardW - 110 },
-    }).setOrigin(0, 0);
-    var icon = this.add.image(-cardW / 2 + 46, 0, 'el_ball_' + tier).setScale(1);
-    icon.setScale(Math.min(1, 56 / this.textures.get('el_ball_' + tier).getSourceImage().width));
-    card.add([g, icon, header, intro, fact]);
+    var cardW = Math.min(430, W * 0.9), cardH = 168;
+    var restY = 120;                         // rests near the top, above the beaker
+    var card = this.add.container(W / 2, -cardH - 20).setDepth(70).setAngle(-2.5);
 
+    var g = this.add.graphics();
+    // soft drop shadow
+    g.fillStyle(0x000000, 0.28); g.fillRoundedRect(-cardW / 2 + 6, -cardH / 2 + 10, cardW, cardH, 14);
+    // yellow legal-pad paper
+    g.fillStyle(0xfde85a, 1);    g.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 14);
+    g.fillStyle(0xfbdf3e, 1);    g.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, 30, { tl: 14, tr: 14, bl: 0, br: 0 }); // header band
+    // blue horizontal rule lines
+    g.lineStyle(1.5, 0x7fa8d8, 0.55);
+    for (var ly = -cardH / 2 + 56; ly < cardH / 2 - 12; ly += 24) {
+      g.beginPath(); g.moveTo(-cardW / 2 + 70, ly); g.lineTo(cardW / 2 - 18, ly); g.strokePath();
+    }
+    // red left margin line
+    g.lineStyle(2, 0xe8506a, 0.8);
+    g.beginPath(); g.moveTo(-cardW / 2 + 60, -cardH / 2 + 6); g.lineTo(-cardW / 2 + 60, cardH / 2 - 6); g.strokePath();
+    // punched holes along the top
+    g.fillStyle(0xcdb52e, 1);
+    for (var hx = -cardW / 2 + 36; hx < cardW / 2 - 20; hx += 56) g.fillCircle(hx, -cardH / 2 + 15, 4);
+
+    var header = this.add.text(-cardW / 2 + 70, -cardH / 2 + 15, t('notes_title', lang), {
+      fontFamily: UI.FONT, fontSize: '17px', color: '#8a5a12', fontStyle: 'bold',
+    }).setOrigin(0, 0.5);
+    var intro = this.add.text(-cardW / 2 + 70, -cardH / 2 + 44, t('discovery_intro', lang, { element: name }), {
+      fontFamily: UI.FONT, fontSize: '19px', color: '#5a3a08', fontStyle: 'bold',
+      wordWrap: { width: cardW - 92 },
+    }).setOrigin(0, 0);
+    var fact = this.add.text(-cardW / 2 + 70, -cardH / 2 + 78, DANNYLAB.elementFact(sym, lang), {
+      fontFamily: UI.FONT, fontSize: '15px', color: '#6a4a1a',
+      wordWrap: { width: cardW - 92 },
+    }).setOrigin(0, 0);
+    var icon = this.add.image(-cardW / 2 + 32, 2, 'el_ball_' + tier);
+    icon.setScale(Math.min(1, 50 / this.textures.get('el_ball_' + tier).getSourceImage().width));
+
+    // ✕ close button (top-right of the card)
     var self = this;
-    this.tweens.add({ targets: card, y: 130, duration: 420, ease: 'Back.out' });
+    var closeBg = this.add.graphics();
+    var cxp = cardW / 2 - 20, cyp = -cardH / 2 + 18;
+    closeBg.fillStyle(0xe8506a, 1); closeBg.fillCircle(cxp, cyp, 14);
+    closeBg.lineStyle(2, 0xffffff, 0.9); closeBg.strokeCircle(cxp, cyp, 14);
+    var closeX = this.add.text(cxp, cyp, '✕', {
+      fontFamily: UI.FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold',
+    }).setOrigin(0.5);
+    card.add([g, icon, header, intro, fact, closeBg, closeX]);
+
+    // big invisible hit-area over the ✕ so it's easy to tap on a phone
+    var closeZone = this.add.zone(W / 2 + cxp, restY + cyp, 52, 52).setOrigin(0.5).setDepth(71)
+      .setInteractive({ useHandCursor: true });
+
+    this.tweens.add({ targets: card, y: restY, duration: 420, ease: 'Back.out' });
 
     function dismiss() {
       if (self._closed) return; self._closed = true;
+      if (self._auto) self._auto.remove(false);
       self.tweens.add({
-        targets: card, y: -cardH, duration: 300, ease: 'Quad.in',
+        targets: card, y: -cardH - 30, angle: -8, alpha: 0, duration: 260, ease: 'Quad.in',
         onComplete: function () {
           var game = self.scene.get('DANNYLAB_Game');
           self.scene.stop();
@@ -246,9 +276,14 @@ window.DANNYLAB = window.DANNYLAB || {};
         }
       });
     }
-    // tap anywhere on the card to dismiss, or auto-dismiss
-    this.input.once('pointerdown', dismiss);
-    this.time.delayedCall(3600, dismiss);
+    closeZone.on('pointerdown', function (p, lx, ly, ev) { if (ev) ev.stopPropagation(); dismiss(); });
+    // auto-dismiss after a readable beat
+    this._auto = this.time.delayedCall(4200, dismiss);
+    // safety: if this scene is ever stopped externally, still drain the queue
+    this.events.once('shutdown', function () {
+      var game = self.scene.get('DANNYLAB_Game');
+      if (!self._closed && game && game.showNextDiscovery) { self._closed = true; game.showNextDiscovery(); }
+    });
   });
 
   // ================= COLLECTION (periodic shelf) =================
