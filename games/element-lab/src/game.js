@@ -190,23 +190,23 @@ GP.buildHUD = function () {
   g.strokeRoundedRect(px + 12, py + 132, pw - 24, 38, 8);
 
   var mb = this.add.text(cx, py + 17, DANNYLAB.t(this.mode, lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '15px', color: '#7CFF6B', fontStyle: 'bold',
+    fontFamily: UI.DISPLAY, fontSize: '15px', color: '#7CFF6B', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
   mb.setShadow(0, 0, '#7CFF6B', 10);
 
   this.add.text(cx, py + 50, DANNYLAB.t('score', lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
+    fontFamily: UI.DISPLAY, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
-  this.scoreText = this.add.text(cx, py + 83, '0', {
-    fontFamily: UI.FONT, fontSize: '24px', color: '#eafffb', fontStyle: 'bold',
+  this.scoreText = this.add.text(cx, py + 82, '0', {
+    fontFamily: UI.DISPLAY, fontSize: '26px', color: '#eafffb', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
   this.scoreText.setShadow(0, 0, '#4fd9ff', 8);
 
   this.add.text(cx, py + 118, DANNYLAB.t('best', lang).toUpperCase(), {
-    fontFamily: UI.FONT, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
+    fontFamily: UI.DISPLAY, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
-  this.bestText = this.add.text(cx, py + 151, String(this.best), {
-    fontFamily: UI.FONT, fontSize: '24px', color: '#FBD38D', fontStyle: 'bold',
+  this.bestText = this.add.text(cx, py + 150, String(this.best), {
+    fontFamily: UI.DISPLAY, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(41);
   this.bestText.setShadow(0, 0, '#e0a020', 8);
 
@@ -226,7 +226,7 @@ GP.buildTweezers = function () {
   this.tweezerG = g;
   c.add(g);
   // gripped preview element
-  this.gripPreview = this.add.image(0, GEO.dropY - 60, 'el_ball_1').setScale(0.5);
+  this.gripPreview = this.add.image(0, GEO.dropY - 60, DANNYLAB.ballKey(this, 1)).setScale(0.5);
   c.add(this.gripPreview);
   this.tweezers = c;
   this.drawTweezers(false);
@@ -254,10 +254,12 @@ GP.drawTweezers = function (open) {
 };
 
 GP.setTweezerPreview = function (tier) {
-  this.gripPreview.setTexture('el_ball_' + tier);
+  var key = DANNYLAB.ballKey(this, tier);
+  this.gripPreview.setTexture(key);
   // normalize so every previewed element reads the same size in the tongs
-  var tex = this.textures.get('el_ball_' + tier).getSourceImage();
-  this.gripPreview.setScale(46 / tex.width);
+  // (px atoms only fill ~80% of their frame, so target a bit larger)
+  var tex = this.textures.get(key).getSourceImage();
+  this.gripPreview.setScale((DANNYLAB.isPxBall(this, tier) ? 58 : 46) / tex.width);
 };
 
 // ---------- aim + drop ----------
@@ -329,20 +331,32 @@ GP.spawnElement = function (tier, x, y, opts) {
   var cfg = DANNYLAB.tierCfg(tier);
   var UI = DANNYLAB.UI;
 
-  var shadow = this.add.image(0, cfg.radius * 0.78, 'el_shadow').setAlpha(0.5);
+  var px = DANNYLAB.isPxBall(this, tier);
+
+  var shadow = this.add.image(0, cfg.radius * 0.82, 'el_shadow').setAlpha(0.5);
   shadow.setDisplaySize(cfg.radius * 2.1, cfg.radius * 1.2);
   var glow = this.add.image(0, 0, 'el_glow').setTint(cfg.color).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.5);
   glow.setDisplaySize(cfg.radius * 3, cfg.radius * 3);
-  var ball = this.add.image(0, 0, 'el_ball_' + tier);
-  var sym = this.add.text(0, cfg.radius * 0.62, cfg.sym, {
-    fontFamily: UI.FONT, fontSize: Math.max(11, Math.round(cfg.radius * 0.42)) + 'px',
-    color: '#10203a', fontStyle: 'bold',
-  }).setOrigin(0.5).setAlpha(0.85);
+  var ball = this.add.image(0, 0, DANNYLAB.ballKey(this, tier));
+  // PixelLab orbs fill ~80% of their frame; size so the orb matches the body.
+  if (px) ball.setDisplaySize(cfg.radius * 2.55, cfg.radius * 2.55);
+
+  var kids = [shadow, glow, ball];
+  // the procedural balls need the element symbol overlaid; the PixelLab atoms
+  // already read as characters, so we keep them clean (symbols live on the
+  // discovery cards + collection screen instead).
+  if (!px) {
+    var sym = this.add.text(0, cfg.radius * 0.62, cfg.sym, {
+      fontFamily: UI.FONT, fontSize: Math.max(11, Math.round(cfg.radius * 0.42)) + 'px',
+      color: '#10203a', fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0.85);
+    kids.push(sym);
+  }
 
   // Inner container holds the visuals; we scale THIS for squash/pop/idle.
   // The outer container carries the Matter body and is never scaled, so the
   // physics circle radius stays fixed (Brief §12).
-  var inner = this.add.container(0, 0, [shadow, glow, ball, sym]);
+  var inner = this.add.container(0, 0, kids);
   var c = this.add.container(x, y, [inner]);
   c.setDepth(0);
   this.matter.add.gameObject(c, {
@@ -600,7 +614,7 @@ GP.toast = function (text, color) {
   var GEO = DANNYLAB.GEO;
   var y = GEO.dropY + 30;
   var t = this.add.text(DANNYLAB.beakerCx(), y, text, {
-    fontFamily: DANNYLAB.UI.FONT, fontSize: '28px', color: '#ffffff', fontStyle: 'bold',
+    fontFamily: DANNYLAB.UI.DISPLAY, fontSize: '28px', color: '#ffffff', fontStyle: 'bold',
     stroke: '#0c1430', strokeThickness: 6, align: 'center',
     wordWrap: { width: GEO.bx1 - GEO.bx0 + 40 },
   }).setOrigin(0.5).setDepth(48).setScale(0.4);

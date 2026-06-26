@@ -17,17 +17,18 @@ DANNYLAB.MenuScene.prototype.create = function () {
   // ---- floating sample elements behind the logo (alive, on-brand) ----
   for (var i = 0; i < 5; i++) {
     var t = 1 + (i % 3);
-    var s = this.add.image(W * (0.15 + 0.18 * i), H * (0.20 + (i % 2) * 0.05), 'el_ball_' + t)
-      .setScale(0.6).setDepth(-10).setAlpha(0.85);
+    var s = this.add.image(W * (0.15 + 0.18 * i), H * (0.20 + (i % 2) * 0.05), DANNYLAB.ballKey(this, t))
+      .setDepth(-10).setAlpha(0.9);
+    s.setDisplaySize(70, 70);
     this.tweens.add({ targets: s, y: s.y - 14, duration: 1400 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   }
 
   // ---- logo ----
   var topper = this.add.text(W / 2, H * 0.16, DANNYLAB.t('title_topper', lang), {
-    fontFamily: UI.FONT, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
+    fontFamily: UI.DISPLAY, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
   }).setOrigin(0.5);
   var logo = this.add.text(W / 2, H * 0.24, DANNYLAB.t('title_logo', lang), {
-    fontFamily: UI.FONT, fontSize: '64px', color: '#7CFF6B', fontStyle: 'bold',
+    fontFamily: UI.DISPLAY, fontSize: '62px', color: '#7CFF6B', fontStyle: 'bold',
   }).setOrigin(0.5);
   logo.setShadow(0, 4, 'rgba(124,255,107,0.45)', 12);
   this.tweens.add({ targets: logo, scaleX: 1.04, scaleY: 1.04, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });

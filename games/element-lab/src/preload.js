@@ -8,6 +8,17 @@ DANNYLAB.PreloadScene = function () {
 DANNYLAB.PreloadScene.prototype = Object.create(Phaser.Scene.prototype);
 DANNYLAB.PreloadScene.prototype.constructor = DANNYLAB.PreloadScene;
 
+// Load the PixelLab art skin (atoms + lab background). If any file is missing
+// the loader just skips it and the game falls back to procedural art, so the
+// whole skin can be reverted by deleting assets/px/*.
+DANNYLAB.PreloadScene.prototype.preload = function () {
+  this.load.image('px_bg', 'assets/px/bg.png');
+  for (var t = 1; t <= DANNYLAB.MAX_TIER; t++) {
+    this.load.image('px_ball_' + t, 'assets/px/ball_' + t + '.png');
+  }
+  this.load.on('loaderror', function () { /* ignore: fall back to procedural */ });
+};
+
 DANNYLAB.PreloadScene.prototype.create = function () {
   var cam = this.cameras.main;
   cam.setBackgroundColor('#0c1430');
@@ -35,7 +46,10 @@ DANNYLAB.PreloadScene.prototype.create = function () {
   var done = false;
   var finish = function () { if (done) return; done = true; go(); };
   if (document.fonts && document.fonts.ready) {
-    document.fonts.load('bold 40px "Baloo 2"').then(function () {
+    Promise.all([
+      document.fonts.load('bold 40px "Baloo 2"'),
+      document.fonts.load('700 40px "Pixelify Sans"'),
+    ]).then(function () {
       document.fonts.ready.then(function () { self.time.delayedCall(120, finish); });
     }).catch(function () { finish(); });
   }

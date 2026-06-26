@@ -4,7 +4,8 @@
 window.DANNYLAB = window.DANNYLAB || {};
 
 DANNYLAB.UI = {
-  FONT: '"Baloo 2", "Trebuchet MS", system-ui, sans-serif',
+  FONT: '"Baloo 2", "Trebuchet MS", system-ui, sans-serif',           // readable body
+  DISPLAY: '"Pixelify Sans", "Baloo 2", system-ui, sans-serif',       // pixel display
 
   // brushed-metal chunky button with a neon accent edge + press-bounce.
   button: function (scene, x, y, w, h, label, onClick, opts) {

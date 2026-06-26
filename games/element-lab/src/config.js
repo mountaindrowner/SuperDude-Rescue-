@@ -53,6 +53,15 @@ DANNYLAB.tierCfg = function (t) {
   return DANNYLAB.CONFIG.tiers[t - 1];
 };
 
+// Skin: prefer the PixelLab art ('px_ball_N') when it loaded, else fall back
+// to the procedural texture ('el_ball_N'). Delete assets/px/* to revert.
+DANNYLAB.ballKey = function (scene, tier) {
+  return scene.textures.exists('px_ball_' + tier) ? ('px_ball_' + tier) : ('el_ball_' + tier);
+};
+DANNYLAB.isPxBall = function (scene, tier) {
+  return scene.textures.exists('px_ball_' + tier);
+};
+
 // Weighted random pick of a droppable tier (1..maxDroppableTier).
 DANNYLAB.pickDroppableTier = function () {
   var w = DANNYLAB.CONFIG.dropWeights;

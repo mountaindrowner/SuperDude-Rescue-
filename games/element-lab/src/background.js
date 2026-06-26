@@ -13,7 +13,18 @@ DANNYLAB.buildLab = function (scene, opts) {
   // ============ BACK LAYERS (blurred + faded into the distance) ============
   var back = scene.add.container(0, 0).setDepth(-100);
 
-  // wall gradient
+  // If the PixelLab lab scene loaded, use it as the whole back wall (it
+  // already has shelves, flasks and a poster) and skip the procedural props.
+  var hasPxBg = scene.textures.exists('px_bg');
+  if (hasPxBg) {
+    var bg = scene.add.image(W / 2, H / 2, 'px_bg');
+    var src = scene.textures.get('px_bg').getSourceImage();
+    bg.setScale(Math.max(W / src.width, H / src.height));   // cover
+    back.add(bg);
+  }
+
+  // wall gradient (procedural fallback when there's no PixelLab background)
+  if (!hasPxBg) {
   var wall = scene.add.graphics();
   var bands = 40;
   for (var i = 0; i < bands; i++) {
@@ -62,6 +73,7 @@ DANNYLAB.buildLab = function (scene, opts) {
       })(bub, shelfY - 4, shelfY - bh);
     }
   }
+  } // end procedural back layers
 
   // soft light shaft from the top, angled down over the beaker (left side)
   var shaft = scene.add.graphics();

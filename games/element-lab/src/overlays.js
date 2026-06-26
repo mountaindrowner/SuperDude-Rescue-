@@ -169,10 +169,11 @@ window.DANNYLAB = window.DANNYLAB || {};
     }).setOrigin(0.5);
 
     var cards = [t('howto_1', lang), t('howto_2', lang), t('howto_3', lang)];
-    var icons = ['el_ball_1', 'el_ball_3', null];
+    var icons = [DANNYLAB.ballKey(this, 1), DANNYLAB.ballKey(this, 3), null];
     this.idx = 0;
     var self = this;
-    var img = this.add.image(W / 2, H / 2 - 80, 'el_ball_1').setScale(0.7);
+    var img = this.add.image(W / 2, H / 2 - 80, DANNYLAB.ballKey(this, 1));
+    img.setDisplaySize(86, 86);
     var body = this.add.text(W / 2, H / 2 + 30, '', {
       fontFamily: UI.FONT, fontSize: '26px', color: '#ffffff', fontStyle: 'bold',
       align: 'center', wordWrap: { width: W * 0.74 },
@@ -183,7 +184,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     function show(i) {
       body.setText(cards[i]);
-      if (icons[i]) { img.setTexture(icons[i]).setVisible(true); } else img.setVisible(false);
+      if (icons[i]) { img.setTexture(icons[i]).setDisplaySize(86, 86).setVisible(true); } else img.setVisible(false);
       dots.setText(['○○○', '○○○', '○○○'][0].split('').map(function (_, k) { return k === i ? '●' : '○'; }).join(' '));
       self.tweens.add({ targets: body, scale: { from: 0.9, to: 1 }, duration: 150 });
     }
@@ -246,8 +247,8 @@ window.DANNYLAB = window.DANNYLAB || {};
       fontFamily: UI.FONT, fontSize: '15px', color: '#6a4a1a',
       wordWrap: { width: cardW - 92 },
     }).setOrigin(0, 0);
-    var icon = this.add.image(-cardW / 2 + 32, 2, 'el_ball_' + tier);
-    icon.setScale(Math.min(1, 50 / this.textures.get('el_ball_' + tier).getSourceImage().width));
+    var icon = this.add.image(-cardW / 2 + 32, 2, DANNYLAB.ballKey(this, tier));
+    icon.setDisplaySize(52, 52);
 
     // ✕ close button (top-right of the card)
     var self = this;
@@ -311,8 +312,8 @@ window.DANNYLAB = window.DANNYLAB || {};
       cell.lineStyle(2, known ? cfg.color : 0x334066, 0.8);
       cell.strokeRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 6, cellW - 12, cellH - 12, 12);
       if (known) {
-        var im = self.add.image(cx, cyy - 14, 'el_ball_' + cfg.t);
-        im.setScale(Math.min(1, 54 / self.textures.get('el_ball_' + cfg.t).getSourceImage().width));
+        var im = self.add.image(cx, cyy - 14, DANNYLAB.ballKey(self, cfg.t));
+        im.setDisplaySize(58, 58);
         self.add.text(cx, cyy + 34, DANNYLAB.elementName(cfg.sym, lang), {
           fontFamily: UI.FONT, fontSize: '15px', color: '#dceaff', fontStyle: 'bold',
         }).setOrigin(0.5);

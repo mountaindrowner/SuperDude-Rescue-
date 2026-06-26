@@ -9,10 +9,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Super Dude Danny's Element Lab</title>
 
-<!-- display font (renders Spanish accented glyphs: á é í ó ú ñ ¡ ¿) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<!-- fonts vendored locally (latin subset covers Spanish á é í ó ú ñ ¡ ¿) so
+     they load offline and inside the native app, no CDN dependency -->
+<style>
+  @font-face { font-family: "Baloo 2"; font-weight: 400; font-display: swap;
+    src: url("assets/fonts/baloo2-400.woff2") format("woff2"); }
+  @font-face { font-family: "Baloo 2"; font-weight: 700; font-display: swap;
+    src: url("assets/fonts/baloo2-700.woff2") format("woff2"); }
+  @font-face { font-family: "Pixelify Sans"; font-weight: 400; font-display: swap;
+    src: url("assets/fonts/pixelify-400.woff2") format("woff2"); }
+  @font-face { font-family: "Pixelify Sans"; font-weight: 700; font-display: swap;
+    src: url("assets/fonts/pixelify-700.woff2") format("woff2"); }
+</style>
 
 <style>
   html, body {
