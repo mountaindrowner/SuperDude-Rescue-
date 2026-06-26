@@ -32,6 +32,7 @@ DANNYLAB.PreloadScene.prototype.create = function () {
 
   // build textures now (one-time, synchronous)
   DANNYLAB.buildTextures(this);
+  DANNYLAB.buildJellyTextures(this);
 
   // prefetch + decode the main-game song to use as the music loop
   // (falls back to the synth arpeggio if it can't load)

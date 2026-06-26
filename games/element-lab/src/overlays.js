@@ -169,10 +169,10 @@ window.DANNYLAB = window.DANNYLAB || {};
     }).setOrigin(0.5);
 
     var cards = [t('howto_1', lang), t('howto_2', lang), t('howto_3', lang)];
-    var icons = [DANNYLAB.ballKey(this, 1), DANNYLAB.ballKey(this, 3), null];
+    var icons = [DANNYLAB.iconKey(this, 1), DANNYLAB.iconKey(this, 3), null];
     this.idx = 0;
     var self = this;
-    var img = this.add.image(W / 2, H / 2 - 80, DANNYLAB.ballKey(this, 1));
+    var img = this.add.image(W / 2, H / 2 - 80, DANNYLAB.iconKey(this, 1));
     img.setDisplaySize(86, 86);
     var body = this.add.text(W / 2, H / 2 + 30, '', {
       fontFamily: UI.FONT, fontSize: '26px', color: '#ffffff', fontStyle: 'bold',
@@ -224,7 +224,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       cell.lineStyle(2, known ? cfg.color : 0x334066, 0.8);
       cell.strokeRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 6, cellW - 12, cellH - 12, 12);
       if (known) {
-        var im = self.add.image(cx, cyy - 14, DANNYLAB.ballKey(self, cfg.t));
+        var im = self.add.image(cx, cyy - 14, DANNYLAB.iconKey(self, cfg.t));
         im.setDisplaySize(58, 58);
         self.add.text(cx, cyy + 34, DANNYLAB.elementName(cfg.sym, lang), {
           fontFamily: UI.FONT, fontSize: '15px', color: '#dceaff', fontStyle: 'bold',

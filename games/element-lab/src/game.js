@@ -231,7 +231,7 @@ GP.buildTweezers = function () {
   this.tweezerG = g;
   c.add(g);
   // gripped preview element
-  this.gripPreview = this.add.image(0, GEO.dropY - 60, DANNYLAB.ballKey(this, 1)).setScale(0.5);
+  this.gripPreview = this.add.image(0, GEO.dropY - 60, DANNYLAB.iconKey(this, 1)).setScale(0.5);
   c.add(this.gripPreview);
   this.tweezers = c;
   this.drawTweezers(false);
@@ -259,12 +259,12 @@ GP.drawTweezers = function (open) {
 };
 
 GP.setTweezerPreview = function (tier) {
-  var key = DANNYLAB.ballKey(this, tier);
+  var key = DANNYLAB.iconKey(this, tier);
   this.gripPreview.setTexture(key);
   // normalize so every previewed element reads the same size in the tongs
-  // (px atoms only fill ~80% of their frame, so target a bit larger)
   var tex = this.textures.get(key).getSourceImage();
-  this.gripPreview.setScale((DANNYLAB.isPxBall(this, tier) ? 58 : 46) / tex.width);
+  var f = DANNYLAB.useJelly(this) ? 56 : (DANNYLAB.isPxBall(this, tier) ? 58 : 46);
+  this.gripPreview.setScale(f / tex.width);
 };
 
 // ---------- aim + drop ----------
@@ -337,24 +337,49 @@ GP.spawnElement = function (tier, x, y, opts) {
   var UI = DANNYLAB.UI;
 
   var px = DANNYLAB.isPxBall(this, tier);
+  var jelly = DANNYLAB.useJelly(this);
+  var r = cfg.radius;
 
-  var shadow = this.add.image(0, cfg.radius * 0.82, 'el_shadow').setAlpha(0.5);
-  shadow.setDisplaySize(cfg.radius * 2.1, cfg.radius * 1.2);
+  var shadow = this.add.image(0, r * 0.82, 'el_shadow').setAlpha(0.5);
+  shadow.setDisplaySize(r * 2.1, r * 1.2);
   var glow = this.add.image(0, 0, 'el_glow').setTint(cfg.color).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.5);
-  glow.setDisplaySize(cfg.radius * 3, cfg.radius * 3);
-  var ball = this.add.image(0, 0, DANNYLAB.ballKey(this, tier));
-  // PixelLab orbs fill ~80% of their frame; size so the orb matches the body.
-  if (px) ball.setDisplaySize(cfg.radius * 2.55, cfg.radius * 2.55);
+  glow.setDisplaySize(r * 3, r * 3);
 
-  var kids = [shadow, glow, ball];
-  // element symbol as a little label near the bottom of the atom. White with
-  // a dark outline so it reads on any colour (light orbs or dark), in the
-  // pixel display font to match the art.
-  var sym = this.add.text(0, cfg.radius * 0.58, cfg.sym, {
-    fontFamily: UI.DISPLAY, fontSize: Math.max(12, Math.round(cfg.radius * 0.42)) + 'px',
+  var kids = [shadow, glow];
+  var ball = null, face = null, bubbles = null;
+
+  if (jelly) {
+    // translucent gradient body
+    ball = this.add.image(0, 0, 'jelly_body_' + tier);
+    ball.setDisplaySize(r * 2.16, r * 2.16);
+    ball.setAlpha(DANNYLAB.JELLY_ALPHA[tier] || 0.9);
+    kids.push(ball);
+    // internal drifting bubbles (kept central so they read as "inside")
+    bubbles = [];
+    var nb = r >= 60 ? 3 : 2;
+    for (var bi = 0; bi < nb; bi++) {
+      var bub = this.add.image((Math.random() - 0.5) * r * 0.6, r * 0.5, 'jelly_bub').setAlpha(0);
+      bub.setScale((0.3 + Math.random() * 0.5) * (r / 40));
+      bub._x0 = bub.x;
+      kids.push(bub); bubbles.push(bub);
+      this._bubbleTween(bub, r, bi);
+    }
+    // chibi face on its own layer (parallax-floats in update)
+    face = this.add.image(0, -r * 0.06, 'jelly_face_smile');
+    face.setDisplaySize(r * 1.55, r * 1.55);
+    kids.push(face);
+  } else {
+    ball = this.add.image(0, 0, DANNYLAB.ballKey(this, tier));
+    if (px) ball.setDisplaySize(r * 2.55, r * 2.55);
+    kids.push(ball);
+  }
+
+  // element symbol label (white with dark outline, pixel font) on every skin
+  var sym = this.add.text(0, r * 0.64, cfg.sym, {
+    fontFamily: UI.DISPLAY, fontSize: Math.max(12, Math.round(r * 0.4)) + 'px',
     color: '#ffffff', fontStyle: 'bold',
-    stroke: '#10203a', strokeThickness: Math.max(2, Math.round(cfg.radius * 0.07)),
-  }).setOrigin(0.5).setAlpha(0.95);
+    stroke: '#10203a', strokeThickness: Math.max(2, Math.round(r * 0.07)),
+  }).setOrigin(0.5).setAlpha(0.92);
   kids.push(sym);
 
   // Inner container holds the visuals; we scale THIS for squash/pop/idle.
@@ -364,7 +389,7 @@ GP.spawnElement = function (tier, x, y, opts) {
   var c = this.add.container(x, y, [inner]);
   c.setDepth(0);
   this.matter.add.gameObject(c, {
-    shape: { type: 'circle', radius: cfg.radius },
+    shape: { type: 'circle', radius: r },
     restitution: DANNYLAB.CONFIG.restitution,
     friction: DANNYLAB.CONFIG.friction,
     frictionStatic: DANNYLAB.CONFIG.frictionStatic,
@@ -374,7 +399,16 @@ GP.spawnElement = function (tier, x, y, opts) {
   c.visual = inner;
   c.glow = glow;
   c.ball = ball;
-  c.radius = cfg.radius;
+  c.radius = r;
+  c.face = face;
+  c.bubbles = bubbles;
+  // face animation state
+  c._ph = Math.random() * 6.28;
+  c.faceFrame = 'smile';
+  c.blinkUntil = 0;
+  c.nextBlink = this.time.now + 800 + Math.random() * 2600;
+  c.exprUntil = 0; c.exprFrame = 'smile';
+  if (jelly && opts.fromMerge) { c.exprFrame = 'wow'; c.exprUntil = this.time.now + 700; }
   this.elements.push(c);
 
   // pop-in overshoot (visual only, body radius fixed)
@@ -393,6 +427,40 @@ GP.spawnElement = function (tier, x, y, opts) {
   return c;
 };
 
+// one internal bubble rising + fading on a self-restarting loop
+GP._bubbleTween = function (bub, radius, i) {
+  var self = this, botY = radius * 0.5, topY = -radius * 0.5;
+  function run() {
+    if (!bub.active) return;
+    bub.y = botY; bub.x = bub._x0 + (Math.random() - 0.5) * radius * 0.18;
+    self.tweens.add({
+      targets: bub, y: topY, duration: 1500 + Math.random() * 1600, ease: 'Sine.inOut',
+      delay: (run._first ? i * 350 + Math.random() * 500 : 0),
+      onUpdate: function (tw) { var p = tw.progress; bub.alpha = (p < 0.25 ? p / 0.25 : p > 0.7 ? (1 - p) / 0.3 : 1) * 0.5; },
+      onComplete: run,
+    });
+    run._first = false;
+  }
+  run._first = true;
+  run();
+};
+
+// per-frame jelly face: blink, expression, and parallax float (dimensionality)
+GP._animFace = function (e, time) {
+  var f = e.face, r = e.radius;
+  var want = 'smile';
+  if (e.exprUntil > time) want = e.exprFrame;
+  else if (e.blinkUntil > time) want = 'blink';
+  else if (time > e.nextBlink) { e.blinkUntil = time + 120; e.nextBlink = time + 2400 + Math.random() * 3500; }
+  if (want !== e.faceFrame) { f.setTexture('jelly_face_' + want); f.setDisplaySize(r * 1.55, r * 1.55); e.faceFrame = want; }
+  // float: lead the motion slightly + a slow idle drift => the face sits
+  // "in front of" the body and bobs in its own space
+  var vx = e.body ? e.body.velocity.x : 0, vy = e.body ? e.body.velocity.y : 0;
+  var t = time * 0.001;
+  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16) + Math.sin(t * 1.3 + e._ph) * r * 0.04;
+  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16) + Math.cos(t * 1.1 + e._ph) * r * 0.04;
+};
+
 // idle breathing jiggle once an element settles (Brief §10.2)
 GP.startIdle = function (c) {
   if (!c.active || !c.visual) return;
@@ -406,19 +474,24 @@ GP.startIdle = function (c) {
 GP.squash = function (c) {
   if (!c.active || c.consumed || !c.visual) return;
   var sp = c.body ? c.body.speed : 0;
-  if (sp < 2.2) return;
+  if (sp < 1.8) return;
   if (c._squashing) return;
   c._squashing = true;
+  var self = this, v = c.visual;
   if (c.idleTween) c.idleTween.pause();
+  var mag = Math.min(0.3, 0.14 + sp * 0.02);   // bigger squash the harder the hit
   this.tweens.add({
-    targets: c.visual, scaleX: 1.18, scaleY: 0.84, duration: 70, yoyo: true, ease: 'Quad.out',
+    targets: v, scaleX: 1 + mag, scaleY: 1 - mag, duration: 80, yoyo: true, ease: 'Quad.out',
     onComplete: function () {
-      c._squashing = false;
-      if (c.active && c.idleTween) c.idleTween.resume();
+      // rebound the other way (jelly wobble) then settle
+      self.tweens.add({
+        targets: v, scaleX: 1 - mag * 0.4, scaleY: 1 + mag * 0.4, duration: 95, yoyo: true, ease: 'Sine.inOut',
+        onComplete: function () { c._squashing = false; if (c.active && c.idleTween) c.idleTween.resume(); }
+      });
     }
   });
-  // a little dust puff when something lands hard (cheap juice)
-  if (sp > 5) this.burst(c.x, c.y + c.radius * 0.65, 0xbfe3ff, 3, { tex: 'p_bubble', speed: 45, scale: 0.4, life: 360 });
+  // a little splash puff when something lands hard (cheap juice)
+  if (sp > 5) this.burst(c.x, c.y + c.radius * 0.65, 0xbfe3ff, 3, { tex: 'jelly_bub', speed: 45, scale: 0.5, life: 360 });
 };
 
 GP.destroyElement = function (c) {
@@ -428,6 +501,7 @@ GP.destroyElement = function (c) {
   if (c.idleTween) { c.idleTween.stop(); c.idleTween = null; }
   if (c.visual) this.tweens.killTweensOf(c.visual);
   this.tweens.killTweensOf(c.glow);
+  if (c.bubbles) for (var bi = 0; bi < c.bubbles.length; bi++) this.tweens.killTweensOf(c.bubbles[bi]);
   if (c.body) this.matter.world.remove(c.body);
   c.destroy();
 };
@@ -552,7 +626,7 @@ GP.buildDiscoveryCard = function (sym) {
     fontFamily: UI.FONT, fontSize: '19px', color: '#5a3a08', fontStyle: 'bold', wordWrap: { width: cardW - 92 } }).setOrigin(0, 0);
   var fact = this.add.text(-cardW / 2 + 70, -cardH / 2 + 78, DANNYLAB.elementFact(sym, lang), {
     fontFamily: UI.FONT, fontSize: '15px', color: '#6a4a1a', wordWrap: { width: cardW - 92 } }).setOrigin(0, 0);
-  var icon = this.add.image(-cardW / 2 + 32, 2, DANNYLAB.ballKey(this, tier)).setDisplaySize(52, 52);
+  var icon = this.add.image(-cardW / 2 + 32, 2, DANNYLAB.iconKey(this, tier)).setDisplaySize(52, 52);
 
   var cxp = cardW / 2 - 20, cyp = -cardH / 2 + 18;
   var closeBg = this.add.graphics();
@@ -734,6 +808,7 @@ GP.update = function (time, delta) {
   // (Cheap per-frame alpha lerp; Uranium keeps its own radioactive pulse.)
   for (var gi = 0; gi < this.elements.length; gi++) {
     var e = this.elements[gi];
+    if (e.face) this._animFace(e, time);   // jelly: blink / expression / float
     if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;
     var sp = e.body.speed;
     var target = sp > 0.7 ? Math.min(1.0, 0.35 + sp * 0.06) : 0.0;   // settled = no glow

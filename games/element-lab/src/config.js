@@ -53,13 +53,21 @@ DANNYLAB.tierCfg = function (t) {
   return DANNYLAB.CONFIG.tiers[t - 1];
 };
 
-// Skin: prefer the PixelLab art ('px_ball_N') when it loaded, else fall back
-// to the procedural texture ('el_ball_N'). Delete assets/px/* to revert.
+// Element art skin: 'jelly' (procedural animated drops, default), 'px'
+// (PixelLab atoms), or 'proc' (flat procedural balls). Change here to switch.
+DANNYLAB.SKIN = 'jelly';
+
+// For the px/proc skins: prefer the PixelLab art when it loaded, else the
+// procedural texture. (The jelly skin builds its own layered visual.)
 DANNYLAB.ballKey = function (scene, tier) {
   return scene.textures.exists('px_ball_' + tier) ? ('px_ball_' + tier) : ('el_ball_' + tier);
 };
 DANNYLAB.isPxBall = function (scene, tier) {
   return scene.textures.exists('px_ball_' + tier);
+};
+// texture for previews / menu / collection icons (jelly body when in jelly skin)
+DANNYLAB.iconKey = function (scene, tier) {
+  return DANNYLAB.useJelly(scene) ? ('jelly_body_' + tier) : DANNYLAB.ballKey(scene, tier);
 };
 
 // Weighted random pick of a droppable tier (1..maxDroppableTier).

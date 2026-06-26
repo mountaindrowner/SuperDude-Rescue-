@@ -23,7 +23,7 @@ DANNYLAB.MenuScene.prototype.create = function () {
   ];
   for (var i = 0; i < spots.length; i++) {
     var sp = spots[i];
-    var s = this.add.image(W * sp.x, H * sp.y, DANNYLAB.ballKey(this, sp.t))
+    var s = this.add.image(W * sp.x, H * sp.y, DANNYLAB.iconKey(this, sp.t))
       .setDepth(-10).setAlpha(0.85);
     s.setDisplaySize(56, 56);
     this.tweens.add({ targets: s, y: s.y - 12, duration: 1500 + i * 170, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
