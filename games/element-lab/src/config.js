@@ -2,6 +2,14 @@
 // Everything tweakable lives here (Brief §17). Edit numbers, never logic.
 window.DANNYLAB = window.DANNYLAB || {};
 
+// Render resolution multiplier — supersample to the device's pixel density so
+// the 540x960 coordinate space renders crisp on high-DPI phones (capped at 2x
+// to keep the per-frame animation cheap). Game coordinates are unchanged.
+DANNYLAB.RES = (function () {
+  var d = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  return Math.max(1, Math.min(2, d));
+})();
+
 DANNYLAB.CONFIG = {
   // ---- gameplay ----
   maxDroppableTier: 3,

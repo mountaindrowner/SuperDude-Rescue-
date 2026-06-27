@@ -11,7 +11,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     S.prototype = Object.create(Phaser.Scene.prototype);
     S.prototype.constructor = S;
     S.prototype.init = function (data) { this.data2 = data || {}; };
-    S.prototype.create = function () { createFn.call(this, this.data2); };
+    S.prototype.create = function () { DANNYLAB.applyRes(this); createFn.call(this, this.data2); };
     return S;
   }
 
@@ -25,7 +25,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ================= PAUSE =================
   DANNYLAB.PauseScene = defscene('DANNYLAB_Pause', function (data) {
-    var W = this.cameras.main.width, H = this.cameras.main.height, lang = this.registry.get('lang');
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
     UI.scrim(this, 0.55);
     UI.panel(this, W / 2, H / 2, Math.min(420, W * 0.86), 470);
     this.add.text(W / 2, H / 2 - 180, t('paused', lang), {
@@ -49,7 +49,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ================= OPTIONS =================
   DANNYLAB.OptionsScene = defscene('DANNYLAB_Options', function (data) {
-    var W = this.cameras.main.width, H = this.cameras.main.height;
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H;
     var lang = this.registry.get('lang'), store = DANNYLAB.store, audio = this.registry.get('audio');
     var parent = data.parent || 'DANNYLAB_Menu';
     UI.scrim(this, 0.6);
@@ -114,7 +114,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ================= CONFIRM (tiny yes/no) =================
   DANNYLAB.ConfirmScene = defscene('DANNYLAB_Confirm', function (data) {
-    var W = this.cameras.main.width, H = this.cameras.main.height, lang = this.registry.get('lang');
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
     UI.scrim(this, 0.5);
     UI.panel(this, W / 2, H / 2, Math.min(400, W * 0.84), 220);
     this.add.text(W / 2, H / 2 - 50, data.message || '?', {
@@ -132,7 +132,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ================= GAME OVER =================
   DANNYLAB.GameOverScene = defscene('DANNYLAB_GameOver', function (data) {
-    var W = this.cameras.main.width, H = this.cameras.main.height, lang = data.lang || this.registry.get('lang');
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = data.lang || this.registry.get('lang');
     UI.scrim(this, 0.62);
     UI.panel(this, W / 2, H / 2, Math.min(440, W * 0.88), 440);
     this.add.text(W / 2, H / 2 - 150, t('game_over', lang), {
@@ -160,7 +160,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ================= HOW TO PLAY =================
   DANNYLAB.HowToScene = defscene('DANNYLAB_HowTo', function (data) {
-    var W = this.cameras.main.width, H = this.cameras.main.height, lang = this.registry.get('lang');
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
     var parent = data.parent || 'DANNYLAB_Menu';
     UI.scrim(this, 0.6);
     UI.panel(this, W / 2, H / 2, Math.min(440, W * 0.9), 480);
@@ -203,7 +203,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ================= COLLECTION (periodic shelf) =================
   DANNYLAB.CollectionScene = defscene('DANNYLAB_Collection', function (data) {
-    var W = this.cameras.main.width, H = this.cameras.main.height, lang = this.registry.get('lang');
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
     var parent = data.parent || 'DANNYLAB_Menu';
     UI.scrim(this, 0.62);
     UI.panel(this, W / 2, H / 2, Math.min(460, W * 0.92), 600);

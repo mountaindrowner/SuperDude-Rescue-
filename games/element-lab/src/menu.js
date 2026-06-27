@@ -9,7 +9,8 @@ DANNYLAB.MenuScene.prototype = Object.create(Phaser.Scene.prototype);
 DANNYLAB.MenuScene.prototype.constructor = DANNYLAB.MenuScene;
 
 DANNYLAB.MenuScene.prototype.create = function () {
-  var W = this.cameras.main.width, H = this.cameras.main.height;
+  DANNYLAB.applyRes(this);
+  var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H;
   var lang = this.registry.get('lang');
   var UI = DANNYLAB.UI;
   this.lab = DANNYLAB.buildLab(this, { dust: 16 });

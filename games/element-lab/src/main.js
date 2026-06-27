@@ -3,6 +3,31 @@
 // for a non-Phaser parent like the Super Dude Danny canvas game).
 window.DANNYLAB = window.DANNYLAB || {};
 
+// Render every Text at the device pixel density by default (the Scale
+// Manager zoom sharpens graphics/images, but text needs its own resolution
+// bump). Patch the factory once so we don't touch every add.text call.
+(function () {
+  if (!window.Phaser || DANNYLAB._textPatched) return;
+  DANNYLAB._textPatched = true;
+  var F = Phaser.GameObjects.GameObjectFactory.prototype;
+  var orig = F.text;
+  F.text = function (x, y, text, style) {
+    style = style || {};
+    if (style.resolution == null) style.resolution = DANNYLAB.RES;
+    return orig.call(this, x, y, text, style);
+  };
+})();
+
+// Zoom a scene's camera by RES and frame the logical 540x960 world, so the
+// world renders supersampled into the larger backing store while all game
+// coordinates remain 540x960. Call at the top of every visible scene's create.
+DANNYLAB.applyRes = function (scene) {
+  var cam = scene.cameras.main;
+  cam.setOrigin(0, 0);          // anchor zoom at the top-left so world (0,0) = screen (0,0)
+  cam.setZoom(DANNYLAB.RES);
+  cam.setScroll(0, 0);
+};
+
 // ordered scene classes (Boot first)
 DANNYLAB.sceneClasses = function () {
   return [
@@ -32,8 +57,10 @@ DANNYLAB.makeConfig = function (parentEl) {
   return {
     type: Phaser.AUTO,
     parent: parentEl || undefined,
-    width: DANNYLAB.GEO.W,
-    height: DANNYLAB.GEO.H,
+    // Backing store is RES× the logical 540x960 (true supersampling); each
+    // scene camera zooms by RES so game coordinates stay 540x960. See applyRes.
+    width: DANNYLAB.GEO.W * DANNYLAB.RES,
+    height: DANNYLAB.GEO.H * DANNYLAB.RES,
     backgroundColor: '#070d22',
     scale: {
       mode: Phaser.Scale.FIT,

@@ -24,6 +24,7 @@ DANNYLAB.GameScene.prototype.constructor = DANNYLAB.GameScene;
 var GP = DANNYLAB.GameScene.prototype;
 
 GP.create = function (data) {
+  DANNYLAB.applyRes(this);
   var GEO = DANNYLAB.GEO, CONFIG = DANNYLAB.CONFIG;
   this.mode = (data && data.mode) || this.registry.get('mode') || 'endless';
   this.lang = this.registry.get('lang');
@@ -97,20 +98,21 @@ GP.create = function (data) {
   // track the finger exactly), and lift to release. A simple tap = aim+lift
   // in the same spot, so it still drops right where you tapped.
   this.aiming = false;
+  // NB: the camera is zoomed (supersampling), so use world coordinates.
   this.input.on('pointerdown', function (p) {
     if (self.audio) self.audio.resume();
     // tapping the Lab Notes ✕ closes the card (checked first — it sits up in
     // the top band that drops otherwise ignore)
-    if (self._discoCard && Phaser.Math.Distance.Between(p.x, p.y, self._discoX, self._discoY) < 46) {
+    if (self._discoCard && Phaser.Math.Distance.Between(p.worldX, p.worldY, self._discoX, self._discoY) < 46) {
       self.dismissDiscovery(); return;
     }
     if (self.paused || self.gameOver || self.dropCooling) return;
-    if (p.y < 176) return;                 // ignore the HUD / pause-button band up top
-    self.beginAim(p.x);
+    if (p.worldY < 176) return;            // ignore the HUD / pause-button band up top
+    self.beginAim(p.worldX);
   });
   this.input.on('pointermove', function (p) {
-    self.pointerX = p.x;
-    if (self.aiming) self.updateAim(p.x);
+    self.pointerX = p.worldX;
+    if (self.aiming) self.updateAim(p.worldX);
   });
   this.input.on('pointerup', function () { self.commitDrop(); });
   this.input.on('pointerupoutside', function () { self.commitDrop(); });

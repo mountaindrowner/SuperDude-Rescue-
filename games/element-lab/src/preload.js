@@ -20,11 +20,12 @@ DANNYLAB.PreloadScene.prototype.preload = function () {
 };
 
 DANNYLAB.PreloadScene.prototype.create = function () {
+  DANNYLAB.applyRes(this);
   var cam = this.cameras.main;
   cam.setBackgroundColor('#0c1430');
 
   // simple loading flask text while the font settles
-  var t = this.add.text(cam.width / 2, cam.height / 2, 'ELEMENT LAB', {
+  var t = this.add.text(DANNYLAB.GEO.W / 2, DANNYLAB.GEO.H / 2, 'ELEMENT LAB', {
     fontFamily: '"Baloo 2", system-ui, sans-serif', fontSize: '40px',
     color: '#7CFF6B', fontStyle: 'bold',
   }).setOrigin(0.5);

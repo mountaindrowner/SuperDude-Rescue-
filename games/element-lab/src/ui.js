@@ -47,29 +47,38 @@ DANNYLAB.UI = {
 
     c.add([g, txt]);
 
-    // Input is driven by a transparent interactive Rectangle child, NOT the
-    // Container's own hitArea: a Container + Geom.Rectangle hit test has a
-    // right-half dead-zone on scaled/mobile canvases. A Shape GameObject has
-    // a reliable, correctly-centered hit area.
-    var hit = scene.add.rectangle(0, 0, w, h, 0x000000, 0).setInteractive({ useHandCursor: true });
-    c.add(hit);
-
-    hit.on('pointerdown', function () { paint(true); txt.y = 3; });
-    function release(fire) {
-      paint(false); txt.y = 0;
-      if (fire) {
+    // Input via the scene pointer + the button's WORLD bounds, not a Phaser
+    // interactive object: the camera is zoomed for supersampling, and per-
+    // camera zoom breaks Phaser's object hit-testing. Comparing the pointer's
+    // worldX/worldY against the button's world transform is zoom-proof and also
+    // handles buttons nested inside other containers (e.g. toggle rows).
+    var pressed = false, tmp = new Phaser.GameObjects.Components.TransformMatrix();
+    function inside(px, py) {
+      if (!c.active || !c.visible) return false;
+      c.getWorldTransformMatrix(tmp);
+      return Math.abs(px - tmp.tx) <= w / 2 && Math.abs(py - tmp.ty) <= h / 2;
+    }
+    function onDown(p) { if (inside(p.worldX, p.worldY)) { pressed = true; paint(true); txt.y = 3; } }
+    function onUp(p) {
+      if (!pressed) return;
+      pressed = false; paint(false); txt.y = 0;
+      if (inside(p.worldX, p.worldY)) {
         var a = scene.registry.get('audio'); if (a) a.click();
         scene.tweens.add({ targets: c, scaleX: 0.94, scaleY: 0.94, duration: 70, yoyo: true, ease: 'Quad.out' });
         if (onClick) onClick();
       }
     }
-    hit.on('pointerup', function () { release(true); });
-    hit.on('pointerout', function () { release(false); });
-    hit.on('pointerupoutside', function () { release(false); });
+    scene.input.on('pointerdown', onDown);
+    scene.input.on('pointerup', onUp);
+    scene.input.on('pointerupoutside', onUp);
+    c.once('destroy', function () {
+      scene.input.off('pointerdown', onDown);
+      scene.input.off('pointerup', onUp);
+      scene.input.off('pointerupoutside', onUp);
+    });
 
     c.setLabel = function (s) { txt.setText(s); };
     c.txt = txt;
-    c.hit = hit;
     return c;
   },
 
@@ -96,13 +105,13 @@ DANNYLAB.UI = {
     return g;
   },
 
-  // full-screen dim behind an overlay
+  // full-screen dim behind an overlay (logical 540x960 world)
   scrim: function (scene, alpha) {
-    var cam = scene.cameras.main;
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H;
     var g = scene.add.graphics();
     g.fillStyle(0x040814, alpha == null ? 0.5 : alpha);
-    g.fillRect(0, 0, cam.width, cam.height);
-    g.setInteractive(new Phaser.Geom.Rectangle(0, 0, cam.width, cam.height), Phaser.Geom.Rectangle.Contains);
+    g.fillRect(0, 0, W, H);
+    g.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains);
     return g;
   },
 

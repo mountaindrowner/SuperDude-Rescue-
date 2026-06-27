@@ -7,7 +7,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
 DANNYLAB.buildLab = function (scene, opts) {
   opts = opts || {};
-  var W = scene.cameras.main.width, H = scene.cameras.main.height;
+  var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H;
   var dustMotes = [];
 
   // ============ BACK LAYERS (blurred + faded into the distance) ============
