@@ -354,18 +354,19 @@ GP.spawnElement = function (tier, x, y, opts) {
     ball.setDisplaySize(r * 2.16, r * 2.16);
     ball.setAlpha(DANNYLAB.JELLY_ALPHA[tier] || 0.9);
     kids.push(ball);
-    // internal drifting bubbles (kept central so they read as "inside")
+    // internal drifting bubbles (kept central so they read as "inside"),
+    // varied per element (count / speed / size / tint)
     bubbles = [];
-    var nb = r >= 60 ? 3 : 2;
-    for (var bi = 0; bi < nb; bi++) {
-      var bub = this.add.image((Math.random() - 0.5) * r * 0.6, r * 0.5, 'jelly_bub').setAlpha(0);
-      bub.setScale((0.3 + Math.random() * 0.5) * (r / 40));
-      bub._x0 = bub.x;
+    var fx = DANNYLAB.JELLY_FX[tier] || { bubbles: 2, speed: 1, size: 1, tint: 0xffffff };
+    for (var bi = 0; bi < fx.bubbles; bi++) {
+      var bub = this.add.image((Math.random() - 0.5) * r * 0.6, r * 0.5, 'jelly_bub').setAlpha(0).setTint(fx.tint);
+      bub.setScale((0.3 + Math.random() * 0.4) * (r / 40) * fx.size);
+      bub._x0 = bub.x; bub._spd = fx.speed;
       kids.push(bub); bubbles.push(bub);
       this._bubbleTween(bub, r, bi);
     }
     // chibi face on its own layer (parallax-floats in update)
-    face = this.add.image(0, -r * 0.06, 'jelly_face_smile');
+    face = this.add.image(0, -r * 0.06, 'jelly_face_' + tier + '_rest');
     face.setDisplaySize(r * 1.55, r * 1.55);
     kids.push(face);
   } else {
@@ -404,11 +405,12 @@ GP.spawnElement = function (tier, x, y, opts) {
   c.bubbles = bubbles;
   // face animation state
   c._ph = Math.random() * 6.28;
-  c.faceFrame = 'smile';
+  c.faceFrame = 'rest';
   c.blinkUntil = 0;
   c.nextBlink = this.time.now + 800 + Math.random() * 2600;
-  c.exprUntil = 0; c.exprFrame = 'smile';
-  if (jelly && opts.fromMerge) { c.exprFrame = 'wow'; c.exprUntil = this.time.now + 700; }
+  c.nextGiggle = this.time.now + 5000 + Math.random() * 9000;
+  c.exprUntil = 0; c.exprFrame = 'alt';
+  if (jelly && opts.fromMerge) c.exprUntil = this.time.now + 750;  // "alt" face pops on birth
   this.elements.push(c);
 
   // pop-in overshoot (visual only, body radius fixed)
@@ -434,7 +436,7 @@ GP._bubbleTween = function (bub, radius, i) {
     if (!bub.active) return;
     bub.y = botY; bub.x = bub._x0 + (Math.random() - 0.5) * radius * 0.18;
     self.tweens.add({
-      targets: bub, y: topY, duration: 1500 + Math.random() * 1600, ease: 'Sine.inOut',
+      targets: bub, y: topY, duration: (1500 + Math.random() * 1600) / (bub._spd || 1), ease: 'Sine.inOut',
       delay: (run._first ? i * 350 + Math.random() * 500 : 0),
       onUpdate: function (tw) { var p = tw.progress; bub.alpha = (p < 0.25 ? p / 0.25 : p > 0.7 ? (1 - p) / 0.3 : 1) * 0.5; },
       onComplete: run,
@@ -448,11 +450,13 @@ GP._bubbleTween = function (bub, radius, i) {
 // per-frame jelly face: blink, expression, and parallax float (dimensionality)
 GP._animFace = function (e, time) {
   var f = e.face, r = e.radius;
-  var want = 'smile';
-  if (e.exprUntil > time) want = e.exprFrame;
+  // occasional giggle (the element's "alt" face) so they feel alive at rest
+  if (e.exprUntil <= time && time > e.nextGiggle) { e.exprUntil = time + 520; e.nextGiggle = time + 6000 + Math.random() * 9000; }
+  var want = 'rest';
+  if (e.exprUntil > time) want = e.exprFrame;        // 'alt'
   else if (e.blinkUntil > time) want = 'blink';
   else if (time > e.nextBlink) { e.blinkUntil = time + 120; e.nextBlink = time + 2400 + Math.random() * 3500; }
-  if (want !== e.faceFrame) { f.setTexture('jelly_face_' + want); f.setDisplaySize(r * 1.55, r * 1.55); e.faceFrame = want; }
+  if (want !== e.faceFrame) { f.setTexture('jelly_face_' + e.tier + '_' + want); f.setDisplaySize(r * 1.55, r * 1.55); e.faceFrame = want; }
   // float: lead the motion slightly + a slow idle drift => the face sits
   // "in front of" the body and bobs in its own space
   var vx = e.body ? e.body.velocity.x : 0, vy = e.body ? e.body.velocity.y : 0;
