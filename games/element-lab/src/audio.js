@@ -149,6 +149,27 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     // button press
     click: function () { tone({ type: 'square', f0: 660, f1: 880, dur: 0.05, gain: 0.14 }); },
 
+    // ---- haptics (Vibration API; Android web/native — iOS Safari ignores it,
+    // a native iOS build would use the Capacitor Haptics plugin). Gated by the
+    // SFX option so it shares the feedback on/off switch. ----
+    haptic: function (combo) {
+      if (!state.sfx) return;
+      if (typeof navigator === 'undefined' || !navigator.vibrate) return;
+      var n = combo || 1, p;
+      if (n <= 1) p = 14;                                  // single merge: a light tick
+      else if (n === 2) p = 22;
+      else if (n === 3) p = [24, 26, 24];                  // double buzz
+      else if (n === 4) p = [26, 28, 26, 28, 30];
+      else p = [30, 28, 30, 28, 34, 28, 48];               // big cascade: long roll
+      try { navigator.vibrate(p); } catch (e) {}
+    },
+    // a celebratory buzz for big moments (level-up, fission)
+    hapticBig: function () {
+      if (!state.sfx) return;
+      if (typeof navigator === 'undefined' || !navigator.vibrate) return;
+      try { navigator.vibrate([40, 40, 60, 40, 90]); } catch (e) {}
+    },
+
     // ---- quiet background-lab ambience (very low in the mix) ----
     ambBeep: function () { tone({ type: 'sine', f0: 1200 + Math.random() * 400, dur: 0.09, gain: 0.045 }); },
     ambClunk: function () { tone({ type: 'square', f0: 130, f1: 80, dur: 0.08, gain: 0.05 }); },

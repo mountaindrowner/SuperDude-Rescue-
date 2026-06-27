@@ -283,7 +283,7 @@ GP.levelUp = function () {
   this.toast(DANNYLAB.t('toast_levelup', this.lang), 0x7CFF6B);
   this.cameras.main.flash(240, 124, 255, 107);
   this.cameras.main.shake(220, 0.006);
-  if (this.audio) this.audio.chargeUp();
+  if (this.audio) { this.audio.chargeUp(); this.audio.hapticBig(); }
   var c = this.chargeGeom;
   this.burst(c.mx + c.mw / 2, c.mTop + c.mH * 0.5, 0x7CFF6B, 26, { tex: 'p_spark', speed: 180, scale: 0.7, life: 850 });
   if (C.chargeDropsMysteryOnLevelUp) this.dropsUntilMystery = 0;   // next piece is a mystery
@@ -719,9 +719,11 @@ GP.onMerge = function (merged) {
   this.addScore(pts, x, y);   // tierPoints x combo (x labBonus in addScore)
   this.lastMergeAt = this.time.now;
 
-  // ---- audio: pitch climbs per tier; cascade chime brightens each step ----
+  // ---- audio + haptics: pitch climbs per tier; cascade chime brightens each
+  // step; the buzz grows with the chain ----
   if (this.audio) {
     this.audio.merge(createdTier);
+    this.audio.haptic(n);                 // haptic at every merge, scaled by combo
     if (n >= 2) this.audio.cascade(n);
     if (n >= CFG.comboToast.overload) this.audio.stinger();
   }
@@ -1146,7 +1148,7 @@ GP.mergeBurst = function (x, y, fromTier) {
 GP.triggerFission = function (a, b) {
   var GEO = DANNYLAB.GEO, CONFIG = DANNYLAB.CONFIG;
   var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
-  if (this.audio) { this.audio.fission(); this.audio.duck(); }
+  if (this.audio) { this.audio.fission(); this.audio.duck(); this.audio.hapticBig(); }
   this.cameras.main.shake(420, 0.012);
   this.cameras.main.flash(180, 180, 255, 160);
 
