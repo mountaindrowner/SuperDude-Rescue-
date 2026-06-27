@@ -44,8 +44,8 @@ DANNYLAB.CONFIG = {
 
   // ---- mystery sample (Addendum §2) ----
   mysteryEnabled: true,
-  mysteryEveryNDrops: 50,
-  mysteryJitter: 5,                            // spawns at N ± this
+  mysteryEveryNDrops: 15,                       // lowered from 50 so it's actually felt
+  mysteryJitter: 3,                            // spawns at N ± this
   mysteryEffects: {                            // keyed by FIRST element's tier; all beneficial
     1: 'updraft',    2: 'float',     3: 'crystallizeUpgrade',
     4: 'combustPop', 5: 'glowBoost', 6: 'fizzPop',

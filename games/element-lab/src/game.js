@@ -593,9 +593,9 @@ GP._animFX = function (c, time) {
     }
   } else if (fx.type === 'motes') {
     for (i = 0; i < fx.items.length; i++) { it = fx.items[i]; it._ang += 0.022 + i * 0.004; it.x = Math.cos(it._ang) * it._orb; it.y = Math.sin(it._ang) * it._orb * 0.7; }
-    if (c.ball) c.ball.alpha = c.baseAlpha * (0.9 + 0.1 * Math.sin(time * 0.004 + fx.phase));
+    if (c.ball) c.ball.alpha = c.baseAlpha * (0.95 + 0.05 * Math.sin(time * 0.004 + fx.phase));
   } else if (fx.type === 'flicker') {
-    if (c.ball) c.ball.alpha = c.baseAlpha * (0.82 + 0.18 * Math.abs(Math.sin(time * 0.005 + fx.phase))) * (Math.random() < 0.012 ? 0.6 : 1);
+    if (c.ball) c.ball.alpha = c.baseAlpha * (0.91 + 0.09 * Math.abs(Math.sin(time * 0.005 + fx.phase))) * (Math.random() < 0.008 ? 0.75 : 1);
     if (fx.sway === undefined && fx.items.length) for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.003 + i) * r * 0.08;
   } else if (fx.type === 'sweep' || fx.type === 'glint') {
     if (fx.sweep) { var p = ((time + fx.phase) % 2600) / 2600; fx.sweep.x = (-0.5 + p) * r * 1.05; fx.sweep.y = (0.5 - p) * r * 1.05; fx.sweep.alpha = (p < 0.5 ? p / 0.5 : (1 - p) / 0.5) * 0.5; }
@@ -621,26 +621,26 @@ GP._animFace = function (e, time) {
   else if (time > e.nextBlink) { e.blinkUntil = time + 130; e.nextBlink = time + 2400 + Math.random() * 3500; }
   if (want !== e.faceFrame) { f.setTexture('jelly_face_' + e.tier + '_' + want); e.faceFrame = want; }
 
-  // smooth scale: gentle breathing bob + an eased eye-squash on blink + a
-  // brief pop when an expression kicks in (no instant pops)
-  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.025, scy = sc;
+  // smooth scale: gentle breathing bob (halved) + an eased eye-squash on
+  // blink + a brief pop when an expression kicks in (no instant pops)
+  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.0125, scy = sc;
   if (e.blinkUntil > time) { var bp = Math.sin(Math.min(1, (e.blinkUntil - time) / 130) * Math.PI); scy *= (1 - 0.3 * bp); }
   if (e.exprUntil > time && (e.exprUntil - time) > 430) { sc *= 1.08; scy *= 1.08; }
   f.setDisplaySize(r * 1.55 * sc, r * 1.55 * scy);
 
-  // float: lead the motion slightly + a slow idle drift => the face sits
-  // "in front of" the body and bobs in its own space
+  // float: lead the motion slightly + a (halved) slow idle drift, so the face
+  // sits "in front of" the body without undulating too much
   var vx = e.body ? e.body.velocity.x : 0, vy = e.body ? e.body.velocity.y : 0;
   var t = time * 0.001;
-  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16) + Math.sin(t * 1.3 + e._ph) * r * 0.04;
-  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16) + Math.cos(t * 1.1 + e._ph) * r * 0.04;
+  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16) + Math.sin(t * 1.3 + e._ph) * r * 0.02;
+  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16) + Math.cos(t * 1.1 + e._ph) * r * 0.02;
 };
 
 // idle breathing jiggle once an element settles (Brief §10.2)
 GP.startIdle = function (c) {
   if (!c.active || !c.visual) return;
   c.idleTween = this.tweens.add({
-    targets: c.visual, scaleX: 1.03, scaleY: 0.97, duration: 1100 + Math.random() * 600,
+    targets: c.visual, scaleX: 1.015, scaleY: 0.985, duration: 1100 + Math.random() * 600,
     yoyo: true, repeat: -1, ease: 'Sine.inOut',
   });
 };
