@@ -833,64 +833,103 @@ GP._popTiers = function (x, y, r, minT, maxT, color) {
 };
 
 GP.applyMysteryEffect = function (effect, tgt, mx, my) {
-  var self = this, R = 110, tier = tgt ? tgt.tier : 0;
+  var self = this, R = 150, tier = tgt ? tgt.tier : 0, BASE = 75;
   var labels = {
-    updraft: 'LIFT-OFF!', float: 'FLOAT!', crystallizeUpgrade: 'CRYSTALLIZE!', combustPop: 'BOOM!',
-    glowBoost: 'GLOW UP!', fizzPop: 'FIZZ!', magnetMerge: 'MAGNET!', jackpot: 'JACKPOT!', miniFission: 'FISSION!',
+    updraft: 'LIFT-OFF!', float: 'FLOAT!', crystallizeUpgrade: 'CRYSTALLIZE!', combustPop: 'KA-BOOM!',
+    glowBoost: 'LIGHT SHOW!', fizzPop: 'FIZZ POP!', magnetMerge: 'MAGNET PULSE!', jackpot: 'JACKPOT!', miniFission: 'FISSION!',
   };
   if (labels[effect]) this.toast(labels[effect], 0xff7be0);
+  // every effect is guaranteed an obvious visual + a score bump; the themed
+  // mechanic (clear/merge/upgrade nearby) is a bonus when targets are present.
 
   switch (effect) {
-    case 'updraft':
-      this.elements.forEach(function (e) { if (e.tier >= 1 && e.tier <= 3 && e.setVelocity) e.setVelocity((Math.random() - 0.5) * 4, -7); });
-      this.burst(mx, my, 0xBEE3F8, 16, { speed: 120, scale: 0.5, life: 500 });
+    case 'updraft':   // LIFT-OFF: the whole pile gets a gust upward
+      this.elements.forEach(function (e) { if (e.tier >= 1 && e.setVelocity) e.setVelocity((Math.random() - 0.5) * 6, -7 - Math.random() * 5); });
+      for (var u = 0; u < 4; u++) this.burst(DANNYLAB.beakerCx() + (Math.random() - 0.5) * 220, DANNYLAB.GEO.floorTop - 30, 0xBEE3F8, 10, { tex: 'p_bubble', speed: 90, scale: 0.7, life: 900, blend: 'NORMAL' });
+      this.addScore(BASE, mx, my);
       break;
-    case 'float':
-      this._elementsNear(mx, my, 130).forEach(function (e) {
-        if (e.setVelocity && e.body) e.setVelocity(e.body.velocity.x, -3);
-        if (e.visual) self.tweens.add({ targets: e.visual, scale: 1.18, duration: 220, yoyo: true });
+
+    case 'float':     // FLOAT: touched + neighbours balloon and lift
+      var near = this._elementsNear(mx, my, 160); if (tgt && near.indexOf(tgt) < 0) near.push(tgt);
+      near.forEach(function (e) {
+        if (e.setVelocity && e.body) e.setVelocity(e.body.velocity.x * 0.4, -6);
+        if (e.visual) self.tweens.add({ targets: e.visual, scale: 1.32, duration: 280, yoyo: true, hold: 280, ease: 'Sine.inOut' });
       });
-      this.burst(mx, my, 0xFBD38D, 14, { tex: 'p_bubble', speed: 70, scale: 0.6, life: 700 });
+      this.burst(mx, my, 0xFBD38D, 20, { tex: 'p_bubble', speed: 80, scale: 0.8, life: 1000 });
+      this.addScore(BASE, mx, my);
       break;
-    case 'crystallizeUpgrade':
+
+    case 'crystallizeUpgrade':  // CRYSTALLIZE: upgrade the touched element + sparkle
       if (tgt && tgt.active && tgt.tier >= 1 && tgt.tier < DANNYLAB.MAX_TIER) {
         var t = tgt.tier, px = tgt.x, py = tgt.y;
         this.mergeBurst(px, py, t); this.destroyElement(tgt);
         this.spawnElement(t + 1, px, py, { fromMerge: true });
-        this.addScore((DANNYLAB.CONFIG.tierPoints[t + 1] || 0) * 2, px, py);
-      } else { this.addScore(80, mx, my); }
-      this.burst(mx, my, 0xffffff, 18, { tex: 'p_spark', speed: 130, scale: 0.6, life: 600 });
+        this.addScore((DANNYLAB.CONFIG.tierPoints[t + 1] || 20) * 2, px, py);
+      } else { this.addScore(BASE * 2, mx, my); }
+      this.burst(mx, my, 0xffffff, 24, { tex: 'p_spark', speed: 160, scale: 0.8, life: 750 });
       break;
-    case 'combustPop':
-      this.burst(mx, my, 0xff9b5b, 16, { speed: 130, scale: 0.6, life: 500 });
+
+    case 'combustPop':  // KA-BOOM: a big cartoon flare that pops small atoms
+      this.cameras.main.shake(220, 0.007); this.cameras.main.flash(140, 255, 170, 90);
+      this.burst(mx, my, 0xff7a3a, 30, { tex: 'p_spark', speed: 230, scale: 0.9, life: 650 });
+      this.burst(mx, my, 0xffd27a, 20, { speed: 150, scale: 0.8, life: 550 });
       this._popTiers(mx, my, R, 1, 1, 0xff9b5b);
+      this.addScore(BASE, mx, my);
       break;
-    case 'glowBoost':
-      this.glowBoostMerges = 6;
-      this.burst(mx, my, 0xF687B3, 22, { tex: 'p_spark', speed: 150, scale: 0.6, life: 700 });
+
+    case 'glowBoost':  // LIGHT SHOW: every element flares + next merges score 1.5x
+      this.glowBoostMerges = 8;
+      this.elements.forEach(function (e) {
+        if (e.glow) { e.glow.setAlpha(1); self.tweens.add({ targets: e.glow, alpha: e.tier === DANNYLAB.MAX_TIER ? 0.6 : 0, duration: 650 }); }
+        if (e.visual) self.tweens.add({ targets: e.visual, scale: 1.14, duration: 180, yoyo: true });
+      });
+      this.cameras.main.flash(320, 246, 135, 179);
+      this.screenSparkle();
+      this.addScore(BASE, mx, my);
       break;
-    case 'fizzPop':
+
+    case 'fizzPop':    // FIZZ POP: a fountain of fizz + pops tier 1-2
+      var em = this.add.particles(mx, my, 'jelly_bub', {
+        speed: { min: 40, max: 150 }, angle: { min: 225, max: 315 }, scale: { start: 0.7, end: 0 },
+        alpha: { start: 0.9, end: 0 }, lifespan: 850, quantity: 30, tint: 0xb98bff, blendMode: 'ADD', emitting: false,
+      }).setDepth(25);
+      em.explode(34); this.time.delayedCall(950, function () { em.destroy(); });
       this._popTiers(mx, my, R, 1, 2, 0x9F7AEA);
+      this.addScore(BASE, mx, my);
       break;
-    case 'magnetMerge':
-      var same = this.elements.filter(function (e) { return e.tier === tier && e.active && e.setVelocity; });
-      if (same.length > 1) {
-        var cxs = 0, cys = 0; same.forEach(function (e) { cxs += e.x; cys += e.y; }); cxs /= same.length; cys /= same.length;
-        same.forEach(function (e) { var dx = cxs - e.x, dy = cys - e.y, d = Math.max(1, Math.hypot(dx, dy)); e.setVelocity(dx / d * 9, dy / d * 9); });
-      }
-      this.burst(mx, my, 0x8696A7, 18, { speed: 120, scale: 0.5, life: 600 });
+
+    case 'magnetMerge':  // MAGNET PULSE: yank everything toward the spot + a ring
+      this.elements.forEach(function (e) {
+        if (e.setVelocity && e.tier >= 1) { var dx = mx - e.x, dy = my - e.y, d = Math.max(1, Math.hypot(dx, dy)); e.setVelocity(dx / d * 11, dy / d * 11); }
+      });
+      var ring = this.add.image(mx, my, 'p_ring').setTint(0x9fd0ff).setBlendMode('ADD').setScale(0.3).setDepth(26).setAlpha(0.9);
+      this.tweens.add({ targets: ring, scale: 4, alpha: 0, duration: 550, ease: 'Cubic.out', onComplete: function () { ring.destroy(); } });
+      if (this.audio) this.audio.magnet();
+      this.addScore(BASE, mx, my);
       break;
-    case 'jackpot':
-      this.addScore(300, mx, my);
-      if (this.audio) this.audio.coin();
-      for (var i = 0; i < 5; i++) (function (i) { self.time.delayedCall(i * 90, function () { self.burst(mx + (Math.random() - 0.5) * 80, my - 10, 0xECC94B, 8, { tex: 'p_spark', speed: 120, scale: 0.6, life: 700 }); }); })(i);
+
+    case 'jackpot':    // JACKPOT: a big coin shower
+      this.addScore(400, mx, my);
+      this.cameras.main.flash(200, 236, 201, 75);
+      for (var i = 0; i < 8; i++) (function (i) {
+        self.time.delayedCall(i * 70, function () {
+          self.burst(mx + (Math.random() - 0.5) * 150, my - 24, 0xECC94B, 7, { tex: 'p_spark', speed: 130, scale: 0.7, life: 850 });
+          if (self.audio) self.audio.coin();
+        });
+      })(i);
       break;
-    case 'miniFission':
-      this.cameras.main.flash(180, 180, 255, 160);
-      this._popTiers(mx, my, DANNYLAB.CONFIG.fissionRadius * 0.6, 1, 3, 0x7CFF6B);
+
+    case 'miniFission':  // FISSION: a bright contained blast
+      this.cameras.main.flash(220, 180, 255, 160); this.cameras.main.shake(300, 0.011);
+      if (this.audio) this.audio.fission();
+      this.burst(mx, my, 0x7CFF6B, 34, { tex: 'p_spark', speed: 240, scale: 0.9, life: 850 });
+      this._popTiers(mx, my, DANNYLAB.CONFIG.fissionRadius * 0.75, 1, 3, 0x7CFF6B);
+      this.addScore(Math.round(BASE * 1.5), mx, my);
       break;
+
     default:
-      this.addScore(80, mx, my);
+      this.burst(mx, my, 0xffffff, 18, { tex: 'p_spark', speed: 140, scale: 0.7, life: 700 });
+      this.addScore(BASE, mx, my);
   }
 };
 
