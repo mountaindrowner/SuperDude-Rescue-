@@ -103,11 +103,7 @@ GP.create = function (data) {
       if (j.kind === 'mystery') { if (j.myst.active && j.tgt.active) self.triggerMystery(j.myst, j.tgt); continue; }
       if (!j.a.active || !j.b.active) continue;
       if (j.kind === 'fission') { self.triggerFission(j.a, j.b); continue; }
-      var mx = (j.a.x + j.b.x) / 2, my = (j.a.y + j.b.y) / 2, tier = j.a.tier;
-      self.mergeBurst(mx, my, tier);
-      self.destroyElement(j.a); self.destroyElement(j.b);
-      var merged = self.spawnElement(tier + 1, mx, my, { fromMerge: true });
-      self.onMerge(merged);
+      self.doMerge(j.a, j.b);
     }
   });
 
@@ -686,6 +682,33 @@ GP.destroyElement = function (c) {
   c.destroy();
 };
 
+// ---------- the merge "implode then pop" effect ----------
+// Pull both twins into the contact point (with a tiny anticipation) and shrink
+// them, then a beat later destroy them and pop the new element out — quick +
+// dynamic. The bodies are frozen (static) so they hold their spot while their
+// visuals slide together.
+GP.doMerge = function (a, b) {
+  var self = this, tier = a.tier;
+  var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dur = 95;
+  [a, b].forEach(function (e) {
+    e._merging = true;
+    if (e.idleTween) { e.idleTween.stop(); e.idleTween = null; }
+    if (e.visual) self.tweens.killTweensOf(e.visual);
+    if (e.setStatic && e.body) e.setStatic(true);          // freeze the body in place
+    if (e.visual) self.tweens.add({
+      targets: e.visual, x: mx - e.x, y: my - e.y, scaleX: 0.45, scaleY: 0.45, alpha: 0.9,
+      duration: dur, ease: 'Back.in',
+    });
+  });
+  this.burst(mx, my, DANNYLAB.tierCfg(tier).color, 5, { speed: 26, scale: 0.3, life: 220 });
+  this.time.delayedCall(dur, function () {
+    self.mergeBurst(mx, my, tier);
+    self.destroyElement(a); self.destroyElement(b);
+    var merged = self.spawnElement(tier + 1, mx, my, { fromMerge: true });
+    self.onMerge(merged);
+  });
+};
+
 // ---------- merge scoring + the escalating cascade ramp (Addendum §1) ----------
 GP.onMerge = function (merged) {
   var createdTier = merged.tier, x = merged.x, y = merged.y;
@@ -1161,6 +1184,7 @@ GP.update = function (time, delta) {
   for (var gi = 0; gi < this.elements.length; gi++) {
     var e = this.elements[gi];
     if (e.isMystery) { this._shimmerMystery(e, time); continue; }   // rainbow swirl
+    if (e._merging) continue;              // being pulled into a merge; leave it be
     if (e.face) this._animFace(e, time);   // jelly: blink / expression / float
     if (e.fx) this._animFX(e, time);       // jelly: per-element internal effect
     if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;
