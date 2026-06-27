@@ -8,19 +8,17 @@ window.DANNYLAB = window.DANNYLAB || {};
 // per-tier translucency — gases read glassier, metals more solid (Brief vibe)
 DANNYLAB.JELLY_ALPHA = { 1: 0.80, 2: 0.82, 3: 0.95, 4: 0.84, 5: 0.86, 6: 0.90, 7: 0.97, 8: 0.97, 9: 0.86 };
 
-// per-tier internal motion — a first pass at "different effect inside": vary
-// how many bubbles, how fast they rise, their size + tint. (Richer per-element
-// effects — glints, sparkles, motes, neon flicker — are the next step.)
+// per-tier internal effect — each element is alive inside in its OWN way.
 DANNYLAB.JELLY_FX = {
-  1: { bubbles: 3, speed: 1.7, size: 0.7, tint: 0xffffff }, // H  fast tiny sparks
-  2: { bubbles: 2, speed: 0.7, size: 1.3, tint: 0xffffff }, // He slow floaty
-  3: { bubbles: 1, speed: 0.9, size: 0.8, tint: 0xcfe0ff }, // C  rare faint glint
-  4: { bubbles: 3, speed: 1.1, size: 1.0, tint: 0xddfff8 }, // O  steady bubbles
-  5: { bubbles: 2, speed: 1.0, size: 1.0, tint: 0xffd0ef }, // Ne pink shimmer
-  6: { bubbles: 5, speed: 1.9, size: 0.6, tint: 0xffffff }, // Na lots of fizz
-  7: { bubbles: 1, speed: 0.8, size: 0.9, tint: 0xdfe6f0 }, // Fe sparse metallic glint
-  8: { bubbles: 2, speed: 0.9, size: 0.9, tint: 0xfff0b0 }, // Au gold sparkle
-  9: { bubbles: 3, speed: 1.2, size: 1.0, tint: 0xc8ffb0 }, // U  radioactive motes
+  1: { type: 'sparks',  n: 4, tint: 0xeaf6ff },                          // H  electric sparks zipping
+  2: { type: 'bubbles', n: 2, speed: 0.62, size: 1.35, tint: 0xffffff }, // He slow balloon bubbles
+  3: { type: 'glint',   tint: 0xdfeaff },                                // C  diamond glints
+  4: { type: 'bubbles', n: 3, speed: 1.1,  size: 1.0,  tint: 0xddfff8, sway: true }, // O bubble stream + swirl
+  5: { type: 'flicker', n: 2, speed: 1.0,  size: 1.0,  tint: 0xffd0ef }, // Ne neon flicker/pulse
+  6: { type: 'bubbles', n: 6, speed: 2.0,  size: 0.55, tint: 0xffffff }, // Na rapid soda fizz
+  7: { type: 'sweep',   tint: 0xeef3fb, fleck: true },                   // Fe metallic shine sweep + rust
+  8: { type: 'sweep',   tint: 0xfff0b0, sparkle: true },                 // Au gold sparkles + shine
+  9: { type: 'motes',   n: 3, tint: 0xc8ffb0 },                          // U  orbiting radioactive motes
 };
 
 function _lerpColor(a, b, t) {
@@ -145,6 +143,17 @@ DANNYLAB.buildJellyTextures = function (scene) {
     b.fillStyle(0xffffff, 0.5); b.fillCircle(10, 10, 8);
     b.fillStyle(0xffffff, 0.9); b.fillCircle(7, 7, 3);
     b.generateTexture('jelly_bub', 20, 20); b.destroy();
+  }
+  // ---------- internal sparkle star (glints / sparkles) ----------
+  if (!made.exists('jelly_star')) {
+    var s = scene.add.graphics(), m = 16, sz = 14;
+    s.fillStyle(0xffffff, 1);
+    s.fillTriangle(m, m - sz, m - sz * 0.3, m, m + sz * 0.3, m);
+    s.fillTriangle(m, m + sz, m - sz * 0.3, m, m + sz * 0.3, m);
+    s.fillTriangle(m - sz, m, m, m - sz * 0.3, m, m + sz * 0.3);
+    s.fillTriangle(m + sz, m, m, m - sz * 0.3, m, m + sz * 0.3);
+    s.fillCircle(m, m, 3);
+    s.generateTexture('jelly_star', 32, 32); s.destroy();
   }
 };
 

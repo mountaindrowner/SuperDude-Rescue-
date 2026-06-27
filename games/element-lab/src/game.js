@@ -354,17 +354,10 @@ GP.spawnElement = function (tier, x, y, opts) {
     ball.setDisplaySize(r * 2.16, r * 2.16);
     ball.setAlpha(DANNYLAB.JELLY_ALPHA[tier] || 0.9);
     kids.push(ball);
-    // internal drifting bubbles (kept central so they read as "inside"),
-    // varied per element (count / speed / size / tint)
-    bubbles = [];
-    var fx = DANNYLAB.JELLY_FX[tier] || { bubbles: 2, speed: 1, size: 1, tint: 0xffffff };
-    for (var bi = 0; bi < fx.bubbles; bi++) {
-      var bub = this.add.image((Math.random() - 0.5) * r * 0.6, r * 0.5, 'jelly_bub').setAlpha(0).setTint(fx.tint);
-      bub.setScale((0.3 + Math.random() * 0.4) * (r / 40) * fx.size);
-      bub._x0 = bub.x; bub._spd = fx.speed;
-      kids.push(bub); bubbles.push(bub);
-      this._bubbleTween(bub, r, bi);
-    }
+    // per-element internal effect (sparks / bubbles / glint / flicker /
+    // sweep / motes) — built + pushed into the visual layer
+    var fxState = this._buildFX(kids, tier, r);
+    bubbles = fxState.items;
     // chibi face on its own layer (parallax-floats in update)
     face = this.add.image(0, -r * 0.06, 'jelly_face_' + tier + '_rest');
     face.setDisplaySize(r * 1.55, r * 1.55);
@@ -403,6 +396,8 @@ GP.spawnElement = function (tier, x, y, opts) {
   c.radius = r;
   c.face = face;
   c.bubbles = bubbles;
+  c.fx = jelly ? fxState : null;
+  c.baseAlpha = jelly ? (DANNYLAB.JELLY_ALPHA[tier] || 0.9) : 1;
   // face animation state
   c._ph = Math.random() * 6.28;
   c.faceFrame = 'rest';
@@ -447,7 +442,80 @@ GP._bubbleTween = function (bub, radius, i) {
   run();
 };
 
-// per-frame jelly face: blink, expression, and parallax float (dimensionality)
+// build the per-element internal effect; pushes its sprites into `kids` and
+// returns the fx state used by _animFX.
+GP._buildFX = function (kids, tier, r) {
+  var cfg = DANNYLAB.JELLY_FX[tier] || { type: 'bubbles', n: 2, speed: 1, size: 1, tint: 0xffffff };
+  var fx = { type: cfg.type, cfg: cfg, items: [], phase: Math.random() * 4000, sway: cfg.sway };
+  var i, it, u = r / 40;
+
+  if (cfg.type === 'bubbles' || cfg.type === 'flicker') {
+    var n = cfg.n || 2;
+    for (i = 0; i < n; i++) {
+      it = this.add.image((Math.random() - 0.5) * r * 0.6, r * 0.5, 'jelly_bub').setAlpha(0).setTint(cfg.tint);
+      it.setScale((0.3 + Math.random() * 0.4) * u * (cfg.size || 1));
+      it._x0 = it.x; it._spd = cfg.speed || 1;
+      kids.push(it); fx.items.push(it); this._bubbleTween(it, r, i);
+    }
+  } else if (cfg.type === 'sparks') {
+    for (i = 0; i < (cfg.n || 4); i++) {
+      it = this.add.image(0, 0, 'jelly_bub').setTint(cfg.tint).setBlendMode('ADD').setScale(0.22 * u);
+      it._tx = (Math.random() - 0.5) * r * 0.9; it._ty = (Math.random() - 0.5) * r * 0.9; it.setAlpha(0.6);
+      kids.push(it); fx.items.push(it);
+    }
+  } else if (cfg.type === 'motes') {
+    for (i = 0; i < (cfg.n || 3); i++) {
+      it = this.add.image(0, 0, 'jelly_bub').setTint(cfg.tint).setBlendMode('ADD').setScale(0.24 * u).setAlpha(0.75);
+      it._ang = Math.random() * 6.28; it._orb = r * (0.26 + i * 0.09);
+      kids.push(it); fx.items.push(it);
+    }
+  } else if (cfg.type === 'glint' || cfg.type === 'sweep') {
+    if (cfg.type === 'sweep') {
+      fx.sweep = this.add.image(0, 0, 'jelly_bub').setTint(0xffffff).setBlendMode('ADD').setAlpha(0);
+      fx.sweep.setScale(0.8 * u, 1.7 * u); fx.sweep.rotation = -0.7;
+      kids.push(fx.sweep);
+    }
+    fx.star = this.add.image(0, 0, 'jelly_star').setTint(cfg.tint).setBlendMode('ADD').setAlpha(0).setScale(0.5 * u);
+    kids.push(fx.star);
+    fx.next = this.time.now + 500 + Math.random() * 1100;
+    if (cfg.fleck) for (i = 0; i < 3; i++) kids.push(
+      this.add.image((Math.random() - 0.5) * r * 0.8, (Math.random() - 0.3) * r * 0.7, 'jelly_bub')
+        .setTint(0x8a5a3a).setAlpha(0.5).setScale(0.13 * u));
+  }
+  return fx;
+};
+
+// per-frame internal effect animation
+GP._animFX = function (c, time) {
+  var fx = c.fx, r = c.radius; if (!fx) return;
+  var i, it;
+  if (fx.type === 'sparks') {
+    for (i = 0; i < fx.items.length; i++) {
+      it = fx.items[i];
+      it.x += (it._tx - it.x) * 0.18; it.y += (it._ty - it.y) * 0.18;
+      if (Phaser.Math.Distance.Between(it.x, it.y, it._tx, it._ty) < 3) { it._tx = (Math.random() - 0.5) * r * 0.9; it._ty = (Math.random() - 0.5) * r * 0.9; }
+      it.alpha = 0.35 + 0.45 * Math.abs(Math.sin(time * 0.018 + i * 1.7));
+    }
+  } else if (fx.type === 'motes') {
+    for (i = 0; i < fx.items.length; i++) { it = fx.items[i]; it._ang += 0.022 + i * 0.004; it.x = Math.cos(it._ang) * it._orb; it.y = Math.sin(it._ang) * it._orb * 0.7; }
+    if (c.ball) c.ball.alpha = c.baseAlpha * (0.9 + 0.1 * Math.sin(time * 0.004 + fx.phase));
+  } else if (fx.type === 'flicker') {
+    if (c.ball) c.ball.alpha = c.baseAlpha * (0.82 + 0.18 * Math.abs(Math.sin(time * 0.005 + fx.phase))) * (Math.random() < 0.012 ? 0.6 : 1);
+    if (fx.sway === undefined && fx.items.length) for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.003 + i) * r * 0.08;
+  } else if (fx.type === 'sweep' || fx.type === 'glint') {
+    if (fx.sweep) { var p = ((time + fx.phase) % 2600) / 2600; fx.sweep.x = (-0.5 + p) * r * 1.05; fx.sweep.y = (0.5 - p) * r * 1.05; fx.sweep.alpha = (p < 0.5 ? p / 0.5 : (1 - p) / 0.5) * 0.5; }
+    if (time > fx.next && fx.star) {
+      var st = fx.star;
+      st.setPosition((Math.random() - 0.5) * r * 0.8, (Math.random() - 0.5) * r * 0.7).setScale(0).setAlpha(1);
+      this.tweens.add({ targets: st, scale: 0.6 * (r / 40), duration: 150, yoyo: true, onComplete: function () { if (st.active) st.setAlpha(0); } });
+      fx.next = time + (fx.cfg.sparkle ? 650 : 1300) + Math.random() * 1100;
+    }
+  } else if (fx.type === 'bubbles' && fx.sway) {
+    for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.002 + i) * r * 0.12;
+  }
+};
+
+// per-frame jelly face: blink, expression, parallax float, and smooth motion
 GP._animFace = function (e, time) {
   var f = e.face, r = e.radius;
   // occasional giggle (the element's "alt" face) so they feel alive at rest
@@ -455,8 +523,16 @@ GP._animFace = function (e, time) {
   var want = 'rest';
   if (e.exprUntil > time) want = e.exprFrame;        // 'alt'
   else if (e.blinkUntil > time) want = 'blink';
-  else if (time > e.nextBlink) { e.blinkUntil = time + 120; e.nextBlink = time + 2400 + Math.random() * 3500; }
-  if (want !== e.faceFrame) { f.setTexture('jelly_face_' + e.tier + '_' + want); f.setDisplaySize(r * 1.55, r * 1.55); e.faceFrame = want; }
+  else if (time > e.nextBlink) { e.blinkUntil = time + 130; e.nextBlink = time + 2400 + Math.random() * 3500; }
+  if (want !== e.faceFrame) { f.setTexture('jelly_face_' + e.tier + '_' + want); e.faceFrame = want; }
+
+  // smooth scale: gentle breathing bob + an eased eye-squash on blink + a
+  // brief pop when an expression kicks in (no instant pops)
+  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.025, scy = sc;
+  if (e.blinkUntil > time) { var bp = Math.sin(Math.min(1, (e.blinkUntil - time) / 130) * Math.PI); scy *= (1 - 0.3 * bp); }
+  if (e.exprUntil > time && (e.exprUntil - time) > 430) { sc *= 1.08; scy *= 1.08; }
+  f.setDisplaySize(r * 1.55 * sc, r * 1.55 * scy);
+
   // float: lead the motion slightly + a slow idle drift => the face sits
   // "in front of" the body and bobs in its own space
   var vx = e.body ? e.body.velocity.x : 0, vy = e.body ? e.body.velocity.y : 0;
@@ -506,6 +582,7 @@ GP.destroyElement = function (c) {
   if (c.visual) this.tweens.killTweensOf(c.visual);
   this.tweens.killTweensOf(c.glow);
   if (c.bubbles) for (var bi = 0; bi < c.bubbles.length; bi++) this.tweens.killTweensOf(c.bubbles[bi]);
+  if (c.fx) { if (c.fx.star) this.tweens.killTweensOf(c.fx.star); if (c.fx.sweep) this.tweens.killTweensOf(c.fx.sweep); }
   if (c.body) this.matter.world.remove(c.body);
   c.destroy();
 };
@@ -813,6 +890,7 @@ GP.update = function (time, delta) {
   for (var gi = 0; gi < this.elements.length; gi++) {
     var e = this.elements[gi];
     if (e.face) this._animFace(e, time);   // jelly: blink / expression / float
+    if (e.fx) this._animFX(e, time);       // jelly: per-element internal effect
     if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;
     var sp = e.body.speed;
     var target = sp > 0.7 ? Math.min(1.0, 0.35 + sp * 0.06) : 0.0;   // settled = no glow
