@@ -804,17 +804,36 @@ GP._shimmerMystery = function (e, time) {
   if (e.glow) { e.glow.setTint(col); e.glow.setAlpha(0.5 + 0.22 * Math.sin(time * 0.008)); }
 };
 
-// the mystery touched `tgt` first → apply the element-keyed effect, then vanish
+// the mystery touched `tgt` first → a slow build-up, then the keyed effect.
 GP.triggerMystery = function (myst, tgt) {
-  var C = DANNYLAB.CONFIG;
+  var self = this, C = DANNYLAB.CONFIG;
   var effect = (C.mysteryEffects && C.mysteryEffects[tgt.tier]) || C.mysteryFallbackEffect;
   var mx = myst.x, my = myst.y;
-  this.burst(mx, my, 0xffffff, 30, { tex: 'p_spark', speed: 220, scale: 0.8, life: 850 });
-  this.cameras.main.flash(200, 220, 180, 255);
-  this.cameras.main.shake(200, 0.006);
+  // --- anticipation: freeze the orb, swell + spin it up, gather sparks ---
+  if (myst.setStatic && myst.body) myst.setStatic(true);
   if (this.audio) this.audio.mystery();
-  this.destroyElement(myst);
-  this.applyMysteryEffect(effect, tgt, mx, my);
+  if (myst.visual) this.tweens.add({ targets: myst.visual, scale: 1.6, duration: 480, ease: 'Quad.in' });
+  this.burst(mx, my, 0xffffff, 8, { speed: 22, scale: 0.3, life: 480 });
+  this.cameras.main.shake(140, 0.003);
+  // --- then it bursts and the effect plays out (in slight slow-mo) ---
+  this.time.delayedCall(520, function () {
+    self.burst(mx, my, 0xffffff, 30, { tex: 'p_spark', speed: 220, scale: 0.85, life: 950 });
+    self.cameras.main.flash(220, 220, 180, 255);
+    self.cameras.main.shake(240, 0.007);
+    self.mysterySlowMo(0.55, 600);
+    self.destroyElement(myst);
+    self.applyMysteryEffect(effect, (tgt && tgt.active) ? tgt : null, mx, my);
+  });
+};
+
+// brief slow motion so the mystery effect reads clearly (dips the Matter sim)
+GP.mysterySlowMo = function (scale, ms) {
+  if (!this.matter.world.engine) return;
+  var eng = this.matter.world.engine, self = this;
+  this._slowmo = true;
+  eng.timing.timeScale = scale;
+  if (this._slowTimer) this._slowTimer.remove(false);
+  this._slowTimer = this.time.delayedCall(ms, function () { if (eng.timing) eng.timing.timeScale = 1; self._slowmo = false; });
 };
 
 GP._elementsNear = function (x, y, r) {
@@ -1212,18 +1231,23 @@ GP.triggerFission = function (a, b) {
 };
 
 // ---------- reaction toasts (brief, auto-dismiss ~1s) ----------
-GP.toast = function (text, color) {
+// Concurrent toasts stack downward so they never overlay each other (e.g. a
+// mystery reaction toast + a "LAB LEVEL UP!" it triggers).
+GP.toast = function (text, color, baseY) {
   var GEO = DANNYLAB.GEO;
-  var y = GEO.dropY + 30;
+  this._toasts = (this._toasts || []).filter(function (o) { return o.active; });
+  var y = (baseY != null ? baseY : GEO.dropY + 30) + this._toasts.length * 40;
   var t = this.add.text(DANNYLAB.beakerCx(), y, text, {
     fontFamily: DANNYLAB.UI.DISPLAY, fontSize: '28px', color: '#ffffff', fontStyle: 'bold',
     stroke: '#0c1430', strokeThickness: 6, align: 'center',
     wordWrap: { width: GEO.bx1 - GEO.bx0 + 40 },
   }).setOrigin(0.5).setDepth(48).setScale(0.4);
   if (color) t.setColor('#' + color.toString(16).padStart(6, '0'));
+  this._toasts.push(t);
+  var self = this;
   this.tweens.add({ targets: t, scale: 1, duration: 200, ease: 'Back.out' });
-  this.tweens.add({ targets: t, alpha: 0, y: y - 30, delay: 850, duration: 350,
-    onComplete: function () { t.destroy(); } });
+  this.tweens.add({ targets: t, alpha: 0, y: y - 30, delay: 950, duration: 350,
+    onComplete: function () { var i = self._toasts.indexOf(t); if (i >= 0) self._toasts.splice(i, 1); t.destroy(); } });
 };
 
 // ---------- pause ----------
