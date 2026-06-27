@@ -134,6 +134,16 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     // button press
     click: function () { tone({ type: 'square', f0: 660, f1: 880, dur: 0.05, gain: 0.14 }); },
 
+    // ---- quiet background-lab ambience (very low in the mix) ----
+    ambBeep: function () { tone({ type: 'sine', f0: 1200 + Math.random() * 400, dur: 0.09, gain: 0.045 }); },
+    ambClunk: function () { tone({ type: 'square', f0: 130, f1: 80, dur: 0.08, gain: 0.05 }); },
+    ambStep: function () { tone({ type: 'sine', f0: 90, f1: 60, dur: 0.06, gain: 0.04 }); noise({ filter: 'lowpass', freq: 300, dur: 0.05, gain: 0.03 }); },
+    ambHiss: function () { noise({ filter: 'highpass', freq: 2600, dur: 0.55, gain: 0.045 }); },
+    ambServo: function () { tone({ type: 'sawtooth', f0: 300, f1: 620, dur: 0.22, gain: 0.04 }); },
+    ambHum: function () { tone({ type: 'sine', f0: 110, dur: 0.6, gain: 0.035 }); tone({ type: 'sine', f0: 165, dur: 0.6, gain: 0.02 }); },
+    ambSpark: function () { for (var i = 0; i < 3; i++) setTimeout(function () { noise({ filter: 'bandpass', freq: 3800, q: 5, dur: 0.03, gain: 0.05 }); }, i * 60 + Math.random() * 40); },
+    ambDoor: function () { tone({ type: 'sawtooth', f0: 220, f1: 120, dur: 0.4, gain: 0.04 }); noise({ filter: 'lowpass', freq: 500, dur: 0.4, gain: 0.03 }); },
+
     // ---- load a real mp3 track (a main-game song) to use as the loop ----
     loadTrack: function (url) {
       if (!ensure()) return Promise.resolve(false);
