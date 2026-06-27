@@ -650,26 +650,69 @@ GP.destroyElement = function (c) {
   c.destroy();
 };
 
-// ---------- merge scoring + combo (Brief §4) ----------
+// ---------- merge scoring + the escalating cascade ramp (Addendum §1) ----------
 GP.onMerge = function (merged) {
-  var createdTier = merged.tier;
-  this.combo += 1;                                   // n-th merge in this chain
-  var base = DANNYLAB.CONFIG.tierPoints[createdTier] || 0;
-  var pts = base * this.combo;
-  this.addScore(pts, merged.x, merged.y);
+  var createdTier = merged.tier, x = merged.x, y = merged.y;
+  this.combo += 1;
+  var n = this.combo, CFG = DANNYLAB.CONFIG;
+  this.addScore((CFG.tierPoints[createdTier] || 0) * n, x, y);   // tierPoints x combo (x labBonus in addScore)
   this.lastMergeAt = this.time.now;
 
-  // audio: pop pitched by tier, plus cascade sparkle on 2nd+ merge
+  // ---- audio: pitch climbs per tier; cascade chime brightens each step ----
   if (this.audio) {
     this.audio.merge(createdTier);
-    if (this.combo >= 2) this.audio.cascade(this.combo);
+    if (n >= 2) this.audio.cascade(n);
+    if (n >= CFG.comboToast.overload) this.audio.stinger();
   }
 
-  // reaction toasts (kept un-noisy)
-  var ct = DANNYLAB.CONFIG.comboToast;
-  if (this.combo === ct.chain) this.toast(DANNYLAB.t('toast_cascade', this.lang));
-  else if (this.combo === ct.overload) this.toast(DANNYLAB.t('toast_overload', this.lang), 0xff9b5b);
+  // ---- escalating audiovisual ramp (everything scales with the chain) ----
+  if (n >= 2) {
+    this.comboPopup(n, x, y);
+    var col = DANNYLAB.tierCfg(createdTier).color;
+    this.burst(x, y, col, Math.min(6 + n * 3, 28), {
+      tex: n >= 3 ? 'p_spark' : 'p_dot', speed: 80 + n * 18, scale: 0.4 + n * 0.06, life: 400 + n * 40,
+    });
+    this.cameras.main.shake(90 + n * 14, Math.min(0.002 + n * 0.0018, 0.014));
+    if (n >= 3) this.cameras.main.flash(70, 150, 210, 255);          // subtle wash
+    if (n >= 5) this.screenSparkle();                                // screen-wide sparkle
+    if (n >= 4 && CFG.cascadeSlowMoEnabled) this.cascadeSlowMo();    // micro slow-mo "land"
+  }
+
+  // ---- reaction toasts at thresholds ----
+  var ct = CFG.comboToast;
+  if (n === ct.chain) this.toast(DANNYLAB.t('toast_cascade', this.lang));
+  else if (n === ct.overload) this.toast(DANNYLAB.t('toast_overload', this.lang), 0xff9b5b);
   if (createdTier === DANNYLAB.MAX_TIER) this.toast(DANNYLAB.t('toast_uranium', this.lang), 0x7CFF6B);
+};
+
+// "COMBO xN" popup that grows + warms as the chain climbs
+GP.comboPopup = function (n, x, y) {
+  var size = 18 + Math.min(n, 9) * 3;
+  var col = n >= 5 ? '#ff9b5b' : n >= 3 ? '#FBD38D' : '#eafffb';
+  var t = this.add.text(x, y - 28, 'COMBO x' + n, {
+    fontFamily: DANNYLAB.UI.DISPLAY, fontSize: size + 'px', color: col, fontStyle: 'bold',
+    stroke: '#0c1430', strokeThickness: 5,
+  }).setOrigin(0.5).setDepth(47).setScale(0.4);
+  this.tweens.add({ targets: t, scale: 1, duration: 150, ease: 'Back.out' });
+  this.tweens.add({ targets: t, y: y - 72, alpha: 0, duration: 720, delay: 220, onComplete: function () { t.destroy(); } });
+};
+
+// a screen-wide sparkle wash on a big chain (n >= 5)
+GP.screenSparkle = function () {
+  var GEO = DANNYLAB.GEO;
+  this.burst(DANNYLAB.beakerCx(), GEO.H * 0.5, 0xffffff, 36, { tex: 'p_spark', speed: 280, scale: 0.7, life: 900 });
+};
+
+// micro slow-mo so a big chain "lands" (dips the Matter sim briefly)
+GP.cascadeSlowMo = function () {
+  if (this._slowmo || !this.matter.world.engine) return;
+  this._slowmo = true;
+  var eng = this.matter.world.engine, self = this;
+  eng.timing.timeScale = DANNYLAB.CONFIG.cascadeSlowMoScale;
+  this.time.delayedCall(DANNYLAB.CONFIG.cascadeSlowMoMs, function () {
+    if (eng.timing) eng.timing.timeScale = 1;
+    self._slowmo = false;
+  });
 };
 
 // rawPts is pre-bonus (e.g. tierPoints x combo); the Lab Bonus multiplier is
