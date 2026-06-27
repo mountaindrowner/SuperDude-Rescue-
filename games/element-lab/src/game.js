@@ -43,6 +43,17 @@ GP.create = function (data) {
   this.overflowAccum = 0;
   this.scorePool = [];
 
+  // Lab Charge / progression (Addendum §3)
+  this.labLevel = 0;
+  this.labBonus = 1.0;
+  this.charge = 0;
+  this.chargeThreshold = CONFIG.chargeBaseThreshold;
+  this.bestLevel = DANNYLAB.store.getBestLevel();
+  // Mystery Sample (Addendum §2)
+  this.dropCount = 0;
+  this.nextMysteryAt = this._rollMystery();
+  this.glowBoostMerges = 0;    // Neon mystery: temporary score boost on next merges
+
   this.lab = DANNYLAB.buildLab(this, { dust: 14 });
   this.buildBeaker();
   this.buildHUD();
@@ -180,48 +191,98 @@ GP.buildBeaker = function () {
   }
 };
 
-// ---------- HUD: stats column on the RIGHT, beside the beaker ----------
+// ---------- HUD: stats panel + right-edge Lab Charge meter ----------
 GP.buildHUD = function () {
   var GEO = DANNYLAB.GEO, UI = DANNYLAB.UI, lang = this.lang, self = this;
-  var px = 400, pw = 132, py = 112, ph = 188, cx = px + pw / 2;
+  var px = 384, pw = 104, py = 112, ph = 150, cx = px + pw / 2;
 
   var g = this.add.graphics().setDepth(40);
-  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(px - 3, py - 3, pw + 6, ph + 6, 16);     // neon halo
-  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(px, py, pw, ph, 14);                     // metal plate
-  g.fillStyle(0x586784, 1);    g.fillRoundedRect(px, py, pw, 34, { tl: 14, tr: 14, bl: 0, br: 0 });
-  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(px, py, pw, ph, 14);               // neon edge
-  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 12, py + 64, pw - 24, 38, 8);       // score well
-  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 12, py + 132, pw - 24, 38, 8);      // best well
+  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(px - 3, py - 3, pw + 6, ph + 6, 16);
+  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(px, py, pw, ph, 14);
+  g.fillStyle(0x586784, 1);    g.fillRoundedRect(px, py, pw, 30, { tl: 14, tr: 14, bl: 0, br: 0 });
+  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(px, py, pw, ph, 14);
+  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 10, py + 58, pw - 20, 32, 7);
+  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 10, py + 116, pw - 20, 30, 7);
   g.lineStyle(1, 0x4fd9ff, 0.3);
-  g.strokeRoundedRect(px + 12, py + 64, pw - 24, 38, 8);
-  g.strokeRoundedRect(px + 12, py + 132, pw - 24, 38, 8);
+  g.strokeRoundedRect(px + 10, py + 58, pw - 20, 32, 7);
+  g.strokeRoundedRect(px + 10, py + 116, pw - 20, 30, 7);
 
-  var mb = this.add.text(cx, py + 17, DANNYLAB.t(this.mode, lang).toUpperCase(), {
-    fontFamily: UI.DISPLAY, fontSize: '15px', color: '#7CFF6B', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(41);
+  var mb = this.add.text(cx, py + 15, DANNYLAB.t(this.mode, lang).toUpperCase(), {
+    fontFamily: UI.DISPLAY, fontSize: '14px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   mb.setShadow(0, 0, '#7CFF6B', 10);
-
-  this.add.text(cx, py + 50, DANNYLAB.t('score', lang).toUpperCase(), {
-    fontFamily: UI.DISPLAY, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(41);
-  this.scoreText = this.add.text(cx, py + 82, '0', {
-    fontFamily: UI.DISPLAY, fontSize: '26px', color: '#eafffb', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(41);
+  this.add.text(cx, py + 44, DANNYLAB.t('score', lang).toUpperCase(), {
+    fontFamily: UI.DISPLAY, fontSize: '11px', color: '#8fe6ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
+  this.scoreText = this.add.text(cx, py + 73, '0', {
+    fontFamily: UI.DISPLAY, fontSize: '23px', color: '#eafffb', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   this.scoreText.setShadow(0, 0, '#4fd9ff', 8);
-
-  this.add.text(cx, py + 118, DANNYLAB.t('best', lang).toUpperCase(), {
-    fontFamily: UI.DISPLAY, fontSize: '12px', color: '#8fe6ff', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(41);
-  this.bestText = this.add.text(cx, py + 150, String(this.best), {
-    fontFamily: UI.DISPLAY, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(41);
+  this.add.text(cx, py + 104, DANNYLAB.t('best', lang).toUpperCase(), {
+    fontFamily: UI.DISPLAY, fontSize: '11px', color: '#8fe6ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
+  this.bestText = this.add.text(cx, py + 131, String(this.best), {
+    fontFamily: UI.DISPLAY, fontSize: '22px', color: '#FBD38D', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   this.bestText.setShadow(0, 0, '#e0a020', 8);
 
-  // pause button (top-right corner, above the stats column)
-  var pb = UI.button(this, GEO.W - 44, 58, 64, 52, '||', function () {
-    self.openPause();
-  }, { fill: 0x46506e, fontSize: 24 });
+  // ---- Lab Charge meter (vertical, far right edge) ----
+  var mx = 498, mw = 28, mTop = 132, mBot = 878, mH = mBot - mTop;
+  this.chargeGeom = { mx: mx, mw: mw, mTop: mTop, mH: mH };
+  var mg = this.add.graphics().setDepth(40);
+  mg.fillStyle(0x4fd9ff, 0.12); mg.fillRoundedRect(mx - 4, mTop - 4, mw + 8, mH + 8, 12);
+  mg.fillStyle(0x0a1024, 1);    mg.fillRoundedRect(mx, mTop, mw, mH, 9);
+  mg.lineStyle(2, 0x4fd9ff, 0.7); mg.strokeRoundedRect(mx, mTop, mw, mH, 9);
+  // tick marks
+  mg.lineStyle(1, 0x4fd9ff, 0.25);
+  for (var ty = mTop + mH / 5; ty < mBot; ty += mH / 5) mg.lineBetween(mx + 3, ty, mx + mw - 3, ty);
+  this.chargeFill = this.add.graphics().setDepth(41);
+
+  this.levelText = this.add.text(mx + mw / 2, mTop - 18, 'LV 0', {
+    fontFamily: UI.DISPLAY, fontSize: '13px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+  this.levelText.setShadow(0, 0, '#7CFF6B', 8);
+  this.bonusText = this.add.text(mx + mw / 2, mBot + 14, 'x1.0', {
+    fontFamily: UI.DISPLAY, fontSize: '13px', color: '#FBD38D', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+  this.bonusText.setShadow(0, 0, '#e0a020', 8);
+  this._drawCharge();
+
+  // pause button (top-right corner)
+  var pb = UI.button(this, GEO.W - 32, 48, 52, 44, '||', function () { self.openPause(); }, { fill: 0x46506e, fontSize: 22 });
   pb.setDepth(45);
+};
+
+// redraw the charge meter fill to the current level
+GP._drawCharge = function () {
+  if (!this.chargeFill) return;
+  var c = this.chargeGeom, g = this.chargeFill;
+  var f = Math.max(0, Math.min(1, this.charge / this.chargeThreshold));
+  g.clear();
+  if (f <= 0) return;
+  var fh = c.mH * f, ytop = c.mTop + c.mH - fh;
+  g.fillStyle(0x46b85e, 1);  g.fillRoundedRect(c.mx + 3, ytop, c.mw - 6, fh, 6);
+  g.fillStyle(0x7CFF6B, 0.85); g.fillRoundedRect(c.mx + 3, ytop, c.mw - 6, Math.min(fh, fh * 0.5 + 6), 6);
+  g.fillStyle(0xeaffff, 0.9); g.fillRect(c.mx + 4, ytop, c.mw - 8, 3);   // bright cap
+};
+
+// pick the drop index for the next Mystery Sample (N ± jitter)
+GP._rollMystery = function () {
+  var C = DANNYLAB.CONFIG;
+  if (!C.mysteryEnabled) return Infinity;
+  return C.mysteryEveryNDrops + Math.round((Math.random() * 2 - 1) * C.mysteryJitter);
+};
+
+// Lab Charge level-up: bump bonus, grow threshold, celebrate (Addendum §3)
+GP.levelUp = function () {
+  var C = DANNYLAB.CONFIG;
+  this.labLevel += 1;
+  this.labBonus = 1.0 + this.labLevel * C.labBonusStep;
+  this.chargeThreshold = Math.round(C.chargeBaseThreshold * Math.pow(C.chargeGrowth, this.labLevel));
+  if (this.labLevel > this.bestLevel) { this.bestLevel = this.labLevel; DANNYLAB.store.setBestLevel(this.bestLevel); }
+  this.levelText.setText('LV ' + this.labLevel);
+  this.bonusText.setText('x' + (Math.round(this.labBonus * 100) / 100));
+  this.tweens.add({ targets: [this.levelText, this.bonusText], scale: 1.5, duration: 160, yoyo: true });
+  this.toast(DANNYLAB.t('toast_levelup', this.lang), 0x7CFF6B);
+  this.cameras.main.flash(240, 124, 255, 107);
+  this.cameras.main.shake(220, 0.006);
+  if (this.audio) this.audio.chargeUp();
+  var c = this.chargeGeom;
+  this.burst(c.mx + c.mw / 2, c.mTop + c.mH * 0.5, 0x7CFF6B, 26, { tex: 'p_spark', speed: 180, scale: 0.7, life: 850 });
+  if (C.chargeDropsMysteryOnLevelUp) this.nextMysteryAt = this.dropCount + 1;
 };
 
 // ---------- tweezers (Brief §10.5) ----------
@@ -421,7 +482,7 @@ GP.spawnElement = function (tier, x, y, opts) {
       onComplete: () => this.startIdle(c) });
   }
 
-  this.handleDiscovery(tier, opts.fromMerge);
+  this.handleDiscovery(tier, opts.fromMerge, c);
   this.signature(c, tier);
   return c;
 };
@@ -605,18 +666,28 @@ GP.onMerge = function (merged) {
   }
 
   // reaction toasts (kept un-noisy)
-  if (this.combo === 3) this.toast(DANNYLAB.t('toast_cascade', this.lang));
-  else if (this.combo === 6) this.toast(DANNYLAB.t('toast_bigcascade', this.lang));
+  var ct = DANNYLAB.CONFIG.comboToast;
+  if (this.combo === ct.chain) this.toast(DANNYLAB.t('toast_cascade', this.lang));
+  else if (this.combo === ct.overload) this.toast(DANNYLAB.t('toast_overload', this.lang), 0xff9b5b);
   if (createdTier === DANNYLAB.MAX_TIER) this.toast(DANNYLAB.t('toast_uranium', this.lang), 0x7CFF6B);
 };
 
-GP.addScore = function (pts, x, y) {
+// rawPts is pre-bonus (e.g. tierPoints x combo); the Lab Bonus multiplier is
+// applied here so it covers ALL scoring, and the points also feed the charge
+// meter (Addendum §3).
+GP.addScore = function (rawPts, x, y) {
+  var pts = Math.round(rawPts * this.labBonus);
   this.score += pts;
   this.scoreText.setText(String(this.score));
   this.tweens.add({ targets: this.scoreText, scale: 1.25, duration: 80, yoyo: true });
   if (this.score > this.best) {
     this.best = this.score;
     this.bestText.setText(String(this.best));
+  }
+  if (DANNYLAB.CONFIG.chargeMeterEnabled && pts > 0) {
+    this.charge += pts;
+    while (this.charge >= this.chargeThreshold) { this.charge -= this.chargeThreshold; this.levelUp(); }
+    this._drawCharge();
   }
   if (pts > 0 && x != null) this.scorePop(x, y, '+' + pts);
 };
@@ -638,7 +709,7 @@ GP.scorePop = function (x, y, label) {
 };
 
 // ---------- discovery: first-ever (+50) and first-this-run (+25) ----------
-GP.handleDiscovery = function (tier, fromMerge) {
+GP.handleDiscovery = function (tier, fromMerge, c) {
   var sym = DANNYLAB.tierCfg(tier).sym;
   var firstEver = !DANNYLAB.store.isDiscovered(sym);
   var firstThisRun = !this.runDiscovered[sym];
@@ -646,8 +717,7 @@ GP.handleDiscovery = function (tier, fromMerge) {
   var bonus = 0;
   if (firstEver) { DANNYLAB.store.addDiscovered(sym); bonus += DANNYLAB.CONFIG.discoverBonusFirstEver; }
   if (firstThisRun) bonus += DANNYLAB.CONFIG.discoverBonusThisRun;
-  if (bonus > 0) this.score += bonus, this.scoreText.setText(String(this.score));
-  if (this.score > this.best) { this.best = this.score; this.bestText.setText(String(this.best)); }
+  if (bonus > 0) this.addScore(bonus, c ? c.x : null, c ? c.y - (c.radius || 20) : null);
 
   // "Danny's Lab Notes" card only on the very first ever creation
   if (firstEver) {

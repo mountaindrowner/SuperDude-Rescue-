@@ -125,6 +125,21 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
       }
     },
 
+    // Lab Charge level-up — triumphant rising charge
+    chargeUp: function () {
+      [523, 659, 784, 1047].forEach(function (f, i) {
+        setTimeout(function () { tone({ type: 'triangle', f0: f, f1: f * 1.5, dur: 0.22, gain: 0.28 }); tone({ type: 'sine', f0: f * 2, dur: 0.15, gain: 0.12 }); }, i * 80);
+      });
+    },
+    // high-combo cascade stinger
+    stinger: function () {
+      [784, 988, 1319].forEach(function (f, i) { setTimeout(function () { tone({ type: 'square', f0: f, dur: 0.12, gain: 0.16 }); }, i * 55); });
+    },
+    // mystery sample reveal — rainbow shimmer
+    mystery: function () {
+      for (var i = 0; i < 6; i++) setTimeout(function () { tone({ type: 'sine', f0: 600 + Math.random() * 1400, dur: 0.18, gain: 0.14 }); }, i * 55);
+    },
+
     // overflow / game over — gentle descending "aww"
     aww: function () {
       tone({ type: 'sine', f0: 440, f1: 180, dur: 0.6, gain: 0.3 });

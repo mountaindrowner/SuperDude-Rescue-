@@ -36,6 +36,31 @@ DANNYLAB.CONFIG = {
   frictionStatic: 0.5,
   bodySoftCap: 70,
 
+  // ---- cascade feel (Addendum §1) ----
+  cascadeSlowMoEnabled: true,
+  cascadeSlowMoScale: 0.85,
+  cascadeSlowMoMs: 150,
+  comboToast: { chain: 3, overload: 5 },
+
+  // ---- mystery sample (Addendum §2) ----
+  mysteryEnabled: true,
+  mysteryEveryNDrops: 50,
+  mysteryJitter: 5,                            // spawns at N ± this
+  mysteryEffects: {                            // keyed by FIRST element's tier; all beneficial
+    1: 'updraft',    2: 'float',     3: 'crystallizeUpgrade',
+    4: 'combustPop', 5: 'glowBoost', 6: 'fizzPop',
+    7: 'magnetMerge', 8: 'jackpot',  9: 'miniFission',
+  },
+  mysteryFallbackEffect: 'crystallizeUpgrade', // v1 universal effect if needed
+  mysteryRadius: 30,                           // physics radius of the sample piece
+
+  // ---- lab charge meter / progression (Addendum §3) ----
+  chargeMeterEnabled: true,
+  chargeBaseThreshold: 150,
+  chargeGrowth: 1.6,                           // threshold(L) = base x growth^(L-1)
+  labBonusStep: 0.25,                          // Lab Bonus x: 1.0, 1.25, 1.5, ...
+  chargeDropsMysteryOnLevelUp: false,
+
   // ---- the element chain — radius/color/symbol drive everything ----
   // glowAlpha + faceMood let us reskin tone per element without code edits.
   tiers: [

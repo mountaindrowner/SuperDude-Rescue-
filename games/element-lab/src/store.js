@@ -25,6 +25,13 @@ DANNYLAB.store = (function () {
     },
     setBest: function (n) { write('bestScore', Math.max(0, n | 0)); },
 
+    // ---- best Lab Level (Addendum §3) ----
+    getBestLevel: function () {
+      var n = parseInt(read('bestLevel', '0'), 10);
+      return isNaN(n) ? 0 : n;
+    },
+    setBestLevel: function (n) { write('bestLevel', Math.max(0, n | 0)); },
+
     // ---- discovered elements (JSON array of symbols) ----
     getDiscovered: function () {
       try {
@@ -53,6 +60,7 @@ DANNYLAB.store = (function () {
     resetCollection: function () {
       remove('discovered');
       remove('bestScore');
+      remove('bestLevel');
     },
   };
 })();
