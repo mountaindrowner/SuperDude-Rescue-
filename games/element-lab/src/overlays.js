@@ -210,6 +210,10 @@ window.DANNYLAB = window.DANNYLAB || {};
     this.add.text(W / 2, H / 2 - 260, t('collection', lang), {
       fontFamily: UI.FONT, fontSize: '34px', color: '#7CFF6B', fontStyle: 'bold',
     }).setOrigin(0.5);
+    // best Lab Level flex (Addendum §3)
+    this.add.text(W / 2, H / 2 - 228, t('lab_level', lang) + ': ' + DANNYLAB.store.getBestLevel(), {
+      fontFamily: UI.FONT, fontSize: '18px', color: '#FBD38D', fontStyle: 'bold',
+    }).setOrigin(0.5);
 
     var discovered = DANNYLAB.store.getDiscovered();
     var cols = 3, cellW = Math.min(130, (W * 0.8) / cols), cellH = 130;

@@ -50,8 +50,8 @@ GP.create = function (data) {
   this.chargeThreshold = CONFIG.chargeBaseThreshold;
   this.bestLevel = DANNYLAB.store.getBestLevel();
   // Mystery Sample (Addendum §2)
-  this.dropCount = 0;
-  this.nextMysteryAt = this._rollMystery();
+  this.nextIsMystery = false;
+  this.dropsUntilMystery = this._rollMystery();
   this.glowBoostMerges = 0;    // Neon mystery: temporary score boost on next merges
 
   this.lab = DANNYLAB.buildLab(this, { dust: 14 });
@@ -78,6 +78,13 @@ GP.create = function (data) {
       if (!a || !b) continue;                         // wall
       if (a.tier == null || b.tier == null) continue;
       if (a.consumed || b.consumed) continue;         // already claimed
+      // Mystery Sample (tier -1) touching a real element → keyed effect
+      if ((a.tier === -1) !== (b.tier === -1)) {
+        var myst = a.tier === -1 ? a : b, tgt = a.tier === -1 ? b : a;
+        if (tgt.tier >= 1) { myst.consumed = true; self.pending.push({ kind: 'mystery', myst: myst, tgt: tgt }); }
+        continue;
+      }
+      if (a.tier < 1 || b.tier < 1) continue;         // ignore non-element pieces otherwise
       if (a.tier !== b.tier) continue;                // twins only
       if (a.tier >= DANNYLAB.MAX_TIER) {              // both Uranium
         if (DANNYLAB.FISSION_ENABLED) { a.consumed = b.consumed = true; self.pending.push({ kind: 'fission', a: a, b: b }); }
@@ -93,6 +100,7 @@ GP.create = function (data) {
     var jobs = self.pending; self.pending = [];
     for (var i = 0; i < jobs.length; i++) {
       var j = jobs[i];
+      if (j.kind === 'mystery') { if (j.myst.active && j.tgt.active) self.triggerMystery(j.myst, j.tgt); continue; }
       if (!j.a.active || !j.b.active) continue;
       if (j.kind === 'fission') { self.triggerFission(j.a, j.b); continue; }
       var mx = (j.a.x + j.b.x) / 2, my = (j.a.y + j.b.y) / 2, tier = j.a.tier;
@@ -282,7 +290,7 @@ GP.levelUp = function () {
   if (this.audio) this.audio.chargeUp();
   var c = this.chargeGeom;
   this.burst(c.mx + c.mw / 2, c.mTop + c.mH * 0.5, 0x7CFF6B, 26, { tex: 'p_spark', speed: 180, scale: 0.7, life: 850 });
-  if (C.chargeDropsMysteryOnLevelUp) this.nextMysteryAt = this.dropCount + 1;
+  if (C.chargeDropsMysteryOnLevelUp) this.dropsUntilMystery = 0;   // next piece is a mystery
 };
 
 // ---------- tweezers (Brief §10.5) ----------
@@ -327,14 +335,26 @@ GP.setTweezerPreview = function (tier) {
   // normalize so every previewed element reads the same size in the tongs
   var tex = this.textures.get(key).getSourceImage();
   var f = DANNYLAB.useJelly(this) ? 56 : (DANNYLAB.isPxBall(this, tier) ? 58 : 46);
-  this.gripPreview.setScale(f / tex.width);
+  this.gripPreview.setScale(f / tex.width).clearTint();
+};
+
+// show the glowing rainbow "?" mystery sample in the tongs
+GP.setTweezerPreviewMystery = function () {
+  this.gripPreview.setTexture('mystery_body');
+  var tex = this.textures.get('mystery_body').getSourceImage();
+  this.gripPreview.setScale(52 / tex.width).setTint(0xff66ff);
+};
+
+// the effective radius of the next piece (mystery has its own)
+GP.nextRadius = function () {
+  return this.nextIsMystery ? DANNYLAB.CONFIG.mysteryRadius : DANNYLAB.tierCfg(this.nextTier).radius;
 };
 
 // ---------- aim + drop ----------
 // clamp a desired x so the element stays fully inside the beaker walls
 GP.clampDropX = function (x) {
-  var GEO = DANNYLAB.GEO, cfg = DANNYLAB.tierCfg(this.nextTier);
-  return Phaser.Math.Clamp(x, GEO.bx0 + cfg.radius + 2, GEO.bx1 - cfg.radius - 2);
+  var GEO = DANNYLAB.GEO, r = this.nextRadius();
+  return Phaser.Math.Clamp(x, GEO.bx0 + r + 2, GEO.bx1 - r - 2);
 };
 
 GP.beginAim = function (x) {
@@ -362,17 +382,16 @@ GP.commitDrop = function () {
 
 // draw the neon dashed guide + landing marker down the aimed column
 GP.drawGuide = function () {
-  var GEO = DANNYLAB.GEO, g = this.guide, x = this.tweezers.x;
-  var cfg = DANNYLAB.tierCfg(this.nextTier);
+  var GEO = DANNYLAB.GEO, g = this.guide, x = this.tweezers.x, r = this.nextRadius();
   g.clear();
   g.lineStyle(2, 0x7CFF6B, 0.55);
   for (var y = GEO.dropY + 12; y < GEO.floorTop - 4; y += 14) {
     g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 7); g.strokePath();
   }
   // footprint disc so you can see the exact column width you're committing to
-  var fy = GEO.floorTop - cfg.radius - 2;
-  g.fillStyle(0x7CFF6B, 0.10); g.fillCircle(x, fy, cfg.radius);
-  g.lineStyle(2, 0x7CFF6B, 0.5); g.strokeCircle(x, fy, cfg.radius);
+  var fy = GEO.floorTop - r - 2;
+  g.fillStyle(0x7CFF6B, 0.10); g.fillCircle(x, fy, r);
+  g.lineStyle(2, 0x7CFF6B, 0.5); g.strokeCircle(x, fy, r);
 };
 
 GP.doDrop = function (x) {
@@ -381,16 +400,33 @@ GP.doDrop = function (x) {
   this.drawTweezers(true);
   this.gripPreview.setVisible(false);
   if (this.audio) this.audio.drop();
-  this.spawnElement(this.nextTier, x, GEO.dropY, { dropped: true });
+  if (this.nextIsMystery) { this.spawnMystery(x, GEO.dropY); this.nextIsMystery = false; }
+  else this.spawnElement(this.nextTier, x, GEO.dropY, { dropped: true });
 
   this.dropCooling = true;
+  this.dropsUntilMystery--;     // this drop counts toward the next mystery
   this.time.delayedCall(120, function () { self.drawTweezers(false); });
   this.time.delayedCall(DANNYLAB.CONFIG.dropCooldownMs, function () {
     self.dropCooling = false;
-    self.nextTier = DANNYLAB.pickDroppableTier();
-    self.setTweezerPreview(self.nextTier);
+    self.prepareNextPiece();
     self.gripPreview.setVisible(true);
   });
+};
+
+// choose the upcoming tweezers piece — a Mystery Sample when due, else a tier
+GP.prepareNextPiece = function () {
+  var C = DANNYLAB.CONFIG;
+  if (C.mysteryEnabled && this.dropsUntilMystery <= 0) {
+    this.nextIsMystery = true;
+    this.dropsUntilMystery = this._rollMystery();   // schedule the one after
+    this.setTweezerPreviewMystery();
+    if (this.audio) this.audio.mystery();
+    this.toast(DANNYLAB.t('toast_mystery', this.lang), 0xff7be0);
+  } else {
+    this.nextIsMystery = false;
+    this.nextTier = DANNYLAB.pickDroppableTier();
+    this.setTweezerPreview(this.nextTier);
+  }
 };
 
 // ---------- spawn an element ----------
@@ -655,7 +691,9 @@ GP.onMerge = function (merged) {
   var createdTier = merged.tier, x = merged.x, y = merged.y;
   this.combo += 1;
   var n = this.combo, CFG = DANNYLAB.CONFIG;
-  this.addScore((CFG.tierPoints[createdTier] || 0) * n, x, y);   // tierPoints x combo (x labBonus in addScore)
+  var pts = (CFG.tierPoints[createdTier] || 0) * n;
+  if (this.glowBoostMerges > 0) { pts = Math.round(pts * 1.5); this.glowBoostMerges--; }  // Neon mystery boost
+  this.addScore(pts, x, y);   // tierPoints x combo (x labBonus in addScore)
   this.lastMergeAt = this.time.now;
 
   // ---- audio: pitch climbs per tier; cascade chime brightens each step ----
@@ -713,6 +751,124 @@ GP.cascadeSlowMo = function () {
     if (eng.timing) eng.timing.timeScale = 1;
     self._slowmo = false;
   });
+};
+
+// ================= MYSTERY SAMPLE (Addendum §2) =================
+GP.spawnMystery = function (x, y) {
+  var r = DANNYLAB.CONFIG.mysteryRadius, UI = DANNYLAB.UI;
+  var shadow = this.add.image(0, r * 0.82, 'el_shadow').setAlpha(0.5); shadow.setDisplaySize(r * 2.1, r * 1.2);
+  var glow = this.add.image(0, 0, 'el_glow').setTint(0xff66ff).setBlendMode('ADD').setAlpha(0.7); glow.setDisplaySize(r * 3.2, r * 3.2);
+  var bodyImg = this.add.image(0, 0, 'mystery_body'); bodyImg.setDisplaySize(r * 2.2, r * 2.2);
+  var q = this.add.text(0, 0, '?', { fontFamily: UI.DISPLAY, fontSize: Math.round(r * 1.2) + 'px', color: '#3a2a6a', fontStyle: 'bold' }).setOrigin(0.5);
+  var inner = this.add.container(0, 0, [shadow, glow, bodyImg, q]);
+  var c = this.add.container(x, y, [inner]); c.setDepth(0);
+  this.matter.add.gameObject(c, { shape: { type: 'circle', radius: r }, restitution: 0.2, friction: 0.4, frictionStatic: 0.5 });
+  c.tier = -1; c.consumed = false; c.visual = inner; c.glow = glow; c.bodyImg = bodyImg; c.radius = r; c.isMystery = true; c._hue = 0;
+  this.elements.push(c);
+  inner.setScale(0.5);
+  this.tweens.add({ targets: inner, scale: 1, duration: 150, ease: 'Back.out' });
+  this.cameras.main.shake(110, 0.003);
+  this.burst(x, y, 0xffffff, 12, { tex: 'p_spark', speed: 90, scale: 0.5, life: 500 });
+  return c;
+};
+
+GP._shimmerMystery = function (e, time) {
+  e._hue = (e._hue + 0.012) % 1;
+  var col = Phaser.Display.Color.HSVToRGB(e._hue, 0.65, 1).color;
+  if (e.bodyImg) { e.bodyImg.setTint(col); e.bodyImg.rotation += 0.05; }
+  if (e.glow) { e.glow.setTint(col); e.glow.setAlpha(0.5 + 0.22 * Math.sin(time * 0.008)); }
+};
+
+// the mystery touched `tgt` first → apply the element-keyed effect, then vanish
+GP.triggerMystery = function (myst, tgt) {
+  var C = DANNYLAB.CONFIG;
+  var effect = (C.mysteryEffects && C.mysteryEffects[tgt.tier]) || C.mysteryFallbackEffect;
+  var mx = myst.x, my = myst.y;
+  this.burst(mx, my, 0xffffff, 30, { tex: 'p_spark', speed: 220, scale: 0.8, life: 850 });
+  this.cameras.main.flash(200, 220, 180, 255);
+  this.cameras.main.shake(200, 0.006);
+  if (this.audio) this.audio.mystery();
+  this.destroyElement(myst);
+  this.applyMysteryEffect(effect, tgt, mx, my);
+};
+
+GP._elementsNear = function (x, y, r) {
+  var out = [];
+  for (var i = 0; i < this.elements.length; i++) { var e = this.elements[i]; if (e.active && e.tier >= 1 && Phaser.Math.Distance.Between(x, y, e.x, e.y) <= r) out.push(e); }
+  return out;
+};
+GP._popTiers = function (x, y, r, minT, maxT, color) {
+  var cleared = 0;
+  for (var i = this.elements.length - 1; i >= 0; i--) {
+    var e = this.elements[i];
+    if (!e.active || e.tier < minT || e.tier > maxT) continue;
+    if (Phaser.Math.Distance.Between(x, y, e.x, e.y) > r) continue;
+    this.burst(e.x, e.y, color, 8, { tex: 'p_spark', speed: 110, scale: 0.5, life: 500 });
+    this.destroyElement(e); cleared++;
+  }
+  if (cleared) this.addScore(cleared * 25, x, y);
+};
+
+GP.applyMysteryEffect = function (effect, tgt, mx, my) {
+  var self = this, R = 110, tier = tgt ? tgt.tier : 0;
+  var labels = {
+    updraft: 'LIFT-OFF!', float: 'FLOAT!', crystallizeUpgrade: 'CRYSTALLIZE!', combustPop: 'BOOM!',
+    glowBoost: 'GLOW UP!', fizzPop: 'FIZZ!', magnetMerge: 'MAGNET!', jackpot: 'JACKPOT!', miniFission: 'FISSION!',
+  };
+  if (labels[effect]) this.toast(labels[effect], 0xff7be0);
+
+  switch (effect) {
+    case 'updraft':
+      this.elements.forEach(function (e) { if (e.tier >= 1 && e.tier <= 3 && e.setVelocity) e.setVelocity((Math.random() - 0.5) * 4, -7); });
+      this.burst(mx, my, 0xBEE3F8, 16, { speed: 120, scale: 0.5, life: 500 });
+      break;
+    case 'float':
+      this._elementsNear(mx, my, 130).forEach(function (e) {
+        if (e.setVelocity && e.body) e.setVelocity(e.body.velocity.x, -3);
+        if (e.visual) self.tweens.add({ targets: e.visual, scale: 1.18, duration: 220, yoyo: true });
+      });
+      this.burst(mx, my, 0xFBD38D, 14, { tex: 'p_bubble', speed: 70, scale: 0.6, life: 700 });
+      break;
+    case 'crystallizeUpgrade':
+      if (tgt && tgt.active && tgt.tier >= 1 && tgt.tier < DANNYLAB.MAX_TIER) {
+        var t = tgt.tier, px = tgt.x, py = tgt.y;
+        this.mergeBurst(px, py, t); this.destroyElement(tgt);
+        this.spawnElement(t + 1, px, py, { fromMerge: true });
+        this.addScore((DANNYLAB.CONFIG.tierPoints[t + 1] || 0) * 2, px, py);
+      } else { this.addScore(80, mx, my); }
+      this.burst(mx, my, 0xffffff, 18, { tex: 'p_spark', speed: 130, scale: 0.6, life: 600 });
+      break;
+    case 'combustPop':
+      this.burst(mx, my, 0xff9b5b, 16, { speed: 130, scale: 0.6, life: 500 });
+      this._popTiers(mx, my, R, 1, 1, 0xff9b5b);
+      break;
+    case 'glowBoost':
+      this.glowBoostMerges = 6;
+      this.burst(mx, my, 0xF687B3, 22, { tex: 'p_spark', speed: 150, scale: 0.6, life: 700 });
+      break;
+    case 'fizzPop':
+      this._popTiers(mx, my, R, 1, 2, 0x9F7AEA);
+      break;
+    case 'magnetMerge':
+      var same = this.elements.filter(function (e) { return e.tier === tier && e.active && e.setVelocity; });
+      if (same.length > 1) {
+        var cxs = 0, cys = 0; same.forEach(function (e) { cxs += e.x; cys += e.y; }); cxs /= same.length; cys /= same.length;
+        same.forEach(function (e) { var dx = cxs - e.x, dy = cys - e.y, d = Math.max(1, Math.hypot(dx, dy)); e.setVelocity(dx / d * 9, dy / d * 9); });
+      }
+      this.burst(mx, my, 0x8696A7, 18, { speed: 120, scale: 0.5, life: 600 });
+      break;
+    case 'jackpot':
+      this.addScore(300, mx, my);
+      if (this.audio) this.audio.coin();
+      for (var i = 0; i < 5; i++) (function (i) { self.time.delayedCall(i * 90, function () { self.burst(mx + (Math.random() - 0.5) * 80, my - 10, 0xECC94B, 8, { tex: 'p_spark', speed: 120, scale: 0.6, life: 700 }); }); })(i);
+      break;
+    case 'miniFission':
+      this.cameras.main.flash(180, 180, 255, 160);
+      this._popTiers(mx, my, DANNYLAB.CONFIG.fissionRadius * 0.6, 1, 3, 0x7CFF6B);
+      break;
+    default:
+      this.addScore(80, mx, my);
+  }
 };
 
 // rawPts is pre-bonus (e.g. tierPoints x combo); the Lab Bonus multiplier is
@@ -1004,6 +1160,7 @@ GP.update = function (time, delta) {
   // (Cheap per-frame alpha lerp; Uranium keeps its own radioactive pulse.)
   for (var gi = 0; gi < this.elements.length; gi++) {
     var e = this.elements[gi];
+    if (e.isMystery) { this._shimmerMystery(e, time); continue; }   // rainbow swirl
     if (e.face) this._animFace(e, time);   // jelly: blink / expression / float
     if (e.fx) this._animFX(e, time);       // jelly: per-element internal effect
     if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;

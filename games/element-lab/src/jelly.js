@@ -144,6 +144,15 @@ DANNYLAB.buildJellyTextures = function (scene) {
     b.fillStyle(0xffffff, 0.9); b.fillCircle(7, 7, 3);
     b.generateTexture('jelly_bub', 20, 20); b.destroy();
   }
+  // ---------- mystery sample body (white orb, tinted rainbow at runtime) ----------
+  if (!made.exists('mystery_body')) {
+    var S2 = 128, c2 = 64, r2 = 58, mg = scene.add.graphics();
+    for (var mi = r2; mi >= 0; mi--) { mg.fillStyle(_lerpColor(0xffffff, 0xc6d0ff, mi / r2), 1); mg.fillCircle(c2, c2, mi); }
+    mg.fillStyle(0xffffff, 0.55); mg.fillEllipse(c2 - 16, c2 - 18, 26, 16);
+    mg.lineStyle(3, 0xffffff, 0.35); mg.strokeCircle(c2, c2, r2 - 1);
+    mg.generateTexture('mystery_body', S2, S2); mg.destroy();
+  }
+
   // ---------- internal sparkle star (glints / sparkles) ----------
   if (!made.exists('jelly_star')) {
     var s = scene.add.graphics(), m = 16, sz = 14;
