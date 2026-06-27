@@ -14,27 +14,25 @@ DANNYLAB.UI = {
     var neonStr = '#' + neon.toString(16).padStart(6, '0');
     var c = scene.add.container(x, y);
 
-    // metallic body bands (top light steel → bottom dark steel)
+    // frosted-glass body lit with the accent (neon) colour
     var g = scene.add.graphics();
     function paint(top) {
       g.clear();
       var off = top ? 3 : 0;
-      // neon outer glow
-      g.fillStyle(neon, 0.16); g.fillRoundedRect(-w / 2 - 4, -h / 2 - 4 + off, w + 8, h + 8, 18);
-      g.fillStyle(neon, 0.10); g.fillRoundedRect(-w / 2 - 7, -h / 2 - 7 + off, w + 14, h + 14, 20);
-      // 3D base lip
-      g.fillStyle(0x10182e, 1); g.fillRoundedRect(-w / 2, -h / 2 + 6, w, h, 14);
-      // brushed-metal body (3 vertical bands)
-      g.fillStyle(0x46546f, 1); g.fillRoundedRect(-w / 2, -h / 2 + off, w, h - 3, 14);
-      g.fillStyle(0x586784, 1); g.fillRoundedRect(-w / 2, -h / 2 + off, w, (h - 3) * 0.5, 14);
-      g.fillStyle(0x6b7c9b, 0.9); g.fillRoundedRect(-w / 2 + 4, -h / 2 + off + 3, w - 8, (h - 3) * 0.30, 10);
-      // gloss highlight
-      g.fillStyle(0xffffff, 0.16); g.fillRoundedRect(-w / 2 + 6, -h / 2 + off + 4, w - 12, h * 0.22, 8);
-      // neon accent border
-      g.lineStyle(2.5, neon, 0.95); g.strokeRoundedRect(-w / 2, -h / 2 + off, w, h - 3, 14);
-      // bottom inner shadow line
-      g.lineStyle(2, 0x0a1024, 0.5); g.beginPath();
-      g.moveTo(-w / 2 + 10, h / 2 - 5 + off); g.lineTo(w / 2 - 10, h / 2 - 5 + off); g.strokePath();
+      // neon outer glow (the "energy")
+      g.fillStyle(neon, 0.20); g.fillRoundedRect(-w / 2 - 5, -h / 2 - 5 + off, w + 10, h + 10, 20);
+      g.fillStyle(neon, 0.10); g.fillRoundedRect(-w / 2 - 9, -h / 2 - 9 + off, w + 18, h + 18, 24);
+      // translucent dark glass body (background shows through faintly)
+      g.fillStyle(0x0c1730, 0.5);  g.fillRoundedRect(-w / 2, -h / 2 + off, w, h - 3, 16);
+      // colour wash + a brighter pool toward the bottom (held energy)
+      g.fillStyle(neon, 0.12);     g.fillRoundedRect(-w / 2, -h / 2 + off, w, h - 3, 16);
+      g.fillStyle(neon, 0.10);     g.fillRoundedRect(-w / 2 + 5, h / 2 - 3 - (h - 3) * 0.4 + off, w - 10, (h - 3) * 0.4, 12);
+      // glossy glass sheen across the top
+      g.fillStyle(0xffffff, 0.16); g.fillRoundedRect(-w / 2 + 6, -h / 2 + off + 4, w - 12, (h - 3) * 0.36, 12);
+      g.fillStyle(0xffffff, 0.08); g.fillRoundedRect(-w / 2 + 6, -h / 2 + off + 4, w - 12, (h - 3) * 0.18, 10);
+      // bright neon rim + faint inner glass rim
+      g.lineStyle(2.5, neon, 0.95); g.strokeRoundedRect(-w / 2, -h / 2 + off, w, h - 3, 16);
+      g.lineStyle(1, 0xffffff, 0.18); g.strokeRoundedRect(-w / 2 + 4, -h / 2 + off + 3, w - 8, (h - 3) - 6, 13);
     }
     paint(false);
 
@@ -82,18 +80,19 @@ DANNYLAB.UI = {
     var g = scene.add.graphics();
     var L = x - w / 2, T = y - h / 2;
     // neon outer halo
-    g.fillStyle(neon, 0.10); g.fillRoundedRect(L - 5, T - 5, w + 10, h + 10, 26);
-    // dark glass body
-    g.fillStyle(0x0a1228, opts.shade != null ? opts.shade : 0.82);
+    g.fillStyle(neon, 0.12); g.fillRoundedRect(L - 6, T - 6, w + 12, h + 12, 28);
+    // translucent dark glass body (frosted)
+    g.fillStyle(0x0b1530, opts.shade != null ? opts.shade : 0.64);
     g.fillRoundedRect(L, T, w, h, 22);
-    // brushed sheen at the very top
-    g.fillStyle(0x182a4a, 0.5);
-    g.fillRoundedRect(L, T, w, 40, { tl: 22, tr: 22, bl: 0, br: 0 });
+    g.fillStyle(neon, 0.06); g.fillRoundedRect(L, T, w, h, 22);
+    // glossy sheen across the top
+    g.fillStyle(0xffffff, 0.10);
+    g.fillRoundedRect(L + 8, T + 8, w - 16, h * 0.18, 16);
     g.fillStyle(0xffffff, 0.05);
-    g.fillRoundedRect(L + 8, T + 8, w - 16, h * 0.16, 14);
-    // neon double border
+    g.fillRoundedRect(L + 8, T + 8, w - 16, h * 0.09, 12);
+    // neon double border + inner glass rim
     g.lineStyle(2.5, neon, 0.85); g.strokeRoundedRect(L, T, w, h, 22);
-    g.lineStyle(1, neon, 0.35); g.strokeRoundedRect(L + 4, T + 4, w - 8, h - 8, 18);
+    g.lineStyle(1, 0xffffff, 0.16); g.strokeRoundedRect(L + 4, T + 4, w - 8, h - 8, 18);
     return g;
   },
 

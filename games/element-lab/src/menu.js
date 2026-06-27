@@ -37,14 +37,16 @@ DANNYLAB.MenuScene.prototype.create = function () {
   topper.setShadow(0, 0, '#e0a020', 10);
   this.tweens.add({ targets: topper, alpha: 1, y: H * 0.155, duration: 420, delay: 120, ease: 'Quad.out' });
 
-  // ---- logo: "ELEMENT LAB" built letter-by-letter, each tinted with a real
-  // element colour (so the title is literally made out of the elements), with
-  // a per-letter glow + a gentle wave bob ----
-  var palette = DANNYLAB.CONFIG.tiers.map(function (t) {
+  // ---- logo: "ELEMENT LAB" built letter-by-letter as glowing GLASS — each
+  // letter is a translucent glass vessel lit with a real element colour (a
+  // white-hot top fading into the element below, like an Edison bulb), with a
+  // soft energy glow behind it and a gentle wave bob ----
+  function hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
+  var paletteInt = DANNYLAB.CONFIG.tiers.map(function (t) {
     var col = t.color;
     var lum = (col >> 16 & 255) * 0.299 + (col >> 8 & 255) * 0.587 + (col & 255) * 0.114;
-    if (lum < 150) col = DANNYLAB.shade(col, 0.30);     // lift muted greys so every letter pops
-    return '#' + col.toString(16).padStart(6, '0');
+    if (lum < 150) col = DANNYLAB.shade(col, 0.34);     // lift muted greys so every letter pops
+    return col;
   });
   var word = DANNYLAB.t('title_logo', lang), fs = 54, baseY = H * 0.25;
   this.logoLetters = [];
@@ -52,15 +54,26 @@ DANNYLAB.MenuScene.prototype.create = function () {
   for (var li = 0; li < word.length; li++) {
     var ch = word.charAt(li);
     if (ch === ' ') { cursorX += fs * 0.42; continue; }
-    var col2 = palette[ci % palette.length]; ci++;
-    var lt = this.add.text(0, 0, ch, {
-      fontFamily: UI.DISPLAY, fontSize: fs + 'px', color: col2, fontStyle: 'bold',
-      stroke: '#0c1430', strokeThickness: 6,
-    }).setOrigin(0.5).setDepth(5);
-    lt.setShadow(0, 0, col2, 12);
-    lt._left = cursorX; lt._w = lt.width;
-    cursorX += lt._w + 2;
-    this.logoLetters.push(lt);
+    var colInt = paletteInt[ci % paletteInt.length]; ci++;
+    var txt = this.add.text(0, 0, ch, {
+      fontFamily: UI.DISPLAY, fontSize: fs + 'px', color: hex(colInt), fontStyle: 'bold',
+      stroke: '#0a1226', strokeThickness: 5,
+    }).setOrigin(0.5).setAlpha(0.95);
+    // glassy vertical gradient: white-hot top -> light -> element colour
+    try {
+      var grd = txt.context.createLinearGradient(0, 0, 0, txt.height);
+      grd.addColorStop(0, '#ffffff');
+      grd.addColorStop(0.4, hex(DANNYLAB.shade(colInt, 0.55)));
+      grd.addColorStop(1, hex(colInt));
+      txt.setColor(grd);
+    } catch (e) { /* fall back to the solid colour already set */ }
+    var w = txt.width;
+    var glow = this.add.image(0, 0, 'el_glow').setTint(colInt).setBlendMode('ADD').setAlpha(0.5);
+    glow.setDisplaySize(w * 1.4 + 22, fs * 1.7);
+    var lc = this.add.container(0, baseY, [glow, txt]).setDepth(5);
+    lc._left = cursorX; lc._w = w;
+    cursorX += w + 2;
+    this.logoLetters.push(lc);
   }
   // centre the row + stage the entrance (each letter pops in, staggered)
   var totalW = cursorX - 2, startX = W / 2 - totalW / 2;
