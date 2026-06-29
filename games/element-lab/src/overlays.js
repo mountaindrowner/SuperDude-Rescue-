@@ -151,7 +151,8 @@ window.DANNYLAB = window.DANNYLAB || {};
     UI.button(this, W / 2, H / 2 + 60, bw, 64, t('play_again', lang), function () {
       self.scene.stop('DANNYLAB_Game');
       self.scene.stop();
-      self.scene.start('DANNYLAB_Game', { mode: self.registry.get('mode') });
+      // route through the loading interstitial (a wonder-of-creation fact)
+      self.scene.start('DANNYLAB_Loading', { mode: self.registry.get('mode') });
     }, { fill: 0x46b85e });
     UI.button(this, W / 2, H / 2 + 134, bw, 60, t('exit', lang), function () {
       DANNYLAB.exitSubgame(self);
@@ -243,5 +244,71 @@ window.DANNYLAB = window.DANNYLAB || {};
     UI.button(this, W / 2, H / 2 + 250, Math.min(300, W * 0.66), 60, t('back', lang), function () {
       self.scene.stop(); self.scene.resume(parent);
     }, { fill: 0x46506e });
+  });
+
+  // ================= LOADING (between runs) =================
+  // A short interstitial shown after a loss while the next run spins up: a real
+  // "wonder of creation" science fact. Auto-advances; tap to skip.
+  DANNYLAB.LoadingScene = defscene('DANNYLAB_Loading', function (data) {
+    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
+    var self = this, mode = (data && data.mode) || this.registry.get('mode');
+
+    // --- backdrop: deep gradient + a few drifting motes ---
+    var g = this.add.graphics();
+    var bands = 32;
+    for (var i = 0; i < bands; i++) {
+      var col = Phaser.Display.Color.Interpolate.ColorWithColor(
+        Phaser.Display.Color.ValueToColor(0x16263d),
+        Phaser.Display.Color.ValueToColor(0x060c1a), bands, i);
+      g.fillStyle(Phaser.Display.Color.GetColor(col.r, col.g, col.b), 1);
+      g.fillRect(0, H * (i / bands), W, H / bands + 1);
+    }
+    for (var mi = 0; mi < 14; mi++) {
+      var px = Math.random() * W, py = Math.random() * H, pr = 1 + Math.random() * 2.4;
+      var mote = this.add.circle(px, py, pr, 0x9fd8ff, 0.5).setBlendMode('ADD');
+      this.tweens.add({ targets: mote, y: py - 30 - Math.random() * 50, alpha: 0,
+        duration: 2600 + Math.random() * 1800, repeat: -1, ease: 'Sine.inOut', delay: Math.random() * 1200 });
+    }
+
+    // --- header ---
+    var header = this.add.text(W / 2, H * 0.205, t('loading_header', lang), {
+      fontFamily: UI.DISPLAY, fontSize: '30px', color: '#FBD38D', fontStyle: 'bold',
+      align: 'center', wordWrap: { width: W * 0.86 },
+    }).setOrigin(0.5).setAlpha(0);
+    header.setShadow(0, 0, '#e0a020', 12);
+    this.tweens.add({ targets: header, alpha: 1, duration: 400 });
+
+    // --- a sample element bobbing above the card (lab flavour) ---
+    var tier = 1 + Math.floor(Math.random() * DANNYLAB.MAX_TIER);
+    var icon = this.add.image(W / 2, H * 0.34, DANNYLAB.iconKey(this, tier)).setDisplaySize(78, 78).setAlpha(0);
+    this.tweens.add({ targets: icon, alpha: 1, duration: 500 });
+    this.tweens.add({ targets: icon, y: icon.y - 12, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    // --- glass card holding the fact ---
+    var cardW = Math.min(440, W * 0.88), cardH = 240, cy = H * 0.53;
+    UI.panel(this, W / 2, cy, cardW, cardH);
+    var fact = this.add.text(W / 2, cy + 14, DANNYLAB.randomFact(lang), {
+      fontFamily: UI.FONT, fontSize: '24px', color: '#eaf4ff', fontStyle: 'bold',
+      align: 'center', lineSpacing: 6, wordWrap: { width: cardW - 56 },
+    }).setOrigin(0.5).setAlpha(0);
+    this.tweens.add({ targets: fact, alpha: 1, duration: 500, delay: 150 });
+
+    // --- progress bar ---
+    var barW = Math.min(380, W * 0.74), barH = 14, barX = W / 2 - barW / 2, barY = H * 0.76;
+    var track = this.add.graphics();
+    track.fillStyle(0x0b1530, 0.85); track.fillRoundedRect(barX, barY, barW, barH, 7);
+    track.lineStyle(1.5, 0x4fd9ff, 0.55); track.strokeRoundedRect(barX, barY, barW, barH, 7);
+    var fill = this.add.rectangle(barX + 3, barY + barH / 2, barW - 6, barH - 6, 0x7CFF6B).setOrigin(0, 0.5);
+    fill.scaleX = 0;
+    this.add.text(W / 2, barY + 36, t('loading_sub', lang), {
+      fontFamily: UI.FONT, fontSize: '18px', color: '#8fb6ff',
+    }).setOrigin(0.5);
+
+    // --- advance to the next run (once) ---
+    var DUR = 2900, started = false;
+    function go() { if (started) return; started = true; self.scene.start('DANNYLAB_Game', { mode: mode }); }
+    this.tweens.add({ targets: fill, scaleX: 1, duration: DUR, ease: 'Sine.inOut', onComplete: go });
+    // tap to skip, after a short readable minimum
+    this.time.delayedCall(650, function () { self.input.once('pointerdown', go); });
   });
 })();

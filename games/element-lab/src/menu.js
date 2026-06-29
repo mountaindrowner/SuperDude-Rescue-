@@ -49,7 +49,10 @@ DANNYLAB.MenuScene.prototype.create = function () {
     if (lum < 150) col = DANNYLAB.shade(col, 0.34);     // lift muted greys so every letter pops
     return col;
   });
-  var word = DANNYLAB.t('title_logo', lang), fs = 54, baseY = H * 0.25;
+  var word = DANNYLAB.t('title_logo', lang);
+  // shrink the font for longer titles so the row still fits the 540px stage
+  var glyphs = word.replace(/ /g, '').length;
+  var fs = glyphs > 11 ? 42 : (glyphs > 9 ? 48 : 54), baseY = H * 0.25;
   this.logoLetters = [];
   var cursorX = 0, ci = 0;
   for (var li = 0; li < word.length; li++) {

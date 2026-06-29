@@ -34,7 +34,7 @@ DANNYLAB.sceneClasses = function () {
     DANNYLAB.BootScene, DANNYLAB.PreloadScene, DANNYLAB.MenuScene, DANNYLAB.GameScene,
     DANNYLAB.PauseScene, DANNYLAB.OptionsScene, DANNYLAB.ConfirmScene,
     DANNYLAB.GameOverScene, DANNYLAB.HowToScene,
-    DANNYLAB.CollectionScene,
+    DANNYLAB.CollectionScene, DANNYLAB.LoadingScene,
   ];
 };
 
@@ -42,7 +42,7 @@ DANNYLAB.sceneClasses = function () {
 DANNYLAB.exitSubgame = function (scene) {
   var game = scene.game;
   var keys = ['DANNYLAB_Pause', 'DANNYLAB_Options', 'DANNYLAB_Confirm', 'DANNYLAB_GameOver',
-    'DANNYLAB_HowTo', 'DANNYLAB_Discovery', 'DANNYLAB_Collection', 'DANNYLAB_Game', 'DANNYLAB_Menu'];
+    'DANNYLAB_HowTo', 'DANNYLAB_Discovery', 'DANNYLAB_Collection', 'DANNYLAB_Loading', 'DANNYLAB_Game', 'DANNYLAB_Menu'];
   keys.forEach(function (k) { if (game.scene.getScene(k)) game.scene.stop(k); });
   var audio = scene.registry.get('audio'); if (audio) audio.stopMusic();
 

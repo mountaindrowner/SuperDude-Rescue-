@@ -4,8 +4,8 @@ window.DANNYLAB = window.DANNYLAB || {};
 DANNYLAB.STRINGS = {
   en: {
     // UI & flow
-    title_topper: "Super Dude Danny's",
-    title_logo: 'ELEMENT LAB',
+    title_topper: 'Super Dude Danny',
+    title_logo: 'THE ELEMENT LAB',
     play: 'Play',
     how_to: 'How to Play',
     options: 'Options',
@@ -48,10 +48,12 @@ DANNYLAB.STRINGS = {
     toast_overload: 'SCIENCE OVERLOAD!!',
     toast_mystery: "Ooh, a mystery sample, what'll it do?!",
     toast_levelup: 'LAB LEVEL UP!',
+    loading_header: 'WONDERS OF CREATION',
+    loading_sub: 'Warming up the lab...',
   },
   es: {
     title_topper: 'Super Dude Danny',
-    title_logo: 'LABORATORIO',
+    title_logo: 'EL LABORATORIO',
     play: 'Jugar',
     how_to: 'Cómo Jugar',
     options: 'Opciones',
@@ -93,7 +95,60 @@ DANNYLAB.STRINGS = {
     toast_overload: '¡¡SOBRECARGA DE CIENCIA!!',
     toast_mystery: '¡Oh, una muestra misteriosa! ¿Qué hará?',
     toast_levelup: '¡SUBE DE NIVEL DE LAB!',
+    loading_header: 'MARAVILLAS DE LA CREACIÓN',
+    loading_sub: 'Calentando el laboratorio...',
   },
+};
+
+// "Godly science facts" shown on the loading screen between runs. Real,
+// awe-inspiring facts about the created world, a few quietly echoing
+// Scripture (dust of the heavens, stars beyond counting) but never preachy
+// or cheesy. The wonder is meant to carry the reverence on its own.
+DANNYLAB.FACTS = [
+  { en: 'Every speck of carbon in you was forged in the heart of a star. We are made from the dust of the heavens.',
+    es: 'Cada partícula de carbono en ti se forjó en el corazón de una estrella. Estamos hechos del polvo de los cielos.' },
+  { en: 'There are more stars in the sky than grains of sand on every shore on Earth.',
+    es: 'Hay más estrellas en el cielo que granos de arena en todas las costas de la Tierra.' },
+  { en: 'Earth orbits in a narrow band where water can stay liquid. A little nearer or farther, and life could not hold.',
+    es: 'La Tierra orbita en una franja estrecha donde el agua puede ser líquida. Un poco más cerca o más lejos, y la vida no resistiría.' },
+  { en: 'The iron in your blood and the gold in the ground were both born in the death of stars.',
+    es: 'El hierro de tu sangre y el oro de la tierra nacieron en la muerte de las estrellas.' },
+  { en: 'Table salt is built from an explosive metal and a poison gas. Joined together, they season your bread.',
+    es: 'La sal de mesa se forma de un metal explosivo y un gas venenoso. Unidos, sazonan tu pan.' },
+  { en: 'Unwound, the DNA in a single one of your cells would stretch about two meters long.',
+    es: 'Desenrollado, el ADN de una sola de tus células mediría unos dos metros de largo.' },
+  { en: 'Water is one of the few things that floats when it freezes. If ice sank, lakes would freeze solid and the life below would end.',
+    es: 'El agua es de las pocas cosas que flotan al congelarse. Si el hielo se hundiera, los lagos se congelarían del todo y la vida bajo ellos terminaría.' },
+  { en: 'Every snowflake has six sides, and in all of history no two have ever been found alike.',
+    es: 'Cada copo de nieve tiene seis lados, y en toda la historia jamás se han hallado dos iguales.' },
+  { en: 'Light leaves the Sun and crosses ninety-three million miles to warm your face in about eight minutes.',
+    es: 'La luz sale del Sol y cruza ciento cincuenta millones de kilómetros para calentar tu rostro en unos ocho minutos.' },
+  { en: 'Your heart will beat around three billion times in a lifetime, and never once stops to rest.',
+    es: 'Tu corazón latirá unas tres mil millones de veces en la vida, y nunca se detiene a descansar.' },
+  { en: 'Honeybees build their combs in perfect hexagons, the shape that stores the most honey with the least wax.',
+    es: 'Las abejas construyen sus panales en hexágonos perfectos, la forma que guarda más miel con menos cera.' },
+  { en: 'Trees breathe in what we breathe out, and give back the very air we need.',
+    es: 'Los árboles respiran lo que nosotros exhalamos, y nos devuelven el aire que necesitamos.' },
+  { en: 'A teaspoon of a neutron star would weigh billions of tons here on Earth.',
+    es: 'Una cucharadita de una estrella de neutrones pesaría miles de millones de toneladas aquí en la Tierra.' },
+  { en: 'Your body is made of about thirty-seven trillion cells, and nearly every one carries the full plan to build you.',
+    es: 'Tu cuerpo se compone de unos treinta y siete billones de células, y casi cada una lleva el plano completo para construirte.' },
+  { en: 'The same carbon sits in pencil lead and in diamond. One element, two forms, set apart only by how its atoms are arranged.',
+    es: 'El mismo carbono está en la mina del lápiz y en el diamante. Un elemento, dos formas, distinguidas solo por cómo se ordenan sus átomos.' },
+  { en: 'Light from some galaxies has traveled billions of years to reach the sky above you tonight.',
+    es: 'La luz de algunas galaxias ha viajado miles de millones de años para llegar al cielo sobre ti esta noche.' },
+];
+
+// A random fact (string) in the given language, avoiding an immediate repeat.
+DANNYLAB._lastFact = -1;
+DANNYLAB.randomFact = function (lang) {
+  var n = DANNYLAB.FACTS.length;
+  if (n === 0) return '';
+  var i = Math.floor(Math.random() * n);
+  if (n > 1 && i === DANNYLAB._lastFact) i = (i + 1) % n;
+  DANNYLAB._lastFact = i;
+  var f = DANNYLAB.FACTS[i];
+  return (lang === 'es') ? f.es : f.en;
 };
 
 // Element names + "Danny's Lab Notes" fun facts (Brief §14).
