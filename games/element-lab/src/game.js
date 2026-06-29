@@ -54,6 +54,12 @@ GP.create = function (data) {
   this.dropsUntilMystery = this._rollMystery();
   this.glowBoostMerges = 0;    // Neon mystery: temporary score boost on next merges
 
+  // Phaser reuses the scene instance across runs, so clear any slow-mo state
+  // left over from a previous run and guarantee this one starts at real-time.
+  this._slowmo = false;
+  if (this._slowTimer) { this._slowTimer.remove(false); this._slowTimer = null; }
+  if (this.matter.world.engine && this.matter.world.engine.timing) this.matter.world.engine.timing.timeScale = 1;
+
   this.lab = DANNYLAB.buildLab(this, { dust: 14 });
   this.buildBeaker();
   this.buildHUD();
@@ -275,7 +281,8 @@ GP.levelUp = function () {
   var C = DANNYLAB.CONFIG;
   this.labLevel += 1;
   this.labBonus = 1.0 + this.labLevel * C.labBonusStep;
-  this.chargeThreshold = Math.round(C.chargeBaseThreshold * Math.pow(C.chargeGrowth, this.labLevel));
+  // clamp to >=1 so the charge-drain while-loop in addScore can never spin forever
+  this.chargeThreshold = Math.max(1, Math.round(C.chargeBaseThreshold * Math.pow(C.chargeGrowth, this.labLevel)));
   if (this.labLevel > this.bestLevel) { this.bestLevel = this.labLevel; DANNYLAB.store.setBestLevel(this.bestLevel); }
   this.levelText.setText('LV ' + this.labLevel);
   this.bonusText.setText('x' + (Math.round(this.labBonus * 100) / 100));
@@ -868,7 +875,10 @@ GP._knockback = function (cx, cy, power, reach) {
 GP._ripple = function (items, gap, fn) {
   var self = this;
   for (var i = 0; i < items.length; i++) (function (it, i) {
-    self.time.delayedCall(i * gap, function () { fn(it, i); });
+    self.time.delayedCall(i * gap, function () {
+      if (self.gameOver) return;     // don't touch score/board after a loss
+      fn(it, i);
+    });
   })(items[i], i);
   return items.length * gap;
 };

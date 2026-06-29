@@ -141,7 +141,7 @@ DANNYLAB.buildLab = function (scene, opts) {
     var x = W * (0.1 + Math.random() * 0.7), y = H * (0.1 + Math.random() * 0.7);
     for (var k = 0; k < 5; k++) (function (k) {
       var d = scene.add.circle(x + k * 9, y, 3, 0x7CFF6B, 0).setBlendMode('ADD'); amb.add(d);
-      scene.tweens.add({ targets: d, alpha: 1, duration: 120, delay: k * 140, yoyo: true, onComplete: function () { if (k === 4) d.destroy(); else d.destroy(); } });
+      scene.tweens.add({ targets: d, alpha: 1, duration: 120, delay: k * 140, yoyo: true, onComplete: function () { d.destroy(); } });
     })(k);
     snd('ambBeep');
   }
@@ -226,11 +226,16 @@ DANNYLAB.buildLab = function (scene, opts) {
     lastEv = idx;
     try { events[idx](); } catch (e) {}
   }
+  var nextTimer = null, dead = false;
   function scheduleNext(first) {
+    if (dead) return;
     var delay = first ? 9000 + Math.random() * 6000 : 30000 + Math.random() * 30000;
-    scene.time.delayedCall(delay, function () { runRandomEvent(); scheduleNext(false); });
+    nextTimer = scene.time.delayedCall(delay, function () { if (dead) return; runRandomEvent(); scheduleNext(false); });
   }
   scheduleNext(true);
+  // stop the ambient scheduler the moment this scene is torn down so it can
+  // never re-arm or run an event against a dead scene
+  scene.events.once('shutdown', function () { dead = true; if (nextTimer) nextTimer.remove(false); });
 
   // ============ MIDGROUND: metallic lab table (in focus) ============
   var tableTopY = H * 0.905;

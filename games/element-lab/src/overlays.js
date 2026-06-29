@@ -34,7 +34,6 @@ window.DANNYLAB = window.DANNYLAB || {};
     var self = this, bw = Math.min(320, W * 0.7), gap = 84, y0 = H / 2 - 90;
     UI.button(this, W / 2, y0, bw, 66, t('resume', lang), function () { closeTo(self, 'DANNYLAB_Game'); }, { fill: 0x46b85e });
     UI.button(this, W / 2, y0 + gap, bw, 66, t('restart', lang), function () {
-      var game = self.scene.get('DANNYLAB_Game');
       self.scene.stop();
       self.scene.stop('DANNYLAB_Game');
       self.scene.start('DANNYLAB_Game', { mode: self.registry.get('mode') });
@@ -106,7 +105,6 @@ window.DANNYLAB = window.DANNYLAB || {};
       self.scene.resume(parent);
       if (dirty) {
         // rebuild whichever UI we came from so the new language shows live
-        var p = self.scene.get(parent);
         if (parent === 'DANNYLAB_Menu' || parent === 'DANNYLAB_Pause') self.scene.get(parent).scene.restart();
       }
     }, { fill: 0x46506e });
@@ -186,7 +184,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     function show(i) {
       body.setText(cards[i]);
       if (icons[i]) { img.setTexture(icons[i]).setDisplaySize(86, 86).setVisible(true); } else img.setVisible(false);
-      dots.setText(['○○○', '○○○', '○○○'][0].split('').map(function (_, k) { return k === i ? '●' : '○'; }).join(' '));
+      dots.setText('○○○'.split('').map(function (_, k) { return k === i ? '●' : '○'; }).join(' '));
       self.tweens.add({ targets: body, scale: { from: 0.9, to: 1 }, duration: 150 });
     }
     show(0);
@@ -316,5 +314,8 @@ window.DANNYLAB = window.DANNYLAB || {};
     this.tweens.add({ targets: fill, scaleX: 1, duration: DUR, ease: 'Sine.inOut', onComplete: go });
     // tap to skip, after a short readable minimum
     this.time.delayedCall(650, function () { self.input.once('pointerdown', go); });
+    // if we're torn down early (e.g. Exit to Game Select), make sure a pending
+    // tween/timer can't fire go() and resurrect the game after we're gone.
+    this.events.once('shutdown', function () { started = true; });
   });
 })();

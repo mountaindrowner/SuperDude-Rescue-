@@ -191,7 +191,10 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
           if (state.music) { api.stopMusic(); api.startMusic(); }   // swap synth → song
           return true;
         })
-        .catch(function () { return false; });   // fall back to synth loop
+        .catch(function (e) {                      // fall back to synth loop
+          if (typeof console !== 'undefined') console.warn('Element Lab: music track failed to load, using synth -', (e && e.message) || e);
+          return false;
+        });
     },
 
     // ---- start music: prefer the mp3 track, else the synth arpeggio ----

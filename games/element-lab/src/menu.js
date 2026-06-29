@@ -124,10 +124,6 @@ DANNYLAB.MenuScene.prototype.create = function () {
   this.input.once('pointerdown', function () {
     var a = self.registry.get('audio'); if (a) a.resume();
   });
-
-  this.events.on('resume', function () {
-    // re-read language-sensitive labels could go here if lang changed
-  });
 };
 
 DANNYLAB.MenuScene.prototype.update = function (time, delta) {

@@ -121,7 +121,7 @@ DANNYLAB.FACTS = [
     es: 'El agua hace algo que casi nada más puede: flota al congelarse, para que la vida siga bajo el hielo que Dios diseñó.' },
   { en: 'Every snowflake has six glittering sides, and no two have ever matched. God never makes the same one twice!',
     es: 'Cada copo de nieve tiene seis lados brillantes, y jamás dos han sido iguales. ¡Dios nunca hace el mismo dos veces!' },
-  { en: 'Sunlight races 93 million miles and lands on your face in eight minutes, a warm hello sent straight from God’s star.',
+  { en: 'Sunlight races 93 million miles and lands on your face in eight minutes, a warm hello sent straight from God\'s star.',
     es: 'La luz del sol recorre 150 millones de kilómetros y llega a tu rostro en ocho minutos, un cálido saludo enviado desde la estrella de Dios.' },
   { en: 'Your heart will beat about three billion times and never ask for a break, a faithful drum God set going before you were born.',
     es: 'Tu corazón latirá unas tres mil millones de veces sin pedir descanso, un tambor fiel que Dios echó a andar antes de que nacieras.' },
