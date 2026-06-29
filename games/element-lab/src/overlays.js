@@ -253,6 +253,11 @@ window.DANNYLAB = window.DANNYLAB || {};
     var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
     var self = this, mode = (data && data.mode) || this.registry.get('mode');
 
+    // a fresh neon accent each time, for that cool electric-lab glow
+    var neons = [0x4fd9ff, 0xff66ff, 0x7CFF6B, 0xFBD38D, 0xF687B3, 0x9F7AEA, 0x4FD1C5];
+    var neon = neons[Math.floor(Math.random() * neons.length)];
+    var neonHex = '#' + neon.toString(16).padStart(6, '0');
+
     // --- backdrop: deep gradient + a few drifting motes ---
     var g = this.add.graphics();
     var bands = 32;
@@ -263,9 +268,9 @@ window.DANNYLAB = window.DANNYLAB || {};
       g.fillStyle(Phaser.Display.Color.GetColor(col.r, col.g, col.b), 1);
       g.fillRect(0, H * (i / bands), W, H / bands + 1);
     }
-    for (var mi = 0; mi < 14; mi++) {
+    for (var mi = 0; mi < 16; mi++) {
       var px = Math.random() * W, py = Math.random() * H, pr = 1 + Math.random() * 2.4;
-      var mote = this.add.circle(px, py, pr, 0x9fd8ff, 0.5).setBlendMode('ADD');
+      var mote = this.add.circle(px, py, pr, neon, 0.55).setBlendMode('ADD');
       this.tweens.add({ targets: mote, y: py - 30 - Math.random() * 50, alpha: 0,
         duration: 2600 + Math.random() * 1800, repeat: -1, ease: 'Sine.inOut', delay: Math.random() * 1200 });
     }
@@ -284,21 +289,22 @@ window.DANNYLAB = window.DANNYLAB || {};
     this.tweens.add({ targets: icon, alpha: 1, duration: 500 });
     this.tweens.add({ targets: icon, y: icon.y - 12, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
-    // --- glass card holding the fact ---
+    // --- glass card holding the fact, lit with the neon accent ---
     var cardW = Math.min(440, W * 0.88), cardH = 240, cy = H * 0.53;
-    UI.panel(this, W / 2, cy, cardW, cardH);
+    UI.panel(this, W / 2, cy, cardW, cardH, { neon: neon });
     var fact = this.add.text(W / 2, cy + 14, DANNYLAB.randomFact(lang), {
-      fontFamily: UI.FONT, fontSize: '24px', color: '#eaf4ff', fontStyle: 'bold',
+      fontFamily: UI.FONT, fontSize: '24px', color: '#f3fbff', fontStyle: 'bold',
       align: 'center', lineSpacing: 6, wordWrap: { width: cardW - 56 },
     }).setOrigin(0.5).setAlpha(0);
+    fact.setShadow(0, 0, neonHex, 16);     // neon halo around the words
     this.tweens.add({ targets: fact, alpha: 1, duration: 500, delay: 150 });
 
     // --- progress bar ---
     var barW = Math.min(380, W * 0.74), barH = 14, barX = W / 2 - barW / 2, barY = H * 0.76;
     var track = this.add.graphics();
     track.fillStyle(0x0b1530, 0.85); track.fillRoundedRect(barX, barY, barW, barH, 7);
-    track.lineStyle(1.5, 0x4fd9ff, 0.55); track.strokeRoundedRect(barX, barY, barW, barH, 7);
-    var fill = this.add.rectangle(barX + 3, barY + barH / 2, barW - 6, barH - 6, 0x7CFF6B).setOrigin(0, 0.5);
+    track.lineStyle(1.5, neon, 0.6); track.strokeRoundedRect(barX, barY, barW, barH, 7);
+    var fill = this.add.rectangle(barX + 3, barY + barH / 2, barW - 6, barH - 6, neon).setOrigin(0, 0.5).setBlendMode('ADD');
     fill.scaleX = 0;
     this.add.text(W / 2, barY + 36, t('loading_sub', lang), {
       fontFamily: UI.FONT, fontSize: '18px', color: '#8fb6ff',
