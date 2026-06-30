@@ -20,7 +20,7 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     ctx = new AC();
-    master = ctx.createGain();   master.gain.value = 0.9;  master.connect(ctx.destination);
+    master = ctx.createGain();   master.gain.value = 0.5;  master.connect(ctx.destination);  // start at 50%
     sfxGain = ctx.createGain();  sfxGain.gain.value = 0.85; sfxGain.connect(master);
     musicGain = ctx.createGain(); musicGain.gain.value = 0.25; musicGain.connect(master);
     return true;
