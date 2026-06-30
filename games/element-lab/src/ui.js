@@ -130,4 +130,61 @@ DANNYLAB.UI = {
     row.valueBtn = btn;
     return row;
   },
+
+  // a label + drag slider row (used in Options for volume). value is 0..1;
+  // onChange(value) fires live as you drag. Input uses the scene pointer + the
+  // row's WORLD transform (zoom-proof, same approach as button()).
+  slider: function (scene, x, y, w, labelText, value, onChange) {
+    value = Math.max(0, Math.min(1, value || 0));
+    var row = scene.add.container(x, y);
+    var label = scene.add.text(-w / 2 + 18, 0, labelText, {
+      fontFamily: DANNYLAB.UI.FONT, fontSize: '26px', color: '#dceaff', fontStyle: 'bold',
+    }).setOrigin(0, 0.5);
+    // track geometry, in row-local coords
+    var tx0 = -w / 2 + 150, tx1 = w / 2 - 64, tw = tx1 - tx0;
+    var g = scene.add.graphics();
+    var knob = scene.add.circle(0, 0, 14, 0x7CFF6B).setStrokeStyle(2, 0xffffff, 0.65);
+    var pct = scene.add.text(w / 2 - 6, 0, '', {
+      fontFamily: DANNYLAB.UI.FONT, fontSize: '22px', color: '#9fe8c0', fontStyle: 'bold',
+    }).setOrigin(1, 0.5);
+    function draw() {
+      var kx = tx0 + tw * value;
+      g.clear();
+      g.fillStyle(0x0b1530, 0.9); g.fillRoundedRect(tx0, -5, tw, 10, 5);
+      g.lineStyle(1.5, 0x4fd9ff, 0.5); g.strokeRoundedRect(tx0, -5, tw, 10, 5);
+      if (kx > tx0 + 1) { g.fillStyle(0x7CFF6B, 0.95); g.fillRoundedRect(tx0, -4, kx - tx0, 8, 4); }
+      knob.setPosition(kx, 0);
+      pct.setText(Math.round(value * 100) + '%');
+    }
+    draw();
+    row.add([label, g, knob, pct]);
+
+    var dragging = false, tmp = new Phaser.GameObjects.Components.TransformMatrix();
+    function setFrom(px) {
+      row.getWorldTransformMatrix(tmp);
+      value = Math.max(0, Math.min(1, (px - tmp.tx - tx0) / tw));   // pointer → 0..1 (zoom-proof)
+      draw();
+      if (onChange) onChange(value);
+    }
+    function near(px, py) {
+      if (!row.active || !row.visible) return false;
+      row.getWorldTransformMatrix(tmp);
+      var lx = px - tmp.tx, ly = py - tmp.ty;
+      return ly > -28 && ly < 28 && lx > tx0 - 26 && lx < tx1 + 26;
+    }
+    function onDown(p) { if (near(p.worldX, p.worldY)) { dragging = true; setFrom(p.worldX); } }
+    function onMove(p) { if (dragging) setFrom(p.worldX); }
+    function onUp() { if (dragging) { dragging = false; var a = scene.registry.get('audio'); if (a) a.click(); } }
+    scene.input.on('pointerdown', onDown);
+    scene.input.on('pointermove', onMove);
+    scene.input.on('pointerup', onUp);
+    scene.input.on('pointerupoutside', onUp);
+    row.once('destroy', function () {
+      scene.input.off('pointerdown', onDown);
+      scene.input.off('pointermove', onMove);
+      scene.input.off('pointerup', onUp);
+      scene.input.off('pointerupoutside', onUp);
+    });
+    return row;
+  },
 };

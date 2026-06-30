@@ -4,7 +4,12 @@
 // options and the parent's initial audio state.
 window.DANNYLAB = window.DANNYLAB || {};
 
-DANNYLAB.makeAudio = function (sfxOn, musicOn) {
+DANNYLAB.makeAudio = function (sfxVol, musicVol) {
+  // channel gains at 100% volume: music sits a touch under the SFX so it never
+  // masks the gameplay feedback. The Options sliders scale these 0..1.
+  var MUSIC_MAX = 0.45, SFX_MAX = 0.9;
+  function clamp01(v) { v = +v; return isNaN(v) ? 0 : Math.max(0, Math.min(1, v)); }
+
   var ctx = null;
   var master, sfxGain, musicGain;
   var musicTimer = null;
@@ -13,16 +18,18 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
   var trackSource = null;     // currently-playing looping source
   var wantTrack = null;       // name of the track we want playing
   var playingTrack = null;    // name of the track actually playing (null = synth/none)
-  var state = { sfx: !!sfxOn, music: !!musicOn };
+  var state = { sfxVol: clamp01(sfxVol == null ? 0.5 : sfxVol), musicVol: clamp01(musicVol == null ? 0.5 : musicVol) };
+  state.sfx = state.sfxVol > 0;       // on/off is just "volume above zero"
+  state.music = state.musicVol > 0;
 
   function ensure() {
     if (ctx) return true;
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     ctx = new AC();
-    master = ctx.createGain();   master.gain.value = 0.5;  master.connect(ctx.destination);  // start at 50%
-    sfxGain = ctx.createGain();  sfxGain.gain.value = 0.85; sfxGain.connect(master);
-    musicGain = ctx.createGain(); musicGain.gain.value = 0.25; musicGain.connect(master);
+    master = ctx.createGain();   master.gain.value = 1.0;  master.connect(ctx.destination);
+    sfxGain = ctx.createGain();  sfxGain.gain.value = SFX_MAX * state.sfxVol; sfxGain.connect(master);
+    musicGain = ctx.createGain(); musicGain.gain.value = MUSIC_MAX * state.musicVol; musicGain.connect(master);
     return true;
   }
 
@@ -77,14 +84,27 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     // read-only music diagnostics (which loop is playing / loaded)
     status: function () {
       var loaded = []; for (var k in tracks) loaded.push(k);
-      return { music: state.music, want: wantTrack, playing: playingTrack, loaded: loaded };
+      return { sfx: state.sfx, music: state.music, sfxVol: state.sfxVol, musicVol: state.musicVol,
+        want: wantTrack, playing: playingTrack, loaded: loaded };
     },
 
-    setSfx: function (on) { state.sfx = !!on; },
-    setMusic: function (on) {
-      state.music = !!on;
-      if (state.music) api.startMusic(); else api.stopMusic();
+    // ---- volume (0..1), driven by the Options sliders ----
+    getSfxVol: function () { return state.sfxVol; },
+    getMusicVol: function () { return state.musicVol; },
+    setSfxVolume: function (v) {
+      v = clamp01(v); state.sfxVol = v; state.sfx = v > 0;
+      if (ctx && sfxGain) sfxGain.gain.value = SFX_MAX * v;
     },
+    setMusicVolume: function (v) {
+      v = clamp01(v); state.musicVol = v;
+      var was = state.music; state.music = v > 0;
+      if (ctx && musicGain) { musicGain.gain.cancelScheduledValues(ctx.currentTime); musicGain.gain.value = MUSIC_MAX * v; }
+      if (state.music && !was) api.startMusic();      // un-muted → (re)start the loop
+      else if (!state.music) api.stopMusic();         // dragged to 0 → silence
+    },
+    // legacy on/off (kept for the parent integration contract)
+    setSfx: function (on) { api.setSfxVolume(on ? (state.sfxVol > 0 ? state.sfxVol : 0.5) : 0); },
+    setMusic: function (on) { api.setMusicVolume(on ? (state.musicVol > 0 ? state.musicVol : 0.5) : 0); },
 
     // soft "bloop" when released from tweezers
     drop: function () { tone({ type: 'sine', f0: 420, f1: 200, dur: 0.16, gain: 0.35 }); },
@@ -267,11 +287,11 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     // duck music briefly under a big SFX
     duck: function () {
       if (!ensure() || !state.music) return;
-      var t0 = ctx.currentTime;
+      var t0 = ctx.currentTime, full = MUSIC_MAX * state.musicVol;
       musicGain.gain.cancelScheduledValues(t0);
       musicGain.gain.setValueAtTime(musicGain.gain.value, t0);
-      musicGain.gain.linearRampToValueAtTime(0.08, t0 + 0.05);
-      musicGain.gain.linearRampToValueAtTime(0.25, t0 + 0.9);
+      musicGain.gain.linearRampToValueAtTime(Math.min(full, 0.08), t0 + 0.05);
+      musicGain.gain.linearRampToValueAtTime(full, t0 + 0.9);
     },
   };
 

@@ -59,19 +59,15 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     var self = this, rw = Math.min(400, W * 0.8), x = W / 2, y = H / 2 - 150, gap = 70;
 
-    function onoff(v) { return v === 'on' ? t('on', lang) : t('off', lang); }
-
-    // Sound
-    UI.toggleRow(this, x, y, rw, t('sound', lang), onoff(this.registry.get('sfx')), function () {
-      var nv = self.registry.get('sfx') === 'on' ? 'off' : 'on';
-      self.registry.set('sfx', nv); store.setOpt('sfx', nv); if (audio) audio.setSfx(nv === 'on');
-      return onoff(nv);
+    // Sound (SFX) volume — drag slider, 0 = muted
+    UI.slider(this, x, y, rw, t('sound', lang), audio ? audio.getSfxVol() : 0.5, function (v) {
+      if (audio) audio.setSfxVolume(v);
+      store.setOpt('volSfx', v);
     });
-    // Music
-    UI.toggleRow(this, x, y + gap, rw, t('music', lang), onoff(this.registry.get('music')), function () {
-      var nv = self.registry.get('music') === 'on' ? 'off' : 'on';
-      self.registry.set('music', nv); store.setOpt('music', nv); if (audio) audio.setMusic(nv === 'on');
-      return onoff(nv);
+    // Music volume — drag slider, 0 = muted
+    UI.slider(this, x, y + gap, rw, t('music', lang), audio ? audio.getMusicVol() : 0.5, function (v) {
+      if (audio) audio.setMusicVolume(v);
+      store.setOpt('volMusic', v);
     });
     // Language (live relabel: restart this panel + flag UI rebuild)
     UI.toggleRow(this, x, y + gap * 2, rw, t('language', lang), lang.toUpperCase(), function () {
