@@ -35,10 +35,16 @@ DANNYLAB.PreloadScene.prototype.create = function () {
   DANNYLAB.buildTextures(this);
   DANNYLAB.buildJellyTextures(this);
 
-  // prefetch + decode the main-game song to use as the music loop
-  // (falls back to the synth arpeggio if it can't load)
+  // prefetch + decode the soundtrack: the intro theme for the menu and four
+  // rotating "elements" tracks for gameplay. Each decodes in the background and
+  // swaps in when ready; until then the synth arpeggio covers (Brief §11).
   var audio = this.registry.get('audio');
-  if (audio) audio.loadTrack('audio/lab-theme.mp3');
+  if (audio) {
+    audio.loadTrack('intro', 'assets/audio/intro.mp3');
+    DANNYLAB.GAME_TRACKS.forEach(function (name) {
+      audio.loadTrack(name, 'assets/audio/' + name + '.mp3');
+    });
+  }
 
   var self = this;
   var go = function () { self.scene.start('DANNYLAB_Menu'); };

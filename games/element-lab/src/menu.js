@@ -92,7 +92,9 @@ DANNYLAB.MenuScene.prototype.create = function () {
   var self = this;
   var bx = W / 2, by = H * 0.45, bw = Math.min(360, W * 0.74), bh = 72, gap = 88;
   function startGame() {
-    var a = self.registry.get('audio'); if (a) { a.resume(); a.startMusic(); }
+    // resume the audio context on this gesture; the Game scene picks its own
+    // gameplay track on create.
+    var a = self.registry.get('audio'); if (a) a.resume();
     self.scene.start('DANNYLAB_Game', { mode: self.registry.get('mode') });
   }
   function entrance(btn, idx) {
@@ -120,9 +122,15 @@ DANNYLAB.MenuScene.prototype.create = function () {
     }, { fill: 0x3aa6a0, fontSize: 18 });
   collBtn.setDepth(5);
 
-  // resume audio on first interaction (browser gesture gate)
+  // the menu plays the intro theme. Returning from a run, audio is already
+  // unlocked so this starts immediately; on the very first load it's gated
+  // behind the first tap below.
+  var menuAudio = this.registry.get('audio');
+  if (menuAudio) menuAudio.startMusic('intro');
+
+  // resume audio + kick off the intro theme on first interaction (gesture gate)
   this.input.once('pointerdown', function () {
-    var a = self.registry.get('audio'); if (a) a.resume();
+    var a = self.registry.get('audio'); if (a) { a.resume(); a.startMusic('intro'); }
   });
 };
 

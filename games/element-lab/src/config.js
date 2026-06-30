@@ -86,6 +86,14 @@ DANNYLAB.tierCfg = function (t) {
   return DANNYLAB.CONFIG.tiers[t - 1];
 };
 
+// Soundtrack: 'intro' plays on the menu; one of these "elements" tracks is
+// picked at random for each gameplay run (see DANNYLAB.pickGameTrack).
+DANNYLAB.GAME_TRACKS = ['game-a', 'game-b', 'game-c', 'game-d'];
+DANNYLAB.pickGameTrack = function () {
+  var g = DANNYLAB.GAME_TRACKS;
+  return g[Math.floor(Math.random() * g.length)];
+};
+
 // Element art skin: 'jelly' (procedural animated drops, default), 'px'
 // (PixelLab atoms), or 'proc' (flat procedural balls). Change here to switch.
 DANNYLAB.SKIN = 'jelly';

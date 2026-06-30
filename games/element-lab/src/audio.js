@@ -9,8 +9,10 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
   var master, sfxGain, musicGain;
   var musicTimer = null;
   var musicStep = 0;
-  var trackBuffer = null;     // decoded mp3 (main-game song), if available
+  var tracks = {};            // name -> decoded mp3 AudioBuffer
   var trackSource = null;     // currently-playing looping source
+  var wantTrack = null;       // name of the track we want playing
+  var playingTrack = null;    // name of the track actually playing (null = synth/none)
   var state = { sfx: !!sfxOn, music: !!musicOn };
 
   function ensure() {
@@ -71,6 +73,12 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
   // ==== named cues (Brief §11 table) ====
   var api = {
     resume: resume,
+
+    // read-only music diagnostics (which loop is playing / loaded)
+    status: function () {
+      var loaded = []; for (var k in tracks) loaded.push(k);
+      return { music: state.music, want: wantTrack, playing: playingTrack, loaded: loaded };
+    },
 
     setSfx: function (on) { state.sfx = !!on; },
     setMusic: function (on) {
@@ -180,36 +188,44 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     ambSpark: function () { for (var i = 0; i < 3; i++) setTimeout(function () { noise({ filter: 'bandpass', freq: 3800, q: 5, dur: 0.03, gain: 0.05 }); }, i * 60 + Math.random() * 40); },
     ambDoor: function () { tone({ type: 'sawtooth', f0: 220, f1: 120, dur: 0.4, gain: 0.04 }); noise({ filter: 'lowpass', freq: 500, dur: 0.4, gain: 0.03 }); },
 
-    // ---- load a real mp3 track (a main-game song) to use as the loop ----
-    loadTrack: function (url) {
+    // ---- load a named mp3 track to use as a music loop ----
+    // Decodes in the background; if it's the track we currently want playing
+    // (and music is on), it swaps in seamlessly the moment it's ready.
+    loadTrack: function (name, url) {
       if (!ensure()) return Promise.resolve(false);
       return fetch(url)
         .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
         .then(function (buf) { return ctx.decodeAudioData(buf); })
         .then(function (decoded) {
-          trackBuffer = decoded;
-          if (state.music) { api.stopMusic(); api.startMusic(); }   // swap synth → song
+          tracks[name] = decoded;
+          if (state.music && wantTrack === name && playingTrack !== name) api.startMusic(name);
           return true;
         })
         .catch(function (e) {                      // fall back to synth loop
-          if (typeof console !== 'undefined') console.warn('Element Lab: music track failed to load, using synth -', (e && e.message) || e);
+          if (typeof console !== 'undefined') console.warn('Element Lab: music track "' + name + '" failed to load, using synth -', (e && e.message) || e);
           return false;
         });
     },
 
-    // ---- start music: prefer the mp3 track, else the synth arpeggio ----
-    startMusic: function () {
+    // ---- start (or switch to) a named music loop; falls back to the synth ----
+    // arpeggio until the requested track has finished decoding.
+    startMusic: function (name) {
+      if (name) wantTrack = name;
       if (!state.music || !ensure()) return;
-      if (trackBuffer) {
-        if (trackSource) return;
+      var buf = wantTrack ? tracks[wantTrack] : null;
+      if (buf) {
+        if (trackSource && playingTrack === wantTrack) return;   // already on it
+        if (trackSource) { try { trackSource.stop(0); } catch (e) {} trackSource = null; }
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }   // leave the synth
         trackSource = ctx.createBufferSource();
-        trackSource.buffer = trackBuffer;
+        trackSource.buffer = buf;
         trackSource.loop = true;
         trackSource.connect(musicGain);
         try { trackSource.start(0); } catch (e) {}
+        playingTrack = wantTrack;
         return;
       }
-      api._startSynth();
+      api._startSynth();   // requested track not decoded yet
     },
 
     _startSynth: function () {
@@ -245,6 +261,7 @@ DANNYLAB.makeAudio = function (sfxOn, musicOn) {
     stopMusic: function () {
       if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
       if (trackSource) { try { trackSource.stop(0); } catch (e) {} trackSource = null; }
+      playingTrack = null;
     },
 
     // duck music briefly under a big SFX
