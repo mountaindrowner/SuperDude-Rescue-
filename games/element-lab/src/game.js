@@ -1171,8 +1171,11 @@ GP.buildDiscoveryCard = function (sym) {
   var name = DANNYLAB.elementName(sym, lang);
 
   var cx = DANNYLAB.beakerCx();
-  var cardW = Math.min(376, GEO.bx1 - GEO.bx0 + 44), cardH = 168, restY = 116;
-  var card = this.add.container(cx, -cardH - 20).setDepth(70).setAngle(-2.5);
+  var cardW = Math.min(376, GEO.bx1 - GEO.bx0 + 44), cardH = 184, restY = 112;
+  // Back layer (behind the tweezers and elements) so it never covers the
+  // tongs — you can keep aiming and dropping right over it. It just slides in,
+  // sits for a few seconds, and slides away.
+  var card = this.add.container(cx, -cardH - 20).setDepth(-2).setAngle(-2.5);
   this._discoCard = card;
 
   var g = this.add.graphics();
@@ -1192,8 +1195,9 @@ GP.buildDiscoveryCard = function (sym) {
     fontFamily: UI.FONT, fontSize: '17px', color: '#8a5a12', fontStyle: 'bold' }).setOrigin(0, 0.5);
   var intro = this.add.text(-cardW / 2 + 70, -cardH / 2 + 44, DANNYLAB.t('discovery_intro', lang, { element: name }), {
     fontFamily: UI.FONT, fontSize: '19px', color: '#5a3a08', fontStyle: 'bold', wordWrap: { width: cardW - 92 } }).setOrigin(0, 0);
-  var fact = this.add.text(-cardW / 2 + 70, -cardH / 2 + 78, DANNYLAB.elementFact(sym, lang), {
-    fontFamily: UI.FONT, fontSize: '15px', color: '#6a4a1a', wordWrap: { width: cardW - 92 } }).setOrigin(0, 0);
+  var fact = this.add.text(-cardW / 2 + 70, -cardH / 2 + 76, DANNYLAB.elementFact(sym, lang), {
+    fontFamily: UI.FONT, fontSize: '15px', color: '#6a4a1a', lineSpacing: 7,
+    wordWrap: { width: cardW - 100 } }).setOrigin(0, 0);
   var icon = this.add.image(-cardW / 2 + 32, 2, DANNYLAB.iconKey(this, tier)).setDisplaySize(52, 52);
 
   var cxp = cardW / 2 - 20, cyp = -cardH / 2 + 18;
@@ -1213,7 +1217,7 @@ GP.buildDiscoveryCard = function (sym) {
   this._discoY = restY + (cxp * Math.sin(ang) + cyp * Math.cos(ang));
 
   this.tweens.add({ targets: card, y: restY, duration: 420, ease: 'Back.out' });
-  this._discoAuto = this.time.delayedCall(4200, function () { self.dismissDiscovery(); });
+  this._discoAuto = this.time.delayedCall(8000, function () { self.dismissDiscovery(); });
 };
 
 // close the current Lab Notes card (tapped ✕ or auto), then show any queued one
