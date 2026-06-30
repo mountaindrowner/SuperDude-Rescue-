@@ -70,7 +70,10 @@ DANNYLAB.makeConfig = function (parentEl) {
       default: 'matter',
       matter: {
         gravity: { x: 0, y: 1 },
-        enableSleeping: false,
+        // settled elements sleep instead of being integrated every frame — a
+        // big CPU win once the beaker fills, and it kills settled micro-jitter
+        // for a smoother look. Collisions/drops wake bodies as needed.
+        enableSleeping: true,
         // debug: true,
       },
     },

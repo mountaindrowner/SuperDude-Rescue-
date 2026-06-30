@@ -604,14 +604,14 @@ GP._animFX = function (c, time) {
       it = fx.items[i];
       it.x += (it._tx - it.x) * 0.18; it.y += (it._ty - it.y) * 0.18;
       if (Phaser.Math.Distance.Between(it.x, it.y, it._tx, it._ty) < 3) { it._tx = (Math.random() - 0.5) * r * 0.9; it._ty = (Math.random() - 0.5) * r * 0.9; }
-      it.alpha = 0.35 + 0.45 * Math.abs(Math.sin(time * 0.018 + i * 1.7));
+      it.alpha = 0.575 + 0.225 * Math.abs(Math.sin(time * 0.018 + i * 1.7));
     }
   } else if (fx.type === 'motes') {
     for (i = 0; i < fx.items.length; i++) { it = fx.items[i]; it._ang += 0.022 + i * 0.004; it.x = Math.cos(it._ang) * it._orb; it.y = Math.sin(it._ang) * it._orb * 0.7; }
-    if (c.ball) c.ball.alpha = c.baseAlpha * (0.95 + 0.05 * Math.sin(time * 0.004 + fx.phase));
+    if (c.ball) c.ball.alpha = c.baseAlpha * (0.975 + 0.025 * Math.sin(time * 0.004 + fx.phase));
   } else if (fx.type === 'flicker') {
-    if (c.ball) c.ball.alpha = c.baseAlpha * (0.91 + 0.09 * Math.abs(Math.sin(time * 0.005 + fx.phase))) * (Math.random() < 0.008 ? 0.75 : 1);
-    if (fx.sway === undefined && fx.items.length) for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.003 + i) * r * 0.08;
+    if (c.ball) c.ball.alpha = c.baseAlpha * (0.955 + 0.045 * Math.abs(Math.sin(time * 0.005 + fx.phase))) * (Math.random() < 0.008 ? 0.875 : 1);
+    if (fx.sway === undefined && fx.items.length) for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.003 + i) * r * 0.04;
   } else if (fx.type === 'sweep' || fx.type === 'glint') {
     if (fx.sweep) { var p = ((time + fx.phase) % 2600) / 2600; fx.sweep.x = (-0.5 + p) * r * 1.05; fx.sweep.y = (0.5 - p) * r * 1.05; fx.sweep.alpha = (p < 0.5 ? p / 0.5 : (1 - p) / 0.5) * 0.5; }
     if (time > fx.next && fx.star) {
@@ -621,7 +621,7 @@ GP._animFX = function (c, time) {
       fx.next = time + (fx.cfg.sparkle ? 650 : 1300) + Math.random() * 1100;
     }
   } else if (fx.type === 'bubbles' && fx.sway) {
-    for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.002 + i) * r * 0.12;
+    for (i = 0; i < fx.items.length; i++) fx.items[i].x = fx.items[i]._x0 + Math.sin(time * 0.002 + i) * r * 0.06;
   }
 };
 
@@ -638,7 +638,7 @@ GP._animFace = function (e, time) {
 
   // smooth scale: gentle breathing bob (halved) + an eased eye-squash on
   // blink + a brief pop when an expression kicks in (no instant pops)
-  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.0125, scy = sc;
+  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.00625, scy = sc;
   if (e.blinkUntil > time) { var bp = Math.sin(Math.min(1, (e.blinkUntil - time) / 130) * Math.PI); scy *= (1 - 0.3 * bp); }
   if (e.exprUntil > time && (e.exprUntil - time) > 430) { sc *= 1.08; scy *= 1.08; }
   f.setDisplaySize(r * 1.55 * sc, r * 1.55 * scy);
@@ -647,15 +647,15 @@ GP._animFace = function (e, time) {
   // sits "in front of" the body without undulating too much
   var vx = e.body ? e.body.velocity.x : 0, vy = e.body ? e.body.velocity.y : 0;
   var t = time * 0.001;
-  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16) + Math.sin(t * 1.3 + e._ph) * r * 0.02;
-  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16) + Math.cos(t * 1.1 + e._ph) * r * 0.02;
+  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16) + Math.sin(t * 1.3 + e._ph) * r * 0.01;
+  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16) + Math.cos(t * 1.1 + e._ph) * r * 0.01;
 };
 
 // idle breathing jiggle once an element settles (Brief §10.2)
 GP.startIdle = function (c) {
   if (!c.active || !c.visual) return;
   c.idleTween = this.tweens.add({
-    targets: c.visual, scaleX: 1.015, scaleY: 0.985, duration: 1100 + Math.random() * 600,
+    targets: c.visual, scaleX: 1.0075, scaleY: 0.9925, duration: 1100 + Math.random() * 600,
     yoyo: true, repeat: -1, ease: 'Sine.inOut',
   });
 };
@@ -816,7 +816,7 @@ GP._shimmerMystery = function (e, time) {
   e._hue = (e._hue + 0.012) % 1;
   var col = Phaser.Display.Color.HSVToRGB(e._hue, 0.65, 1).color;
   if (e.bodyImg) { e.bodyImg.setTint(col); e.bodyImg.rotation += 0.05; }
-  if (e.glow) { e.glow.setTint(col); e.glow.setAlpha(0.5 + 0.22 * Math.sin(time * 0.008)); }
+  if (e.glow) { e.glow.setTint(col); e.glow.setAlpha(0.61 + 0.11 * Math.sin(time * 0.008)); }
 };
 
 // the mystery touched `tgt` first → a slow build-up, then the keyed effect.
@@ -930,6 +930,9 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
   // mechanic (clear/merge/upgrade nearby) is a bonus when targets are present.
 
   var els = this.elements;
+  // sleeping bodies ignore setVelocity, so wake the whole board first — the
+  // shove/lift/magnet effects must be able to move settled pieces.
+  for (var wi = 0; wi < els.length; wi++) { if (els[wi].setAwake) els[wi].setAwake(); }
   switch (effect) {
     case 'updraft':   // LIFT-OFF: the WHOLE pile gets tossed upward (declutter)
       els.forEach(function (e) { if (e.tier >= 1 && e.setVelocity) e.setVelocity((Math.random() - 0.5) * 9, -12 - Math.random() * 6); });
@@ -1217,7 +1220,7 @@ GP.uraniumBirth = function (c) {
   this.burst(c.x, c.y, 0x7CFF6B, 20, { tex: 'p_spark', speed: 130, scale: 0.7, life: 800 });
   // slow radioactive pulse on the glow
   c.glow.setAlpha(0.6);
-  this.tweens.add({ targets: c.glow, alpha: 0.95, scaleX: c.glow.scaleX * 1.18, scaleY: c.glow.scaleY * 1.18,
+  this.tweens.add({ targets: c.glow, alpha: 0.775, scaleX: c.glow.scaleX * 1.09, scaleY: c.glow.scaleY * 1.09,
     duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   this.cameras.main.shake(260, 0.006);
 };
@@ -1341,7 +1344,9 @@ GP.update = function (time, delta) {
     if (e.isMystery) { this._shimmerMystery(e, time); continue; }   // rainbow swirl
     if (e._merging) continue;              // being pulled into a merge; leave it be
     if (e.face) this._animFace(e, time);   // jelly: blink / expression / float
-    if (e.fx) this._animFX(e, time);       // jelly: per-element internal effect
+    // skip the decorative internal effect for settled (sleeping) bodies: they
+    // hold their last frame, dropping the per-item loop once the beaker fills.
+    if (e.fx && !(e.body && e.body.isSleeping)) this._animFX(e, time);
     if (!e.glow || e.tier === DANNYLAB.MAX_TIER || !e.body) continue;
     var sp = e.body.speed;
     var target = sp > 0.7 ? Math.min(1.0, 0.35 + sp * 0.06) : 0.0;   // settled = no glow
