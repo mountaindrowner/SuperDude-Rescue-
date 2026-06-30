@@ -4,14 +4,15 @@
 window.DANNYLAB = window.DANNYLAB || {};
 
 // ---- beaker geometry (portrait 540 x 960) ----
-// Beaker hugs the LEFT edge; the right strip (x > ~390) is the stats column,
-// and the top band (above the rim) is reserved for the Lab Notes card.
+// The beaker fills most of the width (extended right so the Lab Charge bar sits
+// snug on the far edge), lifted up a little so the SCORE/BEST strip tucks in
+// underneath it. The top band (above the rim) holds the Lab Notes card.
 DANNYLAB.GEO = {
   W: 540, H: 960,
-  bx0: 32, bx1: 380,          // interior left/right (tube scooted to the left edge)
+  bx0: 32, bx1: 466,          // interior left/right (wide; bar lives just past bx1)
   wall: 24,
-  yRim: 300, floorTop: 884,
-  fillLineY: 336, dropY: 215,
+  yRim: 280, floorTop: 808,   // lifted; the band below floorTop holds the stats
+  fillLineY: 316, dropY: 215,
 };
 // shared helper: horizontal centre of the beaker (for tweezers / toasts / notes)
 DANNYLAB.beakerCx = function () { return (DANNYLAB.GEO.bx0 + DANNYLAB.GEO.bx1) / 2; };
@@ -206,35 +207,40 @@ GP.buildBeaker = function () {
 // ---------- HUD: stats panel + right-edge Lab Charge meter ----------
 GP.buildHUD = function () {
   var GEO = DANNYLAB.GEO, UI = DANNYLAB.UI, lang = this.lang, self = this;
-  var px = 384, pw = 104, py = 112, ph = 150, cx = px + pw / 2;
+  // ---- stats strip UNDER the beaker: mode tag + score + best, side by side ----
+  var sx = GEO.bx0, sw = GEO.bx1 - GEO.bx0, sy = GEO.floorTop + 18, sh = 112;
+  var scx = DANNYLAB.beakerCx();
 
   var g = this.add.graphics().setDepth(40);
-  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(px - 3, py - 3, pw + 6, ph + 6, 16);
-  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(px, py, pw, ph, 14);
-  g.fillStyle(0x586784, 1);    g.fillRoundedRect(px, py, pw, 30, { tl: 14, tr: 14, bl: 0, br: 0 });
-  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(px, py, pw, ph, 14);
-  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 10, py + 58, pw - 20, 32, 7);
-  g.fillStyle(0x0a1024, 1);    g.fillRoundedRect(px + 10, py + 116, pw - 20, 30, 7);
+  g.fillStyle(0x4fd9ff, 0.10); g.fillRoundedRect(sx - 3, sy - 3, sw + 6, sh + 6, 16);
+  g.fillStyle(0x46546f, 1);    g.fillRoundedRect(sx, sy, sw, sh, 14);
+  g.fillStyle(0x586784, 1);    g.fillRoundedRect(sx, sy, sw, 28, { tl: 14, tr: 14, bl: 0, br: 0 });
+  g.lineStyle(2.5, 0x4fd9ff, 0.8); g.strokeRoundedRect(sx, sy, sw, sh, 14);
+  var wy = sy + 42, wh = 50, ww = sw * 0.40, w1x = sx + sw * 0.06, w2x = sx + sw * 0.94 - ww;
+  g.fillStyle(0x0a1024, 1);
+  g.fillRoundedRect(w1x, wy, ww, wh, 7);
+  g.fillRoundedRect(w2x, wy, ww, wh, 7);
   g.lineStyle(1, 0x4fd9ff, 0.3);
-  g.strokeRoundedRect(px + 10, py + 58, pw - 20, 32, 7);
-  g.strokeRoundedRect(px + 10, py + 116, pw - 20, 30, 7);
+  g.strokeRoundedRect(w1x, wy, ww, wh, 7);
+  g.strokeRoundedRect(w2x, wy, ww, wh, 7);
 
-  var mb = this.add.text(cx, py + 15, DANNYLAB.t(this.mode, lang).toUpperCase(), {
+  var mb = this.add.text(scx, sy + 14, DANNYLAB.t(this.mode, lang).toUpperCase(), {
     fontFamily: UI.DISPLAY, fontSize: '14px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   mb.setShadow(0, 0, '#7CFF6B', 10);
-  this.add.text(cx, py + 44, DANNYLAB.t('score', lang).toUpperCase(), {
+  var c1 = w1x + ww / 2, c2 = w2x + ww / 2;
+  this.add.text(c1, wy - 8, DANNYLAB.t('score', lang).toUpperCase(), {
     fontFamily: UI.DISPLAY, fontSize: '11px', color: '#8fe6ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
-  this.scoreText = this.add.text(cx, py + 73, '0', {
-    fontFamily: UI.DISPLAY, fontSize: '23px', color: '#eafffb', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
+  this.scoreText = this.add.text(c1, wy + 27, '0', {
+    fontFamily: UI.DISPLAY, fontSize: '24px', color: '#eafffb', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   this.scoreText.setShadow(0, 0, '#4fd9ff', 8);
-  this.add.text(cx, py + 104, DANNYLAB.t('best', lang).toUpperCase(), {
+  this.add.text(c2, wy - 8, DANNYLAB.t('best', lang).toUpperCase(), {
     fontFamily: UI.DISPLAY, fontSize: '11px', color: '#8fe6ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
-  this.bestText = this.add.text(cx, py + 131, String(this.best), {
+  this.bestText = this.add.text(c2, wy + 27, String(this.best), {
     fontFamily: UI.DISPLAY, fontSize: '22px', color: '#FBD38D', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   this.bestText.setShadow(0, 0, '#e0a020', 8);
 
-  // ---- Lab Charge meter (vertical, far right edge) ----
-  var mx = 498, mw = 28, mTop = 132, mBot = 878, mH = mBot - mTop;
+  // ---- Lab Charge meter (vertical, far right edge, snug beside the glass) ----
+  var mx = 500, mw = 28, mTop = 160, mBot = GEO.floorTop, mH = mBot - mTop;
   this.chargeGeom = { mx: mx, mw: mw, mTop: mTop, mH: mH };
   var mg = this.add.graphics().setDepth(40);
   mg.fillStyle(0x4fd9ff, 0.12); mg.fillRoundedRect(mx - 4, mTop - 4, mw + 8, mH + 8, 12);
