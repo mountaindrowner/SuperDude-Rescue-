@@ -56,6 +56,8 @@ GP.create = function (data) {
   this.nextIsMystery = false;
   this.dropsUntilMystery = this._rollMystery();
   this.glowBoostMerges = 0;    // Neon mystery: temporary score boost on next merges
+  this._noOverflowUntil = 0;   // mystery overflow-immunity window (scene-clock based)
+  this._mysteryDescTxt = null;
 
   // Phaser reuses the scene instance across runs, so clear any slow-mo state
   // left over from a previous run and guarantee this one starts at real-time.
@@ -638,7 +640,7 @@ GP._animFace = function (e, time) {
 
   // smooth scale: gentle breathing bob (halved) + an eased eye-squash on
   // blink + a brief pop when an expression kicks in (no instant pops)
-  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.00625, scy = sc;
+  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.003, scy = sc;
   if (e.blinkUntil > time) { var bp = Math.sin(Math.min(1, (e.blinkUntil - time) / 130) * Math.PI); scy *= (1 - 0.3 * bp); }
   if (e.exprUntil > time && (e.exprUntil - time) > 430) { sc *= 1.08; scy *= 1.08; }
   f.setDisplaySize(r * 1.55 * sc, r * 1.55 * scy);
@@ -655,7 +657,7 @@ GP._animFace = function (e, time) {
 GP.startIdle = function (c) {
   if (!c.active || !c.visual) return;
   c.idleTween = this.tweens.add({
-    targets: c.visual, scaleX: 1.0075, scaleY: 0.9925, duration: 1100 + Math.random() * 600,
+    targets: c.visual, scaleX: 1.004, scaleY: 0.996, duration: 1700 + Math.random() * 800,
     yoyo: true, repeat: -1, ease: 'Sine.inOut',
   });
 };
@@ -919,13 +921,49 @@ GP.mysteryBanner = function (text, color) {
     onComplete: function () { t.destroy(); } });
 };
 
+// a small one-line explanation under the banner, held ~3s so the player can
+// read what the Mystery just did.
+GP.mysteryDesc = function (text) {
+  if (!text) return;
+  var GEO = DANNYLAB.GEO;
+  if (this._mysteryDescTxt && this._mysteryDescTxt.active) this._mysteryDescTxt.destroy();
+  var y = GEO.dropY + 142;
+  var t = this.add.text(DANNYLAB.beakerCx(), y, text, {
+    fontFamily: DANNYLAB.UI.FONT, fontSize: '20px', color: '#eaf4ff', fontStyle: 'bold',
+    stroke: '#0c1430', strokeThickness: 5, align: 'center',
+    wordWrap: { width: GEO.bx1 - GEO.bx0 - 16 },
+  }).setOrigin(0.5).setDepth(60).setAlpha(0);
+  this._mysteryDescTxt = t;
+  this.tweens.add({ targets: t, alpha: 1, duration: 250 });
+  this.tweens.add({ targets: t, alpha: 0, delay: 3000, duration: 450,
+    onComplete: function () { t.destroy(); } });
+};
+
 GP.applyMysteryEffect = function (effect, tgt, mx, my) {
   var self = this, R = 150, tier = tgt ? tgt.tier : 0, BASE = 75;
   var labels = {
     updraft: 'LIFT-OFF!', float: 'FLOAT!', crystallizeUpgrade: 'CRYSTALLIZE!', combustPop: 'KA-BOOM!',
     glowBoost: 'LIGHT SHOW!', fizzPop: 'FIZZ POP!', magnetMerge: 'MAGNET PULSE!', jackpot: 'JACKPOT!', miniFission: 'FISSION!',
   };
+  // short, plain-language explanation keyed to the element that was touched
+  var descs = {
+    updraft: 'The whole batch floats up!',
+    float: 'Nearby pieces balloon and lift!',
+    crystallizeUpgrade: 'A cluster crystallizes up a tier!',
+    combustPop: 'A blast scatters and clears the small ones!',
+    glowBoost: 'The smallest pieces power up a tier!',
+    fizzPop: 'Every small piece fizzes away!',
+    magnetMerge: 'Everything snaps toward the middle!',
+    jackpot: 'A big jackpot of points!',
+    miniFission: 'A fission blast clears a wide area!',
+  };
   if (labels[effect]) this.mysteryBanner(labels[effect], 0xff7be0);
+  this.mysteryDesc(descs[effect]);
+  // a Mystery shouldn't end the run: the effects briefly lift/scatter pieces,
+  // so suspend the overflow check while they settle back down.
+  this._noOverflowUntil = this.time.now + 3800;
+  this.overflowAccum = 0;
+  if (this.fillFlash) this.fillFlash.setAlpha(1);
   // every effect is guaranteed an obvious visual + a score bump; the themed
   // mechanic (clear/merge/upgrade nearby) is a bonus when targets are present.
 
@@ -950,11 +988,13 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
       this.addScore(BASE, mx, my);
       break;
 
-    case 'crystallizeUpgrade':  // CRYSTALLIZE: upgrade a whole cluster a tier, one by one
-      var cluster = this._elementsNear(mx, my, 200).filter(function (e) { return e.tier < DANNYLAB.MAX_TIER; });
+    case 'crystallizeUpgrade':  // CRYSTALLIZE: upgrade a small cluster a tier, one by one
+      // keep it modest: upgrading replaces pieces with bigger ones, so too many
+      // at once can shove the stack over the line. A few is plenty.
+      var cluster = this._elementsNear(mx, my, 170).filter(function (e) { return e.tier < DANNYLAB.MAX_TIER; });
       if (tgt && tgt.active && cluster.indexOf(tgt) < 0 && tgt.tier < DANNYLAB.MAX_TIER) cluster.unshift(tgt);
       if (!cluster.length) { var lo = this._lowest(); if (lo) cluster.push(lo); }
-      cluster = cluster.slice(0, 5);
+      cluster = cluster.slice(0, 3);
       this.burst(mx, my, 0xffffff, 24, { tex: 'p_spark', speed: 160, scale: 0.8, life: 750 });
       this._upgradeList(cluster, 190);
       this.addScore(BASE, mx, my);
@@ -1358,8 +1398,9 @@ GP.update = function (time, delta) {
     this.combo = 0;
   }
 
-  // overflow check (Endless only) — settled element breaching the fill line
-  if (this.mode === 'endless') {
+  // overflow check (Endless only) — settled element breaching the fill line.
+  // Suspended briefly after a Mystery so its lift/scatter can't end the run.
+  if (this.mode === 'endless' && !(this._noOverflowUntil && time < this._noOverflowUntil)) {
     var breach = false;
     for (var i = 0; i < this.elements.length; i++) {
       var e = this.elements[i];

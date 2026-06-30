@@ -69,10 +69,10 @@ DANNYLAB.CONFIG = {
     { t: 3, sym: 'C',  radius: 40,  color: 0x7B8A9B, mood: 'cool'   },
     { t: 4, sym: 'O',  radius: 52,  color: 0x4FD1C5, mood: 'happy'  },
     { t: 5, sym: 'Ne', radius: 66,  color: 0xF687B3, mood: 'wow'    },
-    { t: 6, sym: 'Na', radius: 82,  color: 0x9F7AEA, mood: 'happy'  },
-    { t: 7, sym: 'Fe', radius: 100, color: 0x8696A7, mood: 'cool'   },
-    { t: 8, sym: 'Au', radius: 120, color: 0xECC94B, mood: 'wow'    },
-    { t: 9, sym: 'U',  radius: 145, color: 0x7CFF6B, mood: 'glow'   },
+    { t: 6, sym: 'Na', radius: 74,  color: 0x9F7AEA, mood: 'happy'  },
+    { t: 7, sym: 'Fe', radius: 90,  color: 0x8696A7, mood: 'cool'   },
+    { t: 8, sym: 'Au', radius: 108, color: 0xECC94B, mood: 'wow'    },
+    { t: 9, sym: 'U',  radius: 130, color: 0x7CFF6B, mood: 'glow'   },
   ],
 };
 

@@ -32,8 +32,8 @@ await page.waitForTimeout(600);
 const fission = await page.evaluate(async () => {
   const g = window.DANNYLAB.game.scene.getScene('DANNYLAB_Game');
   const before = g.score;
-  g.spawnElement(9, 250, 820, {});
-  g.spawnElement(9, 250, 560, {});   // falls onto the first → two Uraniums touch
+  g.spawnElement(9, 250, 650, {});
+  g.spawnElement(9, 250, 540, {});   // overlaps the first → two Uraniums touch → fission
   await new Promise(r => setTimeout(r, 1500));
   return { before, after: g.score, elements: g.elements.length,
     uraniums: g.elements.filter(e => e.tier === 9).length };
