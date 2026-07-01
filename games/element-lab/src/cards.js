@@ -14,26 +14,6 @@ window.DANNYLAB = window.DANNYLAB || {};
   ];
   DANNYLAB.CARD_BACK = 'assets/cards/back.jpg';
 
-  // ---------------- menu mini-card (Phaser image + glow, gentle idle float) ----------------
-  DANNYLAB.buildMiniCard = function (scene, opts) {
-    opts = opts || {};
-    var texKey = opts.textureKey, W = opts.w || 100;
-    var src = scene.textures.get(texKey).getSourceImage();
-    var H = W * (src.height / src.width);
-    var root = scene.add.container(opts.x || 0, opts.y || 0);
-    var glow = scene.add.image(0, 0, 'el_glow').setTint(0x9fd0ff).setBlendMode('ADD').setAlpha(0.55).setDisplaySize(W * 1.5, H * 1.2);
-    var img = scene.add.image(0, 0, texKey).setDisplaySize(W, H);
-    root.add([glow, img]);
-    return {
-      root: root, half: { x: W / 2, y: H / 2 },
-      wobble: function (t) {
-        root.rotation = Math.sin(t * 0.0009) * 0.05;
-        root.y = (opts.y || 0) + Math.sin(t * 0.0013) * 3;
-        glow.setAlpha(0.45 + 0.15 * Math.sin(t * 0.004));
-      },
-    };
-  };
-
   // ---------------- full 3D holographic viewer (DOM / CSS-3D overlay) ----------------
   function injectStyles() {
     if (document.getElementById('dlc-styles')) return;

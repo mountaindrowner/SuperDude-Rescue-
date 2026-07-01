@@ -200,42 +200,71 @@ window.DANNYLAB = window.DANNYLAB || {};
   DANNYLAB.CollectionScene = defscene('DANNYLAB_Collection', function (data) {
     var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = this.registry.get('lang');
     var parent = data.parent || 'DANNYLAB_Menu';
+    var self = this;
     UI.scrim(this, 0.62);
-    UI.panel(this, W / 2, H / 2, Math.min(460, W * 0.92), 600);
-    this.add.text(W / 2, H / 2 - 260, t('collection', lang), {
-      fontFamily: UI.FONT, fontSize: '34px', color: '#7CFF6B', fontStyle: 'bold',
-    }).setOrigin(0.5);
-    // best Lab Level flex (Addendum §3)
-    this.add.text(W / 2, H / 2 - 228, t('lab_level', lang) + ': ' + DANNYLAB.store.getBestLevel(), {
-      fontFamily: UI.FONT, fontSize: '18px', color: '#FBD38D', fontStyle: 'bold',
+    UI.panel(this, W / 2, H / 2, Math.min(468, W * 0.94), 704);
+    this.add.text(W / 2, H / 2 - 316, t('collection', lang), {
+      fontFamily: UI.FONT, fontSize: '32px', color: '#7CFF6B', fontStyle: 'bold',
     }).setOrigin(0.5);
 
+    // ----- Character Cards: a row of tappable thumbnails -> 3D holo viewer -----
+    this.add.text(W / 2, H / 2 - 276, 'CHARACTER CARDS', {
+      fontFamily: UI.DISPLAY, fontSize: '16px', color: '#bfe3ff', fontStyle: 'bold',
+    }).setOrigin(0.5);
+    var cards = DANNYLAB.CARDS || [];
+    var tw = 74, th = 100, gap = 12, cardsY = H / 2 - 208;
+    var startCX = W / 2 - (cards.length - 1) * (tw + gap) / 2;
+    var thumbs = [];
+    cards.forEach(function (c, i) {
+      var cx = startCX + i * (tw + gap);
+      var g = self.add.graphics();
+      g.fillStyle(0x0c1430, 0.7); g.fillRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
+      g.lineStyle(2, 0x8fd0ff, 0.85); g.strokeRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
+      if (self.textures.exists('card_' + c.key)) self.add.image(cx, cardsY, 'card_' + c.key).setDisplaySize(tw, th);
+      thumbs.push({ x: cx, y: cardsY, i: i });
+    });
+    this.input.on('pointerdown', function (p) {
+      for (var k = 0; k < thumbs.length; k++) {
+        var tb = thumbs[k];
+        if (Math.abs(p.worldX - tb.x) < tw / 2 + 4 && Math.abs(p.worldY - tb.y) < th / 2 + 4) {
+          if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { index: tb.i });
+          return;
+        }
+      }
+    });
+
+    // ----- Elements shelf -----
+    this.add.text(W / 2 - 150, H / 2 - 142, 'ELEMENTS', {
+      fontFamily: UI.DISPLAY, fontSize: '16px', color: '#bfe3ff', fontStyle: 'bold',
+    }).setOrigin(0, 0.5);
+    this.add.text(W / 2 + 150, H / 2 - 142, t('lab_level', lang) + ': ' + DANNYLAB.store.getBestLevel(), {
+      fontFamily: UI.FONT, fontSize: '15px', color: '#FBD38D', fontStyle: 'bold',
+    }).setOrigin(1, 0.5);
+
     var discovered = DANNYLAB.store.getDiscovered();
-    var cols = 3, cellW = Math.min(130, (W * 0.8) / cols), cellH = 130;
-    var startX = W / 2 - cellW, startY = H / 2 - 180;
-    var self = this;
+    var cols = 3, cellW = Math.min(132, (W * 0.82) / cols), cellH = 112;
+    var startX = W / 2 - cellW, startY = H / 2 - 72;
     DANNYLAB.CONFIG.tiers.forEach(function (cfg, i) {
       var col = i % cols, row = Math.floor(i / cols);
       var cx = startX + col * cellW, cyy = startY + row * cellH;
       var known = discovered.indexOf(cfg.sym) !== -1;
       var cell = self.add.graphics();
-      cell.fillStyle(0x0c1430, 0.6); cell.fillRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 6, cellW - 12, cellH - 12, 12);
+      cell.fillStyle(0x0c1430, 0.6); cell.fillRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 5, cellW - 12, cellH - 10, 12);
       cell.lineStyle(2, known ? cfg.color : 0x334066, 0.8);
-      cell.strokeRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 6, cellW - 12, cellH - 12, 12);
+      cell.strokeRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 5, cellW - 12, cellH - 10, 12);
       if (known) {
-        var im = self.add.image(cx, cyy - 14, DANNYLAB.iconKey(self, cfg.t));
-        im.setDisplaySize(58, 58);
-        self.add.text(cx, cyy + 34, DANNYLAB.elementName(cfg.sym, lang), {
-          fontFamily: UI.FONT, fontSize: '15px', color: '#dceaff', fontStyle: 'bold',
+        self.add.image(cx, cyy - 12, DANNYLAB.iconKey(self, cfg.t)).setDisplaySize(50, 50);
+        self.add.text(cx, cyy + 30, DANNYLAB.elementName(cfg.sym, lang), {
+          fontFamily: UI.FONT, fontSize: '14px', color: '#dceaff', fontStyle: 'bold',
         }).setOrigin(0.5);
       } else {
         self.add.text(cx, cyy, '?', {
-          fontFamily: UI.FONT, fontSize: '40px', color: '#3a4a66', fontStyle: 'bold',
+          fontFamily: UI.FONT, fontSize: '36px', color: '#3a4a66', fontStyle: 'bold',
         }).setOrigin(0.5);
       }
     });
 
-    UI.button(this, W / 2, H / 2 + 250, Math.min(300, W * 0.66), 60, t('back', lang), function () {
+    UI.button(this, W / 2, H / 2 + 312, Math.min(300, W * 0.66), 58, t('back', lang), function () {
       self.scene.stop(); self.scene.resume(parent);
     }, { fill: 0x46506e });
   });
