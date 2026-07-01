@@ -1,10 +1,10 @@
-// cards.js — collectible character cards. Full-art fronts + a shared back
-// (real assets in assets/cards/), shown with an interactive holographic 3D
-// look: a CSS-3D DOM viewer (drag to spin in perspective, double-tap to flip,
-// a moving foil sheen + shine), and a small shimmering Phaser card on the menu.
+// cards.js — collectible cards shown in a holographic 3D viewer.
+// Two decks share the same back (assets/cards/back.jpg):
+//   * character cards  — full baked art (assets/cards/*.jpg)
+//   * element cards     — built here from the jelly element characters
+// Viewer: DOM/CSS-3D overlay (drag to spin, double-tap to flip, prev/next).
 window.DANNYLAB = window.DANNYLAB || {};
 (function () {
-  // the set (order = browse order). Fronts are full baked art; back is shared.
   DANNYLAB.CARDS = [
     { key: 'kevin',    file: 'assets/cards/kevin.jpg',    name: 'Captain Kevin' },
     { key: 'nayah',    file: 'assets/cards/nayah.jpg',    name: 'Nature Expert Nayah' },
@@ -14,7 +14,67 @@ window.DANNYLAB = window.DANNYLAB || {};
   ];
   DANNYLAB.CARD_BACK = 'assets/cards/back.jpg';
 
-  // ---------------- full 3D holographic viewer (DOM / CSS-3D overlay) ----------------
+  // real atomic numbers + a state tag + a fun epithet per element
+  var ELEMENT_META = {
+    H:  { z: 1,  kind: 'GAS',   epi: 'Spark of the Stars' },
+    He: { z: 2,  kind: 'GAS',   epi: 'Featherlight Wonder' },
+    C:  { z: 6,  kind: 'SOLID', epi: 'Builder of Life' },
+    O:  { z: 8,  kind: 'GAS',   epi: 'Breath of the World' },
+    Ne: { z: 10, kind: 'GAS',   epi: 'The Bright Glow' },
+    Na: { z: 11, kind: 'METAL', epi: 'The Lively Metal' },
+    Fe: { z: 26, kind: 'METAL', epi: 'Heart of the Earth' },
+    Au: { z: 79, kind: 'METAL', epi: 'Everlasting Treasure' },
+    U:  { z: 92, kind: 'METAL', epi: 'Heavyweight Powerhouse' },
+  };
+
+  DANNYLAB.characterDeck = function () { return DANNYLAB.CARDS.map(function (c) { return { img: c.file }; }); };
+  DANNYLAB.elementDeck = function () { return DANNYLAB.CONFIG.tiers.map(function (t) { return { element: t.t }; }); };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  // render the element "character" (body + face) to a data URL
+  function portraitURL(scene, tier) {
+    try {
+      var s = 320, c = document.createElement('canvas'); c.width = s; c.height = s;
+      var ctx = c.getContext('2d');
+      var bk = scene.textures.exists('jelly_body_' + tier) ? 'jelly_body_' + tier : DANNYLAB.iconKey(scene, tier);
+      var body = scene.textures.get(bk).getSourceImage();
+      var bw = s * 0.92; ctx.drawImage(body, (s - bw) / 2, (s - bw) / 2, bw, bw);
+      if (scene.textures.exists('jelly_face_' + tier + '_rest')) {
+        var face = scene.textures.get('jelly_face_' + tier + '_rest').getSourceImage();
+        var fw = s * 0.72; ctx.drawImage(face, (s - fw) / 2, (s - fw) / 2 - s * 0.02, fw, fw);
+      }
+      return c.toDataURL();
+    } catch (e) { return ''; }
+  }
+
+  // full element-card front markup (its own holo frame; viewer adds foil/shine)
+  function elementCardHTML(scene, tier) {
+    var cfg = DANNYLAB.tierCfg(tier), sym = cfg.sym;
+    var lang = scene.registry.get('lang') || 'en';
+    var name = DANNYLAB.elementName(sym, lang).toUpperCase();
+    var fact = DANNYLAB.elementFact(sym, lang);
+    var meta = ELEMENT_META[sym] || { z: tier, kind: '', epi: '' };
+    var accent = '#' + cfg.color.toString(16).padStart(6, '0');
+    var stars = Math.min(5, Math.ceil(tier / 2));
+    var starStr = ''; for (var i = 0; i < 5; i++) starStr += (i < stars ? '★' : '☆');
+    var art = portraitURL(scene, tier);
+    return '<div class="elc" style="--acc:' + accent + ';">'
+      + '<div class="elc-in">'
+      + '<div class="elc-top"><span>ELEMENT</span><span>No.' + ('00' + meta.z).slice(-3) + '</span></div>'
+      + '<div class="elc-hero"><div class="elc-glow"></div>'
+      + (art ? '<img class="elc-art" src="' + art + '">' : '')
+      + '<div class="elc-sym">' + esc(sym) + '</div>'
+      + (meta.kind ? '<div class="elc-kind">' + esc(meta.kind) + '</div>' : '')
+      + '</div>'
+      + '<div class="elc-name">' + esc(name) + '</div>'
+      + '<div class="elc-epi">"' + esc(meta.epi) + '"</div>'
+      + '<div class="elc-stars">' + starStr + '</div>'
+      + '<div class="elc-note"><div class="elc-note-h">LAB NOTE</div><div class="elc-note-b">' + esc(fact) + '</div></div>'
+      + '<div class="elc-brand">SUPER DUDE DANNY &middot; ELEMENT LAB</div>'
+      + '</div></div>';
+  }
+
   function injectStyles() {
     if (document.getElementById('dlc-styles')) return;
     var css = ''
@@ -28,6 +88,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       + '.dlc-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;will-change:transform;cursor:grab;}'
       + '.dlc-face{position:absolute;inset:0;border-radius:20px;overflow:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 18px 46px rgba(0,0,0,.6);}'
       + '.dlc-back{transform:rotateY(180deg);}'
+      + '.dlc-content{position:absolute;inset:0;}'
       + '.dlc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}'
       + '.dlc-foil{position:absolute;inset:0;pointer-events:none;'
       + 'background:linear-gradient(115deg,transparent 26%,rgba(255,80,140,.4),rgba(255,220,90,.4),rgba(90,255,150,.4),rgba(90,200,255,.4),rgba(160,110,255,.4),transparent 74%);'
@@ -40,41 +101,65 @@ window.DANNYLAB = window.DANNYLAB || {};
       + '.dlc-hint{color:#cfe0ff;font-weight:700;font-size:15px;margin-top:4px;opacity:.85;}'
       + '.dlc-done{margin-top:16px;padding:13px 44px;border:none;border-radius:16px;background:#46506e;color:#eafffb;font-weight:800;font-size:19px;'
       + 'font-family:inherit;box-shadow:0 6px 16px rgba(0,0,0,.4);cursor:pointer;}'
-      + '.dlc-done:active{transform:translateY(2px);}';
+      + '.dlc-done:active{transform:translateY(2px);}'
+      // ----- element card face -----
+      + '.elc{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:conic-gradient(from 210deg,#ff2d6f,#ff8a3a,#ffe14d,#49ff7a,#3ad0ff,#7a5cff,#ff5ce6,#ff2d6f);}'
+      + '.elc-in{position:absolute;inset:5px;border-radius:16px;overflow:hidden;background:linear-gradient(165deg,#12203f,#070d1e);border:2px solid rgba(255,255,255,.14);display:flex;flex-direction:column;}'
+      + '.elc-top{display:flex;justify-content:space-between;align-items:center;background:var(--acc);color:#0a1330;font-weight:800;font-size:12px;letter-spacing:2px;padding:5px 12px;}'
+      + '.elc-hero{position:relative;height:152px;margin:7px 9px 0;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 46%,rgba(255,255,255,.05),#050c1e);border:2px solid rgba(255,255,255,.8);}'
+      + '.elc-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,var(--acc),transparent 62%);opacity:.4;}'
+      + '.elc-art{position:absolute;left:50%;top:50%;width:74%;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 16px rgba(0,0,0,.5));}'
+      + '.elc-sym{position:absolute;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:rgba(8,16,38,.8);border:2px solid var(--acc);color:var(--acc);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;}'
+      + '.elc-kind{position:absolute;right:8px;bottom:8px;background:rgba(8,16,38,.8);border:1px solid var(--acc);color:#dfeaff;font-weight:700;font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:8px;}'
+      + '.elc-name{text-align:center;color:#fff;font-weight:800;font-size:27px;letter-spacing:1px;margin-top:6px;text-shadow:0 0 10px var(--acc);}'
+      + '.elc-epi{text-align:center;color:#bcd0f2;font-style:italic;font-size:13px;margin-top:-1px;}'
+      + '.elc-stars{text-align:center;color:#ffd84d;font-size:16px;letter-spacing:3px;margin-top:2px;}'
+      + '.elc-note{margin:6px 12px 0;background:rgba(8,16,38,.7);border:1px solid rgba(143,208,255,.3);border-radius:10px;padding:6px 10px;}'
+      + '.elc-note-h{color:var(--acc);font-weight:800;font-size:10px;letter-spacing:2px;}'
+      + '.elc-note-b{color:#dbe7ff;font-size:12px;line-height:1.32;margin-top:2px;}'
+      + '.elc-brand{margin-top:auto;text-align:center;color:#5f74a6;font-weight:800;font-size:8px;letter-spacing:1px;padding:6px 0;}';
     var st = document.createElement('style'); st.id = 'dlc-styles'; st.textContent = css;
     document.head.appendChild(st);
   }
 
-  // Open the full-screen 3D card. index = starting card in DANNYLAB.CARDS.
+  // opts: { deck: [ {img:'..'} | {element:tier} ], index }
   DANNYLAB.openCardViewer = function (scene, opts) {
     if (document.querySelector('.dlc-overlay')) return;
     opts = opts || {};
     injectStyles();
-    var CARDS = DANNYLAB.CARDS, idx = opts.index || 0;
+    var deck = opts.deck || DANNYLAB.characterDeck(), idx = opts.index || 0;
+    if (idx < 0 || idx >= deck.length) idx = 0;
 
     var ov = document.createElement('div'); ov.className = 'dlc-overlay';
     ov.innerHTML = '<div class="dlc-h">CARD COLLECTION</div>'
       + '<div class="dlc-row">'
       + '<button class="dlc-nav dlc-prev">&#8249;</button>'
       + '<div class="dlc-stage"><div class="dlc-card">'
-      + '<div class="dlc-face dlc-front"><img class="dlc-img" src="' + CARDS[idx].file + '"><div class="dlc-foil"></div><div class="dlc-shine"></div><div class="dlc-glare"></div></div>'
+      + '<div class="dlc-face dlc-front"><div class="dlc-content"></div><div class="dlc-foil"></div><div class="dlc-shine"></div><div class="dlc-glare"></div></div>'
       + '<div class="dlc-face dlc-back"><img class="dlc-img" src="' + DANNYLAB.CARD_BACK + '"><div class="dlc-foil"></div><div class="dlc-shine"></div></div>'
       + '</div></div>'
       + '<button class="dlc-nav dlc-next">&#8250;</button>'
       + '</div>'
-      + '<div class="dlc-count">' + (idx + 1) + ' / ' + CARDS.length + '</div>'
+      + '<div class="dlc-count"></div>'
       + '<div class="dlc-hint">Drag to spin &middot; double-tap to flip</div>'
       + '<button class="dlc-done">Done</button>';
     document.body.appendChild(ov);
     requestAnimationFrame(function () { ov.classList.add('show'); });
 
     var card = ov.querySelector('.dlc-card');
-    var frontImg = ov.querySelector('.dlc-front .dlc-img');
+    var content = ov.querySelector('.dlc-content');
     var count = ov.querySelector('.dlc-count');
     var foils = ov.querySelectorAll('.dlc-foil'), shines = ov.querySelectorAll('.dlc-shine');
     var glare = ov.querySelector('.dlc-glare');
     var rx = -8, ry = -16, vx = 0, vy = 0, dragging = false, lastX = 0, lastY = 0, lastTap = 0;
     var raf = 0, closed = false, phase = 0, flipTarget = null;
+
+    function render() {
+      var spec = deck[idx];
+      content.innerHTML = spec.img ? '<img class="dlc-img" src="' + spec.img + '">' : elementCardHTML(scene, spec.element);
+      count.textContent = (idx + 1) + ' / ' + deck.length;
+    }
+    render();
 
     function apply() {
       card.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
@@ -101,10 +186,9 @@ window.DANNYLAB = window.DANNYLAB || {};
     raf = requestAnimationFrame(loop);
 
     function cycle(d) {
-      idx = (idx + d + CARDS.length) % CARDS.length;
-      frontImg.src = CARDS[idx].file;
-      count.textContent = (idx + 1) + ' / ' + CARDS.length;
-      flipTarget = Math.round(ry / 360) * 360;   // snap to the front to show the new card
+      idx = (idx + d + deck.length) % deck.length;
+      render();
+      flipTarget = Math.round(ry / 360) * 360;   // snap to front to show the new card
       vy = vx = 0;
     }
     function down(e) {

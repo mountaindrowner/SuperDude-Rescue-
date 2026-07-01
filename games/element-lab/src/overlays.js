@@ -223,11 +223,20 @@ window.DANNYLAB = window.DANNYLAB || {};
       if (self.textures.exists('card_' + c.key)) self.add.image(cx, cardsY, 'card_' + c.key).setDisplaySize(tw, th);
       thumbs.push({ x: cx, y: cardsY, i: i });
     });
+    var elemCells = [];   // populated by the element grid below
     this.input.on('pointerdown', function (p) {
-      for (var k = 0; k < thumbs.length; k++) {
-        var tb = thumbs[k];
-        if (Math.abs(p.worldX - tb.x) < tw / 2 + 4 && Math.abs(p.worldY - tb.y) < th / 2 + 4) {
-          if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { index: tb.i });
+      var k, o;
+      for (k = 0; k < thumbs.length; k++) {
+        o = thumbs[k];
+        if (Math.abs(p.worldX - o.x) < tw / 2 + 4 && Math.abs(p.worldY - o.y) < th / 2 + 4) {
+          if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { deck: DANNYLAB.characterDeck(), index: o.i });
+          return;
+        }
+      }
+      for (k = 0; k < elemCells.length; k++) {
+        o = elemCells[k];
+        if (Math.abs(p.worldX - o.x) < o.w / 2 && Math.abs(p.worldY - o.y) < o.h / 2) {
+          if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { deck: DANNYLAB.elementDeck(), index: o.tier - 1 });
           return;
         }
       }
@@ -248,6 +257,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       var col = i % cols, row = Math.floor(i / cols);
       var cx = startX + col * cellW, cyy = startY + row * cellH;
       var known = discovered.indexOf(cfg.sym) !== -1;
+      elemCells.push({ x: cx, y: cyy, w: cellW - 12, h: cellH - 10, tier: cfg.t });
       var cell = self.add.graphics();
       cell.fillStyle(0x0c1430, 0.6); cell.fillRoundedRect(cx - cellW / 2 + 6, cyy - cellH / 2 + 5, cellW - 12, cellH - 10, 12);
       cell.lineStyle(2, known ? cfg.color : 0x334066, 0.8);
