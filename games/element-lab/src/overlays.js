@@ -212,7 +212,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       fontFamily: UI.DISPLAY, fontSize: '16px', color: '#bfe3ff', fontStyle: 'bold',
     }).setOrigin(0.5);
     var cards = DANNYLAB.CARDS || [];
-    var tw = 74, th = 100, gap = 12, cardsY = H / 2 - 208;
+    var tw = 62, th = 86, gap = 10, cardsY = H / 2 - 210;
     var startCX = W / 2 - (cards.length - 1) * (tw + gap) / 2;
     var thumbs = [];
     var stats = DANNYLAB.cardStats ? DANNYLAB.cardStats() : null;

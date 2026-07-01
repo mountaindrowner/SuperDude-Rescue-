@@ -12,6 +12,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     { key: 'carlos',   file: 'assets/cards/carlos.jpg',   name: 'Galaxy Guide Carlos',  req: { text: 'Reach Lab Level 3',     test: function (s) { return s.level >= 3; } } },
     { key: 'nayah',    file: 'assets/cards/nayah.jpg',    name: 'Nature Expert Nayah',  req: { text: 'Discover 6 elements',   test: function (s) { return s.discovered >= 6; } } },
     { key: 'victoria', file: 'assets/cards/victoria.jpg', name: 'Time Tech Victoria',   req: { text: 'Reach Lab Level 6',     test: function (s) { return s.level >= 6; } } },
+    { key: 'danny',    file: 'assets/cards/danny.jpg',    name: 'Super Dude Danny',     req: { text: 'Collect the whole rescue team to find Danny!', test: function (s) { return s.games >= 1 && s.discovered >= 6 && s.level >= 6; } } },
   ];
   DANNYLAB.CARD_BACK = 'assets/cards/back.jpg';
 
