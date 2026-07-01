@@ -5,14 +5,30 @@
 // Viewer: DOM/CSS-3D overlay (drag to spin, double-tap to flip, prev/next).
 window.DANNYLAB = window.DANNYLAB || {};
 (function () {
+  // display order = unlock ramp (easy -> hard). Each has a requirement.
   DANNYLAB.CARDS = [
-    { key: 'kevin',    file: 'assets/cards/kevin.jpg',    name: 'Captain Kevin' },
-    { key: 'nayah',    file: 'assets/cards/nayah.jpg',    name: 'Nature Expert Nayah' },
-    { key: 'carlos',   file: 'assets/cards/carlos.jpg',   name: 'Galaxy Guide Carlos' },
-    { key: 'victoria', file: 'assets/cards/victoria.jpg', name: 'Time Tech Victoria' },
-    { key: 'josh',     file: 'assets/cards/josh.jpg',     name: 'Zookeeper Josh' },
+    { key: 'kevin',    file: 'assets/cards/kevin.jpg',    name: 'Captain Kevin',        req: { text: 'Play your first game',  test: function (s) { return s.games >= 1; } } },
+    { key: 'josh',     file: 'assets/cards/josh.jpg',     name: 'Zookeeper Josh',       req: { text: 'Discover 3 elements',   test: function (s) { return s.discovered >= 3; } } },
+    { key: 'carlos',   file: 'assets/cards/carlos.jpg',   name: 'Galaxy Guide Carlos',  req: { text: 'Reach Lab Level 3',     test: function (s) { return s.level >= 3; } } },
+    { key: 'nayah',    file: 'assets/cards/nayah.jpg',    name: 'Nature Expert Nayah',  req: { text: 'Discover 6 elements',   test: function (s) { return s.discovered >= 6; } } },
+    { key: 'victoria', file: 'assets/cards/victoria.jpg', name: 'Time Tech Victoria',   req: { text: 'Reach Lab Level 6',     test: function (s) { return s.level >= 6; } } },
   ];
   DANNYLAB.CARD_BACK = 'assets/cards/back.jpg';
+
+  // ---------- unlock rules ----------
+  DANNYLAB.cardStats = function () {
+    var st = DANNYLAB.store;
+    return { games: st.getGamesPlayed(), best: st.getBest(), level: st.getBestLevel(), discovered: st.getDiscovered().length };
+  };
+  // spec: { element:tier } or { reqTest, reqText } (character)
+  DANNYLAB.cardUnlocked = function (spec) {
+    if (spec.element) return DANNYLAB.store.isDiscovered(DANNYLAB.tierCfg(spec.element).sym);
+    return spec.reqTest ? !!spec.reqTest(DANNYLAB.cardStats()) : true;
+  };
+  DANNYLAB.cardRequirement = function (spec) {
+    if (spec.element) return 'Create this element in the lab to unlock its card.';
+    return spec.reqText || 'Keep playing to unlock.';
+  };
 
   // real atomic numbers + a state tag + a fun epithet per element
   var ELEMENT_META = {
@@ -27,7 +43,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     U:  { z: 92, kind: 'METAL', epi: 'Heavyweight Powerhouse' },
   };
 
-  DANNYLAB.characterDeck = function () { return DANNYLAB.CARDS.map(function (c) { return { img: c.file }; }); };
+  DANNYLAB.characterDeck = function () { return DANNYLAB.CARDS.map(function (c) { return { img: c.file, key: c.key, reqTest: c.req.test, reqText: c.req.text }; }); };
   DANNYLAB.elementDeck = function () { return DANNYLAB.CONFIG.tiers.map(function (t) { return { element: t.t }; }); };
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -75,6 +91,20 @@ window.DANNYLAB = window.DANNYLAB || {};
       + '</div></div>';
   }
 
+  // the "not yet earned" face: muted holo frame, padlock, requirement text
+  function lockedFrontHTML(spec) {
+    var req = DANNYLAB.cardRequirement(spec);
+    var lock = '<svg width="66" height="74" viewBox="0 0 64 74">'
+      + '<rect x="9" y="30" width="46" height="38" rx="8" fill="#6f83b0"/>'
+      + '<path d="M18 32 v-9 a14 14 0 0 1 28 0 v9" fill="none" stroke="#6f83b0" stroke-width="7"/>'
+      + '<circle cx="32" cy="46" r="5.5" fill="#0c1430"/><rect x="29.5" y="48" width="5" height="11" rx="2.5" fill="#0c1430"/></svg>';
+    return '<div class="lock-card"><div class="lock-in">'
+      + lock + '<div class="lock-t">LOCKED</div>'
+      + '<div class="lock-sub">HOW TO UNLOCK</div>'
+      + '<div class="lock-req">' + esc(req) + '</div>'
+      + '</div></div>';
+  }
+
   function injectStyles() {
     if (document.getElementById('dlc-styles')) return;
     var css = ''
@@ -117,7 +147,13 @@ window.DANNYLAB = window.DANNYLAB || {};
       + '.elc-note{margin:6px 12px 0;background:rgba(8,16,38,.7);border:1px solid rgba(143,208,255,.3);border-radius:10px;padding:6px 10px;}'
       + '.elc-note-h{color:var(--acc);font-weight:800;font-size:10px;letter-spacing:2px;}'
       + '.elc-note-b{color:#dbe7ff;font-size:12px;line-height:1.32;margin-top:2px;}'
-      + '.elc-brand{margin-top:auto;text-align:center;color:#5f74a6;font-weight:800;font-size:8px;letter-spacing:1px;padding:6px 0;}';
+      + '.elc-brand{margin-top:auto;text-align:center;color:#5f74a6;font-weight:800;font-size:8px;letter-spacing:1px;padding:6px 0;}'
+      // ----- locked card face -----
+      + '.lock-card{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:conic-gradient(from 210deg,#46506e,#2a3860,#556089,#2a3860,#46506e);}'
+      + '.lock-in{position:absolute;inset:5px;border-radius:16px;background:linear-gradient(160deg,#0c1430,#060b1c);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;}'
+      + '.lock-t{color:#8fa6cf;font-weight:800;font-size:22px;letter-spacing:5px;}'
+      + '.lock-sub{color:#6f83b0;font-weight:800;font-size:11px;letter-spacing:2px;}'
+      + '.lock-req{color:#eaf2ff;font-size:16px;line-height:1.4;font-weight:700;max-width:80%;}';
     var st = document.createElement('style'); st.id = 'dlc-styles'; st.textContent = css;
     document.head.appendChild(st);
   }
@@ -156,7 +192,8 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     function render() {
       var spec = deck[idx];
-      content.innerHTML = spec.img ? '<img class="dlc-img" src="' + spec.img + '">' : elementCardHTML(scene, spec.element);
+      if (!DANNYLAB.cardUnlocked(spec)) content.innerHTML = lockedFrontHTML(spec);
+      else content.innerHTML = spec.img ? '<img class="dlc-img" src="' + spec.img + '">' : elementCardHTML(scene, spec.element);
       count.textContent = (idx + 1) + ' / ' + deck.length;
     }
     render();

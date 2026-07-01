@@ -215,12 +215,21 @@ window.DANNYLAB = window.DANNYLAB || {};
     var tw = 74, th = 100, gap = 12, cardsY = H / 2 - 208;
     var startCX = W / 2 - (cards.length - 1) * (tw + gap) / 2;
     var thumbs = [];
+    var stats = DANNYLAB.cardStats ? DANNYLAB.cardStats() : null;
     cards.forEach(function (c, i) {
       var cx = startCX + i * (tw + gap);
+      var unlocked = !stats || c.req.test(stats);
       var g = self.add.graphics();
       g.fillStyle(0x0c1430, 0.7); g.fillRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
-      g.lineStyle(2, 0x8fd0ff, 0.85); g.strokeRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
-      if (self.textures.exists('card_' + c.key)) self.add.image(cx, cardsY, 'card_' + c.key).setDisplaySize(tw, th);
+      g.lineStyle(2, unlocked ? 0x8fd0ff : 0x3a4a66, 0.85); g.strokeRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
+      var texKey = unlocked ? ('card_' + c.key) : 'card_back';
+      if (self.textures.exists(texKey)) self.add.image(cx, cardsY, texKey).setDisplaySize(tw, th).setAlpha(unlocked ? 1 : 0.7);
+      if (!unlocked) {
+        var lk = self.add.graphics();
+        lk.lineStyle(4, 0xcfe0ff, 1); lk.strokeCircle(cx, cardsY - 4, 8);
+        lk.fillStyle(0xcfe0ff, 1); lk.fillRoundedRect(cx - 11, cardsY - 2, 22, 17, 4);
+        lk.fillStyle(0x0c1430, 1); lk.fillCircle(cx, cardsY + 6, 2.5);
+      }
       thumbs.push({ x: cx, y: cardsY, i: i });
     });
     var elemCells = [];   // populated by the element grid below

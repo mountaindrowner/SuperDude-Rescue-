@@ -30,6 +30,7 @@ GP.create = function (data) {
   this.mode = (data && data.mode) || this.registry.get('mode') || 'endless';
   this.lang = this.registry.get('lang');
   this.audio = this.registry.get('audio');
+  DANNYLAB.store.addGamePlayed();   // lifetime counter (drives some card unlocks)
   // pick a fresh "elements" gameplay track for this run (swaps off the intro)
   if (this.audio) this.audio.startMusic(DANNYLAB.pickGameTrack());
 

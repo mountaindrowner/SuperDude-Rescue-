@@ -52,15 +52,20 @@ DANNYLAB.store = (function () {
       return this.getDiscovered().indexOf(sym) !== -1;
     },
 
+    // ---- games played (drives some card unlocks) ----
+    getGamesPlayed: function () { var n = parseInt(read('gamesPlayed', '0'), 10); return isNaN(n) ? 0 : n; },
+    addGamePlayed: function () { write('gamesPlayed', this.getGamesPlayed() + 1); },
+
     // ---- options ----
     getOpt: function (name, dflt) { return read('opt.' + name, dflt); },
     setOpt: function (name, val) { write('opt.' + name, val); },
 
-    // ---- reset collection (clears cards + best) ----
+    // ---- reset collection (clears cards + best + progress) ----
     resetCollection: function () {
       remove('discovered');
       remove('bestScore');
       remove('bestLevel');
+      remove('gamesPlayed');
     },
   };
 })();
