@@ -117,9 +117,6 @@ window.DANNYLAB = window.DANNYLAB || {};
     var back = scene.add.container(0, 0).setVisible(false);
     var bgk = scene.add.graphics();
     bgk.fillStyle(0x101a3c, 1); bgk.fillRoundedRect(-CW / 2, -CH / 2, CW, CH, 18);
-    // diamond lattice
-    bgk.lineStyle(1, 0x2a3e74, 0.7);
-    for (var dx = -CW / 2; dx < CW / 2 + 40; dx += 28) { bgk.lineBetween(dx, -CH / 2, dx - CH, CH / 2); bgk.lineBetween(dx, -CH / 2, dx + CH, CH / 2); }
     bgk.fillStyle(0x0a1330, 1); bgk.fillRoundedRect(-CW / 2 + 22, -CH / 2 + 22, CW - 44, CH - 44, 14);
     bgk.lineStyle(2.5, 0x4fd9ff, 0.9); bgk.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 18);
     bgk.lineStyle(2, 0x4fd9ff, 0.5); bgk.strokeRoundedRect(-CW / 2 + 22, -CH / 2 + 22, CW - 44, CH - 44, 14);
@@ -161,52 +158,154 @@ window.DANNYLAB = window.DANNYLAB || {};
     return api;
   };
 
-  // ---------------- full-screen interactive demo (the POC viewer) ----------------
-  DANNYLAB.CardDemoScene = function () { Phaser.Scene.call(this, { key: 'DANNYLAB_CardDemo' }); };
-  DANNYLAB.CardDemoScene.prototype = Object.create(Phaser.Scene.prototype);
-  DANNYLAB.CardDemoScene.prototype.constructor = DANNYLAB.CardDemoScene;
-  DANNYLAB.CardDemoScene.prototype.init = function (d) { this.d2 = d || {}; };
-  DANNYLAB.CardDemoScene.prototype.create = function () {
-    DANNYLAB.applyRes(this);
-    var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, UI = DANNYLAB.UI, self = this;
-    var sc = this.add.graphics(); sc.fillStyle(0x04060f, 0.86); sc.fillRect(0, 0, W, H);
-    sc.setInteractive(new Phaser.Geom.Rectangle(0, 0, W, H), Phaser.Geom.Rectangle.Contains);
+  // ---------------- full 3D interactive viewer (DOM/CSS-3D overlay) ----------------
+  // Real perspective rotation + momentum spin + a color-dodge holo foil, with
+  // proper backface culling. Each face clips its own contents, so nothing bleeds
+  // past the card. Reliable on iOS Safari (where CSS 3D + blend modes excel).
 
-    this.add.text(W / 2, 120, 'HOLO CARD — PROTOTYPE', {
-      fontFamily: UI.DISPLAY, fontSize: '26px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setShadow(0, 0, '#7CFF6B', 10);
+  function injectStyles() {
+    if (document.getElementById('dlc-styles')) return;
+    var css = ''
+      + '.dlc-overlay{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'background:radial-gradient(120% 90% at 50% 30%,rgba(18,26,50,.92),rgba(4,6,15,.96));touch-action:none;'
+      + 'font-family:"Baloo 2","Trebuchet MS",system-ui,sans-serif;-webkit-user-select:none;user-select:none;opacity:0;transition:opacity .25s;}'
+      + '.dlc-overlay.show{opacity:1;}'
+      + '.dlc-h{color:#7CFF6B;font-weight:800;font-size:22px;letter-spacing:2px;text-shadow:0 0 12px rgba(124,255,107,.6);margin-bottom:24px;}'
+      + '.dlc-stage{perspective:1100px;width:280px;height:392px;}'
+      + '.dlc-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;will-change:transform;cursor:grab;}'
+      + '.dlc-face{position:absolute;inset:0;border-radius:18px;overflow:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 18px 40px rgba(0,0,0,.55);}'
+      + '.dlc-back{transform:rotateY(180deg);}'
+      + '.dlc-foil{position:absolute;inset:0;pointer-events:none;border-radius:inherit;'
+      + 'background:linear-gradient(115deg,transparent 12%,rgba(255,45,111,.55),rgba(255,225,77,.55),rgba(73,255,122,.55),rgba(58,208,255,.55),rgba(150,92,255,.55),rgba(255,92,230,.55),transparent 88%);'
+      + 'background-size:280% 280%;mix-blend-mode:color-dodge;opacity:.35;}'
+      + '.dlc-glare{position:absolute;inset:-25%;pointer-events:none;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.55),transparent 42%);mix-blend-mode:screen;opacity:.18;}'
+      + '.dlc-hint{color:#cfe0ff;font-weight:700;font-size:16px;margin-top:26px;opacity:.9;}'
+      + '.dlc-done{margin-top:18px;padding:14px 44px;border:none;border-radius:16px;background:#46506e;color:#eafffb;font-weight:800;font-size:20px;'
+      + 'font-family:inherit;box-shadow:0 6px 16px rgba(0,0,0,.4);cursor:pointer;}'
+      + '.dlc-done:active{transform:translateY(2px);}';
+    var st = document.createElement('style'); st.id = 'dlc-styles'; st.textContent = css;
+    document.head.appendChild(st);
+  }
 
-    this.holo = DANNYLAB.buildHoloCard(this, { x: W / 2, y: H * 0.45, scale: 1.08, tier: this.d2.tier || 9 });
-    this.add.text(W / 2, H * 0.73, 'Drag to tilt  ·  Tap to flip', {
-      fontFamily: UI.FONT, fontSize: '20px', color: '#cfe0ff', fontStyle: 'bold' }).setOrigin(0.5);
-
-    UI.button(this, W / 2, H * 0.85, 220, 60, 'Done', function () {
-      self.scene.stop(); self.scene.resume(self.d2.parent || 'DANNYLAB_Menu');
-    }, { fill: 0x46506e });
-
-    var cx = this.holo.root.x, cy = this.holo.root.y, half = this.holo.half;
-    this.dragging = false; this.tdx = 0; this.tdy = 0; this.cdx = 0; this.cdy = 0;
-    this.input.on('pointerdown', function (p) {
-      if (Math.abs(p.worldX - cx) < half.x * 1.15 && Math.abs(p.worldY - cy) < half.y * 1.15) {
-        self.dragging = true; self._dx = p.worldX; self._dy = p.worldY; self._moved = 0; self._dt = self.time.now;
+  // draw the element "character" (body + face) to a data URL for the DOM card
+  function portraitURL(scene, tier) {
+    try {
+      var s = 320, c = document.createElement('canvas'); c.width = s; c.height = s;
+      var ctx = c.getContext('2d');
+      var bk = scene.textures.exists('jelly_body_' + tier) ? 'jelly_body_' + tier : DANNYLAB.iconKey(scene, tier);
+      var body = scene.textures.get(bk).getSourceImage();
+      var bw = s * 0.9; ctx.drawImage(body, (s - bw) / 2, (s - bw) / 2, bw, bw);
+      if (scene.textures.exists('jelly_face_' + tier + '_rest')) {
+        var face = scene.textures.get('jelly_face_' + tier + '_rest').getSourceImage();
+        var fw = s * 0.7; ctx.drawImage(face, (s - fw) / 2, (s - fw) / 2 - s * 0.02, fw, fw);
       }
-    });
-    this.input.on('pointermove', function (p) {
-      if (!self.dragging) return;
-      self._moved = Math.max(self._moved, Math.hypot(p.worldX - self._dx, p.worldY - self._dy));
-      self.tdx = Phaser.Math.Clamp((p.worldX - cx) / half.x, -1, 1);
-      self.tdy = Phaser.Math.Clamp((p.worldY - cy) / half.y, -1, 1);
-    });
-    function up() {
-      if (!self.dragging) return;
-      self.dragging = false; self.tdx = 0; self.tdy = 0;
-      if (self._moved < 12 && (self.time.now - self._dt) < 450) self.holo.flip();
+      return c.toDataURL();
+    } catch (e) { return ''; }
+  }
+
+  // Open the full-screen 3D card. Non-Phaser DOM overlay; closes itself.
+  DANNYLAB.openCardViewer = function (scene, opts) {
+    if (document.querySelector('.dlc-overlay')) return;   // already open
+    opts = opts || {};
+    injectStyles();
+    var tier = opts.tier || 9, cfg = DANNYLAB.tierCfg(tier);
+    var lang = scene.registry.get('lang') || 'en';
+    var name = DANNYLAB.elementName(cfg.sym, lang).toUpperCase();
+    var fact = DANNYLAB.elementFact(cfg.sym, lang);
+    var accent = '#' + cfg.color.toString(16).padStart(6, '0');
+    var art = portraitURL(scene, tier);
+
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    var frontHTML =
+      '<div class="dlc-face dlc-front" style="background:linear-gradient(160deg,#0e1a3e,#0a1330);border:2px solid ' + accent + ';padding:8px;box-sizing:border-box;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;background:' + accent + ';color:#0a1330;font-weight:800;border-radius:10px 10px 0 0;padding:5px 12px;font-size:15px;">'
+      + '<span style="letter-spacing:1px;">' + esc(name) + '</span><span style="font-size:12px;">No.' + ('00' + tier).slice(-3) + '</span></div>'
+      + '<div style="position:relative;margin:8px 4px;height:196px;border-radius:10px;overflow:hidden;background:radial-gradient(circle at 50% 45%,' + accent + '33,#05122a);border:2px solid rgba(255,255,255,.85);">'
+      + (art ? '<img src="' + art + '" style="position:absolute;left:50%;top:48%;width:78%;transform:translate(-50%,-50%);image-rendering:auto;">' : '')
+      + '<div class="dlc-foil"></div><div class="dlc-glare"></div>'
+      + '<div style="position:absolute;left:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:#081026cc;border:2px solid ' + accent + ';color:' + accent + ';font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;">' + esc(cfg.sym) + '</div>'
+      + '</div>'
+      + '<div style="text-align:center;color:#ffd84d;font-size:16px;letter-spacing:3px;margin-top:2px;">★★★★★</div>'
+      + '<div style="text-align:center;color:#cfe0ff;font-weight:800;font-size:12px;letter-spacing:2px;">LEGENDARY</div>'
+      + '<div style="text-align:center;color:#aebfe0;font-size:11px;line-height:1.25;margin:6px 12px 0;">' + esc(fact) + '</div>'
+      + '<div style="text-align:center;color:#5f74a6;font-weight:800;font-size:9px;letter-spacing:1px;position:absolute;left:0;right:0;bottom:8px;">SUPER DUDE DANNY · ELEMENT LAB</div>'
+      + '</div>';
+    var atomSVG = '<svg width="120" height="120" viewBox="-60 -60 120 120"><circle r="11" fill="#bfe9ff"/>'
+      + '<g fill="none" stroke="#9fe0ff" stroke-width="2.5">'
+      + '<ellipse rx="46" ry="18"/><ellipse rx="46" ry="18" transform="rotate(60)"/><ellipse rx="46" ry="18" transform="rotate(120)"/></g></svg>';
+    var backHTML =
+      '<div class="dlc-face dlc-back" style="background:#101a3c;border:2px solid #4fd9ff;box-sizing:border-box;display:flex;align-items:center;justify-content:center;">'
+      + '<div style="position:absolute;inset:16px;border:2px solid rgba(79,217,255,.5);border-radius:12px;"></div>'
+      + '<div style="text-align:center;">' + atomSVG
+      + '<div style="color:#eafffb;font-weight:800;font-size:22px;letter-spacing:1px;margin-top:6px;">ELEMENT LAB</div>'
+      + '<div style="color:#7fb0d8;font-weight:800;font-size:11px;letter-spacing:2px;">COLLECTOR CARD</div></div></div>';
+
+    var ov = document.createElement('div'); ov.className = 'dlc-overlay';
+    ov.innerHTML = '<div class="dlc-h">HOLO CARD — PROTOTYPE</div>'
+      + '<div class="dlc-stage"><div class="dlc-card">' + frontHTML + backHTML + '</div></div>'
+      + '<div class="dlc-hint">Drag to spin · double-tap to flip</div>'
+      + '<button class="dlc-done">Done</button>';
+    document.body.appendChild(ov);
+    requestAnimationFrame(function () { ov.classList.add('show'); });
+
+    var card = ov.querySelector('.dlc-card');
+    var foil = ov.querySelector('.dlc-foil'), glare = ov.querySelector('.dlc-glare');
+    var rx = -8, ry = -18, vx = 0, vy = 0, dragging = false, lastX = 0, lastY = 0, lastTap = 0;
+    var raf = 0, closed = false, phase = 0, flipTarget = null;
+
+    function apply() {
+      card.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+      var a = Math.abs(Math.sin(ry * Math.PI / 180));
+      if (foil) { foil.style.opacity = 0.22 + 0.55 * a; foil.style.backgroundPosition = (50 + ry * 0.7) + '% ' + (50 + rx * 0.7) + '%'; }
+      if (glare) { glare.style.transform = 'translate(' + (ry * 0.5) + '%,' + (-rx * 0.5) + '%)'; glare.style.opacity = 0.12 + 0.32 * Math.min(1, (Math.abs(rx) + Math.abs(ry)) / 55); }
     }
-    this.input.on('pointerup', up); this.input.on('pointerupoutside', up);
-  };
-  DANNYLAB.CardDemoScene.prototype.update = function (time) {
-    if (!this.holo) return;
-    if (!this.dragging) { this.tdx = Math.sin(time * 0.0006) * 0.5; this.tdy = Math.cos(time * 0.00085) * 0.35; }
-    this.cdx += (this.tdx - this.cdx) * 0.12; this.cdy += (this.tdy - this.cdy) * 0.12;
-    this.holo.shimmer(this.cdx, this.cdy);
+    function loop() {
+      if (closed) return;
+      phase += 0.02;
+      if (flipTarget !== null) {                 // clean 180° snap
+        ry += (flipTarget - ry) * 0.16;
+        if (Math.abs(flipTarget - ry) < 0.4) { ry = flipTarget; flipTarget = null; }
+      } else if (!dragging) {
+        ry += vy; rx += vx; vy *= 0.94; vx *= 0.94;
+        if (Math.abs(vy) < 0.05) vy = 0; if (Math.abs(vx) < 0.05) vx = 0;
+        if (vy === 0 && vx === 0) {               // settled → gentle live wobble
+          ry += Math.sin(phase) * 0.35;
+          rx += (Math.cos(phase * 0.9) * 5 - rx) * 0.04;
+        } else { rx += (0 - rx) * 0.04; }
+      }
+      if (rx > 44) rx = 44; if (rx < -44) rx = -44;
+      apply(); raf = requestAnimationFrame(loop);
+    }
+    raf = requestAnimationFrame(loop);
+
+    function down(e) {
+      if (e.target.closest && e.target.closest('.dlc-done')) return;
+      var now = Date.now();
+      if (now - lastTap < 320) { flipTarget = Math.round(ry / 180) * 180 + 180; vy = 0; vx = 0; }   // double-tap → flip
+      lastTap = now;
+      dragging = true; card.style.cursor = 'grabbing';
+      lastX = e.clientX; lastY = e.clientY;
+      if (e.preventDefault) e.preventDefault();
+    }
+    function move(e) {
+      if (!dragging || flipTarget !== null) return;
+      var dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
+      ry += dx * 0.6; rx -= dy * 0.6; vy = dx * 0.6; vx = -dy * 0.6;
+    }
+    function upp() { dragging = false; card.style.cursor = 'grab'; }
+    ov.addEventListener('pointerdown', down);
+    ov.addEventListener('pointermove', move);
+    ov.addEventListener('pointerup', upp);
+    ov.addEventListener('pointercancel', upp);
+
+    function close() {
+      if (closed) return; closed = true;
+      cancelAnimationFrame(raf);
+      ov.classList.remove('show');
+      setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); }, 220);
+      if (opts.onClose) opts.onClose();
+    }
+    ov.querySelector('.dlc-done').addEventListener('click', close);
+    return { close: close };
   };
 })();

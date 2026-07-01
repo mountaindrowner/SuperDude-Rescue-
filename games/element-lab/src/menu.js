@@ -134,7 +134,7 @@ DANNYLAB.MenuScene.prototype.create = function () {
     var mh = this.miniCard.half;
     var onCardTap = function (p) {
       if (Math.abs(p.worldX - mcx) < mh.x && Math.abs(p.worldY - mcy) < mh.y) {
-        self.scene.pause(); self.scene.launch('DANNYLAB_CardDemo', { parent: 'DANNYLAB_Menu' });
+        if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { tier: 9 });
       }
     };
     this.input.on('pointerdown', onCardTap);
