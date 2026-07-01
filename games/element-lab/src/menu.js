@@ -122,19 +122,19 @@ DANNYLAB.MenuScene.prototype.create = function () {
     }, { fill: 0x3aa6a0, fontSize: 18 });
   collBtn.setDepth(5);
 
-  // ---- POC: a live holographic card, shimmering in the bottom-left corner.
-  // Tap it to open the full drag-to-tilt / flip viewer. ----
-  if (DANNYLAB.buildHoloCard) {
-    var mcx = 88, mcy = H - 116;
-    this.miniCard = DANNYLAB.buildHoloCard(this, { x: mcx, y: mcy, scale: 0.42, tier: 9 });
+  // ---- a live collectible card, shimmering in the bottom-left corner.
+  // Tap it to open the full 3D holographic viewer / browse the set. ----
+  if (DANNYLAB.buildMiniCard && this.textures.exists('card_kevin')) {
+    var mcx = 92, mcy = H - 118;
+    this.miniCard = DANNYLAB.buildMiniCard(this, { x: mcx, y: mcy, textureKey: 'card_kevin', w: 104 });
     this.miniCard.root.setDepth(6);
-    var hint = this.add.text(mcx, mcy + 78, 'TAP', {
+    var hint = this.add.text(mcx, mcy + 82, 'CARDS', {
       fontFamily: UI.DISPLAY, fontSize: '13px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setDepth(6);
     this.tweens.add({ targets: hint, alpha: 0.35, duration: 700, yoyo: true, repeat: -1 });
     var mh = this.miniCard.half;
     var onCardTap = function (p) {
       if (Math.abs(p.worldX - mcx) < mh.x && Math.abs(p.worldY - mcy) < mh.y) {
-        if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { tier: 9 });
+        if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { index: 0 });
       }
     };
     this.input.on('pointerdown', onCardTap);
@@ -155,8 +155,8 @@ DANNYLAB.MenuScene.prototype.create = function () {
 
 DANNYLAB.MenuScene.prototype.update = function (time, delta) {
   if (this.lab) this.lab.update(delta);
-  // idle shimmer on the sample holo card
-  if (this.miniCard) this.miniCard.shimmer(Math.sin(time * 0.0007) * 0.55, Math.cos(time * 0.00095) * 0.4);
+  // gentle idle float on the sample card
+  if (this.miniCard) this.miniCard.wobble(time);
   // gentle wave bob across the logo letters
   if (this.logoLetters) {
     for (var i = 0; i < this.logoLetters.length; i++) {
