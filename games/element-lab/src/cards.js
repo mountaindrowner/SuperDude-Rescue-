@@ -246,6 +246,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       for (var i4 = 0; i4 < 26; i4++) P.push({ k: 'mote', x: rnd(0, W), y: rnd(0, H), vy: -rnd(8, 30), ph: rnd(0, 6.28), r: rnd(1, 2.4), c: Math.random() < 0.5 ? '255,233,168' : '191,227,255' });
     } else if (theme === 'snow') {
       for (var i5 = 0; i5 < 110; i5++) P.push({ k: 'snow', x: rnd(0, W), y: rnd(-H, H), vy: rnd(120, 260), sway: rnd(20, 55), ph: rnd(0, 6.28), r: rnd(1.5, 3.6) });
+      for (var iw = 0; iw < 22; iw++) P.push({ k: 'wind', x: rnd(-W, W), y: rnd(0, H), len: rnd(90, 260), spd: rnd(0.8, 1.6), a: rnd(0.1, 0.26) });
     } else if (theme === 'jungle') {
       for (var i6 = 0; i6 < 60; i6++) P.push(newDrop(true));
       for (var i7 = 0; i7 < 14; i7++) P.push({ k: 'leaf', x: rnd(0, W), y: rnd(-H, 0), vx: rnd(-40, 40), vy: rnd(60, 140), rot: rnd(0, 6.28), vr: rnd(-3, 3), sway: rnd(20, 60), ph: rnd(0, 6.28), sz: rnd(6, 13), c: Math.random() < 0.5 ? '#4caf50' : '#8bc34a' });
@@ -289,11 +290,14 @@ window.DANNYLAB = window.DANNYLAB || {};
           } else { bolt = null; nextBolt = el + rnd(1400, 3200); }
         }
       }
+      // gusting wind (rightward), pulses stronger every few seconds
+      var gust = (theme === 'snow') ? (70 + 110 * Math.sin(el * 0.0009) + 80 * Math.max(0, Math.sin(el * 0.0024))) : 0;
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       for (var i = 0; i < P.length; i++) {
         var p = P[i];
         if (p.k === 'rain') { p.x += p.vx * dt; p.y += p.vy * dt; if (p.y > H) { p.y = -20; p.x = rnd(0, W); } if (p.x > W + 20) p.x = -10; ctx.strokeStyle = p.c; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.02, p.y - p.len); ctx.stroke(); }
-        else if (p.k === 'snow') { p.y += p.vy * dt; p.x += Math.sin((el / 500) + p.ph) * p.sway * dt; if (p.y > H) { p.y = -10; p.x = rnd(0, W); } ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
+        else if (p.k === 'snow') { p.y += p.vy * dt; p.x += (Math.sin((el / 500) + p.ph) * p.sway + gust) * dt; if (p.y > H) { p.y = -10; p.x = rnd(0, W); } if (p.x > W + 12) p.x = -12; else if (p.x < -12) p.x = W + 12; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
+        else if (p.k === 'wind') { p.x += (190 + gust * 2.4) * p.spd * dt; if (p.x > W + p.len) { p.x = -p.len - rnd(0, W * 0.5); p.y = rnd(0, H); } ctx.strokeStyle = 'rgba(224,240,255,' + (p.a * (0.5 + 0.5 * Math.max(0, Math.sin(el * 0.0024)))) + ')'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.len, p.y + p.len * 0.06); ctx.stroke(); }
         else if (p.k === 'star') { var tw = 0.4 + 0.6 * Math.abs(Math.sin(el / 1000 * p.sp + p.ph)); ctx.fillStyle = 'rgba(255,255,255,' + tw + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
         else if (p.k === 'shoot') { p.age += dt; if (p.age > p.life) { p.x = rnd(W * 0.2, W); p.y = rnd(0, H * 0.5); p.age = -rnd(0.6, 3); } if (p.age > 0) { var sx = p.x + p.vx * p.age, sy = p.y + p.vy * p.age; ctx.strokeStyle = 'rgba(255,255,255,' + (1 - p.age / p.life) + ')'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - p.vx * 0.05, sy - p.vy * 0.05); ctx.stroke(); } }
         else if (p.k === 'mote') { p.y += p.vy * dt; if (p.y < -6) { p.y = H + 6; p.x = rnd(0, W); } var ma = 0.25 + 0.5 * Math.abs(Math.sin(el / 900 + p.ph)); ctx.fillStyle = 'rgba(' + p.c + ',' + ma + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
