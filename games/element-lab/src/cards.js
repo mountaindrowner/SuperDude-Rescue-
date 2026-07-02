@@ -71,15 +71,53 @@ window.DANNYLAB = window.DANNYLAB || {};
   };
 
   // ---------- decks ----------
-  function variantSpec(v) { return { img: v.file, rarity: v.rarity, fx: v.fx, reqTest: v.req.test, reqText: v.req.text }; }
+  function variantSpec(h, v) { return { id: h.key + ':' + v.rarity, name: h.name, img: v.file, rarity: v.rarity, fx: v.fx, reqTest: v.req.test, reqText: v.req.text }; }
   DANNYLAB.heroByKey = function (k) { for (var i = 0; i < DANNYLAB.HEROES.length; i++) if (DANNYLAB.HEROES[i].key === k) return DANNYLAB.HEROES[i]; return null; };
-  DANNYLAB.heroDeck = function (key) { var h = DANNYLAB.heroByKey(key); return h ? h.variants.map(variantSpec) : []; };
+  DANNYLAB.heroDeck = function (key) { var h = DANNYLAB.heroByKey(key); return h ? h.variants.map(function (v) { return variantSpec(h, v); }) : []; };
   DANNYLAB.elementDeck = function () { return DANNYLAB.CONFIG.tiers.map(function (t) { return { element: t.t, rarity: 'holo' }; }); };
   // index of the best (highest-rarity) unlocked variant for a hero, else -1
   DANNYLAB.heroBestIndex = function (h) {
     var s = DANNYLAB.cardStats(), best = -1;
     for (var i = 0; i < h.variants.length; i++) if (h.variants[i].req.test(s)) best = i;
     return best;
+  };
+
+  // ---------- unlock bookkeeping (celebration toasts + NEW badges) ----------
+  DANNYLAB.allVariants = function () {
+    var out = [];
+    DANNYLAB.HEROES.forEach(function (h) { h.variants.forEach(function (v) { out.push({ id: h.key + ':' + v.rarity, hero: h, v: v }); }); });
+    return out;
+  };
+  // unlocked but never celebrated -> mark them celebrated and return the list
+  DANNYLAB.newCardUnlocks = function () {
+    var st = DANNYLAB.store, s = DANNYLAB.cardStats(), out = [];
+    var done = st.getCardList('cardsNotified');
+    DANNYLAB.allVariants().forEach(function (a) {
+      if (a.v.req.test(s) && done.indexOf(a.id) === -1) {
+        st.addCardList('cardsNotified', a.id);
+        out.push({ id: a.id, name: a.hero.name, rarity: a.v.rarity, file: a.v.file });
+      }
+    });
+    return out;
+  };
+  // unlocked hero cards the player hasn't looked at yet (drives NEW badges)
+  DANNYLAB.unseenCardCount = function () {
+    var st = DANNYLAB.store, s = DANNYLAB.cardStats(), seen = st.getCardList('cardsSeen'), n = 0;
+    DANNYLAB.allVariants().forEach(function (a) { if (a.v.req.test(s) && seen.indexOf(a.id) === -1) n++; });
+    return n;
+  };
+  // owned cards out of the full binder (hero variants + element cards)
+  DANNYLAB.ownedCardCount = function () {
+    var s = DANNYLAB.cardStats(), n = 0;
+    DANNYLAB.allVariants().forEach(function (a) { if (a.v.req.test(s)) n++; });
+    return { owned: n + s.discovered, total: DANNYLAB.allVariants().length + DANNYLAB.CONFIG.tiers.length };
+  };
+  // the next card worth chasing: the first still-locked variant in ladder order
+  DANNYLAB.nextLockedCard = function () {
+    var s = DANNYLAB.cardStats();
+    var all = DANNYLAB.allVariants();
+    for (var i = 0; i < all.length; i++) if (!all[i].v.req.test(s)) return { name: all[i].hero.name, req: all[i].v.req.text };
+    return null;
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -373,6 +411,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       var ultra = false;
       if (!unlocked) { content.innerHTML = lockedFrontHTML(spec); holoOn = false; rarityEl.textContent = ''; }
       else {
+        if (spec.id) DANNYLAB.store.addCardList('cardsSeen', spec.id);   // clears its NEW badge
         content.innerHTML = spec.img ? '<img class="dlc-img" src="' + spec.img + '">' : elementCardHTML(scene, spec.element);
         holoOn = rar !== 'common';
         ultra = rar === 'ultra';

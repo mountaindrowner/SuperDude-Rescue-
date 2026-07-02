@@ -124,31 +124,80 @@ window.DANNYLAB = window.DANNYLAB || {};
     }, { fill: 0x46506e });
   });
 
-  // ================= GAME OVER =================
+  // ================= GAME OVER (run recap) =================
   DANNYLAB.GameOverScene = defscene('DANNYLAB_GameOver', function (data) {
     var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H, lang = data.lang || this.registry.get('lang');
+    var self = this;
     UI.scrim(this, 0.62);
-    UI.panel(this, W / 2, H / 2, Math.min(440, W * 0.88), 440);
-    this.add.text(W / 2, H / 2 - 150, t('game_over', lang), {
-      fontFamily: UI.FONT, fontSize: '30px', color: '#FBD38D', fontStyle: 'bold',
-      align: 'center', wordWrap: { width: W * 0.74 },
+    UI.panel(this, W / 2, H / 2, Math.min(452, W * 0.9), 640);
+    this.add.text(W / 2, H / 2 - 274, t('game_over', lang), {
+      fontFamily: UI.FONT, fontSize: '28px', color: '#FBD38D', fontStyle: 'bold',
+      align: 'center', wordWrap: { width: W * 0.76 },
     }).setOrigin(0.5);
 
-    this.add.text(W / 2, H / 2 - 60, t('score', lang) + ': ' + data.score, {
+    this.add.text(W / 2, H / 2 - 216, t('score', lang) + ': ' + data.score, {
       fontFamily: UI.FONT, fontSize: '34px', color: '#ffffff', fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.text(W / 2, H / 2 - 14, t('best', lang) + ': ' + data.best, {
-      fontFamily: UI.FONT, fontSize: '26px', color: '#7CFF6B', fontStyle: 'bold',
+    this.add.text(W / 2, H / 2 - 176, t('best', lang) + ': ' + data.best, {
+      fontFamily: UI.FONT, fontSize: '22px', color: '#7CFF6B', fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    var self = this, bw = Math.min(320, W * 0.7);
-    UI.button(this, W / 2, H / 2 + 60, bw, 64, t('play_again', lang), function () {
+    // run recap: lab level reached + biggest chain
+    var recap = t('lab_level', lang) + ' ' + (data.level || 0);
+    if (data.combo > 1) recap += '   ·   ' + t('go_combo', lang) + ' x' + data.combo;
+    this.add.text(W / 2, H / 2 - 136, recap, {
+      fontFamily: UI.FONT, fontSize: '19px', color: '#8fe6ff', fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    // elements discovered this run (icon strip)
+    var disc = data.discovered || [];
+    if (disc.length) {
+      this.add.text(W / 2, H / 2 - 100, t('go_discovered', lang), {
+        fontFamily: UI.DISPLAY, fontSize: '13px', color: '#bfe3ff', fontStyle: 'bold',
+      }).setOrigin(0.5);
+      var dw = 36, dx0 = W / 2 - (disc.length - 1) * dw / 2;
+      for (var di = 0; di < disc.length && di < 9; di++) {
+        var tierN = 1; DANNYLAB.CONFIG.tiers.forEach(function (c) { if (c.sym === disc[di]) tierN = c.t; });
+        this.add.image(dx0 + di * dw, H / 2 - 66, DANNYLAB.iconKey(this, tierN)).setDisplaySize(30, 30);
+      }
+    }
+
+    // new cards earned this run (mini gold-edged thumbs)
+    var cards = data.newCards || [];
+    if (cards.length) {
+      this.add.text(W / 2, H / 2 - 22, t('go_newcards', lang), {
+        fontFamily: UI.DISPLAY, fontSize: '14px', color: '#ffd84d', fontStyle: 'bold',
+      }).setOrigin(0.5);
+      var cw = 44, ch = 61, cgap = 12, cx0 = W / 2 - (Math.min(cards.length, 5) - 1) * (cw + cgap) / 2;
+      for (var ci = 0; ci < cards.length && ci < 5; ci++) {
+        var ccx = cx0 + ci * (cw + cgap), ccy = H / 2 + 26;
+        var cg = this.add.graphics();
+        cg.lineStyle(2.5, 0xffd84d, 1); cg.strokeRoundedRect(ccx - cw / 2 - 2, ccy - ch / 2 - 2, cw + 4, ch + 4, 6);
+        var texKey = DANNYLAB.cardTexKey(cards[ci].file);
+        if (this.textures.exists(texKey)) this.add.image(ccx, ccy, texKey).setDisplaySize(cw, ch);
+      }
+    } else if (DANNYLAB.nextLockedCard) {
+      // nothing new this run -> point at the next card worth chasing
+      var nxt = DANNYLAB.nextLockedCard();
+      if (nxt) {
+        this.add.text(W / 2, H / 2 - 22, t('go_next', lang), {
+          fontFamily: UI.DISPLAY, fontSize: '13px', color: '#bfe3ff', fontStyle: 'bold',
+        }).setOrigin(0.5);
+        this.add.text(W / 2, H / 2 + 16, nxt.name + '\n' + nxt.req, {
+          fontFamily: UI.FONT, fontSize: '17px', color: '#dceaff', fontStyle: 'bold',
+          align: 'center', lineSpacing: 4, wordWrap: { width: 360 },
+        }).setOrigin(0.5);
+      }
+    }
+
+    var bw = Math.min(320, W * 0.7);
+    UI.button(this, W / 2, H / 2 + 128, bw, 62, t('play_again', lang), function () {
       self.scene.stop('DANNYLAB_Game');
       self.scene.stop();
       // route through the loading interstitial (a wonder-of-creation fact)
       self.scene.start('DANNYLAB_Loading', { mode: self.registry.get('mode') });
     }, { fill: 0x46b85e });
-    UI.button(this, W / 2, H / 2 + 134, bw, 60, t('exit', lang), function () {
+    UI.button(this, W / 2, H / 2 + 202, bw, 58, t('exit', lang), function () {
       DANNYLAB.exitSubgame(self);
     }, { fill: 0xc05b7a });
   });

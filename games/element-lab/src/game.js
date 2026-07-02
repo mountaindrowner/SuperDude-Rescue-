@@ -60,6 +60,12 @@ GP.create = function (data) {
   this._noOverflowUntil = 0;   // mystery overflow-immunity window (scene-clock based)
   this._mysteryDescTxt = null;
 
+  // per-run recap + card celebrations (the delayed check catches "play your
+  // first game"-style unlocks shortly after the run starts)
+  this.runMaxCombo = 0;
+  this.runNewCards = [];
+  this.time.delayedCall(1300, this._checkCardUnlocks, [], this);
+
   // Phaser reuses the scene instance across runs, so clear any slow-mo state
   // left over from a previous run and guarantee this one starts at real-time.
   this._slowmo = false;
@@ -305,6 +311,7 @@ GP.levelUp = function () {
   var c = this.chargeGeom;
   this.burst(c.mx + c.mw / 2, c.mTop + c.mH * 0.5, 0x7CFF6B, 26, { tex: 'p_spark', speed: 180, scale: 0.7, life: 850 });
   if (C.chargeDropsMysteryOnLevelUp) this.dropsUntilMystery = 0;   // next piece is a mystery
+  this._checkCardUnlocks();
 };
 
 // ---------- tweezers (Brief §10.5) ----------
@@ -724,6 +731,14 @@ GP.onMerge = function (merged) {
   this.addScore(pts, x, y);   // tierPoints x combo (x labBonus in addScore)
   this.lastMergeAt = this.time.now;
 
+  // lifetime stats + per-run recap (combo records can unlock cards)
+  DANNYLAB.store.bumpStat('merges');
+  if (n > this.runMaxCombo) {
+    this.runMaxCombo = n;
+    DANNYLAB.store.maxStat('bestCombo', n);
+    this._checkCardUnlocks();
+  }
+
   // ---- audio + haptics: pitch climbs per tier; cascade chime brightens each
   // step; the buzz grows with the chain ----
   if (this.audio) {
@@ -812,6 +827,8 @@ GP._shimmerMystery = function (e, time) {
 // the mystery touched `tgt` first → a slow build-up, then the keyed effect.
 GP.triggerMystery = function (myst, tgt) {
   var self = this, C = DANNYLAB.CONFIG;
+  DANNYLAB.store.bumpStat('mysteries');
+  this._checkCardUnlocks();
   var effect = (C.mysteryEffects && C.mysteryEffects[tgt.tier]) || C.mysteryFallbackEffect;
   var mx = myst.x, my = myst.y;
   // --- anticipation: freeze the orb, swell + spin it up, gather sparks ---
@@ -1111,6 +1128,20 @@ GP.scorePop = function (x, y, label) {
   });
 };
 
+// ---------- card unlocks: celebrate the moment a milestone is hit ----------
+GP._checkCardUnlocks = function () {
+  if (!DANNYLAB.newCardUnlocks || this.gameOver) return;
+  var self = this, fresh = DANNYLAB.newCardUnlocks();
+  for (var i = 0; i < fresh.length; i++) (function (cItem, i2) {
+    self.runNewCards.push(cItem);
+    self.time.delayedCall(i2 * 1100, function () {
+      if (self.gameOver) return;
+      self.toast(DANNYLAB.t('toast_newcard', self.lang, { name: cItem.name }), 0xffd84d);
+      if (self.audio) { self.audio.discovery(); self.audio.hapticBig(); }
+    });
+  })(fresh[i], i);
+};
+
 // ---------- discovery: first-ever (+50) and first-this-run (+25) ----------
 GP.handleDiscovery = function (tier, fromMerge, c) {
   var sym = DANNYLAB.tierCfg(tier).sym;
@@ -1118,7 +1149,7 @@ GP.handleDiscovery = function (tier, fromMerge, c) {
   var firstThisRun = !this.runDiscovered[sym];
   this.runDiscovered[sym] = true;
   var bonus = 0;
-  if (firstEver) { DANNYLAB.store.addDiscovered(sym); bonus += DANNYLAB.CONFIG.discoverBonusFirstEver; }
+  if (firstEver) { DANNYLAB.store.addDiscovered(sym); bonus += DANNYLAB.CONFIG.discoverBonusFirstEver; this._checkCardUnlocks(); }
   if (firstThisRun) bonus += DANNYLAB.CONFIG.discoverBonusThisRun;
   if (bonus > 0) this.addScore(bonus, c ? c.x : null, c ? c.y - (c.radius || 20) : null);
 
@@ -1291,6 +1322,8 @@ GP.mergeBurst = function (x, y, fromTier) {
 GP.triggerFission = function (a, b) {
   var GEO = DANNYLAB.GEO, CONFIG = DANNYLAB.CONFIG;
   var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+  DANNYLAB.store.bumpStat('fissions');
+  this._checkCardUnlocks();
   if (this.audio) { this.audio.fission(); this.audio.duck(); this.audio.hapticBig(); }
   this.cameras.main.shake(420, 0.012);
   this.cameras.main.flash(180, 180, 255, 160);
@@ -1431,6 +1464,9 @@ GP.endGame = function () {
   this.time.delayedCall(500, function () {
     self.scene.launch('DANNYLAB_GameOver', {
       parent: 'DANNYLAB_Game', score: self.score, best: newBest, lang: self.lang,
+      level: self.labLevel, combo: self.runMaxCombo,
+      discovered: Object.keys(self.runDiscovered || {}),
+      newCards: self.runNewCards,
     });
     self.scene.pause();
   });

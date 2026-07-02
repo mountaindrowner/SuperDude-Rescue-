@@ -37,5 +37,9 @@ DANNYLAB.BootScene.prototype.create = function (data) {
   var audio = DANNYLAB.makeAudio(sfxVol, musicVol);
   reg.set('audio', audio);
 
+  // 4) silently mark already-earned cards as celebrated, so a returning player
+  // isn't hit with a toast backlog — only unlocks from here on celebrate live
+  if (DANNYLAB.newCardUnlocks) DANNYLAB.newCardUnlocks();
+
   this.scene.start('DANNYLAB_Preload');
 };

@@ -138,14 +138,22 @@ DANNYLAB.MenuScene.prototype.create = function () {
     this.tweens.add({ targets: trim, alpha: 1, duration: 500, delay: 400 });
   }
 
-  // ---- small collection peek (periodic-shelf) bottom corner ----
-  var disc = DANNYLAB.store.getDiscovered().length;
-  var total = DANNYLAB.MAX_TIER;
+  // ---- Cards (binder) peek, bottom corner: owned/total + a NEW badge ----
+  var counts = DANNYLAB.ownedCardCount ? DANNYLAB.ownedCardCount() : { owned: 0, total: 0 };
   var collBtn = UI.button(this, W - 92, H - 56, 150, 48,
-    label(DANNYLAB.t('collection', lang)) + ' ' + disc + '/' + total, function () {
+    label(DANNYLAB.t('collection', lang)) + ' ' + counts.owned + '/' + counts.total, function () {
       self.scene.pause(); self.scene.launch('DANNYLAB_Collection', { parent: 'DANNYLAB_Menu' });
     }, { fill: 0x3aa6a0, fontSize: 18, shape: shape });
   collBtn.setDepth(5);
+  if (DANNYLAB.unseenCardCount && DANNYLAB.unseenCardCount() > 0) {
+    var badge = this.add.container(W - 92 + 68, H - 56 - 20).setDepth(6);
+    var bg = this.add.graphics();
+    bg.fillStyle(0xffd84d, 1); bg.fillCircle(0, 0, 13);
+    bg.lineStyle(2, 0x0c1430, 1); bg.strokeCircle(0, 0, 13);
+    badge.add([bg, this.add.text(0, 0, '!', {
+      fontFamily: UI.FONT, fontSize: '18px', color: '#0c1430', fontStyle: 'bold' }).setOrigin(0.5)]);
+    this.tweens.add({ targets: badge, scale: 1.18, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  }
 
   // the menu plays the intro theme. Returning from a run, audio is already
   // unlocked so this starts immediately; on the very first load it's gated

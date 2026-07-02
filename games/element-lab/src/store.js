@@ -56,6 +56,20 @@ DANNYLAB.store = (function () {
     getGamesPlayed: function () { var n = parseInt(read('gamesPlayed', '0'), 10); return isNaN(n) ? 0 : n; },
     addGamePlayed: function () { write('gamesPlayed', this.getGamesPlayed() + 1); },
 
+    // ---- lifetime stats (card unlocks + game-over recap) ----
+    getStat: function (name) { var n = parseInt(read('stat.' + name, '0'), 10); return isNaN(n) ? 0 : n; },
+    bumpStat: function (name, by) { write('stat.' + name, this.getStat(name) + (by == null ? 1 : by)); },
+    maxStat: function (name, v) { if ((v | 0) > this.getStat(name)) write('stat.' + name, v | 0); },
+
+    // ---- card unlock bookkeeping (toast once; NEW badge until viewed) ----
+    getCardList: function (key) {
+      try { var a = JSON.parse(read(key, '[]')); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+    },
+    addCardList: function (key, id) {
+      var a = this.getCardList(key);
+      if (a.indexOf(id) === -1) { a.push(id); write(key, JSON.stringify(a)); }
+    },
+
     // ---- options ----
     getOpt: function (name, dflt) { return read('opt.' + name, dflt); },
     setOpt: function (name, val) { write('opt.' + name, val); },
@@ -66,6 +80,10 @@ DANNYLAB.store = (function () {
       remove('bestScore');
       remove('bestLevel');
       remove('gamesPlayed');
+      remove('cardsNotified');
+      remove('cardsSeen');
+      var stats = ['merges', 'bestCombo', 'fissions', 'mysteries'];
+      for (var i = 0; i < stats.length; i++) remove('stat.' + stats[i]);
     },
   };
 })();
