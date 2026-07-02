@@ -521,15 +521,15 @@ GP.spawnElement = function (tier, x, y, opts) {
   if (jelly && opts.fromMerge) c.exprUntil = this.time.now + 750;  // "alt" face pops on birth
   this.elements.push(c);
 
-  // pop-in overshoot (visual only, body radius fixed)
+  // pop-in overshoot (visual only, body radius fixed); once landed, elements
+  // sit at scale 1 — no idle breathing (removed: it read as constant pulsing)
   if (opts.fromMerge) {
     inner.setScale(0);
     this.tweens.add({ targets: inner, scale: 1.18, duration: 130, ease: 'Back.out',
-      onComplete: () => { this.tweens.add({ targets: inner, scale: 1, duration: 90 }); this.startIdle(c); } });
+      onComplete: () => { this.tweens.add({ targets: inner, scale: 1, duration: 90 }); } });
   } else {
     inner.setScale(0.6);
-    this.tweens.add({ targets: inner, scale: 1, duration: 120, ease: 'Back.out',
-      onComplete: () => this.startIdle(c) });
+    this.tweens.add({ targets: inner, scale: 1, duration: 120, ease: 'Back.out' });
   }
 
   this.handleDiscovery(tier, opts.fromMerge, c);
@@ -639,28 +639,18 @@ GP._animFace = function (e, time) {
   else if (time > e.nextBlink) { e.blinkUntil = time + 130; e.nextBlink = time + 2400 + Math.random() * 3500; }
   if (want !== e.faceFrame) { f.setTexture('jelly_face_' + e.tier + '_' + want); e.faceFrame = want; }
 
-  // smooth scale: gentle breathing bob (halved) + an eased eye-squash on
-  // blink + a brief pop when an expression kicks in (no instant pops)
-  var sc = 1 + Math.sin(time * 0.0022 + e._ph) * 0.003, scy = sc;
+  // steady at rest — NO constant breathing/pulsing. The only scale changes are
+  // brief events: an eased eye-squash on blink and a quick expression pop.
+  var sc = 1, scy = 1;
   if (e.blinkUntil > time) { var bp = Math.sin(Math.min(1, (e.blinkUntil - time) / 130) * Math.PI); scy *= (1 - 0.3 * bp); }
   if (e.exprUntil > time && (e.exprUntil - time) > 430) { sc *= 1.08; scy *= 1.08; }
   f.setDisplaySize(r * 1.55 * sc, r * 1.55 * scy);
 
-  // float: lead the motion slightly + a (halved) slow idle drift, so the face
-  // sits "in front of" the body without undulating too much
+  // float: lead the motion slightly so the face sits "in front of" the body;
+  // perfectly still at rest (idle drift removed with the breathing)
   var vx = e.body ? e.body.velocity.x : 0, vy = e.body ? e.body.velocity.y : 0;
-  var t = time * 0.001;
-  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16) + Math.sin(t * 1.3 + e._ph) * r * 0.01;
-  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16) + Math.cos(t * 1.1 + e._ph) * r * 0.01;
-};
-
-// idle breathing jiggle once an element settles (Brief §10.2)
-GP.startIdle = function (c) {
-  if (!c.active || !c.visual) return;
-  c.idleTween = this.tweens.add({
-    targets: c.visual, scaleX: 1.004, scaleY: 0.996, duration: 1700 + Math.random() * 800,
-    yoyo: true, repeat: -1, ease: 'Sine.inOut',
-  });
+  f.x = Phaser.Math.Clamp(-vx * 0.8, -r * 0.16, r * 0.16);
+  f.y = -r * 0.06 + Phaser.Math.Clamp(-vy * 0.5, -r * 0.16, r * 0.16);
 };
 
 // squash & stretch on a hard impact (visual scale only, Brief §12)
@@ -671,7 +661,6 @@ GP.squash = function (c) {
   if (c._squashing) return;
   c._squashing = true;
   var self = this, v = c.visual;
-  if (c.idleTween) c.idleTween.pause();
   var mag = Math.min(0.3, 0.14 + sp * 0.02);   // bigger squash the harder the hit
   this.tweens.add({
     targets: v, scaleX: 1 + mag, scaleY: 1 - mag, duration: 80, yoyo: true, ease: 'Quad.out',
@@ -679,7 +668,7 @@ GP.squash = function (c) {
       // rebound the other way (jelly wobble) then settle
       self.tweens.add({
         targets: v, scaleX: 1 - mag * 0.4, scaleY: 1 + mag * 0.4, duration: 95, yoyo: true, ease: 'Sine.inOut',
-        onComplete: function () { c._squashing = false; if (c.active && c.idleTween) c.idleTween.resume(); }
+        onComplete: function () { c._squashing = false; }
       });
     }
   });
@@ -691,7 +680,6 @@ GP.destroyElement = function (c) {
   if (!c || !c.active) return;
   var idx = this.elements.indexOf(c);
   if (idx !== -1) this.elements.splice(idx, 1);
-  if (c.idleTween) { c.idleTween.stop(); c.idleTween = null; }
   if (c.visual) this.tweens.killTweensOf(c.visual);
   this.tweens.killTweensOf(c.glow);
   if (c.bubbles) for (var bi = 0; bi < c.bubbles.length; bi++) this.tweens.killTweensOf(c.bubbles[bi]);
@@ -710,7 +698,6 @@ GP.doMerge = function (a, b) {
   var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dur = 95;
   [a, b].forEach(function (e) {
     e._merging = true;
-    if (e.idleTween) { e.idleTween.stop(); e.idleTween = null; }
     if (e.visual) self.tweens.killTweensOf(e.visual);
     if (e.setStatic && e.body) e.setStatic(true);          // freeze the body in place
     if (e.visual) self.tweens.add({
@@ -1263,10 +1250,9 @@ GP.neonBuzz = function (c) {
 GP.uraniumBirth = function (c) {
   if (this.audio) this.audio.geiger();
   this.burst(c.x, c.y, 0x7CFF6B, 20, { tex: 'p_spark', speed: 130, scale: 0.7, life: 800 });
-  // slow radioactive pulse on the glow
+  // slow radioactive pulse on the glow — brightness only, never size
   c.glow.setAlpha(0.6);
-  this.tweens.add({ targets: c.glow, alpha: 0.775, scaleX: c.glow.scaleX * 1.09, scaleY: c.glow.scaleY * 1.09,
-    duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  this.tweens.add({ targets: c.glow, alpha: 0.775, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   this.cameras.main.shake(260, 0.006);
 };
 
