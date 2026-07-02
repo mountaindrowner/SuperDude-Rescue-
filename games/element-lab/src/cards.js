@@ -1,12 +1,14 @@
 // cards.js — collectible cards in a holographic 3D viewer, with rarities.
-// Heroes have common/rare/ultra variants; ultra cards play a ~1.9s themed
-// cinematic on open (effects drawn from what's on the card). Elements are their
+// Heroes have common/rare/ultra variants. Ultra cards run a CONTINUOUS themed
+// ambience (storm, space, snow, jungle, warp, sparkle) for as long as the card
+// is on screen, plus premium depth layers: parallax art, a floating sparkle
+// layer, a pulsing theme-colored rim, and a depth vignette. Elements are their
 // own deck. Shared card back (assets/cards/back.jpg).
 window.DANNYLAB = window.DANNYLAB || {};
 (function () {
   var A = 'assets/cards/';
 
-  // rarity: common = flat (no shine), rare = holo shine, ultra = shine + cinematic
+  // rarity: common = flat (no shine), rare = holo shine, ultra = shine + ambience
   DANNYLAB.HEROES = [
     { key: 'kevin', name: 'Captain Kevin', variants: [
       { rarity: 'common', file: A + 'kevin_c.jpg',  req: { text: 'Play your first game', test: function (s) { return s.games >= 1; } } },
@@ -126,6 +128,8 @@ window.DANNYLAB = window.DANNYLAB || {};
   }
 
   var RARITY = { common: { label: 'COMMON', color: '#9fb2cf' }, rare: { label: 'RARE', color: '#8fd0ff' }, ultra: { label: 'ULTRA RARE', color: '#ffd84d' }, holo: { label: '', color: '#8fd0ff' } };
+  // rim-glow accent per ultra theme
+  var FX_COLOR = { storm: '#8fb8ff', space: '#c39bff', snow: '#cfeaff', jungle: '#7fe09a', warp: '#5ec8ff', sparkle: '#ffd84d' };
 
   function injectStyles() {
     if (document.getElementById('dlc-styles')) return;
@@ -143,12 +147,21 @@ window.DANNYLAB = window.DANNYLAB || {};
       + '.dlc-face{position:absolute;inset:0;border-radius:20px;overflow:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 18px 46px rgba(0,0,0,.6);}'
       + '.dlc-back{transform:rotateY(180deg);}'
       + '.dlc-content{position:absolute;inset:0;}'
-      + '.dlc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}'
+      + '.dlc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;will-change:transform;}'
+      // depth vignette (settles the eye, makes the parallax pop)
+      + '.dlc-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(115% 95% at 50% 38%,transparent 55%,rgba(2,6,18,.42));}'
       + '.dlc-foil{position:absolute;inset:0;pointer-events:none;'
       + 'background:linear-gradient(115deg,transparent 26%,rgba(255,80,140,.4),rgba(255,220,90,.4),rgba(90,255,150,.4),rgba(90,200,255,.4),rgba(160,110,255,.4),transparent 74%);'
       + 'background-size:240% 240%;mix-blend-mode:color-dodge;opacity:.14;}'
       + '.dlc-shine{position:absolute;inset:-45%;pointer-events:none;background:linear-gradient(103deg,transparent 44%,rgba(255,255,255,.6) 50%,transparent 56%);mix-blend-mode:screen;opacity:.25;}'
       + '.dlc-glare{position:absolute;inset:-25%;pointer-events:none;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.5),transparent 42%);mix-blend-mode:screen;opacity:.14;}'
+      // floating sparkle layer (drifts more than the art -> reads as depth)
+      + '.dlc-sparks{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;will-change:transform;}'
+      + '.dlc-sparks span{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0) 70%);opacity:0;animation:dlcspk 2s ease-in-out infinite;}'
+      + '@keyframes dlcspk{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:.95;transform:scale(1)}}'
+      // pulsing rim light, tinted to the card theme
+      + '.dlc-rim{position:absolute;inset:0;border-radius:20px;pointer-events:none;animation:dlcrim 2.6s ease-in-out infinite;}'
+      + '@keyframes dlcrim{0%,100%{opacity:.45}50%{opacity:1}}'
       + '.dlc-nav{width:52px;height:52px;border-radius:50%;border:none;background:#1b2748;color:#cfe0ff;font-size:26px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4);flex:0 0 auto;}'
       + '.dlc-nav:active{transform:translateY(2px);}'
       + '.dlc-meta{margin-top:14px;text-align:center;}'
@@ -181,11 +194,21 @@ window.DANNYLAB = window.DANNYLAB || {};
     document.head.appendChild(st);
   }
 
-  // ---------- ultra-rare reveal cinematic (canvas, ~1.9s) ----------
+  // scatter twinkling sparkle specks over the card (fresh layout per card)
+  function buildSparks(el) {
+    var html = '';
+    for (var i = 0; i < 18; i++) {
+      var l = 4 + Math.random() * 92, t = 4 + Math.random() * 92, s = 2 + Math.random() * 3.5;
+      var d = (Math.random() * 2.4).toFixed(2), du = (1.4 + Math.random() * 2.2).toFixed(2);
+      html += '<span style="left:' + l + '%;top:' + t + '%;width:' + s + 'px;height:' + s + 'px;animation-delay:' + d + 's;animation-duration:' + du + 's;"></span>';
+    }
+    el.innerHTML = html;
+  }
+
+  // ---------- ultra-rare ambience (canvas; runs until stop()) ----------
   function rnd(a, b) { return a + Math.random() * (b - a); }
-  function playCinematic(ov, theme) {
-    var old = ov.querySelector('.dlc-cine'); if (old) old.remove();
-    var stage = ov.querySelector('.dlc-stage'); if (!stage) return;
+  function startCardFX(ov, theme) {
+    var stage = ov.querySelector('.dlc-stage'); if (!stage) return null;
     var r = stage.getBoundingClientRect();
     var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     var W = window.innerWidth, H = window.innerHeight;
@@ -198,66 +221,92 @@ window.DANNYLAB = window.DANNYLAB || {};
     var card = ov.querySelector('.dlc-card');
     if (card) { card.classList.remove('punch'); void card.offsetWidth; card.classList.add('punch'); }
 
-    var P = [], rings = [], bolts = [], t0 = performance.now(), DUR = 1900;
-    function add(o) { P.push(o); }
-    // theme setup
+    var P = [], rings = [], bolt = null, nextBolt = 260, nextRing = 120;
+    var t0 = performance.now(), stopped = false, raf = 0;
+
+    // splash droplet arcing out from behind the card, then falling away
+    function newDrop(seed) {
+      var side = Math.random() < 0.5 ? -1 : 1;
+      return { k: 'drop', x: cx + side * rnd(r.width * 0.3, r.width * 0.55), y: cy + rnd(0, r.height * 0.45),
+        vx: side * rnd(40, 300), vy: -rnd(120, 420), r: rnd(2, 5), c: 'rgba(180,225,255,' + rnd(0.5, 0.9) + ')',
+        delay: seed ? rnd(0, 1.2) : 0 };
+    }
+    // golden mote drifting up around the card, fading in and out
+    function newGold(seed) {
+      return { k: 'gold', x: cx + rnd(-r.width * 0.75, r.width * 0.75), y: cy + rnd(-r.height * 0.55, r.height * 0.65),
+        vy: -rnd(14, 46), vx: rnd(-10, 10), life: rnd(1.2, 2.6), age: seed ? -rnd(0, 2) : 0, r: rnd(1.2, 3.4),
+        c: Math.random() < 0.6 ? '#ffd84d' : '#fff2b0' };
+    }
+
     if (theme === 'storm') {
-      for (var i = 0; i < 90; i++) add({ k: 'rain', x: rnd(0, W), y: rnd(-H, H), vy: rnd(700, 1100), vx: rnd(120, 200), len: rnd(12, 26), c: 'rgba(190,220,255,' + rnd(0.3, 0.7) + ')' });
-      bolts = [{ t: 120 }, { t: 640 }, { t: 1150 }];
+      for (var i = 0; i < 90; i++) P.push({ k: 'rain', x: rnd(0, W), y: rnd(-H, H), vy: rnd(700, 1100), vx: rnd(120, 200), len: rnd(12, 26), c: 'rgba(190,220,255,' + rnd(0.3, 0.7) + ')' });
     } else if (theme === 'space') {
-      for (var i2 = 0; i2 < 70; i2++) add({ k: 'star', x: rnd(0, W), y: rnd(0, H), r: rnd(0.6, 2.2), ph: rnd(0, 6.28), sp: rnd(2, 6) });
-      for (var i3 = 0; i3 < 5; i3++) add({ k: 'shoot', x: rnd(W * 0.1, W), y: rnd(0, H * 0.5), vx: rnd(-900, -500), vy: rnd(300, 500), life: rnd(0.4, 0.9), age: rnd(0, 0.6) });
-      for (var i4 = 0; i4 < 40; i4++) add({ k: 'spark', x: cx, y: cy, vx: rnd(-260, 260), vy: rnd(-260, 260), r: rnd(1, 3), c: Math.random() < 0.5 ? '#ffe9a8' : '#bfe3ff', drag: 0.94 });
+      for (var i2 = 0; i2 < 80; i2++) P.push({ k: 'star', x: rnd(0, W), y: rnd(0, H), r: rnd(0.6, 2.2), ph: rnd(0, 6.28), sp: rnd(2, 6) });
+      for (var i3 = 0; i3 < 4; i3++) P.push({ k: 'shoot', x: rnd(W * 0.2, W), y: rnd(0, H * 0.5), vx: rnd(-900, -500), vy: rnd(300, 500), life: rnd(0.4, 0.9), age: -rnd(0, 2.5) });
+      for (var i4 = 0; i4 < 26; i4++) P.push({ k: 'mote', x: rnd(0, W), y: rnd(0, H), vy: -rnd(8, 30), ph: rnd(0, 6.28), r: rnd(1, 2.4), c: Math.random() < 0.5 ? '255,233,168' : '191,227,255' });
     } else if (theme === 'snow') {
-      for (var i5 = 0; i5 < 110; i5++) add({ k: 'snow', x: rnd(0, W), y: rnd(-H, H), vy: rnd(120, 260), sway: rnd(20, 55), ph: rnd(0, 6.28), r: rnd(1.5, 3.6) });
+      for (var i5 = 0; i5 < 110; i5++) P.push({ k: 'snow', x: rnd(0, W), y: rnd(-H, H), vy: rnd(120, 260), sway: rnd(20, 55), ph: rnd(0, 6.28), r: rnd(1.5, 3.6) });
     } else if (theme === 'jungle') {
-      for (var i6 = 0; i6 < 70; i6++) add({ k: 'drop', x: cx + rnd(-40, 40), y: cy + rnd(-30, 30), vx: rnd(-420, 420), vy: rnd(-620, -120), r: rnd(2, 5), c: 'rgba(180,225,255,' + rnd(0.5, 0.9) + ')' });
-      for (var i7 = 0; i7 < 16; i7++) add({ k: 'leaf', x: cx + rnd(-60, 60), y: cy + rnd(-40, 40), vx: rnd(-260, 260), vy: rnd(-360, -60), rot: rnd(0, 6.28), vr: rnd(-6, 6), sz: rnd(6, 13), c: Math.random() < 0.5 ? '#4caf50' : '#8bc34a' });
+      for (var i6 = 0; i6 < 60; i6++) P.push(newDrop(true));
+      for (var i7 = 0; i7 < 14; i7++) P.push({ k: 'leaf', x: rnd(0, W), y: rnd(-H, 0), vx: rnd(-40, 40), vy: rnd(60, 140), rot: rnd(0, 6.28), vr: rnd(-3, 3), sway: rnd(20, 60), ph: rnd(0, 6.28), sz: rnd(6, 13), c: Math.random() < 0.5 ? '#4caf50' : '#8bc34a' });
     } else if (theme === 'warp') {
-      rings = [{ t: 60 }, { t: 320 }, { t: 620 }, { t: 980 }];
-      for (var i8 = 0; i8 < 46; i8++) { var a = rnd(0, 6.28); add({ k: 'streak', x: cx, y: cy, a: a, sp: rnd(500, 1000), c: 'rgba(90,190,255,' + rnd(0.4, 0.8) + ')' }); }
-    } else { // sparkle (legendary)
-      for (var i9 = 0; i9 < 60; i9++) add({ k: 'spark', x: cx, y: cy, vx: rnd(-320, 320), vy: rnd(-320, 320), r: rnd(1.5, 4), c: Math.random() < 0.6 ? '#ffd84d' : '#fff2b0', drag: 0.93 });
-      rings = [{ t: 40, c: '255,216,77' }];
-      P.rays = true;
+      for (var i8 = 0; i8 < 46; i8++) P.push({ k: 'streak', a: rnd(0, 6.28), sp: rnd(400, 850), t0: -rnd(0, 900), c: 'rgba(90,190,255,' + rnd(0.4, 0.8) + ')' });
+    } else { // sparkle (Danny)
+      for (var i9 = 0; i9 < 46; i9++) P.push(newGold(true));
+      rings.push({ t: 40, c: '255,216,77' });
     }
 
     function frame(now) {
+      if (stopped) return;
       var el = now - t0, dt = 1 / 60;
       ctx.clearRect(0, 0, W, H);
-      // opening flash + color wash
+      // reveal flash, then the ambience just keeps going
       if (el < 320) { ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * (1 - el / 320)) + ')'; ctx.fillRect(0, 0, W, H); }
-      // rotating rays (sparkle)
-      if (P.rays && el < 1300) {
-        var ra = (1 - el / 1300);
-        ctx.save(); ctx.translate(cx, cy); ctx.rotate(el * 0.002); ctx.globalCompositeOperation = 'lighter';
-        for (var k = 0; k < 12; k++) { ctx.rotate(Math.PI / 6); ctx.fillStyle = 'rgba(255,216,77,' + (0.16 * ra) + ')'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-26, -700); ctx.lineTo(26, -700); ctx.closePath(); ctx.fill(); }
+      if (theme === 'sparkle') {
+        var ra = el < 1300 ? (1 - el / 1300) * 0.16 + 0.05 : 0.05;   // big on reveal, soft forever after
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(el * 0.00045); ctx.globalCompositeOperation = 'lighter';
+        for (var k = 0; k < 12; k++) { ctx.rotate(Math.PI / 6); ctx.fillStyle = 'rgba(255,216,77,' + ra + ')'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-26, -700); ctx.lineTo(26, -700); ctx.closePath(); ctx.fill(); }
         ctx.restore();
       }
-      // expanding rings (warp / sparkle)
+      if (theme === 'warp' && el > nextRing) { rings.push({ t: el }); nextRing = el + rnd(550, 850); }
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      for (var ri = 0; ri < rings.length; ri++) { var rg = rings[ri]; if (el > rg.t) { var age = (el - rg.t) / 900; if (age < 1) { ctx.strokeStyle = 'rgba(' + (rg.c || '90,190,255') + ',' + (0.8 * (1 - age)) + ')'; ctx.lineWidth = 5 * (1 - age) + 1; ctx.beginPath(); ctx.arc(cx, cy, age * 520, 0, 6.28); ctx.stroke(); } } }
+      for (var ri = rings.length - 1; ri >= 0; ri--) {
+        var rg = rings[ri], age = (el - rg.t) / 900;
+        if (age >= 1) { rings.splice(ri, 1); continue; }
+        if (age > 0) { ctx.strokeStyle = 'rgba(' + (rg.c || '90,190,255') + ',' + (0.8 * (1 - age)) + ')'; ctx.lineWidth = 5 * (1 - age) + 1; ctx.beginPath(); ctx.arc(cx, cy, age * 520, 0, 6.28); ctx.stroke(); }
+      }
       ctx.restore();
-      // lightning bolts (storm)
-      for (var bi = 0; bi < bolts.length; bi++) { var b = bolts[bi]; if (!b.done && el > b.t && el < b.t + 130) { ctx.fillStyle = 'rgba(210,230,255,' + (0.55 * (1 - (el - b.t) / 130)) + ')'; ctx.fillRect(0, 0, W, H); if (!b.path) { b.path = []; var bx = rnd(W * 0.2, W * 0.8), by = 0; while (by < H * 0.75) { b.path.push([bx, by]); bx += rnd(-60, 60); by += rnd(40, 90); } } ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(b.path[0][0], b.path[0][1]); for (var pi = 1; pi < b.path.length; pi++) ctx.lineTo(b.path[pi][0], b.path[pi][1]); ctx.stroke(); } else if (el >= b.t + 130) b.done = true; }
-      // particles
+      if (theme === 'storm') {   // lightning keeps striking on a loose rhythm
+        if (!bolt && el > nextBolt) bolt = { t: el, path: null };
+        if (bolt) {
+          var ba = (el - bolt.t) / 130;
+          if (ba < 1) {
+            ctx.fillStyle = 'rgba(210,230,255,' + (0.55 * (1 - ba)) + ')'; ctx.fillRect(0, 0, W, H);
+            if (!bolt.path) { bolt.path = []; var bx = rnd(W * 0.2, W * 0.8), by = 0; while (by < H * 0.75) { bolt.path.push([bx, by]); bx += rnd(-60, 60); by += rnd(40, 90); } }
+            ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bolt.path[0][0], bolt.path[0][1]);
+            for (var pi = 1; pi < bolt.path.length; pi++) ctx.lineTo(bolt.path[pi][0], bolt.path[pi][1]);
+            ctx.stroke();
+          } else { bolt = null; nextBolt = el + rnd(1400, 3200); }
+        }
+      }
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       for (var i = 0; i < P.length; i++) {
         var p = P[i];
-        if (p.k === 'rain') { p.x += p.vx * dt; p.y += p.vy * dt; if (p.y > H) { p.y = -20; p.x = rnd(0, W); } ctx.strokeStyle = p.c; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.02, p.y - p.len); ctx.stroke(); }
-        else if (p.k === 'snow') { p.y += p.vy * dt; p.x += Math.sin((el / 500) + p.ph) * p.sway * dt; if (p.y > H) p.y = -10; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
+        if (p.k === 'rain') { p.x += p.vx * dt; p.y += p.vy * dt; if (p.y > H) { p.y = -20; p.x = rnd(0, W); } if (p.x > W + 20) p.x = -10; ctx.strokeStyle = p.c; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.02, p.y - p.len); ctx.stroke(); }
+        else if (p.k === 'snow') { p.y += p.vy * dt; p.x += Math.sin((el / 500) + p.ph) * p.sway * dt; if (p.y > H) { p.y = -10; p.x = rnd(0, W); } ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
         else if (p.k === 'star') { var tw = 0.4 + 0.6 * Math.abs(Math.sin(el / 1000 * p.sp + p.ph)); ctx.fillStyle = 'rgba(255,255,255,' + tw + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
-        else if (p.k === 'shoot') { p.age += dt; if (p.age > 0 && p.age < p.life) { var sx = p.x + p.vx * p.age, sy = p.y + p.vy * p.age; ctx.strokeStyle = 'rgba(255,255,255,' + (1 - p.age / p.life) + ')'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - p.vx * 0.05, sy - p.vy * 0.05); ctx.stroke(); } }
-        else if (p.k === 'spark') { p.vx *= p.drag; p.vy *= p.drag; p.x += p.vx * dt; p.y += p.vy * dt; ctx.fillStyle = p.c; ctx.globalAlpha = Math.max(0, 1 - el / DUR); ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); ctx.globalAlpha = 1; }
-        else if (p.k === 'drop') { p.vy += 900 * dt; p.x += p.vx * dt; p.y += p.vy * dt; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
-        else if (p.k === 'leaf') { p.vy += 500 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(0, 0, p.sz, p.sz * 0.45, 0, 0, 6.28); ctx.fill(); ctx.restore(); }
-        else if (p.k === 'streak') { var d = p.sp * (el / 1000); ctx.strokeStyle = p.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(p.a) * d * 0.5, cy + Math.sin(p.a) * d * 0.5); ctx.lineTo(cx + Math.cos(p.a) * d, cy + Math.sin(p.a) * d); ctx.stroke(); }
+        else if (p.k === 'shoot') { p.age += dt; if (p.age > p.life) { p.x = rnd(W * 0.2, W); p.y = rnd(0, H * 0.5); p.age = -rnd(0.6, 3); } if (p.age > 0) { var sx = p.x + p.vx * p.age, sy = p.y + p.vy * p.age; ctx.strokeStyle = 'rgba(255,255,255,' + (1 - p.age / p.life) + ')'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - p.vx * 0.05, sy - p.vy * 0.05); ctx.stroke(); } }
+        else if (p.k === 'mote') { p.y += p.vy * dt; if (p.y < -6) { p.y = H + 6; p.x = rnd(0, W); } var ma = 0.25 + 0.5 * Math.abs(Math.sin(el / 900 + p.ph)); ctx.fillStyle = 'rgba(' + p.c + ',' + ma + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
+        else if (p.k === 'drop') { if (p.delay > 0) { p.delay -= dt; continue; } p.vy += 900 * dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.y > H + 12 || p.x < -12 || p.x > W + 12) { P[i] = newDrop(false); continue; } ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
+        else if (p.k === 'leaf') { p.x += (p.vx + Math.sin(el / 700 + p.ph) * p.sway) * dt; p.y += p.vy * dt; p.rot += p.vr * dt; if (p.y > H + 16) { p.y = -14; p.x = rnd(0, W); } ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = 0.85; ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(0, 0, p.sz, p.sz * 0.45, 0, 0, 6.28); ctx.fill(); ctx.restore(); }
+        else if (p.k === 'streak') { var sAge = (el - p.t0) / 1000; var d = p.sp * sAge; if (d > 640) { p.t0 = el; p.a = rnd(0, 6.28); d = 0; } if (d > 0) { ctx.strokeStyle = p.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(p.a) * d * 0.5, cy + Math.sin(p.a) * d * 0.5); ctx.lineTo(cx + Math.cos(p.a) * d, cy + Math.sin(p.a) * d); ctx.stroke(); } }
+        else if (p.k === 'gold') { p.age += dt; if (p.age > p.life) { P[i] = newGold(false); continue; } if (p.age > 0) { p.x += p.vx * dt; p.y += p.vy * dt; ctx.globalAlpha = Math.sin(Math.PI * p.age / p.life); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); ctx.globalAlpha = 1; } }
       }
       ctx.restore();
-      if (el < DUR) requestAnimationFrame(frame);
-      else { if (cv.parentNode) cv.parentNode.removeChild(cv); if (card) card.classList.remove('punch'); }
+      raf = requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
+    return { stop: function () { if (stopped) return; stopped = true; cancelAnimationFrame(raf); if (cv.parentNode) cv.parentNode.removeChild(cv); if (card) card.classList.remove('punch'); } };
   }
 
   // opts: { deck, index }
@@ -272,7 +321,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     ov.innerHTML = '<div class="dlc-h">CARD COLLECTION</div>'
       + '<div class="dlc-row"><button class="dlc-nav dlc-prev">&#8249;</button>'
       + '<div class="dlc-stage"><div class="dlc-card">'
-      + '<div class="dlc-face dlc-front"><div class="dlc-content"></div><div class="dlc-foil"></div><div class="dlc-shine"></div><div class="dlc-glare"></div></div>'
+      + '<div class="dlc-face dlc-front"><div class="dlc-content"></div><div class="dlc-vig"></div><div class="dlc-foil"></div><div class="dlc-shine"></div><div class="dlc-glare"></div><div class="dlc-sparks"></div><div class="dlc-rim"></div></div>'
       + '<div class="dlc-face dlc-back"><img class="dlc-img" src="' + DANNYLAB.CARD_BACK + '"><div class="dlc-foil"></div><div class="dlc-shine"></div></div>'
       + '</div></div><button class="dlc-nav dlc-next">&#8250;</button></div>'
       + '<div class="dlc-meta"><div class="dlc-rarity"></div><div class="dlc-count"></div></div>'
@@ -284,20 +333,33 @@ window.DANNYLAB = window.DANNYLAB || {};
     var count = ov.querySelector('.dlc-count'), rarityEl = ov.querySelector('.dlc-rarity');
     var foils = ov.querySelectorAll('.dlc-foil'), shines = ov.querySelectorAll('.dlc-shine');
     var glare = ov.querySelector('.dlc-glare');
+    var vigEl = ov.querySelector('.dlc-vig'), rimEl = ov.querySelector('.dlc-rim'), sparksEl = ov.querySelector('.dlc-sparks');
     var rx = -8, ry = -16, vx = 0, vy = 0, dragging = false, lastX = 0, lastY = 0, lastTap = 0;
     var raf = 0, closed = false, phase = 0, flipTarget = null, holoOn = true;
+    var artEl = null, fxHandle = null;
 
     function render() {
+      if (fxHandle) { fxHandle.stop(); fxHandle = null; }
       var spec = deck[idx], unlocked = DANNYLAB.cardUnlocked(spec);
       var rar = spec.rarity || (spec.element ? 'holo' : 'common');
+      var ultra = false;
       if (!unlocked) { content.innerHTML = lockedFrontHTML(spec); holoOn = false; rarityEl.textContent = ''; }
       else {
         content.innerHTML = spec.img ? '<img class="dlc-img" src="' + spec.img + '">' : elementCardHTML(scene, spec.element);
         holoOn = rar !== 'common';
+        ultra = rar === 'ultra';
         var info = RARITY[rar] || RARITY.common;
         rarityEl.textContent = info.label; rarityEl.style.color = info.color;
-        if (rar === 'ultra' && spec.fx) requestAnimationFrame(function () { playCinematic(ov, spec.fx); });
       }
+      artEl = content.querySelector('.dlc-img');
+      // premium layers: vignette + rim for any holo card; sparkles + ambience for ultra
+      vigEl.style.display = holoOn ? 'block' : 'none';
+      rimEl.style.display = holoOn ? 'block' : 'none';
+      var rimC = (ultra && deck[idx].fx && FX_COLOR[deck[idx].fx]) || '#8fd0ff';
+      rimEl.style.boxShadow = 'inset 0 0 30px ' + rimC + (ultra ? 'cc' : '66') + ', inset 0 0 7px ' + rimC + '99';
+      sparksEl.style.display = ultra ? 'block' : 'none';
+      if (ultra) buildSparks(sparksEl);
+      if (ultra && deck[idx].fx) fxHandle = startCardFX(ov, deck[idx].fx);
       count.textContent = (idx + 1) + ' / ' + deck.length;
     }
     render();
@@ -308,6 +370,9 @@ window.DANNYLAB = window.DANNYLAB || {};
       for (var i = 0; i < foils.length; i++) { foils[i].style.opacity = holoOn ? (0.10 + 0.28 * a) : 0; foils[i].style.backgroundPosition = (50 + ry * 0.8) + '% ' + (50 + rx * 0.8) + '%'; }
       for (var j = 0; j < shines.length; j++) { shines[j].style.opacity = holoOn ? (0.12 + 0.4 * a) : 0; shines[j].style.transform = 'translateX(' + (ry * 1.1) + '%)'; }
       if (glare) { glare.style.opacity = holoOn ? (0.1 + 0.3 * Math.min(1, (Math.abs(rx) + Math.abs(ry)) / 55)) : 0; glare.style.transform = 'translate(' + (ry * 0.5) + '%,' + (-rx * 0.5) + '%)'; }
+      // parallax depth: the art sits behind the frame, sparkles float in front
+      if (artEl) artEl.style.transform = 'scale(1.07) translate(' + (-ry * 0.28) + 'px,' + (rx * 0.28) + 'px)';
+      sparksEl.style.transform = 'translate(' + (ry * 0.55) + 'px,' + (-rx * 0.55) + 'px)';
     }
     function loop() {
       if (closed) return;
@@ -340,6 +405,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     function close() {
       if (closed) return; closed = true; cancelAnimationFrame(raf);
+      if (fxHandle) { fxHandle.stop(); fxHandle = null; }
       ov.classList.remove('show');
       setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); }, 220);
       if (opts.onClose) opts.onClose();
