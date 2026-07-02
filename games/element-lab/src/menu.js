@@ -13,6 +13,9 @@ DANNYLAB.MenuScene.prototype.create = function () {
   var W = DANNYLAB.GEO.W, H = DANNYLAB.GEO.H;
   var lang = this.registry.get('lang');
   var UI = DANNYLAB.UI;
+  // 'sharp' = angular sci-fi look; DANNYLAB.MENU_STYLE='classic' reverts it all
+  var sharp = this._sharp = DANNYLAB.MENU_STYLE !== 'classic';
+  function label(s) { return sharp ? s.toUpperCase() : s; }
   this.lab = DANNYLAB.buildLab(this, { dust: 16 });
 
   // ---- floating sample elements: drift in the corners + side margins,
@@ -36,6 +39,7 @@ DANNYLAB.MenuScene.prototype.create = function () {
     fontFamily: UI.DISPLAY, fontSize: '26px', color: '#FBD38D', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(5).setAlpha(0);
   topper.setShadow(0, 0, '#e0a020', 10);
+  if (sharp && topper.setLetterSpacing) topper.setLetterSpacing(3);
   this.tweens.add({ targets: topper, alpha: 1, y: H * 0.155, duration: 420, delay: 120, ease: 'Quad.out' });
 
   // ---- logo: "ELEMENT LAB" built letter-by-letter as glowing GLASS — each
@@ -102,24 +106,45 @@ DANNYLAB.MenuScene.prototype.create = function () {
     self.tweens.add({ targets: btn, alpha: 1, y: btn.y - 26, duration: 360, delay: 460 + idx * 90, ease: 'Quad.out' });
     return btn;
   }
-  entrance(UI.button(this, bx, by, bw, bh, DANNYLAB.t('play', lang), startGame, { fill: 0x46b85e }), 0);
-  entrance(UI.button(this, bx, by + gap, bw, bh, DANNYLAB.t('how_to', lang), function () {
+  var shape = sharp ? 'sharp' : undefined;
+  entrance(UI.button(this, bx, by, bw, bh, label(DANNYLAB.t('play', lang)), startGame, { fill: 0x46b85e, shape: shape }), 0);
+  entrance(UI.button(this, bx, by + gap, bw, bh, label(DANNYLAB.t('how_to', lang)), function () {
     self.scene.pause(); self.scene.launch('DANNYLAB_HowTo', { parent: 'DANNYLAB_Menu' });
-  }, { fill: 0x5b8def }), 1);
-  entrance(UI.button(this, bx, by + gap * 2, bw, bh, DANNYLAB.t('options', lang), function () {
+  }, { fill: 0x5b8def, shape: shape }), 1);
+  entrance(UI.button(this, bx, by + gap * 2, bw, bh, label(DANNYLAB.t('options', lang)), function () {
     self.scene.pause(); self.scene.launch('DANNYLAB_Options', { parent: 'DANNYLAB_Menu' });
-  }, { fill: 0x5b8def }), 2);
-  entrance(UI.button(this, bx, by + gap * 3, bw, bh, DANNYLAB.t('exit', lang), function () {
+  }, { fill: 0x5b8def, shape: shape }), 2);
+  entrance(UI.button(this, bx, by + gap * 3, bw, bh, label(DANNYLAB.t('exit', lang)), function () {
     DANNYLAB.exitSubgame(self);
-  }, { fill: 0xc05b7a }), 3);
+  }, { fill: 0xc05b7a, shape: shape }), 3);
+
+  // ---- sharp mode: HUD trim — corner brackets + a divider under the logo ----
+  if (sharp) {
+    var trim = this.add.graphics().setDepth(4).setAlpha(0);
+    var m = 14, bl = 26;
+    trim.lineStyle(1.5, 0x4fd9ff, 0.55);
+    trim.lineBetween(m, m + bl, m, m); trim.lineBetween(m, m, m + bl, m);                             // TL
+    trim.lineBetween(W - m - bl, m, W - m, m); trim.lineBetween(W - m, m, W - m, m + bl);             // TR
+    trim.lineBetween(m, H - m - bl, m, H - m); trim.lineBetween(m, H - m, m + bl, H - m);             // BL
+    trim.lineBetween(W - m - bl, H - m, W - m, H - m); trim.lineBetween(W - m, H - m, W - m, H - m - bl); // BR
+    // divider between logo and buttons, with a centre diamond + end ticks
+    var dy = 330;
+    trim.lineStyle(1.5, 0x4fd9ff, 0.4);
+    trim.lineBetween(W * 0.16, dy, W / 2 - 14, dy);
+    trim.lineBetween(W / 2 + 14, dy, W * 0.84, dy);
+    trim.fillStyle(0x4fd9ff, 0.9);
+    trim.fillPoints([{ x: W / 2, y: dy - 5 }, { x: W / 2 + 5, y: dy }, { x: W / 2, y: dy + 5 }, { x: W / 2 - 5, y: dy }], true);
+    trim.fillRect(W * 0.16 - 2, dy - 3, 2, 6); trim.fillRect(W * 0.84, dy - 3, 2, 6);
+    this.tweens.add({ targets: trim, alpha: 1, duration: 500, delay: 400 });
+  }
 
   // ---- small collection peek (periodic-shelf) bottom corner ----
   var disc = DANNYLAB.store.getDiscovered().length;
   var total = DANNYLAB.MAX_TIER;
   var collBtn = UI.button(this, W - 92, H - 56, 150, 48,
-    DANNYLAB.t('collection', lang) + ' ' + disc + '/' + total, function () {
+    label(DANNYLAB.t('collection', lang)) + ' ' + disc + '/' + total, function () {
       self.scene.pause(); self.scene.launch('DANNYLAB_Collection', { parent: 'DANNYLAB_Menu' });
-    }, { fill: 0x3aa6a0, fontSize: 18 });
+    }, { fill: 0x3aa6a0, fontSize: 18, shape: shape });
   collBtn.setDepth(5);
 
   // the menu plays the intro theme. Returning from a run, audio is already
@@ -136,11 +161,15 @@ DANNYLAB.MenuScene.prototype.create = function () {
 
 DANNYLAB.MenuScene.prototype.update = function (time, delta) {
   if (this.lab) this.lab.update(delta);
-  // gentle wave bob across the logo letters
+  // gentle wave bob across the logo letters (+ a shimmer wave in sharp mode:
+  // each letter's glow flares in sequence, like light sweeping the sign)
   if (this.logoLetters) {
     for (var i = 0; i < this.logoLetters.length; i++) {
       var L = this.logoLetters[i];
       L.y = L._baseY + Math.sin(time * 0.003 + i * 0.5) * 4;
+      if (this._sharp && L.list && L.list[0]) {
+        L.list[0].alpha = 0.42 + 0.24 * Math.max(0, Math.sin(time * 0.0022 - i * 0.55));
+      }
     }
   }
 };

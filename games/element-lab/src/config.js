@@ -98,6 +98,11 @@ DANNYLAB.pickGameTrack = function () {
 // (PixelLab atoms), or 'proc' (flat procedural balls). Change here to switch.
 DANNYLAB.SKIN = 'jelly';
 
+// Main-menu look: 'sharp' (angular sci-fi chamfered buttons + HUD trim,
+// matching the card frames) or 'classic' (the original soft rounded look).
+// One-line revert: set this to 'classic' to go back.
+DANNYLAB.MENU_STYLE = 'sharp';
+
 // For the px/proc skins: prefer the PixelLab art when it loaded, else the
 // procedural texture. (The jelly skin builds its own layered visual.)
 DANNYLAB.ballKey = function (scene, tier) {

@@ -8,10 +8,13 @@ DANNYLAB.UI = {
   DISPLAY: '"Pixelify Sans", "Baloo 2", system-ui, sans-serif',       // pixel display
 
   // brushed-metal chunky button with a neon accent edge + press-bounce.
+  // opts.shape: 'sharp' draws an angular chamfered plate (matches the card
+  // frames); default is the classic rounded glass pill.
   button: function (scene, x, y, w, h, label, onClick, opts) {
     opts = opts || {};
     var neon = opts.fill != null ? opts.fill : 0x4fd9ff;   // accent (neon) colour
     var neonStr = '#' + neon.toString(16).padStart(6, '0');
+    var sharp = opts.shape === 'sharp';
     var c = scene.add.container(x, y);
 
     // frosted-glass body lit with the accent (neon) colour
@@ -34,7 +37,38 @@ DANNYLAB.UI = {
       g.lineStyle(2.5, neon, 0.95); g.strokeRoundedRect(-w / 2, -h / 2 + off, w, h - 3, 16);
       g.lineStyle(1, 0xffffff, 0.18); g.strokeRoundedRect(-w / 2 + 4, -h / 2 + off + 3, w - 8, (h - 3) - 6, 13);
     }
-    paint(false);
+    // angular plate: big chamfer top-left / bottom-right, small on the others
+    var CUT = Math.min(18, h * 0.28), cut2 = Math.min(7, h * 0.12);
+    function chamferPts(e, off) {
+      var x0 = -w / 2 - e, y0 = -h / 2 - e + off, x1 = w / 2 + e, y1 = h / 2 - 3 + e + off;
+      var cA = CUT + e, cB = cut2 + e;
+      return [
+        { x: x0 + cA, y: y0 }, { x: x1 - cB, y: y0 }, { x: x1, y: y0 + cB },
+        { x: x1, y: y1 - cA }, { x: x1 - cA, y: y1 }, { x: x0 + cB, y: y1 },
+        { x: x0, y: y1 - cB }, { x: x0, y: y0 + cA },
+      ];
+    }
+    function paintSharp(top) {
+      g.clear();
+      var off = top ? 3 : 0;
+      // energy halo
+      g.fillStyle(neon, 0.16); g.fillPoints(chamferPts(5, off), true);
+      g.fillStyle(neon, 0.08); g.fillPoints(chamferPts(10, off), true);
+      // dark glass plate + accent wash
+      g.fillStyle(0x0c1730, 0.62); g.fillPoints(chamferPts(0, off), true);
+      g.fillStyle(neon, 0.13);     g.fillPoints(chamferPts(0, off), true);
+      // left energy notch + thin top gloss line
+      g.fillStyle(neon, 0.9);      g.fillRect(-w / 2 + 3, -h / 2 + CUT + off, 4, (h - 3) - CUT - cut2);
+      g.fillStyle(0xffffff, 0.22); g.fillRect(-w / 2 + CUT, -h / 2 + off + 4, w - CUT - cut2 - 6, 2);
+      // crisp neon edge + faint inner rim
+      g.lineStyle(2.5, neon, 0.95);   g.strokePoints(chamferPts(0, off), true, true);
+      g.lineStyle(1, 0xffffff, 0.16); g.strokePoints(chamferPts(-4, off), true, true);
+      // corner tick, bottom-right
+      g.lineStyle(2, neon, 0.9);
+      g.lineBetween(w / 2 - CUT + 3, h / 2 + off + 1, w / 2 + 1, h / 2 - CUT + off + 3);
+    }
+    var paintFn = sharp ? paintSharp : paint;
+    paintFn(false);
 
     var txt = scene.add.text(0, 0, label, {
       fontFamily: DANNYLAB.UI.FONT,
@@ -44,6 +78,7 @@ DANNYLAB.UI = {
       align: 'center',
     }).setOrigin(0.5);
     txt.setShadow(0, 0, neonStr, 8);   // neon text glow
+    if (sharp && txt.setLetterSpacing) txt.setLetterSpacing(1.5);
 
     c.add([g, txt]);
 
@@ -58,10 +93,10 @@ DANNYLAB.UI = {
       c.getWorldTransformMatrix(tmp);
       return Math.abs(px - tmp.tx) <= w / 2 && Math.abs(py - tmp.ty) <= h / 2;
     }
-    function onDown(p) { if (inside(p.worldX, p.worldY)) { pressed = true; paint(true); txt.y = 3; } }
+    function onDown(p) { if (inside(p.worldX, p.worldY)) { pressed = true; paintFn(true); txt.y = 3; } }
     function onUp(p) {
       if (!pressed) return;
-      pressed = false; paint(false); txt.y = 0;
+      pressed = false; paintFn(false); txt.y = 0;
       if (inside(p.worldX, p.worldY)) {
         var a = scene.registry.get('audio'); if (a) a.click();
         scene.tweens.add({ targets: c, scaleX: 0.94, scaleY: 0.94, duration: 70, yoyo: true, ease: 'Quad.out' });
