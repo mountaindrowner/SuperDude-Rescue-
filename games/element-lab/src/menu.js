@@ -145,6 +145,20 @@ DANNYLAB.MenuScene.prototype.create = function () {
       self.scene.pause(); self.scene.launch('DANNYLAB_Collection', { parent: 'DANNYLAB_Menu' });
     }, { fill: 0x3aa6a0, fontSize: 18, shape: shape });
   collBtn.setDepth(5);
+
+  // ---- Daily Experiment: one seeded modifier run per day, bottom-left ----
+  if (DANNYLAB.dailyInfo) {
+    var dInfo = DANNYLAB.dailyInfo();
+    var dailyBtn = UI.button(this, 92, H - 56, 150, 48, label(DANNYLAB.t('daily', lang)), function () {
+      var a = self.registry.get('audio'); if (a) a.resume();
+      self.scene.start('DANNYLAB_Game', { mode: 'endless', daily: dInfo });
+    }, { fill: 0x8a5fd6, fontSize: 18, shape: shape });
+    dailyBtn.setDepth(5);
+    var dBest = DANNYLAB.store.getDailyBest(dInfo.date);
+    if (dBest > 0) this.add.text(92, H - 88, '★ ' + dBest, {
+      fontFamily: UI.DISPLAY, fontSize: '12px', color: '#ffd84d', fontStyle: 'bold' }).setOrigin(0.5).setDepth(5);
+  }
+
   if (DANNYLAB.unseenCardCount && DANNYLAB.unseenCardCount() > 0) {
     var badge = this.add.container(W - 92 + 68, H - 56 - 20).setDepth(6);
     var bg = this.add.graphics();

@@ -117,14 +117,40 @@ DANNYLAB.iconKey = function (scene, tier) {
 };
 
 // Weighted random pick of a droppable tier (1..maxDroppableTier).
-DANNYLAB.pickDroppableTier = function () {
-  var w = DANNYLAB.CONFIG.dropWeights;
+// Optional rng (seeded, for the Daily Experiment) and weight override.
+DANNYLAB.pickDroppableTier = function (rng, weights) {
+  var w = weights || DANNYLAB.CONFIG.dropWeights;
   var total = 0, k;
   for (k in w) total += w[k];
-  var r = Math.random() * total;
+  var r = (rng ? rng() : Math.random()) * total;
   for (k = 1; k <= DANNYLAB.MAX_DROPPABLE_TIER; k++) {
     r -= (w[k] || 0);
     if (r <= 0) return k;
   }
   return 1;
+};
+
+// ---- Daily Experiment: one seeded modifier run per calendar day ----
+// Same date = same modifier + same piece sequence for everyone. No streaks,
+// no timers - just a fresh twist on the lab each day.
+DANNYLAB.DAILY_MODS = [
+  { key: 'lowgrav', name: 'LOW GRAVITY DAY',  gravity: 0.55 },
+  { key: 'heavy',   name: 'HEAVY MATTER DAY', gravity: 1.5 },
+  { key: 'bouncy',  name: 'BOUNCY DAY',       restitution: 0.55 },
+  { key: 'mystery', name: 'MYSTERY MANIA',    cadence: 15 },
+  { key: 'tiny',    name: 'TINY LAB DAY',     fill: 70 },
+  { key: 'jumbo',   name: 'JUMBO DROPS',      weights: { 1: 0.2, 2: 0.4, 3: 0.4 } },
+];
+DANNYLAB.mulberry32 = function (a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+};
+DANNYLAB.dailyInfo = function () {
+  var d = new Date();
+  var ymd = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  return { seed: ymd, date: '' + ymd, mod: DANNYLAB.DAILY_MODS[ymd % DANNYLAB.DAILY_MODS.length] };
 };

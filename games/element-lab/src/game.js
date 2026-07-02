@@ -31,6 +31,14 @@ GP.create = function (data) {
   this.lang = this.registry.get('lang');
   this.audio = this.registry.get('audio');
   DANNYLAB.store.addGamePlayed();   // lifetime counter (drives some card unlocks)
+
+  // Daily Experiment: a seeded piece sequence + one modifier for the whole run
+  this.daily = (data && data.daily) || null;
+  var dm = this.daily ? this.daily.mod : null;
+  this._rng = this.daily ? DANNYLAB.mulberry32(this.daily.seed) : null;
+  this._weights = (dm && dm.weights) || null;
+  this._rest = (dm && dm.restitution) || null;
+  this.fillLineY = DANNYLAB.GEO.fillLineY + ((dm && dm.fill) || 0);
   // pick a fresh "elements" gameplay track for this run (swaps off the intro)
   if (this.audio) this.audio.startMusic(DANNYLAB.pickGameTrack());
 
@@ -66,6 +74,14 @@ GP.create = function (data) {
   this.runNewCards = [];
   this.time.delayedCall(1300, this._checkCardUnlocks, [], this);
 
+  // announce the daily modifier as the run opens
+  if (this.daily) {
+    this.time.delayedCall(700, function (sc) {
+      sc.toast(sc.daily.mod.name, 0xffd84d);
+      sc.mysteryDesc(DANNYLAB.t('daily_tag', sc.lang));
+    }, [this]);
+  }
+
   // Phaser reuses the scene instance across runs, so clear any slow-mo state
   // left over from a previous run and guarantee this one starts at real-time.
   this._slowmo = false;
@@ -77,8 +93,8 @@ GP.create = function (data) {
   this.buildHUD();
   this.buildTweezers();
 
-  // gentle gravity; the beaker walls contain everything
-  this.matter.world.setGravity(0, 1.0);
+  // gentle gravity; the beaker walls contain everything (daily mods can bend it)
+  this.matter.world.setGravity(0, (dm && dm.gravity) || 1.0);
 
   // ---- collision merge handler (double-merge guarded, Brief §12) ----
   // We only CLAIM pairs here (set consumed) and queue them; the actual
@@ -150,8 +166,8 @@ GP.create = function (data) {
   this.input.on('pointerup', function () { self.commitDrop(); });
   this.input.on('pointerupoutside', function () { self.commitDrop(); });
 
-  this.nextTier = DANNYLAB.pickDroppableTier();
-  this.upcomingTier = DANNYLAB.pickDroppableTier();   // the one after (NEXT chip)
+  this.nextTier = this._pickTier();
+  this.upcomingTier = this._pickTier();   // the one after (NEXT chip)
   this.setTweezerPreview(this.nextTier);
   this._drawUpcoming();
   this.pointerX = DANNYLAB.beakerCx();
@@ -209,7 +225,7 @@ GP.buildBeaker = function () {
     var fl = this.add.graphics().setDepth(19);
     fl.lineStyle(2, 0xff6b8b, 0.5);
     fl.beginPath();
-    for (var x = GEO.bx0; x < GEO.bx1; x += 16) { fl.moveTo(x, GEO.fillLineY); fl.lineTo(x + 8, GEO.fillLineY); }
+    for (var x = GEO.bx0; x < GEO.bx1; x += 16) { fl.moveTo(x, this.fillLineY); fl.lineTo(x + 8, this.fillLineY); }
     fl.strokePath();
     this.fillFlash = fl;
   }
@@ -235,7 +251,7 @@ GP.buildHUD = function () {
   g.strokeRoundedRect(w1x, wy, ww, wh, 7);
   g.strokeRoundedRect(w2x, wy, ww, wh, 7);
 
-  var mb = this.add.text(scx, sy + 14, DANNYLAB.t(this.mode, lang).toUpperCase(), {
+  var mb = this.add.text(scx, sy + 14, this.daily ? this.daily.mod.name : DANNYLAB.t(this.mode, lang).toUpperCase(), {
     fontFamily: UI.DISPLAY, fontSize: '14px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   mb.setShadow(0, 0, '#7CFF6B', 10);
   var c1 = w1x + ww / 2, c2 = w2x + ww / 2;
@@ -333,8 +349,12 @@ GP._drawCharge = function () {
 GP._rollMystery = function () {
   var C = DANNYLAB.CONFIG;
   if (!C.mysteryEnabled) return Infinity;
-  return C.mysteryEveryNDrops + Math.round((Math.random() * 2 - 1) * C.mysteryJitter);
+  var base = (this.daily && this.daily.mod.cadence) || C.mysteryEveryNDrops;
+  return base + Math.round((Math.random() * 2 - 1) * C.mysteryJitter);
 };
+
+// piece pick — seeded + reweighted on Daily Experiment days
+GP._pickTier = function () { return DANNYLAB.pickDroppableTier(this._rng, this._weights); };
 
 // Lab Charge level-up: bump bonus, grow threshold, celebrate (Addendum §3)
 GP.levelUp = function () {
@@ -489,7 +509,7 @@ GP.prepareNextPiece = function () {
   } else {
     this.nextIsMystery = false;
     this.nextTier = this.upcomingTier;                    // the queue shifts forward
-    this.upcomingTier = DANNYLAB.pickDroppableTier();
+    this.upcomingTier = this._pickTier();
     this.setTweezerPreview(this.nextTier);
   }
   this._drawUpcoming();
@@ -852,7 +872,7 @@ GP.spawnMystery = function (x, y) {
   var q = this.add.text(0, 0, '?', { fontFamily: UI.DISPLAY, fontSize: Math.round(r * 1.2) + 'px', color: '#3a2a6a', fontStyle: 'bold' }).setOrigin(0.5);
   var inner = this.add.container(0, 0, [shadow, glow, bodyImg, q]);
   var c = this.add.container(x, y, [inner]); c.setDepth(0);
-  this.matter.add.gameObject(c, { shape: { type: 'circle', radius: r }, restitution: 0.2, friction: 0.4, frictionStatic: 0.5 });
+  this.matter.add.gameObject(c, { shape: { type: 'circle', radius: r }, restitution: this._rest || 0.2, friction: 0.4, frictionStatic: 0.5 });
   c.tier = -1; c.consumed = false; c.visual = inner; c.glow = glow; c.bodyImg = bodyImg; c.radius = r; c.isMystery = true; c._hue = 0;
   this.elements.push(c);
   inner.setScale(0.5);
@@ -1479,7 +1499,7 @@ GP.update = function (time, delta) {
     for (var i = 0; i < this.elements.length; i++) {
       var e = this.elements[i];
       if (e.consumed || !e.body) continue;
-      if (e.body.speed < 0.6 && (e.y - e.radius) < DANNYLAB.GEO.fillLineY) { breach = true; break; }
+      if (e.body.speed < 0.6 && (e.y - e.radius) < this.fillLineY) { breach = true; break; }
     }
     if (breach) {
       this.overflowAccum += delta;
@@ -1501,12 +1521,15 @@ GP.endGame = function () {
   this._discoQ = [];
   this.clearDiscoveryCard();
   if (this.audio) this.audio.aww();
-  var newBest = this.score >= this.best ? this.score : this.best;
-  DANNYLAB.store.setBest(newBest);
+  // daily runs keep their own leaderboard (modifiers distort scores); normal
+  // runs feed the all-time best as before
+  var newBest = this.best;
+  if (this.daily) DANNYLAB.store.setDailyBest(this.daily.date, this.score);
+  else { newBest = this.score >= this.best ? this.score : this.best; DANNYLAB.store.setBest(newBest); }
   // gentle fizzle on the top elements
   for (var i = 0; i < this.elements.length; i++) {
     var e = this.elements[i];
-    if ((e.y - e.radius) < DANNYLAB.GEO.fillLineY + 30)
+    if ((e.y - e.radius) < this.fillLineY + 30)
       this.burst(e.x, e.y, 0x9fd8ff, 6, { tex: 'p_bubble', speed: 60, scale: 0.5, life: 700 });
   }
   this.matter.world.enabled = false;
@@ -1517,6 +1540,8 @@ GP.endGame = function () {
       level: self.labLevel, combo: self.runMaxCombo,
       discovered: Object.keys(self.runDiscovered || {}),
       newCards: self.runNewCards,
+      daily: self.daily || null,
+      dailyBest: self.daily ? DANNYLAB.store.getDailyBest(self.daily.date) : 0,
     });
     self.scene.pause();
   });

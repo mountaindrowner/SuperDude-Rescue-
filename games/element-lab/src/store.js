@@ -70,6 +70,14 @@ DANNYLAB.store = (function () {
       if (a.indexOf(id) === -1) { a.push(id); write(key, JSON.stringify(a)); }
     },
 
+    // ---- Daily Experiment best (only today's is kept) ----
+    getDailyBest: function (date) {
+      try { var o = JSON.parse(read('dailyBest', 'null')); return (o && o.date === date) ? (o.score | 0) : 0; } catch (e) { return 0; }
+    },
+    setDailyBest: function (date, score) {
+      if ((score | 0) > this.getDailyBest(date)) write('dailyBest', JSON.stringify({ date: date, score: score | 0 }));
+    },
+
     // ---- options ----
     getOpt: function (name, dflt) { return read('opt.' + name, dflt); },
     setOpt: function (name, val) { write('opt.' + name, val); },

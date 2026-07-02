@@ -138,8 +138,12 @@ window.DANNYLAB = window.DANNYLAB || {};
     this.add.text(W / 2, H / 2 - 216, t('score', lang) + ': ' + data.score, {
       fontFamily: UI.FONT, fontSize: '34px', color: '#ffffff', fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.text(W / 2, H / 2 - 176, t('best', lang) + ': ' + data.best, {
-      fontFamily: UI.FONT, fontSize: '22px', color: '#7CFF6B', fontStyle: 'bold',
+    var bestLine = data.daily
+      ? data.daily.mod.name + '  ·  ' + t('go_dailybest', lang) + ': ' + data.dailyBest
+      : t('best', lang) + ': ' + data.best;
+    this.add.text(W / 2, H / 2 - 176, bestLine, {
+      fontFamily: UI.FONT, fontSize: data.daily ? '18px' : '22px',
+      color: data.daily ? '#ffd84d' : '#7CFF6B', fontStyle: 'bold',
     }).setOrigin(0.5);
 
     // run recap: lab level reached + biggest chain
@@ -194,8 +198,9 @@ window.DANNYLAB = window.DANNYLAB || {};
     UI.button(this, W / 2, H / 2 + 128, bw, 62, t('play_again', lang), function () {
       self.scene.stop('DANNYLAB_Game');
       self.scene.stop();
-      // route through the loading interstitial (a wonder-of-creation fact)
-      self.scene.start('DANNYLAB_Loading', { mode: self.registry.get('mode') });
+      // route through the loading interstitial (a wonder-of-creation fact);
+      // a daily run replays the same daily
+      self.scene.start('DANNYLAB_Loading', { mode: self.registry.get('mode'), daily: data.daily || null });
     }, { fill: 0x46b85e });
     UI.button(this, W / 2, H / 2 + 202, bw, 58, t('exit', lang), function () {
       DANNYLAB.exitSubgame(self);
@@ -432,7 +437,7 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     // --- advance to the next run (once) ---
     var DUR = 2900, started = false;
-    function go() { if (started) return; started = true; self.scene.start('DANNYLAB_Game', { mode: mode }); }
+    function go() { if (started) return; started = true; self.scene.start('DANNYLAB_Game', { mode: mode, daily: (data && data.daily) || null }); }
     this.tweens.add({ targets: fill, scaleX: 1, duration: DUR, ease: 'Sine.inOut', onComplete: go });
     // tap to skip, after a short readable minimum
     this.time.delayedCall(650, function () { self.input.once('pointerdown', go); });
