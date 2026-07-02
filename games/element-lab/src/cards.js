@@ -144,7 +144,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       + '.dlc-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;will-change:transform;cursor:grab;}'
       + '.dlc-card.punch{animation:dlcpunch .6s ease-out;}'
       + '@keyframes dlcpunch{0%{filter:brightness(2.2)}30%{filter:brightness(1.4)}100%{filter:brightness(1)}}'
-      + '.dlc-face{position:absolute;inset:0;border-radius:20px;overflow:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 18px 46px rgba(0,0,0,.6);}'
+      + '.dlc-face{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:#0b1226;-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 18px 46px rgba(0,0,0,.6);}'
       + '.dlc-back{transform:rotateY(180deg);}'
       + '.dlc-content{position:absolute;inset:0;}'
       + '.dlc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;will-change:transform;}'
@@ -162,14 +162,35 @@ window.DANNYLAB = window.DANNYLAB || {};
       // pulsing rim light, tinted to the card theme
       + '.dlc-rim{position:absolute;inset:0;border-radius:20px;pointer-events:none;animation:dlcrim 2.6s ease-in-out infinite;}'
       + '@keyframes dlcrim{0%,100%{opacity:.45}50%{opacity:1}}'
-      + '.dlc-nav{width:52px;height:52px;border-radius:50%;border:none;background:#1b2748;color:#cfe0ff;font-size:26px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4);flex:0 0 auto;}'
+      + '.dlc-nav{width:52px;height:52px;border-radius:50%;border:none;padding:0;background:#1b2748;color:#cfe0ff;font-size:26px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4);flex:0 0 auto;}'
+      + '.dlc-nav i{font-style:normal;display:flex;align-items:center;justify-content:center;width:100%;height:100%;}'
       + '.dlc-nav:active{transform:translateY(2px);}'
+      + '.dlc-done span{display:block;}'
+      + '.dlc-brk{display:none;}'
       + '.dlc-meta{margin-top:14px;text-align:center;}'
       + '.dlc-rarity{font-weight:800;font-size:13px;letter-spacing:2px;}'
       + '.dlc-count{color:#8fb0e6;font-weight:700;font-size:13px;letter-spacing:1px;margin-top:2px;}'
       + '.dlc-hint{color:#cfe0ff;font-weight:700;font-size:15px;margin-top:6px;opacity:.85;}'
       + '.dlc-done{margin-top:14px;padding:13px 44px;border:none;border-radius:16px;background:#46506e;color:#eafffb;font-weight:800;font-size:19px;font-family:inherit;box-shadow:0 6px 16px rgba(0,0,0,.4);cursor:pointer;}'
       + '.dlc-done:active{transform:translateY(2px);}'
+      // ----- sharp chrome (matches the menu's angular look; MENU_STYLE gates it) -----
+      + '.dlc-sharp .dlc-h{letter-spacing:4px;}'
+      + '.dlc-sharp .dlc-done{padding:2px;border-radius:0;background:rgba(79,217,255,.85);'
+      + 'clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);}'
+      + '.dlc-sharp .dlc-done span{padding:12px 46px;background:#18233f;color:#eafffb;letter-spacing:2px;text-transform:uppercase;font-size:17px;'
+      + 'clip-path:polygon(15px 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%,0 15px);}'
+      + '.dlc-sharp .dlc-nav{border-radius:0;padding:2px;background:rgba(79,217,255,.7);'
+      + 'clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);}'
+      + '.dlc-sharp .dlc-nav i{background:#18233f;color:#bfe9ff;'
+      + 'clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);}'
+      + '.dlc-sharp .dlc-rarity:not(:empty){display:inline-block;padding:4px 16px 3px;border:1.5px solid currentColor;background:rgba(8,16,38,.78);font-size:12px;'
+      + 'clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);}'
+      + '.dlc-sharp .dlc-brk{display:block;}'
+      + '.dlc-brk span{position:fixed;width:26px;height:26px;border:2px solid rgba(79,217,255,.5);}'
+      + '.dlc-brk span:nth-child(1){top:12px;left:12px;border-right:none;border-bottom:none;}'
+      + '.dlc-brk span:nth-child(2){top:12px;right:12px;border-left:none;border-bottom:none;}'
+      + '.dlc-brk span:nth-child(3){bottom:12px;left:12px;border-right:none;border-top:none;}'
+      + '.dlc-brk span:nth-child(4){bottom:12px;right:12px;border-left:none;border-top:none;}'
       + '.elc{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:conic-gradient(from 210deg,#ff2d6f,#ff8a3a,#ffe14d,#49ff7a,#3ad0ff,#7a5cff,#ff5ce6,#ff2d6f);}'
       + '.elc-in{position:absolute;inset:5px;border-radius:16px;overflow:hidden;background:linear-gradient(165deg,#12203f,#070d1e);border:2px solid rgba(255,255,255,.14);display:flex;flex-direction:column;}'
       + '.elc-top{display:flex;justify-content:space-between;align-items:center;background:var(--acc);color:#0a1330;font-weight:800;font-size:12px;letter-spacing:2px;padding:5px 12px;}'
@@ -322,14 +343,16 @@ window.DANNYLAB = window.DANNYLAB || {};
     if (idx < 0 || idx >= deck.length) idx = 0;
 
     var ov = document.createElement('div'); ov.className = 'dlc-overlay';
-    ov.innerHTML = '<div class="dlc-h">CARD COLLECTION</div>'
-      + '<div class="dlc-row"><button class="dlc-nav dlc-prev">&#8249;</button>'
+    if (DANNYLAB.MENU_STYLE !== 'classic') ov.className += ' dlc-sharp';
+    ov.innerHTML = '<div class="dlc-brk"><span></span><span></span><span></span><span></span></div>'
+      + '<div class="dlc-h">CARD COLLECTION</div>'
+      + '<div class="dlc-row"><button class="dlc-nav dlc-prev"><i>&#8249;</i></button>'
       + '<div class="dlc-stage"><div class="dlc-card">'
       + '<div class="dlc-face dlc-front"><div class="dlc-content"></div><div class="dlc-vig"></div><div class="dlc-foil"></div><div class="dlc-shine"></div><div class="dlc-glare"></div><div class="dlc-sparks"></div><div class="dlc-rim"></div></div>'
       + '<div class="dlc-face dlc-back"><img class="dlc-img" src="' + DANNYLAB.CARD_BACK + '"><div class="dlc-foil"></div><div class="dlc-shine"></div></div>'
-      + '</div></div><button class="dlc-nav dlc-next">&#8250;</button></div>'
+      + '</div></div><button class="dlc-nav dlc-next"><i>&#8250;</i></button></div>'
       + '<div class="dlc-meta"><div class="dlc-rarity"></div><div class="dlc-count"></div></div>'
-      + '<div class="dlc-hint">Drag to spin &middot; double-tap to flip</div><button class="dlc-done">Done</button>';
+      + '<div class="dlc-hint">Drag to spin &middot; double-tap to flip</div><button class="dlc-done"><span>Done</span></button>';
     document.body.appendChild(ov);
     requestAnimationFrame(function () { ov.classList.add('show'); });
 
@@ -377,13 +400,16 @@ window.DANNYLAB = window.DANNYLAB || {};
       var f = ((ry % 360) + 360) % 360, showingBack = (f > 90 && f < 270);
       frontFace.style.visibility = showingBack ? 'hidden' : 'visible';
       backFace.style.visibility = showingBack ? 'visible' : 'hidden';
-      var a = Math.abs(Math.sin(ry * Math.PI / 180));
-      for (var i = 0; i < foils.length; i++) { foils[i].style.opacity = holoOn ? (0.10 + 0.28 * a) : 0; foils[i].style.backgroundPosition = (50 + ry * 0.8) + '% ' + (50 + rx * 0.8) + '%'; }
-      for (var j = 0; j < shines.length; j++) { shines[j].style.opacity = holoOn ? (0.12 + 0.4 * a) : 0; shines[j].style.transform = 'translateX(' + (ry * 1.1) + '%)'; }
-      if (glare) { glare.style.opacity = holoOn ? (0.1 + 0.3 * Math.min(1, (Math.abs(rx) + Math.abs(ry)) / 55)) : 0; glare.style.transform = 'translate(' + (ry * 0.5) + '%,' + (-rx * 0.5) + '%)'; }
+      // everything below keys off sin/cos so free spins past 360 can't slide
+      // the layers off the card (ry grows unbounded when the player spins)
+      var syr = Math.sin(ry * Math.PI / 180), srx = Math.sin(rx * Math.PI / 180);
+      var a = Math.abs(syr);
+      for (var i = 0; i < foils.length; i++) { foils[i].style.opacity = holoOn ? (0.10 + 0.28 * a) : 0; foils[i].style.backgroundPosition = (50 + syr * 40) + '% ' + (50 + srx * 40) + '%'; }
+      for (var j = 0; j < shines.length; j++) { shines[j].style.opacity = holoOn ? (0.12 + 0.4 * a) : 0; shines[j].style.transform = 'translateX(' + (syr * 46) + '%)'; }
+      if (glare) { glare.style.opacity = holoOn ? (0.1 + 0.3 * Math.min(1, a * 2 + Math.abs(srx))) : 0; glare.style.transform = 'translate(' + (syr * 28) + '%,' + (-srx * 28) + '%)'; }
       // parallax depth: the art sits behind the frame, sparkles float in front
-      if (artEl) artEl.style.transform = 'scale(1.07) translate(' + (-ry * 0.28) + 'px,' + (rx * 0.28) + 'px)';
-      sparksEl.style.transform = 'translate(' + (ry * 0.55) + 'px,' + (-rx * 0.55) + 'px)';
+      if (artEl) artEl.style.transform = 'scale(1.07) translate(' + (-syr * 9) + 'px,' + (srx * 9) + 'px)';
+      sparksEl.style.transform = 'translate(' + (syr * 16) + 'px,' + (-srx * 16) + 'px)';
     }
     function loop() {
       if (closed) return;
