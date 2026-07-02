@@ -284,6 +284,7 @@ window.SDD = window.SDD || {};
       A.startMusic('menu');
       this.items = [{ label: 'NEW GAME', act: 'new' }];
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
+      this.items.push({ label: 'ELEMENT LAB', act: 'lab' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
       this.idx = SDD.save.hasSave() ? 1 : 0;
@@ -296,6 +297,7 @@ window.SDD = window.SDD || {};
         A.sfx('confirm');
         if (act === 'new') { SDD.save.reset(); SDD.save.save(); go('intro'); }
         else if (act === 'continue') { go('overworld'); }
+        else if (act === 'lab') { window.location.href = 'games/element-lab/index.html?from=sdd'; }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
       }
@@ -313,7 +315,9 @@ window.SDD = window.SDD || {};
       S.drawDanny(g, 'big', 'idle', 'east', Math.floor(this.t / 18) % 4, 40, 96);
 
       for (var i = 0; i < this.items.length; i++) {
-        var y = 104 + i * 14;
+        // 13px pitch from y=100 so a 5-item list (with CONTINUE + ELEMENT LAB)
+        // still clears the tagline at y=164
+        var y = 100 + i * 13;
         var sel = i === this.idx;
         if (sel) text(g, '>', 108, y, '#ffd23a', 1, 'left');
         // Mark's request: selection should be brighter but not 2x bigger.

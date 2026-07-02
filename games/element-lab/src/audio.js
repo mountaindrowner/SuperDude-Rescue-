@@ -113,6 +113,50 @@ DANNYLAB.makeAudio = function (sfxVol, musicVol) {
       else if (!state.music) api.stopMusic();         // dragged to 0 → silence
     },
     // legacy on/off (kept for the parent integration contract)
+    // ---- looping synth ambience for the ultra-rare card cinematics ----
+    // Returns { stop() }. Everything routes through sfxGain, so the Sound
+    // slider governs it; each pulse also re-checks the sfx state.
+    cardAmbience: function (theme) {
+      var h = {
+        _dead: false, _iv: [], _to: [], _nodes: [],
+        stop: function () {
+          h._dead = true;
+          h._iv.forEach(clearInterval); h._to.forEach(clearTimeout);
+          h._nodes.forEach(function (nd) { try { nd.stop(0); } catch (e) {} });
+          h._iv = []; h._to = []; h._nodes = [];
+        },
+      };
+      if (!ensure()) return h;
+      function iv(ms, fn) { h._iv.push(setInterval(function () { if (!h._dead && state.sfx) fn(); }, ms)); }
+      function chain(minMs, maxMs, fn) {
+        (function next() {
+          if (h._dead) return;
+          h._to.push(setTimeout(function () { if (!h._dead) { if (state.sfx) fn(); next(); } }, minMs + Math.random() * (maxMs - minMs)));
+        })();
+      }
+      if (theme === 'storm') {              // steady rain patter + rolling thunder
+        iv(110, function () { noise({ filter: 'lowpass', freq: 900, dur: 0.16, gain: 0.016 }); });
+        chain(1800, 4200, function () { noise({ filter: 'lowpass', freq: 130, dur: 0.9, gain: 0.09 }); tone({ type: 'sine', f0: 55, f1: 36, dur: 0.85, gain: 0.05 }); });
+      } else if (theme === 'snow') {        // gusting mountain wind
+        chain(360, 700, function () { noise({ filter: 'bandpass', freq: 320 + Math.random() * 320, q: 1.1, dur: 0.6, gain: 0.02 + Math.random() * 0.022 }); });
+      } else if (theme === 'space') {       // deep drone + far-off pings
+        var osc = ctx.createOscillator(), og = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = 57;
+        og.gain.value = 0.02; osc.connect(og); og.connect(sfxGain); osc.start();
+        h._nodes.push(osc);
+        chain(1500, 3200, function () { var f = 1200 + Math.random() * 1100; tone({ type: 'sine', f0: f, f1: f * 0.98, dur: 0.3, gain: 0.028 }); });
+      } else if (theme === 'jungle') {      // river splashes + a low water bloop
+        chain(240, 620, function () { noise({ filter: 'highpass', freq: 1500, dur: 0.09, gain: 0.028 }); });
+        chain(1600, 3600, function () { tone({ type: 'sine', f0: 300, f1: 90, dur: 0.25, gain: 0.03 }); });
+      } else if (theme === 'warp') {        // rising energy whooshes
+        chain(620, 900, function () { tone({ type: 'sawtooth', f0: 110, f1: 540, dur: 0.5, gain: 0.02 }); });
+      } else {                              // sparkle: a slow golden chime arp
+        var notes = [880, 1174.7, 1568, 1975.5], ni = 0;
+        chain(950, 1400, function () { tone({ type: 'sine', f0: notes[ni % 4], f1: notes[ni % 4], dur: 0.5, gain: 0.026 }); ni++; });
+      }
+      return h;
+    },
+
     setSfx: function (on) { api.setSfxVolume(on ? (state.sfxVol > 0 ? state.sfxVol : 0.5) : 0); },
     setMusic: function (on) { api.setMusicVolume(on ? (state.musicVol > 0 ? state.musicVol : 0.5) : 0); },
 

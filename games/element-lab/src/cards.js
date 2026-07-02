@@ -283,8 +283,11 @@ window.DANNYLAB = window.DANNYLAB || {};
 
   // ---------- ultra-rare ambience (canvas; runs until stop()) ----------
   function rnd(a, b) { return a + Math.random() * (b - a); }
-  function startCardFX(ov, theme) {
+  function startCardFX(ov, theme, audio) {
     var stage = ov.querySelector('.dlc-stage'); if (!stage) return null;
+    // matching synth ambience (rain+thunder, wind, space drone, ...) for as
+    // long as the card is on screen
+    var amb = (audio && audio.cardAmbience) ? audio.cardAmbience(theme) : null;
     var r = stage.getBoundingClientRect();
     var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     var W = window.innerWidth, H = window.innerHeight;
@@ -386,7 +389,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
-    return { stop: function () { if (stopped) return; stopped = true; cancelAnimationFrame(raf); if (cv.parentNode) cv.parentNode.removeChild(cv); if (card) card.classList.remove('punch'); } };
+    return { stop: function () { if (stopped) return; stopped = true; cancelAnimationFrame(raf); if (amb) amb.stop(); if (cv.parentNode) cv.parentNode.removeChild(cv); if (card) card.classList.remove('punch'); } };
   }
 
   // opts: { deck, index }
@@ -443,7 +446,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       rimEl.style.boxShadow = 'inset 0 0 30px ' + rimC + (ultra ? 'cc' : '66') + ', inset 0 0 7px ' + rimC + '99';
       sparksEl.style.display = ultra ? 'block' : 'none';
       if (ultra) buildSparks(sparksEl);
-      if (ultra && deck[idx].fx) fxHandle = startCardFX(ov, deck[idx].fx);
+      if (ultra && deck[idx].fx) fxHandle = startCardFX(ov, deck[idx].fx, scene.registry ? scene.registry.get('audio') : null);
       count.textContent = (idx + 1) + ' / ' + deck.length;
     }
     render();

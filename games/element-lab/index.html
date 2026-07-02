@@ -69,12 +69,15 @@
     // Standalone launch. Running as a sub-game? The parent calls
     // DANNYLAB.launch({ parent, onExit, lang, audioEnabled, musicEnabled })
     // or installs the scenes into its own Phaser game (see src/main.js).
+    // Launched from the Super Dude Danny main menu (?from=sdd) → Exit returns
+    // there; opened directly → Exit stays inside the Lab's own menu.
+    var fromMain = /[?&]from=sdd(&|$)/.test(window.location.search);
     DANNYLAB.launch({
       parent: 'dannylab-root',
       lang: 'en',
       audioEnabled: true,
       musicEnabled: true,
-      // No onExit here → "Exit" returns to the Lab's own menu in standalone.
+      onExit: fromMain ? function () { window.location.href = '../../index.html'; } : null,
     });
   })();
 </script>
