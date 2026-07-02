@@ -16,9 +16,12 @@ DANNYLAB.PreloadScene.prototype.preload = function () {
   for (var t = 1; t <= DANNYLAB.MAX_TIER; t++) {
     this.load.image('px_ball_' + t, 'assets/px/ball_' + t + '.png');
   }
-  // collectible card art (fronts + shared back)
-  if (DANNYLAB.CARDS) {
-    for (var ci = 0; ci < DANNYLAB.CARDS.length; ci++) this.load.image('card_' + DANNYLAB.CARDS[ci].key, DANNYLAB.CARDS[ci].file);
+  // collectible card art (all hero variants + shared back)
+  if (DANNYLAB.HEROES) {
+    for (var hi = 0; hi < DANNYLAB.HEROES.length; hi++) {
+      var vs = DANNYLAB.HEROES[hi].variants;
+      for (var vi = 0; vi < vs.length; vi++) this.load.image(DANNYLAB.cardTexKey(vs[vi].file), vs[vi].file);
+    }
     this.load.image('card_back', DANNYLAB.CARD_BACK);
   }
   this.load.on('loaderror', function () { /* ignore: fall back to procedural */ });

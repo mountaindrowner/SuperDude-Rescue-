@@ -211,18 +211,20 @@ window.DANNYLAB = window.DANNYLAB || {};
     this.add.text(W / 2, H / 2 - 276, 'CHARACTER CARDS', {
       fontFamily: UI.DISPLAY, fontSize: '16px', color: '#bfe3ff', fontStyle: 'bold',
     }).setOrigin(0.5);
-    var cards = DANNYLAB.CARDS || [];
+    var heroes = DANNYLAB.HEROES || [];
     var tw = 62, th = 86, gap = 10, cardsY = H / 2 - 210;
-    var startCX = W / 2 - (cards.length - 1) * (tw + gap) / 2;
+    var startCX = W / 2 - (heroes.length - 1) * (tw + gap) / 2;
     var thumbs = [];
-    var stats = DANNYLAB.cardStats ? DANNYLAB.cardStats() : null;
-    cards.forEach(function (c, i) {
+    var rarColor = { common: 0x9fb2cf, rare: 0x8fd0ff, ultra: 0xffd84d };
+    heroes.forEach(function (h, i) {
       var cx = startCX + i * (tw + gap);
-      var unlocked = !stats || c.req.test(stats);
+      var best = DANNYLAB.heroBestIndex(h);              // -1 if nothing unlocked
+      var unlocked = best >= 0;
+      var edge = unlocked ? (rarColor[h.variants[best].rarity] || 0x8fd0ff) : 0x3a4a66;
       var g = self.add.graphics();
       g.fillStyle(0x0c1430, 0.7); g.fillRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
-      g.lineStyle(2, unlocked ? 0x8fd0ff : 0x3a4a66, 0.85); g.strokeRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
-      var texKey = unlocked ? ('card_' + c.key) : 'card_back';
+      g.lineStyle(2.5, edge, 0.9); g.strokeRoundedRect(cx - tw / 2 - 2, cardsY - th / 2 - 2, tw + 4, th + 4, 8);
+      var texKey = unlocked ? DANNYLAB.cardTexKey(h.variants[best].file) : 'card_back';
       if (self.textures.exists(texKey)) self.add.image(cx, cardsY, texKey).setDisplaySize(tw, th).setAlpha(unlocked ? 1 : 0.7);
       if (!unlocked) {
         var lk = self.add.graphics();
@@ -230,7 +232,7 @@ window.DANNYLAB = window.DANNYLAB || {};
         lk.fillStyle(0xcfe0ff, 1); lk.fillRoundedRect(cx - 11, cardsY - 2, 22, 17, 4);
         lk.fillStyle(0x0c1430, 1); lk.fillCircle(cx, cardsY + 6, 2.5);
       }
-      thumbs.push({ x: cx, y: cardsY, i: i });
+      thumbs.push({ x: cx, y: cardsY, key: h.key, best: best });
     });
     var elemCells = [];   // populated by the element grid below
     this.input.on('pointerdown', function (p) {
@@ -238,7 +240,7 @@ window.DANNYLAB = window.DANNYLAB || {};
       for (k = 0; k < thumbs.length; k++) {
         o = thumbs[k];
         if (Math.abs(p.worldX - o.x) < tw / 2 + 4 && Math.abs(p.worldY - o.y) < th / 2 + 4) {
-          if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { deck: DANNYLAB.characterDeck(), index: o.i });
+          if (DANNYLAB.openCardViewer) DANNYLAB.openCardViewer(self, { deck: DANNYLAB.heroDeck(o.key), index: Math.max(0, o.best) });
           return;
         }
       }
