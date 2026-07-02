@@ -151,7 +151,9 @@ GP.create = function (data) {
   this.input.on('pointerupoutside', function () { self.commitDrop(); });
 
   this.nextTier = DANNYLAB.pickDroppableTier();
+  this.upcomingTier = DANNYLAB.pickDroppableTier();   // the one after (NEXT chip)
   this.setTweezerPreview(this.nextTier);
+  this._drawUpcoming();
   this.pointerX = DANNYLAB.beakerCx();
 
   this.events.on('shutdown', function () {
@@ -271,6 +273,47 @@ GP.buildHUD = function () {
   // pause button (top-right corner)
   var pb = UI.button(this, GEO.W - 32, 48, 52, 44, '||', function () { self.openPause(); }, { fill: 0x46506e, fontSize: 22 });
   pb.setDepth(45);
+
+  // ---- NEXT chip (top-left): the piece coming after the one in the tweezers ----
+  var ng = this.add.graphics().setDepth(44);
+  ng.fillStyle(0x4fd9ff, 0.10); ng.fillRoundedRect(13, 21, 82, 58, 14);
+  ng.fillStyle(0x0c1730, 0.72); ng.fillRoundedRect(16, 24, 76, 52, 12);
+  ng.lineStyle(2, 0x4fd9ff, 0.7); ng.strokeRoundedRect(16, 24, 76, 52, 12);
+  this.add.text(54, 34, 'NEXT', {
+    fontFamily: UI.DISPLAY, fontSize: '11px', color: '#8fe6ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(45);
+  this.upcomingIcon = this.add.image(54, 57, DANNYLAB.iconKey(this, 1)).setDisplaySize(28, 28).setDepth(45);
+
+  // ---- merge-chain strip down the left wall: the road from H to U ----
+  this.chainIcons = [];
+  var chX = 16, chY0 = 336, chGap = 30;
+  for (var ct = 1; ct <= DANNYLAB.MAX_TIER; ct++) {
+    var cfg2 = DANNYLAB.tierCfg(ct);
+    var known = DANNYLAB.store.isDiscovered(cfg2.sym);
+    var dot = this.add.circle(chX, chY0 + (ct - 1) * chGap, 12, 0x0c1430, 0.78).setDepth(40);
+    dot.setStrokeStyle(1.5, known ? cfg2.color : 0x2a3a5c, 0.9);
+    var ic = this.add.image(chX, chY0 + (ct - 1) * chGap, DANNYLAB.iconKey(this, ct)).setDisplaySize(18, 18).setDepth(41);
+    if (!known) ic.setTint(0x101a30).setAlpha(0.9);   // dark silhouette until discovered
+    this.chainIcons.push({ icon: ic, dot: dot, tier: ct });
+  }
+};
+
+// refresh the NEXT chip to the current upcoming tier
+GP._drawUpcoming = function () {
+  if (this.upcomingIcon) this.upcomingIcon.setTexture(DANNYLAB.iconKey(this, this.upcomingTier)).setDisplaySize(28, 28);
+};
+
+// light up a chain-strip slot the moment that element is first discovered
+GP._revealChainIcon = function (tier) {
+  for (var i = 0; i < (this.chainIcons || []).length; i++) {
+    var c = this.chainIcons[i];
+    if (c.tier === tier) {
+      c.icon.clearTint(); c.icon.setAlpha(1);
+      c.dot.setStrokeStyle(1.5, DANNYLAB.tierCfg(tier).color, 0.95);
+      this.tweens.add({ targets: [c.icon, c.dot], scale: 1.5, duration: 170, yoyo: true, ease: 'Back.out' });
+      this.burst(c.icon.x, c.icon.y, DANNYLAB.tierCfg(tier).color, 8, { speed: 60, scale: 0.35, life: 420 });
+      return;
+    }
+  }
 };
 
 // redraw the charge meter fill to the current level
@@ -445,9 +488,11 @@ GP.prepareNextPiece = function () {
     this.toast(DANNYLAB.t('toast_mystery', this.lang), 0xff7be0);
   } else {
     this.nextIsMystery = false;
-    this.nextTier = DANNYLAB.pickDroppableTier();
+    this.nextTier = this.upcomingTier;                    // the queue shifts forward
+    this.upcomingTier = DANNYLAB.pickDroppableTier();
     this.setTweezerPreview(this.nextTier);
   }
+  this._drawUpcoming();
 };
 
 // ---------- spawn an element ----------
@@ -1149,7 +1194,12 @@ GP.handleDiscovery = function (tier, fromMerge, c) {
   var firstThisRun = !this.runDiscovered[sym];
   this.runDiscovered[sym] = true;
   var bonus = 0;
-  if (firstEver) { DANNYLAB.store.addDiscovered(sym); bonus += DANNYLAB.CONFIG.discoverBonusFirstEver; this._checkCardUnlocks(); }
+  if (firstEver) {
+    DANNYLAB.store.addDiscovered(sym);
+    bonus += DANNYLAB.CONFIG.discoverBonusFirstEver;
+    this._revealChainIcon(tier);
+    this._checkCardUnlocks();
+  }
   if (firstThisRun) bonus += DANNYLAB.CONFIG.discoverBonusThisRun;
   if (bonus > 0) this.addScore(bonus, c ? c.x : null, c ? c.y - (c.radius || 20) : null);
 
