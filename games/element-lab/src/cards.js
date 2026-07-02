@@ -330,6 +330,7 @@ window.DANNYLAB = window.DANNYLAB || {};
     requestAnimationFrame(function () { ov.classList.add('show'); });
 
     var card = ov.querySelector('.dlc-card'), content = ov.querySelector('.dlc-content');
+    var frontFace = ov.querySelector('.dlc-front'), backFace = ov.querySelector('.dlc-back');
     var count = ov.querySelector('.dlc-count'), rarityEl = ov.querySelector('.dlc-rarity');
     var foils = ov.querySelectorAll('.dlc-foil'), shines = ov.querySelectorAll('.dlc-shine');
     var glare = ov.querySelector('.dlc-glare');
@@ -366,6 +367,12 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     function apply() {
       card.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+      // Show exactly one face by rotation angle. iOS Safari breaks
+      // backface-visibility when a face has overflow:hidden, so a mirrored
+      // front leaks through when spun past 90 — this guarantees the flip.
+      var f = ((ry % 360) + 360) % 360, showingBack = (f > 90 && f < 270);
+      frontFace.style.visibility = showingBack ? 'hidden' : 'visible';
+      backFace.style.visibility = showingBack ? 'visible' : 'hidden';
       var a = Math.abs(Math.sin(ry * Math.PI / 180));
       for (var i = 0; i < foils.length; i++) { foils[i].style.opacity = holoOn ? (0.10 + 0.28 * a) : 0; foils[i].style.backgroundPosition = (50 + ry * 0.8) + '% ' + (50 + rx * 0.8) + '%'; }
       for (var j = 0; j < shines.length; j++) { shines[j].style.opacity = holoOn ? (0.12 + 0.4 * a) : 0; shines[j].style.transform = 'translateX(' + (ry * 1.1) + '%)'; }
