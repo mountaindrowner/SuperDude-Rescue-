@@ -81,6 +81,16 @@ DANNYLAB.makeAudio = function (sfxVol, musicVol) {
   var api = {
     resume: resume,
 
+    // silence everything while the tab/app is hidden; resume on return.
+    // (WebAudio keeps playing through rAF suspension otherwise.)
+    setHidden: function (hidden) {
+      if (!ctx) return;
+      try {
+        if (hidden && ctx.state === 'running') ctx.suspend();
+        else if (!hidden && ctx.state === 'suspended') { var p = ctx.resume(); if (p && p.catch) p.catch(function () {}); }
+      } catch (e) {}
+    },
+
     // read-only music diagnostics (which loop is playing / loaded)
     status: function () {
       var loaded = []; for (var k in tracks) loaded.push(k);

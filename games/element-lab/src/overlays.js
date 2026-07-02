@@ -212,8 +212,10 @@ window.DANNYLAB = window.DANNYLAB || {};
       fontFamily: UI.FONT, fontSize: '34px', color: '#7CFF6B', fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    var cards = [t('howto_1', lang), t('howto_2', lang), t('howto_3', lang)];
-    var icons = [DANNYLAB.iconKey(this, 1), DANNYLAB.iconKey(this, 3), null];
+    var cards = [t('howto_1', lang), t('howto_2', lang), t('howto_3', lang),
+                 t('howto_4', lang), t('howto_5', lang), t('howto_6', lang)];
+    var icons = [DANNYLAB.iconKey(this, 1), DANNYLAB.iconKey(this, 3), null,
+                 'mystery_body', 'jelly_star', 'card_back'];
     this.idx = 0;
     var self = this;
     var img = this.add.image(W / 2, H / 2 - 80, DANNYLAB.iconKey(this, 1));
@@ -228,8 +230,12 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     function show(i) {
       body.setText(cards[i]);
-      if (icons[i]) { img.setTexture(icons[i]).setDisplaySize(86, 86).setVisible(true); } else img.setVisible(false);
-      dots.setText('○○○'.split('').map(function (_, k) { return k === i ? '●' : '○'; }).join(' '));
+      if (icons[i] && self.textures.exists(icons[i])) {
+        // keep the card-back thumb card-shaped; everything else square
+        if (icons[i] === 'card_back') img.setTexture(icons[i]).setDisplaySize(66, 92).setVisible(true);
+        else img.setTexture(icons[i]).setDisplaySize(86, 86).setVisible(true);
+      } else img.setVisible(false);
+      dots.setText(cards.map(function (_, k) { return k === i ? '●' : '○'; }).join(' '));
       self.tweens.add({ targets: body, scale: { from: 0.9, to: 1 }, duration: 150 });
     }
     show(0);

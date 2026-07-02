@@ -105,5 +105,23 @@ DANNYLAB.launch = function (payload) {
     });
   });
   DANNYLAB.game = game;
+  DANNYLAB.hookVisibility(game);
   return game;
+};
+
+// Auto-pause when the tab/app goes to the background: silence the audio
+// context (music otherwise keeps playing through a hidden tab) and open the
+// pause menu if a run is live, so nothing bad happens while the player is away.
+DANNYLAB.hookVisibility = function (game) {
+  if (DANNYLAB._visHooked || typeof document === 'undefined') return;
+  DANNYLAB._visHooked = true;
+  document.addEventListener('visibilitychange', function () {
+    var hidden = document.hidden;
+    var audio = game.registry ? game.registry.get('audio') : null;
+    if (audio && audio.setHidden) audio.setHidden(hidden);
+    if (hidden) {
+      var gs = game.scene.getScene('DANNYLAB_Game');
+      if (gs && gs.scene.isActive() && !gs.gameOver && !gs.paused && gs.openPause) gs.openPause();
+    }
+  });
 };
