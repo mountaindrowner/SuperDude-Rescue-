@@ -8,12 +8,14 @@ window.DANNYLAB = window.DANNYLAB || {};
 (function () {
   var A = 'assets/cards/';
 
-  // rarity: common = flat (no shine), rare = holo shine, ultra = shine + ambience
+  // rarity: common = flat (no shine), rare = holo shine, ultra = shine + ambience.
+  // Requirements are deliberately varied — levels, discovery, merges, combos,
+  // mysteries, fission — so every part of play advances the binder.
   DANNYLAB.HEROES = [
     { key: 'kevin', name: 'Captain Kevin', variants: [
       { rarity: 'common', file: A + 'kevin_c.jpg',  req: { text: 'Play your first game', test: function (s) { return s.games >= 1; } } },
       { rarity: 'rare',   file: A + 'kevin.jpg',     req: { text: 'Reach Lab Level 3',    test: function (s) { return s.level >= 3; } } },
-      { rarity: 'ultra',  file: A + 'kevin_ur.jpg',  fx: 'storm',  req: { text: 'Reach Lab Level 8', test: function (s) { return s.level >= 8; } } },
+      { rarity: 'ultra',  file: A + 'kevin_ur.jpg',  fx: 'storm',  req: { text: 'Pull off a 4-chain combo', test: function (s) { return s.bestCombo >= 4; } } },
     ] },
     { key: 'josh', name: 'Zookeeper Josh', variants: [
       { rarity: 'common', file: A + 'josh_c.jpg',  req: { text: 'Discover 3 elements', test: function (s) { return s.discovered >= 3; } } },
@@ -21,24 +23,34 @@ window.DANNYLAB = window.DANNYLAB || {};
       { rarity: 'ultra',  file: A + 'josh_ur.jpg',  fx: 'jungle', req: { text: 'Discover all 9 elements', test: function (s) { return s.discovered >= 9; } } },
     ] },
     { key: 'carlos', name: 'Galaxy Guide Carlos', variants: [
-      { rarity: 'common', file: A + 'carlos_c.jpg', req: { text: 'Reach Lab Level 3', test: function (s) { return s.level >= 3; } } },
-      { rarity: 'rare',   file: A + 'carlos.jpg',    req: { text: 'Reach Lab Level 5', test: function (s) { return s.level >= 5; } } },
-      { rarity: 'ultra',  file: A + 'carlos_ur.jpg', fx: 'space', req: { text: 'Reach Lab Level 10', test: function (s) { return s.level >= 10; } } },
+      { rarity: 'common', file: A + 'carlos_c.jpg', req: { text: 'Fuse 50 elements',   test: function (s) { return s.merges >= 50; } } },
+      { rarity: 'rare',   file: A + 'carlos.jpg',    req: { text: 'Reach Lab Level 5',  test: function (s) { return s.level >= 5; } } },
+      { rarity: 'ultra',  file: A + 'carlos_ur.jpg', fx: 'space', req: { text: 'Set off 5 Mystery Samples', test: function (s) { return s.mysteries >= 5; } } },
     ] },
     { key: 'nayah', name: 'Nature Expert Nayah', variants: [
       { rarity: 'common', file: A + 'nayah_c.jpg', req: { text: 'Discover 6 elements', test: function (s) { return s.discovered >= 6; } } },
-      { rarity: 'rare',   file: A + 'nayah.jpg',    req: { text: 'Discover 7 elements', test: function (s) { return s.discovered >= 7; } } },
-      { rarity: 'ultra',  file: A + 'nayah_ur.jpg', fx: 'snow', req: { text: 'Discover all 9 elements', test: function (s) { return s.discovered >= 9; } } },
+      { rarity: 'rare',   file: A + 'nayah.jpg',    req: { text: 'Fuse 200 elements',   test: function (s) { return s.merges >= 200; } } },
+      { rarity: 'ultra',  file: A + 'nayah_ur.jpg', fx: 'snow', req: { text: 'Reach Lab Level 8', test: function (s) { return s.level >= 8; } } },
     ] },
     { key: 'victoria', name: 'Time Tech Victoria', variants: [
-      { rarity: 'common', file: A + 'victoria_c.jpg', req: { text: 'Reach Lab Level 6', test: function (s) { return s.level >= 6; } } },
-      { rarity: 'rare',   file: A + 'victoria.jpg',    req: { text: 'Reach Lab Level 8', test: function (s) { return s.level >= 8; } } },
-      { rarity: 'ultra',  file: A + 'victoria_ur.jpg', fx: 'warp', req: { text: 'Reach Lab Level 12', test: function (s) { return s.level >= 12; } } },
+      { rarity: 'common', file: A + 'victoria_c.jpg', req: { text: 'Play 5 games',       test: function (s) { return s.games >= 5; } } },
+      { rarity: 'rare',   file: A + 'victoria.jpg',    req: { text: 'Reach Lab Level 6',  test: function (s) { return s.level >= 6; } } },
+      { rarity: 'ultra',  file: A + 'victoria_ur.jpg', fx: 'warp', req: { text: 'Trigger Fission: fuse two Uranium!', test: function (s) { return s.fissions >= 1; } } },
     ] },
     { key: 'danny', name: 'Super Dude Danny', variants: [
-      { rarity: 'ultra', file: A + 'danny.jpg', fx: 'sparkle', req: { text: 'Collect the whole rescue team to find Danny!', test: function (s) { return s.games >= 1 && s.discovered >= 6 && s.level >= 6; } } },
+      { rarity: 'ultra', file: A + 'danny.jpg', fx: 'sparkle', req: { text: 'Collect every other card to find Danny!', test: null } },
     ] },
   ];
+  // Danny is the finale: his card appears only once the whole team's binder is
+  // complete — always the very last card you get.
+  (function () {
+    var danny = DANNYLAB.HEROES[DANNYLAB.HEROES.length - 1];
+    danny.variants[0].req.test = function (s) {
+      return DANNYLAB.HEROES.every(function (h) {
+        return h.key === 'danny' || h.variants.every(function (v) { return v.req.test(s); });
+      });
+    };
+  })();
   DANNYLAB.CARD_BACK = A + 'back.jpg';
 
   function stem(file) { return file.split('/').pop().replace(/\.[a-z]+$/, ''); }
@@ -59,7 +71,12 @@ window.DANNYLAB = window.DANNYLAB || {};
   // ---------- stats / unlocks ----------
   DANNYLAB.cardStats = function () {
     var st = DANNYLAB.store;
-    return { games: st.getGamesPlayed(), best: st.getBest(), level: st.getBestLevel(), discovered: st.getDiscovered().length };
+    return {
+      games: st.getGamesPlayed(), best: st.getBest(), level: st.getBestLevel(),
+      discovered: st.getDiscovered().length,
+      merges: st.getStat('merges'), bestCombo: st.getStat('bestCombo'),
+      fissions: st.getStat('fissions'), mysteries: st.getStat('mysteries'),
+    };
   };
   DANNYLAB.cardUnlocked = function (spec) {
     if (spec.element) return DANNYLAB.store.isDiscovered(DANNYLAB.tierCfg(spec.element).sym);

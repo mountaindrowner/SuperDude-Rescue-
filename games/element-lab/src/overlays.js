@@ -258,7 +258,8 @@ window.DANNYLAB = window.DANNYLAB || {};
     var self = this;
     UI.scrim(this, 0.62);
     UI.panel(this, W / 2, H / 2, Math.min(468, W * 0.94), 704);
-    this.add.text(W / 2, H / 2 - 316, t('collection', lang), {
+    var counts = DANNYLAB.ownedCardCount ? DANNYLAB.ownedCardCount() : null;
+    this.add.text(W / 2, H / 2 - 316, t('collection', lang) + (counts ? '  ' + counts.owned + '/' + counts.total : ''), {
       fontFamily: UI.FONT, fontSize: '32px', color: '#7CFF6B', fontStyle: 'bold',
     }).setOrigin(0.5);
 
@@ -286,6 +287,26 @@ window.DANNYLAB = window.DANNYLAB || {};
         lk.lineStyle(4, 0xcfe0ff, 1); lk.strokeCircle(cx, cardsY - 4, 8);
         lk.fillStyle(0xcfe0ff, 1); lk.fillRoundedRect(cx - 11, cardsY - 2, 22, 17, 4);
         lk.fillStyle(0x0c1430, 1); lk.fillCircle(cx, cardsY + 6, 2.5);
+      }
+      // binder pips: one per variant, lit in its rarity colour once earned
+      var stats0 = DANNYLAB.cardStats(), seen0 = DANNYLAB.store.getCardList('cardsSeen');
+      var pipY = cardsY + th / 2 + 9, pipW = 13, pipX0 = cx - (h.variants.length - 1) * pipW / 2;
+      var pg = self.add.graphics();
+      var hasNew = false;
+      h.variants.forEach(function (v, vi) {
+        var on = v.req.test(stats0);
+        if (on && seen0.indexOf(h.key + ':' + v.rarity) === -1) hasNew = true;
+        pg.fillStyle(on ? (rarColor[v.rarity] || 0x8fd0ff) : 0x22304e, 1);
+        pg.fillCircle(pipX0 + vi * pipW, pipY, 3.6);
+        if (!on) { pg.lineStyle(1, 0x3a4a66, 1); pg.strokeCircle(pipX0 + vi * pipW, pipY, 3.6); }
+      });
+      // gold "!" dot on thumbs holding an earned-but-unviewed card
+      if (hasNew) {
+        var nd = self.add.graphics();
+        nd.fillStyle(0xffd84d, 1); nd.fillCircle(cx + tw / 2 - 2, cardsY - th / 2 + 2, 8);
+        nd.lineStyle(1.5, 0x0c1430, 1); nd.strokeCircle(cx + tw / 2 - 2, cardsY - th / 2 + 2, 8);
+        self.add.text(cx + tw / 2 - 2, cardsY - th / 2 + 2, '!', {
+          fontFamily: UI.FONT, fontSize: '12px', color: '#0c1430', fontStyle: 'bold' }).setOrigin(0.5);
       }
       thumbs.push({ x: cx, y: cardsY, key: h.key, best: best });
     });
