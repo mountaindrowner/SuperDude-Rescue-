@@ -63,16 +63,17 @@ DANNYLAB.CONFIG = {
 
   // ---- the element chain — radius/color/symbol drive everything ----
   // glowAlpha + faceMood let us reskin tone per element without code edits.
+  // simple curve: every merge grows the radius by exactly 10 px
   tiers: [
     { t: 1, sym: 'H',  radius: 22,  color: 0xBEE3F8, mood: 'spark'  },
-    { t: 2, sym: 'He', radius: 30,  color: 0xFBD38D, mood: 'happy'  },
-    { t: 3, sym: 'C',  radius: 40,  color: 0x7B8A9B, mood: 'cool'   },
+    { t: 2, sym: 'He', radius: 32,  color: 0xFBD38D, mood: 'happy'  },
+    { t: 3, sym: 'C',  radius: 42,  color: 0x7B8A9B, mood: 'cool'   },
     { t: 4, sym: 'O',  radius: 52,  color: 0x4FD1C5, mood: 'happy'  },
-    { t: 5, sym: 'Ne', radius: 66,  color: 0xF687B3, mood: 'wow'    },
-    { t: 6, sym: 'Na', radius: 74,  color: 0x9F7AEA, mood: 'happy'  },
-    { t: 7, sym: 'Fe', radius: 90,  color: 0x8696A7, mood: 'cool'   },
-    { t: 8, sym: 'Au', radius: 96,  color: 0xECC94B, mood: 'wow'    },
-    { t: 9, sym: 'U',  radius: 112, color: 0x7CFF6B, mood: 'glow'   },
+    { t: 5, sym: 'Ne', radius: 62,  color: 0xF687B3, mood: 'wow'    },
+    { t: 6, sym: 'Na', radius: 72,  color: 0x9F7AEA, mood: 'happy'  },
+    { t: 7, sym: 'Fe', radius: 82,  color: 0x8696A7, mood: 'cool'   },
+    { t: 8, sym: 'Au', radius: 92,  color: 0xECC94B, mood: 'wow'    },
+    { t: 9, sym: 'U',  radius: 102, color: 0x7CFF6B, mood: 'glow'   },
   ],
 };
 
