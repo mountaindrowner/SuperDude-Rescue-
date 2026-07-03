@@ -9,10 +9,10 @@ window.DANNYLAB = window.DANNYLAB || {};
 // underneath it. The top band (above the rim) holds the Lab Notes card.
 DANNYLAB.GEO = {
   W: 540, H: 960,
-  bx0: 32, bx1: 466,          // interior left/right (wide; bar lives just past bx1)
+  bx0: 24, bx1: 466,          // interior left/right (widened; bar lives just past bx1)
   wall: 24,
   yRim: 280, floorTop: 808,   // lifted; the band below floorTop holds the stats
-  fillLineY: 316, dropY: 215,
+  fillLineY: 281, dropY: 215, // fail line sits one pixel under the lip
 };
 // shared helper: horizontal centre of the beaker (for tweezers / toasts / notes)
 DANNYLAB.beakerCx = function () { return (DANNYLAB.GEO.bx0 + DANNYLAB.GEO.bx1) / 2; };
@@ -183,10 +183,13 @@ GP.create = function (data) {
 // ---------- beaker (Brief §12: 3 static bodies + layered glass art) ----------
 GP.buildBeaker = function () {
   var GEO = DANNYLAB.GEO;
-  var wallH = GEO.floorTop - GEO.yRim;
-  // static bodies (invisible)
-  this.matter.add.rectangle(GEO.bx0 - GEO.wall / 2, GEO.yRim + wallH / 2, GEO.wall, wallH, { isStatic: true, friction: 0.4 });
-  this.matter.add.rectangle(GEO.bx1 + GEO.wall / 2, GEO.yRim + wallH / 2, GEO.wall, wallH, { isStatic: true, friction: 0.4 });
+  // static bodies (invisible). The walls extend above the visible rim as a
+  // spill guard: with the fail line at the lip, a cresting pile must never
+  // roll a piece out over the edge into the void.
+  var wallTop = GEO.yRim - 88;
+  var wallH = GEO.floorTop - wallTop;
+  this.matter.add.rectangle(GEO.bx0 - GEO.wall / 2, wallTop + wallH / 2, GEO.wall, wallH, { isStatic: true, friction: 0.4 });
+  this.matter.add.rectangle(GEO.bx1 + GEO.wall / 2, wallTop + wallH / 2, GEO.wall, wallH, { isStatic: true, friction: 0.4 });
   this.matter.add.rectangle((GEO.bx0 + GEO.bx1) / 2, GEO.floorTop + GEO.wall / 2,
     (GEO.bx1 - GEO.bx0) + GEO.wall * 2, GEO.wall, { isStatic: true, friction: 0.5 });
 
@@ -831,6 +834,34 @@ GP.onMerge = function (merged) {
   if (n === ct.chain) this.toast(DANNYLAB.t('toast_cascade', this.lang));
   else if (n === ct.overload) this.toast(DANNYLAB.t('toast_overload', this.lang), 0xff9b5b);
   if (createdTier === DANNYLAB.MAX_TIER) this.toast(DANNYLAB.t('toast_uranium', this.lang), 0x7CFF6B);
+
+  // Golden Flash: forging Gold (or Uranium) releases a purifying wave that
+  // dissolves the small clutter across the whole beaker — exactly when the
+  // big pieces need the room for the next step of the chain.
+  if (createdTier >= DANNYLAB.MAX_TIER - 1) this.goldenFlash(x, y, createdTier);
+};
+
+// ---------- Golden Flash (forge Gold/Uranium -> vaporize the small stuff) ----------
+GP.goldenFlash = function (x, y, tier) {
+  var cap = tier >= DANNYLAB.MAX_TIER ? 3 : 2;    // Gold clears H+He; Uranium adds C
+  var victims = [];
+  for (var i = this.elements.length - 1; i >= 0; i--) {
+    var e = this.elements[i];
+    if (!e.active || e.consumed || e.isMystery || e.tier < 1 || e.tier > cap) continue;
+    e.consumed = true;
+    victims.push(e);
+  }
+  if (!victims.length) return;
+  for (var k = 0; k < victims.length; k++) {
+    var v = victims[k];
+    this.burst(v.x, v.y, 0xffe27a, 6, { tex: 'p_spark', speed: 100, scale: 0.5, life: 500 });
+    this.destroyElement(v);
+  }
+  this.burst(x, y, 0xffe27a, 24, { tex: 'p_spark', speed: 170, scale: 0.7, life: 700 });
+  this.cameras.main.flash(150, 255, 216, 110);
+  if (this.audio) { this.audio.stinger(); this.audio.hapticBig(); }
+  this.addScore(victims.length * 5, x, y);
+  this.toast(DANNYLAB.t('toast_flash', this.lang), 0xffd84d);
 };
 
 // "COMBO xN" popup that grows + warms as the chain climbs

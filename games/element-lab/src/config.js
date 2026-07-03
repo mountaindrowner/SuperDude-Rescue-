@@ -15,7 +15,7 @@ DANNYLAB.CONFIG = {
   maxDroppableTier: 3,
   dropCooldownMs: 450,
   comboResetMs: 250,
-  overflowGraceMs: 1500,
+  overflowGraceMs: 2500,
   fissionEnabled: true,
   fissionRadius: 160,
   fissionClearsTiersUpTo: 3,
@@ -71,8 +71,8 @@ DANNYLAB.CONFIG = {
     { t: 5, sym: 'Ne', radius: 66,  color: 0xF687B3, mood: 'wow'    },
     { t: 6, sym: 'Na', radius: 74,  color: 0x9F7AEA, mood: 'happy'  },
     { t: 7, sym: 'Fe', radius: 90,  color: 0x8696A7, mood: 'cool'   },
-    { t: 8, sym: 'Au', radius: 100, color: 0xECC94B, mood: 'wow'    },
-    { t: 9, sym: 'U',  radius: 118, color: 0x7CFF6B, mood: 'glow'   },
+    { t: 8, sym: 'Au', radius: 96,  color: 0xECC94B, mood: 'wow'    },
+    { t: 9, sym: 'U',  radius: 112, color: 0x7CFF6B, mood: 'glow'   },
   ],
 };
 
