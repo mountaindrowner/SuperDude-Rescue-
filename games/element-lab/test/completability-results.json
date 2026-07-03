@@ -1,702 +1,702 @@
 [
  {
   "result": "loss",
-  "drops": 130,
-  "maxTier": 7,
-  "score": 4728,
-  "ms": 53295
- },
- {
-  "result": "loss",
-  "drops": 111,
-  "maxTier": 6,
-  "score": 2557,
-  "ms": 44088
- },
- {
-  "result": "loss",
-  "drops": 145,
-  "maxTier": 7,
-  "score": 4224,
-  "ms": 59709
- },
- {
-  "result": "loss",
-  "drops": 175,
-  "maxTier": 7,
-  "score": 5742,
-  "ms": 70829
- },
- {
-  "result": "loss",
-  "drops": 240,
-  "maxTier": 8,
-  "score": 11426,
-  "ms": 102906
- },
- {
-  "result": "loss",
-  "drops": 199,
-  "maxTier": 8,
-  "score": 8523,
-  "ms": 82868
- },
- {
-  "result": "loss",
-  "drops": 159,
-  "maxTier": 7,
-  "score": 4858,
-  "ms": 65720
- },
- {
-  "result": "loss",
-  "drops": 187,
-  "maxTier": 8,
-  "score": 6713,
-  "ms": 77534
- },
- {
-  "result": "loss",
-  "drops": 173,
-  "maxTier": 8,
-  "score": 5975,
-  "ms": 69462
- },
- {
-  "result": "loss",
-  "drops": 196,
-  "maxTier": 8,
-  "score": 8859,
-  "ms": 79035
- },
- {
-  "result": "loss",
-  "drops": 126,
-  "maxTier": 8,
-  "score": 4961,
-  "ms": 50628
- },
- {
-  "result": "loss",
-  "drops": 235,
-  "maxTier": 8,
-  "score": 9333,
-  "ms": 101205
- },
- {
-  "result": "loss",
-  "drops": 133,
-  "maxTier": 7,
-  "score": 3016,
-  "ms": 52861
- },
- {
-  "result": "loss",
-  "drops": 254,
-  "maxTier": 8,
-  "score": 16347,
-  "ms": 106432
- },
- {
-  "result": "loss",
-  "drops": 185,
-  "maxTier": 8,
-  "score": 7587,
-  "ms": 77404
- },
- {
-  "result": "loss",
-  "drops": 199,
-  "maxTier": 8,
-  "score": 6677,
-  "ms": 83551
- },
- {
-  "result": "loss",
-  "drops": 167,
-  "maxTier": 8,
-  "score": 6536,
-  "ms": 68772
- },
- {
-  "result": "loss",
-  "drops": 209,
-  "maxTier": 8,
-  "score": 10459,
-  "ms": 86664
- },
- {
-  "result": "loss",
-  "drops": 142,
-  "maxTier": 7,
-  "score": 4956,
-  "ms": 59071
- },
- {
-  "result": "loss",
-  "drops": 131,
-  "maxTier": 7,
-  "score": 4086,
-  "ms": 54931
- },
- {
-  "result": "loss",
-  "drops": 174,
-  "maxTier": 8,
-  "score": 5967,
-  "ms": 73498
- },
- {
-  "result": "loss",
-  "drops": 167,
-  "maxTier": 8,
-  "score": 9813,
-  "ms": 66972
- },
- {
-  "result": "loss",
-  "drops": 159,
-  "maxTier": 7,
-  "score": 4422,
-  "ms": 68258
- },
- {
-  "result": "loss",
-  "drops": 169,
-  "maxTier": 8,
-  "score": 5400,
-  "ms": 69031
- },
- {
-  "result": "loss",
-  "drops": 165,
-  "maxTier": 8,
-  "score": 6617,
-  "ms": 64528
- },
- {
-  "result": "loss",
-  "drops": 148,
-  "maxTier": 7,
-  "score": 3806,
-  "ms": 60458
- },
- {
-  "result": "loss",
-  "drops": 174,
-  "maxTier": 7,
-  "score": 6192,
-  "ms": 70999
- },
- {
-  "result": "loss",
-  "drops": 209,
-  "maxTier": 8,
-  "score": 14508,
-  "ms": 93497
- },
- {
-  "result": "loss",
-  "drops": 130,
-  "maxTier": 6,
-  "score": 3138,
-  "ms": 52952
- },
- {
-  "result": "loss",
-  "drops": 193,
-  "maxTier": 7,
-  "score": 6859,
-  "ms": 84234
- },
- {
-  "result": "loss",
-  "drops": 159,
-  "maxTier": 8,
-  "score": 6170,
-  "ms": 66039
- },
- {
-  "result": "loss",
-  "drops": 167,
-  "maxTier": 8,
-  "score": 5644,
-  "ms": 68005
- },
- {
-  "result": "loss",
-  "drops": 161,
-  "maxTier": 7,
-  "score": 5745,
-  "ms": 65718
- },
- {
-  "result": "loss",
-  "drops": 139,
-  "maxTier": 7,
-  "score": 3201,
-  "ms": 60810
- },
- {
-  "result": "loss",
-  "drops": 213,
-  "maxTier": 8,
-  "score": 10963,
-  "ms": 91022
- },
- {
-  "result": "loss",
-  "drops": 176,
-  "maxTier": 8,
-  "score": 7448,
-  "ms": 76830
- },
- {
-  "result": "loss",
-  "drops": 212,
-  "maxTier": 8,
-  "score": 10163,
-  "ms": 89784
- },
- {
-  "result": "loss",
-  "drops": 158,
-  "maxTier": 7,
-  "score": 5648,
-  "ms": 67212
- },
- {
-  "result": "win",
-  "drops": 207,
-  "maxTier": 9,
-  "score": 11371,
-  "ms": 93803
- },
- {
-  "result": "loss",
-  "drops": 181,
-  "maxTier": 7,
-  "score": 7659,
-  "ms": 76787
- },
- {
-  "result": "loss",
-  "drops": 162,
-  "maxTier": 8,
-  "score": 5432,
-  "ms": 73597
- },
- {
-  "result": "loss",
-  "drops": 174,
-  "maxTier": 8,
-  "score": 9455,
-  "ms": 75646
- },
- {
-  "result": "loss",
-  "drops": 207,
-  "maxTier": 8,
-  "score": 6837,
-  "ms": 89518
- },
- {
-  "result": "loss",
-  "drops": 162,
-  "maxTier": 8,
-  "score": 7665,
-  "ms": 68750
- },
- {
-  "result": "loss",
-  "drops": 203,
-  "maxTier": 8,
-  "score": 9006,
-  "ms": 84326
- },
- {
-  "result": "loss",
-  "drops": 165,
-  "maxTier": 7,
-  "score": 4702,
-  "ms": 72792
- },
- {
-  "result": "loss",
-  "drops": 139,
-  "maxTier": 7,
-  "score": 5528,
-  "ms": 58890
- },
- {
-  "result": "loss",
-  "drops": 222,
-  "maxTier": 8,
-  "score": 10681,
-  "ms": 96284
- },
- {
-  "result": "loss",
-  "drops": 239,
-  "maxTier": 8,
-  "score": 8768,
-  "ms": 101426
- },
- {
-  "result": "loss",
-  "drops": 238,
-  "maxTier": 8,
-  "score": 10923,
-  "ms": 98235
- },
- {
-  "result": "loss",
-  "drops": 187,
-  "maxTier": 8,
-  "score": 7126,
-  "ms": 76914
- },
- {
-  "result": "loss",
-  "drops": 165,
-  "maxTier": 7,
-  "score": 5484,
-  "ms": 69687
- },
- {
-  "result": "loss",
-  "drops": 262,
-  "maxTier": 8,
-  "score": 13342,
-  "ms": 108977
- },
- {
-  "result": "loss",
-  "drops": 194,
-  "maxTier": 8,
-  "score": 11626,
-  "ms": 77010
- },
- {
-  "result": "loss",
-  "drops": 159,
-  "maxTier": 8,
-  "score": 7035,
-  "ms": 64685
- },
- {
-  "result": "loss",
-  "drops": 193,
-  "maxTier": 8,
-  "score": 9134,
-  "ms": 75893
- },
- {
-  "result": "loss",
-  "drops": 202,
-  "maxTier": 8,
-  "score": 8716,
-  "ms": 88811
- },
- {
-  "result": "win",
-  "drops": 216,
-  "maxTier": 9,
-  "score": 15905,
-  "ms": 91845
- },
- {
-  "result": "loss",
-  "drops": 139,
-  "maxTier": 7,
-  "score": 3254,
-  "ms": 55318
- },
- {
-  "result": "loss",
-  "drops": 172,
-  "maxTier": 8,
-  "score": 5921,
-  "ms": 69855
- },
- {
-  "result": "loss",
-  "drops": 168,
-  "maxTier": 7,
-  "score": 5417,
-  "ms": 70315
- },
- {
-  "result": "loss",
-  "drops": 166,
-  "maxTier": 7,
-  "score": 6929,
-  "ms": 70009
- },
- {
-  "result": "loss",
   "drops": 226,
   "maxTier": 8,
-  "score": 13275,
-  "ms": 94744
+  "score": 12185,
+  "ms": 97708
  },
  {
   "result": "loss",
-  "drops": 175,
+  "drops": 221,
   "maxTier": 8,
-  "score": 7201,
-  "ms": 71871
+  "score": 10207,
+  "ms": 85086
  },
  {
   "result": "loss",
-  "drops": 157,
+  "drops": 200,
   "maxTier": 7,
-  "score": 4086,
-  "ms": 67795
- },
- {
-  "result": "loss",
-  "drops": 195,
-  "maxTier": 8,
-  "score": 8116,
-  "ms": 84566
- },
- {
-  "result": "loss",
-  "drops": 231,
-  "maxTier": 8,
-  "score": 9503,
-  "ms": 94322
- },
- {
-  "result": "loss",
-  "drops": 158,
-  "maxTier": 8,
-  "score": 6682,
-  "ms": 68075
- },
- {
-  "result": "loss",
-  "drops": 199,
-  "maxTier": 8,
-  "score": 9971,
-  "ms": 79388
- },
- {
-  "result": "loss",
-  "drops": 203,
-  "maxTier": 8,
-  "score": 9656,
-  "ms": 80717
- },
- {
-  "result": "loss",
-  "drops": 165,
-  "maxTier": 8,
-  "score": 6961,
-  "ms": 66894
- },
- {
-  "result": "loss",
-  "drops": 197,
-  "maxTier": 8,
-  "score": 7770,
-  "ms": 87078
- },
- {
-  "result": "loss",
-  "drops": 190,
-  "maxTier": 8,
-  "score": 9092,
-  "ms": 80514
- },
- {
-  "result": "loss",
-  "drops": 161,
-  "maxTier": 7,
-  "score": 4309,
-  "ms": 70239
- },
- {
-  "result": "loss",
-  "drops": 209,
-  "maxTier": 8,
-  "score": 7613,
-  "ms": 85939
- },
- {
-  "result": "loss",
-  "drops": 154,
-  "maxTier": 7,
-  "score": 5927,
-  "ms": 63171
- },
- {
-  "result": "loss",
-  "drops": 155,
-  "maxTier": 7,
-  "score": 4931,
-  "ms": 66842
- },
- {
-  "result": "loss",
-  "drops": 169,
-  "maxTier": 8,
-  "score": 6456,
-  "ms": 67878
- },
- {
-  "result": "loss",
-  "drops": 170,
-  "maxTier": 7,
-  "score": 4927,
-  "ms": 71151
- },
- {
-  "result": "loss",
-  "drops": 146,
-  "maxTier": 7,
-  "score": 4652,
-  "ms": 61680
- },
- {
-  "result": "win",
-  "drops": 237,
-  "maxTier": 9,
-  "score": 19797,
-  "ms": 97340
- },
- {
-  "result": "loss",
-  "drops": 214,
-  "maxTier": 8,
-  "score": 8959,
-  "ms": 91139
- },
- {
-  "result": "loss",
-  "drops": 170,
-  "maxTier": 7,
-  "score": 5554,
-  "ms": 66629
- },
- {
-  "result": "loss",
-  "drops": 227,
-  "maxTier": 8,
-  "score": 9155,
-  "ms": 94889
- },
- {
-  "result": "loss",
-  "drops": 195,
-  "maxTier": 8,
-  "score": 7871,
-  "ms": 83037
- },
- {
-  "result": "loss",
-  "drops": 207,
-  "maxTier": 8,
-  "score": 9053,
-  "ms": 86724
- },
- {
-  "result": "loss",
-  "drops": 187,
-  "maxTier": 8,
-  "score": 7741,
-  "ms": 78360
- },
- {
-  "result": "loss",
-  "drops": 162,
-  "maxTier": 8,
-  "score": 5495,
-  "ms": 69564
- },
- {
-  "result": "loss",
-  "drops": 191,
-  "maxTier": 8,
-  "score": 7125,
-  "ms": 82511
- },
- {
-  "result": "loss",
-  "drops": 186,
-  "maxTier": 7,
-  "score": 6361,
-  "ms": 75532
- },
- {
-  "result": "loss",
-  "drops": 210,
-  "maxTier": 8,
-  "score": 9771,
-  "ms": 88575
- },
- {
-  "result": "loss",
-  "drops": 214,
-  "maxTier": 8,
-  "score": 9835,
-  "ms": 85266
- },
- {
-  "result": "loss",
-  "drops": 207,
-  "maxTier": 8,
-  "score": 9981,
-  "ms": 90343
+  "score": 7247,
+  "ms": 77138
  },
  {
   "result": "loss",
   "drops": 192,
   "maxTier": 8,
-  "score": 6804,
-  "ms": 81139
+  "score": 7418,
+  "ms": 74192
+ },
+ {
+  "result": "loss",
+  "drops": 205,
+  "maxTier": 8,
+  "score": 12948,
+  "ms": 78936
+ },
+ {
+  "result": "loss",
+  "drops": 234,
+  "maxTier": 8,
+  "score": 12030,
+  "ms": 92133
+ },
+ {
+  "result": "loss",
+  "drops": 123,
+  "maxTier": 7,
+  "score": 3409,
+  "ms": 46075
+ },
+ {
+  "result": "loss",
+  "drops": 172,
+  "maxTier": 7,
+  "score": 6657,
+  "ms": 64827
+ },
+ {
+  "result": "loss",
+  "drops": 221,
+  "maxTier": 8,
+  "score": 9949,
+  "ms": 85642
+ },
+ {
+  "result": "loss",
+  "drops": 279,
+  "maxTier": 8,
+  "score": 16815,
+  "ms": 107853
+ },
+ {
+  "result": "loss",
+  "drops": 236,
+  "maxTier": 8,
+  "score": 12848,
+  "ms": 90813
+ },
+ {
+  "result": "loss",
+  "drops": 164,
+  "maxTier": 7,
+  "score": 5722,
+  "ms": 64072
+ },
+ {
+  "result": "loss",
+  "drops": 144,
+  "maxTier": 7,
+  "score": 3632,
+  "ms": 55029
  },
  {
   "result": "loss",
   "drops": 154,
   "maxTier": 7,
-  "score": 4301,
-  "ms": 62203
+  "score": 4615,
+  "ms": 58465
  },
  {
   "result": "loss",
-  "drops": 167,
-  "maxTier": 7,
-  "score": 5969,
-  "ms": 66895
- },
- {
-  "result": "loss",
-  "drops": 130,
-  "maxTier": 7,
-  "score": 3818,
-  "ms": 51386
- },
- {
-  "result": "loss",
-  "drops": 129,
-  "maxTier": 7,
-  "score": 4354,
-  "ms": 55873
- },
- {
-  "result": "loss",
-  "drops": 120,
-  "maxTier": 6,
-  "score": 3127,
-  "ms": 48058
- },
- {
-  "result": "loss",
-  "drops": 151,
+  "drops": 219,
   "maxTier": 8,
-  "score": 6127,
-  "ms": 64881
+  "score": 8107,
+  "ms": 85618
+ },
+ {
+  "result": "loss",
+  "drops": 187,
+  "maxTier": 7,
+  "score": 8133,
+  "ms": 72665
+ },
+ {
+  "result": "loss",
+  "drops": 218,
+  "maxTier": 8,
+  "score": 11415,
+  "ms": 82685
+ },
+ {
+  "result": "win",
+  "drops": 189,
+  "maxTier": 9,
+  "score": 15282,
+  "ms": 71574
+ },
+ {
+  "result": "loss",
+  "drops": 179,
+  "maxTier": 7,
+  "score": 5862,
+  "ms": 70606
+ },
+ {
+  "result": "loss",
+  "drops": 221,
+  "maxTier": 8,
+  "score": 10937,
+  "ms": 83678
+ },
+ {
+  "result": "loss",
+  "drops": 194,
+  "maxTier": 8,
+  "score": 6749,
+  "ms": 73698
+ },
+ {
+  "result": "win",
+  "drops": 242,
+  "maxTier": 9,
+  "score": 15489,
+  "ms": 92004
+ },
+ {
+  "result": "loss",
+  "drops": 160,
+  "maxTier": 8,
+  "score": 6935,
+  "ms": 59742
+ },
+ {
+  "result": "loss",
+  "drops": 251,
+  "maxTier": 8,
+  "score": 12529,
+  "ms": 95919
+ },
+ {
+  "result": "loss",
+  "drops": 196,
+  "maxTier": 8,
+  "score": 7301,
+  "ms": 75197
+ },
+ {
+  "result": "loss",
+  "drops": 253,
+  "maxTier": 8,
+  "score": 11579,
+  "ms": 100410
+ },
+ {
+  "result": "loss",
+  "drops": 225,
+  "maxTier": 8,
+  "score": 10715,
+  "ms": 87165
+ },
+ {
+  "result": "win",
+  "drops": 261,
+  "maxTier": 9,
+  "score": 14740,
+  "ms": 100066
+ },
+ {
+  "result": "loss",
+  "drops": 233,
+  "maxTier": 8,
+  "score": 14258,
+  "ms": 89035
+ },
+ {
+  "result": "win",
+  "drops": 218,
+  "maxTier": 9,
+  "score": 19382,
+  "ms": 85283
+ },
+ {
+  "result": "loss",
+  "drops": 239,
+  "maxTier": 8,
+  "score": 8505,
+  "ms": 88381
+ },
+ {
+  "result": "loss",
+  "drops": 239,
+  "maxTier": 8,
+  "score": 13057,
+  "ms": 95910
+ },
+ {
+  "result": "loss",
+  "drops": 292,
+  "maxTier": 8,
+  "score": 15921,
+  "ms": 112456
+ },
+ {
+  "result": "loss",
+  "drops": 240,
+  "maxTier": 8,
+  "score": 11767,
+  "ms": 93020
+ },
+ {
+  "result": "loss",
+  "drops": 165,
+  "maxTier": 7,
+  "score": 5935,
+  "ms": 68861
+ },
+ {
+  "result": "loss",
+  "drops": 235,
+  "maxTier": 8,
+  "score": 11362,
+  "ms": 92441
+ },
+ {
+  "result": "loss",
+  "drops": 227,
+  "maxTier": 8,
+  "score": 8814,
+  "ms": 87354
+ },
+ {
+  "result": "loss",
+  "drops": 212,
+  "maxTier": 8,
+  "score": 8013,
+  "ms": 81516
+ },
+ {
+  "result": "loss",
+  "drops": 197,
+  "maxTier": 7,
+  "score": 8111,
+  "ms": 78906
+ },
+ {
+  "result": "loss",
+  "drops": 174,
+  "maxTier": 8,
+  "score": 6454,
+  "ms": 64178
+ },
+ {
+  "result": "loss",
+  "drops": 212,
+  "maxTier": 8,
+  "score": 8462,
+  "ms": 79368
+ },
+ {
+  "result": "win",
+  "drops": 167,
+  "maxTier": 9,
+  "score": 12973,
+  "ms": 62778
+ },
+ {
+  "result": "loss",
+  "drops": 200,
+  "maxTier": 7,
+  "score": 8931,
+  "ms": 79548
+ },
+ {
+  "result": "loss",
+  "drops": 206,
+  "maxTier": 7,
+  "score": 6701,
+  "ms": 82854
+ },
+ {
+  "result": "loss",
+  "drops": 199,
+  "maxTier": 8,
+  "score": 6661,
+  "ms": 74853
+ },
+ {
+  "result": "win",
+  "drops": 187,
+  "maxTier": 9,
+  "score": 13010,
+  "ms": 69442
+ },
+ {
+  "result": "loss",
+  "drops": 173,
+  "maxTier": 7,
+  "score": 6056,
+  "ms": 64858
+ },
+ {
+  "result": "loss",
+  "drops": 213,
+  "maxTier": 8,
+  "score": 8543,
+  "ms": 79927
+ },
+ {
+  "result": "loss",
+  "drops": 170,
+  "maxTier": 7,
+  "score": 6346,
+  "ms": 69064
+ },
+ {
+  "result": "loss",
+  "drops": 234,
+  "maxTier": 8,
+  "score": 12188,
+  "ms": 88806
+ },
+ {
+  "result": "loss",
+  "drops": 170,
+  "maxTier": 7,
+  "score": 5397,
+  "ms": 68149
+ },
+ {
+  "result": "loss",
+  "drops": 200,
+  "maxTier": 7,
+  "score": 6938,
+  "ms": 79354
+ },
+ {
+  "result": "loss",
+  "drops": 236,
+  "maxTier": 8,
+  "score": 9437,
+  "ms": 91008
+ },
+ {
+  "result": "loss",
+  "drops": 234,
+  "maxTier": 8,
+  "score": 10218,
+  "ms": 88691
+ },
+ {
+  "result": "loss",
+  "drops": 124,
+  "maxTier": 6,
+  "score": 3548,
+  "ms": 45951
+ },
+ {
+  "result": "win",
+  "drops": 192,
+  "maxTier": 9,
+  "score": 9506,
+  "ms": 75534
+ },
+ {
+  "result": "loss",
+  "drops": 198,
+  "maxTier": 7,
+  "score": 8612,
+  "ms": 74236
+ },
+ {
+  "result": "loss",
+  "drops": 232,
+  "maxTier": 8,
+  "score": 11298,
+  "ms": 88000
+ },
+ {
+  "result": "loss",
+  "drops": 253,
+  "maxTier": 8,
+  "score": 11704,
+  "ms": 99941
+ },
+ {
+  "result": "win",
+  "drops": 219,
+  "maxTier": 9,
+  "score": 18785,
+  "ms": 83115
+ },
+ {
+  "result": "loss",
+  "drops": 199,
+  "maxTier": 8,
+  "score": 11423,
+  "ms": 76939
+ },
+ {
+  "result": "loss",
+  "drops": 205,
+  "maxTier": 8,
+  "score": 7402,
+  "ms": 80835
+ },
+ {
+  "result": "loss",
+  "drops": 136,
+  "maxTier": 7,
+  "score": 3869,
+  "ms": 49848
+ },
+ {
+  "result": "loss",
+  "drops": 212,
+  "maxTier": 8,
+  "score": 10064,
+  "ms": 79051
+ },
+ {
+  "result": "win",
+  "drops": 195,
+  "maxTier": 9,
+  "score": 12934,
+  "ms": 73125
+ },
+ {
+  "result": "loss",
+  "drops": 286,
+  "maxTier": 8,
+  "score": 13630,
+  "ms": 111071
+ },
+ {
+  "result": "loss",
+  "drops": 194,
+  "maxTier": 7,
+  "score": 6564,
+  "ms": 74978
+ },
+ {
+  "result": "loss",
+  "drops": 166,
+  "maxTier": 7,
+  "score": 5489,
+  "ms": 71644
+ },
+ {
+  "result": "loss",
+  "drops": 199,
+  "maxTier": 8,
+  "score": 8788,
+  "ms": 77534
+ },
+ {
+  "result": "loss",
+  "drops": 218,
+  "maxTier": 8,
+  "score": 10610,
+  "ms": 84949
+ },
+ {
+  "result": "loss",
+  "drops": 284,
+  "maxTier": 8,
+  "score": 16057,
+  "ms": 110053
+ },
+ {
+  "result": "loss",
+  "drops": 195,
+  "maxTier": 7,
+  "score": 7079,
+  "ms": 74649
+ },
+ {
+  "result": "loss",
+  "drops": 182,
+  "maxTier": 8,
+  "score": 5895,
+  "ms": 67384
+ },
+ {
+  "result": "loss",
+  "drops": 216,
+  "maxTier": 8,
+  "score": 9132,
+  "ms": 87257
+ },
+ {
+  "result": "loss",
+  "drops": 196,
+  "maxTier": 8,
+  "score": 10535,
+  "ms": 78392
+ },
+ {
+  "result": "loss",
+  "drops": 258,
+  "maxTier": 8,
+  "score": 12772,
+  "ms": 100908
+ },
+ {
+  "result": "loss",
+  "drops": 225,
+  "maxTier": 8,
+  "score": 10892,
+  "ms": 87227
+ },
+ {
+  "result": "loss",
+  "drops": 162,
+  "maxTier": 7,
+  "score": 5548,
+  "ms": 62489
+ },
+ {
+  "result": "loss",
+  "drops": 200,
+  "maxTier": 7,
+  "score": 6157,
+  "ms": 76276
+ },
+ {
+  "result": "loss",
+  "drops": 193,
+  "maxTier": 8,
+  "score": 8386,
+  "ms": 76150
+ },
+ {
+  "result": "loss",
+  "drops": 322,
+  "maxTier": 8,
+  "score": 16163,
+  "ms": 123357
+ },
+ {
+  "result": "win",
+  "drops": 236,
+  "maxTier": 9,
+  "score": 15999,
+  "ms": 92070
+ },
+ {
+  "result": "loss",
+  "drops": 233,
+  "maxTier": 8,
+  "score": 10400,
+  "ms": 86120
+ },
+ {
+  "result": "win",
+  "drops": 246,
+  "maxTier": 9,
+  "score": 22142,
+  "ms": 91313
+ },
+ {
+  "result": "loss",
+  "drops": 128,
+  "maxTier": 6,
+  "score": 3230,
+  "ms": 50482
+ },
+ {
+  "result": "loss",
+  "drops": 210,
+  "maxTier": 8,
+  "score": 8497,
+  "ms": 77216
+ },
+ {
+  "result": "loss",
+  "drops": 221,
+  "maxTier": 8,
+  "score": 10040,
+  "ms": 84425
+ },
+ {
+  "result": "loss",
+  "drops": 165,
+  "maxTier": 7,
+  "score": 6792,
+  "ms": 62220
+ },
+ {
+  "result": "loss",
+  "drops": 159,
+  "maxTier": 7,
+  "score": 5194,
+  "ms": 59830
+ },
+ {
+  "result": "loss",
+  "drops": 216,
+  "maxTier": 8,
+  "score": 12257,
+  "ms": 86035
+ },
+ {
+  "result": "loss",
+  "drops": 214,
+  "maxTier": 8,
+  "score": 12708,
+  "ms": 80698
+ },
+ {
+  "result": "loss",
+  "drops": 193,
+  "maxTier": 8,
+  "score": 7848,
+  "ms": 73343
+ },
+ {
+  "result": "loss",
+  "drops": 202,
+  "maxTier": 8,
+  "score": 11374,
+  "ms": 74687
+ },
+ {
+  "result": "loss",
+  "drops": 211,
+  "maxTier": 8,
+  "score": 8857,
+  "ms": 80582
+ },
+ {
+  "result": "loss",
+  "drops": 189,
+  "maxTier": 7,
+  "score": 6540,
+  "ms": 74908
+ },
+ {
+  "result": "loss",
+  "drops": 173,
+  "maxTier": 8,
+  "score": 6891,
+  "ms": 66513
+ },
+ {
+  "result": "win",
+  "drops": 224,
+  "maxTier": 9,
+  "score": 14539,
+  "ms": 87270
+ },
+ {
+  "result": "loss",
+  "drops": 285,
+  "maxTier": 8,
+  "score": 16547,
+  "ms": 111227
+ },
+ {
+  "result": "loss",
+  "drops": 276,
+  "maxTier": 8,
+  "score": 13627,
+  "ms": 104751
+ },
+ {
+  "result": "loss",
+  "drops": 239,
+  "maxTier": 8,
+  "score": 11356,
+  "ms": 89329
  }
 ]
