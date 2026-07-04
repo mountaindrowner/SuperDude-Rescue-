@@ -18,10 +18,9 @@ DANNYLAB.BootScene.prototype.create = function (data) {
 
   // 2) settings: persisted value wins, else parent-provided, else default
   var lang = store.getOpt('lang', data.lang || 'en');
-  var mode = store.getOpt('mode', 'endless');
 
   reg.set('lang', (lang === 'es') ? 'es' : 'en');
-  reg.set('mode', (mode === 'zen') ? 'zen' : 'endless');
+  reg.set('mode', 'endless');   // single mode; Zen retired
 
   // audio volumes (0..1): a saved slider value wins; otherwise fall back to the
   // legacy on/off option (or the parent's audio/music flag), starting at 50%.

@@ -77,16 +77,8 @@ window.DANNYLAB = window.DANNYLAB || {};
       self.scene.restart(data);    // relabel the options panel itself
       return nv.toUpperCase();
     });
-    // Mode
-    UI.toggleRow(this, x, y + gap * 3, rw, t('mode', lang),
-      t(this.registry.get('mode'), lang), function () {
-        var nv = self.registry.get('mode') === 'endless' ? 'zen' : 'endless';
-        self.registry.set('mode', nv); store.setOpt('mode', nv);
-        return t(nv, lang);
-      });
-
     // Reset Collection (with confirm)
-    UI.button(this, x, y + gap * 4 + 10, rw, 56, t('reset_collection', lang), function () {
+    UI.button(this, x, y + gap * 3 + 10, rw, 56, t('reset_collection', lang), function () {
       self.scene.launch('DANNYLAB_Confirm', {
         message: t('confirm', lang),
         onYes: function () { store.resetCollection(); },
