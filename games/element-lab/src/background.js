@@ -1,8 +1,8 @@
 // background.js — a fully procedural SCI-FI lab behind the play area: clean
 // panels, pipe runs, glass sample tubes, gauges and blinking status lights,
 // pushed into a blurred + faded layer so it reads as deep, expansive space.
-// A scheduler fires one of ~12 quiet "ambient events" (a robot trundling past,
-// a tube filling, a door sliding, steam venting…) every 30-60s, each with a
+// A scheduler fires one of ~11 quiet "ambient events" (a tube filling, a door
+// sliding, a drone drifting past, steam venting…) every 30-60s, each with a
 // muted little sound, so the lab feels alive without distracting from the game.
 window.DANNYLAB = window.DANNYLAB || {};
 
@@ -97,7 +97,7 @@ DANNYLAB.buildLab = function (scene, opts) {
     scene.tweens.add({ targets: dot, alpha: 0.15, duration: 500 + Math.random() * 1200, yoyo: true, repeat: -1, delay: Math.random() * 1500, ease: 'Sine.inOut' });
   }
 
-  // a far walkway ledge (where the robot trundles)
+  // a far walkway ledge, deep in the back wall
   g.fillStyle(0x1a2740, 1); g.fillRect(0, H * 0.515, W, 5);
   g.fillStyle(0x0e1a2e, 1); g.fillRect(0, H * 0.52, W, 3);
 
@@ -115,22 +115,8 @@ DANNYLAB.buildLab = function (scene, opts) {
   // ============ AMBIENT EVENT LAYER (subtle, lightly blurred) ============
   var amb = scene.add.container(0, 0).setDepth(-90).setAlpha(0.6);
   try { if (amb.postFX) amb.postFX.addBlur(0, 1, 1, 0.7); } catch (e) {}
-  var walkY = H * 0.5;
 
   // --- each event spawns temp shapes, animates a few seconds, cleans up ---
-  function evRobot() {
-    var dir = Math.random() < 0.5 ? 1 : -1, x0 = dir > 0 ? -34 : W + 34, x1 = dir > 0 ? W + 34 : -34;
-    var r = scene.add.container(x0, walkY); amb.add(r);
-    var gg = scene.add.graphics();
-    gg.fillStyle(0x101c30, 1); gg.fillRoundedRect(-10, -16, 20, 18, 4);     // body
-    gg.fillRoundedRect(-7, -24, 14, 9, 3);                                   // head
-    gg.fillStyle(0x4fd9ff, 0.9); gg.fillCircle(0, -19, 2);                   // eye light
-    gg.fillStyle(0x0b1424, 1); gg.fillRect(-8, 2, 5, 7); gg.fillRect(3, 2, 5, 7); // legs
-    r.add(gg);
-    scene.tweens.add({ targets: r, x: x1, duration: 6500, ease: 'Linear', onComplete: function () { r.destroy(); } });
-    var up = false, steps = scene.time.addEvent({ delay: 360, repeat: 16, callback: function () { r.y = walkY + (up ? 2 : -2); up = !up; snd('ambStep'); } });
-    scene.time.delayedCall(6600, function () { if (steps) steps.remove(false); });
-  }
   function evTubeFill() {
     if (!tubes.length) return;
     var tb = tubes[Math.floor(Math.random() * tubes.length)], start = tb.fill, peak = 0.95;
@@ -219,7 +205,7 @@ DANNYLAB.buildLab = function (scene, opts) {
     scene.tweens.add({ targets: d, alpha: 0.9, duration: 260, yoyo: true, repeat: 3, onComplete: function () { d.destroy(); } });
   }
 
-  var events = [evRobot, evTubeFill, evPanelLights, evDoor, evWeld, evClaw, evSteam, evGauge, evScan, evDrone, evConveyor, evAlert];
+  var events = [evTubeFill, evPanelLights, evDoor, evWeld, evClaw, evSteam, evGauge, evScan, evDrone, evConveyor, evAlert];
   var lastEv = -1;
   function runRandomEvent() {
     var idx; do { idx = Math.floor(Math.random() * events.length); } while (idx === lastEv && events.length > 1);
