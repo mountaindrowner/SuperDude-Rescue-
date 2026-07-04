@@ -122,6 +122,11 @@ DANNYLAB.hookVisibility = function (game) {
     if (hidden) {
       var gs = game.scene.getScene('DANNYLAB_Game');
       if (gs && gs.scene.isActive() && !gs.gameOver && !gs.paused && gs.openPause) gs.openPause();
+      // fully stop the render/update loop while backgrounded so the GPU idles
+      // (no frames drawn in a hidden tab = no heat while the kid is elsewhere)
+      try { if (game.loop && game.loop.sleep) game.loop.sleep(); } catch (e) {}
+    } else {
+      try { if (game.loop && game.loop.wake) game.loop.wake(); } catch (e) {}
     }
   });
 };

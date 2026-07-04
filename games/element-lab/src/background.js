@@ -109,12 +109,38 @@ DANNYLAB.buildLab = function (scene, opts) {
   back.add(shaft);
   scene.tweens.add({ targets: shaft, alpha: 0.6, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
-  back.setAlpha(0.8);
-  try { if (back.postFX) back.postFX.addBlur(0, 2, 2, 1.0, 0xffffff, 5); } catch (e) {}
+  // ---- BAKE the back wall to a single static texture ----------------------
+  // The wall is essentially fixed art (its only motion — twinkling dots, rising
+  // tube bubbles, a slow light shaft — is invisible under heavy blur). A live
+  // postFX blur would re-run a multi-pass gaussian shader EVERY frame forever,
+  // on the menu and in-game, which pins the GPU and cooks phones. So we draw
+  // the wall once into a RenderTexture, faking the blur with a few offset
+  // passes, then throw away the live layer (and its ~19 looping tweens). The
+  // result is one plain textured quad: zero per-frame shader/tween cost.
+  var baked = false;
+  try {
+    if (scene.add.renderTexture) {
+      var rt = scene.add.renderTexture(0, 0, W, H).setOrigin(0, 0).setDepth(-100);
+      back.setAlpha(1);
+      // centre-weighted 9-tap kernel at ~2-3px radius ≈ the old soft blur
+      var K = [[0, 0, 0.5], [-2, 0, 0.12], [2, 0, 0.12], [0, -2, 0.12], [0, 2, 0.12],
+               [-3, -3, 0.09], [3, -3, 0.09], [-3, 3, 0.09], [3, 3, 0.09]];
+      for (var bi = 0; bi < K.length; bi++) rt.draw(back, K[bi][0], K[bi][1], K[bi][2]);
+      rt.setAlpha(0.8);
+      back.destroy();                 // frees all children + their looping tweens
+      tubes.length = 0; gauges.length = 0;   // now baked-in; their ambient events no-op
+      baked = true;
+    }
+  } catch (e) { baked = false; }
+  if (!baked) {                       // very old renderer: keep a single cheap live blur
+    back.setAlpha(0.8);
+    try { if (back.postFX) back.postFX.addBlur(0, 2, 2, 1.0, 0xffffff, 2); } catch (e2) {}
+  }
 
-  // ============ AMBIENT EVENT LAYER (subtle, lightly blurred) ============
-  var amb = scene.add.container(0, 0).setDepth(-90).setAlpha(0.6);
-  try { if (amb.postFX) amb.postFX.addBlur(0, 1, 1, 0.7); } catch (e) {}
+  // ============ AMBIENT EVENT LAYER (subtle, transient shapes) ============
+  // No postFX here: these are faint moving shapes, and re-blurring motion every
+  // frame is the costliest thing per pixel of payoff. They read fine unblurred.
+  var amb = scene.add.container(0, 0).setDepth(-90).setAlpha(0.55);
 
   // --- each event spawns temp shapes, animates a few seconds, cleans up ---
   function evTubeFill() {
@@ -205,7 +231,10 @@ DANNYLAB.buildLab = function (scene, opts) {
     scene.tweens.add({ targets: d, alpha: 0.9, duration: 260, yoyo: true, repeat: 3, onComplete: function () { d.destroy(); } });
   }
 
-  var events = [evTubeFill, evPanelLights, evDoor, evWeld, evClaw, evSteam, evGauge, evScan, evDrone, evConveyor, evAlert];
+  // once baked, the tube-liquid + gauge-needle are frozen into the static wall,
+  // so their ambient events would do nothing — leave them out of the pool.
+  var events = [evPanelLights, evDoor, evWeld, evClaw, evSteam, evScan, evDrone, evConveyor, evAlert];
+  if (!baked) events.push(evTubeFill, evGauge);
   var lastEv = -1;
   function runRandomEvent() {
     var idx; do { idx = Math.floor(Math.random() * events.length); } while (idx === lastEv && events.length > 1);
