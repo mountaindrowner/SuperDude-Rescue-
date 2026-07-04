@@ -941,7 +941,11 @@ GP.triggerMystery = function (myst, tgt) {
     self.cameras.main.shake(240, 0.007);
     self.mysterySlowMo(0.4, 2200);
     self.destroyElement(myst);
-    self.applyMysteryEffect(effect, (tgt && tgt.active) ? tgt : null, mx, my);
+    // anchor the effect at the TOUCHED element's centre, not the mystery orb:
+    // landing on a tall Gold/Uranium must erupt from inside the pile, not
+    // from a point high above it where the radius misses the floor clutter.
+    var t2 = (tgt && tgt.active) ? tgt : null;
+    self.applyMysteryEffect(effect, t2, t2 ? t2.x : mx, t2 ? t2.y : my);
   });
 };
 
@@ -1041,88 +1045,87 @@ GP.mysteryDesc = function (text) {
 };
 
 GP.applyMysteryEffect = function (effect, tgt, mx, my) {
-  var self = this, R = 150, tier = tgt ? tgt.tier : 0, BASE = 75;
+  var self = this, BASE = 75;
   var labels = {
     updraft: 'LIFT-OFF!', float: 'FLOAT!', crystallizeUpgrade: 'CRYSTALLIZE!', combustPop: 'KA-BOOM!',
-    glowBoost: 'LIGHT SHOW!', fizzPop: 'FIZZ POP!', magnetMerge: 'MAGNET PULSE!', jackpot: 'JACKPOT!', miniFission: 'FISSION!',
-  };
-  // short, plain-language explanation keyed to the element that was touched
-  var descs = {
-    updraft: 'The whole batch floats up!',
-    float: 'Nearby pieces balloon and lift!',
-    crystallizeUpgrade: 'A cluster crystallizes up a tier!',
-    combustPop: 'A blast scatters and clears the small ones!',
-    glowBoost: 'The smallest pieces power up a tier!',
-    fizzPop: 'Every small piece fizzes away!',
-    magnetMerge: 'Everything snaps toward the middle!',
-    jackpot: 'A big jackpot of points!',
-    miniFission: 'A fission blast clears a wide area!',
+    glowBoost: 'LIGHT SHOW!', fizzPop: 'FIZZ POP!', magnetMerge: 'MAGNET PULSE!', midas: 'MIDAS TOUCH!', miniFission: 'FISSION!',
   };
   if (labels[effect]) this.mysteryBanner(labels[effect], 0xff7be0);
-  this.mysteryDesc(descs[effect]);
   // a Mystery shouldn't end the run: the effects briefly lift/scatter pieces,
   // so suspend the overflow check while they settle back down.
   this._noOverflowUntil = this.time.now + 3800;
   this.overflowAccum = 0;
   if (this.fillFlash) this.fillFlash.setAlpha(1);
-  // every effect is guaranteed an obvious visual + a score bump; the themed
-  // mechanic (clear/merge/upgrade nearby) is a bonus when targets are present.
 
   var els = this.elements;
   // sleeping bodies ignore setVelocity, so wake the whole board first — the
   // shove/lift/magnet effects must be able to move settled pieces.
   for (var wi = 0; wi < els.length; wi++) { if (els[wi].setAwake) els[wi].setAwake(); }
+
+  // Every effect leaves a LASTING change on the board (clear, upgrade, or
+  // forced merges) — never just points and sparks. Each case builds its
+  // victim/upgrade list first, so the description under the rim reports the
+  // real count: what the player reads is exactly what happened.
+  var descKey = null, n = 0, list;
   switch (effect) {
-    case 'updraft':   // LIFT-OFF: the WHOLE pile gets tossed upward (declutter)
+    case 'updraft':   // LIFT-OFF: toss the pile skyward + pop every Hydrogen on the board
       els.forEach(function (e) { if (e.tier >= 1 && e.setVelocity) e.setVelocity((Math.random() - 0.5) * 9, -12 - Math.random() * 6); });
       for (var u = 0; u < 5; u++) this.burst(DANNYLAB.beakerCx() + (Math.random() - 0.5) * 240, DANNYLAB.GEO.floorTop - 30, 0xBEE3F8, 10, { tex: 'p_bubble', speed: 100, scale: 0.7, life: 950, blend: 'NORMAL' });
+      list = this._elementsNear(mx, my, 230).filter(function (e) { return e.tier === 1; }).slice(0, 4);
+      this._popList(list, 0xBEE3F8, 70);
+      descKey = 'myst_updraft'; n = list.length;
       this.addScore(BASE, mx, my);
       break;
 
-    case 'float':     // FLOAT: a cluster balloons huge and shoots up, opening space
-      var near = this._elementsNear(mx, my, 190); if (tgt && near.indexOf(tgt) < 0) near.push(tgt);
+    case 'float':     // FLOAT: nearby small pieces balloon, lift, and pop away
+      var near = this._elementsNear(mx, my, 200);
       near.forEach(function (e) {
         if (e.setVelocity) e.setVelocity((Math.random() - 0.5) * 4, -11 - Math.random() * 4);
         if (e.visual) self.tweens.add({ targets: e.visual, scale: 1.45, duration: 300, yoyo: true, hold: 350, ease: 'Sine.inOut' });
       });
+      list = near.filter(function (e) { return e.tier >= 1 && e.tier <= 2; }).slice(0, 3);
+      this._popList(list, 0xFBD38D, 85);
       this.burst(mx, my, 0xFBD38D, 22, { tex: 'p_bubble', speed: 90, scale: 0.9, life: 1100 });
+      descKey = 'myst_float'; n = list.length;
       this.addScore(BASE, mx, my);
       break;
 
     case 'crystallizeUpgrade':  // CRYSTALLIZE: upgrade a small cluster a tier, one by one
       // keep it modest: upgrading replaces pieces with bigger ones, so too many
       // at once can shove the stack over the line. A few is plenty.
-      var cluster = this._elementsNear(mx, my, 170).filter(function (e) { return e.tier < DANNYLAB.MAX_TIER; });
-      if (tgt && tgt.active && cluster.indexOf(tgt) < 0 && tgt.tier < DANNYLAB.MAX_TIER) cluster.unshift(tgt);
-      if (!cluster.length) { var lo = this._lowest(); if (lo) cluster.push(lo); }
-      cluster = cluster.slice(0, 3);
+      list = this._elementsNear(mx, my, 170).filter(function (e) { return e.tier < DANNYLAB.MAX_TIER; });
+      if (tgt && tgt.active && list.indexOf(tgt) < 0 && tgt.tier < DANNYLAB.MAX_TIER) list.unshift(tgt);
+      list = list.slice(0, 2);
       this.burst(mx, my, 0xffffff, 24, { tex: 'p_spark', speed: 160, scale: 0.8, life: 750 });
-      this._upgradeList(cluster, 190);
+      this._upgradeList(list, 190);
+      descKey = 'myst_crystal'; n = list.length;
       this.addScore(BASE, mx, my);
       break;
 
-    case 'combustPop':  // KA-BOOM: a real shockwave — blasts everything outward + clears small
+    case 'combustPop':  // KA-BOOM: a real shockwave — blasts the pile outward + clears small
       this.cameras.main.shake(260, 0.009); this.cameras.main.flash(160, 255, 150, 70);
       this.burst(mx, my, 0xff7a3a, 34, { tex: 'p_spark', speed: 260, scale: 1.0, life: 700 });
       this.burst(mx, my, 0xffd27a, 22, { speed: 170, scale: 0.9, life: 600 });
       var ringK = this.add.image(mx, my, 'p_ring').setTint(0xff8a3a).setBlendMode('ADD').setScale(0.3).setDepth(26).setAlpha(0.95);
       this.tweens.add({ targets: ringK, scale: 6, alpha: 0, duration: 700, ease: 'Cubic.out', onComplete: function () { ringK.destroy(); } });
       this._knockback(mx, my, 16, 320);                 // shove the whole pile away from the blast (in slow-mo)
-      var small = this._elementsNear(mx, my, R).filter(function (e) { return e.tier >= 1 && e.tier <= 2; });
-      this._popList(small, 0xff9b5b, 90);                // vaporise the small ones nearby, one by one
+      list = this._elementsNear(mx, my, 190).filter(function (e) { return e.tier >= 1 && e.tier <= 2; }).slice(0, 4);
+      this._popList(list, 0xff9b5b, 90);                // vaporise the small ones nearby, one by one
+      descKey = 'myst_combust'; n = list.length;
       this.addScore(BASE, mx, my);
       break;
 
     case 'glowBoost':  // LIGHT SHOW: energise — grow the smallest pieces a tier + boost merges
       this.glowBoostMerges = 8;
       var lowT = this._lowestTier();
-      var toGrow = [];
-      if (lowT > 0) toGrow = els.filter(function (e) { return e.active && e.tier === lowT && e.tier < DANNYLAB.MAX_TIER; }).slice(0, 6);
-      if (!toGrow.length && tgt && tgt.active) toGrow = [tgt];   // always advance at least one
+      list = [];
+      if (lowT > 0) list = els.filter(function (e) { return e.active && e.tier === lowT && e.tier < DANNYLAB.MAX_TIER; }).slice(0, 2);
+      if (!list.length && tgt && tgt.active && tgt.tier < DANNYLAB.MAX_TIER) list = [tgt];   // always advance at least one
       els.forEach(function (e) { if (e.glow) { e.glow.setAlpha(1); self.tweens.add({ targets: e.glow, alpha: e.tier === DANNYLAB.MAX_TIER ? 0.6 : 0, duration: 900 }); } });
       this.cameras.main.flash(320, 246, 135, 179);
       this.screenSparkle();
-      this._upgradeList(toGrow, 175);                   // grow them in a visible chain
+      this._upgradeList(list, 175);                     // grow them in a visible chain
+      descKey = 'myst_glow'; n = list.length;
       this.addScore(BASE, mx, my);
       break;
 
@@ -1132,8 +1135,9 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
         alpha: { start: 0.9, end: 0 }, lifespan: 850, quantity: 30, tint: 0xb98bff, blendMode: 'ADD', emitting: false,
       }).setDepth(25);
       fz.explode(34); this.time.delayedCall(950, function () { fz.destroy(); });
-      var fizz = els.filter(function (e) { return e.active && e.tier >= 1 && e.tier <= 2; });
-      this._popList(fizz, 0x9F7AEA, 70);                 // whole board, popping in a sweep
+      list = this._elementsNear(mx, my, 230).filter(function (e) { return e.tier >= 1 && e.tier <= 2; }).slice(0, 5);
+      this._popList(list, 0x9F7AEA, 70);                 // a wide sweep of pops
+      descKey = 'myst_fizz'; n = list.length;
       this.addScore(BASE, mx, my);
       break;
 
@@ -1144,18 +1148,24 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
       var ring = this.add.image(mx, my, 'p_ring').setTint(0x9fd0ff).setBlendMode('ADD').setScale(0.3).setDepth(26).setAlpha(0.9);
       this.tweens.add({ targets: ring, scale: 4.5, alpha: 0, duration: 600, ease: 'Cubic.out', onComplete: function () { ring.destroy(); } });
       if (this.audio) this.audio.magnet();
+      descKey = 'myst_magnet'; n = els.length;
       this.addScore(BASE, mx, my);
       break;
 
-    case 'jackpot':    // JACKPOT: a big point haul (feeds the charge meter hard)
-      this.addScore(500, mx, my);
+    case 'midas':      // MIDAS TOUCH: nearby small pieces turn to gold dust (wide clear + points)
       this.cameras.main.flash(220, 236, 201, 75);
+      var ringM = this.add.image(mx, my, 'p_ring').setTint(0xECC94B).setBlendMode('ADD').setScale(0.3).setDepth(26).setAlpha(0.95);
+      this.tweens.add({ targets: ringM, scale: 6, alpha: 0, duration: 750, ease: 'Cubic.out', onComplete: function () { ringM.destroy(); } });
+      list = this._elementsNear(mx, my, 150).filter(function (e) { return e.tier >= 1 && e.tier <= 2; }).slice(0, 4);
+      this._popList(list, 0xECC94B, 80);
       for (var i = 0; i < 9; i++) (function (i) {
         self.time.delayedCall(i * 65, function () {
           self.burst(mx + (Math.random() - 0.5) * 160, my - 24, 0xECC94B, 7, { tex: 'p_spark', speed: 140, scale: 0.7, life: 850 });
           if (self.audio) self.audio.coin();
         });
       })(i);
+      descKey = 'myst_midas'; n = list.length;
+      this.addScore(300, mx, my);
       break;
 
     case 'miniFission':  // FISSION: a real blast — clears a wide radius + knockback
@@ -1165,8 +1175,11 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
       var ringF = this.add.image(mx, my, 'p_ring').setTint(0x7CFF6B).setBlendMode('ADD').setScale(0.3).setDepth(26).setAlpha(0.95);
       this.tweens.add({ targets: ringF, scale: 7, alpha: 0, duration: 800, ease: 'Cubic.out', onComplete: function () { ringF.destroy(); } });
       this._knockback(mx, my, 14, 280);
-      var blast = this._elementsNear(mx, my, DANNYLAB.CONFIG.fissionRadius).filter(function (e) { return e.tier >= 1 && e.tier <= 4; });
-      this._popList(blast, 0x7CFF6B, 85);
+      // the ultimate effect: a Uranium orb is r=102 itself, so the clear
+      // radius must reach well past its surface to hit the floor clutter
+      list = this._elementsNear(mx, my, 240).filter(function (e) { return e.tier >= 1 && e.tier <= 4; });
+      this._popList(list, 0x7CFF6B, 85);
+      descKey = 'myst_fission'; n = list.length;
       this.addScore(Math.round(BASE * 1.5), mx, my);
       break;
 
@@ -1174,6 +1187,14 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
       this.burst(mx, my, 0xffffff, 18, { tex: 'p_spark', speed: 140, scale: 0.7, life: 700 });
       this.addScore(BASE, mx, my);
   }
+
+  // guaranteed-tangible floor: if the themed effect found nothing to clear or
+  // grow, surge the lowest piece up a tier instead so SOMETHING visibly happens
+  if (!n) {
+    var lo = this._lowest();
+    if (lo && lo.tier < DANNYLAB.MAX_TIER) { this._upgradeList([lo], 150); descKey = 'myst_surge'; n = 1; }
+  }
+  this.mysteryDesc(DANNYLAB.t(descKey || 'myst_surge', this.lang, { n: n }));
 };
 
 // the lowest tier currently on the board (0 if none), and the actual element

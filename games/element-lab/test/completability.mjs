@@ -89,7 +89,11 @@ function installBot(opts) {
     const G = D.GEO;
     const exposed = (e) => !els.some(o => o !== e && !o.consumed &&
       Math.abs(o.x - e.x) < (o.radius + e.radius) * 0.7 && o.y < e.y - e.radius * 0.6);
-    if (sc.nextIsMystery) {   // effects key off the first element touched — feed it the biggest
+    if (sc.nextIsMystery) {
+      // naive mode: a kid drops the mystery wherever, like any other piece.
+      // skilled mode: feed it to the biggest orb (effects key off the first
+      // element touched), the discoverable optimal strategy.
+      if (opts.naiveMystery) return G.bx0 + 30 + Math.random() * (G.bx1 - G.bx0 - 60);
       let top = null;
       for (const e of els) if (e.tier >= 1 && exposed(e) && (!top || e.tier > top.tier)) top = e;
       return top ? top.x : (G.bx0 + G.bx1) / 2;
@@ -170,7 +174,7 @@ for (let i = 0; i < PAGES; i++) {
     const m = g && g.scene.getScene('DANNYLAB_Menu');
     return !!(m && m.scene.isActive());
   }, null, { timeout: 30000 });
-  await page.evaluate(installBot, { target: per[i], cooldownMs: COOLDOWN_MS, minGapMs: MIN_GAP_MS, capDrops: CAP_DROPS, capMs: CAP_MS });
+  await page.evaluate(installBot, { target: per[i], cooldownMs: COOLDOWN_MS, minGapMs: MIN_GAP_MS, capDrops: CAP_DROPS, capMs: CAP_MS, naiveMystery: !!process.env.NAIVE_MYSTERY });
   pages.push(page);
 }
 console.log(`playing ${GAMES} games across ${PAGES} pages (${per.join('/')}) ...`);

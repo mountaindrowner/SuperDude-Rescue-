@@ -44,12 +44,12 @@ DANNYLAB.CONFIG = {
 
   // ---- mystery sample (Addendum §2) ----
   mysteryEnabled: true,
-  mysteryEveryNDrops: 35,
+  mysteryEveryNDrops: 30,
   mysteryJitter: 5,                            // spawns at N ± this
   mysteryEffects: {                            // keyed by FIRST element's tier; all beneficial
     1: 'updraft',    2: 'float',     3: 'crystallizeUpgrade',
     4: 'combustPop', 5: 'glowBoost', 6: 'fizzPop',
-    7: 'magnetMerge', 8: 'jackpot',  9: 'miniFission',
+    7: 'magnetMerge', 8: 'midas',   9: 'miniFission',
   },
   mysteryFallbackEffect: 'crystallizeUpgrade', // v1 universal effect if needed
   mysteryRadius: 30,                           // physics radius of the sample piece
