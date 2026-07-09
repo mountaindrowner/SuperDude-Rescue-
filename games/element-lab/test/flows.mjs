@@ -25,7 +25,7 @@ await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle
 await page.waitForTimeout(900);
 
 // jump straight into the game scene
-await page.evaluate(() => window.DANNYLAB.game.scene.start('DANNYLAB_Game', { mode: 'zen' }));
+await page.evaluate(() => window.DANNYLAB.game.scene.start('DANNYLAB_Game', { mode: 'endless' }));
 await page.waitForTimeout(600);
 
 // ---- FISSION: drop two Uraniums right next to each other ----
