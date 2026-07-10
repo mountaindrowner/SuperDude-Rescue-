@@ -15,6 +15,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'www');
 
 // Files + directories that make up the playable game.
+// games/element-lab is copied piecewise (v2.0): its test/ suite and
+// README are dev-only and must not ship in the app bundle.
 const INCLUDE = [
   'index.html',
   'manifest.webmanifest',
@@ -22,7 +24,11 @@ const INCLUDE = [
   'privacy.html',
   'css',
   'js',
-  'assets'
+  'assets',
+  'games/element-lab/index.html',
+  'games/element-lab/src',
+  'games/element-lab/vendor',
+  'games/element-lab/assets'
 ];
 
 console.log('build-web: assembling', out);
@@ -32,7 +38,9 @@ mkdirSync(out, { recursive: true });
 for (const entry of INCLUDE) {
   const src = join(root, entry);
   if (!existsSync(src)) { console.warn('  skip (missing):', entry); continue; }
-  cpSync(src, join(out, entry), { recursive: true });
+  const dest = join(out, entry);
+  mkdirSync(dirname(dest), { recursive: true });   // nested entries (games/...)
+  cpSync(src, dest, { recursive: true });
   console.log('  +', entry);
 }
 console.log('build-web: done. webDir =', out);

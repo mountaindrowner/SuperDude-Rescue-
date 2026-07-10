@@ -11,6 +11,24 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
+- **v2.0.0 — THE ELEMENT LAB (Mark's "update 2.0"):** ported the whole
+  merge-puzzle sub-game from the `claude/project-continuation-L24du`
+  branch into `games/element-lab/` (fully self-contained: own Phaser
+  vendored, own `dannylab.*` save keys, own assets — zero changes to
+  the platformer's engine/scenes beyond the menu hook). Menu gains an
+  ELEMENT LAB row (act `'lab'` → navigates to
+  `games/element-lab/index.html?from=sdd`; the Lab's Exit returns to
+  `../../index.html`). Menu list pitch tightens to 12px when >4 rows so
+  the 5-row public list clears the tagline. `scripts/build-web.mjs`
+  copies the Lab piecewise (index/src/vendor/assets — NOT its dev
+  `test/` dir) into `www/`. Service worker: `sdd-shell-v200`, Lab code
+  shell precached (its MP3s/card JPEGs stay lazy, same policy as the
+  platformer's music). `SDD.VERSION = 'v2.0.0'`, package.json 2.0.0.
+  Verified headlessly against the built `www/` bundle: menu → Lab →
+  Exit → menu round trip with real key input, zero console errors.
+  The Lab arrived at its latest state incl. kid-tuned balance (~22%
+  completability), Mystery overhaul, Golden Flash, baked-blur thermal
+  fix, and the collectible-cards system.
 - **Live build**: `v1.0.6` / `sdd-shell-v106`.
 - **v1.0.6 touch-UI sweep (Mark):** audited audio-load timing + A/B +
   pause button. Confirmed via puppeteer: boot requests only the 3 eager

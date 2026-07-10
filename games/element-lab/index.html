@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070d22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>The Element Lab — Super Dude Danny</title>
+
+<!-- fonts vendored locally (latin subset covers Spanish á é í ó ú ñ ¡ ¿) so
+     they load offline and inside the native app, no CDN dependency -->
+<style>
+  @font-face { font-family: "Baloo 2"; font-weight: 400; font-display: swap;
+    src: url("assets/fonts/baloo2-400.woff2") format("woff2"); }
+  @font-face { font-family: "Baloo 2"; font-weight: 700; font-display: swap;
+    src: url("assets/fonts/baloo2-700.woff2") format("woff2"); }
+  @font-face { font-family: "Pixelify Sans"; font-weight: 400; font-display: swap;
+    src: url("assets/fonts/pixelify-400.woff2") format("woff2"); }
+  @font-face { font-family: "Pixelify Sans"; font-weight: 700; font-display: swap;
+    src: url("assets/fonts/pixelify-700.woff2") format("woff2"); }
+</style>
+
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #070d22; overflow: hidden;
+    font-family: "Baloo 2", system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  #dannylab-root { width: 100vw; height: 100vh; }
+  #dannylab-root canvas { display: block; }
+  #fallback {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    color: #cdeeff; text-align: center; padding: 24px; font-size: 18px;
+  }
+</style>
+</head>
+<body>
+<div id="dannylab-root"></div>
+<div id="fallback">Couldn't load the Element Lab engine.<br>Check your connection and reload.</div>
+
+<!-- Phaser 3 (includes Matter.js), vendored locally so the Lab runs offline
+     and bundles cleanly into the native app — no CDN dependency. -->
+<script src="vendor/phaser.min.js"></script>
+
+<!-- game source, loaded in dependency order (no build step) -->
+<script src="src/config.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/store.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/textures.js"></script>
+<script src="src/jelly.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/background.js"></script>
+<script src="src/boot.js"></script>
+<script src="src/preload.js"></script>
+<script src="src/menu.js"></script>
+<script src="src/game.js"></script>
+<script src="src/overlays.js"></script>
+<script src="src/cards.js"></script>
+<script src="src/main.js"></script>
+
+<script>
+  (function () {
+    if (!window.Phaser) { document.getElementById('fallback').style.display = 'flex'; return; }
+    // Standalone launch. Running as a sub-game? The parent calls
+    // DANNYLAB.launch({ parent, onExit, lang, audioEnabled, musicEnabled })
+    // or installs the scenes into its own Phaser game (see src/main.js).
+    // Launched from the Super Dude Danny main menu (?from=sdd) → Exit returns
+    // there; opened directly → Exit stays inside the Lab's own menu.
+    var fromMain = /[?&]from=sdd(&|$)/.test(window.location.search);
+    DANNYLAB.launch({
+      parent: 'dannylab-root',
+      lang: 'en',
+      audioEnabled: true,
+      musicEnabled: true,
+      onExit: fromMain ? function () { window.location.href = '../../index.html'; } : null,
+    });
+  })();
+</script>
+</body>
+</html>

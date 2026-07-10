@@ -1,6 +1,6 @@
 {
   "name": "super-dude-danny",
-  "version": "0.98.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Super Dude Danny - a kid-friendly retro platformer through the seven days of creation. Plain HTML5 Canvas + Web Audio, no build step. This package.json exists only to wrap the web game as a native iOS/Android app via Capacitor; the game itself still runs as a standalone PWA from index.html.",
   "scripts": {

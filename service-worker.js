@@ -5,7 +5,7 @@
 // to the network. New deploys bump CACHE_NAME to evict the old cache on
 // activation so updates roll out cleanly without leaving stale JS.
 
-const CACHE_NAME = 'sdd-shell-v124';
+const CACHE_NAME = 'sdd-shell-v200';
 
 // Precache list. Includes every game-script + the painted images that
 // scenes.js reaches for. Music files are NOT precached - they're big and
@@ -52,7 +52,41 @@ const PRECACHE_URLS = [
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/icon-512-maskable.png',
-  './assets/apple-touch-icon.png'
+  './assets/apple-touch-icon.png',
+  // v2.0: THE ELEMENT LAB sub-game code shell. Its MP3s + card JPEGs are
+  // NOT precached (same lazy policy as the main game's music) - they
+  // runtime-cache on first play.
+  './games/element-lab/index.html',
+  './games/element-lab/vendor/phaser.min.js',
+  './games/element-lab/src/config.js',
+  './games/element-lab/src/i18n.js',
+  './games/element-lab/src/store.js',
+  './games/element-lab/src/audio.js',
+  './games/element-lab/src/textures.js',
+  './games/element-lab/src/jelly.js',
+  './games/element-lab/src/ui.js',
+  './games/element-lab/src/background.js',
+  './games/element-lab/src/boot.js',
+  './games/element-lab/src/preload.js',
+  './games/element-lab/src/menu.js',
+  './games/element-lab/src/game.js',
+  './games/element-lab/src/overlays.js',
+  './games/element-lab/src/cards.js',
+  './games/element-lab/src/main.js',
+  './games/element-lab/assets/fonts/baloo2-400.woff2',
+  './games/element-lab/assets/fonts/baloo2-700.woff2',
+  './games/element-lab/assets/fonts/pixelify-400.woff2',
+  './games/element-lab/assets/fonts/pixelify-700.woff2',
+  './games/element-lab/assets/px/bg.png',
+  './games/element-lab/assets/px/ball_1.png',
+  './games/element-lab/assets/px/ball_2.png',
+  './games/element-lab/assets/px/ball_3.png',
+  './games/element-lab/assets/px/ball_4.png',
+  './games/element-lab/assets/px/ball_5.png',
+  './games/element-lab/assets/px/ball_6.png',
+  './games/element-lab/assets/px/ball_7.png',
+  './games/element-lab/assets/px/ball_8.png',
+  './games/element-lab/assets/px/ball_9.png'
 ];
 
 self.addEventListener('install', function (event) {

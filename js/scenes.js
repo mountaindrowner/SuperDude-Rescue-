@@ -507,6 +507,10 @@ window.SDD = window.SDD || {};
       A.startMusic('title');
       this.items = [{ label: 'NEW GAME', act: 'new' }];
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
+      // v2.0: THE ELEMENT LAB - the merge-puzzle sub-game. It's a separate
+      // page (games/element-lab/) with its own engine + save keys; the act
+      // handler below navigates to it and its Exit returns here.
+      this.items.push({ label: 'ELEMENT LAB', act: 'lab' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
       // v1.0.23 (Mark): Adventure Week unlock now appears as a small
@@ -546,6 +550,7 @@ window.SDD = window.SDD || {};
         A.sfx('confirm');
         if (act === 'new') { go('newgame'); }
         else if (act === 'continue') { go('overworld'); }
+        else if (act === 'lab') { window.location.href = 'games/element-lab/index.html?from=sdd'; }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
         else if (act === 'decoredit') { go('decorEdit', { day: 8, stage: 1 }); }
@@ -570,8 +575,13 @@ window.SDD = window.SDD || {};
 
       // Menu items - dim the highlight when AW badge is focused so the
       // selection ambiguity is visually clear.
+      // v2.0: with ELEMENT LAB the public list is 5 rows (6 with a save),
+      // so tighten the pitch when the list is long - the last row must
+      // clear the tagline at y=164.
+      var pitch = this.items.length > 4 ? 12 : 14;
+      var top = this.items.length > 4 ? 101 : 104;
       for (var i = 0; i < this.items.length; i++) {
-        var y = 104 + i * 14;
+        var y = top + i * pitch;
         var sel = i === this.idx && !this.focusAW;
         if (sel) text(g, '>', 108, y, '#ffd23a', 1, 'left');
         text(g, this.items[i].label, 160, y, sel ? '#ffffff' : '#9aa0c4', 1, 'center');
