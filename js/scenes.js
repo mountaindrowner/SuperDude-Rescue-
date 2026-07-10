@@ -774,18 +774,6 @@ window.SDD = window.SDD || {};
       g.fill();
     }
   }
-  function treeRow(g, camx, factor, baseY, color) {
-    g.fillStyle = color;
-    var span = 50;
-    var off = -(((camx * factor) % span) + span) % span;
-    for (var x = off - span; x < 340; x += span) {
-      g.fillRect(x + 22, baseY - 18, 4, 18);
-      g.beginPath(); g.arc(x + 24, baseY - 26, 14, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(x + 16, baseY - 22, 10, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(x + 32, baseY - 22, 10, 0, 6.28); g.fill();
-    }
-  }
-
   function drawSky_sky(g, camx, camy, prog, t) {
     vGradient(g, '#7fc4ff', '#e0f0ff');
     simpleSun(g, 260, 40, 16, '#ffefa0', false);
@@ -1256,7 +1244,6 @@ window.SDD = window.SDD || {};
       var grid = L.tiles.map(function (r) { return r.slice(); });
       this.map = new E.TileMap(grid);
       this.gravityScale = L.gravityScale || 1;
-      this.skyTheme = L.skyTheme || null;
       this.theme = L.theme || null;
       // Mode flags - Player.update reads these via the level reference
       // it gets each frame.

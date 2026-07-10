@@ -1864,9 +1864,6 @@ window.SDD = window.SDD || {};
       sprites['tile_dirt_'   + theme] = spritePlain(16, 16, fam.dirt);
       sprites['tile_brick_'  + theme] = spritePlain(16, 16, fam.brick);
     });
-    // legacy galactic-named aliases (some existing code paths use this)
-    sprites['tile_ground_galactic'] = sprites['tile_ground_galactic'];
-    sprites['tile_dirt_galactic']   = sprites['tile_dirt_galactic'];
     sprites['tile_vine'] = spritePlain(16, 16, paintVine);
     sprites['npc_adam'] = spriteO(20, 31, paintNPC);
     sprites['tile_water'] = spritePlain(16, 16, paintWater);
@@ -2073,16 +2070,6 @@ window.SDD = window.SDD || {};
   // kick off loading at boot
   loadPixelLab();
 
-  // ---- LOGO SWAP POINT --------------------------------------------------
-  // To use the real Church of the Crossroads logo: save it as assets/logo.png
-  // - the loader below picks it up automatically and the intro scene shows it.
-  var realLogo = new Image();
-  var realLogoOk = false;
-  realLogo.onload = function () { realLogoOk = (realLogo.width > 0); };
-  realLogo.onerror = function () { realLogoOk = false; };
-  realLogo.src = 'assets/logo.png';
-  // -----------------------------------------------------------------------
-
   SDD.sprites = {
     build: build,
     get: function (name) { return sprites[name]; },
@@ -2107,8 +2094,6 @@ window.SDD = window.SDD || {};
       var legacy = anim === 'celebrate' ? 'victory' : anim;
       var s = sprites['danny_' + size + '_' + legacy + '_' + (dir === 'east' ? 'r' : 'l')];
       if (s) g.drawImage(s, x, y);
-    },
-    hasRealLogo: function () { return realLogoOk; },
-    realLogo: function () { return realLogo; }
+    }
   };
 })();

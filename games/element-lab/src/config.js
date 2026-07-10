@@ -34,7 +34,6 @@ DANNYLAB.CONFIG = {
   restitution: 0.15,
   friction: 0.4,
   frictionStatic: 0.5,
-  bodySoftCap: 70,
 
   // ---- cascade feel (Addendum §1) ----
   cascadeSlowMoEnabled: true,
@@ -62,7 +61,7 @@ DANNYLAB.CONFIG = {
   chargeDropsMysteryOnLevelUp: false,
 
   // ---- the element chain — radius/color/symbol drive everything ----
-  // glowAlpha + faceMood let us reskin tone per element without code edits.
+  // mood lets us reskin each element's face expression without code edits.
   // simple curve: every merge grows the radius by exactly 10 px
   tiers: [
     { t: 1, sym: 'H',  radius: 22,  color: 0xBEE3F8, mood: 'spark'  },

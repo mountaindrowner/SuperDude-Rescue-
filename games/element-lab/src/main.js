@@ -42,7 +42,7 @@ DANNYLAB.sceneClasses = function () {
 DANNYLAB.exitSubgame = function (scene) {
   var game = scene.game;
   var keys = ['DANNYLAB_Pause', 'DANNYLAB_Options', 'DANNYLAB_Confirm', 'DANNYLAB_GameOver',
-    'DANNYLAB_HowTo', 'DANNYLAB_Discovery', 'DANNYLAB_Collection', 'DANNYLAB_Loading', 'DANNYLAB_Game', 'DANNYLAB_Menu'];
+    'DANNYLAB_HowTo', 'DANNYLAB_Collection', 'DANNYLAB_Loading', 'DANNYLAB_Game', 'DANNYLAB_Menu'];
   keys.forEach(function (k) { if (game.scene.getScene(k)) game.scene.stop(k); });
   var audio = scene.registry.get('audio'); if (audio) audio.stopMusic();
 
@@ -74,7 +74,7 @@ DANNYLAB.makeConfig = function (parentEl) {
         // big CPU win once the beaker fills, and it kills settled micro-jitter
         // for a smoother look. Collisions/drops wake bodies as needed.
         enableSleeping: true,
-        // debug: true,
+        // debug: true,   // dev toggle: flip on to draw Matter body outlines
       },
     },
     scene: DANNYLAB.sceneClasses(),

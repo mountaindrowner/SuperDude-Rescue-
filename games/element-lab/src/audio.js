@@ -254,7 +254,6 @@ DANNYLAB.makeAudio = function (sfxVol, musicVol) {
 
     // ---- quiet background-lab ambience (very low in the mix) ----
     ambBeep: function () { tone({ type: 'sine', f0: 1200 + Math.random() * 400, dur: 0.09, gain: 0.045 }); },
-    ambClunk: function () { tone({ type: 'square', f0: 130, f1: 80, dur: 0.08, gain: 0.05 }); },
     ambHiss: function () { noise({ filter: 'highpass', freq: 2600, dur: 0.55, gain: 0.045 }); },
     ambServo: function () { tone({ type: 'sawtooth', f0: 300, f1: 620, dur: 0.22, gain: 0.04 }); },
     ambHum: function () { tone({ type: 'sine', f0: 110, dur: 0.6, gain: 0.035 }); tone({ type: 'sine', f0: 165, dur: 0.6, gain: 0.02 }); },

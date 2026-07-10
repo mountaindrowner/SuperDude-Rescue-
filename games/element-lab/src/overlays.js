@@ -1,6 +1,6 @@
 // overlays.js — parallel overlay scenes (Brief §7/§8): Pause, Options,
-// GameOver, HowTo, Discovery, Collection. Each launches over a paused
-// parent and resumes it on close. None ever destroys the Phaser game.
+// GameOver, HowTo, Collection. Each launches over a paused parent and
+// resumes it on close. None ever destroys the Phaser game.
 window.DANNYLAB = window.DANNYLAB || {};
 (function () {
   var UI = DANNYLAB.UI, t = DANNYLAB.t;

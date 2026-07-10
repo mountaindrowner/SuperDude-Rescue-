@@ -9,7 +9,7 @@ window.SDD = window.SDD || {};
     GRAVITY: 0.36, MAX_FALL: 5.8,
     MOVE_ACCEL: 0.36, FRICTION: 0.30,
     MOVE_MAX_SMALL: 1.85, MOVE_MAX_BIG: 2.05,
-    JUMP_SMALL: -6.5, JUMP_BIG: -7.0, JUMP_CUT: 0.42,
+    JUMP_SMALL: -6.5, JUMP_BIG: -7.0,
     COYOTE: 6, JUMP_BUFFER: 7,
     STOMP_BOUNCE: -5.0,
     INVULN_STEPS: 96
@@ -27,7 +27,6 @@ window.SDD = window.SDD || {};
   // ---- tile map ----
   var SOLID = { 'X': 1, '#': 1, 'U': 1, '?': 1, 'G': 1, 'B': 1 };
   var ONEWAY = { '=': 1 };
-  var QBLOCK = { '?': 1, 'G': 1, 'B': 1 };
 
   function TileMap(grid) {
     this.grid = grid;            // array of arrays of single-char codes
@@ -47,7 +46,6 @@ window.SDD = window.SDD || {};
   };
   TileMap.prototype.isSolid = function (tx, ty) { return !!SOLID[this.get(tx, ty)]; };
   TileMap.prototype.isOneWay = function (tx, ty) { return !!ONEWAY[this.get(tx, ty)]; };
-  TileMap.prototype.isQ = function (tx, ty) { return !!QBLOCK[this.get(tx, ty)]; };
 
   // Move an entity by its velocity and resolve collisions against the map.
   // Entity needs: x, y, w, h, vx, vy. Sets e.onGround. Optional e.onHeadBump.
