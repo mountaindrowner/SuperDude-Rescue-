@@ -254,7 +254,7 @@ GP.buildHUD = function () {
   g.strokeRoundedRect(w1x, wy, ww, wh, 7);
   g.strokeRoundedRect(w2x, wy, ww, wh, 7);
 
-  var mb = this.add.text(scx, sy + 14, this.daily ? this.daily.mod.name : DANNYLAB.t(this.mode, lang).toUpperCase(), {
+  var mb = this.add.text(scx, sy + 14, this.daily ? this.daily.mod.name : DANNYLAB.t('mode_endless', lang).toUpperCase(), {
     fontFamily: UI.DISPLAY, fontSize: '14px', color: '#7CFF6B', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
   mb.setShadow(0, 0, '#7CFF6B', 10);
   var c1 = w1x + ww / 2, c2 = w2x + ww / 2;
