@@ -18,3 +18,6 @@ ios/
 android/
 .gradle/
 *.xcuserstate
+
+# Element Lab dev-test output (screenshots regenerate on every test run)
+games/element-lab/test/shot-*.png
