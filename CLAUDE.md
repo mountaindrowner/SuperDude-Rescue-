@@ -1133,6 +1133,10 @@ Massive iteration arc on the secret stage. Key facts for the next session:
 
 ### Pending roadmap (outside the batch flow)
 
+> 2026-07-10 note: items 5 (App Store wrap) and 7 (scripture lessons)
+> below were DONE long ago — kept only as history. Items 1-4 and 6 are
+> the still-plausible ones; confirm with Mark before acting.
+
 1. **Editor pass on 6-2 layout** — 6-2 was generator-built, not
    editor-tuned. Open in-game editor → 6-2 → walk the level for
    awkward gaps / unfair density / impossible sequences, save the
@@ -1228,6 +1232,21 @@ to actually use the image.
    Netlify. Verify before pushing.
 4. If Mark says "continue from where we left off", look at the latest
    `git log` and this file's WHERE-WE-ARE section together.
+
+## End-of-session ritual (ALWAYS — takes 2 minutes)
+
+Before the session ends, after the last push:
+
+1. Add/refresh the top entry of **WHERE WE ARE** (what shipped, what's
+   half-done, exact next step).
+2. If branches/versions/distribution changed, fix **THE MAP** too.
+3. If you bumped `SDD.VERSION`, confirm the whole lockstep set moved:
+   `CACHE_NAME` (service-worker.js) + `MARKETING_VERSION`
+   (codemagic.yaml ×2) + package.json `version`.
+4. Commit as `Handover: <one line>` and push.
+
+That's it — short and every time. Doc drift is how this project once
+lost track of an entire branch.
 
 ## Project at a glance
 
