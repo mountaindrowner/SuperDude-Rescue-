@@ -36,7 +36,7 @@ const VINES = [
   const pg = await b.newPage();
   await pg.setViewport({ width: 640, height: 360 });
   pg.on('pageerror', e => console.log('ERR', e.message));
-  await pg.goto('file:///home/user/SuperDude-Rescue-/index.html');
+  await pg.goto('file://' + require('path').resolve('index.html'));
   for (let i = 0; i < 40; i++) {
     if (await pg.evaluate(() => SDD.sprites.pixelLab && SDD.sprites.pixelLab.ready)) break;
     await w(200);

@@ -103,9 +103,6 @@ window.SDD = window.SDD || {};
     save();
   }
 
-  // Legacy entry point (Day 1 only). Keeps older calls working.
-  function recordDay(day, timeSec, cores) { recordStage(day, 1, timeSec, cores); }
-
   // Next stage to play for a given day (1..stagesForDay), or last stage if done.
   function nextStage(day) {
     var total = stagesForDay(day);
@@ -131,7 +128,6 @@ window.SDD = window.SDD || {};
 
   SDD.save = {
     load: load, save: save, hasSave: hasSave, reset: reset,
-    recordDay: recordDay,
     recordStage: recordStage,
     nextStage: nextStage,
     isStageUnlocked: isStageUnlocked,

@@ -284,6 +284,7 @@ window.SDD = window.SDD || {};
       A.startMusic('menu');
       this.items = [{ label: 'NEW GAME', act: 'new' }];
       if (SDD.save.hasSave()) this.items.splice(1, 0, { label: 'CONTINUE', act: 'continue' });
+      this.items.push({ label: 'ELEMENT LAB', act: 'lab' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
       this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
       this.idx = SDD.save.hasSave() ? 1 : 0;
@@ -296,6 +297,7 @@ window.SDD = window.SDD || {};
         A.sfx('confirm');
         if (act === 'new') { SDD.save.reset(); SDD.save.save(); go('intro'); }
         else if (act === 'continue') { go('overworld'); }
+        else if (act === 'lab') { window.location.href = 'games/element-lab/index.html?from=sdd'; }
         else if (act === 'options') { go('options', { from: 'menu' }); }
         else if (act === 'howto') { go('howto', { from: 'menu' }); }
       }
@@ -313,7 +315,9 @@ window.SDD = window.SDD || {};
       S.drawDanny(g, 'big', 'idle', 'east', Math.floor(this.t / 18) % 4, 40, 96);
 
       for (var i = 0; i < this.items.length; i++) {
-        var y = 104 + i * 14;
+        // 13px pitch from y=100 so a 5-item list (with CONTINUE + ELEMENT LAB)
+        // still clears the tagline at y=164
+        var y = 100 + i * 13;
         var sel = i === this.idx;
         if (sel) text(g, '>', 108, y, '#ffd23a', 1, 'left');
         // Mark's request: selection should be brighter but not 2x bigger.
@@ -770,18 +774,6 @@ window.SDD = window.SDD || {};
       g.fill();
     }
   }
-  function treeRow(g, camx, factor, baseY, color) {
-    g.fillStyle = color;
-    var span = 50;
-    var off = -(((camx * factor) % span) + span) % span;
-    for (var x = off - span; x < 340; x += span) {
-      g.fillRect(x + 22, baseY - 18, 4, 18);
-      g.beginPath(); g.arc(x + 24, baseY - 26, 14, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(x + 16, baseY - 22, 10, 0, 6.28); g.fill();
-      g.beginPath(); g.arc(x + 32, baseY - 22, 10, 0, 6.28); g.fill();
-    }
-  }
-
   function drawSky_sky(g, camx, camy, prog, t) {
     vGradient(g, '#7fc4ff', '#e0f0ff');
     simpleSun(g, 260, 40, 16, '#ffefa0', false);
@@ -1252,7 +1244,6 @@ window.SDD = window.SDD || {};
       var grid = L.tiles.map(function (r) { return r.slice(); });
       this.map = new E.TileMap(grid);
       this.gravityScale = L.gravityScale || 1;
-      this.skyTheme = L.skyTheme || null;
       this.theme = L.theme || null;
       // Mode flags - Player.update reads these via the level reference
       // it gets each frame.
