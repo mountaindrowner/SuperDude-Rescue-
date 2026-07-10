@@ -512,7 +512,9 @@ window.SDD = window.SDD || {};
       // handler below navigates to it and its Exit returns here.
       this.items.push({ label: 'ELEMENT LAB', act: 'lab' });
       this.items.push({ label: 'OPTIONS', act: 'options' });
-      this.items.push({ label: 'HOW TO PLAY', act: 'howto' });
+      // v2.0 (Mark): HOW TO PLAY row removed - the game is self-
+      // explanatory. SDD.scenes.howto stays in the codebase (dormant,
+      // same pattern as the unloaded editors) in case it returns.
       // v1.0.23 (Mark): Adventure Week unlock now appears as a small
       // glowing AW badge on the right side instead of a text row in the
       // menu list. Player navigates right to focus it, A to enter.
@@ -552,7 +554,6 @@ window.SDD = window.SDD || {};
         else if (act === 'continue') { go('overworld'); }
         else if (act === 'lab') { window.location.href = 'games/element-lab/index.html?from=sdd'; }
         else if (act === 'options') { go('options', { from: 'menu' }); }
-        else if (act === 'howto') { go('howto', { from: 'menu' }); }
         else if (act === 'decoredit') { go('decorEdit', { day: 8, stage: 1 }); }
         else if (act === 'editor') { go('editor'); }
       }
