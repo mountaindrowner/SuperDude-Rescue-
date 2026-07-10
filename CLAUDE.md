@@ -1,3 +1,25 @@
+# ⚠️ THIS BRANCH IS RETIRED — the product lives on `claude/super-dude-danny-platformer-Jftc7`
+
+> **Stop. Do not develop here.** (Stock-take, 2026-07-10.)
+>
+> This branch (`claude/project-continuation-L24du`) was where **THE
+> ELEMENT LAB** merge-puzzle sub-game was built in isolation so it
+> couldn't destabilize the live game. At **v2.0.0** its entire
+> `games/element-lab/` tree was ported — byte-identical — onto the
+> real product branch:
+>
+> **`claude/super-dude-danny-platformer-Jftc7`** — the live trunk:
+> Netlify PWA auto-deploys from it, the iOS App Store + Android
+> builds come from it, and its `CLAUDE.md` ("WHERE WE ARE" + "THE
+> MAP") is the single source of current truth.
+>
+> This branch is kept only as development history for the Element Lab
+> (and a main-game cleanup pass whose functional fixes all exist on
+> the trunk independently). Everything below this banner is a
+> snapshot frozen at retirement.
+
+---
+
 # Super Dude Danny — Handover for Claude Code
 
 This file is the durable handover between Claude Code sessions. The web
