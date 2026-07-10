@@ -29,12 +29,18 @@ If you're starting a different game, **don't blindly copy these specifics.** Use
 - `a825a96` — 6-2: blur far/mid layers for bokeh depth
 - `754e600` — 6-2: cohesive canopy scene, branches anchored to foliage
 
-**Project state at end of second-half (now):**
-- Current version: v1.0.23
+**Project state (updated at the 2026-07-10 v2.0.0 stock-take):**
+- Current version: **v2.0.0** (`sdd-shell-v200`)
 - App name: "Super Dude Adventures" (was "Super Dude Danny")
 - Bundle ID: `org.thecrossroads.superdudeadventures`
 - 12 main stages + 1 secret level (Adventure City) all shipped
-- App Store submission in progress (v1.0.20 submitted, v1.0.23 ready as next update)
+- **v2.0.0 added THE ELEMENT LAB** — a Phaser 3 merge-puzzle sub-game
+  at `games/element-lab/`, launched from the main menu; HOW TO PLAY
+  menu row removed
+- iOS pipeline live via Codemagic (TestFlight-verified); v2.0.0 store
+  submission pending. Android prepped, workflow commented out pending
+  keystore (`ANDROID_BUILD.md`)
+- For live current state always defer to repo-root `CLAUDE.md`
 
 **Files with bad naming you should avoid replicating:**
 - `assets/Super Dude Danny Big Sprites/` (spaces)

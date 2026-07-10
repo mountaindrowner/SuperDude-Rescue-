@@ -203,7 +203,7 @@ The first-half had 6 brief templates (session restart, current status, known bug
 
 For accurate context, here's what's true now that wasn't true when the first-half wrote their handoff:
 
-### Project state at end of second-half (now):
+### Project state at end of second-half (v1.0.23 era — see update note below):
 - **Version:** v1.0.23 (was ~v0.85 at first-half handoff)
 - **Branch:** `claude/super-dude-danny-platformer-Jftc7` (same, but on much later commits)
 - **Active state:** v1.0.20 submitted to App Store, awaiting review; v1.0.23 ready as the post-review update
@@ -212,6 +212,14 @@ For accurate context, here's what's true now that wasn't true when the first-hal
 - **Audio:** lazy-loaded, mono VBR ~96kbps, 47 MB total (was 130 MB at first-half handoff)
 - **Mobile shipping:** done. iPhone TestFlight working end-to-end.
 - **Adventure City unlock:** now a glowing AW badge on the menu (was previously a text menu item)
+
+> **2026-07-10 update (v2.0.0):** the snapshot above is now itself
+> historical. Since then: v1.0.24 (Day 1-1 enemy rebalance), Android/
+> Google Play build prep (`ANDROID_BUILD.md`), and **v2.0.0 — THE
+> ELEMENT LAB**, a Phaser 3 merge-puzzle sub-game at
+> `games/element-lab/` reachable from the main menu (HOW TO PLAY row
+> removed). Current truth always lives in the repo-root `CLAUDE.md`
+> ("WHERE WE ARE" + "THE MAP").
 
 ### What got built between the two handoffs:
 - v0.85 → v0.97 — Adventure City stage built (the 5-layer parallax cyber theme + tunnel)

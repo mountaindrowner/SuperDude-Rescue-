@@ -1,13 +1,9 @@
-// scripture_data.js  - PER-STAGE ICB LESSON DATA  (NOT YET LOADED).
+// scripture_data.js  - PER-STAGE ICB LESSON DATA  (LIVE since v1.0).
 //
-// Theory-craft for the post-stage scripture lesson scene. This file is
-// data-only; it is INTENTIONALLY NOT loaded by index.html yet (Mark:
-// "theory craft for now... maybe create the image without launching
-// it"). See docs/SCRIPTURE_LESSONS_SPEC.md for the scene design.
-//
-// When wired up, the level scene's `finish()` calls go('lesson', ...)
-// before the overworld for stages listed below, then the lesson scene
-// chains on to the regular post-stage flow.
+// Data for the post-stage scripture lesson scene (SDD.scenes.lesson).
+// Loaded by index.html; scenes.results routes to 'lesson' for the
+// stages listed below, and cityArrival chains into the 8-1 lesson.
+// See docs/SCRIPTURE_LESSONS_SPEC.md for the original scene design.
 //
 // VERSE TEXT = International Children's Bible (ICB), per Mark's brief.
 // Verses are paraphrased lightly for kid readability where the ICB

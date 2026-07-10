@@ -29,7 +29,33 @@
   The Lab arrived at its latest state incl. kid-tuned balance (~22%
   completability), Mystery overhaul, Golden Flash, baked-blur thermal
   fix, and the collectible-cards system.
-- **Live build**: `v1.0.6` / `sdd-shell-v106`.
+- **Live build**: `v2.0.0` / `sdd-shell-v200`.
+- **Menu (v2.0):** NEW GAME / (CONTINUE) / ELEMENT LAB / OPTIONS.
+  HOW TO PLAY row REMOVED (Mark: self-explanatory); `SDD.scenes.howto`
+  stays dormant in scenes.js like the unloaded editors.
+- **codemagic.yaml MARKETING_VERSION bumped to "2.0.0"** (both iOS +
+  Android workflows) during the 2026-07-10 stock-take — it had been
+  left at 1.0.23/1.0.24, which would have mislabeled the next store
+  build. Keep it in the version-lockstep set: `SDD.VERSION` (main.js)
+  + `CACHE_NAME` (service-worker.js) + `MARKETING_VERSION`
+  (codemagic.yaml ×2) + package.json `version`.
+- **v1.0.7 → v1.0.24 (previously undocumented here — doc drift; see
+  git log for detail):** the WIDE_VIEW dynamic-viewport system
+  (`engine.js C.WIDE_VIEW`, main.js resize() recalcs `VIEW_W` so the
+  camera fills the device screen without letterboxing), true
+  fullscreen + live safe-area insets (v1.0.16), bulletproof iOS icon
+  generation in the Codemagic workflow (v1.0.22), the Adventure Week
+  unlock became a glowing AW badge on the menu's right side instead
+  of a text row (v1.0.23 — navigate RIGHT to focus it, A to enter),
+  Day 1-1 enemy count halved 29→14 (v1.0.24), and TWO standalone 3D
+  prototypes were built under `proto/` (NOT shipped, not in the www
+  bundle): `proto/runner/` ("Super Dude Runner v34", single-file 3D
+  lab-escape runner) and `proto/obby/` (Three.js Roblox-style obby,
+  v6.x, with its own `proto/obby/CLAUDE.md` project manual + editor
+  page; Kenney-asset experiments were tried and rolled back). Android/
+  Google Play build prep landed last before 2.0 (`ANDROID_BUILD.md` +
+  a commented-out `android-googleplay` workflow in codemagic.yaml
+  awaiting keystore setup — see ANDROID_BUILD.md phases).
 - **v1.0.6 touch-UI sweep (Mark):** audited audio-load timing + A/B +
   pause button. Confirmed via puppeteer: boot requests only the 3 eager
   MP3s (title/menu/intro); overworld/level/Adventure-City tracks load
@@ -91,7 +117,82 @@
 
 ---
 
-## ★ PROJECT STATE SNAPSHOT (v1.0.2) — read this whole block first
+## ★ THE MAP — repo & branch truth (stock-take 2026-07-10)
+
+> Written after a full-repo stock-take because a session once lost
+> track of which branch held the real product. If you learn nothing
+> else from this file: **THIS branch (Jftc7) is the product of
+> record** — live PWA + App Store source. Everything else is history.
+
+### Branches
+
+| Branch | Status | What it is |
+|---|---|---|
+| `claude/super-dude-danny-platformer-Jftc7` | **TRUNK — work here** | The shipped game. Netlify auto-deploys the PWA from every push; Codemagic builds iOS/Android from it. v2.0.0. |
+| `claude/project-continuation-L24du` | RETIRED archive | Where THE ELEMENT LAB was built in isolation (so it couldn't destabilize the live game) + a cleanup pass. Its `games/element-lab/` was ported here byte-identical at v2.0.0. Only unmerged leftovers are cosmetic dead-code trims on old file versions — nothing functional. Do not develop here. |
+| `main` | STALE | Early "Add files via upload" asset drops. Zero unique value — every real asset it carries also lives here. Never push to it. |
+| `claude/element-lab-port-2point0` | DELETED (was fully merged) | Staging branch for the v2.0.0 port; 100% contained in Jftc7. |
+
+### The three games in this repo
+
+1. **Super Dude Adventures** (root `index.html`, `js/`) — the shipped
+   platformer. 12 stages + secret Day 8-1 Adventure City, quizzes,
+   scripture lessons, 3 difficulties.
+2. **THE ELEMENT LAB** (`games/element-lab/`) — Phaser 3 merge-puzzle
+   sub-game, reached from the main menu (v2.0.0). Self-contained:
+   own vendored Phaser, own `dannylab.*` save keys, own README.
+3. **Prototypes** (`proto/`, NOT shipped, not in the www bundle):
+   `proto/obby/` Three.js Roblox-style obby (own CLAUDE.md manual +
+   editor.html) and `proto/runner/` 3D lab-escape runner. Standalone
+   experiments — open their index.html directly.
+
+### Distribution truth
+
+- **PWA**: LIVE on Netlify, auto-deploys from THIS branch on every
+  push (`netlify.toml` → `node scripts/build-web.mjs` → `www/`).
+- **iOS App Store**: pipeline LIVE end-to-end via Codemagic
+  (`ios-appstore` workflow) — App ID `6775989095`, bundle
+  `org.thecrossroads.superdudeadventures`, tested on-device via
+  TestFlight. v2.0.0 store submission still pending (screenshots →
+  listing copy in `IOS_BUILD.md` → submit).
+- **Android / Google Play**: prepped but NOT yet run — see
+  `ANDROID_BUILD.md`; the `android-googleplay` workflow sits
+  commented out in `codemagic.yaml` pending keystore setup.
+
+### Documentation map (what to read, where)
+
+| Doc | Role |
+|---|---|
+| `CLAUDE.md` (this file) | Session handover + tech reference. Read first. |
+| `ART_STYLE.md` | Adventure City cyber-theme art bible. |
+| `PLAN.md`, `docs/SDD_FIRST_HALF_HANDOFF.md` | Historical design records — do not treat as current state. |
+| `docs/SCRIPTURE_LESSONS_SPEC.md` | Lesson-scene spec (SHIPPED in v1.0 — the spec's "theory-craft" header is historical). |
+| `IOS_BUILD.md` | App Store listing copy + the (legacy) local-Xcode path. Codemagic is the real path. |
+| `CODEMAGIC_SETUP.md` | THE iOS ship path (cloud build, 8 phases). |
+| `ANDROID_BUILD.md` | Google Play ship path (keystore → workflow → Play Console). |
+| `handoff/00–22_*.md` | 23-doc lessons-learned library for building the NEXT game. 00–14/16–20 timeless; 15/21/22 carry point-in-time state snapshots (refreshed at v2.0.0). |
+| `games/element-lab/README.md` | Element Lab integration + tuning + its test suite. |
+| `proto/obby/CLAUDE.md` | OBBY prototype's own project manual. |
+
+### Known loose ends (stock-take findings, none urgent)
+
+1. `assets/city/` doesn't exist but is referenced by `sprites.js`
+   (`mkCityLayer`) + the SW precache — painted city layers Mark never
+   dropped in; code falls back to procedural and the SW skips the
+   misses. Harmless; drop the 4 PNGs in to activate.
+2. Cosmetic dead code never carried from the L24du cleanup:
+   `TileMap.isQ`, `save.recordDay`, `treeRow`, the `realLogo` loader
+   (all inert). Trim opportunistically.
+3. `tests/test_vines_3_2.js` hardcodes an absolute repo path (L24du
+   fixed this with `path.resolve`; re-apply when touching tests).
+4. Dual sprite trees (`assets/Super Dude Danny Big/Small Sprites`
+   AND `assets/New Assets/…`) — both live, partial migration.
+5. `js/scripture_data.js` header says "NOT YET LOADED / theory-craft"
+   — stale comment; it IS loaded and wired since v1.0.
+
+---
+
+## ★ PROJECT STATE SNAPSHOT (v1.0.2 baseline — still-accurate architecture; for anything time-sensitive, THE MAP + WHERE WE ARE above win)
 
 > Consolidated current-state handover so a fresh/compacted session has
 > everything in one place without scrolling the version-by-version
@@ -1116,14 +1217,17 @@ to actually use the image.
 
 ## Quick start for a new session
 
-1. You're on branch `claude/super-dude-danny-platformer-Jftc7`. Do not
-   switch branches unless told. The other branches (`main`,
-   `claude/project-continuation-L24du`) are stale/dead-end.
-2. Read this whole file.
-3. Read the **"Where we are right now"** section above for current
-   work-in-progress.
+1. You're on branch `claude/super-dude-danny-platformer-Jftc7` — the
+   product of record (live PWA + App Store source). Do not switch
+   branches unless told. See **"THE MAP"** section near the top for
+   the full branch truth (`main` = stale; `L24du` = retired Element
+   Lab dev archive, fully ported here at v2.0.0).
+2. Read this whole file — at minimum WHERE WE ARE + THE MAP + the
+   PROJECT STATE SNAPSHOT + TECHNICAL REFERENCE.
+3. Remember every `git push` here AUTO-DEPLOYS the live PWA on
+   Netlify. Verify before pushing.
 4. If Mark says "continue from where we left off", look at the latest
-   `git log` and this file's WIP section together.
+   `git log` and this file's WHERE-WE-ARE section together.
 
 ## Project at a glance
 
@@ -1441,13 +1545,15 @@ commit ever made.
 
 Paste this into a new session as the first message:
 
-> I'm continuing work on Super Dude Danny. The repo is at
-> `mountaindrowner/SuperDude-Rescue-`. **Read `CLAUDE.md` first** —
-> it has the full handover, file layout, architecture, and "where we
-> are right now" section. The active branch is
-> `claude/super-dude-danny-platformer-Jftc7`. Don't switch branches.
-> When you've read CLAUDE.md, tell me what the last committed work
-> was and what's pending, then wait for instructions.
+> I'm continuing work on Super Dude Adventures (repo
+> `mountaindrowner/SuperDude-Rescue-`). **Read `CLAUDE.md` first** —
+> especially the "WHERE WE ARE" and "THE MAP" sections at the top:
+> they carry the current state, the branch truth, and where all three
+> games live (the platformer, games/element-lab, proto/). The active
+> branch is `claude/super-dude-danny-platformer-Jftc7` — the live
+> product; pushes auto-deploy the PWA. Don't switch branches. When
+> you've read CLAUDE.md, tell me what the last committed work was and
+> what's pending, then wait for instructions.
 
 That single prompt + this file is enough to bootstrap any new session.
 

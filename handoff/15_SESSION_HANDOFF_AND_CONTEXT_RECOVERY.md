@@ -67,6 +67,10 @@ If a new session is missing any of these, they will rediscover them — slowly.
 
 ## The CLAUDE.md (or HANDOVER.md) template
 
+> The values below are a frozen historical example (circa v1.0.23) —
+> illustrating the template, not asserting current state. For the real
+> current state, read the repo-root `CLAUDE.md`.
+
 ```markdown
 # Project Name — Session Handover
 

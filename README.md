@@ -1,9 +1,10 @@
-# Super Dude Danny
+# Super Dude Adventures
 
 A kid-friendly retro platformer that takes Super Dude Danny — a scientist
 stranded in time — through God's seven days of creation. Collect power cores,
 recover time-machine parts, learn a Bible verse between each day, and get him
-home.
+home. (v2.0 adds THE ELEMENT LAB, a merge-puzzle mini-game, right on the
+main menu.)
 
 Built in plain HTML + CSS + JavaScript on top of the HTML5 Canvas and Web
 Audio APIs. No build step, no dependencies. Runs in any modern browser, on
@@ -59,9 +60,17 @@ python3 -m http.server 8000
   hidden in a special block: pearl shell, cooling water, leaf shot,
   star jump, friendly bugs, pollen trail, beetle ride, dove blessing,
   and more. Each one shows a kid-readable hint on pickup.
+- **A secret bonus stage** — beat the whole game once (any difficulty) to
+  unlock Day 8-1 "Adventure City", a neon cyber level starring the
+  Computer character, with its own opening + rescue-team cinematics.
+- **Post-stage scripture lessons** — after select stages, Danny teaches a
+  short ICB verse in his lab with a typewriter + read-along beat.
+- **THE ELEMENT LAB (v2.0)** — a full merge-puzzle mini-game on the main
+  menu: drop and fuse elements from Hydrogen to Uranium, set off Mystery
+  Samples, and collect holographic character cards. English + Spanish.
 - **Animated cinematics** — opening lab + cosmic-arrival intro, time-travel
   finale, plus an Eden setting before the trip home.
-- **38 MP3 music tracks** — title, menu, intro, overworld, results,
+- **43 MP3 music tracks** — title, menu, intro, overworld, results,
   game-over, plus per-level main + variant themes that cycle on retries.
 - **Painted backdrops** for the overworld map and several stages, with
   procedural overlays (clouds drifting over Dawn Sky, stars twinkling
@@ -74,20 +83,28 @@ index.html              entry point
 manifest.webmanifest    PWA manifest
 service-worker.js       offline cache
 css/style.css           page + touch-control layout
-js/                     game code (~13k lines)
+js/                     game code
   save.js               localStorage progress (per-difficulty slots)
   input.js              keyboard + touch input
   audio.js              chiptune synth + MP3 loader
   sprites.js            procedural pixel art + image loaders
   engine.js             physics, collisions, camera
   entities.js           player + enemies + items + signatures
-  level_*.js            per-stage layout data (12 files)
+  level_*.js            per-stage layout data (13 files incl. the
+                        secret Day 8-1 Adventure City)
   quiz_data.js          per-day scripture questions
+  scripture_data.js     post-stage lesson verses (ICB)
   scenes.js             logo / title / menu / intro / overworld /
-                        level / quiz / results / gameover / finale
+                        level / quiz / lesson / results / gameover /
+                        finale / Adventure City cinematics
   main.js               boot + scene manager + fixed-timestep loop
+games/element-lab/      THE ELEMENT LAB merge-puzzle mini-game
+                        (self-contained: own engine, assets, README)
+proto/                  standalone 3D prototypes (obby, runner) —
+                        experiments, not part of the shipped game
 assets/
-  music/                37 MP3 tracks
+  music/                40 MP3 tracks (+3 Adventure City tracks in
+                        "New Assets/Adventure city Music/")
   *.png                 painted backdrops + icons
 ```
 
