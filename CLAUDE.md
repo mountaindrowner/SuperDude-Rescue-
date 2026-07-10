@@ -63,8 +63,8 @@ js/
   main.js              boot, scene manager, fixed-timestep loop
 assets/
   music/               MP3 soundtrack (wired)
-  Super Dude Danny Big Sprites/      reference PNG art (not loaded at runtime)
-  Super Dude Danny Small Sprites -/  reference PNG art (not loaded at runtime)
+  Super Dude Danny Big Sprites/      PixelLab animation frames, loaded at runtime (js/sprites.js PL_MANIFEST)
+  Super Dude Danny Small Sprites -/  PixelLab animation frames, loaded at runtime (js/sprites.js PL_MANIFEST)
   *.png                title.png, overworld.png, lab.png, timemachine*.png
 tests/
   test_overworld.js    static + optional Puppeteer in-game render
@@ -174,10 +174,10 @@ existing log:
 
 ## Known loose ends (for the next session to ask about)
 
-1. **15 duplicate MP3s at the repo root** — `level 4-1.mp3`,
-   `level 5-2.1.mp3`, etc. were dropped in commit `d7dd274 Add files
-   via upload`. They are byte-identical to the properly-named files
-   in `assets/music/` and are unreferenced. They bloat the repo by
-   ~45 MB. Ask the user before deleting.
-2. **README.md is stale** — claims only Day 1 is playable; all days
-   are now complete. A one-line edit fixes it.
+1. **`assets/New Assets/`** (14 MB, git-tracked) — a newer/alternate
+   art drop (Adventure Rescue Team character sprites, Big/Small Danny
+   variants including a space-suit costume, computer-cutscene sprites,
+   an "Adventure city Music" folder) that isn't referenced by any code
+   yet. Left untouched pending the user's confirmation of intent
+   (integrate it, or archive it outside the repo) — don't delete
+   without asking.

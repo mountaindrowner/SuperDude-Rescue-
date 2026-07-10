@@ -23,10 +23,13 @@ python3 -m http.server 8000
 
 (Opening `index.html` directly via `file://` also works in most browsers.)
 
-There are **zero binary art/audio assets** — every sprite is drawn procedurally
-at load (`src/textures.js`) and every sound is synthesized with the Web Audio API
-(`src/audio.js`). Phaser is vendored at `vendor/phaser.min.js` so the Lab runs
-fully offline and bundles cleanly into the native app.
+Every sprite has a procedural fallback drawn at load (`src/textures.js`) and every
+sound synthesizes with the Web Audio API (`src/audio.js`), so the Lab never
+depends on a binary asset finishing its download. On top of that fallback it also
+loads real assets when present: a PixelLab art skin (`assets/px/`), a composed
+soundtrack (`assets/audio/`), collectible card art (`assets/cards/`), and
+vendored webfonts (`assets/fonts/`). Phaser is vendored at `vendor/phaser.min.js`
+so the Lab runs fully offline and bundles cleanly into the native app.
 
 ---
 
@@ -92,18 +95,25 @@ All player-facing copy (EN + ES, in Danny's voice) lives in **`src/i18n.js`**.
 | `store.js`      | namespaced `dannylab.*` localStorage wrapper |
 | `audio.js`      | synthesized SFX + ambient music (Web Audio) |
 | `textures.js`   | procedural sprite generation (balls, faces, glow, particles) |
+| `jelly.js`      | layered animated jelly-drop element renderer |
 | `ui.js`         | reusable chunky buttons / panels / toggle rows |
 | `background.js` | layered parallax lab (poster, shelves, light shaft, dust) |
 | `boot.js`       | stores the §8 integration contract in the registry |
 | `preload.js`    | builds textures, waits for the font |
 | `menu.js`       | main menu (Play / How to Play / Options / Exit) |
 | `game.js`       | the core merge loop, physics, cascade, overflow, fission |
-| `overlays.js`   | Pause / Options / Confirm / GameOver / HowTo / Discovery / Collection |
+| `overlays.js`   | Pause / Options / Confirm / GameOver / HowTo / Collection |
+| `cards.js`      | collectible card system: heroes, elements, holo viewer |
 | `main.js`       | Phaser config, scene registry, exit contract, mount API |
 
 ## Tests (dev only)
 
-`test/smoke.mjs` and `test/flows.mjs` are headless Playwright checks (boot →
-play → merge → cascade → pause → overflow → game-over, plus fission and EN/ES).
-They need `npm i playwright-core` and a Chromium binary; they are **not** part of
-the shipped game.
+All are headless Playwright checks; they need `npm i playwright-core` and a
+Chromium binary, and are **not** part of the shipped game.
+
+| file | what it checks |
+|---|---|
+| `smoke.mjs` | boot → play → merge → cascade → pause → overflow → game-over |
+| `flows.mjs` | fission (two Uraniums), live EN/ES relabel, every overlay scene constructs cleanly |
+| `mystery.mjs` | drops a real Mystery Sample onto every tier 1-9 and asserts the board changed exactly as the on-screen description claims |
+| `completability.mjs` | boots the real game and lets a bot play N full runs (`GAMES=100 node test/completability.mjs`), reporting the win rate — used to balance-tune the beaker |

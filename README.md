@@ -5,8 +5,8 @@ Danny — a scientist stranded in time — journey through God's seven days of
 creation, collecting power cores and time-machine parts to get home.
 
 This proof of concept contains the full game framework (title card, menu,
-animated intro, 7-day overworld map, results screen) plus a complete, playable
-**Day 1: Light & Darkness**.
+animated intro, 7-day overworld map, results screen) plus all seven days —
+twelve stages in all — complete and playable end-to-end.
 
 ## How to play
 
