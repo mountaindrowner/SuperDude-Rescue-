@@ -53,8 +53,10 @@
   version-lockstep set bumped to **2.0.1**. PWA gets this on push;
   **TestFlight needs Mark to run a fresh Codemagic `ios-appstore`
   build** (store submission would now be version 2.0.1). Completability
-  re-measured at 30 games after the shrink — expect the win rate to
-  rise from ~22%; number reported in-session.
+  re-measured after the shrink: the bot now wins **16/30 (53%)**, up
+  from ~22% — the smaller Au/U make the endgame much roomier. Mark is
+  judging whether that's too easy; if so, candidate nudges are the
+  fill line or `overflowGraceMs`, NOT reverting the radii.
 - **v2.0.0 — THE ELEMENT LAB (Mark's "update 2.0"):** ported the whole
   merge-puzzle sub-game from the `claude/project-continuation-L24du`
   branch into `games/element-lab/` (fully self-contained: own Phaser
