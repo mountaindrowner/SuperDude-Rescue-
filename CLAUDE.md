@@ -29,6 +29,19 @@
   The Lab arrived at its latest state incl. kid-tuned balance (~22%
   completability), Mystery overhaul, Golden Flash, baked-blur thermal
   fix, and the collectible-cards system.
+- **iOS orientation unlock (pre-2.0-submission, Mark's call):** the app
+  now supports BOTH orientations. codemagic.yaml's plist step sets
+  iPhone Portrait+LandscapeL/R, iPad all four (UIRequiresFullScreen
+  stays true — no Split View). Root cause work: the v1.0.17
+  fill-viewport canvas CSS stretched the 16:9 platformer ~2.6x in
+  portrait, so main.js resize() gained a portrait mode — full-width
+  16:9 letterbox anchored upper-middle, A/B pad anchored to the screen
+  corner in the open band below (restores the v0.92 portrait layout).
+  THE ELEMENT LAB is portrait-native and now gets a full-screen fit on
+  iPhones held upright. Verified headlessly: portrait/landscape/live-
+  rotation for both games + desktop regression, zero errors. NOT yet
+  submitted to the App Store — next step is Codemagic build →
+  TestFlight on-device check → submit 2.0.0.
 - **Live build**: `v2.0.0` / `sdd-shell-v200`.
 - **Menu (v2.0):** NEW GAME / (CONTINUE) / ELEMENT LAB / OPTIONS.
   HOW TO PLAY row REMOVED (Mark: self-explanatory); `SDD.scenes.howto`

@@ -128,29 +128,39 @@ workflows:
           sips -g pixelWidth -g pixelHeight "$APPICON_DIR/AppIcon-1024x1024.png"
           echo "=== iOS app icons successfully generated ==="
 
-      - name: Lock the iOS app to landscape-only orientation
+      - name: Set iOS orientations (portrait + landscape, v2.0)
         script: |
-          # Capacitor regenerates Info.plist on every build, so we force
-          # landscape-only here (Mark: "landscape only, no turn-phone
-          # words"). iOS then simply keeps the app in landscape - the user
-          # is never prompted to rotate. Applies to both iPhone + iPad.
+          # Capacitor regenerates Info.plist on every build, so we set
+          # orientations here. v2.0 (Mark): BOTH orientations allowed —
+          # THE ELEMENT LAB is a portrait-shaped game, and the platformer
+          # letterboxes in portrait (main.js resize() portrait mode). The
+          # old landscape-only lock is retired.
           PLIST="ios/App/App/Info.plist"
           PB=/usr/libexec/PlistBuddy
-          for KEY in UISupportedInterfaceOrientations "UISupportedInterfaceOrientations~ipad"; do
-            $PB -c "Delete :$KEY" "$PLIST" 2>/dev/null || true
-            $PB -c "Add :$KEY array" "$PLIST"
-            $PB -c "Add :$KEY:0 string UIInterfaceOrientationLandscapeLeft" "$PLIST"
-            $PB -c "Add :$KEY:1 string UIInterfaceOrientationLandscapeRight" "$PLIST"
-          done
-          # iPad normally REQUIRES all 4 orientations (for Split View /
-          # multitasking) - landscape-only otherwise triggers App Store
-          # upload error 90474. We're a full-screen landscape game, so opt
-          # OUT of multitasking with UIRequiresFullScreen=true, which makes
-          # the landscape-only lock valid on iPad too. (Standard for games.)
+          # iPhone: portrait + both landscapes (upside-down portrait is
+          # non-standard on iPhone).
+          KEY=UISupportedInterfaceOrientations
+          $PB -c "Delete :$KEY" "$PLIST" 2>/dev/null || true
+          $PB -c "Add :$KEY array" "$PLIST"
+          $PB -c "Add :$KEY:0 string UIInterfaceOrientationPortrait" "$PLIST"
+          $PB -c "Add :$KEY:1 string UIInterfaceOrientationLandscapeLeft" "$PLIST"
+          $PB -c "Add :$KEY:2 string UIInterfaceOrientationLandscapeRight" "$PLIST"
+          # iPad: all four (required when supporting rotation on iPad).
+          KEY="UISupportedInterfaceOrientations~ipad"
+          $PB -c "Delete :$KEY" "$PLIST" 2>/dev/null || true
+          $PB -c "Add :$KEY array" "$PLIST"
+          $PB -c "Add :$KEY:0 string UIInterfaceOrientationPortrait" "$PLIST"
+          $PB -c "Add :$KEY:1 string UIInterfaceOrientationPortraitUpsideDown" "$PLIST"
+          $PB -c "Add :$KEY:2 string UIInterfaceOrientationLandscapeLeft" "$PLIST"
+          $PB -c "Add :$KEY:3 string UIInterfaceOrientationLandscapeRight" "$PLIST"
+          # Keep opting out of iPad Split View multitasking: we're a
+          # full-screen game and the canvas math assumes a full viewport.
           $PB -c "Delete :UIRequiresFullScreen" "$PLIST" 2>/dev/null || true
           $PB -c "Add :UIRequiresFullScreen bool true" "$PLIST"
           echo "--- iPhone orientations now: ---"
           $PB -c "Print :UISupportedInterfaceOrientations" "$PLIST"
+          echo "--- iPad orientations now: ---"
+          $PB -c "Print :UISupportedInterfaceOrientations~ipad" "$PLIST"
           echo "--- UIRequiresFullScreen: ---"
           $PB -c "Print :UIRequiresFullScreen" "$PLIST"
 

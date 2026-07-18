@@ -77,6 +77,24 @@ window.SDD = window.SDD || {};
     // 100vw/100dvh report the FULL viewport including the area under
     // the notch + home indicator. Read the actual rendered canvas rect
     // back to derive the dynamic VIEW_W.
+    // v2.0 orientation unlock (iOS now allows portrait): reset to the
+    // stylesheet's edge-to-edge sizing, measure the full viewport, then
+    // decide the mode. Landscape keeps the v1.0.17 fill-viewport
+    // behavior. Portrait CANNOT fill (a 16:9 world stretched into a
+    // tall screen distorts ~2.6x), so letterbox instead: full width,
+    // 16:9 height, anchored upper-middle — the open band below is
+    // where the touch controls live (restores v0.92 portrait play).
+    canvas.style.width = '';
+    canvas.style.height = '';
+    canvas.style.top = '';
+    var full = canvas.getBoundingClientRect();
+    var portraitMode = full.height > full.width * 1.05;
+    if (portraitMode) {
+      var lbH = Math.round(full.width * 180 / 320);
+      canvas.style.height = lbH + 'px';
+      canvas.style.top = Math.round(Math.max(0, (full.height - lbH) * 0.30)) + 'px';
+    }
+    resize._portrait = portraitMode;
     var actual = canvas.getBoundingClientRect();
     var dispW = actual.width || vw;
     var dispH = actual.height || vh;
@@ -139,8 +157,15 @@ window.SDD = window.SDD || {};
     }
     var ap = document.getElementById('action-pad');
     if (ap) {
-      ap.style.right  = Math.round(iw - c.right + saiR + 8) + 'px';
-      ap.style.bottom = Math.round(ih - c.bottom + saiB + 8) + 'px';
+      if (resize._portrait) {
+        // portrait: the canvas sits upper-middle, so anchor A/B to the
+        // screen corner in the open band below — natural thumb position
+        ap.style.right  = Math.round(saiR + 14) + 'px';
+        ap.style.bottom = Math.round(saiB + 24) + 'px';
+      } else {
+        ap.style.right  = Math.round(iw - c.right + saiR + 8) + 'px';
+        ap.style.bottom = Math.round(ih - c.bottom + saiB + 8) + 'px';
+      }
     }
   }
 
