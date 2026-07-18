@@ -11,6 +11,30 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
+- **v2.0.1 (cont.) — volume sliders fixed for iOS (Mark, TestFlight):**
+  Mark reported the volume sliders in both games don't seem to work.
+  Verified headlessly: BOTH games' sliders work fine on desktop — the
+  real bug is iOS-only. **iOS makes `HTMLMediaElement.volume` read-only
+  (silently ignored)**, and the platformer's MP3 music volume (and its
+  contribution to mute) ran entirely through `el.volume` → the MUSIC
+  slider did nothing in the TestFlight build. Fix in `js/audio.js`:
+  on iOS only (`IS_IOS` UA+touch detect), each MP3 element is piped
+  once through `createMediaElementSource` → per-track gainNode →
+  master (`pipeTrack`, called from `tryFileTrack`); `applyGain`, the
+  stop-fade, and `_debugTracks` all drive/report the gainNode; `el.
+  muted` is also set everywhere (it DOES work on iOS) so SOUND:OFF is
+  reliable even if a pipe fails. Desktop keeps the proven `el.volume`
+  path — behavior there is byte-identical. (The old comment warning
+  that WebAudio piping once broke music referred to piping on ALL
+  platforms at boot; this is iOS-only, lazy, once-per-track, with a
+  direct-play fallback.) Element Lab sliders were already fully
+  functional (WebAudio gains) — added a throttled audible tick while
+  dragging its Sound slider so the level change is *hearable* even
+  when nothing else is playing. Verified: desktop main game not piped
+  + el.volume follows slider; iPhone-UA main game piped + gainNode
+  follows slider 0.5→0.2→0.9 + mute→0 + zero errors; Lab drag still
+  works. SW serves JS network-first, so no extra cache bump needed —
+  this rides in v2.0.1 (same pending Codemagic build).
 - **v2.0.1 — TestFlight round-1 feedback (Mark, 2026-07-18):** two Lab
   changes. (1) **Daily Experiment is now self-explanatory**: the Lab
   main menu shows today's modifier name in gold under the DAILY button

@@ -59,9 +59,16 @@ window.DANNYLAB = window.DANNYLAB || {};
 
     var self = this, rw = Math.min(400, W * 0.8), x = W / 2, y = H / 2 - 150, gap = 70;
 
-    // Sound (SFX) volume — drag slider, 0 = muted
+    // Sound (SFX) volume — drag slider, 0 = muted. Tick while dragging so
+    // you can HEAR the level change (otherwise nothing plays during the
+    // drag and the slider feels dead on a phone).
+    var lastTick = 0;
     UI.slider(this, x, y, rw, t('sound', lang), audio ? audio.getSfxVol() : 0.5, function (v) {
-      if (audio) audio.setSfxVolume(v);
+      if (audio) {
+        audio.setSfxVolume(v);
+        var now = Date.now();
+        if (now - lastTick > 110 && v > 0) { lastTick = now; audio.click(); }
+      }
       store.setOpt('volSfx', v);
     });
     // Music volume — drag slider, 0 = muted

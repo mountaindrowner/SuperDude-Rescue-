@@ -13,6 +13,15 @@ window.SDD = window.SDD || {};
   var curSong = null, pendingSong = null;
   var schedTimer = null, songState = null;
 
+  // iOS (incl. iPadOS, which lies with a MacIntel platform + touch) makes
+  // HTMLMediaElement.volume READ-ONLY - assigning it is silently ignored,
+  // so the MUSIC slider did nothing in the native/TestFlight build. On
+  // these devices each MP3 element gets piped through a WebAudio gain
+  // node instead (see pipeTrack); everywhere else element.volume works
+  // and stays the proven path.
+  var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
   // note name -> frequency, octaves 2..6
   var NOTES = {};
   (function () {
@@ -268,6 +277,7 @@ window.SDD = window.SDD || {};
     a.preload = eager ? 'auto' : 'none';
     a.loop = loop !== false;
     a.volume = muted ? 0 : musicVolume * mixFor(id);
+    a.muted = muted;                 // .muted works on iOS; .volume does not
     a.src = path;
     // Only the eager (startup) tracks force a download now; lazy tracks
     // are kicked the moment startMusic() asks for them (see ensureLoading).
@@ -282,6 +292,24 @@ window.SDD = window.SDD || {};
     a.addEventListener('error', function () { rec.failed = true; });
   }
   function regPool(key, variantIds) { VARIANT_POOLS[key] = variantIds; }
+  // iOS-only: route the element through a WebAudio gain so the MUSIC
+  // slider actually works (element.volume is inert there). Done lazily at
+  // first play - ctx exists by then (created in the first-gesture init)
+  // and createMediaElementSource permanently reroutes the element, so we
+  // only do it once per track and only when the context is alive. If the
+  // pipe fails the element keeps playing direct (volume stuck at 100%,
+  // same as before this fix - never silent).
+  function pipeTrack(tr) {
+    if (!IS_IOS || tr.piped || !ctx || ctx.state === 'closed') return;
+    try {
+      var src = ctx.createMediaElementSource(tr.el);
+      tr.gainNode = ctx.createGain();
+      tr.gainNode.gain.value = muted ? 0 : musicVolume * mixFor(tr.id);
+      src.connect(tr.gainNode);
+      tr.gainNode.connect(master);
+      tr.piped = true;
+    } catch (e) {}
+  }
   // Kick a lazily-registered track into downloading the instant we know
   // we're about to play it (its scene/level was just entered). Idempotent
   // - only the first call actually flips preload + load().
@@ -314,11 +342,13 @@ window.SDD = window.SDD || {};
     var id = usable[Math.floor(Math.random() * usable.length)];
     var tr = FILE_TRACKS[id]; if (!tr) return false;
     ensureLoading(tr);                       // lazy track: start its download now
+    pipeTrack(tr);                           // iOS: volume via WebAudio gain
     stopMusic();
     currentFileTrack = tr;
     curSong = name;                          // commit now so retries aren't seen as superseded
     try { tr.el.currentTime = 0; } catch (e) {}
     tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
+    if (tr.gainNode) tr.gainNode.gain.value = muted ? 0 : musicVolume * mixFor(id);
 
     function superseded() { return curSong !== name || currentFileTrack !== tr; }
 
@@ -376,15 +406,22 @@ window.SDD = window.SDD || {};
     var tr = currentFileTrack;
     currentFileTrack = null;
     var el = tr.el;
-    if (immediate) { try { el.pause(); el.volume = muted ? 0 : musicVolume * mixFor(tr.id); } catch (e) {} return; }
-    // Fade element.volume to 0 (de-click), then pause and restore vol.
-    var v0 = el.volume, steps = 6, i = 0;
+    if (immediate) {
+      try { el.pause(); el.volume = muted ? 0 : musicVolume * mixFor(tr.id); } catch (e) {}
+      if (tr.gainNode) tr.gainNode.gain.value = muted ? 0 : musicVolume * mixFor(tr.id);
+      return;
+    }
+    // Fade to 0 (de-click), then pause and restore vol. On piped (iOS)
+    // tracks the fade runs on the gainNode since element.volume is inert.
+    var v0 = el.volume, g0 = tr.gainNode ? tr.gainNode.gain.value : 0, steps = 6, i = 0;
     var iv = setInterval(function () {
       i++;
       try { el.volume = Math.max(0, v0 * (1 - i / steps)); } catch (e) {}
+      if (tr.gainNode) tr.gainNode.gain.value = Math.max(0, g0 * (1 - i / steps));
       if (i >= steps) {
         clearInterval(iv);
         try { el.pause(); el.volume = muted ? 0 : musicVolume * mixFor(tr.id); } catch (e) {}
+        if (tr.gainNode) tr.gainNode.gain.value = muted ? 0 : musicVolume * mixFor(tr.id);
       }
     }, 20);
   }
@@ -466,13 +503,20 @@ window.SDD = window.SDD || {};
     if (master)    master.gain.value    = muted ? 0 : 1;     // master = mute switch
     if (musicGain) musicGain.gain.value = musicVolume;        // chiptune bus only
     if (sfxGain)   sfxGain.gain.value   = sfxVolume;          // sfx bus
-    // MP3 tracks use HTMLAudioElement.volume directly (works everywhere
-    // and avoids the createMediaElementSource pitfalls on iOS Safari -
-    // wiring through WebAudio silently disconnected the element from
-    // the speakers on some boots, which broke music entirely).
+    // MP3 tracks: element.volume everywhere it works; on iOS (where the
+    // property is read-only/inert) the per-track WebAudio gainNode from
+    // pipeTrack carries the volume instead. el.muted is set as well - it
+    // DOES work on iOS, so the mute switch is reliable even if a pipe
+    // ever fails.
     for (var id in FILE_TRACKS) {
       var tr = FILE_TRACKS[id];
-      if (tr) { try { tr.el.volume = muted ? 0 : musicVolume * mixFor(id); } catch (e) {} }
+      if (tr) {
+        try {
+          tr.el.volume = muted ? 0 : musicVolume * mixFor(id);
+          tr.el.muted = muted;
+          if (tr.gainNode) tr.gainNode.gain.value = muted ? 0 : musicVolume * mixFor(id);
+        } catch (e) {}
+      }
     }
   }
 
@@ -507,13 +551,15 @@ window.SDD = window.SDD || {};
         var tr = FILE_TRACKS[id];
         out[id] = {
           vol: tr.el.volume,
+          gain: tr.gainNode ? tr.gainNode.gain.value : null,
+          piped: !!tr.piped,
           paused: tr.el.paused,
           currentTime: tr.el.currentTime,
           src: tr.el.src.split('/').pop()
         };
       }
       return { currentFileTrack: currentFileTrack ? currentFileTrack.el.src.split('/').pop() : null,
-               masterVol: volume, masterMuted: muted,
+               masterVol: volume, masterMuted: muted, ios: IS_IOS,
                ctxState: ctx ? ctx.state : 'no-ctx',
                tracks: out };
     }
