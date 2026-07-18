@@ -244,21 +244,29 @@
 | `games/element-lab/README.md` | Element Lab integration + tuning + its test suite. |
 | `proto/obby/CLAUDE.md` | OBBY prototype's own project manual. |
 
-### Known loose ends (stock-take findings, none urgent)
+### Known loose ends — ALL RULED ON by Mark (2026-07-18); do not re-raise
 
-1. `assets/city/` doesn't exist but is referenced by `sprites.js`
-   (`mkCityLayer`) + the SW precache — painted city layers Mark never
-   dropped in; code falls back to procedural and the SW skips the
-   misses. Harmless; drop the 4 PNGs in to activate.
-2. Cosmetic dead code never carried from the L24du cleanup:
-   `TileMap.isQ`, `save.recordDay`, `treeRow`, the `realLogo` loader
-   (all inert). Trim opportunistically.
-3. `tests/test_vines_3_2.js` hardcodes an absolute repo path (L24du
-   fixed this with `path.resolve`; re-apply when touching tests).
-4. Dual sprite trees (`assets/Super Dude Danny Big/Small Sprites`
-   AND `assets/New Assets/…`) — both live, partial migration.
-5. `js/scripture_data.js` header says "NOT YET LOADED / theory-craft"
-   — stale comment; it IS loaded and wired since v1.0.
+Mark reviewed this whole list and closed every item. Leave these
+alone unless he reopens one himself.
+
+1. `assets/city/` painted city layers: **not happening, ever** (Mark).
+   The procedural cyber parallax IS the final look. The `mkCityLayer`
+   references + SW precache entries stay as harmless dead paths.
+2. Family-safety judgment calls (walk-on-water quip, snake line):
+   **not an issue** — keep as written.
+3. `assets/New Assets/` unreferenced sprite folders (~14 MB):
+   **keep just in case** — do not delete.
+4. Cosmetic dead code (`TileMap.isQ`, `save.recordDay`, `treeRow`,
+   `realLogo` loader, inert god branches): **not a problem** — no
+   cleanup wanted.
+5. Old banked ideas (Day-7 reflection lesson, lesson voiceover, vine
+   climb anim, overworld animated overlays, 6-2 editor pass):
+   **dropped** — the "Pending roadmap" section below is historical
+   record only, not open work.
+
+(Still-true mechanical notes, not tasks: `tests/test_vines_3_2.js`
+hardcodes an absolute repo path — fix inline if a test session ever
+needs it; `js/scripture_data.js` header comment is stale but inert.)
 
 ---
 
