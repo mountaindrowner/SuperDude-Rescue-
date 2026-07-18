@@ -11,6 +11,26 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
+- **v2.0.1 — TestFlight round-1 feedback (Mark, 2026-07-18):** two Lab
+  changes. (1) **Daily Experiment is now self-explanatory**: the Lab
+  main menu shows today's modifier name in gold under the DAILY button
+  (menu.js), and the run opens with a big `mysteryBanner` of the name +
+  a plain-language `mysteryDesc` line saying what it DOES (game.js, new
+  `daily_desc_*` i18n keys EN+ES). (2) **Au/U shrunk 10%**: tier radii
+  now taper smoothly 22/32/42/52/62/**69/76/83/92** (+10px steps
+  through Ne then +7,+7,+7,+9) — Au 92→83 and U 102→92 are exactly
+  −10%; Na/Fe shaved too so every size stays visually distinct (a
+  straight −10% on Au alone would have made it ≈ Fe). Verified:
+  syntax, smoke + mystery suites green with new radii, headless
+  screenshots of menu label + run-start banner (note: headless
+  verification needs the WebGL-denial init script — WebGL/SwiftShader
+  runs ~15fps and Phaser's smoothed clock crawls ~¼ speed, so timers
+  look broken when they aren't; real devices unaffected). Whole
+  version-lockstep set bumped to **2.0.1**. PWA gets this on push;
+  **TestFlight needs Mark to run a fresh Codemagic `ios-appstore`
+  build** (store submission would now be version 2.0.1). Completability
+  re-measured at 30 games after the shrink — expect the win rate to
+  rise from ~22%; number reported in-session.
 - **v2.0.0 — THE ELEMENT LAB (Mark's "update 2.0"):** ported the whole
   merge-puzzle sub-game from the `claude/project-continuation-L24du`
   branch into `games/element-lab/` (fully self-contained: own Phaser

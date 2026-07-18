@@ -74,11 +74,14 @@ GP.create = function (data) {
   this.runNewCards = [];
   this.time.delayedCall(1300, this._checkCardUnlocks, [], this);
 
-  // announce the daily modifier as the run opens
+  // announce the daily modifier as the run opens: big banner with the
+  // name + a plain-language line saying what it actually DOES (Mark,
+  // TestFlight round 1: "the Daily should at least let us know what
+  // the daily is")
   if (this.daily) {
     this.time.delayedCall(700, function (sc) {
-      sc.toast(sc.daily.mod.name, 0xffd84d);
-      sc.mysteryDesc(DANNYLAB.t('daily_tag', sc.lang));
+      sc.mysteryBanner(sc.daily.mod.name, 0xffd84d);
+      sc.mysteryDesc(DANNYLAB.t('daily_desc_' + sc.daily.mod.key, sc.lang));
     }, [this]);
   }
 
@@ -1175,7 +1178,7 @@ GP.applyMysteryEffect = function (effect, tgt, mx, my) {
       var ringF = this.add.image(mx, my, 'p_ring').setTint(0x7CFF6B).setBlendMode('ADD').setScale(0.3).setDepth(26).setAlpha(0.95);
       this.tweens.add({ targets: ringF, scale: 7, alpha: 0, duration: 800, ease: 'Cubic.out', onComplete: function () { ringF.destroy(); } });
       this._knockback(mx, my, 14, 280);
-      // the ultimate effect: a Uranium orb is r=102 itself, so the clear
+      // the ultimate effect: a Uranium orb is r=92 itself, so the clear
       // radius must reach well past its surface to hit the floor clutter
       list = this._elementsNear(mx, my, 240).filter(function (e) { return e.tier >= 1 && e.tier <= 4; });
       this._popList(list, 0x7CFF6B, 85);

@@ -154,6 +154,11 @@ DANNYLAB.MenuScene.prototype.create = function () {
       self.scene.start('DANNYLAB_Game', { mode: 'endless', daily: dInfo });
     }, { fill: 0x8a5fd6, fontSize: 18, shape: shape });
     dailyBtn.setDepth(5);
+    // today's modifier, right under the button — a kid should know what
+    // they're tapping into before they tap (Mark, TestFlight round 1)
+    this.add.text(92, H - 25, dInfo.mod.name, {
+      fontFamily: UI.DISPLAY, fontSize: '11px', color: '#ffd84d', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(5);
     var dBest = DANNYLAB.store.getDailyBest(dInfo.date);
     if (dBest > 0) this.add.text(92, H - 88, '★ ' + dBest, {
       fontFamily: UI.DISPLAY, fontSize: '12px', color: '#ffd84d', fontStyle: 'bold' }).setOrigin(0.5).setDepth(5);

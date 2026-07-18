@@ -50,7 +50,7 @@ workflows:
         BUNDLE_ID: "org.thecrossroads.superdudeadventures"
         # Marketing version shown on the store. Keep in step with
         # SDD.VERSION in js/main.js (strip the leading "v").
-        MARKETING_VERSION: "2.0.0"
+        MARKETING_VERSION: "2.0.1"
 
     scripts:
       - name: Install npm dependencies
@@ -274,7 +274,7 @@ workflows:
         # SDD.VERSION in js/main.js (strip the leading "v"). versionCode
         # (the integer Play orders builds by) is set to $BUILD_NUMBER so
         # it always increases.
-        MARKETING_VERSION: "2.0.0"
+        MARKETING_VERSION: "2.0.1"
 
     scripts:
       - name: Install npm dependencies

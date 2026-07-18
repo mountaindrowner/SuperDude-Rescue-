@@ -62,17 +62,20 @@ DANNYLAB.CONFIG = {
 
   // ---- the element chain — radius/color/symbol drive everything ----
   // mood lets us reskin each element's face expression without code edits.
-  // simple curve: every merge grows the radius by exactly 10 px
+  // curve: +10px steps through Ne, then a smooth taper (+7,+7,+7,+9) so
+  // the top of the chain fits the beaker better on phones. Au + U are
+  // exactly -10% from the old 92/102 (Mark, TestFlight round 1); Na/Fe
+  // shave a little too so every size stays visually distinct.
   tiers: [
     { t: 1, sym: 'H',  radius: 22,  color: 0xBEE3F8, mood: 'spark'  },
     { t: 2, sym: 'He', radius: 32,  color: 0xFBD38D, mood: 'happy'  },
     { t: 3, sym: 'C',  radius: 42,  color: 0x7B8A9B, mood: 'cool'   },
     { t: 4, sym: 'O',  radius: 52,  color: 0x4FD1C5, mood: 'happy'  },
     { t: 5, sym: 'Ne', radius: 62,  color: 0xF687B3, mood: 'wow'    },
-    { t: 6, sym: 'Na', radius: 72,  color: 0x9F7AEA, mood: 'happy'  },
-    { t: 7, sym: 'Fe', radius: 82,  color: 0x8696A7, mood: 'cool'   },
-    { t: 8, sym: 'Au', radius: 92,  color: 0xECC94B, mood: 'wow'    },
-    { t: 9, sym: 'U',  radius: 102, color: 0x7CFF6B, mood: 'glow'   },
+    { t: 6, sym: 'Na', radius: 69,  color: 0x9F7AEA, mood: 'happy'  },
+    { t: 7, sym: 'Fe', radius: 76,  color: 0x8696A7, mood: 'cool'   },
+    { t: 8, sym: 'Au', radius: 83,  color: 0xECC94B, mood: 'wow'    },
+    { t: 9, sym: 'U',  radius: 92,  color: 0x7CFF6B, mood: 'glow'   },
   ],
 };
 
