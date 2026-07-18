@@ -29,6 +29,17 @@
   The Lab arrived at its latest state incl. kid-tuned balance (~22%
   completability), Mystery overhaul, Golden Flash, baked-blur thermal
   fix, and the collectible-cards system.
+- **v2.0.0 iOS build SUCCEEDED on Codemagic (2026-07-18)** — first
+  build attempt failed at signing ("App requires a provisioning
+  profile"): the account's Apple Distribution cert slots were stale.
+  Fix: Mark revoked the old Apple Distribution certificates in the
+  developer portal; the `signing` group's stored `CERT_PRIVATE_KEY`
+  (already configured) then minted one fresh reusable cert via
+  `fetch-signing-files --create` and the build went green. The v2.0.0
+  build auto-uploaded to App Store Connect → TestFlight. NEXT: Mark
+  TestFlights on-device (rotation, Lab round-trip, audio, cards) →
+  App Store Connect: new version 2.0.0 + release notes + optional new
+  screenshots (generated, in Mark's hands) → Submit for Review.
 - **iOS orientation unlock (pre-2.0-submission, Mark's call):** the app
   now supports BOTH orientations. codemagic.yaml's plist step sets
   iPhone Portrait+LandscapeL/R, iPad all four (UIRequiresFullScreen
