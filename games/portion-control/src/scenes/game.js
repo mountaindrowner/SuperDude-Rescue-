@@ -24,6 +24,8 @@ PC.GameScene.prototype.create = function () {
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
   this.ground.update(cam);
 
+  this.enemies = new PC.EnemySystem(this);
+
   this.debugText = this.add.text(2, PC.RENDER.H - 12, '', {
     fontFamily: 'monospace', fontSize: '8px', color: '#a8e04a',
   }).setScrollFactor(0).setDepth(101);
@@ -33,6 +35,22 @@ PC.GameScene.prototype.create = function () {
   this.input.keyboard.on('keydown-G', function () {
     this.scene.start('PC_Gallery');
   }, this);
+  // T = stress test: fill the swarm to cap (M2 acceptance harness)
+  this.input.keyboard.on('keydown-T', function () { this.stress(); }, this);
+  if (/[?&]stress=1/.test(window.location.search)) {
+    this.time.delayedCall(400, this.stress, [], this);
+  }
+};
+
+PC.GameScene.prototype.stress = function () {
+  var def = { key: 'enemy_d1_fry', spd: 80, hp: 10, dmg: 6, xp: 1, size: 24 };
+  var left = this.enemies.cap - this.enemies.liveCount;
+  var ring;
+  while (left > 0) {
+    ring = Math.min(60, left);
+    this.enemies.spawnRing(ring, def);
+    left -= ring;
+  }
 };
 
 PC.GameScene.prototype.update = function (time, delta) {
@@ -57,11 +75,13 @@ PC.GameScene.prototype.update = function (time, delta) {
   this.player.setPosition(Math.round(this.px), Math.round(this.py));
   this.player.setFlipX(this.facing < 0);
 
+  this.enemies.update(dt, this.px, this.py);
   this.ground.update(this.cameras.main);
 
   this._dbgAcc += dt;
   if (this._dbgAcc > 0.25) {
     this._dbgAcc = 0;
-    this.debugText.setText('fps ' + Math.round(this.game.loop.actualFps) + ' - foes 0 - M1');
+    this.debugText.setText('fps ' + Math.round(this.game.loop.actualFps) +
+      ' - foes ' + this.enemies.liveCount + ' - M2 (T=stress)');
   }
 };
