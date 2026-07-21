@@ -222,6 +222,7 @@
 | Branch | Status | What it is |
 |---|---|---|
 | `claude/super-dude-danny-platformer-Jftc7` | **TRUNK — work here** | The shipped game. Netlify auto-deploys the PWA from every push; Codemagic builds iOS/Android from it. v2.0.0. |
+| `claude/portion-control-vslice` | ACTIVE side project | **PORTION CONTROL** — the next expansion: kid-friendly Vampire Survivors-style roguelite, self-contained in `games/portion-control/` (own COMPENDIUM.md design doc + HANDOVER.md session state — read those there, not here). Isolate-then-fold-in path, like the Element Lab was for 2.0. Do not develop it on this branch. |
 | `claude/project-continuation-L24du` | RETIRED archive | Where THE ELEMENT LAB was built in isolation (so it couldn't destabilize the live game) + a cleanup pass. Its `games/element-lab/` was ported here byte-identical at v2.0.0. Only unmerged leftovers are cosmetic dead-code trims on old file versions — nothing functional. Do not develop here. |
 | `main` | STALE | Early "Add files via upload" asset drops. Zero unique value — every real asset it carries also lives here. Never push to it. |
 | `claude/element-lab-port-2point0` | Fully merged — safe to delete | Staging branch for the v2.0.0 port; 100% contained in Jftc7 (zero unique commits). The remote-exec git proxy can't push deletions — remove it via GitHub UI (Branches page) whenever. |
