@@ -10,6 +10,34 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-21 — M3 SHIPPED + Mark's round-1 notes all fixed.**
+  (1) **True widescreen**: logical height stays 270, WIDTH now follows
+  the device aspect (clamped 320-640; iPhone 17 ~19.5:9 -> 587 wide,
+  canvas verified edge-to-edge, zero letterbox; re-fits live on
+  rotation). L3 render lock revised accordingly. (2) **Music + SFX**:
+  `systems/audio.js` - synthesized WebAudio (bouncy D1 loop ~136bpm +
+  pop/shoot/gem/hurt/levelup/ui), voice-capped 8, pop rate-limited,
+  gesture-unlocked, suspends when tab hidden. Mark can supply composed
+  MP3 loops later. (3) **Danny is a real character**: hand-authored
+  32px pixel maps in `src/handart.js` (white coat, grape tie, cyan
+  goggle band, spiky hair, boots, Resizer arm ALWAYS extended) - 4
+  walk frames + 96px portrait + fry enemy 2 frames + fry still.
+  Handart layers UNDER the manifest override: PixelLab replaces
+  file-by-file with zero code changes. (4) **M3 combat core**:
+  `systems/weapons.js` (pooled bullets + Resizer auto-fire at nearest,
+  Danny faces his target when idle), `systems/fx.js` (pooled pop puffs
+  + harmless-food stills + muzzle), `systems/gems.js` (pooled gems,
+  vacuum at 72px, VS merge at cap), game scene has HP + timestamp
+  i-frames + 10Hz blink + camera shake, XP/level curve with LEVEL UP
+  banner, kill counter, MM:SS timer, ambient spawner (interval tightens
+  with time), death -> `scenes/results.js` (stats + tap to retry).
+  (5) **Mobile dev button**: on-screen [SWARM] tap = the old T stress
+  key. Verified headless: 7 auto-kills in 6s, gems drop, death ->
+  results -> restart, 60fps, zero errors, iPhone-aspect fills window.
+  **PIXELLAB: API key present but balance is $0.00 — Mark must top up
+  at pixellab.ai, then batch-generate all art (Danny first; prompts in
+  L5/COMPENDIUM 2.4).** Next: M4 level-up cards (3-card picks, Portion
+  Blaster + Whisk Cyclone + 3 passives).
 - **2026-07-21 — M1 + M2 SHIPPED: the feel + the framerate are proven.**
   M1: `systems/input.js` (WASD/arrows + floating touch joystick per
   COMPENDIUM 4, ghost ring, zero-latency read in update),
@@ -83,8 +111,10 @@ the exact isolate-then-fold-in path THE ELEMENT LAB took for v2.0.
   `superDudeDanny.*`, Lab owns `dannylab.*` — never collide).
 
 ### L3. Render lock (the Vampire Survivors feel)
-- **Logical resolution 480×270** (16:9), Phaser `Scale.FIT` +
-  `CENTER_BOTH`. Landscape-first; portrait letterboxes (revisit at M9).
+- **Logical HEIGHT locked at 270; width follows device aspect**
+  (clamp 320-640) so phones get edge-to-edge widescreen with no
+  letterbox (Mark, round 1: "full widescreen on an iPhone 17" - that
+  lands at ~587x270). `Scale.FIT` + live re-fit on rotation.
 - `pixelArt: true`, `roundPixels: true`, devicePixelRatio capped at 2.
 - **All art drawn at native pixel size, camera zoom 1.** A 32px Danny
   on a 270px-tall view ≈ VS's on-screen character scale; the view
@@ -169,8 +199,8 @@ stays on through all of development.
 | M0 | Palette consts + placeholder generator + atlas; boots 100% placeholder | **DONE** |
 | M1 | Feel harness: Danny walk, joystick+WASD, camera, endless D1 ground | **DONE** |
 | M2 | Perf harness: 300 pooled chasers + spatial hash + culling @ 55fps | **DONE** (headless; phone check at M5) |
-| M3 | Combat core: Resizer Beam, pops, gems, HP, i-frames, results | **NEXT** |
-| M4 | Level-ups: XP curve, 3-card picks, +2 weapons +3 passives | — |
+| M3 | Combat core: Resizer Beam, pops, gems, HP, i-frames, results | **DONE** |
+| M4 | Level-ups: XP curve, 3-card picks, +2 weapons +3 passives | **NEXT** |
 | M5 | District 1 slice: full roster/timeline, Big Frank, Cook rescue | — |
 | — | **EVALUATE WITH MARK** | — |
 | M6–M9 | Meta shell → arsenal → districts 2–5 → polish | held |

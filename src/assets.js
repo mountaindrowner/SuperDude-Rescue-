@@ -391,6 +391,8 @@ window.PC = window.PC || {};
       if (loaded) {
         var img = scene.textures.get('art_' + a.key).getSourceImage();
         g.drawImage(img, 0, 0, a.w, a.h);
+      } else if (PC.HANDART && PC.HANDART[a.key]) {
+        PC.HANDART[a.key](g, a);      // hand-authored pixel map
       } else {
         missing++;
         (PAINTERS[a.kind] || PAINTERS.prop)(g, a);
