@@ -154,8 +154,8 @@ window.PC = window.PC || {};
 
   // -- props (5 districts x 8) + flood decals 6 + shared rubble 4 --
   var PROPS = {
-    1: ['lamppost:32:64', 'bench:48:24', 'hydrant:24:24', 'trashcan:24:32',
-        'newsbox:24:32', 'crate:32:32', 'car:64:96', 'sign:24:48'],
+    1: ['lamppost:32:64', 'bench:48:32', 'hydrant:32:32', 'trashcan:32:32',
+        'newsbox:32:48', 'crate:32:32', 'car:64:64', 'sign:32:48'],
     2: ['stall:96:64', 'crates:48:40', 'barrel:24:32', 'dockpost:16:40',
         'net:48:32', 'awning:64:32', 'scale:24:40', 'fruitpile:32:24'],
     3: ['fence:64:24', 'mailbox:16:32', 'gnome:16:24', 'hedge:48:32',
