@@ -10,6 +10,25 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-21 — M1 + M2 SHIPPED: the feel + the framerate are proven.**
+  M1: `systems/input.js` (WASD/arrows + floating touch joystick per
+  COMPENDIUM 4, ghost ring, zero-latency read in update),
+  `systems/ground.js` (endless district: 512px chunk RenderTextures
+  pooled + rebaked from deterministic hashes - tiles/decals/flood/
+  props), `scenes/game.js` (manual movement 190px/s instant
+  accel/stop, 4-frame walk X-flip, idle frame 1, cam lerp 0.12).
+  Verified: 189.7px per held second, flip + follow + touch vector all
+  correct, 60fps, 0 errors. M2: `systems/spatialhash.js` (72px cells,
+  reused buckets, zero-alloc rebuild) + `systems/enemies.js` (pooled
+  swarm allocated at boot, no physics bodies, cull + shared 6fps
+  flipbook, farthest-recycle at cap) + stress key T / ?stress=1.
+  Verified at FULL 400 cap: canvas renderer 60fps, SwiftShader
+  SOFTWARE-GPU WebGL 52fps (a real phone GPU is far faster - the
+  55fps@300 mobile bar looks comfortable; final verdict on Mark's
+  phone at M5). Swarm converges correctly, hash live (12 buckets),
+  0 errors. **Next: M3 combat core** (Resizer Beam auto-fire, pooled
+  bullets, hit flash, pop VFX + food still, gems + magnet + merge,
+  HP, timestamp i-frames, death -> results).
 - **2026-07-21 — M0 SHIPPED: asset pipeline + placeholders + atlas.**
   `src/config.js` (all locked numbers), `src/assets.js` (290-entry
   registry covering the whole 2.5 manifest + chunky placeholder
@@ -148,9 +167,9 @@ stays on through all of development.
 | M | What | Status |
 |---|---|---|
 | M0 | Palette consts + placeholder generator + atlas; boots 100% placeholder | **DONE** |
-| M1 | Feel harness: Danny walk, joystick+WASD, camera, endless D1 ground | **NEXT** |
-| M2 | Perf harness: 300 pooled chasers + spatial hash + culling @ 55fps | — |
-| M3 | Combat core: Resizer Beam, pops, gems, HP, i-frames, results | — |
+| M1 | Feel harness: Danny walk, joystick+WASD, camera, endless D1 ground | **DONE** |
+| M2 | Perf harness: 300 pooled chasers + spatial hash + culling @ 55fps | **DONE** (headless; phone check at M5) |
+| M3 | Combat core: Resizer Beam, pops, gems, HP, i-frames, results | **NEXT** |
 | M4 | Level-ups: XP curve, 3-card picks, +2 weapons +3 passives | — |
 | M5 | District 1 slice: full roster/timeline, Big Frank, Cook rescue | — |
 | — | **EVALUATE WITH MARK** | — |
