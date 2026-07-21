@@ -1,7 +1,9 @@
 # PORTION CONTROL — Session Handover
 
 > **New session? Read this file first, then `COMPENDIUM.md` (the full
-> design doc — §1 Pillars, §2 Art, §3 Performance Bible are law).**
+> design doc — §1 Pillars, §2 Art, §3 Performance Bible are law).
+> Before generating ANY art, read `PIXELLAB.md` — the complete
+> verified reference for the PixelLab API connection.**
 > This file is the living state: what is LOCKED, what is built, what
 > is next. Update it every session (same ritual as the platformer's
 > CLAUDE.md). The remote env is ephemeral — only pushes survive.
