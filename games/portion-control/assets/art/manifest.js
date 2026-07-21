@@ -1,6 +1,28 @@
-// manifest.js - real art that exists in assets/art/ as <key>.png.
-// Add a key here when its PNG lands and the atlas uses it instead of the
-// placeholder. Keys match the registry in src/assets.js (COMPENDIUM 2.3
-// naming, without the .png extension). Empty = 100% placeholders.
+// manifest.js - real art in assets/art/ as <key>.png (PixelLab batch).
 window.PC = window.PC || {};
-PC.ART_MANIFEST = [];
+PC.ART_MANIFEST = [
+  'boss_d1_frank_walk_1',
+  'boss_d1_frank_walk_2',
+  'boss_d1_frank_walk_3',
+  'boss_d1_frank_walk_4',
+  'char_danny_walk_1',
+  'char_danny_walk_2',
+  'char_danny_walk_3',
+  'char_danny_walk_4',
+  'enemy_d1_fry_walk_1',
+  'enemy_d1_fry_walk_2',
+  'enemy_d1_hotdog_walk_1',
+  'enemy_d1_hotdog_walk_2',
+  'enemy_d1_popcorn_walk_1',
+  'enemy_d1_popcorn_walk_2',
+  'enemy_d1_pretzel_walk_1',
+  'enemy_d1_pretzel_walk_2',
+  'enemy_d1_toast_walk_1',
+  'enemy_d1_toast_walk_2',
+  'portrait_danny',
+  'still_d1_fry',
+  'still_d1_hotdog',
+  'still_d1_popcorn',
+  'still_d1_pretzel',
+  'still_d1_toast',
+];
