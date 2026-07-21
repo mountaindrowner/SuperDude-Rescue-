@@ -10,12 +10,21 @@
 
 ## WHERE WE ARE (latest first)
 
-- **2026-07-21 — Project opened. Spec locked (this file), no code yet.**
-  Branch cut from Jftc7 @ `73783a5`. Next step: **M0** (palette
-  constants + placeholder generator + atlas pipeline; game boots with
-  100% placeholder art). Then M1 feel harness → M2 perf harness →
-  M3 combat → M4 level-ups → M5 District 1 slice. STOP at M5 and
-  evaluate with Mark before committing to Districts 2–5.
+- **2026-07-21 — M0 SHIPPED: asset pipeline + placeholders + atlas.**
+  `src/config.js` (all locked numbers), `src/assets.js` (290-entry
+  registry covering the whole 2.5 manifest + chunky placeholder
+  painters with hash-varied faces + shelf-packed ONE-canvas runtime
+  atlas, 1024x1024), `src/scenes/boot.js` (manifest-driven real-art
+  override -> atlas -> M0 gallery with fps readout), `index.html`,
+  vendored Phaser. Real art lands by dropping `assets/art/<key>.png`
+  + one line in `assets/art/manifest.js` - zero code changes.
+  Verified headless: boots clean, 290/290 frames packed, 0 page
+  errors, gallery pages render at 60fps. **Next: M1 feel harness**
+  (Danny walks: 4-frame flip anim, joystick + WASD, camera lerp,
+  endless D1 ground). Then M2 perf harness before any gameplay.
+- **2026-07-21 — Project opened. Spec locked (this file).**
+  Branch cut from Jftc7 @ `73783a5`. v1 target: M0-M5 vertical slice,
+  then STOP and evaluate with Mark before Districts 2-5.
 
 ## Branch truth
 
@@ -138,8 +147,8 @@ stays on through all of development.
 
 | M | What | Status |
 |---|---|---|
-| M0 | Palette consts + placeholder generator + atlas; boots 100% placeholder | **NEXT** |
-| M1 | Feel harness: Danny walk, joystick+WASD, camera, endless D1 ground | — |
+| M0 | Palette consts + placeholder generator + atlas; boots 100% placeholder | **DONE** |
+| M1 | Feel harness: Danny walk, joystick+WASD, camera, endless D1 ground | **NEXT** |
 | M2 | Perf harness: 300 pooled chasers + spatial hash + culling @ 55fps | — |
 | M3 | Combat core: Resizer Beam, pops, gems, HP, i-frames, results | — |
 | M4 | Level-ups: XP curve, 3-card picks, +2 weapons +3 passives | — |
