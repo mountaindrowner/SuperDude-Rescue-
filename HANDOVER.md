@@ -10,6 +10,32 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-21 — PIXELLAB ART IS LIVE + portrait-first flip (Mark round 2).**
+  (1) **PixelLab works**: the $0 USD balance was a red herring - the
+  account bills by subscription GENERATIONS (usage returns
+  `{type:'generations'}`); Mark confirmed plenty remain. Pipeline:
+  `generate-image-pixflux` (API floor 32px, CEILING 64px - generate
+  24px targets at 48 and 128px bosses at 64, integer nearest-scale to
+  target) + `animate-with-text` (min 64px, reference image + action ->
+  4 frames). Alpha cleaned at threshold 90. Batch scripts in
+  scratchpad (`pl-batch-d1.py`).
+  (2) **Full District 1 art set generated + wired** (24 keys in
+  `assets/art/manifest.js`, atlas prefers them over placeholders):
+  Danny 4-frame walk + 96px portrait, all 5 D1 enemies x2 walk frames,
+  5 harmless-food stills, Big Frank boss x4. Chibi style matches the
+  brief perfectly (goofy-cute-menacing, thick outlines).
+  NOTE: PixelLab art keeps its native colors - the 16-color palette
+  law now governs code-drawn FX/UI/readability channels (Cyan shots /
+  Pink enemy shots / Lime XP / Red danger), not generated sprites.
+  (3) **PORTRAIT-FIRST render (L3 rewritten)**: Mark scrapped
+  widescreen - VS-mobile portrait is the target. Portrait locks
+  logical WIDTH 270, height follows aspect (iPhone ~270x587,
+  verified fills screen exactly); landscape/desktop locks height 270.
+  (4) handart.js remains as the sub-manifest fallback layer.
+  Verified: portrait fills iPhone viewport, real art renders in game +
+  50-foe mixed swarm at 60fps, zero errors. **Next: M4 level-up
+  cards** + remaining art (heroes 2-6, districts 2-5, FX/icons) in
+  later batches.
 - **2026-07-21 — M3 SHIPPED + Mark's round-1 notes all fixed.**
   (1) **True widescreen**: logical height stays 270, WIDTH now follows
   the device aspect (clamped 320-640; iPhone 17 ~19.5:9 -> 587 wide,
