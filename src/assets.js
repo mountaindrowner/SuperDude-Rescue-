@@ -20,8 +20,10 @@ window.PC = window.PC || {};
   }
 
   // -- player characters (6) : 4-frame walk + portrait (COMPENDIUM 6) --
+  // Danny renders at 48 (Mark picked option B: native PixelLab quality,
+  // no downscale); other heroes get sized when their art is made.
   var CHARS = [
-    { k: 'danny',  c1: P.WHITE,  c2: P.CYAN },     // white coat, cyan goggles (locked L5)
+    { k: 'danny',  c1: P.WHITE,  c2: P.CYAN, size: 48 },
     { k: 'cook',   c1: P.CLOUD,  c2: P.MUSTARD },
     { k: 'tech',   c1: P.STEEL,  c2: P.CYAN },
     { k: 'muscle', c1: P.GRAPE,  c2: P.CHERRY },
@@ -29,7 +31,7 @@ window.PC = window.PC || {};
     { k: 'medic',  c1: P.WHITE,  c2: P.CHERRY },
   ];
   CHARS.forEach(function (c) {
-    creature('char_' + c.k, PC.SIZE.PLAYER, c.c1, c.c2, 4);
+    creature('char_' + c.k, c.size || PC.SIZE.PLAYER, c.c1, c.c2, 4);
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
   ['cook', 'tech', 'muscle', 'scout', 'medic'].forEach(function (k) {

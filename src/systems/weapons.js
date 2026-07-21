@@ -83,7 +83,7 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
   scene.bullets.fire(scene.px, scene.py - 4, best.x, best.y, {
     speed: this.speed, dmg: this.dmg, frame: 'proj_resizer',
   });
-  scene.fx.burst(scene.px + (best.x > scene.px ? 12 : -12), scene.py - 4, 'fx_muzzle', 2, 0.1);
+  scene.fx.burst(scene.px + (best.x > scene.px ? 18 : -18), scene.py - 4, 'fx_muzzle', 2, 0.1);
   scene.facing = best.x >= scene.px ? 1 : -1;   // Danny faces his target
   if (PC.audio) PC.audio.shoot();
 };
