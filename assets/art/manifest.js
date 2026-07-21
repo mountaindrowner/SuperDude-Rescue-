@@ -1,4 +1,4 @@
-// manifest.js - real art in assets/art/ as <key>.png (PixelLab batch).
+// manifest.js - real art in assets/art/ as <key>.png (PixelLab batches).
 window.PC = window.PC || {};
 PC.ART_MANIFEST = [
   'boss_d1_frank_walk_1',
@@ -9,6 +9,12 @@ PC.ART_MANIFEST = [
   'char_danny_walk_2',
   'char_danny_walk_3',
   'char_danny_walk_4',
+  'decal_flood_1',
+  'decal_flood_2',
+  'decal_flood_3',
+  'decal_flood_4',
+  'decal_flood_5',
+  'decal_flood_6',
   'enemy_d1_fry_walk_1',
   'enemy_d1_fry_walk_2',
   'enemy_d1_hotdog_walk_1',
@@ -20,9 +26,22 @@ PC.ART_MANIFEST = [
   'enemy_d1_toast_walk_1',
   'enemy_d1_toast_walk_2',
   'portrait_danny',
+  'prop_d1_bench',
+  'prop_d1_car',
+  'prop_d1_crate',
+  'prop_d1_hydrant',
+  'prop_d1_lamppost',
+  'prop_d1_newsbox',
+  'prop_d1_sign',
+  'prop_d1_trashcan',
   'still_d1_fry',
   'still_d1_hotdog',
   'still_d1_popcorn',
   'still_d1_pretzel',
   'still_d1_toast',
+  'tile_d1_base',
+  'tile_d1_decal1',
+  'tile_d1_decal2',
+  'tile_d1_var1',
+  'tile_d1_var2',
 ];

@@ -10,6 +10,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-21 — District 1 ENVIRONMENT art live (Mark: "make the
+  levels highly cohesive").** PixelLab env batch (19 keys -> manifest
+  now 43): asphalt ground (one 64x64 texture, 3x 32px crops), road
+  decals (worn yellow paint, pothole), 6 food-litter flood decals,
+  all 8 street props (lamppost/bench/hydrant/trashcan/newsbox/crate/
+  car 64x64/sign). **Cohesion recipe (keep for districts 2-5):**
+  ground graded dark - desaturate x0.55, brightness x0.62, 30% blend
+  toward navy 0x2a2544 - so the swarm always pops (readability
+  pillar); props muted cool + same chunky-outline style as sprites;
+  litter decals stay warm (the outbreak reads on the street).
+  gradeKeepAlpha() in the batch script preserves decal transparency.
+  Verified in the portrait build: dressed street + 50-foe swarm,
+  60fps, zero errors. Known polish knob: 32px tile seams show as a
+  patchwork (VS-like, acceptable); if Mark wants it smoother, draw
+  the full 64px texture per 2x2 tile block in ground.js.
 - **2026-07-21 — PIXELLAB ART IS LIVE + portrait-first flip (Mark round 2).**
   (1) **PixelLab works**: the $0 USD balance was a red herring - the
   account bills by subscription GENERATIONS (usage returns
