@@ -170,36 +170,51 @@ window.SDD = window.SDD || {};
   }
 
   // ---- main loop ----
+  // The whole body is wrapped so a single unexpected throw in any scene's
+  // update()/render() can't escape and stop requestAnimationFrame - that
+  // would freeze the game to a dead screen with no recovery (the "real
+  // players break it in a way you never saw" failure). Instead we log it,
+  // drop the bad frame, and keep looping. No data leaves the device. If a
+  // scene errors every frame, `_loopErrs` throttles the console spam.
+  var _loopErrs = 0;
   function frame(now) {
-    if (!last) last = now;
-    var dt = (now - last) / 1000;
-    last = now;
-    if (dt > 0.25) dt = 0.25;
-    acc += dt;
-    var guard = 0;
-    while (acc >= STEP && guard < 5) {
-      if (SDD.scene && SDD.scene.update) SDD.scene.update(STEP);
-      SDD.input.endStep();
-      acc -= STEP;
-      guard++;
-    }
-    if (guard >= 5) acc = 0;
-    if (SDD.scene && SDD.scene.render) {
-      // v1.0.15: clear the wider canvas first (dark slate). Scenes that
-      // don't fill the full VIEW_W (menus, cinematics, lessons, etc.)
-      // get an X-translate to keep their 320-wide content centered in
-      // the wider canvas. The `level` scene opts in to wide rendering
-      // via `wideView: true` and draws across the full VIEW_W.
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#05060d';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    try {
+      if (!last) last = now;
+      var dt = (now - last) / 1000;
+      last = now;
+      if (dt > 0.25) dt = 0.25;
+      acc += dt;
+      var guard = 0;
+      while (acc >= STEP && guard < 5) {
+        if (SDD.scene && SDD.scene.update) SDD.scene.update(STEP);
+        SDD.input.endStep();
+        acc -= STEP;
+        guard++;
+      }
+      if (guard >= 5) acc = 0;
+      if (SDD.scene && SDD.scene.render) {
+        // v1.0.15: clear the wider canvas first (dark slate). Scenes that
+        // don't fill the full VIEW_W (menus, cinematics, lessons, etc.)
+        // get an X-translate to keep their 320-wide content centered in
+        // the wider canvas. The `level` scene opts in to wide rendering
+        // via `wideView: true` and draws across the full VIEW_W.
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#05060d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      var viewW = SDD.C.VIEW_W;
-      var useWide = !!SDD.scene.wideView;
-      var dx = useWide ? 0 : Math.round((viewW - 320) / 2);
-      ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, dx * RENDER_SCALE, 0);
-      SDD.scene.render(ctx);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+        var viewW = SDD.C.VIEW_W;
+        var useWide = !!SDD.scene.wideView;
+        var dx = useWide ? 0 : Math.round((viewW - 320) / 2);
+        ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, dx * RENDER_SCALE, 0);
+        SDD.scene.render(ctx);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+    } catch (e) {
+      acc = 0;                                   // don't spiral on a stuck step
+      try { ctx.setTransform(1, 0, 0, 1, 0, 0); } catch (e2) {}   // reset canvas state
+      if (_loopErrs++ < 20 && typeof console !== 'undefined' && console.error) {
+        console.error('SDD loop error (frame skipped, game continues):', e);
+      }
     }
     requestAnimationFrame(frame);
   }

@@ -11,6 +11,29 @@
 ## WHERE WE ARE RIGHT NOW (latest first — read this first)
 
 - **Active branch**: `claude/super-dude-danny-platformer-Jftc7` (always work here)
+- **v2.0.1 (cont.) — crash-resilience loop guards (Reddit "AI-built game" audit):**
+  Mark shared an r/aigamedev checklist of common failure modes in
+  vibe-coded games. Audited both games against all 6: keys/secrets in
+  build (**clean** — no committed cert/key files, no hardcoded
+  secrets, iOS signing keys live only in Codemagic env groups),
+  client-trusts-server / account-separation / IAP-trust (**all N/A** —
+  no server, no accounts, no cloud, no purchases; fully offline
+  single-player localStorage), untested backups (**covered** — git +
+  Netlify rebuild-from-clone runs constantly; save has tested v1→v4
+  migration). The one real gap was a variant of "nothing tracks
+  crashes": NOT telemetry (a kids' app should collect zero data — the
+  right call), but **loop resilience**. Neither game loop had an error
+  guard, so a single throw in any scene update/render would escape and
+  stop requestAnimationFrame → frozen dead screen with no recovery.
+  Fixed: `js/main.js frame()` body wrapped in try/catch (resets `acc`
+  so it can't spiral, resets the canvas transform, throttled
+  console-only log, always re-schedules RAF); `games/element-lab/src/
+  game.js GP.update` body wrapped the same way. No data leaves the
+  device. Verified headlessly on BOTH: ~60fps baseline, injected a
+  throw every frame for ~0.5s → loop stayed alive (frames kept
+  advancing) and fully recovered once the throw stopped, scene still
+  active; Lab smoke suite still 0 errors. Rides in v2.0.1 (SW serves
+  JS network-first — no cache bump needed).
 - **v2.0.1 (cont.) — volume sliders fixed for iOS (Mark, TestFlight):**
   Mark reported the volume sliders in both games don't seem to work.
   Verified headlessly: BOTH games' sliders work fine on desktop — the

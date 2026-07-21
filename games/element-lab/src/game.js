@@ -1515,6 +1515,10 @@ GP.resumeFromOverlay = function () {
 
 // ---------- update loop ----------
 GP.update = function (time, delta) {
+  // Guard the whole per-frame body: an unexpected throw here would escape
+  // into Phaser's step and kill the render loop, freezing the Lab dead.
+  // Logged locally (no network), frame dropped, game keeps running.
+  try {
   if (this.lab) this.lab.update(delta);
   if (this.paused || this.gameOver) return;
 
@@ -1563,6 +1567,12 @@ GP.update = function (time, delta) {
     } else {
       this.overflowAccum = 0;
       if (this.fillFlash) this.fillFlash.setAlpha(1);
+    }
+  }
+  } catch (e) {
+    if ((this._updErrs = (this._updErrs || 0) + 1) < 20 &&
+        typeof console !== 'undefined' && console.error) {
+      console.error('Element Lab update error (frame skipped, game continues):', e);
     }
   }
 };
