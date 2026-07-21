@@ -9,12 +9,21 @@ window.PC = window.PC || {};
     (typeof window !== 'undefined' && window.devicePixelRatio) || 1));
   PC.RES = dpr;
 
-  function logicalW() {
+  // PORTRAIT-FIRST (Mark: "a strong, well looking portrait version just
+  // like Vampire Survivors"). Portrait: logical WIDTH locked 270, height
+  // follows the device aspect (iPhone ~270x585) - tall view, swarm above
+  // and below. Landscape/desktop: height locked 270, width follows.
+  function logicalSize() {
     var aw = window.innerWidth || 960, ah = window.innerHeight || 540;
-    var w = Math.round(PC.RENDER.H * (aw / ah));
-    return Math.max(320, Math.min(640, w));
+    if (ah >= aw) {
+      var h = Math.round(270 * (ah / aw));
+      return { w: 270, h: Math.max(360, Math.min(640, h)) };
+    }
+    var w = Math.round(270 * (aw / ah));
+    return { w: Math.max(320, Math.min(640, w)), h: 270 };
   }
-  PC.RENDER.W = logicalW();
+  var ls = logicalSize();
+  PC.RENDER.W = ls.w; PC.RENDER.H = ls.h;
 
   var config = {
     type: Phaser.AUTO,
@@ -33,15 +42,15 @@ window.PC = window.PC || {};
 
   PC.game = new Phaser.Game(config);
 
-  // live re-fit on rotation / resize: same 270 height, new width
+  // live re-fit on rotation / resize
   var rt = null;
   window.addEventListener('resize', function () {
     clearTimeout(rt);
     rt = setTimeout(function () {
-      var w = logicalW();
-      if (w !== PC.RENDER.W) {
-        PC.RENDER.W = w;
-        PC.game.scale.setGameSize(w, PC.RENDER.H);
+      var s = logicalSize();
+      if (s.w !== PC.RENDER.W || s.h !== PC.RENDER.H) {
+        PC.RENDER.W = s.w; PC.RENDER.H = s.h;
+        PC.game.scale.setGameSize(s.w, s.h);
       }
       PC.game.scale.refresh();
     }, 120);
