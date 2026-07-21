@@ -12,6 +12,19 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-21 — Danny upgraded to 48px native (Mark round 3: quality).**
+  Mark flagged the in-game Danny as low quality vs the raw art - root
+  cause: 64px anim frames crushed to 32. Produced a true-scale options
+  sheet (A 32 / B 48 / C 64 on the real street, fry for reference) -
+  implemented **B: 48px native** as the working choice (reversible:
+  regenerate at another size + registry size field if Mark picks
+  differently after seeing the sheet). New native-48 walk set: base +
+  3 pose gens via init_image chain (strength 320), loop order
+  stride-L/together/stride-R/together, NO scaling anywhere. Registry
+  now supports per-char size (danny 48, others 32 until their art
+  lands). Muzzle flash offset widened for the bigger sprite. Verified
+  in-game: face/coat/goggles/gun all read at speed, 59fps @ 50 foes,
+  zero errors. **Next: M4 level-up cards.**
 - **2026-07-21 — District 1 ENVIRONMENT art live (Mark: "make the
   levels highly cohesive").** PixelLab env batch (19 keys -> manifest
   now 43): asphalt ground (one 64x64 texture, 3x 32px crops), road
