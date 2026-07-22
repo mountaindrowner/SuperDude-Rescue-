@@ -12,6 +12,16 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-22 — KONAMI CAST COMPLETE: Mark picked Danny #1.**
+  From a 6-candidate lineup (all in the rev-2 outfit) Mark chose #1
+  (crouched firing pose, coat flare). Walk cycle (3 pose gens via
+  init chain, stride/together/stride/together) + 96px portrait built
+  from that exact sprite, native 48. Full D1 cast re-rolled in ARTDNA
+  Konami style (style suffix v2, selective outline, shading tier by
+  size, anti-chibi negatives): all 5 enemies x2 frames, 5 stills,
+  Big Frank x4 (64 -> x2 to 128). Verified in-game: complete new-
+  style swarm at 59fps, wobble + knockback live, zero errors.
+  **Next: M4 level-up cards** (unchanged).
 - **2026-07-22 — ART DIRECTION SHIFT: chibi -> 90s-Konami shaded
   (Mark round 4 + his VS Art DNA guide, now `ARTDNA.md` - art law,
   wins over COMPENDIUM on art).** Size stays 48px (option B locked).
