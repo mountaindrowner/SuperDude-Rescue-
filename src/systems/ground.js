@@ -1,11 +1,10 @@
-// ground.js - endless district plane (COMPENDIUM 2.6). World is chunked at
-// 512px; each chunk is ONE RenderTexture baked once from deterministic
-// hashes: 16x16 tiles (base/var1/var2), sprinkled decals, flood decals and
-// non-colliding props. Chunks are pooled and rebaked as the camera crosses
-// them - zero per-frame draw cost beyond Phaser blitting a handful of RTs.
+// ground.js - endless painted district. Chunks are 512px canvases painted
+// by the world painter (world.js) - the Adventure City approach: structured
+// streets, world-keyed detail, invisible chunk borders. Canvases + their
+// textures live in a fixed slot pool: zero allocation churn while walking.
 window.PC = window.PC || {};
 
-PC.CHUNK = 512;                   // 16 tiles of 32px
+PC.CHUNK = 512;
 
 // deterministic 0..1 hash from world ints + salt (stable across sessions)
 PC.hash01 = function (x, y, salt) {
@@ -17,77 +16,59 @@ PC.hash01 = function (x, y, salt) {
 PC.Ground = function (scene, district) {
   this.scene = scene;
   this.d = district || 1;
-  this.live = {};                 // "cx,cy" -> RenderTexture
-  this.pool = [];
-  this.propKeys = PC.ASSETS.filter(function (a) {
-    return a.key.indexOf('prop_d' + (district || 1) + '_') === 0;
-  }).map(function (a) { return a.key; });
+  this.live = {};                 // "cx,cy" -> slot
+  this.slots = [];
+  for (var i = 0; i < 12; i++) {
+    var canvas = document.createElement('canvas');
+    canvas.width = PC.CHUNK; canvas.height = PC.CHUNK;
+    var key = 'pc_chunk_' + i;
+    scene.textures.addCanvas(key, canvas);
+    this.slots.push({
+      key: key, canvas: canvas, inUse: false,
+      img: scene.add.image(0, 0, key).setOrigin(0).setDepth(0).setVisible(false),
+    });
+  }
 };
 
 PC.Ground.prototype.update = function (cam) {
   var C = PC.CHUNK;
   var x0 = Math.floor((cam.scrollX - 64) / C), x1 = Math.floor((cam.scrollX + PC.RENDER.W + 64) / C);
   var y0 = Math.floor((cam.scrollY - 64) / C), y1 = Math.floor((cam.scrollY + PC.RENDER.H + 64) / C);
-  var want = {};
+  var want = {}, k;
   for (var cy = y0; cy <= y1; cy++) {
     for (var cx = x0; cx <= x1; cx++) {
-      var k = cx + ',' + cy;
-      want[k] = true;
-      if (!this.live[k]) this.live[k] = this._bake(cx, cy);
+      want[cx + ',' + cy] = true;
     }
   }
-  for (var key in this.live) {
-    if (!want[key]) {
-      var rt = this.live[key];
-      rt.setVisible(false);
-      this.pool.push(rt);
-      delete this.live[key];
+  // release chunks that scrolled away
+  for (k in this.live) {
+    if (!want[k]) {
+      var s = this.live[k];
+      s.inUse = false;
+      s.img.setVisible(false);
+      delete this.live[k];
     }
+  }
+  // bake newly needed chunks into free slots
+  for (k in want) {
+    if (this.live[k]) continue;
+    var free = null;
+    for (var i = 0; i < this.slots.length; i++) {
+      if (!this.slots[i].inUse) { free = this.slots[i]; break; }
+    }
+    if (!free) continue;                       // margin guarantees enough slots
+    var parts = k.split(',');
+    this._bake(free, parseInt(parts[0], 10), parseInt(parts[1], 10));
+    this.live[k] = free;
   }
 };
 
-PC.Ground.prototype._bake = function (cx, cy) {
-  var C = PC.CHUNK, d = this.d;
-  var rt = this.pool.pop();
-  if (!rt) {
-    rt = this.scene.add.renderTexture(0, 0, C, C).setOrigin(0).setDepth(0);
-  }
-  rt.setPosition(cx * C, cy * C).setVisible(true);
-  rt.clear();
-
-  // tiles
-  for (var ty = 0; ty < 16; ty++) {
-    for (var tx = 0; tx < 16; tx++) {
-      var wx = cx * 16 + tx, wy = cy * 16 + ty;
-      var r = PC.hash01(wx, wy, 1);
-      var frame = 'tile_d' + d + '_base';
-      if (r > 0.90) frame = 'tile_d' + d + '_var2';
-      else if (r > 0.72) frame = 'tile_d' + d + '_var1';
-      rt.drawFrame('atlas', frame, tx * 32, ty * 32);
-      var r2 = PC.hash01(wx, wy, 2);
-      if (r2 < 0.05) {
-        rt.drawFrame('atlas', 'tile_d' + d + '_decal' + (r2 < 0.025 ? 1 : 2), tx * 32, ty * 32);
-      }
-    }
-  }
-  // flood decals - D1 light (3 per chunk); density grows per district later
-  var floods = 2 + d;
-  for (var f = 0; f < floods; f++) {
-    var fi = 1 + Math.floor(PC.hash01(cx, cy, 30 + f) * 6);
-    rt.drawFrame('atlas', 'decal_flood_' + fi,
-      Math.floor(PC.hash01(cx, cy, 40 + f) * (C - 32)),
-      Math.floor(PC.hash01(cx, cy, 50 + f) * (C - 32)));
-  }
-  // props: up to 8 per chunk (COMPENDIUM 2.6), non-colliding decor
-  var n = this.propKeys.length;
-  if (n) {
-    for (var i = 0; i < 8; i++) {
-      if (PC.hash01(cx, cy, 60 + i) < 0.35) continue;   // density thinning
-      var pk = this.propKeys[Math.floor(PC.hash01(cx, cy, 70 + i) * n) % n];
-      rt.drawFrame('atlas', pk,
-        Math.floor(PC.hash01(cx, cy, 80 + i) * (C - 96)),
-        Math.floor(PC.hash01(cx, cy, 90 + i) * (C - 96)));
-    }
-  }
-  return rt;
+PC.Ground.prototype._bake = function (slot, cx, cy) {
+  var g = slot.canvas.getContext('2d');
+  g.clearRect(0, 0, PC.CHUNK, PC.CHUNK);
+  PC.paintChunkD1(this.scene, g, cx, cy);
+  var tex = this.scene.textures.get(slot.key);
+  if (tex && tex.refresh) tex.refresh();       // push canvas -> GPU
+  slot.inUse = true;
+  slot.img.setPosition(cx * PC.CHUNK, cy * PC.CHUNK).setVisible(true);
 };

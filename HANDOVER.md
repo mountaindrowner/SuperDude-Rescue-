@@ -12,6 +12,31 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-22 — WORLD REBUILT IN CODE (Mark round 5: "map is ugly,
+  character slides, shooting lackluster - make it like Adventure
+  City").** Mark's screenshots vs real VS proved it: VS ground is ONE
+  continuous quiet surface, ours was hash-tile checkerboard. Fix:
+  **`systems/world.js` - procedural street painter, the Adventure
+  City approach**: every detail keyed to WORLD coordinates (borders
+  invisible), structured city grid per 512px block - plaza concrete
+  with world-aligned slab seams + stains, road bands with sidewalks
+  (slab seams), light curbs, asphalt with 2-tone world-keyed speckle
+  + wheel-wear lanes, yellow center dashes (skip intersections),
+  crosswalk zebras, manholes, seeded cracks, lamp glow pools at
+  intersection corners, props BLITTED FROM THE ATLAS at logical spots
+  (furniture on sidewalks, parked car on road edge, litter sparse).
+  `ground.js` rewritten: 12-slot pool of 512px canvas textures
+  (addCanvas + refresh), zero churn. PixelLab tiles retired from the
+  ground (props/litter PNGs still used - they read well).
+  **Anim fix**: Danny "slides" because init-chain frames were too
+  similar. New: `char_danny_idle` (Mark's aim pose) + 3 RUNNING
+  stride frames (strength 200, explicit full-stride leg prompts,
+  side profile) + code juice (1px step bob, lean into movement,
+  rotation wobble). **Shooting juice**: bullets ADD-blend at 1.4x,
+  impact sparks on every hit, layered shoot SFX.
+  GOTCHA logged: world.js loads before ground.js -> PC.hash01 must be
+  lazy-bound, not captured at IIFE time ("H is not a function").
+  Verified: painted streets + 49-foe swarm at 59fps, zero errors.
 - **2026-07-22 — KONAMI CAST COMPLETE: Mark picked Danny #1.**
   From a 6-candidate lineup (all in the rev-2 outfit) Mark chose #1
   (crouched firing pose, coat flare). Walk cycle (3 pose gens via

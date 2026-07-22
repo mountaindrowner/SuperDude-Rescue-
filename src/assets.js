@@ -34,6 +34,7 @@ window.PC = window.PC || {};
     creature('char_' + c.k, c.size || PC.SIZE.PLAYER, c.c1, c.c2, 4);
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
+  add('char_danny_idle', 48, 48, 'creature', P.WHITE, P.CYAN, 1);
   ['cook', 'tech', 'muscle', 'scout', 'medic'].forEach(function (k) {
     add('captured_' + k, PC.SIZE.PLAYER, PC.SIZE.PLAYER, 'captured', P.MINT, P.INK);
   });

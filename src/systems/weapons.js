@@ -9,7 +9,8 @@ PC.BulletSystem = function (scene) {
   for (var i = 0; i < PC.CAPS.PLAYER_BULLETS; i++) {
     this.pool.push({
       active: false, x: 0, y: 0, dx: 0, dy: 0, spd: 0, dmg: 0, pierce: 0, life: 0,
-      sprite: scene.add.image(0, 0, 'atlas', 'proj_resizer').setDepth(8).setVisible(false),
+      sprite: scene.add.image(0, 0, 'atlas', 'proj_resizer').setDepth(8)
+        .setBlendMode(Phaser.BlendModes.ADD).setScale(1.4).setVisible(false),
     });
   }
 };
@@ -55,6 +56,7 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
       hit.kbUntil = this.scene.now + 0.12;
       hit.kbx = b.dx * hit.spd * 0.8 * hit.kbMult;
       hit.kby = b.dy * hit.spd * 0.8 * hit.kbMult;
+      this.scene.fx.burst(b.x, b.y, 'fx_spark', 3, 0.16);   // impact spark
       if (hit.hp <= 0) onKill(hit);
       if (b.pierce > 0) { b.pierce--; }
       else { b.active = false; b.sprite.setVisible(false); }
