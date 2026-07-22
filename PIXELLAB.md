@@ -113,8 +113,17 @@ them). Reference/style/init images are sent as
 
 - `/rotate`: multi-directional sprites (e.g. north/south walk sets)
   without hand-flipping. `from_image` + from/to view+direction.
-- `/animate-with-skeleton` + `/estimate-skeleton`: precise pose
-  control for bosses (e.g. Big Frank's charge telegraph pose).
+- `/animate-with-skeleton` + `/estimate-skeleton`: PROVEN (round 7) -
+  THE pipeline for character animation without identity drift.
+  Rules: canvas must be exactly 256/128/64/32/16 square (pad odd
+  sizes in, crop back - never scale); the model is a 3-FRAME WINDOW
+  (send exactly 3 skeleton frames; a 4-frame walk cycle = stride/
+  pass/stride + reuse pass); 18 keypoint labels (NOSE, L/R EYE, L/R
+  EAR, NECK, L/R SHOULDER, L/R ELBOW, L/R ARM, L/R HIP, L/R KNEE,
+  L/R LEG) with normalized 0..1 x/y + z_index; estimate-skeleton
+  costs 0.1 generation, the animate call 1. Contrast:
+  animate-with-text animates nicely but MUTATES identity (hats,
+  faces, age) - use it only for throwaway motion studies.
 - `/inpaint`: fix a bad region of an otherwise good sprite instead of
   re-rolling the whole generation.
 - `color_image` forced palette (see above).

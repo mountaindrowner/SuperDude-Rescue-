@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-22 — WALK SOLVED: skeleton animation pipeline (round 7).**
+  Mark rejected 5 animate-with-text walk options ("all terrible" -
+  correct: that endpoint animates well but MUTATES identity: fedoras,
+  red visors, aging). THE fix: **animate-with-skeleton**:
+  estimate-skeleton on Mark's Danny #1 (0.1 gen) -> hand-authored
+  walk poses at the bone level (18 keypoints, normalized; gun arm
+  steady, far arm swings, legs stride +/-0.11x, pass frames drop
+  0.02y) -> animate-with-skeleton with reference_image = HIS EXACT
+  SPRITE. Identity CANNOT drift. API rules learned (-> PIXELLAB.md):
+  canvas must be exactly 256/128/64/32/16 square (pad 48 art into 64,
+  no scaling, crop back); model is a 3-FRAME WINDOW (stride/pass/
+  stride; 4-frame cycle reuses the pass frame); estimate costs 0.1
+  gen, animate 1 gen. Frames installed as char_danny_walk_1..4.
+  **This is now the standard pipeline for ALL character animation**
+  (heroes 2-6, bosses if needed). Verified in-game, zero errors.
 - **2026-07-22 — ROUND 6: buildings, crowd physics, directional fire,
   simple walk, all map art hand-painted.** Mark (after clearing a
   stale cached load): painted map WORKS, but PixelLab map assets
