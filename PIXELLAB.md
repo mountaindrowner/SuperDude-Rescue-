@@ -1,8 +1,56 @@
 # PIXELLAB API — Project Reference (Portion Control)
 
 > The complete, battle-tested knowledge of the PixelLab AI connection.
-> Read this before generating ANY art. Everything here was verified
-> live against the API on 2026-07-21 (OpenAPI spec + real calls).
+> Read this before generating ANY art.
+>
+> ## THE HEADLINE (2026-07-22): USE THE V2 API
+>
+> There are TWO APIs. Everything below the v1 section was learned on
+> `/v1` — the low-level single-image primitives. **The real asset
+> platform is `https://api.pixellab.ai/v2`** (discovered via Mark's
+> other project; verified live). v2 is what PixelLab's own app uses:
+>
+> - **`GET /v2/llms.txt`** — LLM-targeted docs; **`/v2/openapi.json`**
+>   — full spec (~50 endpoints). Saved copies in session scratchpad.
+> - **`GET /v2/balance`** — the REAL meter: returns subscription
+>   `{plan: 'Tier 1: Pixel Apprentice', generations: N, total: 2000}`.
+>   (v1 /balance only shows the useless USD number.)
+> - **Characters**: `POST /create-character-with-4-directions` (also
+>   -8-directions, -pro, -v3): description + image_size -> ASYNC job
+>   (`background_job_id` + `character_id`; poll
+>   `/background-jobs/{id}`) -> consistent multi-direction character
+>   built on a template (e.g. `template_id: mannequin`), PERSISTED to
+>   the account library (visible on the website!). Then
+>   `POST /animate-character` `{character_id, mode: 'template',
+>   template_animation_id: 'walk'}` -> professional template walk
+>   cycles for ALL directions at once (one async job per direction).
+>   `GET /characters/{id}` for metadata + rotation_urls;
+>   **`GET /characters/{id}/zip`** to download everything — use the
+>   ZIP: the CDN host (backblaze.pixellab.ai) is BLOCKED by the
+>   sandbox egress proxy, but api.pixellab.ai serves the zip.
+>   Verified: 48px request produced 68x68 canvases (template size).
+> - **Objects**: create-1/8-direction-object + states + animations —
+>   library-persistent props.
+> - **Tilesets**: top-down Wang tilesets, sidescroller tilesets,
+>   isometric tiles, tiles-pro — all async with list/get/delete.
+> - **Pro image tools**: generate-image-v2, generate-with-style-v2,
+>   generate-ui-v2, pixen model, image-to-pixelart, resize,
+>   remove-background, inpaint-v3, edit-images-v2, edit-animation-v2,
+>   interpolation-v2, transfer-outfit-v2, portrait<->character,
+>   generate-font-pro, animate-with-text-v3, 8-rotations-v2/v3,
+>   prompt enhancers.
+>
+> **Why this matters**: v1 one-shot images do NOT persist to the
+> account library and forced us to hand-stitch animation (the source
+> of every walk-cycle struggle). v2 characters/objects/tilesets are
+> consistent, template-animated, library-persisted assets. CHARACTERS
+> AND ANIMATIONS GO THROUGH V2 FROM NOW ON. The v1 notes below remain
+> valid for quick one-off images and the skeleton/rotate/inpaint
+> primitives.
+
+## The v1 layer (historical + still useful for one-offs)
+
+Everything verified live on 2026-07-21 (v1 OpenAPI + real calls).
 
 ## Connection & billing
 
