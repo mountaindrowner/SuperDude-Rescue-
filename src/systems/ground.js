@@ -72,3 +72,38 @@ PC.Ground.prototype._bake = function (slot, cx, cy) {
   slot.inUse = true;
   slot.img.setPosition(cx * PC.CHUNK, cy * PC.CHUNK).setVisible(true);
 };
+
+// ---- collision against building solids (world.js chunkSolids) ----
+// Circle vs axis-aligned rects; resolves by least-penetration axis.
+PC.resolveCircle = function (x, y, r) {
+  var C = PC.CHUNK;
+  var cx0 = Math.floor((x - r) / C), cx1 = Math.floor((x + r) / C);
+  var cy0 = Math.floor((y - r) / C), cy1 = Math.floor((y + r) / C);
+  for (var cy = cy0; cy <= cy1; cy++) {
+    for (var cx = cx0; cx <= cx1; cx++) {
+      var solids = PC.chunkSolids(cx, cy);
+      for (var i = 0; i < solids.length; i++) {
+        var s = solids[i];
+        var nx = Math.max(s.x, Math.min(x, s.x + s.w));
+        var ny = Math.max(s.y, Math.min(y, s.y + s.h));
+        var dx = x - nx, dy = y - ny;
+        var d2 = dx * dx + dy * dy;
+        if (d2 >= r * r) continue;
+        if (d2 > 0.0001) {
+          var d = Math.sqrt(d2), push = (r - d) / d;
+          x += dx * push; y += dy * push;
+        } else {
+          // center inside the rect: exit along the nearest face
+          var left = x - s.x, right = s.x + s.w - x;
+          var top = y - s.y, bot = s.y + s.h - y;
+          var m = Math.min(left, right, top, bot);
+          if (m === left) x = s.x - r;
+          else if (m === right) x = s.x + s.w + r;
+          else if (m === top) y = s.y - r;
+          else y = s.y + s.h + r;
+        }
+      }
+    }
+  }
+  return { x: x, y: y };
+};

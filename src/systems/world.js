@@ -41,14 +41,34 @@ window.PC = window.PC || {};
 
   function inRoadBand(v) { var m = ((v % C) + C) % C; return m >= R0 && m < R1; }
 
-  // blit a named atlas frame into the chunk canvas (props, litter)
-  function blit(g, scene, frame, x, y) {
-    var tex = scene.textures.get('atlas');
-    var f = tex.frames[frame];
-    if (!f) return;
-    g.drawImage(tex.getSourceImage(), f.cutX, f.cutY, f.width, f.height,
-      Math.round(x - f.width / 2), Math.round(y - f.height), f.width, f.height);
-  }
+  // ---- deterministic building footprints per chunk (world coords) ----
+  // Shared by the painter AND collision. Buildings live in the 4 plaza
+  // quadrants, clear of the road bands. Mark round 6: buildings are real
+  // OBSTACLES (overrides COMPENDIUM 2.6 "no obstacles").
+  var QUADS = [[14, 14, 178, 178], [334, 14, 498, 178], [14, 334, 178, 498], [334, 334, 498, 498]];
+  var solidsCache = {};
+  var solidsCacheN = 0;
+  PC.chunkSolids = function (cx, cy) {
+    var k = cx + ',' + cy;
+    if (solidsCache[k]) return solidsCache[k];
+    if (solidsCacheN > 300) { solidsCache = {}; solidsCacheN = 0; }
+    var out = [];
+    for (var q = 0; q < 4; q++) {
+      var r = H(cx, cy, 500 + q);
+      if (r < 0.30) continue;                       // empty plaza quadrant
+      var Q = QUADS[q];
+      var maxW = Q[2] - Q[0], maxH = Q[3] - Q[1];
+      var w = Math.round(maxW * (0.62 + H(cx, cy, 510 + q) * 0.34));
+      var h = Math.round(maxH * (0.62 + H(cx, cy, 520 + q) * 0.34));
+      var x = Q[0] + Math.round((maxW - w) * H(cx, cy, 530 + q));
+      var y = Q[1] + Math.round((maxH - h) * H(cx, cy, 540 + q));
+      out.push({ x: cx * C + x, y: cy * C + y, w: w, h: h, v: H(cx, cy, 550 + q) });
+    }
+    solidsCache[k] = out; solidsCacheN++;
+    return out;
+  };
+
+
 
   PC.paintChunkD1 = function (scene, g, cx, cy) {
     var wx = cx * C, wy = cy * C;
@@ -152,38 +172,140 @@ window.PC = window.PC || {};
       g.stroke();
     }
 
-    // ---- 8. lamp glow pools + props (blitted from the atlas, LOGICALLY
-    // placed: lamps at intersection corners, street furniture on the
-    // sidewalks, litter on roads + plaza) ----
-    var corners = [[R0 - 12, R0 - 8], [R1 + 12, R0 - 8], [R0 - 12, R1 + 20], [R1 + 12, R1 + 20]];
+    // ---- 8. hand-painted street furniture, litter and BUILDINGS ----
+    // (all PixelLab map assets retired - Mark round 6: paint by hand)
+
+    function pole(lx, ly) {                        // lamppost + warm pool
+      var grad = g.createRadialGradient(lx, ly - 4, 4, lx, ly - 4, 56);
+      grad.addColorStop(0, COL.glow); grad.addColorStop(1, 'rgba(242,195,60,0)');
+      g.fillStyle = grad; g.fillRect(lx - 56, ly - 60, 112, 112);
+      g.fillStyle = '#191627';
+      g.fillRect(lx - 4, ly + 2, 8, 3);            // base plate
+      g.fillRect(lx - 1, ly - 34, 3, 36);          // pole
+      g.fillRect(lx - 5, ly - 38, 11, 5);          // head housing
+      g.fillStyle = '#f2c33c'; g.fillRect(lx - 3, ly - 37, 7, 3);   // lamp
+      g.fillStyle = 'rgba(247,244,239,0.75)'; g.fillRect(lx - 2, ly - 37, 2, 1);
+    }
+    function hydrant(x, y) {
+      g.fillStyle = '#8f2626'; g.fillRect(x - 4, y - 9, 9, 10);
+      g.fillStyle = '#b03030'; g.fillRect(x - 4, y - 9, 4, 10);
+      g.fillStyle = '#701d1d'; g.fillRect(x - 6, y - 4, 3, 4); g.fillRect(x + 4, y - 4, 3, 4);
+      g.fillStyle = '#b03030'; g.fillRect(x - 2, y - 12, 5, 3);
+      g.fillStyle = '#191627'; g.fillRect(x - 5, y + 1, 11, 2);
+    }
+    function trashcan(x, y) {
+      g.fillStyle = '#3f3b58'; g.fillRect(x - 6, y - 14, 13, 15);
+      g.fillStyle = '#55516f'; g.fillRect(x - 6, y - 14, 5, 15);
+      g.fillStyle = '#191627';
+      g.fillRect(x - 7, y - 16, 15, 3);
+      g.fillRect(x - 3, y - 11, 1, 10); g.fillRect(x + 1, y - 11, 1, 10);
+      g.fillRect(x - 7, y + 1, 15, 1);
+    }
+    function bench(x, y) {
+      g.fillStyle = '#4a3945';
+      g.fillRect(x - 13, y - 6, 27, 5);
+      g.fillStyle = '#5c4854'; g.fillRect(x - 13, y - 6, 27, 2);
+      g.fillStyle = '#191627';
+      g.fillRect(x - 12, y - 1, 3, 4); g.fillRect(x + 10, y - 1, 3, 4);
+    }
+    function planter(x, y) {
+      g.fillStyle = '#3a3550'; g.fillRect(x - 10, y - 7, 21, 8);
+      g.fillStyle = '#191627'; g.fillRect(x - 10, y + 1, 21, 1);
+      g.fillStyle = '#3f6b3d';
+      g.fillRect(x - 8, y - 12, 7, 7); g.fillRect(x - 2, y - 14, 8, 9); g.fillRect(x + 5, y - 11, 5, 6);
+      g.fillStyle = '#57895a'; g.fillRect(x - 1, y - 13, 4, 3); g.fillRect(x - 7, y - 11, 3, 2);
+    }
+    function litterFries(x, y) {
+      g.fillStyle = '#8f2626'; g.fillRect(x - 3, y - 4, 7, 6);
+      g.fillStyle = '#c9a032';
+      g.fillRect(x - 2, y - 8, 2, 5); g.fillRect(x + 1, y - 7, 2, 4);
+      g.fillRect(x + 5, y - 2, 4, 2); g.fillRect(x - 8, y + 1, 4, 2);
+    }
+    function litterWrapper(x, y) {
+      g.fillStyle = '#8b879f';
+      g.fillRect(x - 4, y - 2, 8, 5); g.fillRect(x - 2, y - 4, 5, 3);
+      g.fillStyle = '#a5a1b8'; g.fillRect(x - 2, y - 2, 3, 2);
+    }
+    function litterCup(x, y) {
+      g.fillStyle = '#8f2626'; g.fillRect(x - 3, y - 5, 7, 9);
+      g.fillStyle = '#cfd4e8'; g.fillRect(x - 3, y - 3, 7, 2); g.fillRect(x - 3, y + 1, 7, 2);
+      g.fillStyle = '#191627'; g.fillRect(x + 3, y - 8, 1, 5);
+    }
+
+    // lampposts at intersection corners
+    var corners = [[R0 - 12, R0 - 10], [R1 + 12, R0 - 10], [R0 - 12, R1 + 22], [R1 + 12, R1 + 22]];
     for (var cn = 0; cn < 4; cn++) {
       if (H(cx, cy, 110 + cn) < 0.35) continue;
-      var lx = corners[cn][0], ly = corners[cn][1];
-      var grad = g.createRadialGradient(lx, ly - 6, 4, lx, ly - 6, 60);
-      grad.addColorStop(0, COL.glow); grad.addColorStop(1, 'rgba(242,195,60,0)');
-      g.fillStyle = grad;
-      g.fillRect(lx - 60, ly - 66, 120, 120);
-      blit(g, scene, 'prop_d1_lamppost', lx, ly);
+      pole(corners[cn][0], corners[cn][1]);
     }
-    var FURN = ['prop_d1_hydrant', 'prop_d1_trashcan', 'prop_d1_newsbox', 'prop_d1_bench', 'prop_d1_crate'];
-    for (var fy = 48; fy < C; fy += 112) {              // along the vertical sidewalks
+    // street furniture along the sidewalks
+    var FURN = [hydrant, trashcan, bench, planter];
+    for (var fy = 48; fy < C; fy += 112) {
       var rf = H(cx, cy, 130 + fy);
       if (inRoadBand(wy + fy) || rf < 0.45) continue;
-      blit(g, scene, FURN[((rf * 977) | 0) % FURN.length], R0 + 11, fy);
+      FURN[((rf * 977) | 0) % FURN.length](R0 + 11, fy);
     }
-    for (var fx2 = 72; fx2 < C; fx2 += 128) {           // along the horizontal sidewalks
+    for (var fx2 = 72; fx2 < C; fx2 += 128) {
       var rf2 = H(cx, cy, 150 + fx2);
       if (inRoadBand(wx + fx2) || rf2 < 0.5) continue;
-      blit(g, scene, FURN[((rf2 * 787) | 0) % FURN.length], fx2, A1 + 22);
+      FURN[((rf2 * 787) | 0) % FURN.length](fx2, A1 + 22);
     }
-    if (H(cx, cy, 170) > 0.6) {                          // a parked car on the road edge
-      blit(g, scene, 'prop_d1_car', A0 + 18, 90 + H(cx, cy, 171) * 120);
-    }
-    for (var lt = 0; lt < 5; lt++) {                     // the food flood, sparse
+    // food-flood litter, sparse and warm
+    var LIT = [litterFries, litterWrapper, litterCup];
+    for (var lt = 0; lt < 6; lt++) {
       var rl = H(cx, cy, 180 + lt);
       if (rl < 0.35) continue;
-      blit(g, scene, 'decal_flood_' + (1 + ((rl * 887) | 0) % 6),
-        (H(cx, cy, 190 + lt) * (C - 40)) + 20, (H(cx, cy, 200 + lt) * (C - 40)) + 36);
+      LIT[((rl * 887) | 0) % LIT.length](
+        (H(cx, cy, 190 + lt) * (C - 40)) + 20, (H(cx, cy, 200 + lt) * (C - 40)) + 30);
+    }
+
+    // ---- 9. BUILDINGS (real obstacles; rects shared with collision) ----
+    var solids = PC.chunkSolids(cx, cy);
+    for (var bi = 0; bi < solids.length; bi++) {
+      var b = solids[bi];
+      var bx = b.x - wx, by = b.y - wy;
+      var ROOFS = [
+        { base: '#3a3550', lite: '#453f60', dark: '#2c2840' },
+        { base: '#463a48', lite: '#544459', dark: '#362c38' },
+        { base: '#35415a', lite: '#3f4d6a', dark: '#293246' },
+      ];
+      var R = ROOFS[((b.v * 883) | 0) % 3];
+      // drop shadow to the lower-right (fake height)
+      g.fillStyle = 'rgba(15,12,24,0.45)';
+      g.fillRect(bx + 5, by + 7, b.w, b.h);
+      // wall strip along the bottom edge (the visible face)
+      g.fillStyle = R.dark;
+      g.fillRect(bx, by, b.w, b.h);
+      // roof slab, inset - parapet edge reads as height
+      g.fillStyle = R.base;
+      g.fillRect(bx + 2, by + 2, b.w - 4, b.h - 8);
+      g.fillStyle = R.lite;
+      g.fillRect(bx + 2, by + 2, b.w - 4, 2);
+      g.fillRect(bx + 2, by + 2, 2, b.h - 8);
+      // roof speckle, world-keyed
+      speck(g, wx, wy, bx + 4, by + 4, b.w - 8, b.h - 12, 600 + bi, 0.06, R.dark, 2);
+      // AC units + vents
+      var nAc = 1 + ((b.v * 7) | 0) % 3;
+      for (var ac = 0; ac < nAc; ac++) {
+        var ax = bx + 10 + H(cx, cy, 700 + bi * 9 + ac) * (b.w - 34);
+        var ay = by + 10 + H(cx, cy, 720 + bi * 9 + ac) * (b.h - 34);
+        g.fillStyle = '#55516f'; g.fillRect(ax, ay, 16, 11);
+        g.fillStyle = '#6d6a8e'; g.fillRect(ax, ay, 16, 3);
+        g.fillStyle = '#191627'; g.beginPath(); g.arc(ax + 8, ay + 7, 3, 0, Math.PI * 2); g.fill();
+      }
+      // rooftop hatch + pipe
+      g.fillStyle = R.dark;
+      g.fillRect(bx + b.w - 18, by + 6, 10, 8);
+      g.fillStyle = '#55516f';
+      g.fillRect(bx + 6, by + b.h - 18, 3, 6);
+      // street-facing awning stripe on the bottom face (a hint of shopfront)
+      if (b.v > 0.5) {
+        var awW = Math.min(40, b.w - 16);
+        var awX = bx + ((b.w - awW) / 2) | 0;
+        g.fillStyle = '#8f2626'; g.fillRect(awX, by + b.h - 5, awW, 5);
+        g.fillStyle = '#cfd4e8';
+        for (var aw = awX + 5; aw < awX + awW - 4; aw += 10) g.fillRect(aw, by + b.h - 5, 5, 5);
+      }
     }
   };
 })();

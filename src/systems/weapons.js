@@ -74,7 +74,12 @@ PC.ResizerWeapon = function () {
 PC.ResizerWeapon.prototype.update = function (dt, scene) {
   this.cdT -= dt;
   if (this.cdT > 0) return;
-  // nearest live enemy within range (plain scan; runs at most ~2x/s)
+  // VS-knife model (Mark round 6): fire in the direction Danny is moving/
+  // facing, with a forgiving cone-assist snap (~35 deg) so shots still land.
+  // COMPENDIUM 4 keeps its no-aim-input rule - the aim IS your movement.
+  var ax = scene.aimX, ay = scene.aimY;
+  var al = Math.sqrt(ax * ax + ay * ay) || 1;
+  ax /= al; ay /= al;
   var best = null, bestD = this.range * this.range;
   var pool = scene.enemies.pool;
   for (var i = 0; i < pool.length; i++) {
@@ -82,14 +87,18 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
     if (!e.active) continue;
     var dx = e.x - scene.px, dy = e.y - scene.py;
     var d = dx * dx + dy * dy;
-    if (d < bestD) { bestD = d; best = e; }
+    if (d >= bestD) continue;
+    var dl = Math.sqrt(d) || 1;
+    if ((dx * ax + dy * ay) / dl < 0.82) continue;   // outside the aim cone
+    bestD = d; best = e;
   }
-  if (!best) return;
+  var tx, ty;
+  if (best) { tx = best.x; ty = best.y; }
+  else { tx = scene.px + ax * 200; ty = scene.py + ay * 200; }
   this.cdT = this.cd;
-  scene.bullets.fire(scene.px, scene.py - 4, best.x, best.y, {
+  scene.bullets.fire(scene.px, scene.py - 4, tx, ty, {
     speed: this.speed, dmg: this.dmg, frame: 'proj_resizer',
   });
-  scene.fx.burst(scene.px + (best.x > scene.px ? 18 : -18), scene.py - 4, 'fx_muzzle', 2, 0.1);
-  scene.facing = best.x >= scene.px ? 1 : -1;   // Danny faces his target
+  scene.fx.burst(scene.px + ax * 18, scene.py - 4 + ay * 12, 'fx_muzzle', 2, 0.1);
   if (PC.audio) PC.audio.shoot();
 };

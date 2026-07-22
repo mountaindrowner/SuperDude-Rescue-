@@ -12,6 +12,31 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-22 — ROUND 6: buildings, crowd physics, directional fire,
+  simple walk, all map art hand-painted.** Mark (after clearing a
+  stale cached load): painted map WORKS, but PixelLab map assets
+  still bad -> ALL props/litter now painted in code inside world.js
+  (lamppost+glow, hydrant, trashcan, bench, planter, fries/wrapper/
+  cup litter) - zero atlas blits on the ground. **BUILDINGS added as
+  real obstacles** (overrides COMPENDIUM 2.6 no-obstacles):
+  deterministic footprints per plaza quadrant (PC.chunkSolids, cached,
+  computable without painting so off-screen enemies collide too),
+  painted as rooftop slabs (parapet, world-keyed speckle, AC units w/
+  fans, hatch, pipe, drop shadow, optional shopfront awning stripe).
+  Collision: PC.resolveCircle (circle vs rects, least-penetration
+  exit) applied to player (r10) and every enemy. **Anti-stacking**:
+  ARTDNA soft-separation - same-cell neighbor pairs shove apart
+  (0.8x combined radii target, capped push) - crowds now CROWD.
+  **Fire direction**: consulted COMPENDIUM 4 (auto at nearest, no aim
+  input) vs Mark's instinct (fire where moving, like the VS knife) -
+  implemented the knife model: Resizer fires along last movement
+  direction with a ~35-degree cone-assist snap to the nearest enemy
+  in front; no aim input added. Danny no longer snaps to face
+  targets. **Walk fixed**: perpetual-flying-coat run scrapped; new
+  calm 4-frame walk (coat hangs naturally, negative: coat flying/
+  running) from Mark's #1 base at strength 300; lean reduced to a
+  whisper. Verified: buildings block + swarm splits around them, no
+  stacking, directional bolts, 59fps @ 52 foes, zero errors.
 - **2026-07-22 — WORLD REBUILT IN CODE (Mark round 5: "map is ugly,
   character slides, shooting lackluster - make it like Adventure
   City").** Mark's screenshots vs real VS proved it: VS ground is ONE
