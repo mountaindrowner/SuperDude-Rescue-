@@ -5,6 +5,7 @@ PC.ART_MANIFEST = [
   'boss_d1_frank_walk_2',
   'boss_d1_frank_walk_3',
   'boss_d1_frank_walk_4',
+  'char_danny_idle',
   'char_danny_walk_1',
   'char_danny_walk_2',
   'char_danny_walk_3',

@@ -89,7 +89,10 @@ window.PC = window.PC || {};
       tone('sine', 620 * v, 140, 0.14, 0.3);
       noise(0.06, 0.12, 2200);
     },
-    shoot: function () { tone('square', 980, 620, 0.05, 0.05); },
+    shoot: function () {
+      tone('square', 980, 620, 0.05, 0.05);
+      tone('sawtooth', 240, 150, 0.07, 0.04);   // low body layer
+    },
     gem: function () { tone('sine', 1318, 1760, 0.07, 0.12); },
     hurt: function () { tone('sawtooth', 220, 70, 0.25, 0.3); noise(0.12, 0.15, 500); },
     levelup: function () {

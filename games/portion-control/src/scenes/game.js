@@ -157,9 +157,12 @@ PC.GameScene.prototype.update = function (time, delta) {
     this.player.setFrame('char_danny_walk_' + (1 + (Math.floor(this.walkT * 9) % 4)));
   } else {
     this.walkT = 0;
-    this.player.setFrame('char_danny_walk_1');
+    this.player.setFrame('char_danny_idle');
   }
-  this.player.setPosition(Math.round(this.px), Math.round(this.py));
+  // walk juice (ARTDNA): 1px step bob + lean into the movement direction
+  var bob = this.moving ? Math.round(Math.sin(this.walkT * 11)) : 0;
+  this.player.setPosition(Math.round(this.px), Math.round(this.py) + bob);
+  this.player.rotation = this.moving ? this.facing * 0.05 + Math.sin(this.walkT * 11) * 0.03 : 0;
 
   // systems
   this.enemies.update(dt, this.px, this.py);
