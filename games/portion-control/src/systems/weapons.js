@@ -51,6 +51,10 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
       hit.hp -= b.dmg;
       hit.flashUntil = this.scene.now + PC.HURT_FLASH_MS / 1000;
       hit.sprite.setTintFill(0xffffff);
+      // knockback: shove along the bullet's direction (ARTDNA 3)
+      hit.kbUntil = this.scene.now + 0.12;
+      hit.kbx = b.dx * hit.spd * 0.8 * hit.kbMult;
+      hit.kby = b.dy * hit.spd * 0.8 * hit.kbMult;
       if (hit.hp <= 0) onKill(hit);
       if (b.pierce > 0) { b.pierce--; }
       else { b.active = false; b.sprite.setVisible(false); }

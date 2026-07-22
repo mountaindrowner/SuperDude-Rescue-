@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-22 — ART DIRECTION SHIFT: chibi -> 90s-Konami shaded
+  (Mark round 4 + his VS Art DNA guide, now `ARTDNA.md` - art law,
+  wins over COMPENDIUM on art).** Size stays 48px (option B locked).
+  Implemented ARTDNA's REQUIRED juice: (1) per-enemy sin-rotation
+  walk wobble (rotation = sin(animT*6+phase)*0.06 - "the single
+  highest-value trick"), (2) 120ms reversed-velocity knockback on
+  bullet hits along bullet direction (per-def kbMult: heavies 0.3,
+  bosses 0), stack-free timestamp. Also fixed a real bug found in
+  passing: spawn() never copied def.still, so pop-to-harmless-food
+  stills NEVER showed in-game - now copied. Style suffix v2 (90s SNES
+  Konami, selective outline, 3-tone shading, negative: chibi/big
+  head) produced samples: 2 Danny candidates (A medium / B detailed
+  shading) + Konami fry + hotdog - sheet sent to Mark for style
+  approval BEFORE re-rolling the whole cast. Fry upgrade is dramatic.
+  Verified: game clean with wobble+knockback, zero errors.
 - **2026-07-21 — Danny upgraded to 48px native (Mark round 3: quality).**
   Mark flagged the in-game Danny as low quality vs the raw art - root
   cause: 64px anim frames crushed to 32. Produced a true-scale options

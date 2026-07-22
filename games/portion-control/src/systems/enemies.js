@@ -19,6 +19,8 @@ PC.EnemySystem = function (scene) {
       active: false, x: 0, y: 0, spd: 80, hp: 10, dmg: 6, xp: 1,
       frameA: 'enemy_d1_fry_walk_1', frameB: 'enemy_d1_fry_walk_2',
       r: 10, sprite: spr,
+      phase: (i % 17) * 0.37,          // per-enemy wobble phase (ARTDNA 3)
+      kbUntil: 0, kbx: 0, kby: 0, kbMult: 1,
     });
   }
 };
@@ -43,10 +45,13 @@ PC.EnemySystem.prototype.spawn = function (x, y, def) {
   }
   e.active = true;
   e.x = x; e.y = y;
+  e.kbUntil = 0;
   if (def) {
     e.spd = def.spd; e.hp = def.hp; e.dmg = def.dmg; e.xp = def.xp;
     e.frameA = def.key + '_walk_1'; e.frameB = def.key + '_walk_2';
     e.r = def.size / 2 - 2;
+    e.kbMult = def.kbMult != null ? def.kbMult : 1;   // heavies 0.3, bosses 0
+    e.still = def.still || null;
   }
   e.sprite.setFrame(e.frameA);
   this.liveCount++;
@@ -61,16 +66,23 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
   var y0 = cam.scrollY - PC.CULL_MARGIN, y1 = cam.scrollY + PC.RENDER.H + PC.CULL_MARGIN;
 
   this.hash.clear();
+  var now = this.scene.now || 0;
   var pool = this.pool;
   for (var i = 0; i < pool.length; i++) {
     var e = pool[i];
     if (!e.active) continue;
     var dx = px - e.x, dy = py - e.y;
-    var len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 1) {
-      var m = e.spd * dt / len;
-      e.x += dx * m;
-      e.y += dy * m;
+    if (now < e.kbUntil) {
+      // 120ms reversed-velocity knockback (ARTDNA 3) - half the game feel
+      e.x += e.kbx * dt;
+      e.y += e.kby * dt;
+    } else {
+      var len = Math.sqrt(dx * dx + dy * dy);
+      if (len > 1) {
+        var m = e.spd * dt / len;
+        e.x += dx * m;
+        e.y += dy * m;
+      }
     }
     this.hash.insert(e);
     var s = e.sprite;
@@ -80,6 +92,8 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
       s.x = e.x; s.y = e.y;
       s.setFrame(flip ? e.frameB : e.frameA);
       s.flipX = dx < 0;
+      // THE wobble (ARTDNA 3, REQUIRED): sin rocking sells motion at 300 units
+      s.rotation = Math.sin(this.animT * 6 + e.phase) * 0.06;
     }
   }
 };
