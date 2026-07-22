@@ -24,6 +24,14 @@ PC.GameScene.prototype.create = function () {
   this.now = 0;
   this.player = this.add.image(0, 0, 'atlas', 'char_danny_walk_1').setDepth(10);
 
+  // ghost trail (VS after-image, code-side): 6 pooled ghosts, Danny only
+  this.ghosts = [];
+  for (var gi = 0; gi < 6; gi++) {
+    this.ghosts.push({ t: 0, life: 0,
+      img: this.add.image(0, 0, 'atlas', 'char_danny_walk_1').setDepth(9).setVisible(false) });
+  }
+  this._ghostAcc = 0;
+
   this.enemies = new PC.EnemySystem(this);
   this.bullets = new PC.BulletSystem(this);
   this.fx = new PC.FxSystem(this);
@@ -168,6 +176,31 @@ PC.GameScene.prototype.update = function (time, delta) {
   var bob = this.moving ? Math.round(Math.sin(this.walkT * 11)) : 0;
   this.player.setPosition(Math.round(this.px), Math.round(this.py) + bob);
   this.player.rotation = this.moving ? this.facing * 0.03 : 0;
+
+  // ghost trail: drop a faint after-image every 70ms of movement; it stays
+  // put as Danny moves on, so the trail streams opposite his heading
+  this._ghostAcc += dt;
+  if (this.moving && this._ghostAcc > 0.07) {
+    this._ghostAcc = 0;
+    var gh = null;
+    for (var g1 = 0; g1 < this.ghosts.length; g1++) {
+      if (this.ghosts[g1].life <= 0) { gh = this.ghosts[g1]; break; }
+    }
+    if (gh) {
+      gh.life = 0.22; gh.t = 0.22;
+      gh.img.setFrame(this.player.frame.name)
+        .setFlipX(this.player.flipX)
+        .setPosition(this.player.x, this.player.y)
+        .setAlpha(0.16).setVisible(true);
+    }
+  }
+  for (var g2 = 0; g2 < this.ghosts.length; g2++) {
+    var gg = this.ghosts[g2];
+    if (gg.life <= 0) continue;
+    gg.life -= dt;
+    if (gg.life <= 0) { gg.img.setVisible(false); continue; }
+    gg.img.setAlpha(0.16 * (gg.life / gg.t));
+  }
 
   // systems
   this.enemies.update(dt, this.px, this.py);
