@@ -84,6 +84,9 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
         e.y += dy * m;
       }
     }
+    // buildings block the swarm too
+    var rs = PC.resolveCircle(e.x, e.y, e.r);
+    e.x = rs.x; e.y = rs.y;
     this.hash.insert(e);
     var s = e.sprite;
     var vis = e.x > x0 && e.x < x1 && e.y > y0 && e.y < y1;
@@ -94,6 +97,24 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
       s.flipX = dx < 0;
       // THE wobble (ARTDNA 3, REQUIRED): sin rocking sells motion at 300 units
       s.rotation = Math.sin(this.animT * 6 + e.phase) * 0.06;
+    }
+  }
+
+  // soft separation (ARTDNA 5): each enemy shoves apart from ONE same-cell
+  // neighbor per frame - crowd pressure without stacking, near-zero cost
+  var keys = this.hash._usedKeys, buckets = this.hash.buckets;
+  for (var ki = 0; ki < keys.length; ki++) {
+    var b = buckets[keys[ki]];
+    for (var bi = 0; bi + 1 < b.length; bi++) {
+      var e1 = b[bi], e2 = b[bi + 1];
+      var sx = e2.x - e1.x, sy = e2.y - e1.y;
+      var want = (e1.r + e2.r) * 0.8;
+      var d2s = sx * sx + sy * sy;
+      if (d2s >= want * want) continue;
+      var ds = Math.sqrt(d2s) || 0.01;
+      var push = Math.min(1.2, (want - ds) * 0.5) / ds;
+      e1.x -= sx * push; e1.y -= sy * push;
+      e2.x += sx * push; e2.y += sy * push;
     }
   }
 };

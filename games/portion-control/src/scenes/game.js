@@ -18,6 +18,7 @@ PC.GameScene.prototype.create = function () {
 
   this.px = 0; this.py = 0;
   this.facing = 1;
+  this.aimX = 1; this.aimY = 0;      // last movement direction = fire direction
   this.moving = false;
   this.walkT = 0;
   this.now = 0;
@@ -153,16 +154,20 @@ PC.GameScene.prototype.update = function (time, delta) {
     this.py += v.y * PC.PLAYER.SPEED * dt;
     if (v.x > 0.01) this.facing = 1;
     else if (v.x < -0.01) this.facing = -1;
+    this.aimX = v.x; this.aimY = v.y;
     this.walkT += dt;
     this.player.setFrame('char_danny_walk_' + (1 + (Math.floor(this.walkT * 9) % 4)));
   } else {
     this.walkT = 0;
     this.player.setFrame('char_danny_idle');
   }
-  // walk juice (ARTDNA): 1px step bob + lean into the movement direction
+  // buildings are solid (Mark round 6)
+  var rp = PC.resolveCircle(this.px, this.py, 10);
+  this.px = rp.x; this.py = rp.y;
+  // walk juice (ARTDNA): 1px step bob + a whisper of lean
   var bob = this.moving ? Math.round(Math.sin(this.walkT * 11)) : 0;
   this.player.setPosition(Math.round(this.px), Math.round(this.py) + bob);
-  this.player.rotation = this.moving ? this.facing * 0.05 + Math.sin(this.walkT * 11) * 0.03 : 0;
+  this.player.rotation = this.moving ? this.facing * 0.03 : 0;
 
   // systems
   this.enemies.update(dt, this.px, this.py);
