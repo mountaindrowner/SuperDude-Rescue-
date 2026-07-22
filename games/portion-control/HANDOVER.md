@@ -217,9 +217,15 @@ the exact isolate-then-fold-in path THE ELEMENT LAB took for v2.0.
   file name. Real PixelLab art replaces files one by one with zero
   code changes. The game is never blocked on art.
 
-### L5. Character #1 — DANNY (locked; heroes 2–6 named later)
-The star is **Super Dude Danny** himself — same scientist hero as the
-platformer, translated to chunky top-down chibi:
+### L5. Character #1 — DANNY (locked rev 2, Mark 2026-07-22; heroes 2–6 named later)
+The star is **Super Dude Danny** himself, in the ARTDNA.md Konami
+style ("Option B" = detailed shading, NOT chibi, normal human
+proportions, 48px canvas). **Outfit locked by Mark:** long white lab
+coat OPEN over a **black t-shirt and blue jeans**, **dark blue
+backwards baseball cap**, **glasses** (not goggles), brown hair,
+small energy pistol with glowing cyan tip, firing pose facing right.
+Confident grin. (The earlier chibi spec below is HISTORICAL - kept
+only for the fallback pixel maps in handart.js:)
 
 - **Canvas 32×32**, body ~26px tall, chibi proportions ≈ 55% head /
   45% body. Thick Ink outline.
