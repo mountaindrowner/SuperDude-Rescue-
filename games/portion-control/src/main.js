@@ -14,13 +14,14 @@ window.PC = window.PC || {};
   // follows the device aspect (iPhone ~270x585) - tall view, swarm above
   // and below. Landscape/desktop: height locked 270, width follows.
   function logicalSize() {
+    var B = PC.RENDER.BASE;
     var aw = window.innerWidth || 960, ah = window.innerHeight || 540;
     if (ah >= aw) {
-      var h = Math.round(270 * (ah / aw));
-      return { w: 270, h: Math.max(360, Math.min(640, h)) };
+      var h = Math.round(B * (ah / aw));
+      return { w: B, h: Math.max(Math.round(B * 1.3), Math.min(Math.round(B * 2.4), h)) };
     }
-    var w = Math.round(270 * (aw / ah));
-    return { w: Math.max(320, Math.min(640, w)), h: 270 };
+    var w = Math.round(B * (aw / ah));
+    return { w: Math.max(Math.round(B * 1.15), Math.min(Math.round(B * 2.4), w)), h: B };
   }
   var ls = logicalSize();
   PC.RENDER.W = ls.w; PC.RENDER.H = ls.h;

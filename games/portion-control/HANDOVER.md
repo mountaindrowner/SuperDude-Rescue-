@@ -12,6 +12,32 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-23 — PLAYTEST ROUND 10: 8 fixes from Mark's recorded run.**
+  (1) **Zoom out**: `PC.RENDER.BASE` 270->340, main.js derives logical
+  size from it - ~26% more map visible (Danny size kept). (2)
+  **Building collisions fixed**: collision math was already 100%
+  correct (headless-verified all 1152 rects eject) - real issues were
+  perception: player now anchored at FEET (origin 0.5,0.82) so he stops
+  at buildings instead of sinking in (r 10->13); buildings read clearly
+  RAISED (brighter roofs, top rim highlight, strong contact + cast
+  shadow) so none feel invisible. (3) **Spawn director** (new
+  `systems/spawn.js`): 10min->5min (RUN.BOSS_AT_S 300), gentle early /
+  intense late 6-phase timeline, all 5 D1 foods introduced over time
+  with distinct stats + time-scaling, Ring events at phase turns. (4)
+  **Separation strengthened** (round-10 stacking): all-pairs per cell
+  (cap 12), 2 passes, 0.95x full-radius target. (5) **Health + crates
+  + gold** (new `systems/pickups.js`): ambient shiny lab supply crates
+  (break on touch/bullet -> med-kit heal35 or coin fan), med-kit + coin
+  drops from popped food (1.5% / ~8.5%), coins = gold meta-currency
+  (HUD `$`, localStorage `portioncontrol.gold`), floatText. (6)
+  **Shot graphics**: PixelLab whisk sprite (metal wire loops) on the
+  Whisk Cyclone + flying-fries pellet on the Portion Blaster (solid
+  blend, not the beam's glow). (7) **Adventure City music**: 3 tracks
+  copied to `assets/music/city_{a,b,c}.mp3`, random per run via
+  HTMLAudioElement (synth fallback). Verified headless: zoom 340,
+  late-game 4-food mix, coin->gold + medkit->heal, 59fps, 0 errors.
+  **Next per COMPENDIUM: M5 District 1 slice** (Big Frank boss +
+  rescue + win/lose) - the remaining vertical-slice milestone.
 - **2026-07-23 — BUILDING CHARACTER PASS + M4 SHIPPED (round 9).**
   Mark approved the art direction ("right on the money") - world and
   code-painting confirmed as the way. (1) **Buildings got character**:

@@ -28,7 +28,10 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   b.dx = dx / d; b.dy = dy / d;
   b.spd = spec.speed; b.dmg = spec.dmg; b.pierce = spec.pierce || 0;
   b.life = spec.life || 1.1;
+  var glow = spec.frame !== 'proj_pellet';   // fries = solid, beam = glow
   b.sprite.setFrame(spec.frame || 'proj_resizer')
+    .setBlendMode(glow ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
+    .setScale(glow ? 1.4 : 1.2)
     .setPosition(x, y).setRotation(Math.atan2(dy, dx)).setVisible(true);
 };
 
@@ -43,6 +46,9 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     b.x += b.dx * b.spd * dt;
     b.y += b.dy * b.spd * dt;
     b.sprite.setPosition(b.x, b.y);
+    if (this.scene.pickups && this.scene.pickups.hitAt(b.x, b.y)) {
+      b.active = false; b.sprite.setVisible(false); continue;
+    }
     var hit = null;
     hash.eachNear(b.x, b.y, function (e) {
       var dx = e.x - b.x, dy = e.y - b.y;
@@ -175,7 +181,7 @@ PC.WhiskWeapon = function (scene) {
   this.sprites = [];
   for (var i = 0; i < 3; i++) {
     this.sprites.push(scene.add.image(0, 0, 'atlas', 'proj_whisk')
-      .setDepth(9).setVisible(false));
+      .setScale(1.3).setDepth(9).setVisible(false));
   }
 };
 PC.WhiskWeapon.prototype.desc = function () {

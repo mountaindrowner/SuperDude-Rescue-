@@ -4,8 +4,12 @@
 window.PC = window.PC || {};
 
 // ---- render lock (HANDOVER L3) ----
+// BASE = the portrait short-edge logical size = the zoom level. Bigger =
+// more of the map on screen, sprites appear smaller (Mark round 10: "zoom
+// the game out a little so I can see more of the map"). 270 -> 340.
 PC.RENDER = {
-  W: 480, H: 270,              // logical resolution, 16:9, camera zoom 1
+  W: 480, H: 270,              // set live by main.js from BASE + device aspect
+  BASE: 340,                   // portrait width / landscape height (the zoom)
   DPR_CAP: 2,                  // devicePixelRatio cap (Perf Bible 7)
   CAMERA_LERP: 0.12,
 };
@@ -43,7 +47,7 @@ PC.SHAKE = { MAX_PX: 3, MS: 120 };
 PC.HURT_FLASH_MS = 80;
 
 // ---- player baseline (COMPENDIUM 5.2) ----
-PC.PLAYER = { HP: 100, SPEED: 190, PICKUP_R: 72, IFRAMES: 0.6 };
+PC.PLAYER = { HP: 100, SPEED: 190, PICKUP_R: 72, IFRAMES: 0.6, MEDKIT_HEAL: 35 };
 
 // ---- XP & leveling (COMPENDIUM 5.3) ----
 PC.XP = {
@@ -53,7 +57,8 @@ PC.XP = {
 };
 
 // ---- run structure (COMPENDIUM 5.1) ----
-PC.RUN = { BOSS_AT_S: 600, BOSS_AMBIENT_MULT: 1.8 };
+// Mark round 10: 10min is too long for kids - District 1 is a 5min run.
+PC.RUN = { BOSS_AT_S: 300, BOSS_AMBIENT_MULT: 1.8 };
 
 // ---- in-run enemy time scaling (COMPENDIUM 5.5) ----
 PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.02 };

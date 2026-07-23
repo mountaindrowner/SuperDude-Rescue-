@@ -136,6 +136,9 @@ window.PC = window.PC || {};
   add('pickup_health', 16, 16, 'heart', P.CHERRY, P.WHITE);
   add('pickup_magnet', 16, 16, 'magnet', P.CHERRY, P.CLOUD);
   add('pickup_bomb', 16, 16, 'bomb', P.INK, P.CHERRY);
+  add('pickup_crate', 32, 32, 'crate', P.STEEL, P.CYAN);       // supply crate
+  add('pickup_medkit', 16, 16, 'medkit', P.WHITE, P.CHERRY);   // heal
+  add('pickup_coin', 14, 14, 'coin', P.MUSTARD, P.CHEESE);     // gold currency
   fx('pickup_chest', 4, 32, P.CRUST, P.MUSTARD, 'chest');
   fx('pickup_cage', 3, 48, P.STEEL, P.MINT, 'cage');
 
@@ -304,6 +307,29 @@ window.PC = window.PC || {};
       g.fillText(glyph, a.w / 2, a.h / 2 + 1);
     },
     gem: function (g, a) { PAINTERS.proj(g, a); },
+    crate: function (g, a) {                         // shiny lab supply crate
+      blob(g, 3, 5, a.w - 6, a.h - 8, a.c1);
+      g.fillStyle = hex(P.CYAN);
+      g.fillRect(5, 7, a.w - 10, 2);                 // glowing top band
+      g.fillRect(a.w / 2 - 1, 9, 2, a.h - 14);       // vertical seam
+      g.fillStyle = hex(P.CLOUD);
+      g.fillRect(6, a.h - 8, 3, 2); g.fillRect(a.w - 9, a.h - 8, 3, 2);
+    },
+    medkit: function (g, a) {
+      blob(g, 1, 2, a.w - 2, a.h - 4, a.c1);
+      g.fillStyle = hex(P.CHERRY);
+      g.fillRect(a.w / 2 - 1, 4, 2, a.h - 8);        // red cross
+      g.fillRect(4, a.h / 2 - 1, a.w - 8, 2);
+    },
+    coin: function (g, a) {
+      var c = a.w / 2;
+      g.fillStyle = hex(P.INK);
+      g.beginPath(); g.arc(c, c, c - 1, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(a.c1);
+      g.beginPath(); g.arc(c, c, c - 2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(a.c2);
+      g.fillRect(c - 2, 3, 1, a.w - 6);
+    },
     heart: function (g, a) {
       blob(g, 1, 3, a.w - 2, a.h - 6, a.c1);
       g.fillStyle = hex(a.c2); g.fillRect(4, 5, 2, 2);

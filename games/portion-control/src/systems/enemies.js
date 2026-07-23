@@ -105,21 +105,28 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
     }
   }
 
-  // soft separation (ARTDNA 5): each enemy shoves apart from ONE same-cell
-  // neighbor per frame - crowd pressure without stacking, near-zero cost
+  // separation (ARTDNA 5, strengthened round 10: "still stacking too much").
+  // Every same-cell PAIR shoves apart to their full combined radius, two
+  // passes for firmness. Cell = 72px so buckets stay small; capped at 12
+  // per bucket so a giant pile can't blow up the pair count.
   var keys = this.hash._usedKeys, buckets = this.hash.buckets;
-  for (var ki = 0; ki < keys.length; ki++) {
-    var b = buckets[keys[ki]];
-    for (var bi = 0; bi + 1 < b.length; bi++) {
-      var e1 = b[bi], e2 = b[bi + 1];
-      var sx = e2.x - e1.x, sy = e2.y - e1.y;
-      var want = (e1.r + e2.r) * 0.8;
-      var d2s = sx * sx + sy * sy;
-      if (d2s >= want * want) continue;
-      var ds = Math.sqrt(d2s) || 0.01;
-      var push = Math.min(1.2, (want - ds) * 0.5) / ds;
-      e1.x -= sx * push; e1.y -= sy * push;
-      e2.x += sx * push; e2.y += sy * push;
+  for (var pass = 0; pass < 2; pass++) {
+    for (var ki = 0; ki < keys.length; ki++) {
+      var b = buckets[keys[ki]];
+      var n = b.length < 12 ? b.length : 12;
+      for (var bi = 0; bi < n; bi++) {
+        for (var bj = bi + 1; bj < n; bj++) {
+          var e1 = b[bi], e2 = b[bj];
+          var sx = e2.x - e1.x, sy = e2.y - e1.y;
+          var want = (e1.r + e2.r) * 0.95;
+          var d2s = sx * sx + sy * sy;
+          if (d2s >= want * want) continue;
+          var ds = Math.sqrt(d2s) || 0.01;
+          var push = (want - ds) * 0.5 / ds;
+          e1.x -= sx * push; e1.y -= sy * push;
+          e2.x += sx * push; e2.y += sy * push;
+        }
+      }
     }
   }
 };
