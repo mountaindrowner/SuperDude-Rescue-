@@ -10,6 +10,8 @@ PC.ART_MANIFEST = [
   'char_danny_walk_2',
   'char_danny_walk_3',
   'char_danny_walk_4',
+  'char_danny_walk_5',
+  'char_danny_walk_6',
   'decal_flood_1',
   'decal_flood_2',
   'decal_flood_3',

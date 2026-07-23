@@ -12,6 +12,27 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-23 — KID-SAFE ENEMY PIVOT COMPLETE + Danny A wired (round 8).**
+  Mark's ruling: enemies must NOT be monsters/mascots - they are PLAIN
+  OVERSIZED FOOD OBJECTS (no faces, no legs; a kids' game). L4's
+  "menacing face" grammar now applies to BOSSES ONLY; the swarm is
+  cheerful giant food. Art: 5 plain foods via v1 pixflux (bright
+  cheerful, negative: face/eyes/legs/monster) at game-grid sizes;
+  installed as walk_1=walk_2=still (single frame). Motion is ALL code:
+  squash-stretch waddle (scaleY 1+sin*0.07 / scaleX inverse) + the
+  rotation wobble + knockback + separation. Pop fiction upgraded: the
+  still renders at 55% scale - the Resizer visibly SHRINKS food back
+  to normal. **Danny = v2 option A (low detail)**: 68px canvas, idle =
+  standing east rotation, 6-frame template walk (cycle *10 %6), E/W
+  flip only per Mark's VS reference; ghost-trail after-image live.
+  V2 NOTES: create-1-direction-object works and persists to the
+  library BUT its images are only served from backblaze.pixellab.ai,
+  which this environment's egress policy BLOCKS (characters are
+  fetchable via /characters/{id}/zip on the api host; objects have no
+  zip endpoint - flag the host to Mark if object downloads are ever
+  needed). The 13 option-characters from this round remain in Mark's
+  library. Verified: friendly food swarm + Danny A + waddle at 59fps,
+  zero errors. **Next: M4 level-up cards** (still the milestone).
 - **2026-07-22 — WALK SOLVED: skeleton animation pipeline (round 7).**
   Mark rejected 5 animate-with-text walk options ("all terrible" -
   correct: that endpoint animates well but MUTATES identity: fedoras,
