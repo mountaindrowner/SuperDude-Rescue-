@@ -35,6 +35,7 @@ window.PC = window.PC || {};
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
   add('char_danny_idle', 68, 68, 'creature', P.WHITE, P.CYAN, 1);
+  add('hero_cook', 48, 64, 'portrait', P.CLOUD, P.MUSTARD);   // rescue hero
   ['cook', 'tech', 'muscle', 'scout', 'medic'].forEach(function (k) {
     add('captured_' + k, PC.SIZE.PLAYER, PC.SIZE.PLAYER, 'captured', P.MINT, P.INK);
   });

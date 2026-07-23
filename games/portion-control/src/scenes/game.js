@@ -59,6 +59,8 @@ PC.GameScene.prototype.create = function () {
   this.director = new PC.SpawnDirector(this);
   this._rings = {};
   this.pickups = new PC.PickupSystem(this);
+  this.boss = null; this.bossSpawned = false; this.won = false;
+  this.bossBar = this.add.graphics().setScrollFactor(0).setDepth(103);
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
@@ -330,9 +332,13 @@ PC.GameScene.prototype.update = function (time, delta) {
   this.player.setAlpha(this.now < this.invUntil && Math.floor(this.now * 10) % 2 ? 0.35 : 1);
 
   // spawn director (COMPENDIUM 8.1, kid-tuned): sparse early, intense late,
-  // 5 food types introduced on a timeline
-  this.director.update(dt, this.runT);
-  // one-shot Ring events at the phase turns
+  // 5 food types introduced on a timeline. Ambient spawns thin out while
+  // the boss lives (COMPENDIUM 5.1 x1.8 interval) so the fight can breathe.
+  if (!this.boss || this.boss.dead) {
+    this.director.update(dt, this.runT);
+  } else {
+    this.director.update(dt * 0.55, this.runT);
+  }
   var rings = [[60, 14, 'fry'], [150, 18, 'popcorn'], [240, 22, 'hotdog']];
   for (var ri = 0; ri < rings.length; ri++) {
     if (this.runT >= rings[ri][0] && !this._rings[ri]) {
@@ -340,6 +346,10 @@ PC.GameScene.prototype.update = function (time, delta) {
       this.director.ring(rings[ri][1], rings[ri][2], this.runT / 60);
     }
   }
+
+  // ---- BOSS (M5): Big Frank at the timer, then run his fight ----
+  if (!this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
+  if (this.boss) this.boss.update(dt, this.px, this.py);
 
   this.ground.update(this.cameras.main);
 
@@ -355,12 +365,113 @@ PC.GameScene.prototype.update = function (time, delta) {
 };
 
 PC.GameScene.prototype.die = function () {
+  if (this.dead || this.won) return;
   this.dead = true;
   if (PC.audio) { PC.audio.stopMusic(); PC.audio.hurt(); }
   this.fx.burst(this.px, this.py, 'fx_pop', 4, 0.4);
   this.player.setVisible(false);
   var self = this;
   this.time.delayedCall(700, function () {
-    self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level });
+    self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
+      gold: self.pickups.gold, win: false });
+  });
+};
+
+// ---- BOSS spawn: big cinematic entrance (dopamine) ----
+PC.GameScene.prototype.spawnBoss = function () {
+  this.bossSpawned = true;
+  var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
+  // spawn off the top edge, drifting toward the player
+  this.boss = new PC.Boss(this, this.px, this.py - Math.max(W, H) * 0.55);
+  // white flash + shake + roar
+  var flash = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.7).setScrollFactor(0).setDepth(150);
+  this.tweens.add({ targets: flash, alpha: 0, duration: 500, onComplete: function () { flash.destroy(); } });
+  this.cameras.main.shake(400, 0.01);
+  if (PC.audio) { PC.audio.hurt(); PC.audio.levelup(); }
+  // banner
+  var banner = this.add.text(W / 2, H * 0.32, 'BIG FRANK\nAPPEARS!', {
+    fontFamily: 'monospace', fontSize: '20px', color: '#ff6b6b', fontStyle: 'bold',
+    align: 'center', stroke: '#1b1530', strokeThickness: 3,
+  }).setOrigin(0.5).setScrollFactor(0).setDepth(151).setScale(0.5);
+  this.tweens.add({ targets: banner, scale: 1, duration: 300, ease: 'Back.out' });
+  this.tweens.add({ targets: banner, alpha: 0, delay: 1600, duration: 500,
+    onComplete: function () { banner.destroy(); } });
+};
+
+// weapons/bullets route boss hits here (single damage path stays in Boss)
+PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
+  var b = this.boss;
+  if (!b || b.dead) return false;
+  var ddx = b.x - x, ddy = b.y - y;
+  if (ddx * ddx + ddy * ddy > (b.r + 8) * (b.r + 8)) return false;
+  b.damage(dmg, dx, dy);
+  this.fx.burst(x, y, 'fx_spark', 3, 0.16);
+  return true;
+};
+
+// ---- VICTORY: shrink + confetti + slowmo + DISTRICT CLEARED + rescue ----
+PC.GameScene.prototype.onBossDefeated = function () {
+  if (this.won) return;
+  this.won = true;
+  var self = this, W = PC.RENDER.W, H = PC.RENDER.H, b = this.boss;
+  if (PC.audio) { PC.audio.stopMusic(); PC.audio.levelup(); }
+  this.cameras.main.shake(500, 0.012);
+  // slowmo
+  this.time.timeScale = 0.4;
+
+  // Frank shrinks back to a normal hot dog then pops into gold
+  b.tele.setVisible(false); b.shadow.setVisible(false);
+  this.tweens.add({ targets: b.sprite, scale: 0.35, angle: 360, duration: 900, ease: 'Cubic.in',
+    onComplete: function () {
+      b.sprite.setVisible(false);
+      self.fx.burst(b.x, b.y, 'fx_pop', 4, 0.5);
+      // confetti of coins raining toward Danny
+      for (var i = 0; i < 24; i++) {
+        var a = Math.random() * Math.PI * 2, r = 20 + Math.random() * 60;
+        self.pickups.drop(b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, 'coin', 5);
+      }
+    } });
+
+  // banner + cage rescue after a beat
+  this.time.delayedCall(1100, function () {
+    self.time.timeScale = 1;
+    self._rescueSequence(b.x, b.y);
+  }, [], this);
+};
+
+PC.GameScene.prototype._rescueSequence = function (bx, by) {
+  var self = this, W = PC.RENDER.W, H = PC.RENDER.H;
+  // DISTRICT CLEARED banner
+  var t1 = this.add.text(W / 2, H * 0.3, 'DISTRICT CLEARED!', {
+    fontFamily: 'monospace', fontSize: '20px', color: '#a8e04a', fontStyle: 'bold',
+    stroke: '#1b1530', strokeThickness: 3,
+  }).setOrigin(0.5).setScrollFactor(0).setDepth(151).setScale(0.4);
+  this.tweens.add({ targets: t1, scale: 1, duration: 350, ease: 'Back.out' });
+
+  // a cage where Frank was; it cracks, The Cook pops out
+  var cage = this.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.6).setDepth(11);
+  var cook = this.add.image(bx, by - 4, 'atlas', 'hero_cook').setScale(0.9).setDepth(12).setVisible(false);
+  if (PC.audio) PC.audio.chest();
+  this.time.delayedCall(500, function () {
+    cage.setFrame('pickup_cage_2'); self.cameras.main.shake(120, 0.006);
+  });
+  this.time.delayedCall(900, function () {
+    cage.setFrame('pickup_cage_3');
+    cook.setVisible(true).setScale(0.4);
+    self.tweens.add({ targets: cook, scale: 0.9, y: cook.y - 10, duration: 400, ease: 'Back.out' });
+    self.fx.burst(bx, by - 8, 'fx_levelup', 4, 0.5);
+    if (PC.audio) PC.audio.levelup();
+    self.time.delayedCall(200, function () { cage.destroy(); });
+    // sparkle ring of coins/gems joy
+    for (var i = 0; i < 10; i++) self.fx.burst(bx + (Math.random() - 0.5) * 40, by - 8 + (Math.random() - 0.5) * 30, 'fx_spark', 3, 0.4);
+    var t2 = self.add.text(W / 2, H * 0.4, 'THE COOK RESCUED!', {
+      fontFamily: 'monospace', fontSize: '15px', color: '#f2c33c', fontStyle: 'bold',
+      stroke: '#1b1530', strokeThickness: 3,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(151);
+  });
+  // to results
+  this.time.delayedCall(2800, function () {
+    self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
+      gold: self.pickups.gold, win: true, rescued: 'THE COOK' });
   });
 };
