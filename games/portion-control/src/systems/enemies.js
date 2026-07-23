@@ -97,6 +97,11 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
       s.flipX = dx < 0;
       // THE wobble (ARTDNA 3, REQUIRED): sin rocking sells motion at 300 units
       s.rotation = Math.sin(this.animT * 6 + e.phase) * 0.06;
+      // the WADDLE (Mark round 8: enemies are plain oversized food objects,
+      // not monsters - a squash-stretch bounce makes an object walk)
+      var sq = Math.sin(this.animT * 7 + e.phase * 2.3);
+      s.scaleY = 1 + sq * 0.07;
+      s.scaleX = 1 - sq * 0.045;
     }
   }
 
