@@ -12,6 +12,31 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-23 — BUILDING CHARACTER PASS + M4 SHIPPED (round 9).**
+  Mark approved the art direction ("right on the money") - world and
+  code-painting confirmed as the way. (1) **Buildings got character**:
+  4 archetypes by hash (shop: striped awning + glow sign / apartment:
+  roof garden + clothesline / office: skylight grid / diner: checker
+  awning + glowing burger sign), lit south faces (warm windows, some
+  dark, door + light spill), water towers on stilts, AC units,
+  antennas, roof hatches. Empty plaza quadrants now hold mini-parks
+  (grass, trees, path cross) or fountains (stone ring, shimmer) or
+  stay open. (2) **M4 level-up cards COMPLETE** (COMPENDIUM M4):
+  weapons.js rebuilt as a framework - Resizer L1-5 (dmg/amount/cd/
+  pierce per 7.1), Portion Blaster (40-degree cone, life 0.35s, 7.2),
+  Whisk Cyclone (orbiting sprites, per-enemy 0.5s tick via e.whiskCd,
+  7.3); passives battery/fan/shoes apply through scene.stats
+  (dmgMult/cdMult/spdMult); PC.damageEnemy is the single damage path
+  (flash+knockback+kill). Card flow: level-ups queue pendingLevels ->
+  showCards pauses the WORLD (update early-returns; runT verified
+  frozen), 3 distinct draws (weapon-up / weapon-new while <4 slots /
+  passives / Snack Break heal when maxed), tap or keys 1-3, stacked
+  level-ups chain card sets. Verified headless end-to-end: 2 stacked
+  picks, fan lv2 applied, resume at 58fps, zero errors.
+  **Next per COMPENDIUM: M5 - District 1 vertical slice** (full 8.1
+  spawn timeline + Ring/Elite/Golden events, Big Frank with Charge +
+  Condiment Splatter + enrage, single-path damageBoss, cage rescue of
+  hero 2, win/lose screens).
 - **2026-07-23 — KID-SAFE ENEMY PIVOT COMPLETE + Danny A wired (round 8).**
   Mark's ruling: enemies must NOT be monsters/mascots - they are PLAIN
   OVERSIZED FOOD OBJECTS (no faces, no legs; a kids' game). L4's
