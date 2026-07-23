@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-23 — M5 SHIPPED: Big Frank finale + Cook rescue (VERTICAL
+  SLICE COMPLETE).** `systems/boss.js` - THE BIG FRANK (128px, hp3000,
+  spd100, contact20): drifts at the player, **Charge** every 6s (0.7s
+  Cherry-tint telegraph draws the dash lane -> dash 320 for 1.1s),
+  **Condiment Splatter** every 9s (5 warning shadows -> ketchup puddles
+  r30, 3s, 8dmg/s), **enrage <25%** (red tint, charge every 4s).
+  `damage()` is the ONLY HP path and sole caller of die()->
+  onBossDefeated() (Perf Bible 10 - win can't miss). Full-width boss HP
+  bar. Bullets + Whisk route hits through `scene.hitBoss`. **Dopamine
+  chain**: entrance = white flash + shake + double-roar + BIG FRANK
+  APPEARS banner (Back.out pop); ambient spawns thin to 0.55x while he
+  lives; defeat = slowmo (timeScale 0.4) + Frank shrinks+spins to 35%
+  and pops + 24-coin confetti rain -> DISTRICT CLEARED banner -> cage
+  cracks (3 frames) -> **The Cook** springs out (hero_cook, v1 pixflux
+  chef) with level-up burst + sparkle ring + THE COOK RESCUED ->
+  win results. `scenes/results.js` reworked: win path = green bg +
+  confetti rain + rescued-hero portrait + JOINED THE TEAM + TIME/POPS/
+  LEVEL/GOLD; lose path = Overwhelmed. Verified headless: boss spawns
+  at 5:00, single-path defeat sets won=true, results win=true, 0
+  errors. **M0-M5 VERTICAL SLICE DONE** - District 1 is playable start
+  to finish. Next: evaluate with Mark, then M6+ (meta shell, full
+  arsenal, districts 2-5) if greenlit.
 - **2026-07-23 — PLAYTEST ROUND 10: 8 fixes from Mark's recorded run.**
   (1) **Zoom out**: `PC.RENDER.BASE` 270->340, main.js derives logical
   size from it - ~26% more map visible (Danny size kept). (2)

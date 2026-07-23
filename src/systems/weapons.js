@@ -49,6 +49,9 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     if (this.scene.pickups && this.scene.pickups.hitAt(b.x, b.y)) {
       b.active = false; b.sprite.setVisible(false); continue;
     }
+    if (this.scene.hitBoss && this.scene.hitBoss(b.x, b.y, b.dmg, b.dx, b.dy)) {
+      if (b.pierce > 0) { b.pierce--; } else { b.active = false; b.sprite.setVisible(false); continue; }
+    }
     var hit = null;
     hash.eachNear(b.x, b.y, function (e) {
       var dx = e.x - b.x, dy = e.y - b.y;
@@ -214,6 +217,14 @@ PC.WhiskWeapon.prototype.update = function (dt, scene) {
       PC.damageEnemy(scene, e, dmg, dx / dl, dy / dl, scene._onKillCb);
       scene.fx.burst(e.x, e.y, 'fx_spark', 3, 0.14);
     });
+    // whisk also grinds the boss (own 0.5s tick)
+    if (scene.boss && !scene.boss.dead && scene.now >= (scene._whiskBossCd || 0)) {
+      var bdx = scene.boss.x - wxp, bdy = scene.boss.y - wyp;
+      if (bdx * bdx + bdy * bdy < (scene.boss.r + 8) * (scene.boss.r + 8)) {
+        scene._whiskBossCd = scene.now + 0.5;
+        scene.hitBoss(wxp, wyp, dmg, 0, 0);
+      }
+    }
   }
 };
 
