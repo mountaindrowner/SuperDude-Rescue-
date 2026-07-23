@@ -35,7 +35,10 @@ window.PC = window.PC || {};
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
   add('char_danny_idle', 68, 68, 'creature', P.WHITE, P.CYAN, 1);
-  add('hero_cook', 48, 64, 'portrait', P.CLOUD, P.MUSTARD);   // rescue hero
+  // The rescued teammate is a real Super Dude Danny character (Adventure
+  // City rescue team: Victoria/Nayah/Kevin/Carlos/Josh) - Mark supplies the
+  // art + name later. Until then a clearly-placeholder stasis-pod hero.
+  add('hero_placeholder', 48, 64, 'herofig', P.CYAN, P.CLOUD);
   ['cook', 'tech', 'muscle', 'scout', 'medic'].forEach(function (k) {
     add('captured_' + k, PC.SIZE.PLAYER, PC.SIZE.PLAYER, 'captured', P.MINT, P.INK);
   });
@@ -321,6 +324,24 @@ window.PC = window.PC || {};
       g.fillStyle = hex(P.CHERRY);
       g.fillRect(a.w / 2 - 1, 4, 2, a.h - 8);        // red cross
       g.fillRect(4, a.h / 2 - 1, a.w - 8, 2);
+    },
+    herofig: function (g, a) {                       // placeholder rescued hero
+      var w = a.w, h = a.h;
+      g.fillStyle = 'rgba(53,208,255,0.18)';         // cyan lab glow halo
+      g.fillRect(2, 2, w - 4, h - 4);
+      // stasis pod outline
+      g.fillStyle = hex(P.INK); g.fillRect(6, 4, w - 12, h - 8);
+      g.fillStyle = hex(P.STEEL); g.fillRect(8, 6, w - 16, h - 12);
+      // silhouette figure inside
+      g.fillStyle = hex(P.GRAPE);
+      g.fillRect(w / 2 - 5, 12, 10, 10);             // head
+      g.fillRect(w / 2 - 7, 22, 14, 20);             // body
+      g.fillStyle = hex(P.CYAN);
+      g.font = '14px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('?', w / 2, h / 2 + 2);             // mystery hero
+      // sparkles
+      g.fillStyle = hex(P.WHITE);
+      g.fillRect(10, 10, 2, 2); g.fillRect(w - 12, h - 16, 2, 2);
     },
     coin: function (g, a) {
       var c = a.w / 2;

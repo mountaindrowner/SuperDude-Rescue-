@@ -12,7 +12,17 @@
 
 ## WHERE WE ARE (latest first)
 
-- **2026-07-23 — M5 SHIPPED: Big Frank finale + Cook rescue (VERTICAL
+- **2026-07-23 — Rescued teammate is a REAL SDD character, not "The
+  Cook" (Mark).** Mark: the rescue must be a Super Dude Danny roster
+  character (Adventure City team: Victoria/Nayah/Kevin/Carlos/Josh) -
+  he'll supply art + name later. Removed the invented Cook: `hero_cook`
+  art/manifest deleted; rescue + results now use a clean
+  stasis-pod PLACEHOLDER (`hero_placeholder`, code-drawn silhouette +
+  "?") and generic wording ("TEAMMATE RESCUED" / "YOUR HERO JOINED THE
+  TEAM"). Data hook `PC.D1_RESCUE = { name, art }` in config.js - to
+  wire the real hero later: drop art, add manifest key, set name+art.
+  Verified: win flow shows placeholder, 0 errors.
+- **2026-07-23 — M5 SHIPPED: Big Frank finale + hero rescue (VERTICAL
   SLICE COMPLETE).** `systems/boss.js` - THE BIG FRANK (128px, hp3000,
   spd100, contact20): drifts at the player, **Charge** every 6s (0.7s
   Cherry-tint telegraph draws the dash lane -> dash 320 for 1.1s),

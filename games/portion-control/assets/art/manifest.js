@@ -33,7 +33,6 @@ PC.ART_MANIFEST = [
   'pickup_crate',
   'pickup_medkit',
   'pickup_coin',
-  'hero_cook',
   'portrait_danny',
   'prop_d1_bench',
   'prop_d1_car',
