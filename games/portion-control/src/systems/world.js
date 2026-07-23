@@ -62,7 +62,7 @@ window.PC = window.PC || {};
       var h = Math.round(maxH * (0.62 + H(cx, cy, 520 + q) * 0.34));
       var x = Q[0] + Math.round((maxW - w) * H(cx, cy, 530 + q));
       var y = Q[1] + Math.round((maxH - h) * H(cx, cy, 540 + q));
-      out.push({ x: cx * C + x, y: cy * C + y, w: w, h: h, v: H(cx, cy, 550 + q) });
+      out.push({ x: cx * C + x, y: cy * C + y, w: w, h: h, v: H(cx, cy, 550 + q), q: q });
     }
     solidsCache[k] = out; solidsCacheN++;
     return out;
@@ -259,53 +259,197 @@ window.PC = window.PC || {};
         (H(cx, cy, 190 + lt) * (C - 40)) + 20, (H(cx, cy, 200 + lt) * (C - 40)) + 30);
     }
 
-    // ---- 9. BUILDINGS (real obstacles; rects shared with collision) ----
+    // ---- 9. BUILDINGS with CHARACTER (Mark round 9: "give the
+    // buildings some character... keep giving the city life") ----
     var solids = PC.chunkSolids(cx, cy);
+    var usedQuads = {};
     for (var bi = 0; bi < solids.length; bi++) {
       var b = solids[bi];
+      usedQuads[b.q] = true;
       var bx = b.x - wx, by = b.y - wy;
-      var ROOFS = [
-        { base: '#3a3550', lite: '#453f60', dark: '#2c2840' },
-        { base: '#463a48', lite: '#544459', dark: '#362c38' },
-        { base: '#35415a', lite: '#3f4d6a', dark: '#293246' },
-      ];
-      var R = ROOFS[((b.v * 883) | 0) % 3];
-      // drop shadow to the lower-right (fake height)
+      var arch = b.v;                                  // archetype selector
+      var FACE_H = 16;                                 // lit storefront face
+
+      // drop shadow (fake height)
       g.fillStyle = 'rgba(15,12,24,0.45)';
       g.fillRect(bx + 5, by + 7, b.w, b.h);
-      // wall strip along the bottom edge (the visible face)
+
+      // roof family per archetype
+      var R;
+      if (arch < 0.35)      R = { base: '#3a3550', lite: '#453f60', dark: '#2c2840', name: 'shop' };
+      else if (arch < 0.60) R = { base: '#4a3a40', lite: '#584550', dark: '#382b30', name: 'apt' };
+      else if (arch < 0.82) R = { base: '#35415a', lite: '#3f4d6a', dark: '#293246', name: 'office' };
+      else                  R = { base: '#433a52', lite: '#514663', dark: '#332c3f', name: 'diner' };
+
+      // wall block + roof slab (roof inset leaves the south face visible)
       g.fillStyle = R.dark;
       g.fillRect(bx, by, b.w, b.h);
-      // roof slab, inset - parapet edge reads as height
       g.fillStyle = R.base;
-      g.fillRect(bx + 2, by + 2, b.w - 4, b.h - 8);
+      g.fillRect(bx + 2, by + 2, b.w - 4, b.h - FACE_H - 2);
       g.fillStyle = R.lite;
       g.fillRect(bx + 2, by + 2, b.w - 4, 2);
-      g.fillRect(bx + 2, by + 2, 2, b.h - 8);
-      // roof speckle, world-keyed
-      speck(g, wx, wy, bx + 4, by + 4, b.w - 8, b.h - 12, 600 + bi, 0.06, R.dark, 2);
-      // AC units + vents
-      var nAc = 1 + ((b.v * 7) | 0) % 3;
-      for (var ac = 0; ac < nAc; ac++) {
-        var ax = bx + 10 + H(cx, cy, 700 + bi * 9 + ac) * (b.w - 34);
-        var ay = by + 10 + H(cx, cy, 720 + bi * 9 + ac) * (b.h - 34);
-        g.fillStyle = '#55516f'; g.fillRect(ax, ay, 16, 11);
-        g.fillStyle = '#6d6a8e'; g.fillRect(ax, ay, 16, 3);
-        g.fillStyle = '#191627'; g.beginPath(); g.arc(ax + 8, ay + 7, 3, 0, Math.PI * 2); g.fill();
+      g.fillRect(bx + 2, by + 2, 2, b.h - FACE_H - 2);
+      speck(g, wx, wy, bx + 4, by + 4, b.w - 8, b.h - FACE_H - 6, 600 + bi, 0.06, R.dark, 2);
+
+      // ---- the lit south face: windows + door = life ----
+      var faceY = by + b.h - FACE_H;
+      g.fillStyle = '#221e33';
+      g.fillRect(bx + 2, faceY, b.w - 4, FACE_H - 2);
+      var doorX = bx + 8 + Math.floor(H(cx, cy, 900 + bi) * (b.w - 26));
+      for (var wxp = bx + 6; wxp < bx + b.w - 10; wxp += 12) {
+        if (wxp > doorX - 10 && wxp < doorX + 12) continue;   // door gap
+        var lit = H(cx, cy, 910 + bi * 13 + wxp) > 0.3;
+        g.fillStyle = lit ? '#c9a032' : '#2c2840';            // warm lit / dark
+        g.fillRect(wxp, faceY + 3, 7, 6);
+        if (lit) { g.fillStyle = '#e8c463'; g.fillRect(wxp + 1, faceY + 4, 2, 2); }
       }
-      // rooftop hatch + pipe
-      g.fillStyle = R.dark;
-      g.fillRect(bx + b.w - 18, by + 6, 10, 8);
-      g.fillStyle = '#55516f';
-      g.fillRect(bx + 6, by + b.h - 18, 3, 6);
-      // street-facing awning stripe on the bottom face (a hint of shopfront)
-      if (b.v > 0.5) {
-        var awW = Math.min(40, b.w - 16);
+      g.fillStyle = '#191627';                                 // door
+      g.fillRect(doorX, faceY + 2, 9, FACE_H - 4);
+      g.fillStyle = '#5a5678';
+      g.fillRect(doorX + 6, faceY + 8, 2, 2);                  // handle
+      g.fillStyle = 'rgba(201,160,50,0.12)';                   // door light spill
+      g.fillRect(doorX - 3, by + b.h, 15, 6);
+
+      // ---- archetype charm ----
+      if (R.name === 'shop') {
+        // striped awning over the face + hanging sign
+        var awW = Math.min(b.w - 12, 44);
         var awX = bx + ((b.w - awW) / 2) | 0;
-        g.fillStyle = '#8f2626'; g.fillRect(awX, by + b.h - 5, awW, 5);
-        g.fillStyle = '#cfd4e8';
-        for (var aw = awX + 5; aw < awX + awW - 4; aw += 10) g.fillRect(aw, by + b.h - 5, 5, 5);
+        for (var aw = 0; aw < awW; aw += 6) {
+          g.fillStyle = (aw / 6) % 2 ? '#8f2626' : '#cfd4e8';
+          g.fillRect(awX + aw, faceY - 4, Math.min(6, awW - aw), 5);
+        }
+        g.fillStyle = '#191627'; g.fillRect(awX, faceY + 1, awW, 1);
+        g.fillStyle = '#c9a032'; g.fillRect(bx + b.w - 14, faceY - 8, 8, 6);   // glow sign
+        g.fillStyle = '#191627'; g.fillRect(bx + b.w - 15, faceY - 9, 10, 1);
+      } else if (R.name === 'apt') {
+        // roof garden: planters + a clothesline
+        for (var pg = 0; pg < 3; pg++) {
+          var pgx = bx + 8 + H(cx, cy, 930 + bi * 7 + pg) * (b.w - 28);
+          var pgy = by + 8 + H(cx, cy, 940 + bi * 7 + pg) * (b.h - FACE_H - 24);
+          g.fillStyle = '#3a3550'; g.fillRect(pgx, pgy + 4, 14, 6);
+          g.fillStyle = '#3f6b3d'; g.fillRect(pgx + 1, pgy, 12, 5);
+          g.fillStyle = '#57895a'; g.fillRect(pgx + 3, pgy + 1, 4, 2);
+        }
+        g.fillStyle = '#6d6a8e';                                // clothesline
+        g.fillRect(bx + 10, by + 10, 1, 8); g.fillRect(bx + b.w - 12, by + 10, 1, 8);
+        g.fillRect(bx + 10, by + 12, b.w - 22, 1);
+        var CLOTH = ['#8f2626', '#cfd4e8', '#3f6b3d'];
+        for (var cl = 0; cl < 3; cl++) {
+          g.fillStyle = CLOTH[cl];
+          g.fillRect(bx + 16 + cl * 12, by + 13, 6, 5);
+        }
+      } else if (R.name === 'office') {
+        // skylight grid, softly glowing
+        for (var skr = 0; skr < 2; skr++) {
+          for (var skc = 0; skc < 3; skc++) {
+            var skx = bx + 10 + skc * 16, sky = by + 10 + skr * 14;
+            if (skx + 12 > bx + b.w - 8 || sky + 10 > faceY - 6) continue;
+            g.fillStyle = '#191627'; g.fillRect(skx, sky, 12, 10);
+            g.fillStyle = H(cx, cy, 950 + bi * 11 + skr * 3 + skc) > 0.4 ? '#4a5d80' : '#2c3550';
+            g.fillRect(skx + 1, sky + 1, 10, 8);
+            g.fillStyle = 'rgba(207,212,232,0.35)';
+            g.fillRect(skx + 2, sky + 2, 3, 2);
+          }
+        }
+      } else {
+        // diner: checker awning + big glowing roof sign with a burger disc
+        var aw2 = Math.min(b.w - 10, 50), ax2 = bx + ((b.w - aw2) / 2) | 0;
+        for (var ck2 = 0; ck2 < aw2; ck2 += 4) {
+          g.fillStyle = (ck2 / 4) % 2 ? '#8f2626' : '#f2e6d8';
+          g.fillRect(ax2 + ck2, faceY - 3, Math.min(4, aw2 - ck2), 4);
+        }
+        var sgx = bx + b.w / 2 - 10, sgy = by + 8;
+        g.fillStyle = '#191627'; g.fillRect(sgx - 2, sgy - 2, 24, 16);
+        g.fillStyle = '#2c2840'; g.fillRect(sgx, sgy, 20, 12);
+        g.fillStyle = '#c9a032';                                // bun
+        g.beginPath(); g.arc(sgx + 10, sgy + 6, 5, Math.PI, 0); g.fill();
+        g.fillRect(sgx + 5, sgy + 8, 10, 2);
+        g.fillStyle = '#8f2626'; g.fillRect(sgx + 4, sgy + 6, 12, 2);   // patty
+        g.fillStyle = 'rgba(242,195,60,0.10)';
+        g.fillRect(sgx - 8, sgy - 8, 36, 28);                    // sign glow
       }
+
+      // ---- shared rooftop life ----
+      if (H(cx, cy, 960 + bi) > 0.55) {                          // water tower
+        var wtx = bx + 12 + H(cx, cy, 961 + bi) * (b.w - 40);
+        var wty = by + 12 + H(cx, cy, 962 + bi) * ((b.h - FACE_H) * 0.4);
+        g.fillStyle = '#191627';
+        g.fillRect(wtx, wty + 12, 2, 6); g.fillRect(wtx + 12, wty + 12, 2, 6);
+        g.fillRect(wtx + 3, wty + 14, 2, 5); g.fillRect(wtx + 9, wty + 14, 2, 5);
+        g.fillStyle = '#4a3a40'; g.fillRect(wtx - 1, wty + 2, 16, 11);
+        g.fillStyle = '#584550'; g.fillRect(wtx - 1, wty + 2, 16, 3);
+        g.fillStyle = '#191627';
+        g.beginPath(); g.moveTo(wtx - 2, wty + 2); g.lineTo(wtx + 7, wty - 4); g.lineTo(wtx + 16, wty + 2); g.fill();
+      }
+      var nAc = 1 + ((b.v * 7) | 0) % 2;                         // AC units
+      for (var ac = 0; ac < nAc; ac++) {
+        var ax3 = bx + 10 + H(cx, cy, 700 + bi * 9 + ac) * (b.w - 34);
+        var ay3 = by + 10 + H(cx, cy, 720 + bi * 9 + ac) * (b.h - FACE_H - 26);
+        g.fillStyle = '#55516f'; g.fillRect(ax3, ay3, 14, 10);
+        g.fillStyle = '#6d6a8e'; g.fillRect(ax3, ay3, 14, 3);
+        g.fillStyle = '#191627'; g.beginPath(); g.arc(ax3 + 7, ay3 + 6, 3, 0, Math.PI * 2); g.fill();
+      }
+      if (H(cx, cy, 970 + bi) > 0.5) {                           // antenna
+        var anx = bx + b.w - 14, any2 = by + 8;
+        g.fillStyle = '#6d6a8e';
+        g.fillRect(anx, any2, 1, 10);
+        g.fillRect(anx - 3, any2, 7, 1); g.fillRect(anx - 2, any2 + 3, 5, 1);
+      }
+      g.fillStyle = R.dark;                                      // roof hatch
+      g.fillRect(bx + 6, by + b.h - FACE_H - 12, 10, 8);
+      g.fillStyle = R.lite;
+      g.fillRect(bx + 6, by + b.h - FACE_H - 12, 10, 2);
+    }
+
+    // ---- 10. CITY LIFE in the empty plaza quadrants ----
+    for (var q2 = 0; q2 < 4; q2++) {
+      if (usedQuads[q2]) continue;
+      var Q2 = QUADS[q2];
+      var qcx = (Q2[0] + Q2[2]) / 2, qcy = (Q2[1] + Q2[3]) / 2;
+      var rq = H(cx, cy, 980 + q2);
+      if (rq < 0.35) {
+        // mini-park: grass pad + path cross + planters + benches
+        var pw = 110, ph = 100;
+        g.fillStyle = '#33473a';
+        g.fillRect(qcx - pw / 2, qcy - ph / 2, pw, ph);
+        g.fillStyle = '#3c5244';
+        g.fillRect(qcx - pw / 2, qcy - ph / 2, pw, 3);
+        speck(g, wx, wy, qcx - pw / 2, qcy - ph / 2, pw, ph, 985 + q2, 0.08, '#2c3d33', 2);
+        g.fillStyle = COL.walk;                                   // paths
+        g.fillRect(qcx - 6, qcy - ph / 2, 12, ph);
+        g.fillRect(qcx - pw / 2, qcy - 6, pw, 12);
+        for (var tp = 0; tp < 4; tp++) {                          // trees
+          var tx2 = qcx + (tp % 2 ? 1 : -1) * (pw / 4 + 6);
+          var ty2 = qcy + (tp < 2 ? -1 : 1) * (ph / 4 + 4);
+          g.fillStyle = 'rgba(15,12,24,0.3)';
+          g.beginPath(); g.ellipse(tx2 + 2, ty2 + 3, 9, 5, 0, 0, Math.PI * 2); g.fill();
+          g.fillStyle = '#3f6b3d';
+          g.beginPath(); g.arc(tx2, ty2, 9, 0, Math.PI * 2); g.fill();
+          g.fillStyle = '#57895a';
+          g.beginPath(); g.arc(tx2 - 3, ty2 - 3, 4, 0, Math.PI * 2); g.fill();
+        }
+      } else if (rq < 0.6) {
+        // fountain: stone ring + shimmer water
+        g.fillStyle = 'rgba(15,12,24,0.3)';
+        g.beginPath(); g.ellipse(qcx + 3, qcy + 4, 30, 26, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#5a5678';
+        g.beginPath(); g.arc(qcx, qcy, 28, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#413d5c';
+        g.beginPath(); g.arc(qcx, qcy, 24, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#2b4a66';
+        g.beginPath(); g.arc(qcx, qcy, 20, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#3d6485';
+        for (var sh = 0; sh < 8; sh++) {
+          var sa = H(cx, cy, 990 + q2 * 9 + sh) * Math.PI * 2;
+          var sr = 4 + H(cx, cy, 995 + q2 * 9 + sh) * 14;
+          g.fillRect(qcx + Math.cos(sa) * sr, qcy + Math.sin(sa) * sr, 3, 1);
+        }
+        g.fillStyle = '#6d6a8e';
+        g.beginPath(); g.arc(qcx, qcy, 5, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#8fb8d8'; g.fillRect(qcx - 1, qcy - 8, 2, 6);
+      }
+      // else: open plaza (breathing room is life too)
     }
   };
 })();
