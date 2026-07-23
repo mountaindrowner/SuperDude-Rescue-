@@ -23,7 +23,7 @@ window.PC = window.PC || {};
   // Danny renders at 48 (Mark picked option B: native PixelLab quality,
   // no downscale); other heroes get sized when their art is made.
   var CHARS = [
-    { k: 'danny',  c1: P.WHITE,  c2: P.CYAN, size: 48 },
+    { k: 'danny',  c1: P.WHITE,  c2: P.CYAN, size: 68, frames: 6 },   // v2 char (option A)
     { k: 'cook',   c1: P.CLOUD,  c2: P.MUSTARD },
     { k: 'tech',   c1: P.STEEL,  c2: P.CYAN },
     { k: 'muscle', c1: P.GRAPE,  c2: P.CHERRY },
@@ -31,10 +31,10 @@ window.PC = window.PC || {};
     { k: 'medic',  c1: P.WHITE,  c2: P.CHERRY },
   ];
   CHARS.forEach(function (c) {
-    creature('char_' + c.k, c.size || PC.SIZE.PLAYER, c.c1, c.c2, 4);
+    creature('char_' + c.k, c.size || PC.SIZE.PLAYER, c.c1, c.c2, c.frames || 4);
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
-  add('char_danny_idle', 48, 48, 'creature', P.WHITE, P.CYAN, 1);
+  add('char_danny_idle', 68, 68, 'creature', P.WHITE, P.CYAN, 1);
   ['cook', 'tech', 'muscle', 'scout', 'medic'].forEach(function (k) {
     add('captured_' + k, PC.SIZE.PLAYER, PC.SIZE.PLAYER, 'captured', P.MINT, P.INK);
   });
@@ -42,11 +42,11 @@ window.PC = window.PC || {};
   // -- enemies (COMPENDIUM 8, incl. split minions) : 2-frame walk + still --
   var ENEMIES = [
     // d1 street food
-    { k: 'enemy_d1_fry',      s: 24, c1: P.MUSTARD, c2: P.CHEESE },
-    { k: 'enemy_d1_popcorn',  s: 24, c1: P.WHITE,   c2: P.MUSTARD },
-    { k: 'enemy_d1_hotdog',   s: 32, c1: P.KETCHUP, c2: P.CRUST },
-    { k: 'enemy_d1_pretzel',  s: 48, c1: P.CRUST,   c2: P.COCOA },
-    { k: 'enemy_d1_toast',    s: 32, c1: P.CRUST,   c2: P.STEEL },
+    { k: 'enemy_d1_fry', s: 24, c1: P.MUSTARD, c2: P.CHEESE },
+    { k: 'enemy_d1_popcorn', s: 24, c1: P.WHITE,   c2: P.MUSTARD },
+    { k: 'enemy_d1_hotdog', s: 32, c1: P.KETCHUP, c2: P.CRUST },
+    { k: 'enemy_d1_pretzel', s: 48, c1: P.CRUST,   c2: P.COCOA },
+    { k: 'enemy_d1_toast', s: 32, c1: P.CRUST,   c2: P.STEEL },
     // d2 produce
     { k: 'enemy_d2_apple',    s: 24, c1: P.KETCHUP, c2: P.MINT },
     { k: 'enemy_d2_banana',   s: 40, c1: P.MUSTARD, c2: P.COCOA },

@@ -164,7 +164,7 @@ PC.GameScene.prototype.update = function (time, delta) {
     else if (v.x < -0.01) this.facing = -1;
     this.aimX = v.x; this.aimY = v.y;
     this.walkT += dt;
-    this.player.setFrame('char_danny_walk_' + (1 + (Math.floor(this.walkT * 9) % 4)));
+    this.player.setFrame('char_danny_walk_' + (1 + (Math.floor(this.walkT * 10) % 6)));
   } else {
     this.walkT = 0;
     this.player.setFrame('char_danny_idle');
