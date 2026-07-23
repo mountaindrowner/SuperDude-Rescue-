@@ -450,7 +450,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
 
   // a cage where Frank was; it cracks, The Cook pops out
   var cage = this.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.6).setDepth(11);
-  var cook = this.add.image(bx, by - 4, 'atlas', 'hero_cook').setScale(0.9).setDepth(12).setVisible(false);
+  var cook = this.add.image(bx, by - 4, 'atlas', PC.D1_RESCUE.art).setScale(0.8).setDepth(12).setVisible(false);
   if (PC.audio) PC.audio.chest();
   this.time.delayedCall(500, function () {
     cage.setFrame('pickup_cage_2'); self.cameras.main.shake(120, 0.006);
@@ -464,7 +464,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
     self.time.delayedCall(200, function () { cage.destroy(); });
     // sparkle ring of coins/gems joy
     for (var i = 0; i < 10; i++) self.fx.burst(bx + (Math.random() - 0.5) * 40, by - 8 + (Math.random() - 0.5) * 30, 'fx_spark', 3, 0.4);
-    var t2 = self.add.text(W / 2, H * 0.4, 'THE COOK RESCUED!', {
+    var t2 = self.add.text(W / 2, H * 0.4, 'TEAMMATE RESCUED!', {
       fontFamily: 'monospace', fontSize: '15px', color: '#f2c33c', fontStyle: 'bold',
       stroke: '#1b1530', strokeThickness: 3,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(151);
@@ -472,6 +472,6 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
   // to results
   this.time.delayedCall(2800, function () {
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
-      gold: self.pickups.gold, win: true, rescued: 'THE COOK' });
+      gold: self.pickups.gold, win: true, rescued: PC.D1_RESCUE.name });
   });
 };

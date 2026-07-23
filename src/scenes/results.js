@@ -29,8 +29,8 @@ PC.ResultsScene.prototype.create = function () {
       align: 'center', stroke: '#0a1a0a', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(2);
     // the rescued hero, framed
-    this.add.image(W / 2, H * 0.42, 'atlas', 'hero_cook').setScale(1.4).setDepth(2);
-    this.add.text(W / 2, H * 0.56, (d.rescued || 'A HERO') + '\nJOINED THE TEAM!', {
+    this.add.image(W / 2, H * 0.42, 'atlas', PC.D1_RESCUE.art).setScale(1.2).setDepth(2);
+    this.add.text(W / 2, H * 0.56, (d.rescued || 'A TEAMMATE') + '\nJOINED THE TEAM!', {
       fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5).setDepth(2);

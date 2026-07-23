@@ -60,6 +60,12 @@ PC.XP = {
 // Mark round 10: 10min is too long for kids - District 1 is a 5min run.
 PC.RUN = { BOSS_AT_S: 300, BOSS_AMBIENT_MULT: 1.8 };
 
+// District 1 rescue: a real Super Dude Danny character goes here (Mark
+// supplies art + name later - the Adventure City rescue team). Until then
+// a placeholder. To wire a real hero: drop art at assets/art/<key>.png,
+// add the key to the manifest, set art + name here.
+PC.D1_RESCUE = { name: 'YOUR HERO', art: 'hero_placeholder' };
+
 // ---- in-run enemy time scaling (COMPENDIUM 5.5) ----
 PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.02 };
 
