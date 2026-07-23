@@ -83,6 +83,9 @@ PC.GameScene.prototype.create = function () {
   this.debugText = this.add.text(2, PC.RENDER.H - 12, '', {
     fontFamily: 'monospace', fontSize: '8px', color: '#a8e04a',
   }).setScrollFactor(0).setDepth(101);
+  this.add.text(PC.RENDER.W - 3, PC.RENDER.H - 11, PC.VERSION, {
+    fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
+  }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
   this._dbgAcc = 0;
   this.drawHud();
 
