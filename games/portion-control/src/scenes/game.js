@@ -37,7 +37,13 @@ PC.GameScene.prototype.create = function () {
   this.fx = new PC.FxSystem(this);
   var self = this;
   this.gems = new PC.GemSystem(this, function (v) { self.gainXp(v); });
-  this.weapon = new PC.ResizerWeapon();
+  this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1 };
+  this.weapons = [new PC.ResizerWeapon()];
+  this.passives = {};
+  this._onKillCb = function (e) { self.onKill(e); };
+  this.pendingLevels = 0;
+  this.cardsOpen = false;
+  this.cardUi = [];
 
   // run state
   this.hp = PC.PLAYER.HP;
@@ -114,11 +120,9 @@ PC.GameScene.prototype.gainXp = function (v) {
     this.xpNext = Math.round(this.xpNext * PC.XP.CURVE_MULT + PC.XP.CURVE_ADD);
     this.levelText.setText('LV ' + this.level);
     if (PC.audio) PC.audio.levelup();
-    var t = this.add.text(PC.RENDER.W / 2, PC.RENDER.H / 2 - 40, 'LEVEL UP!', {
-      fontFamily: 'monospace', fontSize: '18px', color: '#a8e04a', fontStyle: 'bold',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
-    this.tweens.add({ targets: t, alpha: 0, y: t.y - 20, duration: 900, onComplete: function () { t.destroy(); } });
+    this.pendingLevels++;
   }
+  if (this.pendingLevels > 0 && !this.cardsOpen) this.showCards();
   this.drawHud();
 };
 
@@ -147,8 +151,68 @@ PC.GameScene.prototype.drawHud = function () {
   g.fillStyle(PC.PAL.LIME, 1).fillRect(4, 13, Math.max(0, hpw * Math.min(1, this.xp / this.xpNext)), 2);
 };
 
+// ---- M4: the 3-card pick (pause world, choose, resume) ----
+PC.GameScene.prototype.showCards = function () {
+  this.cardsOpen = true;
+  var W = PC.RENDER.W, H = PC.RENDER.H;
+  var self = this;
+  var ui = this.cardUi;
+  var scrim = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0818, 0.72)
+    .setScrollFactor(0).setDepth(200);
+  ui.push(scrim);
+  ui.push(this.add.text(W / 2, H / 2 - 96, 'LEVEL UP! PICK ONE', {
+    fontFamily: 'monospace', fontSize: '13px', color: '#a8e04a', fontStyle: 'bold',
+  }).setOrigin(0.5).setScrollFactor(0).setDepth(201));
+  var cards = PC.drawCards(this);
+  var cw = 78, ch = 120, gap = 8;
+  var x0 = W / 2 - (cards.length * (cw + gap) - gap) / 2 + cw / 2;
+  cards.forEach(function (card, i) {
+    var cx = x0 + i * (cw + gap), cy = H / 2;
+    var panel = self.add.rectangle(cx, cy, cw, ch, 0x2a2544, 1)
+      .setStrokeStyle(2, card.sub === 'NEW!' ? 0xf2c33c : 0x35d0ff)
+      .setScrollFactor(0).setDepth(201).setInteractive({ useHandCursor: true });
+    var icon = self.add.image(cx, cy - 32, 'atlas', card.icon)
+      .setScale(1.6).setScrollFactor(0).setDepth(202);
+    var title = self.add.text(cx, cy + 2, card.title, {
+      fontFamily: 'monospace', fontSize: '8px', color: '#f7f4ef', fontStyle: 'bold',
+      align: 'center', wordWrap: { width: cw - 8 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(202);
+    var sub = self.add.text(cx, cy + 22, card.sub, {
+      fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(202);
+    var desc = self.add.text(cx, cy + 42, card.desc, {
+      fontFamily: 'monospace', fontSize: '7px', color: '#cfd4e8',
+      align: 'center', wordWrap: { width: cw - 8 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(202);
+    ui.push(panel, icon, title, sub, desc);
+    panel.on('pointerdown', function () { self.pickCard(card); });
+  });
+  this._cardKeys = [];
+  cards.forEach(function (card, i) {
+    var h = function () { self.pickCard(card); };
+    self.input.keyboard.on('keydown-' + ['ONE', 'TWO', 'THREE'][i], h);
+    self._cardKeys.push(['keydown-' + ['ONE', 'TWO', 'THREE'][i], h]);
+  });
+};
+
+PC.GameScene.prototype.pickCard = function (card) {
+  if (!this.cardsOpen) return;
+  PC.applyCard(this, card);
+  if (PC.audio) PC.audio.ui();
+  var self = this;
+  this.cardUi.forEach(function (o) { o.destroy(); });
+  this.cardUi = [];
+  this._cardKeys.forEach(function (k) { self.input.keyboard.off(k[0], k[1]); });
+  this._cardKeys = [];
+  this.cardsOpen = false;
+  this.pendingLevels--;
+  this.drawHud();
+  if (this.pendingLevels > 0) this.showCards();
+};
+
 PC.GameScene.prototype.update = function (time, delta) {
   if (this.dead) return;
+  if (this.cardsOpen) return;                 // world paused during the pick
   var dt = Math.min(PC.DT_CLAMP, delta / 1000);
   this.now += dt;
   this.runT += dt;
@@ -157,9 +221,10 @@ PC.GameScene.prototype.update = function (time, delta) {
   this.moveInput.update();
   var v = this.moveInput.vec;
   this.moving = (v.x !== 0 || v.y !== 0);
+  var spd = PC.PLAYER.SPEED * this.stats.spdMult;
   if (this.moving) {
-    this.px += v.x * PC.PLAYER.SPEED * dt;
-    this.py += v.y * PC.PLAYER.SPEED * dt;
+    this.px += v.x * spd * dt;
+    this.py += v.y * spd * dt;
     if (v.x > 0.01) this.facing = 1;
     else if (v.x < -0.01) this.facing = -1;
     this.aimX = v.x; this.aimY = v.y;
@@ -204,9 +269,9 @@ PC.GameScene.prototype.update = function (time, delta) {
 
   // systems
   this.enemies.update(dt, this.px, this.py);
-  this.weapon.update(dt, this);
+  for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
   var self = this;
-  this.bullets.update(dt, this.enemies, function (e) { self.onKill(e); });
+  this.bullets.update(dt, this.enemies, this._onKillCb);
   this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
   this.fx.update(dt);
   this.player.setFlipX(this.facing < 0);
