@@ -3,6 +3,9 @@
 // by milestone; each block cites its COMPENDIUM section.
 window.PC = window.PC || {};
 
+// on-screen build tag (Mark: track builds while playing). Bump on each push.
+PC.VERSION = 'v0.5.0';
+
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
 // more of the map on screen, sprites appear smaller (Mark round 10: "zoom
