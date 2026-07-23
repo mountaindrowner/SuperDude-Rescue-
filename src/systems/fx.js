@@ -26,15 +26,17 @@ PC.FxSystem.prototype.burst = function (x, y, prefix, frames, dur, tint) {
   var f = this._get(); if (!f) return;
   f.active = true; f.t = 0; f.dur = dur; f.prefix = prefix; f.frames = frames; f.fade = false;
   var s = f.sprite;
-  s.setPosition(x, y).setFrame(prefix + '_1').setAlpha(1).setVisible(true);
+  s.setPosition(x, y).setFrame(prefix + '_1').setAlpha(1).setScale(1).setVisible(true);
   if (tint) s.setTint(tint); else s.clearTint();
 };
 
-// static frame that fades out (the "pops back to normal food" still)
+// static frame that fades out - drawn at 55% scale: the Resizer SHRINKS
+// giant food back to normal size (kid-safe fiction, Mark round 8)
 PC.FxSystem.prototype.still = function (x, y, frame, dur) {
   var f = this._get(); if (!f) return;
   f.active = true; f.t = 0; f.dur = dur; f.prefix = null; f.fade = true;
-  f.sprite.setPosition(x, y).setFrame(frame).setAlpha(1).clearTint().setVisible(true);
+  f.sprite.setPosition(x, y).setFrame(frame).setAlpha(1).clearTint()
+    .setScale(0.55).setVisible(true);
 };
 
 PC.FxSystem.prototype.update = function (dt) {
