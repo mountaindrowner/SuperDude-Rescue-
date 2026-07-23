@@ -22,13 +22,17 @@ PC.GameScene.prototype.create = function () {
   this.moving = false;
   this.walkT = 0;
   this.now = 0;
-  this.player = this.add.image(0, 0, 'atlas', 'char_danny_walk_1').setDepth(10);
+  // origin at the feet (0.82 down) so his world position IS where he stands -
+  // collision stops his FEET at buildings, not his center (Mark round 10:
+  // "some buildings are walk-throughable / strange collisions")
+  this.player = this.add.image(0, 0, 'atlas', 'char_danny_walk_1')
+    .setOrigin(0.5, 0.82).setDepth(10);
 
   // ghost trail (VS after-image, code-side): 6 pooled ghosts, Danny only
   this.ghosts = [];
   for (var gi = 0; gi < 6; gi++) {
     this.ghosts.push({ t: 0, life: 0,
-      img: this.add.image(0, 0, 'atlas', 'char_danny_walk_1').setDepth(9).setVisible(false) });
+      img: this.add.image(0, 0, 'atlas', 'char_danny_walk_1').setOrigin(0.5, 0.82).setDepth(9).setVisible(false) });
   }
   this._ghostAcc = 0;
 
@@ -52,7 +56,9 @@ PC.GameScene.prototype.create = function () {
   this.kills = 0;
   this.runT = 0;
   this.dead = false;
-  this.spawnAcc = 0;
+  this.director = new PC.SpawnDirector(this);
+  this._rings = {};
+  this.pickups = new PC.PickupSystem(this);
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
@@ -68,6 +74,9 @@ PC.GameScene.prototype.create = function () {
   }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
   this.levelText = this.add.text(4, 16, 'LV 1', {
     fontFamily: 'monospace', fontSize: '9px', color: '#a8e04a',
+  }).setScrollFactor(0).setDepth(101);
+  this.goldText = this.add.text(4, 27, '', {
+    fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c',
   }).setScrollFactor(0).setDepth(101);
   this.debugText = this.add.text(2, PC.RENDER.H - 12, '', {
     fontFamily: 'monospace', fontSize: '8px', color: '#a8e04a',
@@ -136,6 +145,9 @@ PC.GameScene.prototype.onKill = function (e) {
   this.fx.burst(e.x, e.y, 'fx_pop', 4, 0.3);
   if (e.still) this.fx.still(e.x, e.y, e.still, 0.4);
   this.gems.spawn(e.x, e.y, e.xp);
+  var roll = Math.random();
+  if (roll < 0.015) this.pickups.drop(e.x, e.y, 'medkit', PC.PLAYER.MEDKIT_HEAL);
+  else if (roll < 0.10) this.pickups.drop(e.x, e.y, 'coin', 1);
   if (PC.audio) PC.audio.pop();
 };
 
@@ -149,6 +161,17 @@ PC.GameScene.prototype.drawHud = function () {
   // XP bar (Lime) under it
   g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 12, hpw + 2, 4);
   g.fillStyle(PC.PAL.LIME, 1).fillRect(4, 13, Math.max(0, hpw * Math.min(1, this.xp / this.xpNext)), 2);
+  if (this.goldText && this.pickups) this.goldText.setText('$ ' + this.pickups.gold);
+};
+
+// small rising label (heals, pickups)
+PC.GameScene.prototype.floatText = function (str, color) {
+  var t = this.add.text(this.player.x, this.player.y - 30, str, {
+    fontFamily: 'monospace', fontSize: '10px',
+    color: '#' + ('00000' + (color || 0xffffff).toString(16)).slice(-6), fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(102);
+  this.tweens.add({ targets: t, y: t.y - 16, alpha: 0, duration: 700,
+    onComplete: function () { t.destroy(); } });
 };
 
 // ---- M4: the 3-card pick (pause world, choose, resume) ----
@@ -235,7 +258,7 @@ PC.GameScene.prototype.update = function (time, delta) {
     this.player.setFrame('char_danny_idle');
   }
   // buildings are solid (Mark round 6)
-  var rp = PC.resolveCircle(this.px, this.py, 10);
+  var rp = PC.resolveCircle(this.px, this.py, 13);
   this.px = rp.x; this.py = rp.y;
   // walk juice (ARTDNA): 1px step bob + a whisper of lean
   var bob = this.moving ? Math.round(Math.sin(this.walkT * 11)) : 0;
@@ -272,7 +295,8 @@ PC.GameScene.prototype.update = function (time, delta) {
   for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
   var self = this;
   this.bullets.update(dt, this.enemies, this._onKillCb);
-  this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
+  this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R * (1 + 0));
+  this.pickups.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
   this.fx.update(dt);
   this.player.setFlipX(this.facing < 0);
 
@@ -305,19 +329,15 @@ PC.GameScene.prototype.update = function (time, delta) {
   // i-frame blink at 10Hz
   this.player.setAlpha(this.now < this.invUntil && Math.floor(this.now * 10) % 2 ? 0.35 : 1);
 
-  // ambient spawner (M3 stand-in for the M5 spawn director): pressure
-  // rises gently with time so Danny always has something to pop
-  this.spawnAcc += dt;
-  var interval = Math.max(0.45, 1.1 - this.runT * 0.01);
-  if (this.spawnAcc >= interval && this.enemies.liveCount < 150) {
-    this.spawnAcc = 0;
-    var cam = this.cameras.main;
-    var cx = cam.scrollX + PC.RENDER.W / 2, cy = cam.scrollY + PC.RENDER.H / 2;
-    var n = 1 + (Math.random() < 0.4 ? 1 : 0) + (this.runT > 60 ? 1 : 0);
-    for (var s = 0; s < n; s++) {
-      var a = Math.random() * Math.PI * 2;
-      var R = 300 + Math.random() * 60;
-      this.enemies.spawn(cx + Math.cos(a) * R, cy + Math.sin(a) * R, FRY_DEF);
+  // spawn director (COMPENDIUM 8.1, kid-tuned): sparse early, intense late,
+  // 5 food types introduced on a timeline
+  this.director.update(dt, this.runT);
+  // one-shot Ring events at the phase turns
+  var rings = [[60, 14, 'fry'], [150, 18, 'popcorn'], [240, 22, 'hotdog']];
+  for (var ri = 0; ri < rings.length; ri++) {
+    if (this.runT >= rings[ri][0] && !this._rings[ri]) {
+      this._rings[ri] = true;
+      this.director.ring(rings[ri][1], rings[ri][2], this.runT / 60);
     }
   }
 

@@ -270,16 +270,20 @@ window.PC = window.PC || {};
       var arch = b.v;                                  // archetype selector
       var FACE_H = 16;                                 // lit storefront face
 
-      // drop shadow (fake height)
-      g.fillStyle = 'rgba(15,12,24,0.45)';
-      g.fillRect(bx + 5, by + 7, b.w, b.h);
+      // ground contact shadow (soft, all around) + hard cast shadow so
+      // every building clearly reads as RAISED off the plaza (Mark round
+      // 10: "some invisible buildings")
+      g.fillStyle = 'rgba(10,8,18,0.30)';
+      g.fillRect(bx - 3, by - 2, b.w + 12, b.h + 14);      // soft halo
+      g.fillStyle = 'rgba(8,6,14,0.55)';
+      g.fillRect(bx + 6, by + 9, b.w + 2, b.h + 2);        // hard cast SE
 
-      // roof family per archetype
+      // roof family per archetype - brighter than the plaza so it pops
       var R;
-      if (arch < 0.35)      R = { base: '#3a3550', lite: '#453f60', dark: '#2c2840', name: 'shop' };
-      else if (arch < 0.60) R = { base: '#4a3a40', lite: '#584550', dark: '#382b30', name: 'apt' };
-      else if (arch < 0.82) R = { base: '#35415a', lite: '#3f4d6a', dark: '#293246', name: 'office' };
-      else                  R = { base: '#433a52', lite: '#514663', dark: '#332c3f', name: 'diner' };
+      if (arch < 0.35)      R = { base: '#4a4570', lite: '#5a5388', dark: '#332f4e', name: 'shop' };
+      else if (arch < 0.60) R = { base: '#5c4a54', lite: '#6e5866', dark: '#3c2f38', name: 'apt' };
+      else if (arch < 0.82) R = { base: '#40567a', lite: '#4d688f', dark: '#2c3a52', name: 'office' };
+      else                  R = { base: '#564a6c', lite: '#665882', dark: '#3a3050', name: 'diner' };
 
       // wall block + roof slab (roof inset leaves the south face visible)
       g.fillStyle = R.dark;
@@ -289,6 +293,11 @@ window.PC = window.PC || {};
       g.fillStyle = R.lite;
       g.fillRect(bx + 2, by + 2, b.w - 4, 2);
       g.fillRect(bx + 2, by + 2, 2, b.h - FACE_H - 2);
+      // bright top rim (roof edge catching light) - reads as "raised"
+      g.fillStyle = 'rgba(207,212,232,0.35)';
+      g.fillRect(bx, by, b.w, 1);
+      g.fillStyle = 'rgba(0,0,0,0.35)';                    // dark right edge
+      g.fillRect(bx + b.w - 1, by + 1, 1, b.h - 1);
       speck(g, wx, wy, bx + 4, by + 4, b.w - 8, b.h - FACE_H - 6, 600 + bi, 0.06, R.dark, 2);
 
       // ---- the lit south face: windows + door = life ----

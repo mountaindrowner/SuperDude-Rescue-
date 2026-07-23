@@ -57,6 +57,25 @@ window.PC = window.PC || {};
   var MEL =  [523.3, 0, 659.3, 523.3, 0, 784.0, 0, 659.3, 698.5, 0, 523.3, 0, 587.3, 0, 659.3, 0,
               523.3, 0, 659.3, 784.0, 0, 880.0, 0, 784.0, 698.5, 659.3, 0, 587.3, 659.3, 0, 523.3, 0];
 
+  // Adventure City tracks (Mark round 10: "bring in the Adventure City
+  // music"). Plays a random one per run via a plain HTMLAudioElement
+  // (works everywhere, avoids the iOS createMediaElementSource pitfall);
+  // the synth loop below is the fallback if an mp3 fails to load.
+  var CITY_TRACKS = ['assets/music/city_a.mp3', 'assets/music/city_b.mp3', 'assets/music/city_c.mp3'];
+  var musicEl = null, MUSIC_VOL = 0.42;
+
+  function startSynth() {
+    if (!ensure() || musicTimer) return;
+    musicTimer = setInterval(function () {
+      var b = BASS[step % 32], m = MEL[step % 32];
+      if (b) tone('square', b, 0, 0.16, 0.10, musicGain);
+      if (m) tone('triangle', m, 0, 0.14, 0.12, musicGain);
+      if (step % 4 === 2) noise(0.03, 0.025, 6000);        // hat
+      if (step % 8 === 0) tone('sine', 65, 40, 0.1, 0.2, musicGain); // kick
+      step++;
+    }, 110);
+  }
+
   PC.audio = {
     unlock: function () {
       if (!ensure()) return;
@@ -64,20 +83,22 @@ window.PC = window.PC || {};
       this.startMusic();
     },
     startMusic: function () {
-      if (!ensure() || musicTimer) return;
-      musicTimer = setInterval(function () {
-        var b = BASS[step % 32], m = MEL[step % 32];
-        if (b) tone('square', b, 0, 0.16, 0.10, musicGain);
-        if (m) tone('triangle', m, 0, 0.14, 0.12, musicGain);
-        if (step % 4 === 2) noise(0.03, 0.025, 6000);        // hat
-        if (step % 8 === 0) tone('sine', 65, 40, 0.1, 0.2, musicGain); // kick
-        step++;
-      }, 110);
+      if ((musicEl && !musicEl.paused) || musicTimer) return;
+      try {
+        var src = CITY_TRACKS[(Math.random() * CITY_TRACKS.length) | 0];
+        musicEl = new Audio(src);
+        musicEl.loop = true; musicEl.volume = MUSIC_VOL;
+        musicEl.addEventListener('error', function () { startSynth(); });
+        var p = musicEl.play();
+        if (p && p.catch) p.catch(function () { startSynth(); });
+      } catch (e) { startSynth(); }
     },
     stopMusic: function () {
       if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      if (musicEl) { try { musicEl.pause(); } catch (e) {} }
     },
     setHidden: function (h) {
+      if (musicEl) { try { h ? musicEl.pause() : musicEl.play(); } catch (e) {} }
       if (!ctx) return;
       try { if (h && ctx.state === 'running') ctx.suspend(); else if (!h) ctx.resume(); } catch (e) {}
     },
@@ -102,5 +123,8 @@ window.PC = window.PC || {};
       })(f[i], i * 70);
     },
     ui: function () { tone('square', 660, 880, 0.05, 0.1); },
+    heal: function () { tone('sine', 523, 784, 0.18, 0.2); tone('sine', 784, 1046, 0.2, 0.12); },
+    coin: function () { tone('square', 988, 1319, 0.06, 0.14); },
+    chest: function () { tone('square', 440, 660, 0.08, 0.14); noise(0.12, 0.1, 1800); tone('sine', 880, 1318, 0.2, 0.14); },
   };
 })();
