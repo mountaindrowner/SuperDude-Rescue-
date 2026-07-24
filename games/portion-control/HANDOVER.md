@@ -12,6 +12,22 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — WINNERS PICKED + ANIMATED + IN THE ATLAS.** Mark
+  chose Victoria 3, Kevin 3, Carlos 1, Nayah 1 (**Josh pick still
+  PENDING** — re-ask, options in `concepts/heroes/josh_v2_options.
+  png`). Each winner ran through v2 `animate-character` (template
+  walk, east) — 4 generations total — and shipped-Danny-convention
+  frames landed in `assets/art/`: `char_<name>_idle` (east rotation)
+  + `char_<name>_walk_1..6`, all in the manifest/atlas (verified:
+  headless boot 0 errors, only the perennial favicon 404). NOT yet
+  playable — no character-select system exists; assets are staged
+  for it. Kit A/B/C picks per hero also still pending (CHARACTERS.
+  md). PixelLab character_ids in `concepts/heroes/heroes_v2_state.
+  json` (also in the account library) if more directions/animations
+  are needed. ~1582 generations remain. NEXT: Josh pick -> kit picks
+  -> character select + kit implementation; D1_RESCUE still the
+  placeholder until Mark names the District 1 rescue hero.
+
 - **2026-07-24 — HERO AVATARS ROUND 2 (v2 pipeline).** Round 1 (v1
   pixflux 64px chibi concepts) REJECTED by Mark: "all of them are
   bad" — not the style of shipped Danny, too childish, not
