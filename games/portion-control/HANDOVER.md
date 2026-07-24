@@ -12,21 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
-- **2026-07-24 — HERO ROSTER DESIGN ROUND: 6 characters x 3 avatar
-  options + 3 kit iterations each.** Mark: make the SDD heroes fully
-  fleshed, viable, unique unlockable characters. Two deliverables:
-  (1) `CHARACTERS.md` — per hero (Danny/Victoria/Nayah/Kevin/Carlos/
-  Josh) three complete candidate kits (signature weapon + special +
-  passive), grounded in their Element Lab card identities, with a
-  roster-balance grid (each VS archetype used exactly once: projectile
-  / deployable / zone DoT / orbital / artillery / dash / shield / beam
-  / pet / melee ring). (2) `concepts/heroes/` — 18 PixelLab avatar
-  concepts (v1 pixflux 64px, ARTDNA style suffix, A/B/C per hero) +
-  labeled contact sheets (`*_options.png`, `all_heroes_overview.png`).
-  AWAITING MARK: pick one art option + one kit per hero (mixing
-  allowed). Winners then get the full v2 character + template-walk
-  pipeline (like Danny) and kit implementation. ~1600 PixelLab
-  generations remain.
+- **2026-07-24 — HERO AVATARS ROUND 2 (v2 pipeline).** Round 1 (v1
+  pixflux 64px chibi concepts) REJECTED by Mark: "all of them are
+  bad" — not the style of shipped Danny, too childish, not
+  card-accurate. LESSON (now law): ALL playable-character art goes
+  through the v2 `create-character-with-4-directions` pipeline at
+  shipped-Danny settings (48x48 request -> 68px template canvas, low
+  detail, basic shading, low top-down) — never v1 one-shots, and no
+  "kid-friendly big eyes" prompt language ("adult hero ... normal
+  human proportions ... 90s SNES Konami style" is the formula).
+  Mark's outfit specs (verbatim, used in the prompts): Victoria =
+  denim onesie/overalls with straps + techie devices; Nayah = jean
+  jacket, jeans, boots, white shirt, backpack; Kevin = navy bomber
+  jacket with patches, tactical pants, boots; Carlos = jean jacket
+  over mustard hoodie, telescope + backpack; Josh = khaki shirt over
+  blue undershirt, khakis, boots, cowboy hat. 5 heroes x 3 rolls
+  created (15 gens; parallel job submission caused "heavy load"
+  failures — serialized one-at-a-time submission is the reliable
+  pattern). `concepts/heroes/`: `<hero>_<n>_south.png` rolls,
+  `*_v2_options.png` sheets (shipped Danny as in-row style ref),
+  `v2_overview.png`, `heroes_v2_state.json` (PixelLab character_ids —
+  the winners' ids get template-walk animated later). `CHARACTERS.md`
+  kits (3 per hero) still stand. AWAITING MARK: pick roll 1/2/3 per
+  hero + kit A/B/C per hero. ~1586 generations remain.
 - **2026-07-23 — Rescued teammate is a REAL SDD character, not "The
   Cook" (Mark).** Mark: the rescue must be a Super Dude Danny roster
   character (Adventure City team: Victoria/Nayah/Kevin/Carlos/Josh) -
