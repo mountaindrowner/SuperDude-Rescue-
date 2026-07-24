@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — HERO ROSTER DESIGN ROUND: 6 characters x 3 avatar
+  options + 3 kit iterations each.** Mark: make the SDD heroes fully
+  fleshed, viable, unique unlockable characters. Two deliverables:
+  (1) `CHARACTERS.md` — per hero (Danny/Victoria/Nayah/Kevin/Carlos/
+  Josh) three complete candidate kits (signature weapon + special +
+  passive), grounded in their Element Lab card identities, with a
+  roster-balance grid (each VS archetype used exactly once: projectile
+  / deployable / zone DoT / orbital / artillery / dash / shield / beam
+  / pet / melee ring). (2) `concepts/heroes/` — 18 PixelLab avatar
+  concepts (v1 pixflux 64px, ARTDNA style suffix, A/B/C per hero) +
+  labeled contact sheets (`*_options.png`, `all_heroes_overview.png`).
+  AWAITING MARK: pick one art option + one kit per hero (mixing
+  allowed). Winners then get the full v2 character + template-walk
+  pipeline (like Danny) and kit implementation. ~1600 PixelLab
+  generations remain.
 - **2026-07-23 — Rescued teammate is a REAL SDD character, not "The
   Cook" (Mark).** Mark: the rescue must be a Super Dude Danny roster
   character (Adventure City team: Victoria/Nayah/Kevin/Carlos/Josh) -
