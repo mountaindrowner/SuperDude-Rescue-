@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.8.0: BUILD-CRAFTING UPDATE (WP-EVOLUTIONS pulled
+  forward per Mark: "the fun is choices + combos").** Card pool grew
+  from 3 weapons + 3 %-passives to: WEAPONS x6 pickup (Resizer,
+  Blaster, Whisk + NEW Salt Shaker garlic-nova w/ expanding ring
+  visual, Snack Drone orbiting pet that pelts nearest, Freeze Ray
+  that SLOWS 45% w/ cyan tint - enemies.js slow + bullet slowMs/tint
+  support) + hero signatures; PASSIVES x7 (battery/fan/shoes + NEW
+  Snack Magnet +20% pickup, Focus Lens +15% shot speed, Servo Motor
+  +12% area, Padded Apron flat armor). New stats plumbing: projMult
+  (BulletSystem), areaMult (whisk/salt/seeds/lasso/strike),
+  pickupMult (gems call), armor (contact + boss contact - boss now
+  also respects Josh's dmgTakenMult, was a gap). EVOLUTIONS
+  (`src/data/evolutions.js`, data-driven): maxed weapon + partner
+  passive GUARANTEES a golden pulsing EVOLVE card in slot 1 -
+  MEGA RESIZER (resizer+lens), TORNADO WHISK (whisk+servo), BUFFET
+  BLASTER 360-ring (blaster+battery), SEASON STORM (salt+magnet),
+  BLIZZARD RAY (freeze+fan), WINGMAN SQUAD (drone+shoes). applyCard
+  'evolve' plays PC.audio.evolve + burst + shake. VERIFIED: full
+  4-weapon build, passives measurably applied, evolve card offered +
+  applied (MEGA RESIZER dmg40/x3/pierce3), 60fps at 400 foes.
+  Signature-weapon evolutions for the other 5 heroes = future round.
+
 - **2026-07-25 — v0.7.4: WP-JUICE SHIPPED.** New `systems/juice.js`:
   pooled DAMAGE NUMBERS (24 texts, ~14/s rate limit, rise+fade 0.45s,
   crits bigger + cherry, fed from the single PC.damageEnemy path +

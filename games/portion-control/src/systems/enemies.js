@@ -79,7 +79,7 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
     } else {
       var len = Math.sqrt(dx * dx + dy * dy);
       if (len > 1) {
-        var m = e.spd * dt / len;
+        var m = e.spd * (now < e.slowUntil ? 0.45 : 1) * dt / len;
         e.x += dx * m;
         e.y += dy * m;
       }

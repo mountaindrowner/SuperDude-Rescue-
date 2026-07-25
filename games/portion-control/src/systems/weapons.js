@@ -26,13 +26,16 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   b.active = true;
   b.x = x; b.y = y;
   b.dx = dx / d; b.dy = dy / d;
-  b.spd = spec.speed; b.dmg = spec.dmg; b.pierce = spec.pierce || 0;
+  b.spd = spec.speed * (this.scene.stats ? this.scene.stats.projMult : 1);
+  b.dmg = spec.dmg; b.pierce = spec.pierce || 0;
   b.life = spec.life || 1.1;
+  b.slowMs = spec.slowMs || 0;
   var glow = spec.frame !== 'proj_pellet';   // fries = solid, beam = glow
   b.sprite.setFrame(spec.frame || 'proj_resizer')
     .setBlendMode(glow ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
     .setScale(glow ? 1.4 : 1.2)
     .setPosition(x, y).setRotation(Math.atan2(dy, dx)).setVisible(true);
+  if (spec.tint) b.sprite.setTint(spec.tint); else b.sprite.clearTint();
 };
 
 PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
@@ -64,6 +67,7 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     });
     if (hit) {
       PC.damageEnemy(this.scene, hit, b.dmg, b.dx, b.dy, onKill);
+      if (b.slowMs) hit.slowUntil = this.scene.now + b.slowMs / 1000;
       this.scene.fx.burst(b.x, b.y, 'fx_spark', 3, 0.16);
       if (b.pierce > 0) { b.pierce--; }
       else { b.active = false; b.sprite.setVisible(false); }
@@ -173,8 +177,10 @@ PC.BlasterWeapon.prototype.update = function (dt, scene) {
   var dmg = this.dmg * scene.stats.dmgMult;
   var base = Math.atan2(aim.target ? aim.target.y - scene.py : aim.ay,
                         aim.target ? aim.target.x - scene.px : aim.ax);
+  var arc = this.ring ? Math.PI * 2 : (40 * Math.PI / 180);
   for (var n = 0; n < this.pellets; n++) {
-    var ang = base + (n / (this.pellets - 1) - 0.5) * (40 * Math.PI / 180);
+    var ang = base + (this.ring ? n / this.pellets * arc
+                               : (n / (this.pellets - 1) - 0.5) * arc);
     scene.bullets.fire(scene.px, scene.py - 4,
       scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
       { speed: 420, dmg: dmg, frame: 'proj_pellet', life: 0.35 });
@@ -206,6 +212,7 @@ PC.WhiskWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) { this.dmg = 22; this.degS = 220; }
 };
 PC.WhiskWeapon.prototype.update = function (dt, scene) {
+  var radius = this.radius * scene.stats.areaMult;
   this.angle += (this.degS * Math.PI / 180) * dt;
   var dmg = this.dmg * scene.stats.dmgMult;
   var self = this;
@@ -213,8 +220,8 @@ PC.WhiskWeapon.prototype.update = function (dt, scene) {
     var s = this.sprites[i];
     if (i >= this.count) { s.setVisible(false); continue; }
     var a = this.angle + i * (Math.PI * 2 / this.count);
-    var wxp = scene.px + Math.cos(a) * this.radius;
-    var wyp = scene.py + Math.sin(a) * this.radius;
+    var wxp = scene.px + Math.cos(a) * radius;
+    var wyp = scene.py + Math.sin(a) * radius;
     s.setPosition(wxp, wyp).setRotation(a + Math.PI / 2).setVisible(true);
     scene.enemies.hash.eachNear(wxp, wyp, function (e) {
       var dx = e.x - wxp, dy = e.y - wyp;
@@ -236,6 +243,149 @@ PC.WhiskWeapon.prototype.update = function (dt, scene) {
   }
 };
 
+// -- Salt Shaker: garlic-archetype nova ring around the player --
+PC.SaltWeapon = function (scene) {
+  this.key = 'salt'; this.name = 'SALT SHAKER';
+  this.level = 1; this.max = 5;
+  this.cd = 2.4; this.cdT = 0.8; this.dmg = 8; this.radius = 55;
+  this.pulseT = 0;
+  this.gfx = scene.add.graphics().setDepth(8);
+};
+PC.SaltWeapon.prototype.desc = function () {
+  return ['', 'A stinging ring of seasoning', 'Damage up!', 'Wider ring!',
+          'Faster shakes!', 'Extra spicy!'][Math.min(this.level + 1, 5)] || 'Damage up!';
+};
+PC.SaltWeapon.prototype.applyLevel = function () {
+  if (this.level === 2) this.dmg = 12;
+  else if (this.level === 3) this.radius = 70;
+  else if (this.level === 4) this.cd = 1.8;
+  else if (this.level === 5) this.dmg = 17;
+};
+PC.SaltWeapon.prototype.update = function (dt, scene) {
+  var R = this.radius * scene.stats.areaMult;
+  this.cdT -= dt;
+  if (this.cdT <= 0) {
+    this.cdT = this.cd * scene.stats.cdMult;
+    this.pulseT = 0.25;
+    var dmg = PC.rollDmg(scene, this.dmg), pxp = scene.px, pyp = scene.py - 4;
+    scene.enemies.hash.eachNear(pxp, pyp, function (e) {
+      var dx = e.x - pxp, dy = e.y - pyp;
+      var d2 = dx * dx + dy * dy;
+      if (d2 > R * R) return;
+      var dl = Math.sqrt(d2) || 1;
+      PC.damageEnemy(scene, e, dmg, dx / dl * 0.9, dy / dl * 0.9, scene._onKillCb);
+    });
+    if (scene.boss && !scene.boss.dead) {
+      var bdx = scene.boss.x - pxp, bdy = scene.boss.y - pyp;
+      if (bdx * bdx + bdy * bdy < (scene.boss.r + R) * (scene.boss.r + R)) {
+        scene.hitBoss(scene.boss.x, scene.boss.y, dmg, 0, 0);
+      }
+    }
+    if (PC.audio) PC.audio.pop();
+  }
+  var g = this.gfx;
+  g.clear();
+  if (this.pulseT > 0) {
+    this.pulseT -= dt;
+    var k = 1 - Math.max(0, this.pulseT) / 0.25;
+    g.lineStyle(3, 0xf7f4ef, 0.6 * (1 - k));
+    g.strokeCircle(scene.px, scene.py - 4, R * (0.4 + 0.6 * k));
+  }
+};
+
+// -- Snack Drone: an orbiting pet that pelts the nearest foe --
+PC.DroneWeapon = function (scene) {
+  this.key = 'drone'; this.name = 'SNACK DRONE';
+  this.level = 1; this.max = 5;
+  this.count = 1; this.fireCd = 0.85; this.dmg = 8; this.range = 240;
+  this.t = 0;
+  this.drones = [];
+  for (var i = 0; i < 2; i++) {
+    this.drones.push({ fireT: 0.3 + i * 0.4,
+      sprite: scene.add.image(0, 0, 'atlas', 'proj_resizer')
+        .setScale(1.8).setTint(0x7dd97b).setDepth(11)
+        .setBlendMode(Phaser.BlendModes.ADD).setVisible(false) });
+  }
+};
+PC.DroneWeapon.prototype.desc = function () {
+  return ['', 'A loyal snack-seeking drone', 'Faster pecks!', 'Damage up!',
+          'Second drone!', 'Full patrol mode!'][Math.min(this.level + 1, 5)] || 'Faster pecks!';
+};
+PC.DroneWeapon.prototype.applyLevel = function () {
+  if (this.level === 2) this.fireCd = 0.62;
+  else if (this.level === 3) this.dmg = 12;
+  else if (this.level === 4) this.count = 2;
+  else if (this.level === 5) { this.fireCd = 0.48; this.dmg = 15; }
+};
+PC.DroneWeapon.prototype.update = function (dt, scene) {
+  this.t += dt;
+  for (var i = 0; i < this.drones.length; i++) {
+    var d = this.drones[i];
+    if (i >= this.count) { d.sprite.setVisible(false); continue; }
+    var a = this.t * 1.6 + i * Math.PI;
+    var dxp = scene.px + Math.cos(a) * 42;
+    var dyp = scene.py - 18 + Math.sin(a) * 16;
+    d.sprite.setPosition(dxp, dyp).setVisible(true)
+      .setRotation(Math.sin(this.t * 3 + i) * 0.2);
+    d.fireT -= dt;
+    if (d.fireT > 0) continue;
+    var best = null, bestD = this.range * this.range;
+    var pool = scene.enemies.pool;
+    for (var k = 0; k < pool.length; k++) {
+      var e = pool[k];
+      if (!e.active) continue;
+      var ex = e.x - dxp, ey = e.y - dyp;
+      var dd = ex * ex + ey * ey;
+      if (dd < bestD) { bestD = dd; best = e; }
+    }
+    if (best) {
+      d.fireT = this.fireCd * scene.stats.cdMult;
+      scene.bullets.fire(dxp, dyp, best.x, best.y,
+        { speed: 480, dmg: PC.rollDmg(scene, this.dmg), frame: 'proj_pellet',
+          tint: 0x7dd97b, life: 0.7 });
+      if (PC.audio) PC.audio.shoot();
+    } else { d.fireT = 0.25; }
+  }
+};
+
+// -- Freeze Ray: low damage, SLOWS what it hits (control archetype) --
+PC.FreezeWeapon = function () {
+  this.key = 'freeze'; this.name = 'FREEZE RAY';
+  this.level = 1; this.max = 5;
+  this.cd = 1.6; this.cdT = 0.5; this.dmg = 5; this.slowMs = 2000; this.bolts = 1;
+};
+PC.FreezeWeapon.prototype.desc = function () {
+  return ['', 'Chills foes to a crawl', 'Longer chill!', 'Colder + faster!',
+          'Twin bolts!', 'Deep freeze!'][Math.min(this.level + 1, 5)] || 'Longer chill!';
+};
+PC.FreezeWeapon.prototype.applyLevel = function () {
+  if (this.level === 2) this.slowMs = 2600;
+  else if (this.level === 3) { this.dmg = 9; this.cd = 1.3; }
+  else if (this.level === 4) this.bolts = 2;
+  else if (this.level === 5) { this.dmg = 13; this.slowMs = 3200; }
+};
+PC.FreezeWeapon.prototype.update = function (dt, scene) {
+  this.cdT -= dt;
+  if (this.cdT > 0) return;
+  var pool = scene.enemies.pool, targets = [];
+  for (var i = 0; i < pool.length; i++) {
+    var e = pool[i];
+    if (!e.active) continue;
+    var dx = e.x - scene.px, dy = e.y - scene.py;
+    var d = dx * dx + dy * dy;
+    if (d < 340 * 340) targets.push({ e: e, d: d });
+  }
+  if (!targets.length) { this.cdT = 0.25; return; }
+  targets.sort(function (a, b) { return a.d - b.d; });
+  this.cdT = this.cd * scene.stats.cdMult;
+  for (var n = 0; n < Math.min(this.bolts, targets.length); n++) {
+    scene.bullets.fire(scene.px, scene.py - 6, targets[n].e.x, targets[n].e.y,
+      { speed: 500, dmg: PC.rollDmg(scene, this.dmg), frame: 'proj_pellet',
+        tint: 0x9adfff, slowMs: this.slowMs, life: 0.9 });
+  }
+  if (PC.audio) PC.audio.shoot();
+};
+
 // =====================================================================
 // PASSIVES (COMPENDIUM 7 table) + the card pool
 // =====================================================================
@@ -248,15 +398,41 @@ PC.PASSIVES = {
              desc: '-6% cooldowns', apply: function (st, lv) { st.cdMult = (st.heroCd || 1) * (1 - 0.06 * lv); } },
   shoes:   { name: 'RUNNING SHOES', icon: 'icon_passive_shoes', max: 5,
              desc: '+6% move speed', apply: function (st, lv) { st.spdMult = (st.heroSpd || 1) * (1 + 0.06 * lv); } },
+  magnet:  { name: 'SNACK MAGNET', icon: 'icon_passive_magnet', max: 3,
+             desc: '+20% pickup range', apply: function (st, lv) { st.pickupMult = 1 + 0.2 * lv; } },
+  lens:    { name: 'FOCUS LENS', icon: 'icon_passive_lens', max: 3,
+             desc: '+15% shot speed', apply: function (st, lv) { st.projMult = 1 + 0.15 * lv; } },
+  servo:   { name: 'SERVO MOTOR', icon: 'icon_passive_servo', max: 3,
+             desc: '+12% weapon area', apply: function (st, lv) { st.areaMult = 1 + 0.12 * lv; } },
+  coat:    { name: 'PADDED APRON', icon: 'icon_passive_coat', max: 3,
+             desc: 'Block 1 damage per hit', apply: function (st, lv) { st.armor = lv; } },
 };
 PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaster',
-  whisk: 'icon_weapon_whisk', sentry: 'icon_weapon_drone', seeds: 'icon_weapon_salt',
-  strike: 'icon_weapon_microwave', beam: 'icon_weapon_freeze', lasso: 'icon_weapon_ketchup' };
+  whisk: 'icon_weapon_whisk', sentry: 'icon_weapon_fridge', seeds: 'icon_weapon_soothe',
+  strike: 'icon_weapon_microwave', beam: 'icon_weapon_ketchup', lasso: 'icon_weapon_whisk',
+  salt: 'icon_weapon_salt', drone: 'icon_weapon_drone', freeze: 'icon_weapon_freeze' };
 
-// build 3 distinct card choices from the current run state
+// build 3 distinct card choices from the current run state.
+// EVOLUTIONS (data/evolutions.js): a maxed weapon + its partner passive
+// GUARANTEES a golden EVOLVE card - the build-crafting payoff.
 PC.drawCards = function (scene) {
   var pool = [];
   var i, w;
+  var evolveCard = null;
+  if (PC.EVOLUTIONS) {
+    for (i = 0; i < scene.weapons.length && !evolveCard; i++) {
+      w = scene.weapons[i];
+      if (w.evolved || w.level < w.max) continue;
+      for (var ev = 0; ev < PC.EVOLUTIONS.length; ev++) {
+        var rec = PC.EVOLUTIONS[ev];
+        if (rec.base === w.key && (scene.passives[rec.requires] || 0) > 0) {
+          evolveCard = { kind: 'evolve', w: w, rec: rec, title: rec.name,
+                         sub: 'EVOLVE!', desc: rec.desc, icon: PC.WEAPON_ICONS[w.key] };
+          break;
+        }
+      }
+    }
+  }
   for (i = 0; i < scene.weapons.length; i++) {
     w = scene.weapons[i];
     if (w.level < w.max) {
@@ -264,13 +440,19 @@ PC.drawCards = function (scene) {
                   sub: 'LV ' + (w.level + 1), desc: w.desc(), icon: PC.WEAPON_ICONS[w.key] });
     }
   }
-  if (scene.weapons.length < 4) {
+  if (scene.weapons.length < PC.XP.WEAPON_SLOTS) {
     var owned = {};
     for (i = 0; i < scene.weapons.length; i++) owned[scene.weapons[i].key] = true;
     if (!owned.blaster) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.BlasterWeapon(); },
       title: 'PORTION BLASTER', sub: 'NEW!', desc: 'Short-range snack scatter', icon: PC.WEAPON_ICONS.blaster });
     if (!owned.whisk) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.WhiskWeapon(sc); },
       title: 'WHISK CYCLONE', sub: 'NEW!', desc: 'Whisks orbit and batter foes', icon: PC.WEAPON_ICONS.whisk });
+    if (!owned.salt) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.SaltWeapon(sc); },
+      title: 'SALT SHAKER', sub: 'NEW!', desc: 'A stinging ring of seasoning', icon: PC.WEAPON_ICONS.salt });
+    if (!owned.drone) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.DroneWeapon(sc); },
+      title: 'SNACK DRONE', sub: 'NEW!', desc: 'A loyal snack-seeking drone', icon: PC.WEAPON_ICONS.drone });
+    if (!owned.freeze) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.FreezeWeapon(); },
+      title: 'FREEZE RAY', sub: 'NEW!', desc: 'Chills foes to a crawl', icon: PC.WEAPON_ICONS.freeze });
   }
   for (var k in PC.PASSIVES) {
     var p = PC.PASSIVES[k];
@@ -283,8 +465,9 @@ PC.drawCards = function (scene) {
   if (!pool.length) {
     pool.push({ kind: 'heal', title: 'SNACK BREAK', sub: '', desc: 'Heal 25 HP', icon: 'pickup_health' });
   }
-  // shuffle-draw 3 distinct
+  // shuffle-draw 3 distinct; a pending evolution ALWAYS takes slot 1
   var out = [];
+  if (evolveCard) out.push(evolveCard);
   while (out.length < 3 && pool.length) {
     out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
@@ -292,7 +475,13 @@ PC.drawCards = function (scene) {
 };
 
 PC.applyCard = function (scene, card) {
-  if (card.kind === 'weapon-up') {
+  if (card.kind === 'evolve') {
+    card.rec.apply(card.w);
+    card.w.evolved = true;
+    if (PC.audio) PC.audio.evolve();
+    scene.fx.burst(scene.px, scene.py - 8, 'fx_levelup', 4, 0.6);
+    scene.cameras.main.shake(200, 0.004);
+  } else if (card.kind === 'weapon-up') {
     card.w.level++;
     card.w.applyLevel();
   } else if (card.kind === 'weapon-new') {
