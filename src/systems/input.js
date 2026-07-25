@@ -17,7 +17,8 @@ PC.MoveInput = function (scene) {
   });
 
   // joystick ghost, drawn in screen space
-  this.gfx = scene.add.graphics().setScrollFactor(0).setDepth(100);
+  this.gfx = scene.add.graphics().setDepth(100);
+  if (scene.uiAttach) scene.uiAttach(this.gfx);   // pin to screen-space UI container
 
   var self = this;
   scene.input.on('pointerdown', function (p) {
