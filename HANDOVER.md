@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.7.2: SHARPNESS FIX (Mark: "text fuzzy, edges
+  soft").** Root cause: the canvas backing store was the LOGICAL size
+  (340xH) CSS-stretched ~3x to the phone — text/vector could never be
+  sharp. Fix = PHASE2 4-B internal render scale: `PC.RENDER.SCALE=2`;
+  canvas = logical*2; every scene calls `PC.applyRenderScale(this)`
+  (camera setZoom(2) + centerOn) so ALL layout stays in logical
+  coords; global Text factory patch defaults `style.resolution=2`
+  (dense glyph canvases under the zoom = crisp text); vector Graphics
+  (HUD, rings, telegraphs) render at 2x automatically; sprites get a
+  clean integer 2x. GOTCHAS BAKED IN: (1) with camera zoom, scrollX
+  is NOT the visible left edge — every visibility window
+  (ground chunks, enemy cull + spawn ring centers in enemies.js /
+  spawn.js) now uses `cam.worldView`; (2) raw pointer coords are in
+  canvas px — joystick (input.js), audio sliders, gallery paging
+  divide by SCALE; interactive-zone hit-tests need nothing (camera
+  transforms them). Danny kit renamed RESIZER RAY (fits cell +
+  matches his actual signature). VERIFIED (canvas renderer, worst
+  case): 59fps at 388 live enemies, joystick drag moves player,
+  select/game screenshots visibly crisp. NOTE: headless WebGL
+  (SwiftShader) reads ~31fps — that is a harness artifact, not real
+  device perf; always force-canvas for fps comparisons.
+
 - **2026-07-25 — v0.7.1: WP-AUDIO SHIPPED.** audio.js upgraded in
   place (PHASE2 premise was stale — buses/caps already existed):
   persisted mix (localStorage `portioncontrol.audio`, default music

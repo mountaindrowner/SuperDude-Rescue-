@@ -340,7 +340,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
 // ---------------------------------------------------------------
 PC.KITS = {
   danny: {
-    kitName: 'LAB WHISK PROTOCOL',
+    kitName: 'RESIZER RAY',
     weapon: function (scene) { return new PC.ResizerWeapon(); },
     passive: function (scene) { scene.xpMult = 1.10; },
     passiveDesc: '+10% XP',

@@ -1,9 +1,8 @@
 // select.js - PC_Select: hero picker. Portrait-first 2-column grid of
-// the 6 roster heroes (PC.ROSTER), idle sprites at select-screen scale
-// with a slow bob, name + role labels, gold highlight ring on the
-// current pick. Tap a hero -> persist to localStorage -> start the run.
-// Kits are not implemented yet - every hero runs the default loadout,
-// so selection is purely visual until the kit milestone lands.
+// the 6 roster heroes (PC.ROSTER), idle sprites with a slow bob, name +
+// role + kit labels, gold ring on the pick, locked heroes as silhouettes
+// (kits.js unlock meta). Tap to select, tap again to start. Also hosts
+// the [ AUDIO ] mix panel.
 window.PC = window.PC || {};
 
 PC.SelectScene = function () { Phaser.Scene.call(this, { key: 'PC_Select' }); };
@@ -11,6 +10,7 @@ PC.SelectScene.prototype = Object.create(Phaser.Scene.prototype);
 PC.SelectScene.prototype.constructor = PC.SelectScene;
 
 PC.SelectScene.prototype.create = function () {
+  PC.applyRenderScale(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x1b1530);
 
@@ -101,7 +101,7 @@ PC.SelectScene.prototype.buildAudioPanel = function () {
     var zone = self.add.zone(bx + bw / 2, y + 5, bw + 24, 30).setDepth(31)
       .setInteractive({ useHandCursor: true });
     var drag = function (p) {
-      var v = Math.max(0, Math.min(1, (p.x / (PC.game.scale.displaySize.width / W) - bx) / bw));
+      var v = Math.max(0, Math.min(1, (p.x / PC.RENDER.SCALE - bx) / bw));
       set(v); draw();
     };
     zone.on('pointerdown', function (p) { drag(p); zone._held = true; });

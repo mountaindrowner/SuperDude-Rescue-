@@ -23,7 +23,8 @@ PC.MoveInput = function (scene) {
   scene.input.on('pointerdown', function (p) {
     if (self._ptrId !== -1) return;
     self._ptrId = p.id;
-    self._origin.x = p.x; self._origin.y = p.y;
+    var S = PC.RENDER.SCALE;
+    self._origin.x = p.x / S; self._origin.y = p.y / S;
     self.touchActive = true;
     self._updateTouch(p);
   });
@@ -42,7 +43,8 @@ PC.MoveInput = function (scene) {
 };
 
 PC.MoveInput.prototype._updateTouch = function (p) {
-  var dx = p.x - this._origin.x, dy = p.y - this._origin.y;
+  var S = PC.RENDER.SCALE;
+  var dx = p.x / S - this._origin.x, dy = p.y / S - this._origin.y;
   var len = Math.sqrt(dx * dx + dy * dy);
   var J = PC.JOY;
   if (len < J.DEAD) { this._touchVec = { x: 0, y: 0 }; }

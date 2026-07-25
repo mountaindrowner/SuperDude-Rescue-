@@ -34,7 +34,7 @@ PC.EnemySystem.prototype.spawn = function (x, y, def) {
   if (!e) {
     var far = -1, farD = -1;
     var cam = this.scene.cameras.main;
-    var cx = cam.scrollX + PC.RENDER.W / 2, cy = cam.scrollY + PC.RENDER.H / 2;
+    var cx = cam.worldView.centerX, cy = cam.worldView.centerY;
     for (i = 0; i < this.pool.length; i++) {
       var p = this.pool[i];
       var d = (p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy);
@@ -62,8 +62,8 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
   this.animT += dt;
   var flip = Math.floor(this.animT * 6) % 2 === 1;   // shared 6fps flipbook
   var cam = this.scene.cameras.main;
-  var x0 = cam.scrollX - PC.CULL_MARGIN, x1 = cam.scrollX + PC.RENDER.W + PC.CULL_MARGIN;
-  var y0 = cam.scrollY - PC.CULL_MARGIN, y1 = cam.scrollY + PC.RENDER.H + PC.CULL_MARGIN;
+  var x0 = cam.worldView.x - PC.CULL_MARGIN, x1 = cam.worldView.right + PC.CULL_MARGIN;
+  var y0 = cam.worldView.y - PC.CULL_MARGIN, y1 = cam.worldView.bottom + PC.CULL_MARGIN;
 
   this.hash.clear();
   var now = this.scene.now || 0;
@@ -134,7 +134,7 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
 // spawn n enemies in an off-screen ring around the camera center
 PC.EnemySystem.prototype.spawnRing = function (n, def) {
   var cam = this.scene.cameras.main;
-  var cx = cam.scrollX + PC.RENDER.W / 2, cy = cam.scrollY + PC.RENDER.H / 2;
+  var cx = cam.worldView.centerX, cy = cam.worldView.centerY;
   var R = 320;
   for (var i = 0; i < n; i++) {
     var a = (i / n) * Math.PI * 2;

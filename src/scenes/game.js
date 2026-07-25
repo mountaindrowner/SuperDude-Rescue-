@@ -11,6 +11,7 @@ PC.GameScene.prototype.constructor = PC.GameScene;
 var FRY_DEF = { key: 'enemy_d1_fry', spd: 80, hp: 10, dmg: 6, xp: 1, size: 24, still: 'still_d1_fry' };
 
 PC.GameScene.prototype.create = function () {
+  PC.applyRenderScale(this);
   this.cameras.main.setBackgroundColor(0x2a2544);
 
   this.ground = new PC.Ground(this, 1);
