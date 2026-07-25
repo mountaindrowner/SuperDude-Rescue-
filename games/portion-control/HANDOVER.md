@@ -12,10 +12,15 @@
 
 ## WHERE WE ARE (latest first)
 
-- **2026-07-24 — WINNERS PICKED + ANIMATED + IN THE ATLAS.** Mark
-  chose Victoria 3, Kevin 3, Carlos 1, Nayah 1 (**Josh pick still
-  PENDING** — re-ask, options in `concepts/heroes/josh_v2_options.
-  png`). Each winner ran through v2 `animate-character` (template
+- **2026-07-24 — ROSTER ART COMPLETE.** Mark chose Victoria 3,
+  Kevin 3, Carlos 1, Nayah 1, Josh 1 — all five animated and in the
+  atlas (`char_<name>_idle` + `walk_1..6`). Boot verified clean.
+  STILL PENDING from Mark: kit A/B/C pick per hero (CHARACTERS.md)
+  + which hero is the District 1 rescue. NEXT BUILD STEP: character
+  select + kit implementation.
+- **2026-07-24 — (superseded detail) winners round.** Mark
+  chose Victoria 3, Kevin 3, Carlos 1, Nayah 1. Each winner ran
+  through v2 `animate-character` (template
   walk, east) — 4 generations total — and shipped-Danny-convention
   frames landed in `assets/art/`: `char_<name>_idle` (east rotation)
   + `char_<name>_walk_1..6`, all in the manifest/atlas (verified:
