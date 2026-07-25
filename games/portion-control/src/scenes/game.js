@@ -238,7 +238,7 @@ PC.GameScene.prototype.showCards = function () {
 PC.GameScene.prototype.pickCard = function (card) {
   if (!this.cardsOpen) return;
   PC.applyCard(this, card);
-  if (PC.audio) PC.audio.ui();
+  if (PC.audio) PC.audio.cardSelect();
   var self = this;
   this.cardUi.forEach(function (o) { o.destroy(); });
   this.cardUi = [];
@@ -413,7 +413,7 @@ PC.GameScene.prototype.spawnBoss = function () {
   var flash = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.7).setScrollFactor(0).setDepth(150);
   this.tweens.add({ targets: flash, alpha: 0, duration: 500, onComplete: function () { flash.destroy(); } });
   this.cameras.main.shake(400, 0.01);
-  if (PC.audio) { PC.audio.hurt(); PC.audio.levelup(); }
+  if (PC.audio) PC.audio.roar();
   // banner
   var banner = this.add.text(W / 2, H * 0.32, 'BIG FRANK\nAPPEARS!', {
     fontFamily: 'monospace', fontSize: '20px', color: '#ff6b6b', fontStyle: 'bold',
@@ -432,6 +432,10 @@ PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
   if (ddx * ddx + ddy * ddy > (b.r + 8) * (b.r + 8)) return false;
   b.damage(dmg, dx, dy);
   this.fx.burst(x, y, 'fx_spark', 3, 0.16);
+  if (PC.audio && this.now >= (this._bossHitSfxCd || 0)) {   // throttled thunk
+    this._bossHitSfxCd = this.now + 0.25;
+    PC.audio.bossHit();
+  }
   return true;
 };
 
@@ -440,7 +444,7 @@ PC.GameScene.prototype.onBossDefeated = function () {
   if (this.won) return;
   this.won = true;
   var self = this, W = PC.RENDER.W, H = PC.RENDER.H, b = this.boss;
-  if (PC.audio) { PC.audio.stopMusic(); PC.audio.levelup(); }
+  if (PC.audio) { PC.audio.stopMusic(); PC.audio.bossDie(); }
   this.cameras.main.shake(500, 0.012);
   // slowmo
   this.time.timeScale = 0.4;
@@ -487,7 +491,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
     cook.setVisible(true).setScale(0.4);
     self.tweens.add({ targets: cook, scale: 0.9, y: cook.y - 10, duration: 400, ease: 'Back.out' });
     self.fx.burst(bx, by - 8, 'fx_levelup', 4, 0.5);
-    if (PC.audio) PC.audio.levelup();
+    if (PC.audio) PC.audio.fanfare();
     self.time.delayedCall(200, function () { cage.destroy(); });
     // sparkle ring of coins/gems joy
     for (var i = 0; i < 10; i++) self.fx.burst(bx + (Math.random() - 0.5) * 40, by - 8 + (Math.random() - 0.5) * 30, 'fx_spark', 3, 0.4);

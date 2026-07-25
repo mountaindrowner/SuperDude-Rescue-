@@ -59,7 +59,7 @@ PC.Boss.prototype._splat = function () {
         } });
     })(tx, ty);
   }
-  if (PC.audio) PC.audio.hurt();
+  if (PC.audio) PC.audio.splat();
 };
 
 PC.Boss.prototype._puddle = function (x, y) {
@@ -111,7 +111,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
       this.state = 'charge'; this.stateT = 0; this.tele.setVisible(false);
       this.chargeVX = this._teleDx * 320; this.chargeVY = this._teleDy * 320;
       this.sprite.clearTint();
-      if (PC.audio) PC.audio.hurt();
+      if (PC.audio) PC.audio.roar();
     }
   } else if (this.state === 'charge') {
     this.x += this.chargeVX * dt; this.y += this.chargeVY * dt;

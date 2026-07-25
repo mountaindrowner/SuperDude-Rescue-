@@ -203,7 +203,7 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
         this.pending = { x: best.x, y: best.y, ang: Math.random() * Math.PI,
                          at: scene.now + 0.8, fired: 0, nextAt: 0 };
         this.marker.setPosition(best.x, best.y).setScale(0.8).setAlpha(0.9).setVisible(true);
-        if (PC.audio) PC.audio.ui();
+        if (PC.audio) PC.audio.telegraph();
       } else { this.cdT = 0.4; }
     }
   }

@@ -12,6 +12,26 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.7.1: WP-AUDIO SHIPPED.** audio.js upgraded in
+  place (PHASE2 premise was stale — buses/caps already existed):
+  persisted mix (localStorage `portioncontrol.audio`, default music
+  .35 / sfx .85, `setMusicVol/setSfxVol/getVols`), music DUCKING
+  (~38% dip, ~250ms recovery) on level-up/chest/roar/boss-die/
+  fanfare/revive, shared feedback-delay "air" send for chime SFX,
+  detuned layering. NEW SFX (musical language: major = good, low
+  minor = danger): `cardSelect` (E->B fifth), `telegraph` (low growl
+  + minor-2nd rub; Kevin strike + boss charge), `roar` (boss
+  entrance/charge), `splat` (condiment), `bossHit` (throttled thunk
+  in hitBoss), `bossDie` (descend + resolve arpeggio), `fanfare`
+  (rescue/victory triad + held C+G), `revive` + `evolve` (reserved
+  for WP-SCRIPTURE / WP-EVOLUTIONS). Call sites remapped (boss no
+  longer reuses hurt() for everything). Select screen gains
+  [ AUDIO ] gear -> panel with draggable MUSIC/SOUND FX sliders
+  (audible tick while dragging SFX). Verified: all 18 SFX methods
+  clean, sliders persist, combat 60fps. NEXT: WP-JUICE (damage
+  numbers, trails, enemy squish, gem art), then METASHOP +
+  COLLECTIONS title hub, SCRIPTURE (Claude authors, Mark reviews).
+
 - **2026-07-25 — v0.7.0: PHASE 2.0 TRACK 0 SHIPPED — HERO KITS LIVE.**
   Mark delegated the open decisions (2026-07-25): camera stays (no
   further zoom-out; "4K feel" comes via fidelity/juice), Claude may
