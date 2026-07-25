@@ -12,6 +12,27 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.8.1: SIGNATURE INHERITANCE + OWNER MASTERY (new
+  Mark design, NOT in PHASE2 - confirmed to him).** All six hero
+  signature weapons now appear in the shared level-up card pool
+  (SIGS list in drawCards, own signature excluded since you start
+  with it) - any hero can inherit a teammate's weapon mid-run. The
+  OWNER's copy carries SIGNATURE MASTERY: `w.mastery = 1.25` (+25%
+  power at every level, applied at every damage-calc site via
+  `this.dmg * (this.mastery || 1)`); per-kit flavor mastery via
+  `kit.masterize(w)` where fields are never overwritten by
+  applyLevel (Victoria: deploy cd x0.8, turret life x1.5 - other
+  kits' extra flavors TODO, dmg-only for now since their level-ups
+  set cd/count/radius absolutely). Emergent bonus: inherited
+  Resizer + Focus Lens still evolves to MEGA RESIZER for ANY hero.
+  Card pool now ~18 distinct candidates (6 signatures + 5 generic
+  weapons + 7 passives) for 4+4 slots. VERIFIED: Josh lasso mastery
+  1.25 + full foreign-sig pool; Victoria sentry cd 5.6/life 21.
+  TODO next in this thread: signature evolutions for the other 5
+  heroes, flavor masteries for Nayah/Kevin/Carlos/Josh, "a bunch
+  more" weapons (Mark) - candidates: ketchup lob artillery,
+  microwave sweep beam, fridge wall.
+
 - **2026-07-25 — v0.8.0: BUILD-CRAFTING UPDATE (WP-EVOLUTIONS pulled
   forward per Mark: "the fun is choices + combos").** Card pool grew
   from 3 weapons + 3 %-passives to: WEAPONS x6 pickup (Resizer,

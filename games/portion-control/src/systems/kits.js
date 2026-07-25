@@ -82,7 +82,7 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
     if (best) {
       tu.fireT = this.fireCd;
       scene.bullets.fire(tu.x, tu.y - 8, best.x, best.y,
-        { speed: 460, dmg: PC.rollDmg(scene, this.dmg), frame: 'proj_pellet', life: 0.6 });
+        { speed: 460, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet', life: 0.6 });
       if (PC.audio) PC.audio.shoot();
     } else { tu.fireT = 0.2; }
   }
@@ -220,7 +220,7 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
       var idx = p.fired - (this.count - 1) / 2;
       var bx = p.x + Math.cos(p.ang) * idx * 40;
       var by = p.y + Math.sin(p.ang) * idx * 40;
-      var r = this.radius * scene.stats.areaMult, dmg = PC.rollDmg(scene, this.dmg);
+      var r = this.radius * scene.stats.areaMult, dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
       scene.fx.burst(bx, by, 'fx_pop', 5, 0.28);
       scene.fx.burst(bx, by, 'fx_nova_1', 2, 0.2);
       scene.cameras.main.shake(60, 0.002);
@@ -277,7 +277,7 @@ PC.BeamWeapon.prototype.update = function (dt, scene) {
   for (var n = 0; n < this.beams; n++) {
     var ox = (n - (this.beams - 1) / 2) * 10;
     scene.bullets.fire(scene.px + ox, scene.py - 6, best.x, best.y,
-      { speed: 700, dmg: PC.rollDmg(scene, this.dmg), frame: 'proj_resizer',
+      { speed: 700, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_resizer',
         pierce: 99, life: 1.5 });
   }
   scene.fx.burst(scene.px, scene.py - 6, 'fx_muzzle', 2, 0.1);
@@ -329,7 +329,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
     var bd = Math.sqrt(bdx * bdx + bdy * bdy);
     if (Math.abs(bd - r) < scene.boss.r + 7) {
       scene._lassoBossCd = scene.now + 0.5;
-      scene.hitBoss(scene.boss.x, scene.boss.y, this.dmg * scene.stats.dmgMult, 0, 0);
+      scene.hitBoss(scene.boss.x, scene.boss.y, this.dmg * (this.mastery || 1) * scene.stats.dmgMult, 0, 0);
     }
   }
 };
@@ -361,6 +361,7 @@ PC.KITS = {
   victoria: {
     kitName: 'TURRET TINKER',
     weapon: function (scene) { return new PC.SentryWeapon(scene); },
+    masterize: function (w) { w.cd *= 0.8; w.life *= 1.5; },
     passive: function (scene) { scene.stats.heroCd = 0.90; },
     passiveDesc: '-10% cooldowns',
     glow: { x: 8, y: -16, color: 0xcfd4e8 },
@@ -402,7 +403,14 @@ PC.applyHeroKit = function (scene) {
   scene.stats.dmgMult = scene.stats.heroDmg || 1;
   scene.stats.cdMult = scene.stats.heroCd || 1;
   scene.stats.spdMult = scene.stats.heroSpd || 1;
-  scene.weapons = [kit.weapon(scene)];
+  // SIGNATURE MASTERY (Mark 2026-07-25): every signature weapon is
+  // inheritable by other heroes via the card pool, but the OWNER's
+  // copy is inherently stronger - +25% power at every level, plus a
+  // per-kit flavor edge where fields are never overwritten by levels.
+  var w = kit.weapon(scene);
+  w.mastery = 1.25;
+  if (kit.masterize) kit.masterize(w);
+  scene.weapons = [w];
 };
 
 // ---------------------------------------------------------------
