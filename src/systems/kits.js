@@ -139,7 +139,7 @@ PC.SeedWeapon.prototype.update = function (dt, scene) {
     scene.fx.burst(tx, ty, 'fx_spark', 4, 0.2);
     if (PC.audio) PC.audio.shoot();
   }
-  var dmg = this.dmg, r = this.radius, self = this;
+  var dmg = this.dmg, r = this.radius * scene.stats.areaMult, self = this;
   for (var j = 0; j < this.patches.length; j++) {
     var pt = this.patches[j];
     if (!pt.active) continue;
@@ -220,7 +220,7 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
       var idx = p.fired - (this.count - 1) / 2;
       var bx = p.x + Math.cos(p.ang) * idx * 40;
       var by = p.y + Math.sin(p.ang) * idx * 40;
-      var r = this.radius, dmg = PC.rollDmg(scene, this.dmg);
+      var r = this.radius * scene.stats.areaMult, dmg = PC.rollDmg(scene, this.dmg);
       scene.fx.burst(bx, by, 'fx_pop', 5, 0.28);
       scene.fx.burst(bx, by, 'fx_nova_1', 2, 0.2);
       scene.cameras.main.shake(60, 0.002);
@@ -304,7 +304,8 @@ PC.LassoWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) this.dmg = 18;
 };
 PC.LassoWeapon.prototype.update = function (dt, scene) {
-  var r = this.rMin + (this.rMax - this.rMin) * (0.5 + 0.5 * Math.sin(scene.now * 5.2));
+  var am = scene.stats.areaMult;
+  var r = (this.rMin + (this.rMax - this.rMin) * (0.5 + 0.5 * Math.sin(scene.now * 5.2))) * am;
   var g = this.gfx;
   g.clear();
   g.lineStyle(3, 0xb5793f, 0.85);

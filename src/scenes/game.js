@@ -55,7 +55,8 @@ PC.GameScene.prototype.create = function () {
   var self = this;
   this.gems = new PC.GemSystem(this, function (v) { self.gainXp(v); });
   this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1, heroDmg: 1, heroCd: 1,
-                 heroSpd: 1, critChance: 0 };
+                 heroSpd: 1, critChance: 0, projMult: 1, areaMult: 1,
+                 armor: 0, pickupMult: 1 };
   this.xpMult = 1; this.dmgTakenMult = 1; this.kbMult = 1;
   this.passives = {};
   PC.applyHeroKit(this);            // signature weapon + hero passive (kits.js)
@@ -221,9 +222,15 @@ PC.GameScene.prototype.showCards = function () {
   var x0 = W / 2 - (cards.length * (cw + gap) - gap) / 2 + cw / 2;
   cards.forEach(function (card, i) {
     var cx = x0 + i * (cw + gap), cy = H / 2;
-    var panel = self.add.rectangle(cx, cy, cw, ch, 0x2a2544, 1)
-      .setStrokeStyle(2, card.sub === 'NEW!' ? 0xf2c33c : 0x35d0ff)
+    var isEvo = card.kind === 'evolve';
+    var panel = self.add.rectangle(cx, cy, cw, ch, isEvo ? 0x3a2c10 : 0x2a2544, 1)
+      .setStrokeStyle(isEvo ? 3 : 2,
+        isEvo ? 0xf2c33c : (card.sub === 'NEW!' ? 0xf2c33c : 0x35d0ff))
       .setDepth(201).setInteractive({ useHandCursor: true });
+    if (isEvo) {
+      self.tweens.add({ targets: panel, scaleX: 1.04, scaleY: 1.04,
+        duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
     var icon = self.add.image(cx, cy - 32, 'atlas', card.icon)
       .setScale(1.6).setDepth(202);
     var title = self.add.text(cx, cy + 2, card.title, {
@@ -340,7 +347,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   var self = this;
   this.bullets.update(dt, this.enemies, this._onKillCb);
   this.juice.update(dt);
-  this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R * (1 + 0));
+  this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R * this.stats.pickupMult);
   this.pickups.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
   this.fx.update(dt);
   this.player.setFlipX(this.facing < 0);
@@ -351,6 +358,11 @@ PC.GameScene.prototype.update = function (time, delta) {
     var e = pool[i];
     if (e.active && e.flashUntil && this.now > e.flashUntil) {
       e.flashUntil = 0;
+      if (this.now < e.slowUntil) e.sprite.setTint(0x9adfff);   // frozen
+      else e.sprite.clearTint();
+    }
+    if (e.active && e.slowUntil && this.now > e.slowUntil && !e.flashUntil) {
+      e.slowUntil = 0;
       e.sprite.clearTint();
     }
   }
@@ -363,7 +375,7 @@ PC.GameScene.prototype.update = function (time, delta) {
       if (dx * dx + dy * dy < (e.r + 8) * (e.r + 8)) { hitDmg = e.dmg; return true; }
     });
     if (hitDmg > 0) {
-      this.hp -= hitDmg * this.dmgTakenMult;
+      this.hp -= Math.max(1, hitDmg * this.dmgTakenMult - this.stats.armor);
       this.invUntil = this.now + PC.PLAYER.IFRAMES;
       this.cameras.main.shake(PC.SHAKE.MS, 0.004);
       if (PC.audio) PC.audio.hurt();
