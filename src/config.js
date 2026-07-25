@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.6.6';
+PC.VERSION = 'v0.7.0';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
@@ -63,11 +63,13 @@ PC.XP = {
 // Mark round 10: 10min is too long for kids - District 1 is a 5min run.
 PC.RUN = { BOSS_AT_S: 300, BOSS_AMBIENT_MULT: 1.8 };
 
-// District 1 rescue: a real Super Dude Danny character goes here (Mark
-// supplies art + name later - the Adventure City rescue team). Until then
-// a placeholder. To wire a real hero: drop art at assets/art/<key>.png,
-// add the key to the manifest, set art + name here.
-PC.D1_RESCUE = { name: 'YOUR HERO', art: 'hero_placeholder' };
+// District 1 rescue: Victoria is Big Frank's captive (call delegated to
+// Claude by Mark 2026-07-25). Winning D1 unlocks her as playable.
+PC.D1_RESCUE = { name: 'VICTORIA', art: 'char_victoria_idle', hero: 'victoria' };
+
+// Dev flag (PHASE2 §3): true = every hero selectable. Flip false to
+// activate the rescue-based unlock flow (Danny always unlocked).
+PC.DEV_ALL_UNLOCKED = true;
 
 // ---- playable roster ----
 // scale normalizes figure height to Danny's (~50px) - measured from the

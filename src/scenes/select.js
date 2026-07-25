@@ -29,32 +29,44 @@ PC.SelectScene.prototype.create = function () {
   PC.ROSTER.forEach(function (hero, i) {
     var cx = ((i % cols) + 0.5) * cellW;
     var cy = top + (Math.floor(i / cols) + 0.55) * cellH;
+    var unlocked = PC.heroUnlocked(hero.id);
 
     var ring = self.add.graphics();
     var img = self.add.image(cx, cy - 8, 'atlas', hero.art + '_idle')
       .setScale(hero.scale * 1.05);
-    self.tweens.add({ targets: img, y: cy - 11, duration: 900 + i * 90,
-      yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    if (unlocked) {
+      self.tweens.add({ targets: img, y: cy - 11, duration: 900 + i * 90,
+        yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    } else {
+      img.setTintFill(0x2a2544);          // locked silhouette
+    }
 
-    self.add.text(cx, cy + cellH * 0.26, hero.name, {
-      fontFamily: 'monospace', fontSize: '11px', color: '#f7f4ef', fontStyle: 'bold',
+    self.add.text(cx, cy + cellH * 0.26, unlocked ? hero.name : '???', {
+      fontFamily: 'monospace', fontSize: '11px', color: unlocked ? '#f7f4ef' : '#45356e',
+      fontStyle: 'bold',
     }).setOrigin(0.5, 0);
-    self.add.text(cx, cy + cellH * 0.26 + 13, hero.role, {
+    self.add.text(cx, cy + cellH * 0.26 + 13,
+      unlocked ? (PC.KITS && PC.KITS[hero.id] ? hero.role + ' - ' + PC.KITS[hero.id].kitName : hero.role)
+               : 'RESCUE TO UNLOCK', {
       fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
     }).setOrigin(0.5, 0);
 
-    var zone = self.add.zone(cx, cy + cellH * 0.05, cellW * 0.92, cellH * 0.92)
-      .setInteractive({ useHandCursor: true });
-    zone.on('pointerdown', function () {
-      if (picked === hero.id) { self.launch(hero); return; }
-      picked = hero.id;
-      try { localStorage.setItem('portioncontrol.hero', hero.id); } catch (e) {}
-      if (PC.audio) PC.audio.ui();
-      self.redraw(picked);
-    });
+    if (unlocked) {
+      var zone = self.add.zone(cx, cy + cellH * 0.05, cellW * 0.92, cellH * 0.92)
+        .setInteractive({ useHandCursor: true });
+      zone.on('pointerdown', function () {
+        if (picked === hero.id) { self.launch(hero); return; }
+        picked = hero.id;
+        try { localStorage.setItem('portioncontrol.hero', hero.id); } catch (e) {}
+        if (PC.audio) PC.audio.ui();
+        self.redraw(picked);
+      });
+    }
 
-    self._cells.push({ hero: hero, ring: ring, cx: cx, cy: cy, cellW: cellW, cellH: cellH });
+    self._cells.push({ hero: hero, ring: ring, cx: cx, cy: cy, cellW: cellW,
+                       cellH: cellH, locked: !unlocked });
   });
+  if (!PC.heroUnlocked(picked)) picked = 'danny';
 
   var go = this.add.text(W / 2, H * 0.985, 'TAP YOUR HERO AGAIN TO START', {
     fontFamily: 'monospace', fontSize: '10px', color: '#a8e04a', fontStyle: 'bold',
@@ -67,6 +79,12 @@ PC.SelectScene.prototype.create = function () {
 PC.SelectScene.prototype.redraw = function (picked) {
   this._cells.forEach(function (c) {
     c.ring.clear();
+    if (c.locked) {
+      c.ring.lineStyle(2, 0x2a2544, 1);
+      var lw = c.cellW * 0.86, lh = c.cellH * 0.88;
+      c.ring.strokeRoundedRect(c.cx - lw / 2, c.cy - lh * 0.52, lw, lh, 8);
+      return;
+    }
     var sel = c.hero.id === picked;
     c.ring.lineStyle(2, sel ? 0xf2c33c : 0x45356e, 1);
     var w = c.cellW * 0.86, h = c.cellH * 0.88;

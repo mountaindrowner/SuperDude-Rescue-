@@ -12,6 +12,35 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.7.0: PHASE 2.0 TRACK 0 SHIPPED — HERO KITS LIVE.**
+  Mark delegated the open decisions (2026-07-25): camera stays (no
+  further zoom-out; "4K feel" comes via fidelity/juice), Claude may
+  author scripture/faith content (overrides PHASE2 §2.8), difficulty
+  pillar proceeds as specced. DECISIONS MADE: kits = Danny A /
+  Victoria B / Nayah A / Kevin A / Carlos C / Josh B (each VS
+  archetype once); D1 captive = VICTORIA; unlock flow = Danny start,
+  rescues unlock, `PC.DEV_ALL_UNLOCKED=true` for now. NEW
+  `systems/kits.js`: SentryWeapon (Vic turrets), SeedWeapon (Nayah
+  thorn patches), StrikeWeapon (Kevin marked strafe), BeamWeapon
+  (Carlos farthest-enemy pierce + only crit source), LassoWeapon
+  (Josh breathing rope ring), Danny keeps Resizer + Eureka level-up
+  pulse; per-hero passives via stats.heroDmg/heroCd/heroSpd (PASSIVES
+  now COMPOSE on hero base — never overwrite), scene.xpMult/
+  dmgTakenMult/kbMult, PC.rollDmg crit helper. Item glow = pulsing
+  additive spark at per-hero offset while walking (code-side,
+  VS-law). Select screen: locked heroes = silhouette + ??? +
+  "RESCUE TO UNLOCK" (honors DEV_ALL_UNLOCKED); kit name shown under
+  role. D1 win calls PC.unlockHero('victoria'); rescue cage now pops
+  Victoria. REAL BUG FIXED in ground.js (locked file, zero-regression
+  fix per guardrail 1): chunk canvas textures are game-global, so
+  scene restarts left images bound to stale canvases -> "floating
+  building block" artifact; now remove-before-addCanvas. VERIFIED:
+  all 6 heroes fight with their signature weapon at 60fps, 0 errors,
+  5-restart artifact sweep clean. NEXT: WP-AUDIO (extend existing
+  audio.js - it already HAS buses/caps, PHASE2 premise stale there),
+  then JUICE, METASHOP+COLLECTIONS, SCRIPTURE (Claude authors, Mark
+  reviews), EVOLUTIONS/LOOT, ENVFIDELITY, DISTRICT2.
+
 - **2026-07-24 — v0.6.4: ROSTER FINAL — whole cast on the v3
   generation.** Final picks, all animated + live in-game: Danny =
   v3_1, Victoria = v3_5 (re-rolled from her pro pick for engine
