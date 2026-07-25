@@ -57,8 +57,8 @@ PC.ResultsScene.prototype.create = function () {
   if (win && PC.audio) PC.audio.levelup();
 
   var go = function () {
-    if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
-    self.scene.start('PC_Game');
+    if (PC.audio) PC.audio.ui();
+    self.scene.start('PC_Select');
   };
   this.time.delayedCall(700, function () {
     self.input.once('pointerdown', go);

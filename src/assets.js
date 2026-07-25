@@ -22,26 +22,25 @@ window.PC = window.PC || {};
   // -- player characters (6) : 4-frame walk + portrait (COMPENDIUM 6) --
   // Danny renders at 48 (Mark picked option B: native PixelLab quality,
   // no downscale); other heroes get sized when their art is made.
+  // The real SDD roster. Sizes = each hero's actual PixelLab canvas
+  // (v2 standard Danny 68, Victoria pro 84, v3 heroes 88-92); the
+  // in-game footprint is normalized via PC.ROSTER scale, not here.
   var CHARS = [
-    { k: 'danny',  c1: P.WHITE,  c2: P.CYAN, size: 68, frames: 6 },   // v2 char (option A)
-    { k: 'cook',   c1: P.CLOUD,  c2: P.MUSTARD },
-    { k: 'tech',   c1: P.STEEL,  c2: P.CYAN },
-    { k: 'muscle', c1: P.GRAPE,  c2: P.CHERRY },
-    { k: 'scout',  c1: P.MINT,   c2: P.LIME },
-    { k: 'medic',  c1: P.WHITE,  c2: P.CHERRY },
+    { k: 'danny',    c1: P.WHITE,  c2: P.CYAN,    size: 68 },
+    { k: 'victoria', c1: P.CLOUD,  c2: P.BERRY,   size: 84 },
+    { k: 'nayah',    c1: P.MINT,   c2: P.LIME,    size: 92 },
+    { k: 'kevin',    c1: P.STEEL,  c2: P.MUSTARD, size: 92 },
+    { k: 'carlos',   c1: P.MUSTARD,c2: P.CYAN,    size: 92 },
+    { k: 'josh',     c1: P.CRUST,  c2: P.COCOA,   size: 88 },
   ];
   CHARS.forEach(function (c) {
-    creature('char_' + c.k, c.size || PC.SIZE.PLAYER, c.c1, c.c2, c.frames || 4);
+    creature('char_' + c.k, c.size, c.c1, c.c2, 6);
+    add('char_' + c.k + '_idle', c.size, c.size, 'creature', c.c1, c.c2, 1);
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
-  add('char_danny_idle', 68, 68, 'creature', P.WHITE, P.CYAN, 1);
-  // The rescued teammate is a real Super Dude Danny character (Adventure
-  // City rescue team: Victoria/Nayah/Kevin/Carlos/Josh) - Mark supplies the
-  // art + name later. Until then a clearly-placeholder stasis-pod hero.
+  // The District 1 rescued teammate - stays a stasis-pod placeholder
+  // until Mark names which roster hero is in Big Frank's cage.
   add('hero_placeholder', 48, 64, 'herofig', P.CYAN, P.CLOUD);
-  ['cook', 'tech', 'muscle', 'scout', 'medic'].forEach(function (k) {
-    add('captured_' + k, PC.SIZE.PLAYER, PC.SIZE.PLAYER, 'captured', P.MINT, P.INK);
-  });
 
   // -- enemies (COMPENDIUM 8, incl. split minions) : 2-frame walk + still --
   var ENEMIES = [

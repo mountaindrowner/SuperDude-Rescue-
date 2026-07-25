@@ -12,6 +12,24 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — v0.6.0: ROSTER ART CLOSED + CHARACTER SELECT LIVE.**
+  Kevin = v3 option 9 (leaner build; Mark picked it seeing the
+  lighter-than-card skin + red tie). All 6 heroes now playable:
+  boot -> PC_Select (new `scenes/select.js`, 2-col portrait grid /
+  3-col landscape, bobbing idle sprites, gold ring, tap-twice to
+  start, pick persisted at `portioncontrol.hero`); results loops
+  back to select. `PC.ROSTER` in config.js (id/name/role/art/scale —
+  scale normalizes figure heights to Danny's ~50px: Vic 1.25, Nayah/
+  Kevin/Carlos 1.1, Josh 1.15). game.js player+ghosts are hero-
+  agnostic via `this.hero`. GOTCHA fixed: the atlas packs ONLY
+  PC.ASSETS registry entries — manifest alone is not enough; the
+  fictional cook/tech/muscle/scout/medic + captured_* placeholder
+  entries were replaced with the real roster at true canvas sizes
+  (68/84/92/92/92/88). Verified headless: all 6 select cells launch
+  with their own art + scale, zero page errors. KITS still pending
+  (all heroes run Danny's default loadout — CHARACTERS.md picks
+  needed) + D1 rescue hero still unnamed. 1433 generations remain.
+
 - **2026-07-24 — FINAL HERO ART LOCKED (4/5) + Kevin re-rolls.**
   Mark's engine picks: Victoria = PRO, Nayah = v3 opt 3, Carlos =
   v3 opt 2, Josh = v3 opt 3; Kevin = none of round 1 (settled-for
