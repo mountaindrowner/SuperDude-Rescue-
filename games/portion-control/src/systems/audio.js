@@ -11,10 +11,14 @@ window.PC = window.PC || {};
   var duckUntil = 0, duckTimer = null;
 
   // persisted mix (PHASE2 default: music .35 / sfx .85)
-  var VOLS = { music: 0.35, sfx: 0.85 };
+  // v2 mix (Mark 2026-07-25): music default 10%. The v field migrates
+  // older saves - their sfx choice survives, music resets to the new
+  // default once.
+  var VOLS = { music: 0.10, sfx: 0.85, v: 2 };
   try {
     var saved = JSON.parse(localStorage.getItem('portioncontrol.audio') || 'null');
-    if (saved && typeof saved.music === 'number') VOLS = saved;
+    if (saved && saved.v === 2) VOLS = saved;
+    else if (saved && typeof saved.sfx === 'number') VOLS.sfx = saved.sfx;
   } catch (e) {}
 
   function ensure() {

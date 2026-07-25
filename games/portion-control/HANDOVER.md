@@ -12,6 +12,22 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.7.3: on-device UI misposition FIXED + music
+  default 10% (Mark).** Mark's phone screenshot showed level-up
+  cards/HUD/version tag drifting off toward the top-left mid-run —
+  scrollFactor(0) UI under a ZOOMED camera mispositions once the
+  camera scrolls (menus were fine; my headless checks never eyeballed
+  the in-run HUD - lesson: screenshot the GAME scene after movement).
+  FIX: all in-run screen-space UI now lives in `scene.ui`, a
+  world-space container pinned to `camera.worldView.x/y` every
+  update; children keep plain logical coords; `scene.uiAttach(obj)`
+  is the API (joystick gfx, HUD set, cards, banners, boss bar all
+  attached; setScrollFactor(0) removed from game.js/input.js).
+  Verified: player at (678,-493) with cards open — everything
+  centered/cornered correctly. AUDIO: default music volume 0.35 ->
+  0.10 (Mark), with a v:2 save migration that preserves a user's
+  custom SFX but resets music to the new default once.
+
 - **2026-07-25 — v0.7.2: SHARPNESS FIX (Mark: "text fuzzy, edges
   soft").** Root cause: the canvas backing store was the LOGICAL size
   (340xH) CSS-stretched ~3x to the phone — text/vector could never be

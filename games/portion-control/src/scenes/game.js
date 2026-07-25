@@ -15,6 +15,13 @@ PC.GameScene.prototype.create = function () {
   this.cameras.main.setBackgroundColor(0x2a2544);
 
   this.ground = new PC.Ground(this, 1);
+  // screen-space UI lives in a world-space container pinned to the
+  // camera's worldView corner every frame - the ONLY reliable way to
+  // anchor UI under a zoomed camera (sf-0 + zoom mispositions, seen
+  // on-device v0.7.2). Children keep plain logical coords.
+  var uiSelf = this;
+  this.ui = this.add.container(0, 0).setDepth(100);
+  this.uiAttach = function (o) { uiSelf.ui.add(o); return o; };
   this.moveInput = new PC.MoveInput(this);
 
   this.px = 0; this.py = 0;
@@ -72,44 +79,48 @@ PC.GameScene.prototype.create = function () {
   this._rings = {};
   this.pickups = new PC.PickupSystem(this);
   this.boss = null; this.bossSpawned = false; this.won = false;
-  this.bossBar = this.add.graphics().setScrollFactor(0).setDepth(103);
+  this.bossBar = this.add.graphics().setDepth(103);
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
   this.ground.update(cam);
 
   // ---- HUD (screen-space) ----
-  this.hud = this.add.graphics().setScrollFactor(0).setDepth(100);
+  this.hud = this.add.graphics().setDepth(100);
   this.timerText = this.add.text(PC.RENDER.W / 2, 4, '0:00', {
     fontFamily: 'monospace', fontSize: '12px', color: '#f7f4ef',
-  }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(101);
+  }).setOrigin(0.5, 0).setDepth(101);
   this.killText = this.add.text(PC.RENDER.W - 4, 4, 'POPS 0', {
     fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c',
-  }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
+  }).setOrigin(1, 0).setDepth(101);
   this.levelText = this.add.text(4, 16, 'LV 1', {
     fontFamily: 'monospace', fontSize: '9px', color: '#a8e04a',
-  }).setScrollFactor(0).setDepth(101);
+  }).setDepth(101);
   this.goldText = this.add.text(4, 27, '', {
     fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c',
-  }).setScrollFactor(0).setDepth(101);
+  }).setDepth(101);
   this.debugText = this.add.text(2, PC.RENDER.H - 12, '', {
     fontFamily: 'monospace', fontSize: '8px', color: '#a8e04a',
-  }).setScrollFactor(0).setDepth(101);
-  this.add.text(PC.RENDER.W - 3, PC.RENDER.H - 11, PC.VERSION, {
+  }).setDepth(101);
+  this.verText = this.add.text(PC.RENDER.W - 3, PC.RENDER.H - 11, PC.VERSION, {
     fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
-  }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
+  }).setOrigin(1, 0).setDepth(101);
   this._dbgAcc = 0;
   this.drawHud();
 
   // dev swarm button (works on touch - Mark can't press T on a phone)
   this.swarmBtn = this.add.text(PC.RENDER.W - 4, 18, '[SWARM]', {
     fontFamily: 'monospace', fontSize: '9px', color: '#6d6a8e',
-  }).setOrigin(1, 0).setScrollFactor(0).setDepth(101)
+  }).setOrigin(1, 0).setDepth(101)
     .setInteractive({ useHandCursor: true });
   this.swarmBtn.on('pointerdown', function (p, lx, ly, ev) {
     if (ev && ev.stopPropagation) ev.stopPropagation();
     this.stress();
   }, this);
+
+  [this.bossBar, this.hud, this.timerText, this.killText, this.levelText,
+   this.goldText, this.debugText, this.verText, this.swarmBtn]
+    .forEach(this.uiAttach);
 
   this.input.keyboard.on('keydown-G', function () { this.scene.start('PC_Gallery'); }, this);
   this.input.keyboard.on('keydown-T', function () { this.stress(); }, this);
@@ -199,11 +210,11 @@ PC.GameScene.prototype.showCards = function () {
   var self = this;
   var ui = this.cardUi;
   var scrim = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0818, 0.72)
-    .setScrollFactor(0).setDepth(200);
+    .setDepth(200);
   ui.push(scrim);
   ui.push(this.add.text(W / 2, H / 2 - 96, 'LEVEL UP! PICK ONE', {
     fontFamily: 'monospace', fontSize: '13px', color: '#a8e04a', fontStyle: 'bold',
-  }).setOrigin(0.5).setScrollFactor(0).setDepth(201));
+  }).setOrigin(0.5).setDepth(201));
   var cards = PC.drawCards(this);
   var cw = 78, ch = 120, gap = 8;
   var x0 = W / 2 - (cards.length * (cw + gap) - gap) / 2 + cw / 2;
@@ -211,23 +222,24 @@ PC.GameScene.prototype.showCards = function () {
     var cx = x0 + i * (cw + gap), cy = H / 2;
     var panel = self.add.rectangle(cx, cy, cw, ch, 0x2a2544, 1)
       .setStrokeStyle(2, card.sub === 'NEW!' ? 0xf2c33c : 0x35d0ff)
-      .setScrollFactor(0).setDepth(201).setInteractive({ useHandCursor: true });
+      .setDepth(201).setInteractive({ useHandCursor: true });
     var icon = self.add.image(cx, cy - 32, 'atlas', card.icon)
-      .setScale(1.6).setScrollFactor(0).setDepth(202);
+      .setScale(1.6).setDepth(202);
     var title = self.add.text(cx, cy + 2, card.title, {
       fontFamily: 'monospace', fontSize: '8px', color: '#f7f4ef', fontStyle: 'bold',
       align: 'center', wordWrap: { width: cw - 8 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(202);
+    }).setOrigin(0.5).setDepth(202);
     var sub = self.add.text(cx, cy + 22, card.sub, {
       fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c', fontStyle: 'bold',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(202);
+    }).setOrigin(0.5).setDepth(202);
     var desc = self.add.text(cx, cy + 42, card.desc, {
       fontFamily: 'monospace', fontSize: '7px', color: '#cfd4e8',
       align: 'center', wordWrap: { width: cw - 8 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(202);
+    }).setOrigin(0.5).setDepth(202);
     ui.push(panel, icon, title, sub, desc);
     panel.on('pointerdown', function () { self.pickCard(card); });
   });
+  ui.forEach(function (o) { self.uiAttach(o); });
   this._cardKeys = [];
   cards.forEach(function (card, i) {
     var h = function () { self.pickCard(card); };
@@ -253,6 +265,8 @@ PC.GameScene.prototype.pickCard = function (card) {
 
 PC.GameScene.prototype.update = function (time, delta) {
   if (this.dead) return;
+  var wv = this.cameras.main.worldView;
+  this.ui.setPosition(wv.x, wv.y);
   if (this.cardsOpen) return;                 // world paused during the pick
   var dt = Math.min(PC.DT_CLAMP, delta / 1000);
   this.now += dt;
@@ -411,7 +425,7 @@ PC.GameScene.prototype.spawnBoss = function () {
   // spawn off the top edge, drifting toward the player
   this.boss = new PC.Boss(this, this.px, this.py - Math.max(W, H) * 0.55);
   // white flash + shake + roar
-  var flash = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.7).setScrollFactor(0).setDepth(150);
+  var flash = this.uiAttach(this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.7).setDepth(150));
   this.tweens.add({ targets: flash, alpha: 0, duration: 500, onComplete: function () { flash.destroy(); } });
   this.cameras.main.shake(400, 0.01);
   if (PC.audio) PC.audio.roar();
@@ -419,7 +433,8 @@ PC.GameScene.prototype.spawnBoss = function () {
   var banner = this.add.text(W / 2, H * 0.32, 'BIG FRANK\nAPPEARS!', {
     fontFamily: 'monospace', fontSize: '20px', color: '#ff6b6b', fontStyle: 'bold',
     align: 'center', stroke: '#1b1530', strokeThickness: 3,
-  }).setOrigin(0.5).setScrollFactor(0).setDepth(151).setScale(0.5);
+  }).setOrigin(0.5).setDepth(151).setScale(0.5);
+  this.uiAttach(banner);
   this.tweens.add({ targets: banner, scale: 1, duration: 300, ease: 'Back.out' });
   this.tweens.add({ targets: banner, alpha: 0, delay: 1600, duration: 500,
     onComplete: function () { banner.destroy(); } });
@@ -476,7 +491,8 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
   var t1 = this.add.text(W / 2, H * 0.3, 'DISTRICT CLEARED!', {
     fontFamily: 'monospace', fontSize: '20px', color: '#a8e04a', fontStyle: 'bold',
     stroke: '#1b1530', strokeThickness: 3,
-  }).setOrigin(0.5).setScrollFactor(0).setDepth(151).setScale(0.4);
+  }).setOrigin(0.5).setDepth(151).setScale(0.4);
+  this.uiAttach(t1);
   this.tweens.add({ targets: t1, scale: 1, duration: 350, ease: 'Back.out' });
 
   // a cage where Frank was; it cracks, The Cook pops out
@@ -499,7 +515,8 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
     var t2 = self.add.text(W / 2, H * 0.4, 'TEAMMATE RESCUED!', {
       fontFamily: 'monospace', fontSize: '15px', color: '#f2c33c', fontStyle: 'bold',
       stroke: '#1b1530', strokeThickness: 3,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(151);
+    }).setOrigin(0.5).setDepth(151);
+    self.uiAttach(t2);
   });
   // to results
   this.time.delayedCall(2800, function () {
