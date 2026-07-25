@@ -12,6 +12,16 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — ART-REVIEW LAW (Mark): judge EAST, not south.** The
+  game renders only east + west-flip; south/north rotations are never
+  used. ALL future option sheets must show the EAST rotation (and
+  ideally the west flip) — a sprite that wins on the south view can
+  lose on the side view (Danny v3 opt 2's forward-extended ray gun
+  only reads from the east). Danny engine sheets redone east-first
+  (`concepts/heroes/engines/danny_engines_east.png`) + a
+  `roster_east_lineup.png` of all six current in-game east idles at
+  relative scale. Danny pick still pending.
+
 - **2026-07-24 — v0.6.0: ROSTER ART CLOSED + CHARACTER SELECT LIVE.**
   Kevin = v3 option 9 (leaner build; Mark picked it seeing the
   lighter-than-card skin + red tie). All 6 heroes now playable:
