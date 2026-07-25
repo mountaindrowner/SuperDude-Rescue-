@@ -49,11 +49,14 @@ PC.GemSystem.prototype.spawn = function (x, y, v) {
 };
 
 PC.GemSystem.prototype.update = function (dt, px, py, pickupR) {
+  this._shT = (this._shT || 0) + dt;
+  var sh = this._shT;
   var r2 = pickupR * pickupR;
   var pool = this.pool;
   for (var i = 0; i < pool.length; i++) {
     var g = pool[i];
     if (!g.active) continue;
+    g.sprite.setScale(1 + 0.12 * Math.sin(sh * 5 + i * 1.7));   // shimmer
     var dx = px - g.x, dy = py - g.y;
     var d2 = dx * dx + dy * dy;
     if (!g.fly && d2 < r2) { g.fly = true; g.spd = 120; }

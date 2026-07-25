@@ -82,7 +82,7 @@ PC.SelectScene.prototype.create = function () {
 PC.SelectScene.prototype.buildAudioPanel = function () {
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   var open = false, ui = [];
-  var gear = this.add.text(6, H - 6, '[ AUDIO ]', {
+  var gear = this.add.text(6, H - 6, '[ SETTINGS ]', {
     fontFamily: 'monospace', fontSize: '9px', color: '#6d6a8e', fontStyle: 'bold',
   }).setOrigin(0, 1).setDepth(20).setInteractive({ useHandCursor: true });
 
@@ -115,7 +115,7 @@ PC.SelectScene.prototype.buildAudioPanel = function () {
     if (PC.audio) PC.audio.unlock();
     open = !open;
     if (open) {
-      var panel = self.add.rectangle(W / 2, H * 0.5, Math.min(250, W * 0.8), 110, 0x120e24, 0.95)
+      var panel = self.add.rectangle(W / 2, H * 0.5 + 6, Math.min(250, W * 0.8), 132, 0x120e24, 0.95)
         .setDepth(30).setStrokeStyle(2, 0xf2c33c);
       ui = [panel];
       var vols = PC.audio ? PC.audio.getVols() : { music: 0.35, sfx: 0.85 };
@@ -125,6 +125,18 @@ PC.SelectScene.prototype.buildAudioPanel = function () {
       ui = ui.concat(slider(H * 0.5 + 22, 'SOUND FX',
         function () { return PC.audio ? PC.audio.getVols().sfx : vols.sfx; },
         function (v) { if (PC.audio) PC.audio.setSfxVol(v); }));
+      var dn = self.add.text(W / 2, H * 0.5 + 44,
+        'DAMAGE NUMBERS: ' + (PC.settings.dmgNums ? 'ON' : 'OFF'), {
+        fontFamily: 'monospace', fontSize: '9px', fontStyle: 'bold',
+        color: PC.settings.dmgNums ? '#a8e04a' : '#6d6a8e',
+      }).setOrigin(0.5, 0).setDepth(31).setInteractive({ useHandCursor: true });
+      dn.on('pointerdown', function () {
+        PC.setDmgNumbers(!PC.settings.dmgNums);
+        dn.setText('DAMAGE NUMBERS: ' + (PC.settings.dmgNums ? 'ON' : 'OFF'))
+          .setColor(PC.settings.dmgNums ? '#a8e04a' : '#6d6a8e');
+        if (PC.audio) PC.audio.ui();
+      });
+      ui.push(dn);
     } else {
       ui.forEach(function (o) { o.destroy(); });
       ui = [];

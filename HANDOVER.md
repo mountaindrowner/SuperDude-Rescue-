@@ -12,6 +12,20 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.7.4: WP-JUICE SHIPPED.** New `systems/juice.js`:
+  pooled DAMAGE NUMBERS (24 texts, ~14/s rate limit, rise+fade 0.45s,
+  crits bigger + cherry, fed from the single PC.damageEnemy path +
+  hitBoss; toggleable + persisted `portioncontrol.settings`),
+  pooled PROJECTILE TRAILS (70 additive sparks, 45ms cadence per
+  bullet, cap-drop never grow), GEM SHIMMER (sin scale pulse in
+  gems.update). Select-screen panel renamed [ SETTINGS ] and gains a
+  DAMAGE NUMBERS ON/OFF row. Enemy squish/waddle already existed
+  (ARTDNA) - not duplicated. Verified: 60fps at 384 foes with juice
+  on (canvas renderer), toggle persists, 0 errors. NEXT:
+  WP-METASHOP + WP-COLLECTIONS (title hub, permanent gold power-ups),
+  then WP-SCRIPTURE (Claude authors ~150 questions, Mark reviews),
+  EVOLUTIONS/LOOT, ENVFIDELITY, DISTRICT2.
+
 - **2026-07-25 — v0.7.3: on-device UI misposition FIXED + music
   default 10% (Mark).** Mark's phone screenshot showed level-up
   cards/HUD/version tag drifting off toward the top-left mid-run —

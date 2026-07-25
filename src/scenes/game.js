@@ -51,6 +51,7 @@ PC.GameScene.prototype.create = function () {
   this.enemies = new PC.EnemySystem(this);
   this.bullets = new PC.BulletSystem(this);
   this.fx = new PC.FxSystem(this);
+  this.juice = new PC.Juice(this);
   var self = this;
   this.gems = new PC.GemSystem(this, function (v) { self.gainXp(v); });
   this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1, heroDmg: 1, heroCd: 1,
@@ -338,6 +339,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
   var self = this;
   this.bullets.update(dt, this.enemies, this._onKillCb);
+  this.juice.update(dt);
   this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R * (1 + 0));
   this.pickups.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
   this.fx.update(dt);
@@ -448,6 +450,7 @@ PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
   if (ddx * ddx + ddy * ddy > (b.r + 8) * (b.r + 8)) return false;
   b.damage(dmg, dx, dy);
   this.fx.burst(x, y, 'fx_spark', 3, 0.16);
+  if (this.juice) this.juice.dmgNum(x, y - 10, dmg, this._lastCrit);
   if (PC.audio && this.now >= (this._bossHitSfxCd || 0)) {   // throttled thunk
     this._bossHitSfxCd = this.now + 0.25;
     PC.audio.bossHit();
