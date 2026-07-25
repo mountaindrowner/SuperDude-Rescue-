@@ -25,14 +25,18 @@ PC.GameScene.prototype.create = function () {
   // origin at the feet (0.82 down) so his world position IS where he stands -
   // collision stops his FEET at buildings, not his center (Mark round 10:
   // "some buildings are walk-throughable / strange collisions")
-  this.player = this.add.image(0, 0, 'atlas', 'char_danny_walk_1')
-    .setOrigin(0.5, 0.82).setDepth(10);
+  // hero = the picked roster entry; scale normalizes figure height to
+  // Danny's so every hero occupies the same world footprint.
+  this.hero = PC.selectedHero();
+  this.player = this.add.image(0, 0, 'atlas', this.hero.art + '_walk_1')
+    .setOrigin(0.5, 0.82).setDepth(10).setScale(this.hero.scale);
 
-  // ghost trail (VS after-image, code-side): 6 pooled ghosts, Danny only
+  // ghost trail (VS after-image, code-side): 6 pooled ghosts
   this.ghosts = [];
   for (var gi = 0; gi < 6; gi++) {
     this.ghosts.push({ t: 0, life: 0,
-      img: this.add.image(0, 0, 'atlas', 'char_danny_walk_1').setOrigin(0.5, 0.82).setDepth(9).setVisible(false) });
+      img: this.add.image(0, 0, 'atlas', this.hero.art + '_walk_1').setOrigin(0.5, 0.82).setDepth(9)
+        .setScale(this.hero.scale).setVisible(false) });
   }
   this._ghostAcc = 0;
 
@@ -257,10 +261,10 @@ PC.GameScene.prototype.update = function (time, delta) {
     else if (v.x < -0.01) this.facing = -1;
     this.aimX = v.x; this.aimY = v.y;
     this.walkT += dt;
-    this.player.setFrame('char_danny_walk_' + (1 + (Math.floor(this.walkT * 10) % 6)));
+    this.player.setFrame(this.hero.art + '_walk_' + (1 + (Math.floor(this.walkT * 10) % 6)));
   } else {
     this.walkT = 0;
-    this.player.setFrame('char_danny_idle');
+    this.player.setFrame(this.hero.art + '_idle');
   }
   // buildings are solid (Mark round 6)
   var rp = PC.resolveCircle(this.px, this.py, 13);

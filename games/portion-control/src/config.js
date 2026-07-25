@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.5.7';
+PC.VERSION = 'v0.6.0';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
@@ -68,6 +68,29 @@ PC.RUN = { BOSS_AT_S: 300, BOSS_AMBIENT_MULT: 1.8 };
 // a placeholder. To wire a real hero: drop art at assets/art/<key>.png,
 // add the key to the manifest, set art + name here.
 PC.D1_RESCUE = { name: 'YOUR HERO', art: 'hero_placeholder' };
+
+// ---- playable roster ----
+// scale normalizes figure height to Danny's (~50px) - measured from the
+// idle frames' content bboxes, rounded to 0.05. Kits come later
+// (CHARACTERS.md); until then everyone runs Danny's default loadout.
+PC.ROSTER = [
+  { id: 'danny',    name: 'DANNY',    role: 'SUPER DUDE',     art: 'char_danny',    scale: 1.0  },
+  { id: 'victoria', name: 'VICTORIA', role: 'TIME TECH',      art: 'char_victoria', scale: 1.25 },
+  { id: 'nayah',    name: 'NAYAH',    role: 'NATURE EXPERT',  art: 'char_nayah',    scale: 1.1  },
+  { id: 'kevin',    name: 'KEVIN',    role: 'CAPTAIN',        art: 'char_kevin',    scale: 1.1  },
+  { id: 'carlos',   name: 'CARLOS',   role: 'GALAXY GUIDE',   art: 'char_carlos',   scale: 1.1  },
+  { id: 'josh',     name: 'JOSH',     role: 'ZOOKEEPER',      art: 'char_josh',     scale: 1.15 },
+];
+PC.heroById = function (id) {
+  for (var i = 0; i < PC.ROSTER.length; i++)
+    if (PC.ROSTER[i].id === id) return PC.ROSTER[i];
+  return PC.ROSTER[0];
+};
+PC.selectedHero = function () {
+  var id = null;
+  try { id = localStorage.getItem('portioncontrol.hero'); } catch (e) {}
+  return PC.heroById(id);
+};
 
 // ---- in-run enemy time scaling (COMPENDIUM 5.5) ----
 PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.02 };
