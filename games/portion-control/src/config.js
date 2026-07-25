@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.6.5';
+PC.VERSION = 'v0.6.6';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
@@ -77,7 +77,7 @@ PC.ROSTER = [
   { id: 'danny',    name: 'DANNY',    role: 'SUPER DUDE',     art: 'char_danny',    scale: 1.1  },
   { id: 'victoria', name: 'VICTORIA', role: 'TIME TECH',      art: 'char_victoria', scale: 1.1  },
   { id: 'nayah',    name: 'NAYAH',    role: 'NATURE EXPERT',  art: 'char_nayah',    scale: 1.1  },
-  { id: 'kevin',    name: 'KEVIN',    role: 'CAPTAIN',        art: 'char_kevin',    scale: 1.1  },
+  { id: 'kevin',    name: 'KEVIN',    role: 'CAPTAIN',        art: 'char_kevin',    scale: 1.15 },
   { id: 'carlos',   name: 'CARLOS',   role: 'GALAXY GUIDE',   art: 'char_carlos',   scale: 1.1  },
   { id: 'josh',     name: 'JOSH',     role: 'ZOOKEEPER',      art: 'char_josh',     scale: 1.15 },
 ];

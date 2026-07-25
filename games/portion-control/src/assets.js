@@ -28,8 +28,8 @@ window.PC = window.PC || {};
   var CHARS = [
     { k: 'danny',    c1: P.WHITE,  c2: P.CYAN,    size: 92 },
     { k: 'victoria', c1: P.CLOUD,  c2: P.BERRY,   size: 96 },
-    { k: 'nayah',    c1: P.MINT,   c2: P.LIME,    size: 92 },
-    { k: 'kevin',    c1: P.STEEL,  c2: P.MUSTARD, size: 92 },
+    { k: 'nayah',    c1: P.MINT,   c2: P.LIME,    size: 96 },
+    { k: 'kevin',    c1: P.STEEL,  c2: P.MUSTARD, size: 88 },
     { k: 'carlos',   c1: P.MUSTARD,c2: P.CYAN,    size: 92 },
     { k: 'josh',     c1: P.CRUST,  c2: P.COCOA,   size: 88 },
   ];
