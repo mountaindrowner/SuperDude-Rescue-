@@ -114,7 +114,7 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
 PC.PickupSystem.prototype.collect = function (f) {
   var scene = this.scene;
   if (f.kind === 'medkit') {
-    scene.hp = Math.min(PC.PLAYER.HP, scene.hp + f.val);
+    scene.hp = Math.min(PC.PLAYER.HP + (scene.stats.bonusHp || 0), scene.hp + f.val);
     scene.drawHud();
     if (PC.audio) PC.audio.heal();
     scene.floatText && scene.floatText('+' + f.val, 0xff6b6b);

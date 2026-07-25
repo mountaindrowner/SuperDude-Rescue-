@@ -12,6 +12,33 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.9.0: ARSENAL EXPANSION SLICE 1 (from Mark's
+  ArsenalExpansion doc, saved decisions).** Doc reviewed vs code: no
+  conflicts; 4 adaptations agreed - Lucky Ladle DEFERRED (needs
+  rarity/reroll machinery from WP-LOOT), Carlos §B reworded (his
+  global crit already covers everything; flavor = beam critBoost
+  +10% extra), Fridge Wall will soft-block (knockback) not
+  hard-block, Jawbreaker ricochets off enemies not "edges".
+  SHIPPED: 3 new passives (DUPLICATOR TRAY +1 proj/rank max2 ->
+  stats.extraProj consumed by resizer/blaster/beam/freeze; SLOW
+  COOKER +25% duration/rank -> stats.durMult on turret life + patch
+  life; LEFTOVERS +15maxHP +0.5regen/rank -> stats.bonusHp/regen,
+  maxHp clamps updated in heal card/medkit/HUD, regen tick in
+  update). 6 FLAVOR MASTERIES via kit.masterize (owner-only, on top
+  of +25%): Danny bolts shrink/slow 900ms, Vic (existing), Nayah
+  patches root 0.7s, Kevin +2 strafe passes (bonusPass, safe vs
+  applyLevel overwrites), Carlos beam critBoost, Josh ring dizzies
+  0.5s. 5 SIGNATURE EVOLUTIONS in data/evolutions.js: SENTRY SWARM
+  (sentry+duplicator), JUNGLE BLOOM (seeds+slowcooker), CARPET
+  RESCUE (strike+battery), METEOR SHOWER (beam+duplicator), CYCLONE
+  TITAN (lasso+servo). Passive count 7->10, evolutions 6->11.
+  VERIFIED: all masteries land, passives measurably applied, CYCLONE
+  TITAN offered as golden card, regen works, 53fps at 392 foes on
+  worst-case canvas renderer. NEXT SLICES from the doc: (2) Ketchup
+  Artillery + Microwave Beam + Fridge Wall + their evos, (3) the
+  remaining 9 archetype weapons (boomerang/chain/trail/ricochet/
+  homing/melee/pull/charge/aura) + Lucky Ladle with WP-LOOT.
+
 - **2026-07-25 — v0.8.1: SIGNATURE INHERITANCE + OWNER MASTERY (new
   Mark design, NOT in PHASE2 - confirmed to him).** All six hero
   signature weapons now appear in the shared level-up card pool
