@@ -48,6 +48,55 @@
 > valid for quick one-off images and the skeleton/rotate/inpaint
 > primitives.
 
+## Capability survey 2026-07-24 (Mark asked "what else is there?")
+
+Sources: live `/v2/openapi.json` + `/v2/llms.txt` + the MCP docs at
+`api.pixellab.ai/mcp/docs`. The MCP server (`https://api.pixellab.ai/
+mcp`, HTTP transport, same Bearer token) wraps the SAME API we already
+drive with scripts — plus a chat agent + code sandbox we don't need.
+Direct REST remains our path; nothing is MCP-only.
+
+**Character creation — THREE modes** (all persist to the library and
+all work with `/animate-character`):
+
+| Mode | Endpoint | Cost | Directions | Max size | Notes |
+|---|---|---|---|---|---|
+| standard | create-character-with-4/8-directions | 1 gen | 4 or 8 | 128px | What made Danny + the 5 heroes. Template skeleton (`mannequin`, quadrupeds: bear/cat/dog/horse/lion). |
+| v3 | create-character-v3 | 2-9 gens | always 8 | **256px** | Highest quality. **Accepts a `reference_image` (south-facing sprite) and rotates it into 8 directions** — the tool for upgrading an existing sprite to 8-dir, or for big high-res versions. From-scratch mode uses the Pixen model. |
+| pro | create-character-pro | 20-40 gens | always 8 | 128px | Reference-based. `method: create_from_concept` takes a **concept image up to 1024x1024** (e.g. an Element Lab trading card) + optional style ref (max 168px) — the card-accuracy tool. Expensive. |
+
+**Template animation catalog is ~50 deep, not just walk** (1 gen per
+direction, identity-locked): `attack`, `attack-back/left/right`,
+`cross-punch`, `lead-jab`, `high-kick`, `roundhouse-kick`,
+`hurricane-kick`, `flying-kick`, `leg-sweep`, `surprise-uppercut`,
+`fireball`, `throw-object`, `taking-punch`, `falling-back-death`,
+`getting-up`, `breathing-idle`, `fight-stance-idle-8-frames`,
+`jumping-1/2`, `two-footed-jump`, `running-jump`, `running-slide`,
+`running-4/6/8-frames`, `crouching`, `crouched-walking`, `pushing`,
+`pull-heavy-object`, `picking-up`, `drinking`, `sad-walk`,
+`scary-walk`, `backflip`, `front-flip`, many `walking-*` variants,
+`angry`, `bark`. (Quadruped templates have their own set.)
+KIT FIT: throw-object (Victoria wrench), fireball (Carlos stars),
+attack/cross-punch (melee), taking-punch + falling-back-death +
+getting-up (player hurt/KO/revive), breathing-idle (select screen).
+
+**Other high-value endpoints we haven't used yet:**
+- `create-character-state`: text-edit an existing character, applied
+  consistently across ALL rotations, saved as a grouped variant —
+  costumes, powered-up forms, held-weapon states.
+- `portrait-character-pro`: full-body sprite -> BUST PORTRAIT (or
+  reverse). Output sizes 16..160 (128/160 render at 2K). The tool for
+  character-select / results portraits of the roster.
+- `transfer-outfit-v2`: apply an outfit from a reference image across
+  2-16 animation frames.
+- `animate-character mode:'v3'`: free-form animation by text (2-16
+  frames, even counts) with optional start/end poses — for actions no
+  template covers. Template mode remains the identity-safe default.
+- `edit-animation-v2`, `interpolation-v2`, `inpaint-v3`,
+  `image-to-pixelart-pro`, `generate-font-pro` (pixel fonts!),
+  `create-ui-asset` (pixel UI panels), building kits + path tiles +
+  Wang tilesets (top-down maps — future districts).
+
 ## The v1 layer (historical + still useful for one-offs)
 
 Everything verified live on 2026-07-21 (v1 OpenAPI + real calls).
