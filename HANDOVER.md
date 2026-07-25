@@ -12,6 +12,20 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — v0.6.4: ROSTER FINAL — whole cast on the v3
+  generation.** Final picks, all animated + live in-game: Danny =
+  v3_1, Victoria = v3_5 (re-rolled from her pro pick for engine
+  consistency), Nayah = v3_3, Kevin = v3_9, Carlos = v3_2, Josh =
+  v3_3. Every hero: 92-96px canvas, figure ~46px, roster scale 1.1
+  (Josh 1.15), east idle + 6-frame east template walk, west = flip.
+  `final_roster_eastwest.png` in concepts/heroes/engines is the
+  canonical lineup. Verified: all 6 select + launch with own art,
+  0 errors. Character ids for every roll in engines_state.json (the
+  PixelLab library keeps them; more directions/animations can be
+  ordered later by id). NEXT: kit picks (CHARACTERS.md A/B/C per
+  hero) + D1 rescue hero + item-glow walk polish (code-side).
+  ~1400 generations remain.
+
 - **2026-07-24 — ART-REVIEW LAW (Mark): judge EAST, not south.** The
   game renders only east + west-flip; south/north rotations are never
   used. ALL future option sheets must show the EAST rotation (and
