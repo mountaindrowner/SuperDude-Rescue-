@@ -73,7 +73,63 @@ PC.SelectScene.prototype.create = function () {
   }).setOrigin(0.5, 1);
   this.tweens.add({ targets: go, alpha: 0.35, duration: 550, yoyo: true, repeat: -1 });
 
+  this.buildAudioPanel();
   this.redraw(picked);
+};
+
+// small AUDIO settings: gear toggle -> two draggable mix sliders
+// (music / SFX), persisted via PC.audio (WP-AUDIO).
+PC.SelectScene.prototype.buildAudioPanel = function () {
+  var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
+  var open = false, ui = [];
+  var gear = this.add.text(6, H - 6, '[ AUDIO ]', {
+    fontFamily: 'monospace', fontSize: '9px', color: '#6d6a8e', fontStyle: 'bold',
+  }).setOrigin(0, 1).setDepth(20).setInteractive({ useHandCursor: true });
+
+  function slider(y, label, get, set) {
+    var bw = Math.min(200, W * 0.6), bx = W / 2 - bw / 2;
+    var txt = self.add.text(bx, y - 14, label, {
+      fontFamily: 'monospace', fontSize: '9px', color: '#cfd4e8', fontStyle: 'bold',
+    }).setDepth(31);
+    var bar = self.add.graphics().setDepth(31);
+    function draw() {
+      bar.clear();
+      bar.fillStyle(0x45356e, 1).fillRoundedRect(bx, y, bw, 10, 5);
+      bar.fillStyle(0xf2c33c, 1).fillRoundedRect(bx, y, Math.max(10, bw * get()), 10, 5);
+    }
+    draw();
+    var zone = self.add.zone(bx + bw / 2, y + 5, bw + 24, 30).setDepth(31)
+      .setInteractive({ useHandCursor: true });
+    var drag = function (p) {
+      var v = Math.max(0, Math.min(1, (p.x / (PC.game.scale.displaySize.width / W) - bx) / bw));
+      set(v); draw();
+    };
+    zone.on('pointerdown', function (p) { drag(p); zone._held = true; });
+    zone.on('pointermove', function (p) { if (zone._held && p.isDown) drag(p); });
+    zone.on('pointerup', function () { zone._held = false; });
+    zone.on('pointerout', function () { zone._held = false; });
+    return [txt, bar, zone];
+  }
+
+  gear.on('pointerdown', function () {
+    if (PC.audio) PC.audio.unlock();
+    open = !open;
+    if (open) {
+      var panel = self.add.rectangle(W / 2, H * 0.5, Math.min(250, W * 0.8), 110, 0x120e24, 0.95)
+        .setDepth(30).setStrokeStyle(2, 0xf2c33c);
+      ui = [panel];
+      var vols = PC.audio ? PC.audio.getVols() : { music: 0.35, sfx: 0.85 };
+      ui = ui.concat(slider(H * 0.5 - 22, 'MUSIC',
+        function () { return PC.audio ? PC.audio.getVols().music : vols.music; },
+        function (v) { if (PC.audio) PC.audio.setMusicVol(v); }));
+      ui = ui.concat(slider(H * 0.5 + 22, 'SOUND FX',
+        function () { return PC.audio ? PC.audio.getVols().sfx : vols.sfx; },
+        function (v) { if (PC.audio) PC.audio.setSfxVol(v); }));
+    } else {
+      ui.forEach(function (o) { o.destroy(); });
+      ui = [];
+    }
+  });
 };
 
 PC.SelectScene.prototype.redraw = function (picked) {
