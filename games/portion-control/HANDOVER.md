@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — ENGINE COMPARISON ROUND (v3 + pro) + VS-style item
+  law.** Mark's art direction locked: heroes are IDENTIFIED BY THEIR
+  HELD ITEM, Vampire-Survivors-style — Victoria holds the wrench,
+  Nayah bare fists with work gloves (no item), Kevin nothing (strong
+  commanding gait), Carlos telescope, Josh WHIP (rope is out),
+  Danny ray gun (existing). ANIMATION POLICY: walk-only + static
+  idle holding the item; NO attack-animation catalog; the item may
+  subtly animate during walk (Danny's gun glow) — do that via code
+  overlay or a tiny state variant, not new anims. Ran the same
+  descriptions through create-character-v3 (3 rolls each, ~2 gens
+  ea, 96px canvas, 8 rotations, richer painterly shading) and
+  create-character-pro (1 each, ~16 gens, 84px, crunchier classic
+  pixel clusters). All 20 in `concepts/heroes/engines/`
+  (`<hero>_<v3_N|pro>_south.png`, `*_engines.png` sheets,
+  `engines_overview.png`, `engines_state.json` char ids). Honest
+  caveats logged for Mark: Nayah's skin renders lighter in all 3 v3
+  rolls (her PRO roll matches the card best); Kevin's v3 rolls also
+  lighter than his standard pick. AWAITING MARK: engine + roll per
+  hero (mixing engines is fine; a winner gets template-walk + game
+  wiring; 96px v3 sprites will be integer-scaled to fit). 1470
+  generations remain.
+
 - **2026-07-24 — ROSTER ART COMPLETE.** Mark chose Victoria 3,
   Kevin 3, Carlos 1, Nayah 1, Josh 1 — all five animated and in the
   atlas (`char_<name>_idle` + `walk_1..6`). Boot verified clean.
