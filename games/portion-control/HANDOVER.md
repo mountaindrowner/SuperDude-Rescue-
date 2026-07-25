@@ -12,6 +12,22 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-24 — FINAL HERO ART LOCKED (4/5) + Kevin re-rolls.**
+  Mark's engine picks: Victoria = PRO, Nayah = v3 opt 3, Carlos =
+  v3 opt 2, Josh = v3 opt 3; Kevin = none of round 1 (settled-for
+  v3_3 rejected in favor of a re-roll). The four winners are
+  template-walk animated and their frames REPLACED the standard-round
+  art in `assets/art/` under the SAME keys (`char_<name>_idle` +
+  `walk_1..6`; canvases now 84px Victoria-pro / 96px v3 vs Danny's
+  68 — apply a per-hero display scale at wire-in time, sprites are
+  NOT yet drawn by gameplay code). Kevin got 3 fresh v3 rolls
+  (options 4/5/6, dark brown skin + broad commanding build written
+  explicitly) in `concepts/heroes/engines/kevin_v3_[456]_south.png`
+  + `kevin_v3_options2.png`. AWAITING MARK: Kevin 4/5/6, then kit
+  A/B/C picks + D1 rescue hero. Style-prompt law confirmed to Mark:
+  one shared scaffold, only the outfit/item clause varies. 1440
+  generations remain.
+
 - **2026-07-24 — ENGINE COMPARISON ROUND (v3 + pro) + VS-style item
   law.** Mark's art direction locked: heroes are IDENTIFIED BY THEIR
   HELD ITEM, Vampire-Survivors-style — Victoria holds the wrench,
