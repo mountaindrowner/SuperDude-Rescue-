@@ -46,6 +46,11 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     b.x += b.dx * b.spd * dt;
     b.y += b.dy * b.spd * dt;
     b.sprite.setPosition(b.x, b.y);
+    b.trailT = (b.trailT || 0) + dt;
+    if (b.trailT > 0.045 && this.scene.juice) {
+      b.trailT = 0;
+      this.scene.juice.trail(b.x, b.y);
+    }
     if (this.scene.pickups && this.scene.pickups.hitAt(b.x, b.y)) {
       b.active = false; b.sprite.setVisible(false); continue;
     }
@@ -70,6 +75,7 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
 // scene.kbMult = hero knockback bonus (Josh kit), default 1.
 PC.damageEnemy = function (scene, e, dmg, dirx, diry, onKill) {
   e.hp -= dmg;
+  if (scene.juice) scene.juice.dmgNum(e.x, e.y - e.r - 2, dmg, scene._lastCrit);
   e.flashUntil = scene.now + PC.HURT_FLASH_MS / 1000;
   e.sprite.setTintFill(0xffffff);
   e.kbUntil = scene.now + 0.12;
