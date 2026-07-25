@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.5.6';
+PC.VERSION = 'v0.5.7';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
