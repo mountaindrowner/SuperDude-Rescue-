@@ -26,7 +26,7 @@ window.PC = window.PC || {};
   // (v2 standard Danny 68, Victoria pro 84, v3 heroes 88-92); the
   // in-game footprint is normalized via PC.ROSTER scale, not here.
   var CHARS = [
-    { k: 'danny',    c1: P.WHITE,  c2: P.CYAN,    size: 68 },
+    { k: 'danny',    c1: P.WHITE,  c2: P.CYAN,    size: 92 },
     { k: 'victoria', c1: P.CLOUD,  c2: P.BERRY,   size: 84 },
     { k: 'nayah',    c1: P.MINT,   c2: P.LIME,    size: 92 },
     { k: 'kevin',    c1: P.STEEL,  c2: P.MUSTARD, size: 92 },
