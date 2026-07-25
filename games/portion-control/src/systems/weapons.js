@@ -66,14 +66,16 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
   }
 };
 
-// single damage path for every weapon: flash + knockback + kill routing
+// single damage path for every weapon: flash + knockback + kill routing.
+// scene.kbMult = hero knockback bonus (Josh kit), default 1.
 PC.damageEnemy = function (scene, e, dmg, dirx, diry, onKill) {
   e.hp -= dmg;
   e.flashUntil = scene.now + PC.HURT_FLASH_MS / 1000;
   e.sprite.setTintFill(0xffffff);
   e.kbUntil = scene.now + 0.12;
-  e.kbx = (dirx || 0) * e.spd * 0.8 * e.kbMult;
-  e.kby = (diry || 0) * e.spd * 0.8 * e.kbMult;
+  var kb = e.spd * 0.8 * e.kbMult * (scene.kbMult || 1);
+  e.kbx = (dirx || 0) * kb;
+  e.kby = (diry || 0) * kb;
   if (e.hp <= 0 && onKill) onKill(e);
 };
 
@@ -231,15 +233,19 @@ PC.WhiskWeapon.prototype.update = function (dt, scene) {
 // =====================================================================
 // PASSIVES (COMPENDIUM 7 table) + the card pool
 // =====================================================================
+// passives compose on the hero-kit base (st.heroDmg/heroCd/heroSpd,
+// default 1) so a hero bonus is never wiped by a card level.
 PC.PASSIVES = {
   battery: { name: 'BIGGER BATTERY', icon: 'icon_passive_battery', max: 5,
-             desc: '+8% damage', apply: function (st, lv) { st.dmgMult = 1 + 0.08 * lv; } },
+             desc: '+8% damage', apply: function (st, lv) { st.dmgMult = (st.heroDmg || 1) * (1 + 0.08 * lv); } },
   fan:     { name: 'COOLING FAN', icon: 'icon_passive_fan', max: 5,
-             desc: '-6% cooldowns', apply: function (st, lv) { st.cdMult = 1 - 0.06 * lv; } },
+             desc: '-6% cooldowns', apply: function (st, lv) { st.cdMult = (st.heroCd || 1) * (1 - 0.06 * lv); } },
   shoes:   { name: 'RUNNING SHOES', icon: 'icon_passive_shoes', max: 5,
-             desc: '+6% move speed', apply: function (st, lv) { st.spdMult = 1 + 0.06 * lv; } },
+             desc: '+6% move speed', apply: function (st, lv) { st.spdMult = (st.heroSpd || 1) * (1 + 0.06 * lv); } },
 };
-PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaster', whisk: 'icon_weapon_whisk' };
+PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaster',
+  whisk: 'icon_weapon_whisk', sentry: 'icon_weapon_drone', seeds: 'icon_weapon_salt',
+  strike: 'icon_weapon_microwave', beam: 'icon_weapon_freeze', lasso: 'icon_weapon_ketchup' };
 
 // build 3 distinct card choices from the current run state
 PC.drawCards = function (scene) {

@@ -22,6 +22,10 @@ PC.Ground = function (scene, district) {
     var canvas = document.createElement('canvas');
     canvas.width = PC.CHUNK; canvas.height = PC.CHUNK;
     var key = 'pc_chunk_' + i;
+    // textures are GAME-global: on scene restart the key still exists and
+    // addCanvas would silently no-op, leaving images bound to the previous
+    // run's stale canvases (the "floating building block" artifact)
+    if (scene.textures.exists(key)) scene.textures.remove(key);
     scene.textures.addCanvas(key, canvas);
     this.slots.push({
       key: key, canvas: canvas, inUse: false,

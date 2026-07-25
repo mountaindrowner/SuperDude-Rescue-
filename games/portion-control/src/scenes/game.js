@@ -45,9 +45,16 @@ PC.GameScene.prototype.create = function () {
   this.fx = new PC.FxSystem(this);
   var self = this;
   this.gems = new PC.GemSystem(this, function (v) { self.gainXp(v); });
-  this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1 };
-  this.weapons = [new PC.ResizerWeapon()];
+  this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1, heroDmg: 1, heroCd: 1,
+                 heroSpd: 1, critChance: 0 };
+  this.xpMult = 1; this.dmgTakenMult = 1; this.kbMult = 1;
   this.passives = {};
+  PC.applyHeroKit(this);            // signature weapon + hero passive (kits.js)
+  // item glow: a soft pulsing light on the hero's held item while walking
+  // (VS-law: code-side life, no new frames). Offset flips with facing.
+  this.itemGlow = this.kit.glow ? this.add.image(0, 0, 'atlas', 'fx_muzzle_1')
+    .setBlendMode(Phaser.BlendModes.ADD).setDepth(11)
+    .setTint(this.kit.glow.color).setVisible(true) : null;
   this._onKillCb = function (e) { self.onKill(e); };
   this.pendingLevels = 0;
   this.cardsOpen = false;
@@ -131,13 +138,14 @@ PC.GameScene.prototype.stress = function () {
 
 PC.GameScene.prototype.gainXp = function (v) {
   if (PC.audio) PC.audio.gem();
-  this.xp += v;
+  this.xp += v * this.xpMult;
   while (this.xp >= this.xpNext) {
     this.xp -= this.xpNext;
     this.level++;
     this.xpNext = Math.round(this.xpNext * PC.XP.CURVE_MULT + PC.XP.CURVE_ADD);
     this.levelText.setText('LV ' + this.level);
     if (PC.audio) PC.audio.levelup();
+    if (this.kit && this.kit.onLevelUp) this.kit.onLevelUp(this);
     this.pendingLevels++;
   }
   if (this.pendingLevels > 0 && !this.cardsOpen) this.showCards();
@@ -274,6 +282,17 @@ PC.GameScene.prototype.update = function (time, delta) {
   this.player.setPosition(Math.round(this.px), Math.round(this.py) + bob);
   this.player.rotation = this.moving ? this.facing * 0.03 : 0;
 
+  // item glow: steady faint spark on the held item; breathes while
+  // walking (Danny's ray gun glow etc.) - pure code-side life
+  if (this.itemGlow) {
+    var gl = this.kit.glow, hs = this.hero.scale;
+    this.itemGlow.setPosition(
+      Math.round(this.px + gl.x * hs * this.facing),
+      Math.round(this.py + gl.y * hs) + bob);
+    var pulse = this.moving ? 0.5 + 0.35 * Math.sin(this.now * 9) : 0.22;
+    this.itemGlow.setAlpha(pulse).setScale(this.moving ? 1.15 : 0.85);
+  }
+
   // ghost trail: drop a faint after-image every 70ms of movement; it stays
   // put as Danny moves on, so the trail streams opposite his heading
   this._ghostAcc += dt;
@@ -327,7 +346,7 @@ PC.GameScene.prototype.update = function (time, delta) {
       if (dx * dx + dy * dy < (e.r + 8) * (e.r + 8)) { hitDmg = e.dmg; return true; }
     });
     if (hitDmg > 0) {
-      this.hp -= hitDmg;
+      this.hp -= hitDmg * this.dmgTakenMult;
       this.invUntil = this.now + PC.PLAYER.IFRAMES;
       this.cameras.main.shake(PC.SHAKE.MS, 0.004);
       if (PC.audio) PC.audio.hurt();
@@ -458,6 +477,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
   // a cage where Frank was; it cracks, The Cook pops out
   var cage = this.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.6).setDepth(11);
   var cook = this.add.image(bx, by - 4, 'atlas', PC.D1_RESCUE.art).setScale(0.8).setDepth(12).setVisible(false);
+  if (PC.D1_RESCUE.hero) PC.unlockHero(PC.D1_RESCUE.hero);
   if (PC.audio) PC.audio.chest();
   this.time.delayedCall(500, function () {
     cage.setFrame('pickup_cage_2'); self.cameras.main.shake(120, 0.006);
