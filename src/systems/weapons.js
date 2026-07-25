@@ -139,7 +139,7 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
   if (aim.target) { tx = aim.target.x; ty = aim.target.y; }
   else { tx = scene.px + aim.ax * 200; ty = scene.py + aim.ay * 200; }
   this.cdT = this.cd * scene.stats.cdMult;
-  var dmg = this.dmg * scene.stats.dmgMult;
+  var dmg = this.dmg * (this.mastery || 1) * scene.stats.dmgMult;
   for (var n = 0; n < this.amount; n++) {
     var spread = (n - (this.amount - 1) / 2) * 0.12;
     var dx = tx - scene.px, dy = ty - scene.py;
@@ -174,7 +174,7 @@ PC.BlasterWeapon.prototype.update = function (dt, scene) {
   if (this.cdT > 0) return;
   var aim = PC.aimAt(scene, 260);
   this.cdT = this.cd * scene.stats.cdMult;
-  var dmg = this.dmg * scene.stats.dmgMult;
+  var dmg = this.dmg * (this.mastery || 1) * scene.stats.dmgMult;
   var base = Math.atan2(aim.target ? aim.target.y - scene.py : aim.ay,
                         aim.target ? aim.target.x - scene.px : aim.ax);
   var arc = this.ring ? Math.PI * 2 : (40 * Math.PI / 180);
@@ -214,7 +214,7 @@ PC.WhiskWeapon.prototype.applyLevel = function () {
 PC.WhiskWeapon.prototype.update = function (dt, scene) {
   var radius = this.radius * scene.stats.areaMult;
   this.angle += (this.degS * Math.PI / 180) * dt;
-  var dmg = this.dmg * scene.stats.dmgMult;
+  var dmg = this.dmg * (this.mastery || 1) * scene.stats.dmgMult;
   var self = this;
   for (var i = 0; i < this.sprites.length; i++) {
     var s = this.sprites[i];
@@ -267,7 +267,7 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
   if (this.cdT <= 0) {
     this.cdT = this.cd * scene.stats.cdMult;
     this.pulseT = 0.25;
-    var dmg = PC.rollDmg(scene, this.dmg), pxp = scene.px, pyp = scene.py - 4;
+    var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1)), pxp = scene.px, pyp = scene.py - 4;
     scene.enemies.hash.eachNear(pxp, pyp, function (e) {
       var dx = e.x - pxp, dy = e.y - pyp;
       var d2 = dx * dx + dy * dy;
@@ -341,7 +341,7 @@ PC.DroneWeapon.prototype.update = function (dt, scene) {
     if (best) {
       d.fireT = this.fireCd * scene.stats.cdMult;
       scene.bullets.fire(dxp, dyp, best.x, best.y,
-        { speed: 480, dmg: PC.rollDmg(scene, this.dmg), frame: 'proj_pellet',
+        { speed: 480, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet',
           tint: 0x7dd97b, life: 0.7 });
       if (PC.audio) PC.audio.shoot();
     } else { d.fireT = 0.25; }
@@ -380,7 +380,7 @@ PC.FreezeWeapon.prototype.update = function (dt, scene) {
   this.cdT = this.cd * scene.stats.cdMult;
   for (var n = 0; n < Math.min(this.bolts, targets.length); n++) {
     scene.bullets.fire(scene.px, scene.py - 6, targets[n].e.x, targets[n].e.y,
-      { speed: 500, dmg: PC.rollDmg(scene, this.dmg), frame: 'proj_pellet',
+      { speed: 500, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet',
         tint: 0x9adfff, slowMs: this.slowMs, life: 0.9 });
   }
   if (PC.audio) PC.audio.shoot();
@@ -453,6 +453,27 @@ PC.drawCards = function (scene) {
       title: 'SNACK DRONE', sub: 'NEW!', desc: 'A loyal snack-seeking drone', icon: PC.WEAPON_ICONS.drone });
     if (!owned.freeze) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.FreezeWeapon(); },
       title: 'FREEZE RAY', sub: 'NEW!', desc: 'Chills foes to a crawl', icon: PC.WEAPON_ICONS.freeze });
+    // hero SIGNATURES are inheritable (Mark): any hero can learn a
+    // teammate's weapon - just without the owner's mastery bonus
+    var SIGS = [
+      { key: 'resizer', title: 'RESIZER RAY', desc: "Danny's trusty shrink ray",
+        make: function (sc) { return new PC.ResizerWeapon(); } },
+      { key: 'sentry', title: 'POCKET SENTRY', desc: "Victoria's pellet turrets",
+        make: function (sc) { return new PC.SentryWeapon(sc); } },
+      { key: 'seeds', title: 'THORN SEEDS', desc: "Nayah's blooming thorn patches",
+        make: function (sc) { return new PC.SeedWeapon(sc); } },
+      { key: 'strike', title: 'RESCUE STRIKE', desc: "Kevin's marked air strafe",
+        make: function (sc) { return new PC.StrikeWeapon(sc); } },
+      { key: 'beam', title: 'COMET BEAM', desc: "Carlos' far-piercing comet",
+        make: function (sc) { return new PC.BeamWeapon(); } },
+      { key: 'lasso', title: 'ROPE CYCLONE', desc: "Josh's spinning rope ring",
+        make: function (sc) { return new PC.LassoWeapon(sc); } },
+    ];
+    SIGS.forEach(function (sig) {
+      if (owned[sig.key]) return;
+      pool.push({ kind: 'weapon-new', make: sig.make, title: sig.title,
+                  sub: 'NEW!', desc: sig.desc, icon: PC.WEAPON_ICONS[sig.key] });
+    });
   }
   for (var k in PC.PASSIVES) {
     var p = PC.PASSIVES[k];
