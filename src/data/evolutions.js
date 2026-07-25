@@ -41,4 +41,35 @@ PC.EVOLUTIONS = [
       w.name = 'WINGMAN SQUAD';
       w.count = 2; w.dmg = 20; w.fireCd = 0.3; w.range = 300;
     } },
+  // ---- signature evolutions (arsenal expansion slice 1) ----
+  { base: 'sentry', requires: 'duplicator', name: 'SENTRY SWARM',
+    desc: 'Rapid-fire turrets that never quit!',
+    apply: function (w) {
+      w.name = 'SENTRY SWARM';
+      w.cd = 3; w.life = 24; w.dmg = 22; w.fireCd = 0.3; w.maxTurrets = 3;
+    } },
+  { base: 'seeds', requires: 'slowcooker', name: 'JUNGLE BLOOM',
+    desc: 'Giant patches blanket the field!',
+    apply: function (w) {
+      w.name = 'JUNGLE BLOOM';
+      w.dmg = 18; w.radius = 60; w.life = 8; w.maxPatches = 8; w.cd = 1.4;
+    } },
+  { base: 'strike', requires: 'battery', name: 'CARPET RESCUE',
+    desc: 'A full-screen bombing run!',
+    apply: function (w) {
+      w.name = 'CARPET RESCUE';
+      w.count = 10; w.dmg = 50; w.radius = 46; w.cd = 4;
+    } },
+  { base: 'beam', requires: 'duplicator', name: 'METEOR SHOWER',
+    desc: 'A barrage of piercing comets!',
+    apply: function (w) {
+      w.name = 'METEOR SHOWER';
+      w.beams = 4; w.dmg = 24; w.cd = 0.8;
+    } },
+  { base: 'lasso', requires: 'servo', name: 'CYCLONE TITAN',
+    desc: 'A colossal dizzying ring!',
+    apply: function (w) {
+      w.name = 'CYCLONE TITAN';
+      w.rMin = 60; w.rMax = 110; w.dmg = 26; w.tickCd = 0.3; w.stun = true;
+    } },
 ];

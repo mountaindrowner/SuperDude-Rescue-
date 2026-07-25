@@ -56,7 +56,8 @@ PC.GameScene.prototype.create = function () {
   this.gems = new PC.GemSystem(this, function (v) { self.gainXp(v); });
   this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1, heroDmg: 1, heroCd: 1,
                  heroSpd: 1, critChance: 0, projMult: 1, areaMult: 1,
-                 armor: 0, pickupMult: 1 };
+                 armor: 0, pickupMult: 1, extraProj: 0, durMult: 1,
+                 bonusHp: 0, regen: 0 };
   this.xpMult = 1; this.dmgTakenMult = 1; this.kbMult = 1;
   this.passives = {};
   PC.applyHeroKit(this);            // signature weapon + hero passive (kits.js)
@@ -188,7 +189,8 @@ PC.GameScene.prototype.drawHud = function () {
   // HP bar (Cherry) top-left
   var hpw = 70;
   g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 3, hpw + 2, 8);
-  g.fillStyle(PC.PAL.CHERRY, 1).fillRect(4, 4, Math.max(0, hpw * this.hp / PC.PLAYER.HP), 6);
+  g.fillStyle(PC.PAL.CHERRY, 1).fillRect(4, 4,
+    Math.max(0, hpw * this.hp / (PC.PLAYER.HP + (this.stats.bonusHp || 0))), 6);
   // XP bar (Lime) under it
   g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 12, hpw + 2, 4);
   g.fillStyle(PC.PAL.LIME, 1).fillRect(4, 13, Math.max(0, hpw * Math.min(1, this.xp / this.xpNext)), 2);
@@ -275,6 +277,15 @@ PC.GameScene.prototype.update = function (time, delta) {
   if (this.dead) return;
   var wv = this.cameras.main.worldView;
   this.ui.setPosition(wv.x, wv.y);
+  // Leftovers regen (arsenal expansion): slow trickle, hud at 1Hz
+  if (this.stats.regen > 0 && this.hp > 0) {
+    var mh = PC.PLAYER.HP + (this.stats.bonusHp || 0);
+    if (this.hp < mh) {
+      this.hp = Math.min(mh, this.hp + this.stats.regen * (this.game.loop.delta / 1000));
+      this._regenHud = (this._regenHud || 0) + this.game.loop.delta / 1000;
+      if (this._regenHud > 1) { this._regenHud = 0; this.drawHud(); }
+    }
+  }
   if (this.cardsOpen) return;                 // world paused during the pick
   var dt = Math.min(PC.DT_CLAMP, delta / 1000);
   this.now += dt;

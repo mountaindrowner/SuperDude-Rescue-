@@ -140,13 +140,15 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
   else { tx = scene.px + aim.ax * 200; ty = scene.py + aim.ay * 200; }
   this.cdT = this.cd * scene.stats.cdMult;
   var dmg = this.dmg * (this.mastery || 1) * scene.stats.dmgMult;
-  for (var n = 0; n < this.amount; n++) {
-    var spread = (n - (this.amount - 1) / 2) * 0.12;
+  var amount = this.amount + (scene.stats.extraProj || 0);
+  for (var n = 0; n < amount; n++) {
+    var spread = (n - (amount - 1) / 2) * 0.12;
     var dx = tx - scene.px, dy = ty - scene.py;
     var ang = Math.atan2(dy, dx) + spread;
     scene.bullets.fire(scene.px, scene.py - 4,
       scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
-      { speed: this.speed, dmg: dmg, frame: 'proj_resizer', pierce: this.pierce });
+      { speed: this.speed, dmg: dmg, frame: 'proj_resizer', pierce: this.pierce,
+        slowMs: this.shrinkMs || 0 });
   }
   scene.fx.burst(scene.px + aim.ax * 18, scene.py - 4 + aim.ay * 12, 'fx_muzzle', 2, 0.1);
   if (PC.audio) PC.audio.shoot();
@@ -178,9 +180,10 @@ PC.BlasterWeapon.prototype.update = function (dt, scene) {
   var base = Math.atan2(aim.target ? aim.target.y - scene.py : aim.ay,
                         aim.target ? aim.target.x - scene.px : aim.ax);
   var arc = this.ring ? Math.PI * 2 : (40 * Math.PI / 180);
-  for (var n = 0; n < this.pellets; n++) {
-    var ang = base + (this.ring ? n / this.pellets * arc
-                               : (n / (this.pellets - 1) - 0.5) * arc);
+  var pellets = this.pellets + (scene.stats.extraProj || 0);
+  for (var n = 0; n < pellets; n++) {
+    var ang = base + (this.ring ? n / pellets * arc
+                               : (n / (pellets - 1) - 0.5) * arc);
     scene.bullets.fire(scene.px, scene.py - 4,
       scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
       { speed: 420, dmg: dmg, frame: 'proj_pellet', life: 0.35 });
@@ -378,7 +381,8 @@ PC.FreezeWeapon.prototype.update = function (dt, scene) {
   if (!targets.length) { this.cdT = 0.25; return; }
   targets.sort(function (a, b) { return a.d - b.d; });
   this.cdT = this.cd * scene.stats.cdMult;
-  for (var n = 0; n < Math.min(this.bolts, targets.length); n++) {
+  var bolts = this.bolts + (scene.stats.extraProj || 0);
+  for (var n = 0; n < Math.min(bolts, targets.length); n++) {
     scene.bullets.fire(scene.px, scene.py - 6, targets[n].e.x, targets[n].e.y,
       { speed: 500, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet',
         tint: 0x9adfff, slowMs: this.slowMs, life: 0.9 });
@@ -406,6 +410,13 @@ PC.PASSIVES = {
              desc: '+12% weapon area', apply: function (st, lv) { st.areaMult = 1 + 0.12 * lv; } },
   coat:    { name: 'PADDED APRON', icon: 'icon_passive_coat', max: 3,
              desc: 'Block 1 damage per hit', apply: function (st, lv) { st.armor = lv; } },
+  duplicator: { name: 'DUPLICATOR TRAY', icon: 'icon_passive_capacitor', max: 2,
+             desc: '+1 projectile per rank', apply: function (st, lv) { st.extraProj = lv; } },
+  slowcooker: { name: 'SLOW COOKER', icon: 'icon_passive_fan', max: 3,
+             desc: '+25% effect duration', apply: function (st, lv) { st.durMult = 1 + 0.25 * lv; } },
+  leftovers: { name: 'LEFTOVERS', icon: 'icon_passive_shoes', max: 3,
+             desc: '+15 max HP and slow regen',
+             apply: function (st, lv) { st.bonusHp = 15 * lv; st.regen = 0.5 * lv; } },
 };
 PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaster',
   whisk: 'icon_weapon_whisk', sentry: 'icon_weapon_fridge', seeds: 'icon_weapon_soothe',
@@ -511,6 +522,6 @@ PC.applyCard = function (scene, card) {
     scene.passives[card.pk] = (scene.passives[card.pk] || 0) + 1;
     PC.PASSIVES[card.pk].apply(scene.stats, scene.passives[card.pk]);
   } else if (card.kind === 'heal') {
-    scene.hp = Math.min(PC.PLAYER.HP, scene.hp + 25);
+    scene.hp = Math.min(PC.PLAYER.HP + (scene.stats.bonusHp || 0), scene.hp + 25);
   }
 };

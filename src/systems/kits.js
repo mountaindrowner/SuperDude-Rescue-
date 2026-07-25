@@ -55,7 +55,8 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
       if (tr.t < oldestT) { oldestT = tr.t; oldest = tr; }
     }
     var t = slot || oldest;
-    t.active = true; t.x = scene.px; t.y = scene.py; t.t = this.life;
+    t.active = true; t.x = scene.px; t.y = scene.py;
+    t.t = this.life * (scene.stats.durMult || 1);
     t.fireT = 0.2;
     t.sprite.setPosition(t.x, t.y - 6).setVisible(true).setAlpha(1);
     scene.fx.burst(t.x, t.y - 6, 'fx_nova_1', 3, 0.2);
@@ -132,7 +133,8 @@ PC.SeedWeapon.prototype.update = function (dt, scene) {
       else if (!p) p = pa;
     }
     if (live >= this.maxPatches || !p) p = oldest;
-    p.active = true; p.x = tx; p.y = ty; p.t = this.life; p.tick = 0;
+    p.active = true; p.x = tx; p.y = ty;
+    p.t = this.life * (scene.stats.durMult || 1); p.tick = 0;
     p.sprite.setPosition(tx, ty).setScale(this.radius / 28)
       .setAlpha(0).setVisible(true);
     scene.tweens.add({ targets: p.sprite, alpha: 0.55, duration: 180 });
@@ -155,6 +157,7 @@ PC.SeedWeapon.prototype.update = function (dt, scene) {
         if (dx * dx + dy * dy > r * r) return;
         var dl = Math.sqrt(dx * dx + dy * dy) || 1;
         PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg), dx / dl * 0.3, dy / dl * 0.3, scene._onKillCb);
+        if (self.root) e.slowUntil = scene.now + 0.7;   // Nayah flavor: patches root
       });
     })(pt.x, pt.y);
   }
@@ -217,7 +220,8 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
     this.marker.setVisible(false);
     if (scene.now >= p.nextAt) {
       p.nextAt = scene.now + 0.08;
-      var idx = p.fired - (this.count - 1) / 2;
+      var total = this.count + (this.bonusPass || 0);
+      var idx = p.fired - (total - 1) / 2;
       var bx = p.x + Math.cos(p.ang) * idx * 40;
       var by = p.y + Math.sin(p.ang) * idx * 40;
       var r = this.radius * scene.stats.areaMult, dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
@@ -238,7 +242,7 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
       }
       if (PC.audio) PC.audio.pop();
       p.fired++;
-      if (p.fired >= this.count) this.pending = null;
+      if (p.fired >= this.count + (this.bonusPass || 0)) this.pending = null;
     }
   }
 };
@@ -274,10 +278,15 @@ PC.BeamWeapon.prototype.update = function (dt, scene) {
   }
   if (!best) { this.cdT = 0.3; return; }
   this.cdT = this.cd * scene.stats.cdMult;
-  for (var n = 0; n < this.beams; n++) {
-    var ox = (n - (this.beams - 1) / 2) * 10;
+  var beams = this.beams + (scene.stats.extraProj || 0);
+  for (var n = 0; n < beams; n++) {
+    var ox = (n - (beams - 1) / 2) * 10;
+    var bd = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
+    if (this.critBoost && !scene._lastCrit && Math.random() < this.critBoost) {
+      bd *= 2; scene._lastCrit = true;   // Carlos flavor: comets crit extra
+    }
     scene.bullets.fire(scene.px + ox, scene.py - 6, best.x, best.y,
-      { speed: 700, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_resizer',
+      { speed: 700, dmg: bd, frame: 'proj_resizer',
         pierce: 99, life: 1.5 });
   }
   scene.fx.burst(scene.px, scene.py - 6, 'fx_muzzle', 2, 0.1);
@@ -320,6 +329,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
     if (Math.abs(d - r) > e.r + 7) return;
     if (scene.now < (e.lassoCd || 0)) return;
     e.lassoCd = scene.now + tickCd;
+    if (self.stun) e.slowUntil = scene.now + 0.5;   // Josh flavor: dizzying spin
     var dl = d || 1;
     PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg), dx / dl * 1.6, dy / dl * 1.6, scene._onKillCb);
     scene.fx.burst(e.x, e.y, 'fx_spark', 3, 0.14);
@@ -343,6 +353,7 @@ PC.KITS = {
   danny: {
     kitName: 'RESIZER RAY',
     weapon: function (scene) { return new PC.ResizerWeapon(); },
+    masterize: function (w) { w.shrinkMs = 900; },   // bolts briefly shrink (slow)
     passive: function (scene) { scene.xpMult = 1.10; },
     passiveDesc: '+10% XP',
     onLevelUp: function (scene) {           // Eureka! knockback pulse
@@ -369,6 +380,7 @@ PC.KITS = {
   nayah: {
     kitName: 'SEED SLINGER',
     weapon: function (scene) { return new PC.SeedWeapon(scene); },
+    masterize: function (w) { w.root = true; },      // patches root enemies
     passive: function (scene) { scene.xpMult = 1.15; },
     passiveDesc: '+15% XP',
     glow: { x: 8, y: -18, color: 0x7dd97b },
@@ -376,6 +388,7 @@ PC.KITS = {
   kevin: {
     kitName: 'AIR SUPPORT',
     weapon: function (scene) { return new PC.StrikeWeapon(scene); },
+    masterize: function (w) { w.bonusPass = 2; },    // captain's extra passes
     passive: function (scene) { scene.stats.heroDmg = 1.08; },
     passiveDesc: '+8% all damage',
     glow: null,                              // Kevin carries nothing - presence only
@@ -383,6 +396,7 @@ PC.KITS = {
   carlos: {
     kitName: 'COMET BEAM',
     weapon: function (scene) { return new PC.BeamWeapon(); },
+    masterize: function (w) { w.critBoost = 0.10; }, // comets crit twice as often
     passive: function (scene) { scene.stats.critChance = 0.10; },
     passiveDesc: '10% critical hits',
     glow: { x: -6, y: -30, color: 0xf2c33c },
@@ -390,6 +404,7 @@ PC.KITS = {
   josh: {
     kitName: 'ROPE CYCLONE',
     weapon: function (scene) { return new PC.LassoWeapon(scene); },
+    masterize: function (w) { w.stun = true; },      // ring dizzies on hit
     passive: function (scene) { scene.dmgTakenMult = 0.90; scene.kbMult = 1.5; },
     passiveDesc: 'Tougher + big knockback',
     glow: { x: 8, y: -14, color: 0xb5793f },
