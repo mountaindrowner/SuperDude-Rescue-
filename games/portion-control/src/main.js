@@ -26,11 +26,28 @@ window.PC = window.PC || {};
   var ls = logicalSize();
   PC.RENDER.W = ls.w; PC.RENDER.H = ls.h;
 
+  // sharpness (Mark: "text fuzzy, edges soft"): backing store renders at
+  // logical*SCALE; every scene camera zooms SCALE so layout stays logical.
+  var S = PC.RENDER.SCALE;
+  // helper each scene calls first in create()
+  PC.applyRenderScale = function (scene) {
+    scene.cameras.main.setZoom(S);
+    scene.cameras.main.centerOn(PC.RENDER.W / 2, PC.RENDER.H / 2);
+  };
+  // crisp text: default every Text object to SCALE resolution so glyph
+  // canvases are dense enough for the zoomed camera
+  var origText = Phaser.GameObjects.GameObjectFactory.prototype.text;
+  Phaser.GameObjects.GameObjectFactory.prototype.text = function (x, y, t, style) {
+    style = style || {};
+    if (!style.resolution) style.resolution = S;
+    return origText.call(this, x, y, t, style);
+  };
+
   var config = {
     type: Phaser.AUTO,
     parent: 'game',
-    width: PC.RENDER.W,
-    height: PC.RENDER.H,
+    width: PC.RENDER.W * S,
+    height: PC.RENDER.H * S,
     backgroundColor: '#1b1530',
     pixelArt: true,
     roundPixels: true,
@@ -51,7 +68,7 @@ window.PC = window.PC || {};
       var s = logicalSize();
       if (s.w !== PC.RENDER.W || s.h !== PC.RENDER.H) {
         PC.RENDER.W = s.w; PC.RENDER.H = s.h;
-        PC.game.scale.setGameSize(s.w, s.h);
+        PC.game.scale.setGameSize(s.w * S, s.h * S);
       }
       PC.game.scale.refresh();
     }, 120);

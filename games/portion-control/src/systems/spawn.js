@@ -64,7 +64,7 @@ PC.SpawnDirector.prototype.update = function (dt, runT) {
     this.acc = 0;
     var perTick = ph[5];
     var cam = scene.cameras.main;
-    var cx = cam.scrollX + PC.RENDER.W / 2, cy = cam.scrollY + PC.RENDER.H / 2;
+    var cx = cam.worldView.centerX, cy = cam.worldView.centerY;
     var ringR = Math.max(PC.RENDER.W, PC.RENDER.H) * 0.62 + 40;   // just off-screen
     for (var n = 0; n < perTick; n++) {
       var a = Math.random() * Math.PI * 2;
@@ -77,7 +77,7 @@ PC.SpawnDirector.prototype.update = function (dt, runT) {
 // off-screen ring EVENT: N enemies in a circle closing in (COMPENDIUM 8)
 PC.SpawnDirector.prototype.ring = function (nn, key, minutes) {
   var scene = this.scene, cam = scene.cameras.main;
-  var cx = cam.scrollX + PC.RENDER.W / 2, cy = cam.scrollY + PC.RENDER.H / 2;
+  var cx = cam.worldView.centerX, cy = cam.worldView.centerY;
   var rr = Math.max(PC.RENDER.W, PC.RENDER.H) * 0.7 + 40;
   var def = this._pick([[key, 1]], minutes);
   for (var i = 0; i < nn; i++) {

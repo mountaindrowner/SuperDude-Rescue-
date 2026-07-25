@@ -36,8 +36,8 @@ PC.Ground = function (scene, district) {
 
 PC.Ground.prototype.update = function (cam) {
   var C = PC.CHUNK;
-  var x0 = Math.floor((cam.scrollX - 64) / C), x1 = Math.floor((cam.scrollX + PC.RENDER.W + 64) / C);
-  var y0 = Math.floor((cam.scrollY - 64) / C), y1 = Math.floor((cam.scrollY + PC.RENDER.H + 64) / C);
+  var x0 = Math.floor((cam.worldView.x - 64) / C), x1 = Math.floor((cam.worldView.right + 64) / C);
+  var y0 = Math.floor((cam.worldView.y - 64) / C), y1 = Math.floor((cam.worldView.bottom + 64) / C);
   var want = {}, k;
   for (var cy = y0; cy <= y1; cy++) {
     for (var cx = x0; cx <= x1; cx++) {

@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.7.1';
+PC.VERSION = 'v0.7.2';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
@@ -13,6 +13,10 @@ PC.VERSION = 'v0.7.1';
 PC.RENDER = {
   W: 480, H: 270,              // set live by main.js from BASE + device aspect
   BASE: 340,                   // portrait width / landscape height (the zoom)
+  // internal render scale (PHASE2 4-B "4K feel"): the canvas backing store
+  // is logical*SCALE with camera zoom SCALE - same framing, double density.
+  // Sprites integer-upscale (crisp), vector UI + text render dense (sharp).
+  SCALE: 2,
   DPR_CAP: 2,                  // devicePixelRatio cap (Perf Bible 7)
   CAMERA_LERP: 0.12,
 };

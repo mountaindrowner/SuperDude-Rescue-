@@ -36,6 +36,7 @@ PC.GalleryScene.prototype = Object.create(Phaser.Scene.prototype);
 PC.GalleryScene.prototype.constructor = PC.GalleryScene;
 
 PC.GalleryScene.prototype.create = function () {
+  PC.applyRenderScale(this);
   var W = PC.RENDER.W, H = PC.RENDER.H;
   this.cameras.main.setBackgroundColor(0x241f3d);
 
@@ -74,7 +75,7 @@ PC.GalleryScene.prototype.create = function () {
   this.input.keyboard.on('keydown-RIGHT', function () { this.showPage(this.pageIdx + 1); }, this);
   this.input.keyboard.on('keydown-LEFT', function () { this.showPage(this.pageIdx - 1); }, this);
   this.input.on('pointerdown', function (p) {
-    this.showPage(this.pageIdx + (p.x > W / 2 ? 1 : -1));
+    this.showPage(this.pageIdx + (p.x / PC.RENDER.SCALE > W / 2 ? 1 : -1));
   }, this);
 };
 
