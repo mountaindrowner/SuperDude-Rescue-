@@ -30,11 +30,16 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   b.dmg = spec.dmg; b.pierce = spec.pierce || 0;
   b.life = spec.life || 1.1;
   b.slowMs = spec.slowMs || 0;
+  b.retT = spec.boomerang || 0;          // boomerang: outbound time left
+  b.homing = spec.homing || 0;           // homing: steer rad/s
+  b.bounces = spec.bounces || 0;         // ricochet: redirects left
+  b.scale0 = spec.scale || 0;
   var glow = spec.frame !== 'proj_pellet';   // fries = solid, beam = glow
   b.sprite.setFrame(spec.frame || 'proj_resizer')
     .setBlendMode(glow ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
     .setScale(glow ? 1.4 : 1.2)
     .setPosition(x, y).setRotation(Math.atan2(dy, dx)).setVisible(true);
+  if (spec.scale) b.sprite.setScale(spec.scale);
   if (spec.tint) b.sprite.setTint(spec.tint); else b.sprite.clearTint();
 };
 
@@ -46,9 +51,43 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     if (!b.active) continue;
     b.life -= dt;
     if (b.life <= 0) { b.active = false; b.sprite.setVisible(false); continue; }
+    // boomerang: after the outbound leg, steer hard back to the player
+    if (b.retT > 0) {
+      b.retT -= dt;
+      if (b.retT <= 0) b.life = 2.5;     // returning leg gets fresh life
+    } else if (b.retT < 0 || (b.retT === 0 && false)) { /* noop */ }
+    if (b.retT !== 0 && b.retT <= 0) {
+      var rdx = this.scene.px - b.x, rdy = this.scene.py - b.y;
+      var rd = Math.sqrt(rdx * rdx + rdy * rdy) || 1;
+      if (rd < 18) { b.active = false; b.sprite.setVisible(false); continue; }
+      b.dx = rdx / rd; b.dy = rdy / rd;
+    }
+    // homing: steer toward the nearest enemy
+    if (b.homing) {
+      var hb = null, hd = 160 * 160;
+      var hp2 = this.scene.enemies.pool;
+      for (var hj = 0; hj < hp2.length; hj++) {
+        var he = hp2[hj];
+        if (!he.active) continue;
+        var hx = he.x - b.x, hy = he.y - b.y;
+        var hdd = hx * hx + hy * hy;
+        if (hdd < hd) { hd = hdd; hb = he; }
+      }
+      if (hb) {
+        var want = Math.atan2(hb.y - b.y, hb.x - b.x);
+        var cur = Math.atan2(b.dy, b.dx);
+        var dl2 = want - cur;
+        while (dl2 > Math.PI) dl2 -= Math.PI * 2;
+        while (dl2 < -Math.PI) dl2 += Math.PI * 2;
+        var mx = b.homing * dt;
+        cur += Math.max(-mx, Math.min(mx, dl2));
+        b.dx = Math.cos(cur); b.dy = Math.sin(cur);
+      }
+    }
     b.x += b.dx * b.spd * dt;
     b.y += b.dy * b.spd * dt;
     b.sprite.setPosition(b.x, b.y);
+    if (b.retT || b.bounces) b.sprite.rotation += 12 * dt;   // spin
     b.trailT = (b.trailT || 0) + dt;
     if (b.trailT > 0.045 && this.scene.juice) {
       b.trailT = 0;
@@ -66,11 +105,31 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
       if (dx * dx + dy * dy < (e.r + 5) * (e.r + 5)) { hit = e; return true; }
     });
     if (hit) {
+      // piercing/returning bullets shouldn't grind the same enemy every
+      // frame - short per-enemy re-hit throttle
+      if ((b.pierce > 0 || b.retT !== 0 || b.bounces > 0) &&
+          this.scene.now < (hit.pierceCd || 0)) continue;
+      hit.pierceCd = this.scene.now + 0.25;
       PC.damageEnemy(this.scene, hit, b.dmg, b.dx, b.dy, onKill);
       if (b.slowMs) hit.slowUntil = this.scene.now + b.slowMs / 1000;
       this.scene.fx.burst(b.x, b.y, 'fx_spark', 3, 0.16);
-      if (b.pierce > 0) { b.pierce--; }
-      else { b.active = false; b.sprite.setVisible(false); }
+      if (b.bounces > 0) {
+        // ricochet: carom toward another nearby enemy (or a random angle)
+        b.bounces--;
+        var rb = null, rbd = 220 * 220;
+        var rp2 = this.scene.enemies.pool;
+        for (var rj = 0; rj < rp2.length; rj++) {
+          var re = rp2[rj];
+          if (!re.active || re === hit) continue;
+          var rx2 = re.x - b.x, ry2 = re.y - b.y;
+          var rdd = rx2 * rx2 + ry2 * ry2;
+          if (rdd < rbd) { rbd = rdd; rb = re; }
+        }
+        var na = rb ? Math.atan2(rb.y - b.y, rb.x - b.x) : Math.random() * Math.PI * 2;
+        b.dx = Math.cos(na); b.dy = Math.sin(na);
+      } else if (b.pierce > 0 || b.retT !== 0) {
+        if (b.pierce > 0) b.pierce--;
+      } else { b.active = false; b.sprite.setVisible(false); }
     }
   }
 };
@@ -298,7 +357,7 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
 
 // -- Snack Drone: an orbiting pet that pelts the nearest foe --
 PC.DroneWeapon = function (scene) {
-  this.key = 'drone'; this.name = 'SNACK DRONE';
+  this.key = 'drone'; this.name = 'THE GIZMOTRON';   // renamed by Mark
   this.level = 1; this.max = 5;
   this.count = 1; this.fireCd = 0.85; this.dmg = 8; this.range = 240;
   this.t = 0;
@@ -311,7 +370,7 @@ PC.DroneWeapon = function (scene) {
   }
 };
 PC.DroneWeapon.prototype.desc = function () {
-  return ['', 'A loyal snack-seeking drone', 'Faster pecks!', 'Damage up!',
+  return ['', 'A loyal whirring gizmo pal', 'Faster pecks!', 'Damage up!',
           'Second drone!', 'Full patrol mode!'][Math.min(this.level + 1, 5)] || 'Faster pecks!';
 };
 PC.DroneWeapon.prototype.applyLevel = function () {
@@ -423,7 +482,11 @@ PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaste
   strike: 'icon_weapon_microwave', beam: 'icon_weapon_ketchup', lasso: 'icon_weapon_whisk',
   salt: 'icon_weapon_salt', drone: 'icon_weapon_drone', freeze: 'icon_weapon_freeze',
   ketchup: 'icon_weapon_ketchup', microwave: 'icon_weapon_microwave',
-  fridge: 'icon_weapon_fridge' };
+  fridge: 'icon_weapon_fridge', cutter: 'icon_weapon_whisk',
+  zap: 'icon_weapon_microwave', grease: 'icon_weapon_ketchup',
+  jaw: 'icon_weapon_salt', sprinkle: 'icon_weapon_blaster',
+  skillet: 'icon_weapon_resizer', vortex: 'icon_weapon_fridge',
+  espresso: 'icon_weapon_freeze', pineapple: 'icon_weapon_soothe' };
 
 // build 3 distinct card choices from the current run state.
 // EVOLUTIONS (data/evolutions.js): a maxed weapon + its partner passive
@@ -463,7 +526,7 @@ PC.drawCards = function (scene) {
     if (!owned.salt) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.SaltWeapon(sc); },
       title: 'SALT SHAKER', sub: 'NEW!', desc: 'A stinging ring of seasoning', icon: PC.WEAPON_ICONS.salt });
     if (!owned.drone) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.DroneWeapon(sc); },
-      title: 'SNACK DRONE', sub: 'NEW!', desc: 'A loyal snack-seeking drone', icon: PC.WEAPON_ICONS.drone });
+      title: 'THE GIZMOTRON', sub: 'NEW!', desc: 'A loyal whirring gizmo pal', icon: PC.WEAPON_ICONS.drone });
     if (!owned.freeze) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.FreezeWeapon(); },
       title: 'FREEZE RAY', sub: 'NEW!', desc: 'Chills foes to a crawl', icon: PC.WEAPON_ICONS.freeze });
     if (!owned.ketchup) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.KetchupWeapon(sc); },
@@ -472,6 +535,22 @@ PC.drawCards = function (scene) {
       title: 'MICROWAVE BEAM', sub: 'NEW!', desc: 'A beam sweeps around you', icon: PC.WEAPON_ICONS.microwave });
     if (!owned.fridge) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.FridgeWeapon(sc); },
       title: 'FRIDGE WALL', sub: 'NEW!', desc: 'Drops a chilling barrier wall', icon: PC.WEAPON_ICONS.fridge });
+    var A3 = [
+      ['cutter', 'PIZZA CUTTER', 'A spinning cutter that returns', function (sc) { return new PC.CutterWeapon(); }],
+      ['zap', 'TOASTER ZAP', 'Zaps arc between close foes', function (sc) { return new PC.ZapWeapon(sc); }],
+      ['grease', 'GREASE TRAIL', 'A burning slick trails behind you', function (sc) { return new PC.GreaseWeapon(sc); }],
+      ['jaw', 'JAWBREAKER', 'A candy that caroms off foes', function (sc) { return new PC.JawWeapon(); }],
+      ['sprinkle', 'SPRINKLE SWARM', 'Homing sprinkles seek foes', function (sc) { return new PC.SprinkleWeapon(); }],
+      ['skillet', 'SKILLET SWING', 'A mighty pan swing forward', function (sc) { return new PC.SkilletWeapon(sc); }],
+      ['vortex', 'VORTEX MIXER', 'Pulls foes into a tight pile', function (sc) { return new PC.VortexWeapon(sc); }],
+      ['espresso', 'ESPRESSO CANNON', 'Charges while you stand still', function (sc) { return new PC.EspressoWeapon(sc); }],
+      ['pineapple', 'PINEAPPLE GUARD', 'Spiky aura; bites back when hit', function (sc) { return new PC.PineappleWeapon(sc); }],
+    ];
+    A3.forEach(function (w3) {
+      if (owned[w3[0]]) return;
+      pool.push({ kind: 'weapon-new', make: w3[3], title: w3[1],
+                  sub: 'NEW!', desc: w3[2], icon: PC.WEAPON_ICONS[w3[0]] });
+    });
     // hero SIGNATURES are inheritable (Mark): any hero can learn a
     // teammate's weapon - just without the owner's mastery bonus
     var SIGS = [

@@ -128,6 +128,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
   var cdx = px - this.x, cdy = py - this.y;
   if (cdx * cdx + cdy * cdy < (this.r + 12) * (this.r + 12) && scene.now > scene.invUntil) {
     scene.hp -= Math.max(1, this.contact * scene.dmgTakenMult - scene.stats.armor);
+    scene.lastHurtT = scene.now;
     scene.invUntil = scene.now + PC.PLAYER.IFRAMES;
     scene.cameras.main.shake(140, 0.008);
     if (PC.audio) PC.audio.hurt();

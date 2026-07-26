@@ -35,10 +35,10 @@ PC.EVOLUTIONS = [
       w.name = 'BLIZZARD RAY';
       w.dmg = 16; w.bolts = 3; w.cd = 0.9; w.slowMs = 3800;
     } },
-  { base: 'drone', requires: 'shoes', name: 'WINGMAN SQUAD',
-    desc: 'Two turbo drones with hot triggers!',
+  { base: 'drone', requires: 'shoes', name: 'GIZMOTRON ARMADA',
+    desc: 'Two turbo gizmos with hot triggers!',
     apply: function (w) {
-      w.name = 'WINGMAN SQUAD';
+      w.name = 'GIZMOTRON ARMADA';
       w.count = 2; w.dmg = 20; w.fireCd = 0.3; w.range = 300;
     } },
   // ---- signature evolutions (arsenal expansion slice 1) ----
@@ -91,4 +91,32 @@ PC.EVOLUTIONS = [
       w.name = 'BUNKER FRIDGE';
       w.orbit = true; w.dmg = 22; w.length = 66; w.kb = 2.6;
     } },
+  // ---- slice 3 evolutions ----
+  { base: 'cutter', requires: 'duplicator', name: 'PIZZA STORM',
+    desc: 'Saws criss-cross the field!',
+    apply: function (w) { w.name = 'PIZZA STORM'; w.cutters = 3; w.dmg = 30; w.cd = 1.4; w.out = 0.8; } },
+  { base: 'zap', requires: 'lens', name: 'TESLA TOASTER',
+    desc: 'The arc chains through the crowd!',
+    apply: function (w) { w.name = 'TESLA TOASTER'; w.jumps = 8; w.dmg = 28; w.cd = 0.9; } },
+  { base: 'grease', requires: 'shoes', name: 'INFERNO TRAIL',
+    desc: 'A wide blazing wake!',
+    apply: function (w) { w.name = 'INFERNO TRAIL'; w.dmg = 14; w.segR = 34; w.life = 2.8; w.slow = true; } },
+  { base: 'jaw', requires: 'servo', name: 'WRECKING JAWBREAKER',
+    desc: 'A giant gobstopper caroms everywhere!',
+    apply: function (w) { w.name = 'WRECKING JAWBREAKER'; w.dmg = 38; w.bounces = 10; w.scale = 3.2; w.cd = 2; } },
+  { base: 'sprinkle', requires: 'duplicator', name: 'SPRINKLE STORM',
+    desc: 'A seeking cloud of sprinkles!',
+    apply: function (w) { w.name = 'SPRINKLE STORM'; w.count = 12; w.dmg = 16; w.seek = 6; w.cd = 1.6; } },
+  { base: 'skillet', requires: 'battery', name: 'FRYING FURY',
+    desc: 'A giant pan smash with a shockwave!',
+    apply: function (w) { w.name = 'FRYING FURY'; w.dmg = 44; w.reach = 75; w.halfArc = Math.PI; w.both = false; w.cd = 0.9; } },
+  { base: 'vortex', requires: 'servo', name: 'SINGULARITY BLENDER',
+    desc: 'A huge pull that grinds the pile!',
+    apply: function (w) { w.name = 'SINGULARITY BLENDER'; w.radius = 150; w.pull = 340; w.dur = 2.2; w.grind = true; w.dmg = 14; w.cd = 3.6; } },
+  { base: 'espresso', requires: 'lens', name: 'RISTRETTO RAILGUN',
+    desc: 'Instant charge, endless pierce!',
+    apply: function (w) { w.name = 'RISTRETTO RAILGUN'; w.instant = true; w.baseDmg = 55; w.maxBonus = 30; } },
+  { base: 'pineapple', requires: 'leftovers', name: 'FORTRESS FRUIT',
+    desc: 'A mighty aura that heals on payback!',
+    apply: function (w) { w.name = 'FORTRESS FRUIT'; w.dmg = 18; w.radius = 48; w.retDmg = 55; w.retR = 110; w.heal = 6; } },
 ];
