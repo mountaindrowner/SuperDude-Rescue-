@@ -12,6 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.11.0: ICON + PORTRAIT ART WAVE (Mark: "do number
+  one and two").** (1) CARD ICONS: every weapon key (26) and passive
+  key (10) now owns a real icon frame `icon_weapon_<key>` /
+  `icon_passive_<key>` — 36 pixflux one-shots at 48px NATIVE (no
+  rescale; registry cells moved 24->48, card draw scale 1.6->0.8 =
+  same footprint, 4x detail). PC.WEAPON_ICONS rewritten to a
+  loop (was many-to-few reuse: lasso/cutter shared whisk, zap shared
+  microwave, etc.); PASSIVES duplicator/slowcooker/leftovers got own
+  icons (old icon_passive_capacitor + icon_weapon_soothe registry
+  keys removed, grep-verified unreferenced). (2) PORTRAITS: all 6
+  heroes via v2 `portrait-character-pro` (character_to_portrait,
+  input = shipped idle sprite so identity is exact, result_size 128
+  2K). COST WARNING: 25 gens EACH at 128 (150 total; submit returns
+  HTTP 202 not 200, and a treat-202-as-failure bug cost one dup
+  danny submit). PC.SIZE.PORTRAIT 96->128; old 96px portrait_danny
+  deleted/regenerated; results.js lose screen now shows the SELECTED
+  hero's portrait (scale 0.45). Manifest +41 keys. Verified
+  headless: zero missing atlas frames, cards screenshot real icons
+  (sprinkle jar / skillet / strike reticle), results shows Danny
+  portrait, zero errors. Balance: ~1188/2000 generations remain.
+  Remaining placeholder fronts: D2-D5 enemies/bosses/tiles/props +
+  future title-hub art. NEXT: WP-METASHOP + title hub.
+
 - **2026-07-26 — v0.10.1: SIGNATURE-WEAPON ART BATCH (doc §4 TODO
   cleared).** 5 PixelLab pixflux one-shots (1 gen each; balance
   1378.85 -> ~1373.85): `sig_sentrybot` 32 (Vic's hovering bot pal,
