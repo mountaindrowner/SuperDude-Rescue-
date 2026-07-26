@@ -30,6 +30,7 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   b.dmg = spec.dmg; b.pierce = spec.pierce || 0;
   b.life = spec.life || 1.1;
   b.slowMs = spec.slowMs || 0;
+  b.shrinkFx = spec.shrinkFx || 0;       // Danny: visually shrink victims
   b.retT = spec.boomerang || 0;          // boomerang: outbound time left
   b.homing = spec.homing || 0;           // homing: steer rad/s
   b.bounces = spec.bounces || 0;         // ricochet: redirects left
@@ -112,6 +113,7 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
       hit.pierceCd = this.scene.now + 0.25;
       PC.damageEnemy(this.scene, hit, b.dmg, b.dx, b.dy, onKill);
       if (b.slowMs) hit.slowUntil = this.scene.now + b.slowMs / 1000;
+      if (b.shrinkFx) hit.shrinkUntil = this.scene.now + b.shrinkFx / 1000;
       this.scene.fx.burst(b.x, b.y, 'fx_spark', 3, 0.16);
       if (b.bounces > 0) {
         // ricochet: carom toward another nearby enemy (or a random angle)
@@ -207,9 +209,13 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
     scene.bullets.fire(scene.px, scene.py - 4,
       scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
       { speed: this.speed, dmg: dmg, frame: 'proj_resizer', pierce: this.pierce,
-        slowMs: this.shrinkMs || 0 });
+        slowMs: this.shrinkMs || 0, shrinkFx: 450 });
   }
-  scene.fx.burst(scene.px + aim.ax * 18, scene.py - 4 + aim.ay * 12, 'fx_muzzle', 2, 0.1);
+  if (PC.VFX_V2 && scene.vfx) {
+    scene.vfx.shrinkRing(scene.px + aim.ax * 16, scene.py - 4 + aim.ay * 10, 12, 220);
+  } else {
+    scene.fx.burst(scene.px + aim.ax * 18, scene.py - 4 + aim.ay * 12, 'fx_muzzle', 2, 0.1);
+  }
   if (PC.audio) PC.audio.shoot();
 };
 

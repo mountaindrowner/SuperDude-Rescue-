@@ -33,6 +33,14 @@ PC.Vfx.prototype.telegraphRing = function (x, y, radius, ms, color) {
   s.active = true; s.x = x; s.y = y; s.r = radius;
   s.dur = (ms || 700) / 1000; s.t = s.dur;
   s.color = color || 0xd93a3a;
+  s.shrink = false;
+  return s;
+};
+
+// contracting ring (Danny's shrink-ray muzzle: big -> small)
+PC.Vfx.prototype.shrinkRing = function (x, y, radius, ms, color) {
+  var s = this.telegraphRing(x, y, radius, ms, color || 0x35d0ff);
+  s.shrink = true;
   return s;
 };
 
@@ -78,6 +86,12 @@ PC.Vfx.prototype.update = function (dt) {
     r.t -= dt;
     if (r.t <= 0) { r.active = false; continue; }
     var k = r.t / r.dur;                        // 1 -> 0
+    if (r.shrink) {
+      // contracting ring: radius collapses toward the point
+      g.lineStyle(2, r.color, 0.6 * k + 0.2);
+      g.strokeCircle(r.x, r.y, r.r * (0.15 + 0.85 * k));
+      continue;
+    }
     var pulse = 0.75 + 0.25 * Math.sin(now * 16);
     g.lineStyle(2, r.color, (0.35 + 0.45 * k) * pulse);
     g.strokeCircle(r.x, r.y, r.r * (0.85 + 0.15 * pulse));

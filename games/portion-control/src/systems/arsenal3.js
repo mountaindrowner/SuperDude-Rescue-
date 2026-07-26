@@ -155,7 +155,19 @@ PC.GreaseWeapon.prototype.update = function (dt, scene) {
     if (!sj.active) continue;
     sj.t -= dt;
     if (sj.t <= 0) { sj.active = false; sj.img.setVisible(false); continue; }
-    sj.img.setAlpha(0.5 * Math.min(1, sj.t));
+    if (PC.VFX_V2) {
+      // living fire: flicker + color ramp mustard->cheese->ketchup as it ages
+      var age = 1 - sj.t / (this.life * (scene.stats.durMult || 1));
+      sj.img.setTint(age < 0.35 ? 0xff9d3b : age < 0.7 ? 0xf2c33c : 0xd93a3a)
+        .setAlpha((0.38 + 0.2 * Math.sin(scene.now * 13 + j * 2.1)) * Math.min(1, sj.t))
+        .setScale((this.segR / 24 * scene.stats.areaMult) * (0.9 + 0.12 * Math.sin(scene.now * 9 + j)));
+      if (Math.random() < dt * 2.2) {
+        scene.fx.burst(sj.x + (Math.random() - 0.5) * 14, sj.y - 6 - Math.random() * 8,
+          'fx_spark', 2, 0.28, 0xff9d3b);   // drifting embers
+      }
+    } else {
+      sj.img.setAlpha(0.5 * Math.min(1, sj.t));
+    }
     sj.tick -= dt;
     if (sj.tick > 0) continue;
     sj.tick = 0.5;
