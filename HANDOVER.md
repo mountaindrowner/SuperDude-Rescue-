@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.10.1: SIGNATURE-WEAPON ART BATCH (doc §4 TODO
+  cleared).** 5 PixelLab pixflux one-shots (1 gen each; balance
+  1378.85 -> ~1373.85): `sig_sentrybot` 32 (Vic's hovering bot pal,
+  cyan eye, faces east — code setFlipX handles west), `sig_turret`
+  40 (tripod heavy turret, mustard warning stripes), `sig_comet` 48
+  (golden fireball, head bottom-left / tail up-right — matches the
+  (+24,-170)->target travel line so the streak needs NO rotation),
+  `sig_bomb` 32 (Kevin's falling supply bomb), `sig_ketchup_shell`
+  32 (glossy lobbed glob). All alpha-thresholded (a>=90). Wired:
+  assets.js registry block ("signature-weapon props") + manifest 5
+  keys; heroes2.js bot/turret/comet swapped off tinted
+  pickup_crate/proj_resizer (tints+ADD blend+rotation removed - the
+  art carries the look now); kits.js Kevin bomb + arsenal2.js
+  ketchup shell likewise. Verified headless: both runs zero errors,
+  atlas has all 5 frames, Vic's bot rides at frame sig_sentrybot +
+  deploy spawns the real turret, comet freeze-framed mid-fall
+  in-world (looks right at native scale 1). Remaining placeholders
+  after this batch: weapon/passive ICONS (letter badges), hero
+  PORTRAITS (portrait-character-pro is the tool), D2-D5
+  enemies/bosses/tiles/props, results/gallery art. D1 in-run is now
+  placeholder-free.
+
 - **2026-07-26 — v0.10.0: HERO REWORK WAVE (Tasks 6-8 + Task 9, ALL
   flags approved by Mark).** NOTE: container recycled mid-session -
   repo re-cloned at default branch; recovered via checkout -B from

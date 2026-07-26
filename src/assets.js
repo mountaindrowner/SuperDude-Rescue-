@@ -109,6 +109,13 @@ window.PC = window.PC || {};
     add('eproj_' + p[0], +p[1], +p[1], 'proj', P.PINK, P.CHERRY);
   });
 
+  // -- signature-weapon props (hero reworks; real PNGs via manifest) --
+  add('sig_sentrybot', 32, 32, 'proj', P.STEEL, P.CYAN);
+  add('sig_turret', 40, 40, 'proj', P.STEEL, P.MUSTARD);
+  add('sig_comet', 48, 48, 'proj', P.CHEESE, P.MUSTARD);
+  add('sig_bomb', 32, 32, 'proj', P.STEEL, P.MUSTARD);
+  add('sig_ketchup_shell', 32, 32, 'proj', P.KETCHUP, P.CHERRY);
+
   // -- FX loops (COMPENDIUM 2.5) --
   function fx(key, n, size, c1, c2, kind) {
     for (var i = 1; i <= n; i++) add(key + '_' + i, size, size, kind || 'burst', c1, c2, i);
