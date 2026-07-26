@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.9.2';
+PC.VERSION = 'v0.9.3';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
@@ -70,6 +70,10 @@ PC.RUN = { BOSS_AT_S: 300, BOSS_AMBIENT_MULT: 1.8 };
 // District 1 rescue: Victoria is Big Frank's captive (call delegated to
 // Claude by Mark 2026-07-25). Winning D1 unlocks her as playable.
 PC.D1_RESCUE = { name: 'VICTORIA', art: 'char_victoria_idle', hero: 'victoria' };
+
+// VFX toolkit v2 (Weapons&VFX doc Task 1-2): rings/fields/muzzles route
+// through systems/vfx.js. Toggle off to fall back to legacy visuals.
+PC.VFX_V2 = true;
 
 // Dev flag (PHASE2 §3): true = every hero selectable. Flip false to
 // activate the rescue-based unlock flow (Danny always unlocked).

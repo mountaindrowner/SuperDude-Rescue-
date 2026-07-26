@@ -59,6 +59,7 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
     t.t = this.life * (scene.stats.durMult || 1);
     t.fireT = 0.2;
     t.sprite.setPosition(t.x, t.y - 6).setVisible(true).setAlpha(1);
+    if (PC.VFX_V2 && scene.vfx) scene.vfx.telegraphRing(t.x, t.y - 6, 16, 450, 0x35d0ff);
     scene.fx.burst(t.x, t.y - 6, 'fx_nova_1', 3, 0.2);
     if (PC.audio) PC.audio.ui();
   }
@@ -82,6 +83,7 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
     }
     if (best) {
       tu.fireT = this.fireCd;
+      if (PC.VFX_V2 && scene.vfx) scene.vfx.muzzleFlash(tu.x, tu.y - 8);
       scene.bullets.fire(tu.x, tu.y - 8, best.x, best.y,
         { speed: 460, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet', life: 0.6 });
       if (PC.audio) PC.audio.shoot();
@@ -205,7 +207,14 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
         this.cdT = this.cd * scene.stats.cdMult;
         this.pending = { x: best.x, y: best.y, ang: Math.random() * Math.PI,
                          at: scene.now + 0.8, fired: 0, nextAt: 0 };
-        this.marker.setPosition(best.x, best.y).setScale(0.8).setAlpha(0.9).setVisible(true);
+        if (PC.VFX_V2 && scene.vfx) {
+          // proper pulsing reticle over the strike zone (color law: danger red)
+          scene.vfx.telegraphRing(best.x, best.y,
+            (this.radius + 22) * scene.stats.areaMult, 820);
+          this.marker.setVisible(false);
+        } else {
+          this.marker.setPosition(best.x, best.y).setScale(0.8).setAlpha(0.9).setVisible(true);
+        }
         if (PC.audio) PC.audio.telegraph();
       } else { this.cdT = 0.4; }
     }
@@ -213,8 +222,10 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
   if (this.pending) {
     var p = this.pending;
     if (scene.now < p.at) {
-      this.marker.setScale(0.7 + 0.25 * Math.sin(scene.now * 14))
-        .setAlpha(0.55 + 0.35 * Math.sin(scene.now * 14));
+      if (!(PC.VFX_V2 && scene.vfx)) {
+        this.marker.setScale(0.7 + 0.25 * Math.sin(scene.now * 14))
+          .setAlpha(0.55 + 0.35 * Math.sin(scene.now * 14));
+      }
       return;
     }
     this.marker.setVisible(false);

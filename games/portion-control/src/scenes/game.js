@@ -52,6 +52,7 @@ PC.GameScene.prototype.create = function () {
   this.bullets = new PC.BulletSystem(this);
   this.fx = new PC.FxSystem(this);
   this.juice = new PC.Juice(this);
+  this.vfx = new PC.Vfx(this);
   var self = this;
   this.gems = new PC.GemSystem(this, function (v) { self.gainXp(v); });
   this.stats = { dmgMult: 1, cdMult: 1, spdMult: 1, heroDmg: 1, heroCd: 1,
@@ -358,6 +359,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   var self = this;
   this.bullets.update(dt, this.enemies, this._onKillCb);
   this.juice.update(dt);
+  this.vfx.update(dt);
   this.gems.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R * this.stats.pickupMult);
   this.pickups.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
   this.fx.update(dt);

@@ -12,6 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.9.3: VFX TOOLKIT (Weapons&VFX doc Tasks 1-2).**
+  Doc reviewed with Mark; 4 design flags surfaced (Vic deploy button
+  = first active input, Vic bot vs Gizmotron overlap, Nayah
+  Haymaker signature swap, Carlos comet delivery) - AWAITING his
+  rulings before Tasks 6-8. Tasks 1-2 executed: NEW `systems/vfx.js`
+  (`PC.Vfx`, flag `PC.VFX_V2` default true): pooled telegraphRing
+  (12, pulsing danger-red AoE preview), lingeringField (8,
+  flickering translucent area - never solid), muzzleFlash /
+  impactBurst (via fx.js tinted bursts), clamped shake(px<=3);
+  one shared additive Graphics redrawn per frame; scene.vfx created
+  + updated in game.js. ROUTING: Kevin's Rescue Strike telegraph is
+  now a proper pulsing red reticle (nova-marker legacy path kept
+  behind flag), Vic's turrets get a cyan deploy ring + muzzle
+  flashes, Ketchup Artillery shows landing telegraph rings before
+  shells hit, SPRINKLE SWARM recolored pink->CYAN (color-law
+  violation: pink is enemy-only; Ketchup's red kept as thematic
+  exception). Audited all 23 weapons: no raw rectangles remain (Vic
+  turret crate sprite is real art, replaced in Task 6). VERIFIED:
+  60fps at 347 foes with rings live; VFX_V2=false restores legacy
+  marker at 60fps. NEXT (awaiting Mark): Tasks 3-5 (Danny shrink-ray
+  look, Kevin bomb sequence, flame trail) can proceed anytime;
+  Tasks 6-8 need flag rulings.
+
 - **2026-07-26 — v0.9.2: ARSENAL COMPLETE — slice 3 (9 archetypes) +
   THE GIZMOTRON rename.** SNACK DRONE renamed THE GIZMOTRON (Mark);
   evo now GIZMOTRON ARMADA. BulletSystem gained additive behaviors:

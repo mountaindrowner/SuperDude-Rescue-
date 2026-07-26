@@ -77,6 +77,10 @@ PC.KetchupWeapon.prototype.update = function (dt, scene) {
       var self = this;
       for (var n = 0; n < this.shells; n++) {
         var t = picks[(Math.random() * picks.length) | 0];
+        if (PC.VFX_V2 && scene.vfx) {
+          scene.vfx.telegraphRing(t.x, t.y,
+            this.burstR * scene.stats.areaMult, 750 + n * 150);
+        }
         (function (tx, ty, delay) {
           // lobbed shell: tween up-and-over, land -> burst
           var sh = scene.add.image(scene.px, scene.py - 10, 'atlas', 'proj_resizer')
