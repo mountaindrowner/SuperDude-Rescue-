@@ -72,4 +72,23 @@ PC.EVOLUTIONS = [
       w.name = 'CYCLONE TITAN';
       w.rMin = 60; w.rMax = 110; w.dmg = 26; w.tickCd = 0.3; w.stun = true;
     } },
+  // ---- slice 2 evolutions ----
+  { base: 'ketchup', requires: 'servo', name: 'CONDIMENT STORM',
+    desc: 'Shells rain across the screen!',
+    apply: function (w) {
+      w.name = 'CONDIMENT STORM';
+      w.shells = 3; w.dmg = 44; w.burstR = 56; w.cd = 2.2; w.puddleDmg = 8;
+    } },
+  { base: 'microwave', requires: 'lens', name: 'PLASMA CAROUSEL',
+    desc: 'Twin beams spin at full power!',
+    apply: function (w) {
+      w.name = 'PLASMA CAROUSEL';
+      w.beams = 2; w.dmg = 20; w.length = 170; w.degS = 150; w.halfArc = 0.22;
+    } },
+  { base: 'fridge', requires: 'coat', name: 'BUNKER FRIDGE',
+    desc: 'Four icy walls guard you!',
+    apply: function (w) {
+      w.name = 'BUNKER FRIDGE';
+      w.orbit = true; w.dmg = 22; w.length = 66; w.kb = 2.6;
+    } },
 ];

@@ -421,7 +421,9 @@ PC.PASSIVES = {
 PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaster',
   whisk: 'icon_weapon_whisk', sentry: 'icon_weapon_fridge', seeds: 'icon_weapon_soothe',
   strike: 'icon_weapon_microwave', beam: 'icon_weapon_ketchup', lasso: 'icon_weapon_whisk',
-  salt: 'icon_weapon_salt', drone: 'icon_weapon_drone', freeze: 'icon_weapon_freeze' };
+  salt: 'icon_weapon_salt', drone: 'icon_weapon_drone', freeze: 'icon_weapon_freeze',
+  ketchup: 'icon_weapon_ketchup', microwave: 'icon_weapon_microwave',
+  fridge: 'icon_weapon_fridge' };
 
 // build 3 distinct card choices from the current run state.
 // EVOLUTIONS (data/evolutions.js): a maxed weapon + its partner passive
@@ -464,6 +466,12 @@ PC.drawCards = function (scene) {
       title: 'SNACK DRONE', sub: 'NEW!', desc: 'A loyal snack-seeking drone', icon: PC.WEAPON_ICONS.drone });
     if (!owned.freeze) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.FreezeWeapon(); },
       title: 'FREEZE RAY', sub: 'NEW!', desc: 'Chills foes to a crawl', icon: PC.WEAPON_ICONS.freeze });
+    if (!owned.ketchup) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.KetchupWeapon(sc); },
+      title: 'KETCHUP ARTILLERY', sub: 'NEW!', desc: 'Shells burst into slowing puddles', icon: PC.WEAPON_ICONS.ketchup });
+    if (!owned.microwave) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.MicrowaveWeapon(sc); },
+      title: 'MICROWAVE BEAM', sub: 'NEW!', desc: 'A beam sweeps around you', icon: PC.WEAPON_ICONS.microwave });
+    if (!owned.fridge) pool.push({ kind: 'weapon-new', make: function (sc) { return new PC.FridgeWeapon(sc); },
+      title: 'FRIDGE WALL', sub: 'NEW!', desc: 'Drops a chilling barrier wall', icon: PC.WEAPON_ICONS.fridge });
     // hero SIGNATURES are inheritable (Mark): any hero can learn a
     // teammate's weapon - just without the owner's mastery bonus
     var SIGS = [
