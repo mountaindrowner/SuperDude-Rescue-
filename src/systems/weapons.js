@@ -504,24 +504,22 @@ PC.PASSIVES = {
              desc: '+12% weapon area', apply: function (st, lv) { st.areaMult = 1 + 0.12 * lv; } },
   coat:    { name: 'PADDED APRON', icon: 'icon_passive_coat', max: 3,
              desc: 'Block 1 damage per hit', apply: function (st, lv) { st.armor = lv; } },
-  duplicator: { name: 'DUPLICATOR TRAY', icon: 'icon_passive_capacitor', max: 2,
+  duplicator: { name: 'DUPLICATOR TRAY', icon: 'icon_passive_duplicator', max: 2,
              desc: '+1 projectile per rank', apply: function (st, lv) { st.extraProj = lv; } },
-  slowcooker: { name: 'SLOW COOKER', icon: 'icon_passive_fan', max: 3,
+  slowcooker: { name: 'SLOW COOKER', icon: 'icon_passive_slowcooker', max: 3,
              desc: '+25% effect duration', apply: function (st, lv) { st.durMult = 1 + 0.25 * lv; } },
-  leftovers: { name: 'LEFTOVERS', icon: 'icon_passive_shoes', max: 3,
+  leftovers: { name: 'LEFTOVERS', icon: 'icon_passive_leftovers', max: 3,
              desc: '+15 max HP and slow regen',
              apply: function (st, lv) { st.bonusHp = 15 * lv; st.regen = 0.5 * lv; } },
 };
-PC.WEAPON_ICONS = { resizer: 'icon_weapon_resizer', blaster: 'icon_weapon_blaster',
-  whisk: 'icon_weapon_whisk', sentry: 'icon_weapon_fridge', seeds: 'icon_weapon_soothe',
-  strike: 'icon_weapon_microwave', beam: 'icon_weapon_ketchup', lasso: 'icon_weapon_whisk',
-  salt: 'icon_weapon_salt', drone: 'icon_weapon_drone', freeze: 'icon_weapon_freeze',
-  ketchup: 'icon_weapon_ketchup', microwave: 'icon_weapon_microwave',
-  fridge: 'icon_weapon_fridge', cutter: 'icon_weapon_whisk',
-  zap: 'icon_weapon_microwave', grease: 'icon_weapon_ketchup',
-  jaw: 'icon_weapon_salt', sprinkle: 'icon_weapon_blaster',
-  skillet: 'icon_weapon_resizer', vortex: 'icon_weapon_fridge',
-  espresso: 'icon_weapon_freeze', pineapple: 'icon_weapon_soothe' };
+// every weapon key owns its icon frame: icon_weapon_<key>
+PC.WEAPON_ICONS = {};
+['resizer', 'blaster', 'whisk', 'sentry', 'seeds', 'strike', 'beam',
+ 'lasso', 'salt', 'drone', 'freeze', 'ketchup', 'microwave', 'fridge',
+ 'cutter', 'zap', 'grease', 'jaw', 'sprinkle', 'skillet', 'vortex',
+ 'espresso', 'pineapple', 'sentrybot', 'comet', 'haymaker'].forEach(function (k) {
+  PC.WEAPON_ICONS[k] = 'icon_weapon_' + k;
+});
 
 // build 3 distinct card choices from the current run state.
 // EVOLUTIONS (data/evolutions.js): a maxed weapon + its partner passive

@@ -235,7 +235,7 @@ PC.GameScene.prototype.showCards = function () {
         duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
     var icon = self.add.image(cx, cy - 32, 'atlas', card.icon)
-      .setScale(1.6).setDepth(202);
+      .setScale(0.8).setDepth(202);
     var title = self.add.text(cx, cy + 2, card.title, {
       fontFamily: 'monospace', fontSize: '8px', color: '#f7f4ef', fontStyle: 'bold',
       align: 'center', wordWrap: { width: cw - 8 },

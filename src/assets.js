@@ -130,13 +130,17 @@ window.PC = window.PC || {};
   fx('fx_freeze', 1, 24, P.CYAN, P.CLOUD);
   fx('fx_muzzle', 2, 12, P.CYAN, P.WHITE);
 
-  // -- icons (weapons 10 + passives 8) --
-  ['resizer', 'blaster', 'whisk', 'drone', 'fridge', 'salt', 'soothe',
-   'microwave', 'freeze', 'ketchup'].forEach(function (k) {
-    add('icon_weapon_' + k, PC.SIZE.ICON, PC.SIZE.ICON, 'icon', P.CYAN, P.GRAPE);
+  // -- icons: one per weapon key (26) + one per passive key (10). --
+  // 48px native (pixflux generation size, no rescale); cards draw at 0.8.
+  ['resizer', 'blaster', 'whisk', 'sentry', 'seeds', 'strike', 'beam',
+   'lasso', 'salt', 'drone', 'freeze', 'ketchup', 'microwave', 'fridge',
+   'cutter', 'zap', 'grease', 'jaw', 'sprinkle', 'skillet', 'vortex',
+   'espresso', 'pineapple', 'sentrybot', 'comet', 'haymaker'].forEach(function (k) {
+    add('icon_weapon_' + k, 48, 48, 'icon', P.CYAN, P.GRAPE);
   });
-  ['battery', 'fan', 'capacitor', 'lens', 'servo', 'coat', 'shoes', 'magnet'].forEach(function (k) {
-    add('icon_passive_' + k, PC.SIZE.ICON, PC.SIZE.ICON, 'icon', P.MUSTARD, P.GRAPE);
+  ['battery', 'fan', 'shoes', 'magnet', 'lens', 'servo', 'coat',
+   'duplicator', 'slowcooker', 'leftovers'].forEach(function (k) {
+    add('icon_passive_' + k, 48, 48, 'icon', P.MUSTARD, P.GRAPE);
   });
 
   // -- pickups --

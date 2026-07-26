@@ -39,7 +39,8 @@ PC.ResultsScene.prototype.create = function () {
     this.add.text(W / 2, H * 0.2, 'OVERWHELMED!', {
       fontFamily: 'monospace', fontSize: '22px', color: '#ff6b6b', fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.image(W / 2, H * 0.4, 'atlas', 'portrait_danny').setScale(0.6);
+    this.add.image(W / 2, H * 0.4, 'atlas',
+      'portrait_' + PC.selectedHero().id).setScale(0.45);
   }
 
   this.add.text(W / 2, H * 0.68,
