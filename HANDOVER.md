@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-25 — v0.9.1: ARSENAL SLICE 2 — Mark's three named
+  weapons + evolutions.** New `systems/arsenal2.js`: KETCHUP
+  ARTILLERY (tween-lobbed shells onto a ranged cluster -> AoE burst
+  + pooled slowing puddle, player-cherry tint to stay distinct from
+  boss ketchup), MICROWAVE BEAM (rotating sweep corridor, per-enemy
+  0.4s tick via e.mwCd, graphics beam + end blob, boss corridor
+  check), FRIDGE WALL (perpendicular-to-aim chilled segment,
+  soft-block = 0.4s dmg tick + strong perpendicular shove + chill
+  slow; 3 placed walls max). Evolutions: CONDIMENT STORM
+  (ketchup+servo), PLASMA CAROUSEL (microwave+lens, twin beams),
+  BUNKER FRIDGE (fridge+coat -> orbit:true, 4 walls circle the
+  player - finally gives Padded Apron an evolution). All in the
+  shared card pool. Pool now 14 weapons / 10 passives / 14
+  evolutions. VERIFIED: 107 kills in 7s with the loadout, 61fps at
+  293-foe swarm (canvas renderer), BUNKER FRIDGE offer+apply+orbit,
+  0 errors. REMAINING from the ArsenalExpansion doc: slice 3 = 9
+  archetypes (Pizza Cutter boomerang, Toaster Zap chain, Grease
+  Trail, Jawbreaker ricochet-off-enemies, Sprinkle Swarm homing,
+  Skillet Swing melee, Vortex Mixer pull, Espresso Cannon charge,
+  Pineapple Guard retaliate) + their evos + Lucky Ladle (with
+  WP-LOOT).
+
 - **2026-07-25 — v0.9.0: ARSENAL EXPANSION SLICE 1 (from Mark's
   ArsenalExpansion doc, saved decisions).** Doc reviewed vs code: no
   conflicts; 4 adaptations agreed - Lucky Ladle DEFERRED (needs
