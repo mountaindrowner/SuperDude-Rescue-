@@ -12,6 +12,24 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.9.4: VFX Tasks 3-5 (Danny shrink-ray, Kevin
+  falling bombs, living fire).** All behind PC.VFX_V2. TASK 3: vfx
+  gains `shrinkRing` (contracting muzzle ring); Resizer fires with
+  it + every resizer bolt carries `shrinkFx:450` -> victims visually
+  SHRINK to 0.82x for 0.45s (enemies.js waddle multiplies by shf;
+  bullet hit sets e.shrinkUntil). Note: fries die in one resizer hit
+  so shrink shows on tankier foes - verified 2 concurrent shrunk on
+  a 500hp test swarm. TASK 4: Kevin's strafe booms are now BOMBS
+  that visibly fall (160ms tween from y-85) then detonate; damage
+  moved into the boom closure (timing +0.16s, mechanic unchanged);
+  legacy instant path behind flag. TASK 5: Grease Trail is living
+  fire - per-segment flicker (alpha+scale sin), color ramp by age
+  mustard->cheese->ketchup, drifting ember bursts (rate-limited by
+  fx pool). VERIFIED: 59fps at 370 foes, 0 errors. STILL AWAITING
+  MARK: Task 6-8 flag rulings (Vic deploy button, bot-vs-Gizmotron,
+  Nayah Haymaker, Carlos comets) + Task 9 leftovers (Salt aura
+  debuff, Josh pull-slam, evolution-transform audit).
+
 - **2026-07-26 — v0.9.3: VFX TOOLKIT (Weapons&VFX doc Tasks 1-2).**
   Doc reviewed with Mark; 4 design flags surfaced (Vic deploy button
   = first active input, Vic bot vs Gizmotron overlap, Nayah

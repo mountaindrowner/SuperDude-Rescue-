@@ -100,8 +100,10 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
       // the WADDLE (Mark round 8: enemies are plain oversized food objects,
       // not monsters - a squash-stretch bounce makes an object walk)
       var sq = Math.sin(this.animT * 7 + e.phase * 2.3);
-      s.scaleY = 1 + sq * 0.07;
-      s.scaleX = 1 - sq * 0.045;
+      // Danny's Resizer literally shrinks what it hits (VFX task 3)
+      var shf = now < (e.shrinkUntil || 0) ? 0.82 : 1;
+      s.scaleY = (1 + sq * 0.07) * shf;
+      s.scaleX = (1 - sq * 0.045) * shf;
     }
   }
 

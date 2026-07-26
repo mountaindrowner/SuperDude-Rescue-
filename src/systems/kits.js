@@ -236,22 +236,35 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
       var bx = p.x + Math.cos(p.ang) * idx * 40;
       var by = p.y + Math.sin(p.ang) * idx * 40;
       var r = this.radius * scene.stats.areaMult, dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
-      scene.fx.burst(bx, by, 'fx_pop', 5, 0.28);
-      scene.fx.burst(bx, by, 'fx_nova_1', 2, 0.2);
-      scene.cameras.main.shake(60, 0.002);
-      scene.enemies.hash.eachNear(bx, by, function (e) {
-        var dx = e.x - bx, dy = e.y - by;
-        if (dx * dx + dy * dy > r * r) return;
-        var dl = Math.sqrt(dx * dx + dy * dy) || 1;
-        PC.damageEnemy(scene, e, dmg, dx / dl, dy / dl, scene._onKillCb);
-      });
-      if (scene.boss && !scene.boss.dead) {
-        var bdx = scene.boss.x - bx, bdy = scene.boss.y - by;
-        if (bdx * bdx + bdy * bdy < (scene.boss.r + r) * (scene.boss.r + r)) {
-          scene.hitBoss(bx, by, dmg, 0, 0);
+      var boom = function () {
+        scene.fx.burst(bx, by, 'fx_pop', 5, 0.28);
+        scene.fx.burst(bx, by, 'fx_nova_1', 2, 0.2);
+        if (scene.vfx) scene.vfx.shake(2, 70);
+        else scene.cameras.main.shake(60, 0.002);
+        scene.enemies.hash.eachNear(bx, by, function (e) {
+          var dx = e.x - bx, dy = e.y - by;
+          if (dx * dx + dy * dy > r * r) return;
+          var dl = Math.sqrt(dx * dx + dy * dy) || 1;
+          PC.damageEnemy(scene, e, dmg, dx / dl, dy / dl, scene._onKillCb);
+        });
+        if (scene.boss && !scene.boss.dead) {
+          var bdx = scene.boss.x - bx, bdy = scene.boss.y - by;
+          if (bdx * bdx + bdy * bdy < (scene.boss.r + r) * (scene.boss.r + r)) {
+            scene.hitBoss(bx, by, dmg, 0, 0);
+          }
         }
+        if (PC.audio) PC.audio.pop();
+      };
+      if (PC.VFX_V2 && scene.vfx) {
+        // Task 4: a visible bomb FALLS onto the point, then detonates
+        var bomb = scene.add.image(bx, by - 85, 'atlas', 'proj_resizer')
+          .setTint(0xf2c33c).setScale(1.5).setDepth(15)
+          .setBlendMode(Phaser.BlendModes.ADD).setRotation(Math.PI / 2);
+        scene.tweens.add({ targets: bomb, y: by, duration: 160, ease: 'Quad.in',
+          onComplete: function () { bomb.destroy(); boom(); } });
+      } else {
+        boom();
       }
-      if (PC.audio) PC.audio.pop();
       p.fired++;
       if (p.fired >= this.count + (this.bonusPass || 0)) this.pending = null;
     }
