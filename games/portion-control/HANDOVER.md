@@ -12,6 +12,37 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.10.0: HERO REWORK WAVE (Tasks 6-8 + Task 9, ALL
+  flags approved by Mark).** NOTE: container recycled mid-session -
+  repo re-cloned at default branch; recovered via checkout -B from
+  origin (nothing pushed was lost; scratchpad node_modules needed
+  reinstall). New `systems/heroes2.js` + flags in config
+  (VIC_SENTRY_BOT / CARLOS_COMET_CALL / NAYAH_HAYMAKER / SALT_AURA /
+  JOSH_PULLSLAM, all default true; legacy classes remain for
+  flag-off AND for inheritance - other heroes drafting POCKET
+  SENTRY/COMET BEAM/THORN SEEDS get the classics). VIC = SENTRY BOT:
+  robot pal walks beside her firing aimed 3-round bursts (distinct
+  from Gizmotron's orbit pecks) + THE GAME'S ONLY ACTIVE INPUT: a
+  Vic-exclusive DEPLOY button (bottom-right, cooldown ring,
+  stopPropagation so it doesn't grab the joystick) dropping a heavy
+  turret; her masterize (cd*0.8/life*1.5) applies to deploy cd +
+  turret life (verified 8.6s cd). CARLOS = COMET CALL: marker on the
+  FARTHEST foe -> comet streaks down -> big impact (critBoost
+  applies) + the column above takes 50%; evo METEOR SHOWER now
+  literal (old beam evo renamed COMET BARRAGE). NAYAH = HAYMAKER
+  FLURRY: rapid punches at nearest w/ LIFESTEAL + alternating
+  punch-arc flashes; masterize +1 lifesteal; evo KNOCKOUT QUEEN
+  (haymaker+fan). Also SWARM PROTOCOL (sentrybot+duplicator). SALT
+  AURA rework: constant 0.4s tick, applies SEASONED (take +25% dmg
+  from ALL sources 2s, amp applied in damageEnemy) - verified 117
+  concurrently seasoned. JOSH PULL-SLAM: every ~5s rope telegraphs,
+  PULLS crowd in 0.5s, then SLAMS x2 dmg + big fling (+0.8s dizzy w/
+  stun mastery). Kit names updated on select screen. FPS: recycled
+  container is ~10% slower baseline (control: plain Danny 54fps at
+  389 foes canvas renderer); reworks cost ~3fps worst-case. TODO
+  NEXT: PixelLab art for Vic's bot/turret + Carlos comet (doc §4),
+  weapon list/HANDOVER arsenal doc refresh, then WP-METASHOP.
+
 - **2026-07-26 — v0.9.4: VFX Tasks 3-5 (Danny shrink-ray, Kevin
   falling bombs, living fire).** All behind PC.VFX_V2. TASK 3: vfx
   gains `shrinkRing` (contracting muzzle ring); Resizer fires with

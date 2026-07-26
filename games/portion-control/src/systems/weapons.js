@@ -139,6 +139,10 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
 // single damage path for every weapon: flash + knockback + kill routing.
 // scene.kbMult = hero knockback bonus (Josh kit), default 1.
 PC.damageEnemy = function (scene, e, dmg, dirx, diry, onKill) {
+  // Seasoned (Salt aura rework): debuffed foes take amplified damage
+  if (e.seasonedUntil && scene.now < e.seasonedUntil) {
+    dmg *= 1 + (e.seasonPct || 0.25);
+  }
   e.hp -= dmg;
   if (scene.juice) scene.juice.dmgNum(e.x, e.y - e.r - 2, dmg, scene._lastCrit);
   e.flashUntil = scene.now + PC.HURT_FLASH_MS / 1000;
@@ -331,6 +335,31 @@ PC.SaltWeapon.prototype.applyLevel = function () {
 };
 PC.SaltWeapon.prototype.update = function (dt, scene) {
   var R = this.radius * scene.stats.areaMult;
+  if (PC.SALT_AURA) {
+    // Task 9 rework: constant fast-ticking aura that SEASONS foes -
+    // they take +25% damage from ALL sources for 2s (build amplifier)
+    this.cdT -= dt;
+    if (this.cdT <= 0) {
+      this.cdT = 0.4 * scene.stats.cdMult;
+      var adx = PC.rollDmg(scene, this.dmg * 0.45 * (this.mastery || 1));
+      var pxa = scene.px, pya = scene.py - 4;
+      var pct = this.seasonPct || 0.25;
+      scene.enemies.hash.eachNear(pxa, pya, function (e) {
+        var dx = e.x - pxa, dy = e.y - pya;
+        if (dx * dx + dy * dy > R * R) return;
+        e.seasonedUntil = scene.now + 2;
+        e.seasonPct = pct;
+        PC.damageEnemy(scene, e, adx, 0, 0, scene._onKillCb);
+      });
+    }
+    var g0 = this.gfx;
+    g0.clear();
+    g0.lineStyle(2, 0xf7f4ef, 0.22 + 0.1 * Math.sin(scene.now * 7));
+    g0.strokeCircle(scene.px, scene.py - 4, R);
+    g0.lineStyle(1, 0xf2c33c, 0.18 + 0.1 * Math.sin(scene.now * 9 + 2));
+    g0.strokeCircle(scene.px, scene.py - 4, R * 0.85);
+    return;
+  }
   this.cdT -= dt;
   if (this.cdT <= 0) {
     this.cdT = this.cd * scene.stats.cdMult;
