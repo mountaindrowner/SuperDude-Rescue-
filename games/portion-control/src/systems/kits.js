@@ -257,9 +257,8 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
       };
       if (PC.VFX_V2 && scene.vfx) {
         // Task 4: a visible bomb FALLS onto the point, then detonates
-        var bomb = scene.add.image(bx, by - 85, 'atlas', 'proj_resizer')
-          .setTint(0xf2c33c).setScale(1.5).setDepth(15)
-          .setBlendMode(Phaser.BlendModes.ADD).setRotation(Math.PI / 2);
+        var bomb = scene.add.image(bx, by - 85, 'atlas', 'sig_bomb')
+          .setDepth(15);
         scene.tweens.add({ targets: bomb, y: by, duration: 160, ease: 'Quad.in',
           onComplete: function () { bomb.destroy(); boom(); } });
       } else {

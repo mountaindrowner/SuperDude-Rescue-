@@ -23,13 +23,13 @@ PC.SentryBotWeapon = function (scene) {
   for (var i = 0; i < 2; i++) {
     this.botSprites.push({ x: 0, y: 0, burstT: 0.4 + i * 0.5, firing: 0, fireGap: 0,
       target: null,
-      img: scene.add.image(0, 0, 'atlas', 'pickup_crate')
-        .setScale(0.55).setDepth(9).setTint(0xcfd4e8).setVisible(false) });
+      img: scene.add.image(0, 0, 'atlas', 'sig_sentrybot')
+        .setScale(0.75).setDepth(9).setVisible(false) });
   }
   // heavy deployed turret (one alive)
   this.turret = { active: false, x: 0, y: 0, t: 0, fireT: 0,
-    img: scene.add.image(0, 0, 'atlas', 'pickup_crate')
-      .setScale(0.95).setDepth(7).setTint(0xf2c33c).setVisible(false) };
+    img: scene.add.image(0, 0, 'atlas', 'sig_turret')
+      .setDepth(7).setVisible(false) };
   this._buildButton(scene);
 };
 PC.SentryBotWeapon.prototype.desc = function () {
@@ -187,9 +187,10 @@ PC.CometWeapon.prototype._call = function (scene, target, delay) {
   scene.time.delayedCall(300 + delay, function () {
     // re-track the target a little so it feels aimed
     if (target.active) { tx = target.x; ty = target.y; }
-    var streak = scene.add.image(tx + 24, ty - 170, 'atlas', 'proj_resizer')
-      .setTint(0xf2c33c).setScale(2.4).setDepth(15)
-      .setBlendMode(Phaser.BlendModes.ADD).setRotation(Math.PI / 2 - 0.14);
+    // sig_comet art is drawn mid-fall: head bottom-left, tail up-right -
+    // matches the (+24,-170) -> target travel line with no rotation.
+    var streak = scene.add.image(tx + 24, ty - 170, 'atlas', 'sig_comet')
+      .setDepth(15);
     scene.tweens.add({ targets: streak, x: tx, y: ty, duration: 200, ease: 'Quad.in',
       onComplete: function () {
         streak.destroy();

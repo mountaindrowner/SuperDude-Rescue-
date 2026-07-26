@@ -83,9 +83,8 @@ PC.KetchupWeapon.prototype.update = function (dt, scene) {
         }
         (function (tx, ty, delay) {
           // lobbed shell: tween up-and-over, land -> burst
-          var sh = scene.add.image(scene.px, scene.py - 10, 'atlas', 'proj_resizer')
-            .setTint(0xd93a3a).setScale(1.6).setDepth(15)
-            .setBlendMode(Phaser.BlendModes.ADD);
+          var sh = scene.add.image(scene.px, scene.py - 10, 'atlas', 'sig_ketchup_shell')
+            .setDepth(15);
           scene.tweens.add({ targets: sh, x: tx, duration: 700, delay: delay });
           scene.tweens.add({ targets: sh, y: ty - 70, duration: 350, delay: delay, ease: 'Quad.out',
             onComplete: function () {
