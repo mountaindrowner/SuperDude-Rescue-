@@ -387,6 +387,7 @@ PC.GameScene.prototype.update = function (time, delta) {
     });
     if (hitDmg > 0) {
       this.hp -= Math.max(1, hitDmg * this.dmgTakenMult - this.stats.armor);
+      this.lastHurtT = this.now;
       this.invUntil = this.now + PC.PLAYER.IFRAMES;
       this.cameras.main.shake(PC.SHAKE.MS, 0.004);
       if (PC.audio) PC.audio.hurt();

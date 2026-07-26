@@ -12,6 +12,30 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.9.2: ARSENAL COMPLETE — slice 3 (9 archetypes) +
+  THE GIZMOTRON rename.** SNACK DRONE renamed THE GIZMOTRON (Mark);
+  evo now GIZMOTRON ARMADA. BulletSystem gained additive behaviors:
+  `boomerang` (outbound timer -> steer back to player, despawn at
+  hand), `homing` (steer rad/s to nearest), `bounces` (ricochet:
+  carom to another nearby enemy), `scale`, plus a 0.25s per-enemy
+  re-hit throttle for piercing/returning/bouncing bullets
+  (e.pierceCd). New `systems/arsenal3.js`: PIZZA CUTTER (boomerang),
+  TOASTER ZAP (chain lightning w/ jagged gfx, dmg falloff 0.85^j),
+  GREASE TRAIL (move-drop slick segments), JAWBREAKER (ricochet),
+  SPRINKLE SWARM (radial homing burst), SKILLET SWING (directional
+  melee arc + gfx wedge flash), VORTEX MIXER (pull-together
+  enabler), ESPRESSO CANNON (charge-while-still, release on move),
+  PINEAPPLE GUARD (aura + retaliate on scene.lastHurtT, set at both
+  player-hurt sites). 9 evolutions: PIZZA STORM, TESLA TOASTER,
+  INFERNO TRAIL, WRECKING JAWBREAKER, SPRINKLE STORM, FRYING FURY
+  (360 pan), SINGULARITY BLENDER, RISTRETTO RAILGUN (instant
+  charge), FORTRESS FRUIT (heals on payback). TOTALS: 23 weapons /
+  10 passives / 23 evolutions - ArsenalExpansion doc fully
+  implemented except Lucky Ladle (waits for WP-LOOT rarity/reroll).
+  VERIFIED: two full loadout batches at 59-60fps under 340+ swarms,
+  SPRINKLE STORM + RISTRETTO RAILGUN evolve correctly, 0 errors.
+  NEXT: WP-METASHOP + WP-COLLECTIONS title hub, then WP-SCRIPTURE.
+
 - **2026-07-25 — v0.9.1: ARSENAL SLICE 2 — Mark's three named
   weapons + evolutions.** New `systems/arsenal2.js`: KETCHUP
   ARTILLERY (tween-lobbed shells onto a ranged cluster -> AoE burst
