@@ -35,7 +35,7 @@ PC.PAL = {
 PC.SIZE = {
   ENEMY_S: 24, ENEMY_M: 32, ENEMY_H: 48, PLAYER: 32,
   BOSS: 128, BOSS_FINAL: 160, TILE: 32, PROJ_MIN: 8, PROJ_MAX: 16,
-  ICON: 24, PORTRAIT: 96, GEM_S: 12, GEM_M: 14, GEM_G: 16,
+  ICON: 24, PORTRAIT: 128, GEM_S: 12, GEM_M: 14, GEM_G: 16,
 };
 
 // ---- performance bible hard caps (COMPENDIUM 3.4) ----
