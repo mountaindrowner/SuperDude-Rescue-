@@ -232,7 +232,7 @@ PC.SprinkleWeapon.prototype.update = function (dt, scene) {
     scene.bullets.fire(scene.px, scene.py - 6,
       scene.px + Math.cos(a) * 50, scene.py - 6 + Math.sin(a) * 50,
       { speed: 260, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
-        frame: 'proj_pellet', tint: 0xff9ecb, homing: this.seek, life: 1.6 });
+        frame: 'proj_pellet', tint: 0x35d0ff, homing: this.seek, life: 1.6 });   // cyan (color law)
   }
   if (PC.audio) PC.audio.shoot();
 };
