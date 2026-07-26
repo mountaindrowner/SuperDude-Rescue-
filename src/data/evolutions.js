@@ -60,10 +60,10 @@ PC.EVOLUTIONS = [
       w.name = 'CARPET RESCUE';
       w.count = 10; w.dmg = 50; w.radius = 46; w.cd = 4;
     } },
-  { base: 'beam', requires: 'duplicator', name: 'METEOR SHOWER',
+  { base: 'beam', requires: 'duplicator', name: 'COMET BARRAGE',
     desc: 'A barrage of piercing comets!',
     apply: function (w) {
-      w.name = 'METEOR SHOWER';
+      w.name = 'COMET BARRAGE';
       w.beams = 4; w.dmg = 24; w.cd = 0.8;
     } },
   { base: 'lasso', requires: 'servo', name: 'CYCLONE TITAN',
@@ -119,4 +119,23 @@ PC.EVOLUTIONS = [
   { base: 'pineapple', requires: 'leftovers', name: 'FORTRESS FRUIT',
     desc: 'A mighty aura that heals on payback!',
     apply: function (w) { w.name = 'FORTRESS FRUIT'; w.dmg = 18; w.radius = 48; w.retDmg = 55; w.retR = 110; w.heal = 6; } },
+  // ---- hero-rework evolutions (Tasks 6-8) ----
+  { base: 'sentrybot', requires: 'duplicator', name: 'SWARM PROTOCOL',
+    desc: 'Twin turbo bots + rapid deploys!',
+    apply: function (w) {
+      w.name = 'SWARM PROTOCOL';
+      w.bots = 2; w.dmg = 22; w.burstCd = 0.55; w.cd = 7; w.life = 16;
+    } },
+  { base: 'comet', requires: 'duplicator', name: 'METEOR SHOWER',
+    desc: 'The sky itself rains meteors!',
+    apply: function (w) {
+      w.name = 'METEOR SHOWER';
+      w.comets = 4; w.dmg = 70; w.cd = 1.8; w.impactR = 50;
+    } },
+  { base: 'haymaker', requires: 'fan', name: 'KNOCKOUT QUEEN',
+    desc: 'An unstoppable healing flurry!',
+    apply: function (w) {
+      w.name = 'KNOCKOUT QUEEN';
+      w.cd = 0.16; w.dmg = 24; w.lifesteal = 3; w.fists = 3; w.reach = 70;
+    } },
 ];

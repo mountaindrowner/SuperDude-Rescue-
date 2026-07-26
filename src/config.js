@@ -4,7 +4,7 @@
 window.PC = window.PC || {};
 
 // on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.9.4';
+PC.VERSION = 'v0.10.0';
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
@@ -74,6 +74,13 @@ PC.D1_RESCUE = { name: 'VICTORIA', art: 'char_victoria_idle', hero: 'victoria' }
 // VFX toolkit v2 (Weapons&VFX doc Task 1-2): rings/fields/muzzles route
 // through systems/vfx.js. Toggle off to fall back to legacy visuals.
 PC.VFX_V2 = true;
+// Hero rework flags (Weapons&VFX Tasks 6-8 + Task 9, ALL approved by
+// Mark 2026-07-26). Off = legacy signature behavior.
+PC.VIC_SENTRY_BOT = true;      // bot pal + Vic-only Deploy button
+PC.CARLOS_COMET_CALL = true;   // falling comets on the farthest foe
+PC.NAYAH_HAYMAKER = true;      // lifesteal brawler (seeds -> shared pool)
+PC.SALT_AURA = true;           // Salt Shaker = Seasoned debuff aura
+PC.JOSH_PULLSLAM = true;       // Rope Cyclone pull-then-slam special
 
 // Dev flag (PHASE2 §3): true = every hero selectable. Flip false to
 // activate the rescue-based unlock flow (Danny always unlocked).
