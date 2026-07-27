@@ -230,6 +230,7 @@ PC.GameScene.prototype.showCards = function () {
     fontFamily: 'monospace', fontSize: '13px', color: '#a8e04a', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(201));
   var cards = PC.drawCards(this);
+  this._shownCards = cards;   // testability hook (balance bots)
   var cw = 78, ch = 120, gap = 8;
   var x0 = W / 2 - (cards.length * (cw + gap) - gap) / 2 + cw / 2;
   cards.forEach(function (card, i) {
