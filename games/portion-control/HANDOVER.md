@@ -12,6 +12,22 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.11.2: version stamp on EVERY screen + Kevin
+  audit (Mark: "sure Kevin doesn't have placeholder on his ability?
+  add the version number to all screens so I can tell").** New
+  `PC.stampVersion(scene)` helper (main.js, next to
+  applyRenderScale) — 8px steel text bottom-right, depth 999; called
+  in select/results/gallery create (game scene already had its own
+  verText; boot is a zero-frame pass-through). KEVIN AUDIT RESULT:
+  clean on current build — falling bomb = real `sig_bomb` art
+  (since v0.10.1), telegraph = intended danger-red vector ring,
+  explosions = shared fx_pop/fx_nova bursts (all-weapon FX
+  language, not Kevin-specific), icon = real crosshair
+  (v0.11.0). If Mark sees a yellow streak bomb he's on a PRE-0.10.1
+  CACHED build — the stamps exist precisely to diagnose that.
+  Verified: bomb freeze-framed mid-fall in a Kevin run, stamps
+  visible on select + results screenshots, zero errors.
+
 - **2026-07-26 — v0.11.1: PORTRAITS REDONE FROM THE ELEMENT LAB
   CARDS (Mark: "the portraits kinda suck... base them on the cards,
   get the ethnicities right").** The v0.11.0 portrait-character-pro

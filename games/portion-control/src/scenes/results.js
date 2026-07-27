@@ -10,6 +10,7 @@ PC.ResultsScene.prototype.init = function (data) { this.data2 = data || {}; };
 
 PC.ResultsScene.prototype.create = function () {
   PC.applyRenderScale(this);
+  PC.stampVersion(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   var d = this.data2, win = !!d.win;
   this.cameras.main.setBackgroundColor(win ? 0x142a1a : 0x1b1530);

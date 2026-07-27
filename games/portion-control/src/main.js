@@ -34,6 +34,13 @@ window.PC = window.PC || {};
     scene.cameras.main.setZoom(S);
     scene.cameras.main.centerOn(PC.RENDER.W / 2, PC.RENDER.H / 2);
   };
+  // build tag on every screen (Mark: "add the version number to all
+  // screens so I can tell" which build is live vs cached)
+  PC.stampVersion = function (scene) {
+    return scene.add.text(PC.RENDER.W - 3, PC.RENDER.H - 3, PC.VERSION, {
+      fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
+    }).setOrigin(1, 1).setDepth(999);
+  };
   // crisp text: default every Text object to SCALE resolution so glyph
   // canvases are dense enough for the zoomed camera
   var origText = Phaser.GameObjects.GameObjectFactory.prototype.text;
