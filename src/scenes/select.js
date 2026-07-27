@@ -75,6 +75,7 @@ PC.SelectScene.prototype.create = function () {
 
   this.buildAudioPanel();
   this.redraw(picked);
+  PC.stampVersion(this);
 };
 
 // small AUDIO settings: gear toggle -> two draggable mix sliders

@@ -37,6 +37,7 @@ PC.GalleryScene.prototype.constructor = PC.GalleryScene;
 
 PC.GalleryScene.prototype.create = function () {
   PC.applyRenderScale(this);
+  PC.stampVersion(this);
   var W = PC.RENDER.W, H = PC.RENDER.H;
   this.cameras.main.setBackgroundColor(0x241f3d);
 
