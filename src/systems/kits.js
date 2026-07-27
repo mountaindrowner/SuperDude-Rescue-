@@ -360,8 +360,9 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
       });
       if (this._pulling <= 0) {
         this._pulling = 0; this._slamT = 5;
+        this._spinup = 0.25;          // the lasso must spin back up after a slam
         var sR = (this.rMax + 20) * scene.stats.areaMult;
-        var sdmg = PC.rollDmg(scene, this.dmg * 2 * (this.mastery || 1));
+        var sdmg = PC.rollDmg(scene, this.dmg * 1.7 * (this.mastery || 1));
         var stun = this.stun;
         scene.fx.burst(ppx, ppy, 'fx_nova', 3, 0.3);
         if (scene.vfx) scene.vfx.shake(2.5, 100);
@@ -377,20 +378,50 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
       }
     }
   }
+  // v0.14.0 rework (Mark: "make it look like a lasso coming FROM him,
+  // spinning... partial, then completed as it gets faster"): the rope
+  // runs from Josh's hand to a spinning arc. The arc starts PARTIAL
+  // and closes into a full loop as it spins up; only foes touching
+  // the DRAWN arc are hit - so the post-slam wind-up is a real
+  // vulnerability window, not just a visual.
+  if (this._spinup === undefined) this._spinup = 1;
+  this._spinup = Math.min(1, this._spinup + dt / 1.4);
+  var spin = this._spinup;
+  this._spinA = (this._spinA || 0) + dt * (4 + 5 * spin);
   var am = scene.stats.areaMult;
   var r = (this.rMin + (this.rMax - this.rMin) * (0.5 + 0.5 * Math.sin(scene.now * 5.2))) * am;
+  var span = Math.PI * 2 * (0.32 + 0.68 * spin);   // partial -> full loop
+  var lead = this._spinA;
+  var pxp = scene.px, pyp = scene.py - 4;
   var g = this.gfx;
   g.clear();
+  // the spinning arc
   g.lineStyle(3, 0xb5793f, 0.85);
-  g.strokeCircle(scene.px, scene.py - 4, r);
-  g.lineStyle(1, 0xf2c33c, 0.5);
-  g.strokeCircle(scene.px, scene.py - 4, r + 2);
+  g.beginPath();
+  g.arc(pxp, pyp, r, lead - span, lead);
+  g.strokePath();
+  g.lineStyle(1, 0xf2c33c, 0.35 + 0.25 * spin);
+  g.beginPath();
+  g.arc(pxp, pyp, r + 2, lead - span, lead);
+  g.strokePath();
+  // rope from Josh's hand to the loop's leading knot
+  var hx = pxp + 5 * scene.facing, hy = pyp - 4;
+  var kx = pxp + Math.cos(lead) * r, ky = pyp + Math.sin(lead) * r;
+  var mx = (hx + kx) / 2 + Math.cos(lead + 1.7) * 6;   // slight rope sag
+  var my = (hy + ky) / 2 + Math.sin(lead + 1.7) * 6;
+  g.lineStyle(2, 0xb5793f, 0.9);
+  g.beginPath(); g.moveTo(hx, hy); g.lineTo(mx, my); g.lineTo(kx, ky); g.strokePath();
+  g.fillStyle(0xf2c33c, 0.9).fillCircle(kx, ky, 2.5);  // the knot
+  // damage: only along the drawn arc
   var dmg = this.dmg, tickCd = this.tickCd, self = this;
-  var pxp = scene.px, pyp = scene.py - 4;
+  var TWO_PI = Math.PI * 2;
   scene.enemies.hash.eachNear(pxp, pyp, function (e) {
     var dx = e.x - pxp, dy = e.y - pyp;
     var d = Math.sqrt(dx * dx + dy * dy);
     if (Math.abs(d - r) > e.r + 7) return;
+    var rel = (lead - Math.atan2(dy, dx)) % TWO_PI;
+    if (rel < 0) rel += TWO_PI;
+    if (rel > span) return;                      // outside the drawn arc
     if (scene.now < (e.lassoCd || 0)) return;
     e.lassoCd = scene.now + tickCd;
     if (self.stun) e.slowUntil = scene.now + 0.5;   // Josh flavor: dizzying spin

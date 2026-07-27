@@ -230,16 +230,25 @@ PC.CometWeapon.prototype._call = function (scene, target, delay) {
 PC.CometWeapon.prototype.update = function (dt, scene) {
   this.cdT -= dt;
   if (this.cdT > 0) return;
-  // farthest targets (Carlos's identity: snipe the FAR ones)
+  // farthest VISIBLE targets (Mark: "I never see the comet ball...
+  // it should always stay within the screen") - snipe the far edge
+  // of the camera view, never off-screen; off-screen only as a
+  // fallback when nothing is visible at all.
+  var cam = scene.cameras.main.worldView;
   var pool = scene.enemies.pool, list = [];
   for (var i = 0; i < pool.length; i++) {
     var e = pool[i];
     if (!e.active) continue;
     var dx = e.x - scene.px, dy = e.y - scene.py;
-    list.push({ e: e, d: dx * dx + dy * dy });
+    var vis = e.x > cam.x + 14 && e.x < cam.right - 14 &&
+              e.y > cam.y + 44 && e.y < cam.bottom - 16;
+    list.push({ e: e, d: dx * dx + dy * dy, vis: vis });
   }
   if (!list.length) { this.cdT = 0.3; return; }
-  list.sort(function (a, b) { return b.d - a.d; });
+  list.sort(function (a, b) {
+    if (a.vis !== b.vis) return a.vis ? -1 : 1;
+    return b.d - a.d;
+  });
   this.cdT = this.cd * scene.stats.cdMult;
   for (var n = 0; n < Math.min(this.comets, list.length); n++) {
     this._call(scene, list[n].e, n * 160);
@@ -254,20 +263,23 @@ PC.CometWeapon.prototype.update = function (dt, scene) {
 PC.HaymakerWeapon = function (scene) {
   this.key = 'haymaker'; this.name = 'HAYMAKER FLURRY';
   this.level = 1; this.max = 5;
-  this.cd = 0.35; this.cdT = 0.3; this.dmg = 7; this.reach = 58;
-  this.lifesteal = 1; this.fists = 1; this.side = 1;
+  // v0.14.0 buff (Mark: "too short range, easily outclassed"): reach
+  // 58->78, TWO fists from L1 (a flurry, not a poke) - she trades
+  // range for lifesteal sustain, not for less damage.
+  this.cd = 0.35; this.cdT = 0.3; this.dmg = 8; this.reach = 78;
+  this.lifesteal = 1; this.fists = 2; this.side = 1;
   this.gfx = scene.add.graphics().setDepth(9);
   this.flashT = 0; this.flashAng = 0;
 };
 PC.HaymakerWeapon.prototype.desc = function () {
-  return ['', 'Fast punches that heal her', 'Faster fists!', 'Damage up!',
-          'More lifesteal!', 'Double haymaker!'][Math.min(this.level + 1, 5)] || 'Faster fists!';
+  return ['', 'A flurry of healing punches', 'Faster fists!', 'Damage up!',
+          'More lifesteal!', 'Triple haymaker!'][Math.min(this.level + 1, 5)] || 'Faster fists!';
 };
 PC.HaymakerWeapon.prototype.applyLevel = function () {
   if (this.level === 2) this.cd = 0.28;
-  else if (this.level === 3) this.dmg = 11;
+  else if (this.level === 3) this.dmg = 12;
   else if (this.level === 4) this.lifesteal = 2;
-  else if (this.level === 5) { this.dmg = 15; this.fists = 2; }
+  else if (this.level === 5) { this.dmg = 16; this.fists = 3; }
 };
 PC.HaymakerWeapon.prototype.update = function (dt, scene) {
   if (this.flashT > 0) {
