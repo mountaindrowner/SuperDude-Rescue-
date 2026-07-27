@@ -39,8 +39,11 @@ PC.ResultsScene.prototype.create = function () {
     this.add.text(W / 2, H * 0.2, 'OVERWHELMED!', {
       fontFamily: 'monospace', fontSize: '22px', color: '#ff6b6b', fontStyle: 'bold',
     }).setOrigin(0.5);
+    var pw = 128 * 0.6;
     this.add.image(W / 2, H * 0.4, 'atlas',
-      'portrait_' + PC.selectedHero().id).setScale(0.45);
+      'portrait_' + PC.selectedHero().id).setScale(0.6);
+    this.add.graphics().lineStyle(2, 0xf2c33c, 1)
+      .strokeRect(W / 2 - pw / 2 - 2, H * 0.4 - pw / 2 - 2, pw + 4, pw + 4);
   }
 
   this.add.text(W / 2, H * 0.68,

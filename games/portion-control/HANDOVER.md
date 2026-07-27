@@ -12,6 +12,24 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.11.1: PORTRAITS REDONE FROM THE ELEMENT LAB
+  CARDS (Mark: "the portraits kinda suck... base them on the cards,
+  get the ethnicities right").** The v0.11.0 portrait-character-pro
+  portraits re-synthesized identity from the tiny idle sprites and
+  whitewashed the whole cast. THE FIX: the repo already carries the
+  true likenesses — `games/element-lab/assets/cards/<hero>.jpg`
+  (900x1250 card art). Pipeline: hand-tuned bust crop per card
+  (frac coords in scratchpad pl script) -> 512x512 -> v2
+  `/image-to-pixelart` (sync, output 128, **1 gen each** vs 25 for
+  portrait-pro!) -> portrait_<hero>.png. Style CONVERSION not
+  re-synthesis, so faces/skin/hair carry exactly; card backgrounds
+  come along and read as mini trading-card portraits (on-brand:
+  the cards ARE canon likenesses). Results screen: portrait scale
+  0.6 + gold frame stroke. LESSON: for likeness-critical art,
+  image-to-pixelart on real reference art beats every generative
+  path - cheaper AND right. Balance ~1182/2000. All 6 verified
+  in-game, zero errors.
+
 - **2026-07-26 — v0.11.0: ICON + PORTRAIT ART WAVE (Mark: "do number
   one and two").** (1) CARD ICONS: every weapon key (26) and passive
   key (10) now owns a real icon frame `icon_weapon_<key>` /
