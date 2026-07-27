@@ -59,7 +59,7 @@ PC.SentryBotWeapon.prototype._buildButton = function (scene) {
     t.t = self.life * (scene.stats.durMult || 1); t.fireT = 0.15;
     t.img.setPosition(t.x, t.y - 7).setVisible(true).setAlpha(1);
     if (scene.vfx) { scene.vfx.telegraphRing(t.x, t.y - 7, 22, 500, 0x35d0ff); scene.vfx.shake(2, 80); }
-    scene.fx.burst(t.x, t.y - 7, 'fx_nova_1', 3, 0.25);
+    scene.fx.burst(t.x, t.y - 7, 'fx_nova', 3, 0.25);
     if (PC.audio) PC.audio.chest();
   });
   scene.uiAttach(this.btnGfx);
@@ -199,8 +199,8 @@ PC.CometWeapon.prototype._call = function (scene, target, delay) {
         if (self.critBoost && !scene._lastCrit && Math.random() < self.critBoost) {
           dmg *= 2; scene._lastCrit = true;
         }
-        scene.fx.burst(tx, ty, 'fx_pop', 5, 0.3);
-        scene.fx.burst(tx, ty, 'fx_nova_1', 3, 0.25, 0xf2c33c);
+        scene.fx.burst(tx, ty, 'fx_pop', 4, 0.3);
+        scene.fx.burst(tx, ty, 'fx_nova', 3, 0.25, 0xf2c33c);
         if (scene.vfx) scene.vfx.shake(2.5, 90);
         scene.enemies.hash.eachNear(tx, ty, function (e) {
           var dx = e.x - tx, dy = e.y - ty;

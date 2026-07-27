@@ -60,7 +60,7 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
     t.fireT = 0.2;
     t.sprite.setPosition(t.x, t.y - 6).setVisible(true).setAlpha(1);
     if (PC.VFX_V2 && scene.vfx) scene.vfx.telegraphRing(t.x, t.y - 6, 16, 450, 0x35d0ff);
-    scene.fx.burst(t.x, t.y - 6, 'fx_nova_1', 3, 0.2);
+    scene.fx.burst(t.x, t.y - 6, 'fx_nova', 3, 0.2);
     if (PC.audio) PC.audio.ui();
   }
   for (var j = 0; j < this.turrets.length; j++) {
@@ -140,7 +140,7 @@ PC.SeedWeapon.prototype.update = function (dt, scene) {
     p.sprite.setPosition(tx, ty).setScale(this.radius / 28)
       .setAlpha(0).setVisible(true);
     scene.tweens.add({ targets: p.sprite, alpha: 0.55, duration: 180 });
-    scene.fx.burst(tx, ty, 'fx_spark', 4, 0.2);
+    scene.fx.burst(tx, ty, 'fx_spark', 3, 0.2);
     if (PC.audio) PC.audio.shoot();
   }
   var dmg = this.dmg, r = this.radius * scene.stats.areaMult, self = this;
@@ -237,8 +237,8 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
       var by = p.y + Math.sin(p.ang) * idx * 40;
       var r = this.radius * scene.stats.areaMult, dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
       var boom = function () {
-        scene.fx.burst(bx, by, 'fx_pop', 5, 0.28);
-        scene.fx.burst(bx, by, 'fx_nova_1', 2, 0.2);
+        scene.fx.burst(bx, by, 'fx_pop', 4, 0.28);
+        scene.fx.burst(bx, by, 'fx_nova', 2, 0.2);
         if (scene.vfx) scene.vfx.shake(2, 70);
         else scene.cameras.main.shake(60, 0.002);
         scene.enemies.hash.eachNear(bx, by, function (e) {

@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.11.3: THE PINK SQUARES BUG (Mark, on-device:
+  "Kevin's ability has the pink squares still... thoroughly check
+  all of them").** ROOT CAUSE: `fx.burst(x, y, prefix, frames, ...)`
+  animates frames `<prefix>_1..n` — TEN call sites passed either a
+  full frame name as prefix (`'fx_nova_1'` -> nonexistent
+  `fx_nova_1_1`) or more frames than registered (`'fx_pop', 5` when
+  fx_pop has 4). A missing atlas frame silently falls back to the
+  atlas's first frame = the 160px BERRY-purple D5 boss -> giant
+  pink squares flashing inside explosions. Kevin's strike boom had
+  BOTH bugs, so every bomb flashed pink (my freeze-frame
+  verification caught the bomb sprite but not the boom frames).
+  Fixed all 10 sites (kits 63/143/240/241, heroes2 62/202/203,
+  arsenal2 36/230, arsenal3 431). WHY EVERY EARLIER VERIFY MISSED
+  IT: Phaser logs missing frames as console WARNINGS and the
+  harnesses only captured errors. HARNESS LAW FROM NOW ON: capture
+  console 'warning' + 'error'; scratchpad `audit-frames.js` grants
+  ALL 26 weapons maxed at once, runs the swarm 20s, sweeps every
+  registry key against the atlas, and was negative-controlled (a
+  deliberately bogus frame DOES surface as `Texture "atlas" has no
+  frame ...`). Current state: zero frame warnings, zero missing
+  registry keys, zero page errors with all 26 weapons live.
+
 - **2026-07-26 — v0.11.2: version stamp on EVERY screen + Kevin
   audit (Mark: "sure Kevin doesn't have placeholder on his ability?
   add the version number to all screens so I can tell").** New
