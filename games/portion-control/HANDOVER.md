@@ -12,6 +12,36 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 — v0.12.0: WP-METASHOP + TITLE HUB (the "invest
+  between runs" loop, PHASE2 7).** NEW: `src/data/powerups.js` —
+  14 ranked permanent power-ups + `PC.meta` (ranks persist in
+  `portioncontrol.meta`; gold stays in pickups' existing
+  `portioncontrol.gold` key — extended, not forked). 10 food-flavored
+  stat lines (BIGGER MUSCLES +4%dmg, QUICK HANDS -3%cd, RUNNING
+  START, BIG APPETITE +10HP, LONG ARMS area, SNACK RADAR pickup,
+  FAST FOOD shot speed, SHARP EYES +XP, LUCKY SPOON +gold, SECOND
+  HELPING +1 proj flagship $4k) + 4 faith-themed authored per Mark's
+  delegation (ARMOR OF GOD block, DAILY BREAD regen, MUSTARD SEED
+  start-with-a-level-up $1.5k, AMAZING GRACE one revive/run at half
+  HP — $8k flagship). COMPOSE-SAFE: meta multiplies hero* bases and
+  adds meta* bases; the 6 overwriting PASSIVE formulas in weapons.js
+  now fold meta* in, so an in-run card never wipes a purchase.
+  NEW SCENES: PC_Title (wordmark, portrait marquee, START /
+  POWER-UPS, gold) and PC_Shop (2-col grid, rank pips, affordability
+  coloring, instant buy). Boot -> Title; select gains TITLE > back
+  link. game.js: meta.applyAll after applyHeroKit, hp init includes
+  bonusHp, die() consumes reviveCharges (half HP + crowd fling +
+  nova + revive sting + AMAZING GRACE! float) before dead, mustard
+  seed pops its free card at t+0.8s. goldMult applied in pickups
+  (min 1/coin). VERIFIED headless: 6 buys deduct exactly, ranks +
+  gold persist across reload, in-run heroDmg 1.08/hp 110/goldMult
+  1.1, seed card opens at run start, revive at 55/110 then charge
+  exhausts, zero frame warnings/errors. ECONOMY IS A KNOB: costs
+  assume ~$300-800/run income; retune when Mark reports real run
+  yields (spec target was 1-2k/run — may need coin value bump).
+  NEXT: WP-SCRIPTURE (Mark delegated question authoring to Claude),
+  WP-COLLECTIONS/unlocks, WP-LOOT.
+
 - **2026-07-26 — v0.11.4: CACHE-SKEW ARMOR (Mark on-device: "Nope
   still there" — purple squares SURVIVED the v0.11.3 fix on his
   phone).** Diagnosis: my v0.11.3 fix was correct for the code, but
