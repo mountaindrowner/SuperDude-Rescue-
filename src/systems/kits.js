@@ -378,61 +378,58 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
       }
     }
   }
-  // v0.14.0 rework (Mark: "make it look like a lasso coming FROM him,
-  // spinning... partial, then completed as it gets faster"): the rope
-  // runs from Josh's hand to a spinning arc. The arc starts PARTIAL
-  // and closes into a full loop as it spins up; only foes touching
-  // the DRAWN arc are hit - so the post-slam wind-up is a real
-  // vulnerability window, not just a visual.
+  // v0.14.2 lasso morph (Mark: "begins as a small rotating circle at
+  // the end of the lasso which gradually ends at the full loop
+  // around"): the rope from Josh's hand ends in a CLOSED loop that
+  // starts small, twirling fast at the rope tip, and GROWS as it
+  // spins up until the loop is the full circle around him. Damage is
+  // whatever the drawn loop touches, so the post-slam wind-up (small
+  // loop) is a real vulnerability window.
   if (this._spinup === undefined) this._spinup = 1;
   this._spinup = Math.min(1, this._spinup + dt / 1.4);
   var spin = this._spinup;
-  this._spinA = (this._spinA || 0) + dt * (4 + 5 * spin);
+  this._spinA = (this._spinA || 0) + dt * (9 - 4 * spin);   // small = fast twirl
   var am = scene.stats.areaMult;
   var r = (this.rMin + (this.rMax - this.rMin) * (0.5 + 0.5 * Math.sin(scene.now * 5.2))) * am;
-  var span = Math.PI * 2 * (0.32 + 0.68 * spin);   // partial -> full loop
   var lead = this._spinA;
   var pxp = scene.px, pyp = scene.py - 4;
+  var loopR = 7 + (r - 7) * spin;                 // loop size: tiny -> full
+  var cx2 = pxp + Math.cos(lead) * (r - loopR);   // loop center orbits, then
+  var cy2 = pyp + Math.sin(lead) * (r - loopR);   // converges onto Josh
   var g = this.gfx;
   g.clear();
-  // the spinning arc
+  // the loop (always closed - it IS the lasso)
   g.lineStyle(3, 0xb5793f, 0.85);
-  g.beginPath();
-  g.arc(pxp, pyp, r, lead - span, lead);
-  g.strokePath();
+  g.strokeCircle(cx2, cy2, loopR);
   g.lineStyle(1, 0xf2c33c, 0.35 + 0.25 * spin);
-  g.beginPath();
-  g.arc(pxp, pyp, r + 2, lead - span, lead);
-  g.strokePath();
-  // rope from Josh's hand to the loop's leading knot
+  g.strokeCircle(cx2, cy2, loopR + 2);
+  // rope from Josh's hand to the loop's near edge, with a little sag
   var hx = pxp + 5 * scene.facing, hy = pyp - 4;
-  var kx = pxp + Math.cos(lead) * r, ky = pyp + Math.sin(lead) * r;
-  var mx = (hx + kx) / 2 + Math.cos(lead + 1.7) * 6;   // slight rope sag
-  var my = (hy + ky) / 2 + Math.sin(lead + 1.7) * 6;
+  var ha = Math.atan2(hy - cy2, hx - cx2);
+  var kx = cx2 + Math.cos(ha) * loopR, ky = cy2 + Math.sin(ha) * loopR;
+  var mx = (hx + kx) / 2 + Math.cos(lead + 1.7) * 5;
+  var my = (hy + ky) / 2 + Math.sin(lead + 1.7) * 5;
   g.lineStyle(2, 0xb5793f, 0.9);
   g.beginPath(); g.moveTo(hx, hy); g.lineTo(mx, my); g.lineTo(kx, ky); g.strokePath();
   g.fillStyle(0xf2c33c, 0.9).fillCircle(kx, ky, 2.5);  // the knot
-  // damage: only along the drawn arc
+  // damage: whatever the drawn loop touches
   var dmg = this.dmg, tickCd = this.tickCd, self = this;
-  var TWO_PI = Math.PI * 2;
-  scene.enemies.hash.eachNear(pxp, pyp, function (e) {
-    var dx = e.x - pxp, dy = e.y - pyp;
+  scene.enemies.hash.eachNear(cx2, cy2, function (e) {
+    var dx = e.x - cx2, dy = e.y - cy2;
     var d = Math.sqrt(dx * dx + dy * dy);
-    if (Math.abs(d - r) > e.r + 7) return;
-    var rel = (lead - Math.atan2(dy, dx)) % TWO_PI;
-    if (rel < 0) rel += TWO_PI;
-    if (rel > span) return;                      // outside the drawn arc
+    if (Math.abs(d - loopR) > e.r + 7) return;
     if (scene.now < (e.lassoCd || 0)) return;
     e.lassoCd = scene.now + tickCd;
     if (self.stun) e.slowUntil = scene.now + 0.5;   // Josh flavor: dizzying spin
-    var dl = d || 1;
-    PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg), dx / dl * 1.6, dy / dl * 1.6, scene._onKillCb);
+    var fdx = e.x - pxp, fdy = e.y - pyp;
+    var fl = Math.sqrt(fdx * fdx + fdy * fdy) || 1;
+    PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg), fdx / fl * 1.6, fdy / fl * 1.6, scene._onKillCb);
     scene.fx.burst(e.x, e.y, 'fx_spark', 3, 0.14);
   });
   if (scene.boss && !scene.boss.dead && scene.now >= (scene._lassoBossCd || 0)) {
-    var bdx = scene.boss.x - pxp, bdy = scene.boss.y - pyp;
+    var bdx = scene.boss.x - cx2, bdy = scene.boss.y - cy2;
     var bd = Math.sqrt(bdx * bdx + bdy * bdy);
-    if (Math.abs(bd - r) < scene.boss.r + 7) {
+    if (Math.abs(bd - loopR) < scene.boss.r + 7) {
       scene._lassoBossCd = scene.now + 0.5;
       scene.hitBoss(scene.boss.x, scene.boss.y, this.dmg * (this.mastery || 1) * scene.stats.dmgMult, 0, 0);
     }

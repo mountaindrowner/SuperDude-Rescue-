@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.2: LASSO MORPH (Mark: "begins as a small
+  rotating circle at the end of the lasso which gradually ends at
+  the full loop around").** Replaced the partial-arc rework with
+  the real-lasso morph: the rope from Josh's hand ends in a CLOSED
+  loop that starts tiny (7px) twirling FAST at the rope tip, and
+  grows as it spins up until loop center converges on Josh and
+  loopR = full radius (the geometry: center = player +
+  dir(lead)*(r-loopR), so the morph is one continuous expression).
+  Damage = whatever the drawn loop touches (no more angle gating -
+  the small-loop wind-up after each slam IS the vulnerability
+  window). Boss check follows the loop too. Balance re-run: josh
+  53 kills/11 dmg (was 72 OP; bot variance 31-53 across runs) -
+  mid-pack beside kevin 51/carlos 60, CC identity intact.
+  Verified freeze-frames: small loop at hand + grown full loop.
+
 - **2026-07-27 - v0.14.1: THE BALANCE LAB (Mark: "create agents to
   try each character... break down the math... Carlos comets
   off-screen... Josh too OP + lasso visual... Nayah too short
