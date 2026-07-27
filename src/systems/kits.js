@@ -394,8 +394,12 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
   var lead = this._spinA;
   var pxp = scene.px, pyp = scene.py - 4;
   var loopR = 7 + (r - 7) * spin;                 // loop size: tiny -> full
-  var cx2 = pxp + Math.cos(lead) * (r - loopR);   // loop center orbits, then
-  var cy2 = pyp + Math.sin(lead) * (r - loopR);   // converges onto Josh
+  // cowboy swing (Mark v0.14.3): the little loop REVOLVES around him
+  // close-in on a short rope, and as it grows the swing centers onto
+  // the player until the loop IS the full circle around him
+  var orbit = (1 - spin) * (loopR + 12);
+  var cx2 = pxp + Math.cos(lead) * orbit;
+  var cy2 = pyp + Math.sin(lead) * orbit;
   var g = this.gfx;
   g.clear();
   // the loop (always closed - it IS the lasso)
