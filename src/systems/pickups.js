@@ -119,7 +119,8 @@ PC.PickupSystem.prototype.collect = function (f) {
     if (PC.audio) PC.audio.heal();
     scene.floatText && scene.floatText('+' + f.val, 0xff6b6b);
   } else if (f.kind === 'coin') {
-    this.gold += f.val; this.runGold += f.val;
+    var gv = Math.max(1, Math.round(f.val * (this.scene.goldMult || 1)));
+    this.gold += gv; this.runGold += gv;
     try { localStorage.setItem('portioncontrol.gold', String(this.gold)); } catch (e) {}
     if (PC.audio) PC.audio.coin ? PC.audio.coin() : PC.audio.gem();
     scene.drawHud();

@@ -62,6 +62,7 @@ PC.GameScene.prototype.create = function () {
   this.xpMult = 1; this.dmgTakenMult = 1; this.kbMult = 1;
   this.passives = {};
   PC.applyHeroKit(this);            // signature weapon + hero passive (kits.js)
+  if (PC.meta) PC.meta.applyAll(this);   // permanent shop power-ups (WP-METASHOP)
   // item glow: a soft pulsing light on the hero's held item while walking
   // (VS-law: code-side life, no new frames). Offset flips with facing.
   this.itemGlow = this.kit.glow ? this.add.image(0, 0, 'atlas', 'fx_muzzle_1')
@@ -70,10 +71,18 @@ PC.GameScene.prototype.create = function () {
   this._onKillCb = function (e) { self.onKill(e); };
   this.pendingLevels = 0;
   this.cardsOpen = false;
+  if (this._mustardSeed) {
+    var msSelf = this;
+    this.time.delayedCall(800, function () {
+      if (msSelf.dead || msSelf.won) return;
+      msSelf.floatText('MUSTARD SEED!', 0x7dd97b);
+      msSelf.gainXp(msSelf.xpNext - msSelf.xp);
+    });
+  }
   this.cardUi = [];
 
   // run state
-  this.hp = PC.PLAYER.HP;
+  this.hp = PC.PLAYER.HP + (this.stats.bonusHp || 0);
   this.invUntil = 0;
   this.xp = 0; this.level = 1; this.xpNext = PC.XP.FIRST;
   this.kills = 0;
@@ -435,6 +444,29 @@ PC.GameScene.prototype.update = function (time, delta) {
 
 PC.GameScene.prototype.die = function () {
   if (this.dead || this.won) return;
+  // AMAZING GRACE (shop flagship): get back up once per run at half HP
+  if (this.reviveCharges > 0) {
+    this.reviveCharges--;
+    var mhG = PC.PLAYER.HP + (this.stats.bonusHp || 0);
+    this.hp = Math.ceil(mhG * 0.5);
+    this.invUntil = this.now + 2.5;
+    var gSelf = this;
+    // fling the crowd back so the fresh start isn't instantly undone
+    this.enemies.hash.eachNear(this.px, this.py, function (e) {
+      var dx = e.x - gSelf.px, dy = e.y - gSelf.py;
+      var d = Math.sqrt(dx * dx + dy * dy) || 1;
+      if (d > 110) return;
+      e.kbUntil = gSelf.now + 0.5;
+      e.kbx = dx / d * 220; e.kby = dy / d * 220;
+    });
+    this.fx.burst(this.px, this.py - 8, 'fx_nova', 3, 0.4);
+    this.fx.burst(this.px, this.py - 8, 'fx_levelup', 4, 0.5);
+    if (this.vfx) this.vfx.shake(2.5, 110);
+    if (PC.audio && PC.audio.revive) PC.audio.revive();
+    this.floatText('AMAZING GRACE!', 0xf2c33c);
+    this.drawHud();
+    return;
+  }
   this.dead = true;
   if (PC.audio) { PC.audio.stopMusic(); PC.audio.hurt(); }
   this.fx.burst(this.px, this.py, 'fx_pop', 4, 0.4);

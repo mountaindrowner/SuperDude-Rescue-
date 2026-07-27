@@ -73,9 +73,17 @@ PC.SelectScene.prototype.create = function () {
   }).setOrigin(0.5, 1);
   this.tweens.add({ targets: go, alpha: 0.35, duration: 550, yoyo: true, repeat: -1 });
 
+  var back = this.add.text(W - 6, H - 6, 'TITLE >', {
+    fontFamily: 'monospace', fontSize: '9px', color: '#6d6a8e', fontStyle: 'bold',
+  }).setOrigin(1, 1).setInteractive({ useHandCursor: true });
+  back.on('pointerdown', function () {
+    if (PC.audio) PC.audio.ui();
+    self.scene.start('PC_Title');
+  });
+
   this.buildAudioPanel();
   this.redraw(picked);
-  PC.stampVersion(this);
+  PC.stampVersion(this).setPosition(W - 3, H - 16);
 };
 
 // small AUDIO settings: gear toggle -> two draggable mix sliders
