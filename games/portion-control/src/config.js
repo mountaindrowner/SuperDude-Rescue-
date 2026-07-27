@@ -3,8 +3,10 @@
 // by milestone; each block cites its COMPENDIUM section.
 window.PC = window.PC || {};
 
-// on-screen build tag (Mark: track builds while playing). Bump on each push.
-PC.VERSION = 'v0.11.3';
+// on-screen build tag (Mark: track builds while playing). The single
+// bump point is PC_BUILD in index.html - it also cache-busts every
+// script/art URL so devices can never mix files from two builds.
+PC.VERSION = 'v' + (window.PC_BUILD || 'dev');
 
 // ---- render lock (HANDOVER L3) ----
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =

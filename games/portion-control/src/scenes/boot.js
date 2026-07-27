@@ -12,8 +12,11 @@ PC.BootScene.prototype.preload = function () {
   var loadedReal = this._loadedReal = {};
   var list = PC.ART_MANIFEST || [];
   var self = this;
+  // ?v busts stale caches: art files change content under stable names
+  // (e.g. portrait redos), so they version with the build like the code
+  var bust = '?v=' + (window.PC_BUILD || 'dev');
   list.forEach(function (key) {
-    self.load.image('art_' + key, 'assets/art/' + key + '.png');
+    self.load.image('art_' + key, 'assets/art/' + key + '.png' + bust);
   });
   this.load.on('filecomplete', function (key) {
     if (key.indexOf('art_') === 0) loadedReal[key] = true;

@@ -12,6 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-26 — v0.11.4: CACHE-SKEW ARMOR (Mark on-device: "Nope
+  still there" — purple squares SURVIVED the v0.11.3 fix on his
+  phone).** Diagnosis: my v0.11.3 fix was correct for the code, but
+  the game is ~29 separate un-versioned JS files — Mark's device had
+  a MIXED CACHE (new kits.js asking for `sig_bomb` + a stale cached
+  assets.js registry without it -> missing frame -> giant purple
+  first-frame fallback, persistent on his device only; unreproducible
+  here because our fetches are always fresh). THREE-PART FIX:
+  (1) index.html now defines `window.PC_BUILD` (THE single version
+  bump point) and document.writes every script tag with
+  `?v=PC_BUILD` — files can never skew across builds once index.html
+  refreshes; (2) boot.js busts art PNG URLs the same way (portraits
+  changed content under stable names — same trap); (3) buildAtlas
+  reserves a guaranteed-transparent 4px `px_missing` frame
+  (clearRect'd corner) and patches the atlas texture's `get` so ANY
+  unknown frame renders INVISIBLE + logs `PC missing frame ->
+  blank:` instead of the 160px purple D5 boss. config.js now derives
+  `PC.VERSION` from PC_BUILD (bump ritual = edit ONE line in
+  index.html). Verified: full 26-weapon audit clean, negative
+  control shows blank+warning (not purple), stamp reads v0.11.4.
+  NOTE for Mark's device: ONE more hard-refresh may be needed to
+  pick up the new index.html; after that, staleness self-heals.
+
 - **2026-07-26 — v0.11.3: THE PINK SQUARES BUG (Mark, on-device:
   "Kevin's ability has the pink squares still... thoroughly check
   all of them").** ROOT CAUSE: `fx.burst(x, y, prefix, frames, ...)`
