@@ -154,24 +154,31 @@ PC.damageEnemy = function (scene, e, dmg, dirx, diry, onKill) {
   if (e.hp <= 0 && onKill) onKill(e);
 };
 
-// ---- aim helper: movement direction + ~35 degree cone assist ----
+// ---- aim helper: movement-direction cone assist, with an over-the-
+// shoulder fallback (v0.14.0 balance lab: the kiting playstyle fires
+// AWAY from chasers - Danny scored 15 kills vs Victoria's 84 purely
+// because fleeing pointed his gun at nothing; VS-style auto-aim
+// falls back to the nearest foe in ANY direction) ----
 PC.aimAt = function (scene, range) {
   var ax = scene.aimX, ay = scene.aimY;
   var al = Math.sqrt(ax * ax + ay * ay) || 1;
   ax /= al; ay /= al;
   var best = null, bestD = range * range;
+  var near = null, nearD = range * range;
   var pool = scene.enemies.pool;
   for (var i = 0; i < pool.length; i++) {
     var e = pool[i];
     if (!e.active) continue;
     var dx = e.x - scene.px, dy = e.y - scene.py;
     var d = dx * dx + dy * dy;
+    if (d >= nearD) continue;
+    nearD = d; near = e;
     if (d >= bestD) continue;
     var dl = Math.sqrt(d) || 1;
     if ((dx * ax + dy * ay) / dl < 0.82) continue;
     bestD = d; best = e;
   }
-  return { ax: ax, ay: ay, target: best };
+  return { ax: ax, ay: ay, target: best || near };
 };
 
 // =====================================================================

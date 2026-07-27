@@ -266,7 +266,7 @@ PC.HaymakerWeapon = function (scene) {
   // v0.14.0 buff (Mark: "too short range, easily outclassed"): reach
   // 58->78, TWO fists from L1 (a flurry, not a poke) - she trades
   // range for lifesteal sustain, not for less damage.
-  this.cd = 0.35; this.cdT = 0.3; this.dmg = 8; this.reach = 78;
+  this.cd = 0.35; this.cdT = 0.3; this.dmg = 9; this.reach = 78;
   this.lifesteal = 1; this.fists = 2; this.side = 1;
   this.gfx = scene.add.graphics().setDepth(9);
   this.flashT = 0; this.flashAng = 0;
@@ -277,9 +277,9 @@ PC.HaymakerWeapon.prototype.desc = function () {
 };
 PC.HaymakerWeapon.prototype.applyLevel = function () {
   if (this.level === 2) this.cd = 0.28;
-  else if (this.level === 3) this.dmg = 12;
+  else if (this.level === 3) this.dmg = 13;
   else if (this.level === 4) this.lifesteal = 2;
-  else if (this.level === 5) { this.dmg = 16; this.fists = 3; }
+  else if (this.level === 5) { this.dmg = 18; this.fists = 3; }
 };
 PC.HaymakerWeapon.prototype.update = function (dt, scene) {
   if (this.flashT > 0) {

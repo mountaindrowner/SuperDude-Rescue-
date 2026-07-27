@@ -12,6 +12,40 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.1: THE BALANCE LAB (Mark: "create agents to
+  try each character... break down the math... Carlos comets
+  off-screen... Josh too OP + lasso visual... Nayah too short
+  range").** NEW scratchpad harness `balance-bots.js`: every hero
+  plays the SAME 100s with the SAME kiting bot (flees weighted
+  enemy centroid, auto-picks first card, taps Vic's deploy),
+  measuring kills/dmgTaken/minHp/level. BASELINE FINDINGS:
+  victoria 84 kills/0 dmg (top, untouched), josh 72/11 (confirmed
+  OP), carlos 60/23, kevin 51/12, nayah 22/0 (confirmed weak),
+  danny 15(!)/6 - ROOT CAUSE: aimAt's cone tracks MOVEMENT
+  direction, so the kiting playstyle fired AWAY from chasers.
+  CHANGES SHIPPED: (1) aimAt over-the-shoulder fallback (cone miss
+  -> nearest foe any direction): danny 15 -> 85. (2) CARLOS:
+  comets target the farthest foe INSIDE cam.worldView (pad 14/44),
+  off-screen only when nothing visible - the comet always lands
+  on-screen. (3) NAYAH buff: reach 58->78, TWO fists from L1
+  (L5 = 3), dmg 9/13/18: 22 -> 65 kills, still 0 dmg taken
+  (lifesteal identity works). (4) JOSH rework + nerf: lasso now
+  drawn as a rope from his hand to a SPINNING PARTIAL ARC that
+  closes into a full loop as it spins up (Mark's spec); damage only
+  along the DRAWN arc; every slam resets spin-up to 25% (1.4s
+  vulnerability window); pull radius rMax+34 -> +26. TUNING
+  LESSON: slam 2x->1.7x collapsed him to 8 kills - a THRESHOLD
+  effect (slam stopped one-shotting scaled fries, flinging 1hp
+  survivors out of reach); restored 2x, kept the other nerfs ->
+  31 kills / 5 dmg = mid-low with heavy CC utility. FINAL LEAGUE
+  (100s kiting bot): danny 85/0, vic 84/0, nayah 65/0, carlos
+  60/23, kevin 51/12, josh ~31. OBSERVATION (not a bug): ranged
+  killers (vic/kevin/carlos) stayed LEVEL 1 - their kills drop
+  gems far away and the kiting bot never walks back; melee-ish
+  heroes leveled. Real players collect better; watch it on-device.
+  Lasso probe harness `probe-lasso.js` (16-dummy annulus ring, 144
+  hits/5s verified).
+
 - **2026-07-27 — v0.13.0: TITLE SEQUENCE + SHARPNESS + LAB UI +
   HERO UNLOCKS (Mark: "high quality... Megaman X... metal doors...
   heavy duty security lab... text still blurry... characters

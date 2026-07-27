@@ -343,12 +343,12 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
     if (this._slamT <= 0 && !this._pulling) {
       this._pulling = 0.5;
       if (scene.vfx) scene.vfx.telegraphRing(scene.px, scene.py - 4,
-        (this.rMax + 34) * scene.stats.areaMult, 500, 0xb5793f);
+        (this.rMax + 26) * scene.stats.areaMult, 500, 0xb5793f);
       if (PC.audio) PC.audio.telegraph();
     }
     if (this._pulling) {
       this._pulling -= dt;
-      var pR = (this.rMax + 34) * scene.stats.areaMult;
+      var pR = (this.rMax + 26) * scene.stats.areaMult;
       var ppx = scene.px, ppy = scene.py - 4;
       scene.enemies.hash.eachNear(ppx, ppy, function (e) {
         var dx = ppx - e.x, dy = ppy - e.y;
@@ -362,7 +362,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
         this._pulling = 0; this._slamT = 5;
         this._spinup = 0.25;          // the lasso must spin back up after a slam
         var sR = (this.rMax + 20) * scene.stats.areaMult;
-        var sdmg = PC.rollDmg(scene, this.dmg * 1.7 * (this.mastery || 1));
+        var sdmg = PC.rollDmg(scene, this.dmg * 2 * (this.mastery || 1));
         var stun = this.stun;
         scene.fx.burst(ppx, ppy, 'fx_nova', 3, 0.3);
         if (scene.vfx) scene.vfx.shake(2.5, 100);
