@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.3: LASSO COWBOY SWING (Mark's final read:
+  "small rotating circle at the end of a rope... revolves around
+  him like a cowboy... gradually the circle gets bigger and the
+  arc centers more around the player until it's a complete circle
+  round").** One geometry change over v0.14.2: the loop's orbit is
+  now `orbit = (1-spin) * (loopR + 12)` - at wind-up the tiny loop
+  swings CLOSE around his body on a short rope; as spin grows the
+  loop expands while the swing center converges onto the player,
+  ending as the full circle around him (rope + knot attached
+  throughout; damage = the drawn loop, unchanged). Verified
+  freeze-frames both states; probe 160 hits/5s on the dummy
+  annulus; bot band ~25-53 kills across re-rolls (one 4-kill
+  outlier = bot wandered into empty streets, not a regression -
+  re-roll 29). Balance holds mid-pack.
+
 - **2026-07-27 - v0.14.2: LASSO MORPH (Mark: "begins as a small
   rotating circle at the end of the lasso which gradually ends at
   the full loop around").** Replaced the partial-arc rework with
