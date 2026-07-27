@@ -461,11 +461,27 @@ window.PC = window.PC || {};
       g.restore();
     });
 
+    g.clearRect(W - 6, H - 6, 6, 6);   // reserved transparent px_missing cell
+
     if (scene.textures.exists('atlas')) scene.textures.remove('atlas');
     var tex = scene.textures.addCanvas('atlas', canvas);
     places.forEach(function (p) {
       tex.add(p.a.key, 0, p.x, p.y, p.a.w, p.a.h);
     });
+    // SAFE FALLBACK (v0.11.4, the "purple squares" lesson): Phaser
+    // resolves a missing frame to the atlas's FIRST frame - here the
+    // 160px purple D5 boss, i.e. a giant purple square on screen. Remap
+    // unknown frame names to a guaranteed-transparent 4px corner frame
+    // instead, so a miss renders invisible and only logs a warning.
+    tex.add('px_missing', 0, W - 6, H - 6, 4, 4);
+    var origGet = Phaser.Textures.Texture.prototype.get;
+    tex.get = function (name) {
+      if (typeof name === 'string' && name !== '__BASE' && !this.has(name)) {
+        if (typeof console !== 'undefined') console.warn('PC missing frame -> blank:', name);
+        name = 'px_missing';
+      }
+      return origGet.call(this, name);
+    };
     // free the individual real-art textures - only the atlas goes to the GPU
     if (realKeys) Object.keys(realKeys).forEach(function (k) {
       if (scene.textures.exists(k)) scene.textures.remove(k);
