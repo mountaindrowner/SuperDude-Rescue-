@@ -33,7 +33,7 @@ PC.KetchupWeapon.prototype.applyLevel = function () {
 PC.KetchupWeapon.prototype._land = function (scene, x, y) {
   var r = this.burstR * scene.stats.areaMult;
   var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
-  scene.fx.burst(x, y, 'fx_pop', 5, 0.3);
+  scene.fx.burst(x, y, 'fx_pop', 4, 0.3);
   scene.enemies.hash.eachNear(x, y, function (e) {
     var dx = e.x - x, dy = e.y - y;
     if (dx * dx + dy * dy > r * r) return;
@@ -227,7 +227,7 @@ PC.FridgeWeapon.prototype.update = function (dt, scene) {
       wl.y = scene.py + Math.sin(aim) * 44;
       wl.ang = aim + Math.PI / 2;                // perpendicular to aim
       wl.t = this.life * (scene.stats.durMult || 1);
-      scene.fx.burst(wl.x, wl.y, 'fx_freeze_1', 1, 0.3);
+      scene.fx.burst(wl.x, wl.y, 'fx_freeze', 1, 0.3);
       if (PC.audio) PC.audio.ui();
     }
   } else {

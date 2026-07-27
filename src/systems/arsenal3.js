@@ -428,7 +428,7 @@ PC.EspressoWeapon.prototype.update = function (dt, scene) {
       scale: 1.6 + this.charge, tint: 0xb5793f, pierce: 99, life: 1.1 });
   if (this.splash) {
     var pxp = scene.px, pyp = scene.py;
-    scene.fx.burst(pxp, pyp - 6, 'fx_nova_1', 2, 0.25);
+    scene.fx.burst(pxp, pyp - 6, 'fx_nova', 2, 0.25);
   }
   this.charge = 0;
   if (PC.audio) PC.audio.shoot();
