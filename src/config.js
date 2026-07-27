@@ -16,10 +16,12 @@ PC.RENDER = {
   W: 480, H: 270,              // set live by main.js from BASE + device aspect
   BASE: 340,                   // portrait width / landscape height (the zoom)
   // internal render scale (PHASE2 4-B "4K feel"): the canvas backing store
-  // is logical*SCALE with camera zoom SCALE - same framing, double density.
-  // Sprites integer-upscale (crisp), vector UI + text render dense (sharp).
-  SCALE: 2,
-  DPR_CAP: 2,                  // devicePixelRatio cap (Perf Bible 7)
+  // is logical*SCALE with camera zoom SCALE - same framing, denser pixels.
+  // v0.13.0 (Mark: "text still looks a little blurry"): SCALE now matches
+  // the DEVICE pixel ratio (main.js resolves clamp(round(dpr), 2, 3)) so
+  // a 3x iPhone gets a true 1:1 backing store - no final CSS upscale.
+  SCALE: 2,                    // resolved live in main.js; 2 = min/desktop
+  DPR_CAP: 3,                  // devicePixelRatio cap (was 2; modern phones hold 3)
   CAMERA_LERP: 0.12,
 };
 
@@ -84,9 +86,10 @@ PC.NAYAH_HAYMAKER = true;      // lifesteal brawler (seeds -> shared pool)
 PC.SALT_AURA = true;           // Salt Shaker = Seasoned debuff aura
 PC.JOSH_PULLSLAM = true;       // Rope Cyclone pull-then-slam special
 
-// Dev flag (PHASE2 §3): true = every hero selectable. Flip false to
-// activate the rescue-based unlock flow (Danny always unlocked).
-PC.DEV_ALL_UNLOCKED = true;
+// Dev flag (PHASE2 §3): true = every hero selectable. FLIPPED FALSE
+// v0.13.0 (Mark: "make some more characters unlockable, all except the
+// first one") - each hero has a unique condition in PC.HERO_UNLOCKS.
+PC.DEV_ALL_UNLOCKED = false;
 
 // ---- playable roster ----
 // scale normalizes figure height to Danny's (~50px) - measured from the

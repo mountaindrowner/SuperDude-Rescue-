@@ -13,6 +13,8 @@ PC.ResultsScene.prototype.create = function () {
   PC.stampVersion(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   var d = this.data2, win = !!d.win;
+  // hero unlocks earned this run (stats were recorded by the game scene)
+  var freshHeroes = PC.checkHeroUnlocks ? PC.checkHeroUnlocks() : [];
   this.cameras.main.setBackgroundColor(win ? 0x142a1a : 0x1b1530);
   var m = Math.floor((d.time || 0) / 60), s = Math.floor((d.time || 0) % 60);
 
@@ -47,6 +49,8 @@ PC.ResultsScene.prototype.create = function () {
       .strokeRect(W / 2 - pw / 2 - 2, H * 0.4 - pw / 2 - 2, pw + 4, pw + 4);
   }
 
+  var statG = this.add.graphics();
+  PC.labPanel(statG, W / 2 - 70, H * 0.68 - 38, 140, 76, { rivets: true });
   this.add.text(W / 2, H * 0.68,
     'TIME  ' + m + ':' + (s < 10 ? '0' : '') + s +
     '\nPOPS  ' + (d.kills || 0) +
@@ -55,7 +59,25 @@ PC.ResultsScene.prototype.create = function () {
     fontFamily: 'monospace', fontSize: '12px', color: '#cfd4e8', align: 'center', lineSpacing: 4,
   }).setOrigin(0.5).setDepth(2);
 
-  var again = this.add.text(W / 2, H * 0.88, win ? 'TAP TO PLAY AGAIN' : 'TAP TO TRY AGAIN', {
+  if (freshHeroes.length) {
+    var bnG = this.add.graphics().setDepth(10);
+    PC.labPanel(bnG, W / 2 - 92, H * 0.81 - 24, 184, 48,
+      { rivets: true, base: 0x1c3320, edge: 0xa8e04a });
+    var who = freshHeroes.map(function (id) { return id.toUpperCase(); }).join(' + ');
+    this.add.text(W / 2, H * 0.81 - 12, 'NEW HERO UNLOCKED!', {
+      fontFamily: 'monospace', fontSize: '10px', color: '#a8e04a', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(11);
+    var whoT = this.add.text(W / 2 + 14, H * 0.81 + 6, who, {
+      fontFamily: 'monospace', fontSize: '11px', color: '#f7f4ef', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(11);
+    var up = this.add.image(W / 2 - 62, H * 0.81 + 4, 'atlas',
+      'portrait_' + freshHeroes[0]).setScale(0.22).setDepth(11);
+    this.tweens.add({ targets: [up, whoT], scale: '*=1.06', duration: 420,
+      yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    if (PC.audio && PC.audio.fanfare) this.time.delayedCall(300, function () { PC.audio.fanfare(); });
+  }
+
+  var again = this.add.text(W / 2, H * 0.92, win ? 'TAP TO PLAY AGAIN' : 'TAP TO TRY AGAIN', {
     fontFamily: 'monospace', fontSize: '12px', color: '#a8e04a', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(2);
   this.tweens.add({ targets: again, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });

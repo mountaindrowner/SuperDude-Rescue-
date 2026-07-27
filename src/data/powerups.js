@@ -84,8 +84,24 @@ PC.meta = (function () {
       if (PC.POWERUPS[i].id === id) return PC.POWERUPS[i];
     return null;
   }
+  if (!data.st) data.st = {};   // lifetime stats (hero unlock conditions)
+
   return {
     rank: function (id) { return data.pu[id] || 0; },
+    // ---- lifetime stat tracking (v0.13.0 hero unlocks) ----
+    stat: function (k) { return data.st[k] || 0; },
+    bump: function (k, v) { data.st[k] = (data.st[k] || 0) + (v || 1); save(); },
+    maxStat: function (k, v) {
+      if ((v || 0) > (data.st[k] || 0)) { data.st[k] = v; save(); }
+    },
+    setFlag: function (k) {
+      if (!data.st[k]) { data.st[k] = 1; save(); }
+    },
+    spendGold: function (n) {
+      if (this.gold() < n) return false;
+      try { localStorage.setItem('portioncontrol.gold', String(this.gold() - n)); } catch (e) {}
+      return true;
+    },
     // gold lives in pickups' existing key - extend, don't fork (PHASE2)
     gold: function () {
       var g = 0;

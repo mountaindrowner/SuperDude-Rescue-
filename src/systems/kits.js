@@ -517,3 +517,32 @@ PC.heroUnlocked = function (id) {
   if (PC.DEV_ALL_UNLOCKED) return true;
   return !!PC.unlockedHeroes()[id];
 };
+
+// Each hero has a UNIQUE way in (Mark v0.13.0): Victoria is the D1
+// rescue (canon), the rest are earned different ways. `how` shows on
+// the locked select cell; `progress` renders a live counter.
+PC.HERO_UNLOCKS = {
+  victoria: { how: 'RESCUE HER: WIN DISTRICT 1',
+              check: function (m) { return m.stat('wonD1') > 0; } },
+  kevin:    { how: 'SURVIVE TO THE BOSS',
+              check: function (m) { return m.stat('reachedBoss') > 0; } },
+  nayah:    { how: 'POP 750 SNACKS (TOTAL)',
+              progress: function (m) { return Math.min(750, m.stat('totalPops')) + '/750'; },
+              check: function (m) { return m.stat('totalPops') >= 750; } },
+  carlos:   { how: 'REACH LEVEL 8 IN ONE RUN',
+              check: function (m) { return m.stat('bestLevel') >= 8; } },
+  josh:     { how: 'HIRE HIM: $3000', gold: 3000 },
+};
+
+// run after stats update (results screen): unlock every satisfied hero,
+// return the newly unlocked ids for the celebration banner
+PC.checkHeroUnlocks = function () {
+  var fresh = [];
+  Object.keys(PC.HERO_UNLOCKS).forEach(function (id) {
+    var def = PC.HERO_UNLOCKS[id];
+    if (def.check && !PC.unlockedHeroes()[id] && def.check(PC.meta)) {
+      if (PC.unlockHero(id)) fresh.push(id);
+    }
+  });
+  return fresh;
+};

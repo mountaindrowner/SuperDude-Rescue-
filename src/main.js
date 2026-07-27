@@ -26,9 +26,11 @@ window.PC = window.PC || {};
   var ls = logicalSize();
   PC.RENDER.W = ls.w; PC.RENDER.H = ls.h;
 
-  // sharpness (Mark: "text fuzzy, edges soft"): backing store renders at
-  // logical*SCALE; every scene camera zooms SCALE so layout stays logical.
-  var S = PC.RENDER.SCALE;
+  // sharpness (Mark: "text fuzzy, edges soft" / "still a little blurry"):
+  // backing store renders at logical*SCALE with camera zoom SCALE. SCALE
+  // now MATCHES the device pixel ratio (clamped 2..3) so there is no
+  // final CSS upscale - a 3x iPhone renders 1:1 device pixels.
+  var S = PC.RENDER.SCALE = Math.max(2, Math.min(PC.RENDER.DPR_CAP, Math.round(dpr)));
   // helper each scene calls first in create()
   PC.applyRenderScale = function (scene) {
     scene.cameras.main.setZoom(S);

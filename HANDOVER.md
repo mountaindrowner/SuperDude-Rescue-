@@ -12,6 +12,45 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 — v0.13.0: TITLE SEQUENCE + SHARPNESS + LAB UI +
+  HERO UNLOCKS (Mark: "high quality... Megaman X... metal doors...
+  heavy duty security lab... text still blurry... characters
+  unlockable all except the first").** (1) SHARPNESS ROOT CAUSE:
+  SCALE was locked 2 but iPhones are DPR 3 -> final 1.5x CSS
+  upscale = the blur. SCALE now = clamp(round(devicePixelRatio),
+  2, 3) (DPR_CAP 3); a 3x phone renders 1:1 device pixels. (2)
+  TITLE SEQUENCE (title.js rewrite): sealed riveted bulkhead
+  (3 new PixelLab textures: ui_door_plate steel / ui_hazard
+  stripes / ui_emblem = glowing cyan FORK security badge) with
+  pulsing red lamps + "SECURITY LAB - SEALED" -> clank + shake ->
+  hiss, doors slide apart revealing the lab interior (light
+  falloff, receding grid, ceiling glow, dust motes) -> PORTION /
+  CONTROL steel plates FALL in with impact shake + sparks (layered
+  extrude/face/highlight text on beveled scanlined plates + pulsing
+  underglow) -> menu powers on (portrait marquee on a steel shelf,
+  riveted panel buttons). Any tap skips. New audio: clank + hiss.
+  (3) PC.labPanel(g,x,y,w,h,opts) shared beveled-steel panel
+  (drop shadow, top light, bottom occlusion, inner shadow, rivets)
+  applied across title/select/shop/results. (4) UNLOCKS LIVE:
+  DEV_ALL_UNLOCKED=false. PC.HERO_UNLOCKS unique conditions -
+  victoria RESCUE (win D1, existing hook), kevin SURVIVE TO THE
+  BOSS, nayah POP 750 SNACKS lifetime (live progress on her locked
+  cell), carlos REACH LEVEL 8 IN ONE RUN, josh HIRE FOR $3000 (tap
+  his locked cell). Lifetime stats in PC.meta (totalPops/bestLevel/
+  reachedBoss/wonD1, recorded at die/win via recordRunStats);
+  results runs PC.checkHeroUnlocks -> green NEW HERO UNLOCKED
+  banner w/ portrait + fanfare. GOTCHA FIXED: setTintFill is a no-op
+  on the canvas renderer - locked silhouettes now use setTint.
+  HARNESS NOTES: WebGL-denial init script REQUIRED for timing-true
+  headless runs (SwiftShader crawls Phaser timers ~1/4 speed -
+  same documented gotcha as the platformer); harnesses updated for
+  the PC_Title entry flow. Verified: full door sequence staged
+  screenshots, fresh-save locks (danny only), nayah+carlos unlock
+  via simulated lifetime stats + banner, shop/select panel
+  restyle, all-26-weapons audit zero warnings. Heroes' unique
+  ADVANTAGES remain their kits + owner mastery (heroes2/kits);
+  unique unlock PATHS are new.
+
 - **2026-07-27 — v0.12.0: WP-METASHOP + TITLE HUB (the "invest
   between runs" loop, PHASE2 7).** NEW: `src/data/powerups.js` —
   14 ranked permanent power-ups + `PC.meta` (ranks persist in

@@ -195,6 +195,11 @@ window.PC = window.PC || {};
   for (var fd = 1; fd <= 6; fd++) add('decal_flood_' + fd, 32, 32, 'decal', P.CHEESE, P.MUSTARD, fd);
   for (var rb = 1; rb <= 4; rb++) add('prop_rubble_' + rb, 32, 24, 'prop', P.STEEL, P.INK, rb);
 
+  // -- title-sequence textures (security-lab bulkhead, v0.13.0) --
+  add('ui_door_plate', 64, 64, 'tile', 0x2a2740, 0x3a3652);
+  add('ui_hazard', 32, 32, 'tile', P.MUSTARD, P.INK);
+  add('ui_emblem', 64, 64, 'ring', P.STEEL, P.CYAN);
+
   // -- UI shells (most UI is drawn live; these are the reusable frames) --
   add('ui_card', 96, 120, 'panel', P.GRAPE, P.CYAN);
   add('ui_btn', 64, 24, 'panel', P.GRAPE, P.STEEL);
