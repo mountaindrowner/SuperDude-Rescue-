@@ -14,6 +14,8 @@ PC.ShopScene.prototype.create = function () {
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x1b1530);
 
+  var hdrG = this.add.graphics();
+  PC.labPanel(hdrG, 4, 4, W - 8, 34, { rivets: true, base: 0x1c1733, edge: 0x6d6a8e });
   this.add.text(W / 2, 8, 'POWER-UPS', {
     fontFamily: 'monospace', fontSize: '15px', color: '#f2c33c',
     fontStyle: 'bold', stroke: '#120e24', strokeThickness: 4,
@@ -80,12 +82,10 @@ PC.ShopScene.prototype.redraw = function () {
     var maxed = next === null;
     var afford = !maxed && gold >= next;
     c.panel.clear();
-    c.panel.fillStyle(maxed ? 0x24331f : 0x241f3d, 1)
-      .fillRoundedRect(c.cx - c.cellW / 2 + 3, c.cy - c.cellH / 2 + 2,
-                       c.cellW - 6, c.cellH - 4, 5);
-    c.panel.lineStyle(1, maxed ? 0x7dd97b : (afford ? 0xf2c33c : 0x45356e), 1)
-      .strokeRoundedRect(c.cx - c.cellW / 2 + 3, c.cy - c.cellH / 2 + 2,
-                         c.cellW - 6, c.cellH - 4, 5);
+    PC.labPanel(c.panel, c.cx - c.cellW / 2 + 3, c.cy - c.cellH / 2 + 2,
+      c.cellW - 6, c.cellH - 4,
+      { base: maxed ? 0x1c3320 : 0x241f3d, rivets: true,
+        edge: maxed ? 0x7dd97b : (afford ? 0xf2c33c : 0x45356e) });
     // rank pips
     for (var r = 0; r < p.costs.length; r++) {
       var px = c.cx - c.cellW / 2 + 36 + r * 9;

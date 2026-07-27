@@ -193,6 +193,16 @@ window.PC = window.PC || {};
       tone('triangle', 659.3, 0, 0.09, 0.16, null, 0.006, true);      // E
       setTimeout(function () { tone('triangle', 987.8, 0, 0.14, 0.18, null, 0.006, true); }, 70); // B (P5 up)
     },
+    // title sequence (v0.13.0): heavy door clank + pneumatic hiss
+    clank: function () {
+      tone('square', 190, 60, 0.16, 0.28);
+      tone('sawtooth', 95, 45, 0.3, 0.2);
+      tone('sine', 52, 30, 0.4, 0.26);
+      noise(0.1, 0.22, 900); noise(0.28, 0.09, 300);
+    },
+    hiss: function () {
+      noise(0.5, 0.09, 5200); noise(0.6, 0.045, 2400);
+    },
     ui: function () { tone('square', 660, 880, 0.05, 0.1); },
     chest: function () {
       duck(200);

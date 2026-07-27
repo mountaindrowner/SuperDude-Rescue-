@@ -14,6 +14,8 @@ PC.SelectScene.prototype.create = function () {
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x1b1530);
 
+  var hdrG = this.add.graphics();
+  PC.labPanel(hdrG, 4, H * 0.045 - 5, W - 8, 30, { rivets: true, base: 0x1c1733, edge: 0x6d6a8e });
   this.add.text(W / 2, H * 0.045, 'CHOOSE YOUR HERO', {
     fontFamily: 'monospace', fontSize: '16px', color: '#f2c33c',
     fontStyle: 'bold', stroke: '#120e24', strokeThickness: 4,
@@ -31,6 +33,9 @@ PC.SelectScene.prototype.create = function () {
     var cy = top + (Math.floor(i / cols) + 0.55) * cellH;
     var unlocked = PC.heroUnlocked(hero.id);
 
+    var cellG = self.add.graphics();
+    PC.labPanel(cellG, cx - cellW * 0.43, cy - cellH * 0.52, cellW * 0.86,
+      cellH * 0.88, { base: unlocked ? 0x241f3d : 0x171330, radius: 8 });
     var ring = self.add.graphics();
     var img = self.add.image(cx, cy - 8, 'atlas', hero.art + '_idle')
       .setScale(hero.scale * 1.05);
@@ -38,17 +43,21 @@ PC.SelectScene.prototype.create = function () {
       self.tweens.add({ targets: img, y: cy - 11, duration: 900 + i * 90,
         yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     } else {
-      img.setTintFill(0x2a2544);          // locked silhouette
+      img.setTint(0x241f3d).setAlpha(0.9);   // locked silhouette (works on canvas + webgl)
     }
 
     self.add.text(cx, cy + cellH * 0.26, unlocked ? hero.name : '???', {
       fontFamily: 'monospace', fontSize: '11px', color: unlocked ? '#f7f4ef' : '#45356e',
       fontStyle: 'bold',
     }).setOrigin(0.5, 0);
+    var def = PC.HERO_UNLOCKS && PC.HERO_UNLOCKS[hero.id];
+    var lockLine = def ? def.how + (def.progress ? '\n' + def.progress(PC.meta) : '') : 'LOCKED';
     self.add.text(cx, cy + cellH * 0.26 + 13,
       unlocked ? (PC.KITS && PC.KITS[hero.id] ? hero.role + ' - ' + PC.KITS[hero.id].kitName : hero.role)
-               : 'RESCUE TO UNLOCK', {
-      fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
+               : lockLine, {
+      fontFamily: 'monospace', fontSize: unlocked ? '8px' : '7px',
+      color: unlocked ? '#6d6a8e' : '#f2c33c', align: 'center',
+      wordWrap: { width: cellW * 0.94 },
     }).setOrigin(0.5, 0);
 
     if (unlocked) {
@@ -60,6 +69,18 @@ PC.SelectScene.prototype.create = function () {
         try { localStorage.setItem('portioncontrol.hero', hero.id); } catch (e) {}
         if (PC.audio) PC.audio.ui();
         self.redraw(picked);
+      });
+    } else if (def && def.gold) {
+      // gold-hire hero (Josh): tap the locked cell to buy the unlock
+      var hz = self.add.zone(cx, cy + cellH * 0.05, cellW * 0.92, cellH * 0.92)
+        .setInteractive({ useHandCursor: true });
+      hz.on('pointerdown', function () {
+        if (PC.audio) PC.audio.unlock();
+        if (PC.meta.spendGold(def.gold)) {
+          PC.unlockHero(hero.id);
+          if (PC.audio && PC.audio.fanfare) PC.audio.fanfare();
+          self.scene.restart();
+        } else if (PC.audio) { PC.audio.hurt(); }
       });
     }
 

@@ -442,6 +442,16 @@ PC.GameScene.prototype.update = function (time, delta) {
   }
 };
 
+// lifetime stats feed the hero-unlock conditions (kits.js HERO_UNLOCKS)
+PC.GameScene.prototype.recordRunStats = function (won) {
+  if (this._statsRecorded || !PC.meta) return;
+  this._statsRecorded = true;
+  PC.meta.bump('totalPops', this.kills);
+  PC.meta.maxStat('bestLevel', this.level);
+  if (this.bossSpawned) PC.meta.setFlag('reachedBoss');
+  if (won) PC.meta.setFlag('wonD1');
+};
+
 PC.GameScene.prototype.die = function () {
   if (this.dead || this.won) return;
   // AMAZING GRACE (shop flagship): get back up once per run at half HP
@@ -468,6 +478,7 @@ PC.GameScene.prototype.die = function () {
     return;
   }
   this.dead = true;
+  this.recordRunStats(false);
   if (PC.audio) { PC.audio.stopMusic(); PC.audio.hurt(); }
   this.fx.burst(this.px, this.py, 'fx_pop', 4, 0.4);
   this.player.setVisible(false);
@@ -520,6 +531,7 @@ PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
 PC.GameScene.prototype.onBossDefeated = function () {
   if (this.won) return;
   this.won = true;
+  this.recordRunStats(true);
   var self = this, W = PC.RENDER.W, H = PC.RENDER.H, b = this.boss;
   if (PC.audio) { PC.audio.stopMusic(); PC.audio.bossDie(); }
   this.cameras.main.shake(500, 0.012);
