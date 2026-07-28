@@ -12,6 +12,43 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-28 - v0.19.0: THE FREE-ROAM SEAM (Mark's linear-flow
+  direction: "you're thrown into the gameplay... free roaming around
+  the city, finishing objectives... a,b,c,d,e,f,g... there's just
+  extra things you can do on the way").** Finishing a story mission NO
+  LONGER bounces to a results screen - the city stays open. NEW
+  `src/story/freeroam.js` (PC.FreeRoam: compact in-world MISSION
+  COMPLETE reward card w/ TP+gold+pops, pulsing world marker + bobbing
+  chevron at the MISSION BOARD, edge compass, "FREE ROAM - HEAD TO THE
+  MISSION BOARD" banner, proximity-armed START button (tap zone +
+  SPACE/ENTER) -> fade-out -> scene.restart into the next beat).
+  quest.complete() now hands to `scene.enterFreeRoam(next, earned)`
+  whenever the next chain beat is BUILT; results is now ONLY for
+  death / campaign end / next-map-not-built. enterFreeRoam clears the
+  swarm (new `EnemySystem.clearAll(fx)` w/ pop bursts, capped at 12)
+  and the director drops to 0.25x. GameScene fades IN on story runs so
+  beat->beat is a cut, never a menu. CHAIN RESTRUCTURED to Mark's 8
+  linear beats w/ helper fns (chainIndex/nextInChain/beatBuilt): Danny
+  runs the rescue missions on each new map; the freshly-rescued hero
+  gets ONE spotlight mission on that same map (beats 2 and 4) so
+  "new character, city you know" is taught while it's novel, then the
+  back half drives to the Tower. NEW `src/data/story/mission2.js` -
+  BEAT 2 "LOUD AND CLEAR", the first spotlight: play as VIC on Central,
+  3 objectives (clear Bloom Tower approach 16 / fetch 2 SIGNAL BOOSTERS
+  at cityhall+garage / defend the array 45s), no boss, no rescue,
+  105 TP. Its dialogue is NEW (not spec'd) and in-voice - Vic dry, Danny
+  on radio, Bloom cameo - MARK SHOULD REVIEW. VERIFIED
+  (verify-freeroam.js ALL GREEN): full Stage 1 -> stays in PC_Game,
+  results NOT started, 0 foes left, reward card + marker shown, next
+  beat armed as stage2/victoria -> walk to board arms START -> beat 2
+  loads as VIC on the SAME map with her own 3-objective quest, no menu
+  in between -> death still routes results -> mission map with beat 2
+  playable. verify-linear trimmed to the parts freeroam doesn't cover;
+  newscast/region/shop regressions green. NEXT: walk-in shops (Sal's
+  storefront opens PC_Shop, the GARAGE = the missing TP sink for hero
+  signature levels) then Vic's radio tutorial at the top of Stage 1
+  (6 DRAFT lines already in docs/VOICE_SCRIPT.md awaiting approval).
+
 - **2026-07-28 - VOICE-OVER SCRIPT COMPILED (Mark: "compile all of the
   scripts... I'm gonna see if I can implement eleven labs").** NEW
   `docs/VOICE_SCRIPT.md` (readable master: totals, 11-character

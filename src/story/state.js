@@ -44,8 +44,7 @@ PC.storyState = (function () {
       var entry = chain[i];
       if (!entry) return 'hidden';
       if (data.cleared[entry.id]) return 'cleared';
-      var built = PC.STORY.maps && PC.STORY.maps[entry.map] &&
-                  PC.STORY.missions && PC.STORY.missions[entry.id];
+      var built = PC.STORY.beatBuilt(entry);
       if (PC.DEV_MODE) return built ? 'active' : 'soon';
       var cur = this.currentIndex();
       if (i === cur) return built ? 'active' : 'soon';
