@@ -12,6 +12,27 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-28 - v0.18.1: DEFEAT PORTRAITS (Mark: "Generate defeat
+  portraits too").** All 6 heroes now have a KO/defeat expression
+  variant (portrait_<hero>_ko.png, 128px) shown framed on the
+  results LOSE screen ("OVERWHELMED!") - story deaths show the
+  ASSIGNED hero's KO face. PIPELINE (new, document-worthy): v2
+  `/edit-image` on the SHIPPED portrait = identity/colors/framing
+  preserved, expression re-authored by text. 11 gens total incl.
+  re-rolls (balance ~1150 left). LESSONS: (1) the endpoint returns
+  RAW RGBA bytes (128*128*4), NOT a PNG - detect the PNG magic and
+  wrap with PIL Image.frombytes otherwise; (2) gentle prompts
+  ("sad, downcast") barely move smiling faces - the reliable
+  recipe is text_guidance_scale 10 + explicit anatomy ("eyes
+  squeezed SHUT with big cartoon tears, mouth wide open in a
+  wobbly upside-down U wail, absolutely no smile") which landed
+  kevin/josh/nayah after softer passes failed. Registered in
+  manifest.js + assets.js (procedural portrait painter remains the
+  missing-file fallback). Verified headless: quick-run kevin death
+  + story danny death both render the KO portrait, zero frame
+  warnings, zero errors (scratchpad verify-ko.js; sheets
+  ko_sheet4.png).
+
 - **2026-07-28 - v0.18.0: THE LINEAR STORY SPINE (Mark: "I really
   don't want a hero select... you're given the character and then
   given the mission... you unlock more and more of a mission map -

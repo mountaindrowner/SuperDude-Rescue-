@@ -37,6 +37,8 @@ window.PC = window.PC || {};
     creature('char_' + c.k, c.size, c.c1, c.c2, 6);
     add('char_' + c.k + '_idle', c.size, c.size, 'creature', c.c1, c.c2, 1);
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
+    // defeat variant (results lose screen; edit-image of the shipped portrait)
+    add('portrait_' + c.k + '_ko', PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
   // story NPC portraits (STORY-1; real PNGs via manifest)
   ['bloom', 'sal', 'pip', 'chomp'].forEach(function (n) {
