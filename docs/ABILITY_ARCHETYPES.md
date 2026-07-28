@@ -50,8 +50,15 @@ the same cell must differ in FEEL or one is redundant.
 - Espresso's stand-still charge (risk posture).
 - Faith flagships in the meta shop.
 
-## Proposed next actions (Mark to approve)
-- [ ] Pineapple → pure retaliation rework (drops the third ring).
+## Status (updated 2026-07-27, same day)
+- [x] Pineapple → pure retaliation SHIPPED v0.14.9 (Mark's spec:
+      dormant until hit, then spikes launch in all directions and fly
+      toward the screen edge; FORTRESS FRUIT evo = 16 spikes + heal).
+- [x] Kevin → MANUAL AIMED STRIKE shipped v0.14.9: cooldown button
+      (same pattern as Vic's Deploy); when ready, tap STRIKE then tap
+      the map to drop the run there. Owner-only; inheritors keep
+      auto-targeting. "Ability buttons for special ones" is now an
+      approved PATTERN (2 of 6 heroes have one).
 - [ ] If Beam still reads as "Danny's laser" after the gold pass:
       held-line laser rework.
 - [ ] Per-ability SFX voices (see MOTHER_SESSION_BRIEFS §1) — sound

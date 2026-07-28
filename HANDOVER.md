@@ -12,6 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.9: PINEAPPLE RETALIATION + KEVIN'S AIMED
+  STRIKE BUTTON (both Mark-approved this session).** (1) PINEAPPLE
+  GUARD rework per Mark's spec: completely DORMANT until the player
+  takes a hit, then 8 lime spike bullets (L3 10, L5 12, +extraProj)
+  launch radially at 430px/s with pierce 3 and fly to the screen
+  edge; no ring, no aura (kills the third player-circle the
+  archetype audit flagged). FORTRESS FRUIT evo = 16 spikes dmg 48 +
+  heal 6 on retaliation. (2) KEVIN manual strike: masterize sets
+  w.manual (OWNER-ONLY; inheritors keep auto densest-cluster) ->
+  STRIKE cooldown button bottom-right (Vic Deploy pattern: red
+  ready ring, gold cd sweep, 'TAP!' armed state, tap-again
+  cancels); when armed the next map tap converts screen->world
+  (worldView + p/SCALE) and drops the telegraph + bombing run
+  there. Verified headless: arm->tap world coords EXACT, cd
+  engages, bombs land on point; pineapple 0->8 live spikes on
+  hurt; zero errors. "Ability buttons" is now an approved pattern
+  (Vic + Kevin). DOCS refreshed for the mother-session handoff:
+  briefs 2 confirms Mark's chunk-order framing (fixed city =
+  ordered 512px chunks, ring-streamed, flat memory); archetypes
+  doc marks both reworks shipped. Mark is handing the two docs to
+  the mother session now (SFX voice table + story/map briefs
+  expected back).
+
 - **2026-07-27 - v0.14.8: PULL-SLAM FULLY CUT (Mark: "I don't like
   the telegraph and slam shockwave for Josh, it doesn't make
   sense").** The whole Task-9 pull/slam block is gone from

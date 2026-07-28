@@ -62,6 +62,12 @@ resolution costs ~1 byte/tile:
   that, navigation (not tech) becomes the problem for kids.
 - Recommend the story-mode vertical slice at **4096x4096**.
 
+**Mark's framing (2026-07-27, confirmed correct)**: the streamer
+already keeps only a ~1-chunk ring around the player alive - a fixed
+authored city is simply giving those 512px chunks an ORDER (a lookup
+table instead of random seeds). Nothing else changes; memory stays
+flat regardless of city size.
+
 How authoring would work: a **region map JSON** (grid of zone types +
 building rects + prop placements + decal seeds) that the SAME chunk
 painter consumes instead of noise — so the art pipeline (procedural

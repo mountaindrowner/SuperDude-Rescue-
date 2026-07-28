@@ -186,8 +186,75 @@ PC.StrikeWeapon.prototype.applyLevel = function () {
   else if (this.level === 4) this.cd = 4.5;
   else if (this.level === 5) { this.dmg = 40; this.radius = 42; }
 };
+// Kevin-only STRIKE button (Mark v0.14.9: "a cooldown button... when
+// the cooldown is done, the player can press it and then press where
+// they wanna drop - a little more intentional"). Same pattern as
+// Vic's Deploy; inheritors keep the auto densest-cluster targeting.
+PC.StrikeWeapon.prototype._buildButton = function (scene) {
+  var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
+  this.btnGfx = scene.add.graphics().setDepth(102);
+  this.btnTxt = scene.add.text(W - 30, H - 52, 'STRIKE', {
+    fontFamily: 'monospace', fontSize: '7px', color: '#f7f4ef', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(103);
+  this.btnZone = scene.add.zone(W - 30, H - 52, 48, 48).setDepth(103)
+    .setInteractive({ useHandCursor: true });
+  this.btnZone.on('pointerdown', function (p, lx, ly, ev) {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    if (self.armed) { self.armed = false; return; }        // tap again = cancel
+    if (self.cdT > 0 || self.pending) return;
+    self.armed = true;
+    if (PC.audio) PC.audio.ui();
+    scene.time.delayedCall(0, function () {                // skip the arming tap
+      scene.input.once('pointerdown', function (p2) {
+        if (!self.armed) return;
+        self.armed = false;
+        var wv = scene.cameras.main.worldView;
+        var tx = wv.x + p2.x / PC.RENDER.SCALE;
+        var ty = wv.y + p2.y / PC.RENDER.SCALE;
+        self.cdT = self.cd * scene.stats.cdMult;
+        self.pending = { x: tx, y: ty, ang: Math.random() * Math.PI,
+                         at: scene.now + 0.8, fired: 0, nextAt: 0 };
+        if (PC.VFX_V2 && scene.vfx) {
+          scene.vfx.telegraphRing(tx, ty, (self.radius + 22) * scene.stats.areaMult, 820);
+        }
+        if (PC.audio) PC.audio.telegraph();
+      });
+    });
+  });
+  scene.uiAttach(this.btnGfx);
+  scene.uiAttach(this.btnTxt);
+  scene.uiAttach(this.btnZone);
+};
+PC.StrikeWeapon.prototype._drawButton = function (scene) {
+  var W = PC.RENDER.W, H = PC.RENDER.H;
+  var g = this.btnGfx;
+  g.clear();
+  var ready = this.cdT <= 0 && !this.pending;
+  g.fillStyle(0x120e24, 0.85).fillCircle(W - 30, H - 52, 20);
+  g.lineStyle(2, this.armed ? 0xf2c33c : (ready ? 0xd93a3a : 0x45356e), 1)
+    .strokeCircle(W - 30, H - 52, 20);
+  this.btnTxt.setText(this.armed ? 'TAP!' : 'STRIKE')
+    .setColor(this.armed ? '#f2c33c' : '#f7f4ef');
+  if (!ready) {
+    var k = 1 - Math.max(0, this.cdT) / (this.cd * scene.stats.cdMult);
+    g.lineStyle(3, 0xf2c33c, 0.9);
+    g.beginPath();
+    g.arc(W - 30, H - 52, 16, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, k));
+    g.strokePath();
+  } else if (this.armed) {
+    g.lineStyle(2, 0xf2c33c, 0.5 + 0.4 * Math.sin(scene.now * 10));
+    g.strokeCircle(W - 30, H - 52, 14);
+  } else {
+    g.lineStyle(1, 0xd93a3a, 0.5 + 0.3 * Math.sin(scene.now * 6));
+    g.strokeCircle(W - 30, H - 52, 15);
+  }
+};
 PC.StrikeWeapon.prototype.update = function (dt, scene) {
-  if (!this.pending) {
+  if (this.manual) {
+    if (!this.btnGfx) this._buildButton(scene);
+    if (!this.pending && this.cdT > 0) this.cdT -= dt;
+    this._drawButton(scene);
+  } else if (!this.pending) {
     this.cdT -= dt;
     if (this.cdT <= 0) {
       // densest cluster: sample active enemies, count neighbors within 60
@@ -448,7 +515,7 @@ PC.KITS = {
   kevin: {
     kitName: 'AIR SUPPORT',
     weapon: function (scene) { return new PC.StrikeWeapon(scene); },
-    masterize: function (w) { w.bonusPass = 2; },    // captain's extra passes
+    masterize: function (w) { w.bonusPass = 2; w.manual = true; },  // captain aims his own strikes (v0.14.9 button)
     passive: function (scene) { scene.stats.heroDmg = 1.08; },
     passiveDesc: '+8% all damage',
     glow: null,                              // Kevin carries nothing - presence only

@@ -440,55 +440,40 @@ PC.EspressoWeapon.prototype.update = function (dt, scene) {
 PC.PineappleWeapon = function (scene) {
   this.key = 'pineapple'; this.name = 'PINEAPPLE GUARD';
   this.level = 1; this.max = 5;
-  this.dmg = 6; this.radius = 30; this.retDmg = 18; this.retR = 70;
-  this.heal = 0; this.tick = 0; this.lastHurtSeen = 0;
-  this.gfx = scene.add.graphics().setDepth(6).setBlendMode(Phaser.BlendModes.ADD);
+  // v0.14.9 rework (Mark approved the archetype-audit fix, spec'd the
+  // look): PURE RETALIATION - completely dormant until the player
+  // takes a hit, then spikes LAUNCH radially and fly to the screen
+  // edge. No ring, no aura - "it fights back" is the whole read.
+  this.spikes = 8; this.dmg = 14; this.heal = 0;
+  this.lastHurtSeen = 0;
 };
 PC.PineappleWeapon.prototype.desc = function () {
-  return ['', 'Spiky aura; bites back when hit', 'Damage up!', 'Bigger aura!',
-          'Stronger payback!', 'Fortress spikes!'][Math.min(this.level + 1, 5)] || 'Damage up!';
+  return ['', 'Spikes fly out when you get hit', 'Sharper spikes!', 'More spikes!',
+          'Heavy spikes!', 'Spike storm!'][Math.min(this.level + 1, 5)] || 'Sharper spikes!';
 };
 PC.PineappleWeapon.prototype.applyLevel = function () {
-  if (this.level === 2) this.dmg = 9;
-  else if (this.level === 3) this.radius = 40;
-  else if (this.level === 4) this.retDmg = 30;
-  else if (this.level === 5) { this.dmg = 12; this.retDmg = 40; this.retR = 90; }
+  if (this.level === 2) this.dmg = 20;
+  else if (this.level === 3) this.spikes = 10;
+  else if (this.level === 4) this.dmg = 26;
+  else if (this.level === 5) { this.spikes = 12; this.dmg = 34; }
 };
 PC.PineappleWeapon.prototype.update = function (dt, scene) {
-  var R = this.radius * scene.stats.areaMult;
-  var g = this.gfx;
-  g.clear();
-  g.lineStyle(2, 0xa8e04a, 0.3 + 0.1 * Math.sin(scene.now * 6));
-  g.strokeCircle(scene.px, scene.py - 4, R);
-  this.tick -= dt;
+  if (!scene.lastHurtT || scene.lastHurtT === this.lastHurtSeen) return;
+  this.lastHurtSeen = scene.lastHurtT;
+  var n = this.spikes + (scene.stats.extraProj || 0);
+  var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
   var pxp = scene.px, pyp = scene.py - 4;
-  var dmg = this.dmg, self = this;
-  if (this.tick <= 0) {
-    this.tick = 0.5;
-    scene.enemies.hash.eachNear(pxp, pyp, function (e) {
-      var dx = e.x - pxp, dy = e.y - pyp;
-      if (dx * dx + dy * dy > R * R) return;
-      var dl = Math.sqrt(dx * dx + dy * dy) || 1;
-      PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg * (self.mastery || 1)),
-        dx / dl * 0.6, dy / dl * 0.6, scene._onKillCb);
-    });
+  for (var i = 0; i < n; i++) {
+    var a = (i / n) * Math.PI * 2 + Math.random() * 0.15;
+    scene.bullets.fire(pxp, pyp, pxp + Math.cos(a) * 100, pyp + Math.sin(a) * 100,
+      { speed: 430, dmg: dmg, frame: 'proj_pellet', tint: 0xa8e04a,
+        scale: 1.5, pierce: 3, life: 1.3 });
   }
-  // retaliate when the player just took a hit
-  if (scene.lastHurtT && scene.lastHurtT !== this.lastHurtSeen) {
-    this.lastHurtSeen = scene.lastHurtT;
-    var RR = this.retR * scene.stats.areaMult;
-    var rdmg = PC.rollDmg(scene, this.retDmg * (this.mastery || 1));
-    scene.fx.burst(pxp, pyp, 'fx_nova', 3, 0.3);
-    scene.enemies.hash.eachNear(pxp, pyp, function (e) {
-      var dx = e.x - pxp, dy = e.y - pyp;
-      if (dx * dx + dy * dy > RR * RR) return;
-      var dl = Math.sqrt(dx * dx + dy * dy) || 1;
-      PC.damageEnemy(scene, e, rdmg, dx / dl * 2, dy / dl * 2, scene._onKillCb);
-    });
-    if (this.heal > 0) {
-      scene.hp = Math.min(PC.PLAYER.HP + (scene.stats.bonusHp || 0), scene.hp + this.heal);
-      scene.drawHud();
-    }
-    if (PC.audio) PC.audio.pop();
+  scene.fx.burst(pxp, pyp, 'fx_nova', 3, 0.25, 0xa8e04a);
+  if (scene.vfx) scene.vfx.shake(1.5, 70);
+  if (this.heal > 0) {
+    scene.hp = Math.min(PC.PLAYER.HP + (scene.stats.bonusHp || 0), scene.hp + this.heal);
+    scene.drawHud();
   }
+  if (PC.audio) PC.audio.pop();
 };
