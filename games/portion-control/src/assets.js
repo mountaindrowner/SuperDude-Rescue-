@@ -210,6 +210,16 @@ window.PC = window.PC || {};
 
   // ---------- placeholder painters ----------
   function hex(c) { return '#' + ('00000' + c.toString(16)).slice(-6); }
+  // hue-shifted ramps (ASSET_QUALITY law 4): highlights lean yellow-white,
+  // shadows lean violet - never a flat lighten/darken
+  function lerpC(c, t, k) {
+    var r = ((c >> 16) & 255) + (((t >> 16) & 255) - ((c >> 16) & 255)) * k;
+    var g2 = ((c >> 8) & 255) + (((t >> 8) & 255) - ((c >> 8) & 255)) * k;
+    var b2 = (c & 255) + ((t & 255) - (c & 255)) * k;
+    return (Math.round(r) << 16) | (Math.round(g2) << 8) | Math.round(b2);
+  }
+  function lite(c, k) { return lerpC(c, 0xfff6e0, k === undefined ? 0.45 : k); }
+  function shade(c, k) { return lerpC(c, 0x2a1040, k === undefined ? 0.45 : k); }
   function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
 
   // chunky rounded blob with 1px Ink outline, drawn with rects only
@@ -278,43 +288,86 @@ window.PC = window.PC || {};
       g.fillStyle = hex(a.c2);
       g.fillRect(12, 14, a.w - 24, 6);
     },
-    proj: function (g, a) {      // diamond
-      var c = a.w / 2;
-      g.fillStyle = hex(P.INK);
-      for (var i = 0; i < a.w; i++) {
-        var d = Math.abs(i - c), t = Math.max(0, c - d);
-        g.fillRect(i, c - t, 1, t * 2);
-      }
-      g.fillStyle = hex(a.c1);
-      for (var j = 1; j < a.w - 1; j++) {
-        var d2 = Math.abs(j - c), t2 = Math.max(0, c - d2 - 1);
-        if (t2 > 0) g.fillRect(j, c - t2, 1, t2 * 2);
-      }
-      g.fillStyle = hex(a.c2);
-      g.fillRect(c - 1, c - 1, 2, 2);
+    proj: function (g, a) {      // layered orb (ASSET_QUALITY layer law):
+      // rim -> base -> bottom-right occlusion -> up-left highlight -> core
+      var c = a.w / 2, r = a.w / 2 - 1;
+      g.fillStyle = hex(P.INK);                               // 1px rim
+      g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(a.c1);                                // base
+      g.beginPath(); g.arc(c, c, r - 1, 0, Math.PI * 2); g.fill();
+      g.save();                                               // occlusion crescent
+      g.beginPath(); g.arc(c, c, r - 1, 0, Math.PI * 2); g.clip();
+      g.fillStyle = hex(shade(a.c1));
+      g.beginPath(); g.arc(c + r * 0.35, c + r * 0.35, r, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(a.c1);                                // re-carve base
+      g.beginPath(); g.arc(c - r * 0.12, c - r * 0.12, r * 0.82, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(lite(a.c1));                          // up-left highlight
+      g.beginPath(); g.arc(c - r * 0.32, c - r * 0.32, r * 0.42, 0, Math.PI * 2); g.fill();
+      g.restore();
+      g.fillStyle = hex(lite(a.c2, 0.7));                     // hot core
+      g.fillRect(Math.round(c) - 1, Math.round(c) - 1, 2, 2);
     },
-    burst: function (g, a) {     // expanding starburst by frame
-      var c = a.w / 2, r = (a.w / 2 - 2) * (a.f ? a.f / 4 : 0.75);
-      g.fillStyle = hex(a.c1);
-      for (var k = 0; k < 8; k++) {
-        var ang = k * Math.PI / 4;
-        g.fillRect(Math.round(c + Math.cos(ang) * r) - 1, Math.round(c + Math.sin(ang) * r) - 1, 3, 3);
+    burst: function (g, a) {     // layer law: flash core + radial spark
+      // quads + flung debris dots, expanding + fading by frame
+      var c = a.w / 2, n = 4;
+      var k0 = a.f ? a.f / n : 0.75;                          // 0..1 progress
+      var r = (a.w / 2 - 2) * k0;
+      var seed = hash(a.key);
+      for (var k = 0; k < 6; k++) {                           // spark quads
+        var ang = k * Math.PI / 3 + (seed % 7) * 0.13;
+        var sr = r * (0.8 + ((seed >> k) % 3) * 0.12);
+        var qx = c + Math.cos(ang) * sr, qy = c + Math.sin(ang) * sr;
+        var ql = Math.max(2, (a.w / 8) * (1 - k0 * 0.5));
+        g.strokeStyle = hex(a.c1); g.lineWidth = 2;
+        g.beginPath(); g.moveTo(qx, qy);
+        g.lineTo(qx + Math.cos(ang) * ql, qy + Math.sin(ang) * ql); g.stroke();
+        g.fillStyle = hex(lite(a.c1));                        // bright tip
+        g.fillRect(Math.round(qx) - 1, Math.round(qy) - 1, 2, 2);
       }
+      for (var d3 = 0; d3 < 3; d3++) {                        // debris dots
+        var da = d3 * 2.1 + (seed % 5) * 0.4;
+        g.fillStyle = hex(shade(a.c1, 0.3));
+        g.fillRect(Math.round(c + Math.cos(da) * r * 1.15),
+                   Math.round(c + Math.sin(da) * r * 1.15), 1, 1);
+      }
+      var coreR = Math.max(1.5, (a.w / 7) * (1.2 - k0));      // flash core
       g.fillStyle = hex(a.c2);
-      g.fillRect(c - 2, c - 2, 4, 4);
+      g.beginPath(); g.arc(c, c, coreR + 1, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(c, c, coreR * 0.55, 0, Math.PI * 2); g.fill();
     },
-    ring: function (g, a) {      // hollow ring, radius by frame
+    ring: function (g, a) {      // layer law: darker outer rim + bright
+      // edge + soft inward falloff (never a bare outline)
       var c = a.w / 2, r = Math.max(3, (a.w / 2 - 2) * (a.f ? (0.4 + a.f * 0.2) : 0.9));
-      g.fillStyle = hex(a.c1);
-      for (var k = 0; k < 24; k++) {
-        var ang = k * Math.PI / 12;
-        g.fillRect(Math.round(c + Math.cos(ang) * r) - 1, Math.round(c + Math.sin(ang) * r) - 1, 2, 2);
+      g.strokeStyle = hex(shade(a.c1, 0.55)); g.lineWidth = 2; // outer rim
+      g.beginPath(); g.arc(c, c, Math.min(a.w / 2 - 1, r + 1.5), 0, Math.PI * 2); g.stroke();
+      g.globalAlpha = 0.22;                                   // falloff bands
+      g.strokeStyle = hex(a.c1);
+      g.lineWidth = 2;
+      g.beginPath(); g.arc(c, c, r - 2, 0, Math.PI * 2); g.stroke();
+      g.globalAlpha = 0.1;
+      g.beginPath(); g.arc(c, c, Math.max(1, r - 4), 0, Math.PI * 2); g.stroke();
+      g.globalAlpha = 1;
+      g.strokeStyle = hex(lite(a.c1, 0.35)); g.lineWidth = 2; // bright edge
+      g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#ffffff'; g.globalAlpha = 0.5;           // edge glints
+      for (var k = 0; k < 4; k++) {
+        var ang = k * Math.PI / 2 + 0.6;
+        g.fillRect(Math.round(c + Math.cos(ang) * r) - 1,
+                   Math.round(c + Math.sin(ang) * r) - 1, 2, 1);
       }
+      g.globalAlpha = 1;
     },
-    puddle: function (g, a) {
+    puddle: function (g, a) {    // layer law: rim + base + inner shade + glint
       blob(g, 2, a.h / 2, a.w - 4, a.h / 2 - 2, a.c1);
+      g.fillStyle = hex(shade(a.c1, 0.35));                   // inner occlusion
+      g.beginPath();
+      g.ellipse(a.w / 2 + 1, a.h * 0.76, a.w * 0.26, a.h * 0.12, 0, 0, Math.PI * 2);
+      g.fill();
       g.fillStyle = hex(a.c2);
       g.fillRect(a.w / 4, a.h * 0.6, 3, 2); g.fillRect(a.w * 0.6, a.h * 0.7, 4, 2);
+      g.fillStyle = hex(lite(a.c1, 0.5));                     // top-left glint
+      g.fillRect(a.w * 0.3, a.h * 0.56, 4, 1);
     },
     icon: function (g, a) {
       blob(g, 0, 0, a.w, a.h, a.c2);

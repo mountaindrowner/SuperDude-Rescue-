@@ -12,6 +12,36 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.16.0: ASSET QUALITY PIPELINE + PUNCH LIST (Mark:
+  "pipeline and asset quality first"; mother-session docs archived
+  as docs/ASSET_QUALITY.md + docs/ENV_PIPELINE.md).** THE BIG MOVE:
+  the FX frames are BAKED from code painters in assets.js, so
+  rewriting 4 painters to the 3-layer recipes upgraded every
+  burst/ring/projectile at once, free at runtime: `proj` = layered
+  orb (rim -> base -> bottom-right occlusion -> up-left highlight ->
+  hot core; covers all remaining placeholder projectiles incl. every
+  eproj), `burst` = flash core + radial spark quads + debris (fx_pop
+  /spark/muzzle/freeze), `ring` = darker outer rim + bright edge +
+  falloff bands + glints (fx_nova/levelup/aura/cyclone + elite
+  aura), `puddle` = rim/base/inner-shade/glint. New lite()/shade()
+  hue-shifted ramps (yellow-white highlights, violet shadows).
+  vfx.js telegraph rings gained a soft interior falloff (dark rim
+  impossible on the ADD layer - documented). PATH-A BATCH (8 gens):
+  real art for pickup_health (glossy heart), pickup_magnet,
+  pickup_bomb, CHEST closed+open -> pickup_chest_1..4 (brightness
+  shimmer frames), CAGE 48px -> pickup_cage_1..3 (PIL crack overlays
+  + shattered gap - Victoria's rescue cage is now real), and
+  characterful eproj_tomato/eproj_soda. COMPENDIUM Appendix A added:
+  the 8 style-law amendments (no-flat-fill, color roles canon,
+  top-left light, hue ramps, additive=energy-only, small-object
+  rule, screenshot gate, environment painter contract). ENV doc
+  audit: the D1 chunk painter ALREADY complies (cast shadows,
+  contact halos, roof rims, textured surfaces since round 10);
+  the contract now binds D2-D5 set construction. Verified:
+  9-asset contact sheet, all-26-weapons audit zero errors, in-run
+  screenshot shows layered rings/bursts live. Balance ~1160/2000
+  gens. NEXT: WP-SCRIPTURE (Mark-approved queue).
+
 - **2026-07-27 - v0.15.0: PER-ABILITY SFX VOICES (mother-session
   deliverable docs/SFX_VOICES.md, built to spec).** audio.js gains
   VOICE_FAM (12 family timbre defaults) + VOICES (26 weapon rows:
