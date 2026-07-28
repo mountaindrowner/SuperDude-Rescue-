@@ -36,9 +36,14 @@
   25 first-clear), Victoria unlocked, clear_stage1 flagged, zero
   errors/warnings; design shots: banner+marker over City Hall
   swarm, Big Frank at the Bank, Vic-in-cage rescue w/ typed
-  dialogue, DISTRICT CLEARED w/ TECH +125. Regression battery
-  (intro/region/title/dev/audit/shop) run in progress - results
-  recorded next entry. NEXT: STORY-4 hub + Garage = vertical slice.
+  dialogue, DISTRICT CLEARED w/ TECH +125. FULL REGRESSION BATTERY (Mark: "test
+  everything") ALL GREEN: intro cinematic plays + hands off; region
+  collision/door/OOB + quick-run reverts to default solids; title
+  door sequence + SCALE 3 on dpr-3 devices; dev modes (?dev=1 /
+  sticky / 5-tap off / #dev); all-26-weapons audit zero missing
+  frames + zero errors; meta shop buy/persist/apply + Amazing Grace
+  revive-once-then-die; balance smoke danny 99 kills / carlos 61 -
+  in band. NEXT: STORY-4 hub + Garage = vertical slice.
 
 - **2026-07-27 - v0.17.1: STORY-2 SHIPPED - the authored CENTRAL
   DISTRICT region map.** KEY DECISION (guardrail-driven): ONE
