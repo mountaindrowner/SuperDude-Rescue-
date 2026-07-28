@@ -36,7 +36,8 @@ PC.ResultsScene.prototype.create = function () {
       align: 'center', stroke: '#0a1a0a', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(2);
     // the rescued hero, framed
-    this.add.image(W / 2, H * 0.42, 'atlas', PC.D1_RESCUE.art).setScale(1.2).setDepth(2);
+    this.add.image(W / 2, H * 0.42, 'atlas', d.rescuedArt || PC.D1_RESCUE.art)
+      .setScale(1.2).setDepth(2);
     this.add.text(W / 2, H * 0.56, (d.rescued || 'A TEAMMATE') + '\nJOINED THE TEAM!', {
       fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
       align: 'center',
@@ -47,7 +48,7 @@ PC.ResultsScene.prototype.create = function () {
     }).setOrigin(0.5);
     var pw = 128 * 0.6;
     this.add.image(W / 2, H * 0.4, 'atlas',
-      'portrait_' + PC.selectedHero().id).setScale(0.6);
+      'portrait_' + (d.hero || PC.selectedHero().id)).setScale(0.6);
     this.add.graphics().lineStyle(2, 0xf2c33c, 1)
       .strokeRect(W / 2 - pw / 2 - 2, H * 0.4 - pw / 2 - 2, pw + 4, pw + 4);
   }
@@ -81,7 +82,12 @@ PC.ResultsScene.prototype.create = function () {
     if (PC.audio && PC.audio.fanfare) this.time.delayedCall(300, function () { PC.audio.fanfare(); });
   }
 
-  var again = this.add.text(W / 2, H * 0.92, win ? 'TAP TO PLAY AGAIN' : 'TAP TO TRY AGAIN', {
+  // story runs return to the MISSION MAP (the linear spine's only menu -
+  // win reveals the next mission there; lose = pick the mission again);
+  // quick runs keep the hero-select loop
+  var again = this.add.text(W / 2, H * 0.92,
+    d.story ? (win ? 'TAP - BACK TO THE MISSION MAP' : 'TAP TO TRY AGAIN')
+            : (win ? 'TAP TO PLAY AGAIN' : 'TAP TO TRY AGAIN'), {
     fontFamily: 'monospace', fontSize: '12px', color: '#a8e04a', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(2);
   this.tweens.add({ targets: again, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
@@ -90,6 +96,7 @@ PC.ResultsScene.prototype.create = function () {
 
   var go = function () {
     if (PC.audio) PC.audio.ui();
+    if (d.story) { PC.STORY.pendingMission = null; self.scene.start('PC_Missions'); return; }
     self.scene.start('PC_Select');
   };
   this.time.delayedCall(700, function () {

@@ -14,12 +14,14 @@ PC.GameScene.prototype.create = function () {
   PC.applyRenderScale(this);
   this.cameras.main.setBackgroundColor(0x2a2544);
 
-  // STORY-2: authored region map (set by the title's STORY flow via
-  // PC.STORY.pendingMap). Region overlays the same city fabric with
-  // landmarks + bounds; patrol/quick-run path is untouched (null).
+  // STORY-4 linear spine: PC.STORY.pendingMission (set by the mission
+  // map's GO button) carries { map, hero, id } - the story assigns BOTH
+  // the region and the hero (Mark: "you're given the character and then
+  // given the mission"). Patrol/quick-run path is untouched (null).
+  this.storyMission = (PC.STORY && PC.STORY.pendingMission) || null;
   this.region = null;
-  if (PC.STORY && PC.STORY.pendingMap && PC.STORY.maps[PC.STORY.pendingMap]) {
-    this.region = new PC.Region(PC.STORY.maps[PC.STORY.pendingMap]);
+  if (this.storyMission && PC.STORY.maps[this.storyMission.map]) {
+    this.region = new PC.Region(PC.STORY.maps[this.storyMission.map]);
   }
   PC.installRegion(this.region);
   var regionSelf = this;
@@ -47,7 +49,8 @@ PC.GameScene.prototype.create = function () {
   // "some buildings are walk-throughable / strange collisions")
   // hero = the picked roster entry; scale normalizes figure height to
   // Danny's so every hero occupies the same world footprint.
-  this.hero = PC.selectedHero();
+  this.hero = this.storyMission ? PC.heroById(this.storyMission.hero)
+                                : PC.selectedHero();
   this.player = this.add.image(0, 0, 'atlas', this.hero.art + '_walk_1')
     .setOrigin(0.5, 0.82).setDepth(10).setScale(this.hero.scale);
 
@@ -95,8 +98,10 @@ PC.GameScene.prototype.create = function () {
   // STORY-3: the mission engine rides on top of the run
   this.storyPause = false;
   this.quest = null;
-  if (this.region && PC.STORY.missions && PC.STORY.missions[this.region.def.id]) {
-    this.quest = new PC.Quest(this, this.region, PC.STORY.missions[this.region.def.id]);
+  if (this.region && PC.STORY.missions && this.storyMission &&
+      PC.STORY.missions[this.storyMission.id]) {
+    this.quest = new PC.Quest(this, this.region,
+      PC.STORY.missions[this.storyMission.id]);
   }
   this.cardUi = [];
 
@@ -514,7 +519,8 @@ PC.GameScene.prototype.die = function () {
   var self = this;
   this.time.delayedCall(700, function () {
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
-      gold: self.pickups.gold, win: false });
+      gold: self.pickups.gold, win: false, story: !!self.quest,
+      tp: self.quest ? self.quest.tpEarned : 0, hero: self.hero.id });
   });
 };
 

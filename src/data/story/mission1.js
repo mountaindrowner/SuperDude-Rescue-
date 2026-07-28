@@ -5,7 +5,9 @@ window.PC = window.PC || {};
 PC.STORY = PC.STORY || {};
 PC.STORY.missions = PC.STORY.missions || {};
 
-PC.STORY.missions.central = {
+// keyed by MISSION id (v0.18 linear spine: a map can host several
+// missions; the chain entry names which one to run)
+PC.STORY.missions.stage1 = {
   id: 'stage1',
   name: 'STAGE 1: THE BIG OOPS',
   objectives: [
@@ -65,3 +67,4 @@ PC.STORY.missions.central = {
     },
   ],
 };
+PC.STORY.missions.central = PC.STORY.missions.stage1;   // legacy alias

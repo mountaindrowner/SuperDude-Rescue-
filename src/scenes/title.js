@@ -133,14 +133,16 @@ PC.TitleScene.prototype.create = function () {
     self.menu.add(bg2); self.menu.add(t); self.menu.add(zone);
     return t;
   }
+  // linear story (v0.18): intro cinematic once, then the MISSION MAP -
+  // the story assigns hero + mission, so PC_Select never appears here
   var start = button(H * 0.565, '>> STORY <<', '#a8e04a', 0xa8e04a, function () {
-    PC.STORY.pendingMap = 'central';        // GameScene picks this up
+    if (PC.storyState.introSeen()) { self.scene.start('PC_Missions'); return; }
     self.scene.start('PC_Cutscene', { script: PC.STORY.scripts.intro,
-      next: 'PC_Select' });   // select -> the Central District map
+      next: 'PC_Missions' });
   });
   this.tweens.add({ targets: start, alpha: 0.45, duration: 620, yoyo: true, repeat: -1 });
   button(H * 0.565 + 38, 'QUICK RUN', '#35d0ff', 0x35d0ff, function () {
-    if (PC.STORY) PC.STORY.pendingMap = null;
+    if (PC.STORY) PC.STORY.pendingMission = null;
     self.scene.start('PC_Select');
   });
   button(H * 0.565 + 76, 'POWER-UPS', '#f2c33c', 0xf2c33c, function () {
