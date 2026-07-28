@@ -39,8 +39,11 @@ window.PC = window.PC || {};
   // build tag on every screen (Mark: "add the version number to all
   // screens so I can tell" which build is live vs cached)
   PC.stampVersion = function (scene) {
-    return scene.add.text(PC.RENDER.W - 3, PC.RENDER.H - 3, PC.VERSION, {
-      fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
+    return scene.add.text(PC.RENDER.W - 3, PC.RENDER.H - 3,
+      PC.VERSION + (PC.DEV_MODE ? ' DEV' : ''), {
+      fontFamily: 'monospace', fontSize: '8px',
+      color: PC.DEV_MODE ? '#ff6b6b' : '#6d6a8e',
+      fontStyle: PC.DEV_MODE ? 'bold' : 'normal',
     }).setOrigin(1, 1).setDepth(999);
   };
   // crisp text: default every Text object to SCALE resolution so glyph

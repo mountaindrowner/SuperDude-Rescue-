@@ -12,6 +12,15 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.5: DEVELOPER MODE via ?dev=1 (Mark: "give me
+  an admin version... everything unlocked so I could test").**
+  config.js: `PC.DEV_MODE` from the URL query -> DEV_ALL_UNLOCKED
+  true + gold topped up to $50k (only if below); version stamp
+  shows red bold "vX.Y.Z DEV". The PLAIN URL stays the real player
+  experience (verified: same browser, dev URL = 6/6 heroes + $50k,
+  plain URL = danny only). Session-scoped by URL, nothing dev
+  persists except the test gold.
+
 - **2026-07-27 - v0.14.4: LASSO FINAL FORM - LEVEL-DRIVEN COWBOY
   SWING (Mark: "tiny loop swings WIDE around him... every time he
   levels it up, it increases the size of the loop and brings it in

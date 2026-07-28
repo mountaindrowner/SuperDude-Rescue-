@@ -89,7 +89,19 @@ PC.JOSH_PULLSLAM = true;       // Rope Cyclone pull-then-slam special
 // Dev flag (PHASE2 §3): true = every hero selectable. FLIPPED FALSE
 // v0.13.0 (Mark: "make some more characters unlockable, all except the
 // first one") - each hero has a unique condition in PC.HERO_UNLOCKS.
-PC.DEV_ALL_UNLOCKED = false;
+// v0.14.5: ?dev=1 in the URL = DEVELOPER MODE (Mark: "give me an
+// admin version... everything unlocked so I could test") - all
+// heroes selectable + test-wallet gold top-up + red DEV badge on the
+// version stamp. The plain URL stays the real player experience.
+PC.DEV_MODE = /[?&]dev=1/.test(
+  (typeof window !== 'undefined' && window.location.search) || '');
+PC.DEV_ALL_UNLOCKED = PC.DEV_MODE;
+if (PC.DEV_MODE) {
+  try {
+    var _g = parseInt(localStorage.getItem('portioncontrol.gold') || '0', 10) || 0;
+    if (_g < 50000) localStorage.setItem('portioncontrol.gold', '50000');
+  } catch (e) {}
+}
 
 // ---- playable roster ----
 // scale normalizes figure height to Danny's (~50px) - measured from the
