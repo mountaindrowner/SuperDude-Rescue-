@@ -91,6 +91,13 @@ PC.GameScene.prototype.create = function () {
       msSelf.gainXp(msSelf.xpNext - msSelf.xp);
     });
   }
+
+  // STORY-3: the mission engine rides on top of the run
+  this.storyPause = false;
+  this.quest = null;
+  if (this.region && PC.STORY.missions && PC.STORY.missions[this.region.def.id]) {
+    this.quest = new PC.Quest(this, this.region, PC.STORY.missions[this.region.def.id]);
+  }
   this.cardUi = [];
 
   // run state
@@ -195,6 +202,7 @@ PC.GameScene.prototype.onKill = function (e) {
   e.sprite.clearTint();
   this.enemies.liveCount--;
   this.kills++;
+  if (this.quest) this.quest.notifyKill(e);
   this.killText.setText('POPS ' + this.kills);
   this.fx.burst(e.x, e.y, 'fx_pop', 4, 0.3);
   if (e.still) this.fx.still(e.x, e.y, e.still, 0.4);
@@ -311,6 +319,12 @@ PC.GameScene.prototype.update = function (time, delta) {
   }
   if (this.cardsOpen) return;                 // world paused during the pick
   var dt = Math.min(PC.DT_CLAMP, delta / 1000);
+  if (this.storyPause) {                       // story dialogue: world holds
+    if (this.quest) this.quest.update(dt);
+    this.ground.update(this.cameras.main);
+    return;
+  }
+  if (this.quest) this.quest.update(dt);
   this.now += dt;
   this.runT += dt;
 
@@ -429,11 +443,9 @@ PC.GameScene.prototype.update = function (time, delta) {
   // spawn director (COMPENDIUM 8.1, kid-tuned): sparse early, intense late,
   // 5 food types introduced on a timeline. Ambient spawns thin out while
   // the boss lives (COMPENDIUM 5.1 x1.8 interval) so the fight can breathe.
-  if (!this.boss || this.boss.dead) {
-    this.director.update(dt, this.runT);
-  } else {
-    this.director.update(dt * 0.55, this.runT);
-  }
+  var dirScale = (this.boss && !this.boss.dead) ? 0.55 : 1;
+  if (this.region) dirScale *= 0.5;            // story: ambient stays thin
+  this.director.update(dt * dirScale, this.runT);
   var rings = [[45, 16, 'fry'], [120, 22, 'popcorn'], [200, 28, 'hotdog']];
   for (var ri = 0; ri < rings.length; ri++) {
     if (this.runT >= rings[ri][0] && !this._rings[ri]) {
@@ -443,7 +455,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   }
 
   // ---- BOSS (M5): Big Frank at the timer, then run his fight ----
-  if (!this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
+  if (!this.region && !this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
   if (this.boss) this.boss.update(dt, this.px, this.py);
 
   this.ground.update(this.cameras.main);
@@ -568,9 +580,11 @@ PC.GameScene.prototype.onBossDefeated = function () {
       }
     } });
 
-  // banner + cage rescue after a beat
+  // banner + cage rescue after a beat (story missions hand the moment
+  // to the quest engine instead)
   this.time.delayedCall(1100, function () {
     self.time.timeScale = 1;
+    if (self.quest) { self.quest.onBossDown(); return; }
     self._rescueSequence(b.x, b.y);
   }, [], this);
 };
