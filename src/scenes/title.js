@@ -133,11 +133,15 @@ PC.TitleScene.prototype.create = function () {
     self.menu.add(bg2); self.menu.add(t); self.menu.add(zone);
     return t;
   }
-  var start = button(H * 0.585, '>> START <<', '#a8e04a', 0xa8e04a, function () {
-    self.scene.start('PC_Select');
+  var start = button(H * 0.565, '>> STORY <<', '#a8e04a', 0xa8e04a, function () {
+    self.scene.start('PC_Cutscene', { script: PC.STORY.scripts.intro,
+      next: 'PC_Select' });   // temp next until Stage 1 lands (STORY-3)
   });
   this.tweens.add({ targets: start, alpha: 0.45, duration: 620, yoyo: true, repeat: -1 });
-  button(H * 0.585 + 40, 'POWER-UPS', '#f2c33c', 0xf2c33c, function () {
+  button(H * 0.565 + 38, 'QUICK RUN', '#35d0ff', 0x35d0ff, function () {
+    self.scene.start('PC_Select');
+  });
+  button(H * 0.565 + 76, 'POWER-UPS', '#f2c33c', 0xf2c33c, function () {
     self.scene.start('PC_Shop');
   });
 
@@ -151,7 +155,7 @@ PC.TitleScene.prototype.create = function () {
     this.menu.add(sfxT);
   }
 
-  var goldT = this.add.text(W / 2, H * 0.585 + 72, '$ ' + PC.meta.gold(), {
+  var goldT = this.add.text(W / 2, H * 0.565 + 108, '$ ' + PC.meta.gold(), {
     fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
   }).setOrigin(0.5);
   this.menu.add(goldT);
