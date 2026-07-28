@@ -340,47 +340,117 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
 // ---------------------------------------------------------------
 // CARLOS (kit C) - COMET BEAM: pierces to the FARTHEST enemy
 // ---------------------------------------------------------------
-PC.BeamWeapon = function () {
+PC.BeamWeapon = function (scene) {
   this.key = 'beam'; this.name = 'COMET BEAM';
   this.level = 1; this.max = 5;
-  this.cd = 1.5; this.cdT = 0.5; this.dmg = 14; this.beams = 1;
+  // v0.16.1 rework (Mark: "too much like Danny's laser... a charged
+  // beam that slowly coalesces, then shoots on a BIG beam, then
+  // stops - once every ~10 seconds"): heavy held-line laser.
+  // idle (long cd) -> charge (energy coalesces ~0.9s) -> FIRE (thick
+  // beam corridor held ~0.55s, ticking) -> stop.
+  this.cd = 10; this.cdT = 3; this.dmg = 50; this.width = 26;
+  this.beams = 1; this.range = 430;
+  this.state = 'idle'; this.chargeT = 0; this.fireT = 0; this.dir = 0;
+  this.gfx = scene.add.graphics().setDepth(11)
+    .setBlendMode(Phaser.BlendModes.ADD);
 };
 PC.BeamWeapon.prototype.desc = function () {
-  return ['', 'Snipes the farthest foe, pierces all', 'Damage up!', 'Twin comets!',
-          'Faster comets!', 'Comet storm!'][Math.min(this.level + 1, 5)] || 'Damage up!';
+  return ['', 'Charges up one MIGHTY beam', 'Heavier beam!', 'Wider + faster!',
+          'Twin beams!', 'Cosmic lance!'][Math.min(this.level + 1, 5)] || 'Heavier beam!';
 };
 PC.BeamWeapon.prototype.applyLevel = function () {
-  if (this.level === 2) this.dmg = 20;
-  else if (this.level === 3) this.beams = 2;
-  else if (this.level === 4) this.cd = 1.1;
-  else if (this.level === 5) this.dmg = 28;
+  if (this.level === 2) this.dmg = 70;
+  else if (this.level === 3) { this.width = 34; this.cd = 8.5; }
+  else if (this.level === 4) this.beams = 2;
+  else if (this.level === 5) { this.dmg = 95; this.cd = 7.5; this.width = 40; }
 };
-PC.BeamWeapon.prototype.update = function (dt, scene) {
-  this.cdT -= dt;
-  if (this.cdT > 0) return;
-  var pool = scene.enemies.pool, best = null, bestD = -1;
+PC.BeamWeapon.prototype._corridor = function (scene, ang, w2, dmg) {
+  var pxp = scene.px, pyp = scene.py - 4;
+  var ca = Math.cos(ang), sa = Math.sin(ang);
+  var range = this.range;
+  scene.enemies.hash.eachNear(pxp + ca * range * 0.5, pyp + sa * range * 0.5, function () {});
+  var pool = scene.enemies.pool;
   for (var i = 0; i < pool.length; i++) {
     var e = pool[i];
     if (!e.active) continue;
-    var dx = e.x - scene.px, dy = e.y - scene.py;
-    var d = dx * dx + dy * dy;
-    if (d > bestD) { bestD = d; best = e; }
+    var rx = e.x - pxp, ry = e.y - pyp;
+    var along = rx * ca + ry * sa;
+    if (along < -6 || along > range) continue;
+    var across = Math.abs(rx * -sa + ry * ca);
+    if (across > w2 + e.r) continue;
+    if (scene.now < (e.beamCd || 0)) continue;
+    e.beamCd = scene.now + 0.22;
+    PC.damageEnemy(scene, e, dmg, ca * 1.4, sa * 1.4, scene._onKillCb);
   }
-  if (!best) { this.cdT = 0.3; return; }
-  this.cdT = this.cd * scene.stats.cdMult;
-  var beams = this.beams + (scene.stats.extraProj || 0);
-  for (var n = 0; n < beams; n++) {
-    var ox = (n - (beams - 1) / 2) * 10;
-    var bd = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
-    if (this.critBoost && !scene._lastCrit && Math.random() < this.critBoost) {
-      bd *= 2; scene._lastCrit = true;   // Carlos flavor: comets crit extra
+  if (scene.boss && !scene.boss.dead && scene.now >= (scene._beamBossCd || 0)) {
+    var brx = scene.boss.x - pxp, bry = scene.boss.y - pyp;
+    var balong = brx * ca + bry * sa;
+    var bacross = Math.abs(brx * -sa + bry * ca);
+    if (balong > 0 && balong < range && bacross < w2 + scene.boss.r) {
+      scene._beamBossCd = scene.now + 0.22;
+      scene.hitBoss(scene.boss.x, scene.boss.y, dmg, ca, sa);
     }
-    scene.bullets.fire(scene.px + ox, scene.py - 6, best.x, best.y,
-      { speed: 700, dmg: bd, frame: 'proj_resizer', tint: 0xf2c33c, scale: 1.9,
-        pierce: 99, life: 1.5 });
   }
-  scene.fx.burst(scene.px, scene.py - 6, 'fx_muzzle', 2, 0.1);
-  if (PC.audio) PC.audio.weaponVoice('beam');
+};
+PC.BeamWeapon.prototype.update = function (dt, scene) {
+  var g = this.gfx;
+  g.clear();
+  var pxp = scene.px, pyp = scene.py - 4;
+  if (this.state === 'idle') {
+    this.cdT -= dt;
+    if (this.cdT > 0) return;
+    var aim = PC.aimAt(scene, this.range);
+    if (!aim.target) { this.cdT = 0.3; return; }
+    this.dir = Math.atan2(aim.target.y - pyp, aim.target.x - pxp);
+    this.state = 'charge'; this.chargeT = 0.9;
+    if (scene.vfx) scene.vfx.shrinkRing(pxp, pyp, 26, 850, 0xf2c33c);
+    if (PC.audio) PC.audio.weaponVoice('beam');
+    return;
+  }
+  if (this.state === 'charge') {
+    this.chargeT -= dt;
+    var k = 1 - Math.max(0, this.chargeT) / 0.9;        // 0 -> 1
+    // energy coalesces: converging motes + a growing hot orb
+    var orb = 2 + 6 * k;
+    for (var m = 0; m < 5; m++) {
+      var ma = scene.now * 3.1 + m * 1.26;
+      var md = 22 * (1 - k) + 5;
+      g.fillStyle(0xf2c33c, 0.5 + 0.3 * k);
+      g.fillCircle(pxp + Math.cos(ma) * md, pyp + Math.sin(ma) * md, 1.6);
+    }
+    g.fillStyle(0xf2c33c, 0.5).fillCircle(pxp, pyp, orb + 2);
+    g.fillStyle(0xffffff, 0.8).fillCircle(pxp, pyp, orb * 0.6);
+    if (this.chargeT <= 0) {
+      this.state = 'fire'; this.fireT = 0.55;
+      if (scene.vfx) scene.vfx.shake(2.5, 140);
+    }
+    return;
+  }
+  // FIRE: thick layered beam corridor, anchored to the player,
+  // direction locked at charge
+  this.fireT -= dt;
+  var fk = Math.max(0, this.fireT) / 0.55;              // 1 -> 0
+  var w = this.width * scene.stats.areaMult;
+  var count = this.beams + (scene.stats.extraProj || 0);
+  var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
+  for (var b2 = 0; b2 < count; b2++) {
+    var ang = this.dir + (b2 ? Math.PI * b2 / (count > 2 ? count / 2 : 1) : 0);
+    var ex = pxp + Math.cos(ang) * this.range;
+    var ey = pyp + Math.sin(ang) * this.range;
+    var pulse = 0.85 + 0.15 * Math.sin(scene.now * 40);
+    g.lineStyle(w * fk * pulse, 0xf2c33c, 0.22);        // outer glow
+    g.lineBetween(pxp, pyp, ex, ey);
+    g.lineStyle(w * 0.5 * fk * pulse, 0xff9d3b, 0.5);   // mid body
+    g.lineBetween(pxp, pyp, ex, ey);
+    g.lineStyle(Math.max(2, w * 0.2 * fk), 0xffffff, 0.9);  // white-hot core
+    g.lineBetween(pxp, pyp, ex, ey);
+    this._corridor(scene, ang, w * 0.5, dmg);
+  }
+  g.fillStyle(0xffffff, 0.9).fillCircle(pxp, pyp, 4 + w * 0.1 * fk);
+  if (this.fireT <= 0) {
+    this.state = 'idle';
+    this.cdT = this.cd * scene.stats.cdMult;
+  }
 };
 
 // ---------------------------------------------------------------
@@ -523,7 +593,7 @@ PC.KITS = {
   },
   carlos: {
     kitName: 'COMET BEAM',
-    weapon: function (scene) { return new PC.BeamWeapon(); },
+    weapon: function (scene) { return new PC.BeamWeapon(scene); },
     masterize: function (w) { w.critBoost = 0.10; }, // comets crit twice as often
     passive: function (scene) { scene.stats.critChance = 0.10; },
     passiveDesc: '10% critical hits',

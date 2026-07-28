@@ -189,7 +189,7 @@ PC.GameScene.prototype.onKill = function (e) {
   this.gems.spawn(e.x, e.y, e.xp);
   var roll = Math.random();
   if (roll < 0.015) this.pickups.drop(e.x, e.y, 'medkit', PC.PLAYER.MEDKIT_HEAL);
-  else if (roll < 0.10) this.pickups.drop(e.x, e.y, 'coin', 1);
+  else if (roll < 0.13) this.pickups.drop(e.x, e.y, 'coin', 2);
   if (PC.audio) PC.audio.pop();
 };
 
@@ -418,7 +418,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   } else {
     this.director.update(dt * 0.55, this.runT);
   }
-  var rings = [[60, 14, 'fry'], [150, 18, 'popcorn'], [240, 22, 'hotdog']];
+  var rings = [[45, 16, 'fry'], [120, 22, 'popcorn'], [200, 28, 'hotdog']];
   for (var ri = 0; ri < rings.length; ri++) {
     if (this.runT >= rings[ri][0] && !this._rings[ri]) {
       this._rings[ri] = true;

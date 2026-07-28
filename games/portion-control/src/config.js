@@ -146,7 +146,9 @@ PC.selectedHero = function () {
 };
 
 // ---- in-run enemy time scaling (COMPENDIUM 5.5) ----
-PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.02 };
+// v0.16.1 (Mark: "feels a little too easy... ramp up sooner" on the
+// 5-min run): in-run scaling doubled-ish so minute 3+ has teeth
+PC.TIMESCALE = { HP_PER_MIN: 0.10, DMG_PER_MIN: 0.04 };
 
 // ---- pickups (COMPENDIUM 5.6) ----
 PC.DROPS = { HEALTH: 0.012, MAGNET: 0.004, BOMB: 0.0015, HEALTH_HEAL: 30 };

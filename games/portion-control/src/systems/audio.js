@@ -145,7 +145,9 @@ window.PC = window.PC || {};
   var VOICES = {
     resizer:   { f: 'shot', b: 620, g0: 1, g1: 1.7, d: 0.08, n: 0.03, nl: 2000, gap: 0.09 },
     blaster:   { f: 'shot', w: 'square', b: 480, g0: 1, g1: 0.7, d: 0.10, n: 0.12, nl: 1500, reps: 3, gap: 0.18 },
-    beam:      { f: 'shot', w: 'sawtooth', b: 700, g0: 1, g1: 1.02, d: 0.09, n: 0.02, nl: 3000, g: 0.07, gap: 0.14 },
+    beam:      { f: 'strike', gap: 2.0, layers: [
+      { w: 'sawtooth', f0: 120, f1: 640, d: 0.85, g: 0.07, air: 1 },
+      { t: 0.9, w: 'sawtooth', f0: 520, f1: 180, d: 0.55, g: 0.16, n: 0.14, nl: 1600, air: 1 }] },
     espresso:  { f: 'shot', gap: 0.4, layers: [
       { w: 'triangle', f0: 300, f1: 900, d: 0.5, g: 0.08, air: 1 },
       { t: 0.5, w: 'sine', f0: 900, f1: 600, d: 0.09, g: 0.16, n: 0.05, nl: 2000 }] },
