@@ -41,8 +41,12 @@ window.PC = window.PC || {};
     add('portrait_' + c.k + '_ko', PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
   // story NPC portraits (STORY-1; real PNGs via manifest)
-  ['bloom', 'sal', 'pip', 'chomp'].forEach(function (n) {
+  ['bloom', 'sal', 'pip', 'chomp', 'anchor'].forEach(function (n) {
     add('portrait_' + n, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', P.CLOUD, P.GRAPE);
+  });
+  // newscast cutscene figures (v0.18.2): crowd from behind + npc minis
+  ['cs_civ_a', 'cs_civ_b', 'cs_civ_c', 'cs_bloom', 'cs_sal', 'cs_pip'].forEach(function (n) {
+    add(n, 48, 48, 'creature', P.CLOUD, P.GRAPE, 1);
   });
 
   // The District 1 rescued teammate - stays a stasis-pod placeholder

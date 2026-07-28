@@ -1,12 +1,16 @@
-// cutscene.js - STORY-1: the beat-list runner (STORY_SPEC Part V).
-// A cutscene = { script: [beat...], next, nextData }. Beat kinds:
-//   { say: { speaker, text, portrait? } }        dialogue box beat
-//   { scene: 'plaza_sunny'|'plaza_flooded'|'black' }  背景 painter
-//   { action: 'flash'|'shake'|'smashcut'|'sodatip'|'floodburst'|
-//             'portraits6'|'confetti'|'chant' , text? }
-//   { music: 'hopeful'|'tense'|'lift'|'stop' }   (synth stubs for now)
-//   { wait: ms }
-// Tap advances say-beats (two-stage); [SKIP >] ends the whole scene.
+// cutscene.js - STORY-1 beat runner, v0.18.2 NEWSCAST presentation
+// (Mark: "the intro is barely understandable... maybe it's a newscast.
+// We're looking at an old style tube TV and on it is a newscast").
+// The whole cinematic plays INSIDE a CRT: garage room -> tube TV powers
+// on -> ACN (Adventure City News) chrome (BREAKING banner, ticker, LIVE
+// bug) over close-up footage built from REAL sprites (Danny on the demo
+// stage, Bloom/Sal/Pip, a crowd seen from behind) -> the soda tips, the
+// flood erupts, SIGNAL LOST static -> day-2 flood report -> the TV dims
+// and Danny himself steps forward for the wrist-pad call. Beat kinds:
+//   { say: {speaker, text} }   { scene: 'off|news_desk|demo|flood|danny_room' }
+//   { chrome: {banner, ticker, live} }   { music: tag }   { wait: ms }
+//   { action: 'tvon|sodatip|floodburst|signallost|smashcut|portraits6|
+//              flash|shake|confetti|chant' }
 window.PC = window.PC || {};
 
 PC.CutsceneScene = function () { Phaser.Scene.call(this, { key: 'PC_Cutscene' }); };
@@ -23,8 +27,58 @@ PC.CutsceneScene.prototype.create = function () {
   PC.applyRenderScale(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x0d0a1c);
-  this.bg = this.add.graphics().setDepth(0);
-  this.bgImgs = [];                       // atlas stamps for scenes
+
+  // ---- the TV screen rect (4:3.2-ish tube, centered above the box) ----
+  var sw = Math.min(W - 44, 300);
+  var sh = Math.round(sw * 0.82);
+  var availH = H - 96;                       // dialogue box + margins
+  if (sh > availH - 70) sh = availH - 70;
+  var sx = Math.round((W - sw) / 2);
+  var sy = Math.round(38 + (availH - sh) / 2) - 6;
+  this.scr = { x: sx, y: sy, w: sw, h: sh };
+
+  this.paintRoom();
+  this.paintBezel();
+
+  // footage: graphics + stamped sprites inside a masked container
+  this.bg = this.add.graphics();
+  this.tv = this.add.container(0, 0, [this.bg]).setDepth(10);
+  this.bgImgs = [];
+  var maskG = this.make.graphics({ add: false });
+  maskG.fillStyle(0xffffff).fillRect(sx, sy, sw, sh);
+  var mask = maskG.createGeometryMask();
+  this.tv.setMask(mask);
+
+  // news chrome (banner / ticker / LIVE bug) above footage
+  this.chromeG = this.add.graphics().setDepth(20).setMask(mask);
+  this.bannerTxt = this.add.text(sx + 26, sy + sh - 34, '', {
+    fontFamily: 'monospace', fontSize: '9px', color: '#f7f4ef', fontStyle: 'bold',
+  }).setOrigin(0, 0.5).setDepth(21).setMask(mask).setVisible(false);
+  this.tickerTxt = this.add.text(sx + sw, sy + sh - 10, '', {
+    fontFamily: 'monospace', fontSize: '7px', color: '#f2c33c', fontStyle: 'bold',
+  }).setOrigin(0, 0.5).setDepth(21).setMask(mask).setVisible(false);
+  this.liveTxt = this.add.text(sx + sw - 8, sy + 6, 'LIVE', {
+    fontFamily: 'monospace', fontSize: '8px', color: '#f7f4ef', fontStyle: 'bold',
+  }).setOrigin(1, 0).setDepth(21).setMask(mask).setVisible(false);
+  this.acnTxt = this.add.text(sx + 8, sy + 10, 'ACN', {
+    fontFamily: 'monospace', fontSize: '8px', color: '#f2c33c', fontStyle: 'bold',
+  }).setOrigin(0, 0.5).setDepth(21).setMask(mask).setVisible(false);
+  this.liveDot = this.add.circle(sx + sw - 36, sy + 11, 3, 0xd93a3a).setDepth(21)
+    .setMask(mask).setVisible(false);
+  this.tweens.add({ targets: this.liveDot, alpha: 0.2, duration: 500, yoyo: true, repeat: -1 });
+
+  // CRT glass pass: scanlines + vignette + glare (over chrome)
+  this.paintGlass();
+
+  // static / signal-lost layer
+  this.staticG = this.add.graphics().setDepth(32).setMask(mask);
+  this._staticT = 0; this._staticAlpha = 1;
+  this.lostTxt = this.add.text(sx + sw / 2, sy + sh / 2, 'SIGNAL LOST', {
+    fontFamily: 'monospace', fontSize: '13px', color: '#f7f4ef', fontStyle: 'bold',
+    stroke: '#120e24', strokeThickness: 4,
+  }).setOrigin(0.5).setDepth(33).setVisible(false);
+
+  this.roomSprites = [];                     // danny_room actors (outside TV)
   this.fxLayer = this.add.graphics().setDepth(50);
   this.box = new PC.DialogueBox(this);
   this._i = 0; this._busy = false; this._ended = false;
@@ -40,12 +94,97 @@ PC.CutsceneScene.prototype.create = function () {
   this.input.on('pointerdown', function () {
     if (PC.audio) PC.audio.unlock();
     if (self.box.active) { self.box.tap(); return; }
-    // taps during waits/actions fast-forward to the next beat
     if (self._busy === 'wait') { self._busy = false; self._advance(); }
   });
 
   PC.stampVersion(this);
   this._advance();
+};
+
+// ---- the room around the TV (Danny's garage, night) ----
+PC.CutsceneScene.prototype.paintRoom = function () {
+  var W = PC.RENDER.W, H = PC.RENDER.H, R = this.scr;
+  var g = this.add.graphics().setDepth(0);
+  // wall falloff darker toward edges
+  g.fillStyle(0x171330, 1).fillRect(0, 0, W, H);
+  g.fillStyle(0x1c1733, 1).fillRect(W * 0.08, 0, W * 0.84, H);
+  // shelf above the TV with tool silhouettes
+  var shy = R.y - 26;
+  if (shy > 26) {
+    g.fillStyle(0x241f3d, 1).fillRect(W * 0.12, shy, W * 0.76, 4);
+    g.fillStyle(0x120e24, 1);
+    g.fillRect(W * 0.16, shy - 10, 8, 10);          // jar
+    g.fillRect(W * 0.24, shy - 14, 4, 14);          // wrench upright
+    g.fillRect(W * 0.30, shy - 8, 14, 8);           // toolbox
+    g.fillRect(W * 0.70, shy - 12, 10, 12);         // canister
+    g.fillStyle(0x35d0ff, 0.5).fillRect(W * 0.31, shy - 6, 3, 2);
+  }
+  // floor + TV stand
+  var fy = R.y + R.h + 34;
+  g.fillStyle(0x120e24, 1).fillRect(0, fy, W, H - fy);
+  g.fillStyle(0x241f3d, 1).fillRect(R.x + 18, R.y + R.h + 22, R.w - 36, 14);
+  g.fillStyle(0x0a0716, 0.8).fillRect(R.x + 22, fy, R.w - 44, 3);
+  // TV glow spilling onto the room
+  g.fillStyle(0x35d0ff, 0.05).fillRect(R.x - 16, R.y - 12, R.w + 32, R.h + 30);
+};
+
+// ---- the tube-TV shell: bezel, grille, dials, antenna ----
+PC.CutsceneScene.prototype.paintBezel = function () {
+  var R = this.scr;
+  var bx = R.x - 12, by = R.y - 12, bw = R.w + 24, bh = R.h + 24 + 16;
+  // BODY renders BELOW the footage (the screen is a window in it) -
+  // filling it at detail depth was v0.18.2's black-screen bug: the one
+  // big rounded rect covered the whole masked footage layer.
+  var body = this.add.graphics().setDepth(4);
+  body.fillStyle(0x0a0716, 0.6).fillRoundedRect(bx + 3, by + 4, bw, bh, 10);
+  body.fillStyle(0x2b2338, 1).fillRoundedRect(bx, by, bw, bh, 10);
+  body.fillStyle(0xffffff, 0.07).fillRoundedRect(bx, by, bw, 8, 10);      // top sheen
+  body.fillStyle(0x000000, 0.25).fillRoundedRect(bx, by + bh - 10, bw, 10, 10);
+  body.lineStyle(1, 0x45356e, 1).strokeRoundedRect(bx, by, bw, bh, 10);
+  // dark tube glass behind the picture
+  body.fillStyle(0x120e24, 1).fillRoundedRect(R.x - 5, R.y - 5, R.w + 10, R.h + 10, 6);
+  // details OUTSIDE the screen window stay on top
+  var g = this.add.graphics().setDepth(40);
+  g.lineStyle(2, 0x0a0716, 1).strokeRoundedRect(R.x - 3, R.y - 3, R.w + 6, R.h + 6, 5);
+  // speaker grille + dials strip under the screen
+  var gy = R.y + R.h + 9;
+  g.fillStyle(0x241f3d, 1).fillRoundedRect(R.x + 6, gy, R.w * 0.5, 10, 3);
+  g.fillStyle(0x120e24, 1);
+  for (var i = 0; i < 8; i++) g.fillRect(R.x + 12 + i * (R.w * 0.5 - 14) / 8, gy + 2, 2, 6);
+  g.fillStyle(0x6d6a8e, 1).fillCircle(R.x + R.w - 20, gy + 5, 4);          // dial A
+  g.fillStyle(0xf2c33c, 1).fillRect(R.x + R.w - 21, gy + 2, 2, 3);
+  g.fillStyle(0x6d6a8e, 1).fillCircle(R.x + R.w - 38, gy + 5, 4);          // dial B
+  g.fillStyle(0x120e24, 1).fillRect(R.x + R.w - 39, gy + 4, 2, 3);
+  // brand plate
+  var brand = this.add.text(R.x + R.w * 0.5 + 14, gy + 5, 'ACN-VISION', {
+    fontFamily: 'monospace', fontSize: '6px', color: '#6d6a8e', fontStyle: 'bold',
+  }).setOrigin(0, 0.5).setDepth(41);
+  // rabbit-ear antenna
+  var ax = R.x + R.w / 2;
+  g.lineStyle(2, 0x45356e, 1);
+  g.lineBetween(ax, R.y - 12, ax - 26, R.y - 34);
+  g.lineBetween(ax, R.y - 12, ax + 20, R.y - 38);
+  g.fillStyle(0x6d6a8e, 1).fillCircle(ax - 26, R.y - 34, 2);
+  g.fillCircle(ax + 20, R.y - 38, 2);
+  g.fillStyle(0x241f3d, 1).fillRoundedRect(ax - 8, R.y - 16, 16, 8, 3);
+};
+
+// ---- CRT glass: scanlines + edge vignette + glare streak ----
+PC.CutsceneScene.prototype.paintGlass = function () {
+  var R = this.scr;
+  var g = this.add.graphics().setDepth(30);
+  g.fillStyle(0x000000, 0.10);
+  for (var y = R.y; y < R.y + R.h; y += 3) g.fillRect(R.x, y, R.w, 1);
+  g.fillStyle(0x000000, 0.22);                       // corner vignette
+  g.fillRect(R.x, R.y, R.w, 3); g.fillRect(R.x, R.y + R.h - 3, R.w, 3);
+  g.fillRect(R.x, R.y, 3, R.h); g.fillRect(R.x + R.w - 3, R.y, 3, R.h);
+  g.fillStyle(0xffffff, 0.05);                       // curved glare
+  g.beginPath();
+  g.moveTo(R.x + R.w * 0.12, R.y);
+  g.lineTo(R.x + R.w * 0.34, R.y);
+  g.lineTo(R.x + R.w * 0.10, R.y + R.h * 0.5);
+  g.lineTo(R.x + R.w * 0.02, R.y + R.h * 0.5);
+  g.closePath(); g.fill();
 };
 
 PC.CutsceneScene.prototype.finish = function () {
@@ -65,6 +204,9 @@ PC.CutsceneScene.prototype._advance = function () {
   } else if (beat.scene) {
     this.paintScene(beat.scene);
     this._advance();
+  } else if (beat.chrome) {
+    this.setChrome(beat.chrome);
+    this._advance();
   } else if (beat.music) {
     this.musicCue(beat.music);
     this._advance();
@@ -80,85 +222,219 @@ PC.CutsceneScene.prototype._advance = function () {
   }
 };
 
-// ---- scene backgrounds (code-painted; landmark art arrives STORY-2) ----
-PC.CutsceneScene.prototype.paintScene = function (name) {
-  var W = PC.RENDER.W, H = PC.RENDER.H, g = this.bg, self = this;
-  g.clear();
+// stamp a sprite into the footage (auto-cleaned on scene change)
+PC.CutsceneScene.prototype.stamp = function (frame, x, y, scale, flip) {
+  var im = this.add.image(x, y, 'atlas', frame).setScale(scale || 1);
+  if (flip) im.setFlipX(true);
+  this.tv.add(im);
+  this.bgImgs.push(im);
+  return im;
+};
+
+PC.CutsceneScene.prototype.clearFootage = function () {
+  this.bg.clear();
   this.bgImgs.forEach(function (im) { im.destroy(); });
   this.bgImgs = [];
-  if (name === 'black') { this.cameras.main.setBackgroundColor(0x000000); return; }
-  var flooded = name === 'plaza_flooded';
-  // sky
-  var top = flooded ? 0x3a3050 : 0x35d0ff, bot = flooded ? 0x241f3d : 0xcfe9f2;
-  g.fillStyle(top, 1).fillRect(0, 0, W, H * 0.35);
-  g.fillStyle(bot, 1).fillRect(0, H * 0.35, W, H * 0.2);
-  if (flooded) {
-    // uneasy stars + a smog moon
-    for (var st2 = 0; st2 < 22; st2++) {
-      g.fillStyle(0xcfd4e8, 0.4 + PC.hash01(st2, 3, 9) * 0.4);
-      g.fillRect(PC.hash01(st2, 1, 7) * W, PC.hash01(st2, 2, 8) * H * 0.3, 1, 1);
-    }
-    g.fillStyle(0xcfd4e8, 0.25).fillCircle(W * 0.82, H * 0.12, 14);
-    g.fillStyle(0x3a3050, 1).fillCircle(W * 0.85, H * 0.11, 11);
-  } else {
-    // sun + drifting clouds
-    g.fillStyle(0xfff6e0, 0.5).fillCircle(W * 0.8, H * 0.12, 22);
-    g.fillStyle(0xf2c33c, 1).fillCircle(W * 0.8, H * 0.12, 15);
-    g.fillStyle(0xffffff, 0.9);
-    for (var cl = 0; cl < 4; cl++) {
-      var cxx = PC.hash01(cl, 5, 11) * W, cyy = H * (0.06 + PC.hash01(cl, 6, 12) * 0.16);
-      g.fillEllipse(cxx, cyy, 44, 12);
-      g.fillEllipse(cxx + 16, cyy - 5, 28, 10);
-    }
+};
+
+// ---- news chrome ----
+PC.CutsceneScene.prototype.setChrome = function (c) {
+  var R = this.scr, g = this.chromeG;
+  g.clear();
+  this._tickerText = c && c.ticker ? '  +++  ' + c.ticker : null;
+  if (!c) {
+    this.bannerTxt.setVisible(false); this.tickerTxt.setVisible(false);
+    this.liveTxt.setVisible(false); this.liveDot.setVisible(false);
+    this.acnTxt.setVisible(false);
+    return;
   }
-  // skyline silhouettes
-  g.fillStyle(flooded ? 0x1c1733 : 0x45356e, 1);
-  var seed = 7;
-  for (var x = 0; x < W; x += 34) {
-    seed = (seed * 16807) % 2147483647;
-    var bh = 40 + (seed % 70);
-    g.fillRect(x, H * 0.55 - bh, 30, bh);
-    // lit windows
-    g.fillStyle(flooded ? 0x45356e : 0xf2c33c, flooded ? 0.5 : 0.8);
-    for (var wy = H * 0.55 - bh + 6; wy < H * 0.53; wy += 10) {
-      g.fillRect(x + 5, wy, 3, 3); g.fillRect(x + 15, wy, 3, 3);
-    }
-    g.fillStyle(flooded ? 0x1c1733 : 0x45356e, 1);
-  }
-  // plaza ground
-  g.fillStyle(flooded ? 0x3a3652 : 0x6d6a8e, 1).fillRect(0, H * 0.55, W, H * 0.45);
-  g.fillStyle(0x000000, 0.15);
-  for (var sx = 0; sx < W; sx += 40) g.fillRect(sx, H * 0.55, 1, H * 0.45);
-  // the Nourish-Ray demo stage (center)
-  PC.labPanel(g, W / 2 - 60, H * 0.5, 120, 26, { rivets: true, base: 0x241f3d });
-  g.fillStyle(0x35d0ff, flooded ? 0.25 : 0.9);
-  g.fillCircle(W / 2, H * 0.47, 9);                      // the Ray emitter
-  g.fillStyle(0xffffff, flooded ? 0.2 : 0.8).fillCircle(W / 2, H * 0.47, 4);
-  if (flooded) {
-    // food flood: mounds of real enemy stills piled along the ground
-    var stills = ['still_d1_fry', 'still_d1_hotdog', 'still_d1_popcorn',
-                  'still_d1_toast', 'still_d1_pretzel'];
-    for (var f = 0; f < 26; f++) {
-      var fx2 = PC.hash01(f, 13, 21) * W;
-      var fy2 = H * 0.6 + PC.hash01(f, 14, 22) * H * 0.34;
-      var im = this.add.image(fx2, fy2, 'atlas', stills[f % stills.length])
-        .setDepth(1).setScale(0.9 + (f % 3) * 0.25).setAngle((f * 53) % 40 - 20);
-      this.bgImgs.push(im);
-    }
-    g.fillStyle(0xff9d3b, 0.12).fillRect(0, H * 0.55, W, H * 0.45);   // grease haze
+  this.acnTxt.setVisible(true);
+  // ACN bug (top-left)
+  g.fillStyle(0x120e24, 0.85).fillRect(R.x + 4, R.y + 4, 30, 13);
+  g.fillStyle(0xf2c33c, 1).fillRect(R.x + 4, R.y + 15, 30, 2);
+  // LIVE bug (top-right)
+  if (c.live) {
+    g.fillStyle(0x120e24, 0.85).fillRect(R.x + R.w - 44, R.y + 4, 40, 13);
+    this.liveTxt.setVisible(true); this.liveDot.setVisible(true);
   } else {
-    // crowd dots at the stage
-    for (var c = 0; c < 18; c++) {
-      var cx2 = W / 2 - 80 + (c * 29) % 160;
-      var cy2 = H * 0.62 + (c * 17) % 40;
-      g.fillStyle([0xcfd4e8, 0x7dd97b, 0xff9ecb, 0xf2c33c][c % 4], 1);
-      g.fillCircle(cx2, cy2, 3);
-      g.fillStyle(0xb5793f, 1).fillCircle(cx2, cy2 - 4, 2);
-    }
+    this.liveTxt.setVisible(false); this.liveDot.setVisible(false);
+  }
+  // banner bar
+  if (c.banner) {
+    g.fillStyle(0xd93a3a, 1).fillRect(R.x, R.y + R.h - 42, R.w, 16);
+    g.fillStyle(0xfff6e0, 1).fillRect(R.x, R.y + R.h - 42, 4, 16);
+    g.fillStyle(0x8f1f1f, 1).fillRect(R.x, R.y + R.h - 26, R.w, 2);
+    this.bannerTxt.setText(c.banner).setVisible(true);
+  } else {
+    this.bannerTxt.setVisible(false);
+  }
+  // ticker strip
+  if (c.ticker) {
+    g.fillStyle(0x120e24, 0.92).fillRect(R.x, R.y + R.h - 18, R.w, 18);
+    this.tickerTxt.setText(this._tickerText).setVisible(true);
+    this.tickerTxt.x = R.x + R.w;
+  } else {
+    this.tickerTxt.setVisible(false);
   }
 };
 
-// ---- music cues (synth stubs; Suno loops slot in later) ----
+// ---- scene painters (all inside the TV rect) ----
+PC.CutsceneScene.prototype.paintScene = function (name) {
+  var R = this.scr, g = this.bg, self = this;
+  this.clearFootage();
+  this.setChrome(null);
+  this.lostTxt.setVisible(false);
+  this._staticT = 0; this.staticG.clear();
+  this.roomSprites.forEach(function (o) { o.destroy(); });
+  this.roomSprites = [];
+
+  if (name === 'off' || name === 'black') {
+    g.fillStyle(0x08060f, 1).fillRect(R.x, R.y, R.w, R.h);
+    return;
+  }
+
+  if (name === 'news_desk') {
+    // newsroom: window band w/ skyline, desk, the anchor, story graphic
+    g.fillStyle(0x1c3a52, 1).fillRect(R.x, R.y, R.w, R.h);
+    g.fillStyle(0x35d0ff, 0.9).fillRect(R.x + 8, R.y + 10, R.w - 16, R.h * 0.42);
+    g.fillStyle(0xcfe9f2, 0.8);
+    g.fillEllipse(R.x + R.w * 0.3, R.y + 24, 30, 8);
+    g.fillEllipse(R.x + R.w * 0.7, R.y + 34, 38, 9);
+    g.fillStyle(0x2a5a7a, 1);                        // skyline in the window
+    for (var b = 0; b < 7; b++) {
+      var bh2 = 18 + PC.hash01(b, 3, 5) * 34;
+      g.fillRect(R.x + 10 + b * (R.w - 20) / 7, R.y + 10 + R.h * 0.42 - bh2,
+        (R.w - 20) / 7 - 4, bh2);
+    }
+    // ADVENTURE TOWER stands tallest, the Ray glinting on top
+    var tx = R.x + R.w * 0.72;
+    g.fillStyle(0x1f4a66, 1).fillRect(tx, R.y + 14, 16, R.h * 0.42 - 4);
+    g.fillStyle(0x35d0ff, 1).fillRect(tx + 6, R.y + 8, 4, 8);
+    g.fillStyle(0xfff6e0, 0.9).fillRect(tx + 7, R.y + 6, 2, 2);
+    g.lineStyle(2, 0x0f2a3d, 1).strokeRect(R.x + 8, R.y + 10, R.w - 16, R.h * 0.42);
+    // window mullions
+    g.lineBetween(R.x + R.w / 2, R.y + 10, R.x + R.w / 2, R.y + 10 + R.h * 0.42);
+    // desk
+    g.fillStyle(0x241f3d, 1).fillRect(R.x, R.y + R.h * 0.66, R.w, R.h * 0.34);
+    g.fillStyle(0x2e2850, 1).fillRect(R.x, R.y + R.h * 0.66, R.w, 6);
+    g.fillStyle(0xf2c33c, 1).fillRect(R.x + R.w * 0.30, R.y + R.h * 0.74, R.w * 0.4, 10);
+    var plate = this.add.text(R.x + R.w / 2, R.y + R.h * 0.74 + 5, 'ACN NEWS', {
+      fontFamily: 'monospace', fontSize: '8px', color: '#120e24', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(11);
+    this.tv.add(plate); this.bgImgs.push(plate);
+    // the anchor bust behind the desk
+    this.stamp('portrait_anchor', R.x + R.w * 0.30, R.y + R.h * 0.47, (R.h * 0.52) / 128);
+    // story-graphic inset: the Nourish-Ray over the tower
+    g.fillStyle(0x120e24, 1).fillRect(R.x + R.w * 0.60, R.y + R.h * 0.30, R.w * 0.32, R.h * 0.30);
+    g.lineStyle(2, 0xf2c33c, 1).strokeRect(R.x + R.w * 0.60, R.y + R.h * 0.30, R.w * 0.32, R.h * 0.30);
+    var gx = R.x + R.w * 0.76, gy0 = R.y + R.h * 0.30;
+    g.fillStyle(0x45356e, 1).fillRect(gx - 7, gy0 + R.h * 0.10, 14, R.h * 0.19);
+    g.fillStyle(0x35d0ff, 1).fillCircle(gx, gy0 + R.h * 0.085, 5);
+    g.fillStyle(0x35d0ff, 0.35);
+    g.fillTriangle(gx, gy0 + R.h * 0.085, gx - 16, gy0 + 4, gx + 16, gy0 + 4);
+    return;
+  }
+
+  if (name === 'demo' || name === 'flood') {
+    var flooded = name === 'flood';
+    // sky
+    g.fillStyle(flooded ? 0x241f3d : 0x35d0ff, 1).fillRect(R.x, R.y, R.w, R.h);
+    if (flooded) {
+      g.fillStyle(0xcfd4e8, 0.5);
+      for (var st = 0; st < 14; st++) {
+        g.fillRect(R.x + PC.hash01(st, 1, 7) * R.w, R.y + PC.hash01(st, 2, 8) * R.h * 0.3, 1, 1);
+      }
+      g.fillStyle(0xcfd4e8, 0.3).fillCircle(R.x + R.w * 0.85, R.y + 18, 9);
+    } else {
+      g.fillStyle(0xf2c33c, 1).fillCircle(R.x + R.w * 0.85, R.y + 18, 10);
+      g.fillStyle(0xfff6e0, 0.5).fillCircle(R.x + R.w * 0.85, R.y + 18, 14);
+      g.fillStyle(0xffffff, 0.9);
+      g.fillEllipse(R.x + R.w * 0.25, R.y + 16, 34, 9);
+      g.fillEllipse(R.x + R.w * 0.55, R.y + 26, 26, 8);
+    }
+    // faded far city (we're up on the mega-tower's plaza deck)
+    g.fillStyle(flooded ? 0x1c1733 : 0x7fb8d9, flooded ? 1 : 0.55);
+    for (var b2 = 0; b2 < 8; b2++) {
+      var bh3 = 12 + PC.hash01(b2, 5, 9) * 26;
+      g.fillRect(R.x + b2 * R.w / 8, R.y + R.h * 0.40 - bh3, R.w / 8 - 3, bh3);
+    }
+    // deck ground
+    g.fillStyle(flooded ? 0x3a3652 : 0x6d6a8e, 1).fillRect(R.x, R.y + R.h * 0.40, R.w, R.h * 0.60);
+    g.fillStyle(0x000000, 0.12);
+    for (var s2 = 0; s2 < R.w; s2 += 26) g.fillRect(R.x + s2, R.y + R.h * 0.40, 1, R.h * 0.60);
+    g.fillRect(R.x, R.y + R.h * 0.40, R.w, 2);
+    // the demo stage (center)
+    var stX = R.x + R.w * 0.5, stY = R.y + R.h * 0.46, stW = R.w * 0.62, stH = 12;
+    g.fillStyle(0x0a0716, 0.4).fillRect(stX - stW / 2 + 3, stY + stH, stW, 5);
+    g.fillStyle(0x8a5a30, 1).fillRect(stX - stW / 2, stY, stW, stH);
+    g.fillStyle(0xa8713f, 1).fillRect(stX - stW / 2, stY, stW, 3);
+    g.fillStyle(0x120e24, 0.5);
+    for (var pk = 1; pk < 6; pk++) g.fillRect(stX - stW / 2 + pk * stW / 6, stY, 1, stH);
+    if (!flooded) {
+      // bunting + the Nourish-Ray machine on stage
+      for (var bt = 0; bt < 7; bt++) {
+        g.fillStyle([0xd93a3a, 0xf2c33c, 0x35d0ff][bt % 3], 1);
+        g.fillTriangle(stX - stW / 2 + bt * stW / 7 + 4, stY - 1,
+          stX - stW / 2 + bt * stW / 7 + 12, stY - 1,
+          stX - stW / 2 + bt * stW / 7 + 8, stY + 6);
+      }
+      var rx = stX + stW * 0.27, ry = stY - 2;
+      g.fillStyle(0x45356e, 1).fillRect(rx - 5, ry - 20, 10, 20);       // pedestal
+      g.fillStyle(0x6d6a8e, 1).fillRect(rx - 8, ry - 24, 16, 6);        // console
+      g.fillStyle(0x35d0ff, 1).fillCircle(rx, ry - 32, 6);              // emitter orb
+      g.fillStyle(0xffffff, 0.85).fillCircle(rx - 2, ry - 34, 2);
+      g.lineStyle(2, 0x35d0ff, 0.5).strokeCircle(rx, ry - 32, 9);
+      this._rayAnchor = { x: rx, y: ry - 24 };                          // sodatip target
+      // Danny presenting on stage + Bloom beside him
+      this.stamp('char_danny_idle', stX - stW * 0.16, stY + 2, 0.85);
+      this.stamp('cs_bloom', stX + stW * 0.05, stY + 3, 0.8);
+      // Sal's cart at the edge, Pip pointing up front-row
+      this.stamp('cs_sal', R.x + R.w * 0.86, R.y + R.h * 0.62, 0.9);
+      this.stamp('cs_pip', R.x + R.w * 0.18, R.y + R.h * 0.66, 0.9);
+      // the crowd, seen from behind, facing the stage
+      var civs = ['cs_civ_a', 'cs_civ_b', 'cs_civ_c'];
+      for (var cv = 0; cv < 7; cv++) {
+        this.stamp(civs[cv % 3], R.x + R.w * (0.10 + (cv * 0.13) % 0.82),
+          R.y + R.h * (0.76 + PC.hash01(cv, 4, 6) * 0.14),
+          0.85 + PC.hash01(cv, 2, 3) * 0.3, cv % 2 === 1);
+      }
+    } else {
+      // the flood: stage half-buried under piled food stills
+      var stills = ['still_d1_fry', 'still_d1_hotdog', 'still_d1_popcorn',
+                    'still_d1_toast', 'still_d1_pretzel'];
+      for (var f = 0; f < 24; f++) {
+        this.stamp(stills[f % stills.length],
+          R.x + PC.hash01(f, 13, 21) * R.w,
+          R.y + R.h * 0.48 + PC.hash01(f, 14, 22) * R.h * 0.48,
+          0.8 + (f % 3) * 0.25).setAngle((f * 53) % 40 - 20);
+      }
+      g.fillStyle(0xff9d3b, 0.12).fillRect(R.x, R.y + R.h * 0.40, R.w, R.h * 0.60);
+      var hint = this.add.text(stX, stY - 6, '', { fontSize: '1px' });   // keep z-order stable
+      this.tv.add(hint); this.bgImgs.push(hint);
+    }
+    return;
+  }
+
+  if (name === 'danny_room') {
+    // the TV drops to idle static; Danny himself steps into the room
+    g.fillStyle(0x08060f, 1).fillRect(R.x, R.y, R.w, R.h);
+    this._staticT = 9999; this._staticAlpha = 0.25;
+    // Danny stands IN FRONT of the set (above bezel depth 40-41), feet
+    // on the room floor, lit by the static's glow
+    var W2 = PC.RENDER.W;
+    // char canvases pad below the figure, so the puddle sits ~14px up
+    var dx = W2 / 2, dy = this.scr.y + this.scr.h + 56;
+    var glow = this.add.ellipse(dx, dy - 12, 96, 20, 0x35d0ff, 0.14).setDepth(44);
+    var danny = this.add.image(dx, dy, 'atlas', 'char_danny_idle')
+      .setOrigin(0.5, 0.9).setScale(1.3).setDepth(45);
+    this.tweens.add({ targets: danny, y: dy - 2, duration: 900, yoyo: true,
+      repeat: -1, ease: 'Sine.inOut' });
+    this.roomSprites.push(glow, danny);
+    return;
+  }
+};
+
+// ---- music cues ----
 PC.CutsceneScene.prototype.musicCue = function (tag) {
   if (!PC.audio) return;
   if (tag === 'stop') { PC.audio.stopMusic(); return; }
@@ -167,9 +443,35 @@ PC.CutsceneScene.prototype.musicCue = function (tag) {
 
 // ---- scripted actions ----
 PC.CutsceneScene.prototype.runAction = function (beat, done) {
-  var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
+  var W = PC.RENDER.W, H = PC.RENDER.H, R = this.scr, self = this;
   var a = beat.action;
-  if (a === 'flash') {
+  if (a === 'tvon') {
+    // CRT power-on: dot -> horizontal line -> full picture
+    if (PC.audio) PC.audio.hiss();
+    var line = this.add.rectangle(R.x + R.w / 2, R.y + R.h / 2, 3, 2, 0xffffff)
+      .setDepth(34);
+    this.tweens.add({ targets: line, width: R.w, duration: 260, ease: 'Quad.out',
+      onComplete: function () {
+        self.tweens.add({ targets: line, height: R.h, alpha: 0.7, duration: 200,
+          ease: 'Quad.in',
+          onComplete: function () {
+            self.tweens.add({ targets: line, alpha: 0, duration: 240,
+              onComplete: function () { line.destroy(); done(); } });
+          } });
+      } });
+    this._staticT = 0.7; this._staticAlpha = 0.5;
+  } else if (a === 'signallost') {
+    if (PC.audio) PC.audio.hiss();
+    this.setChrome(null);
+    this.clearFootage();
+    this.bg.fillStyle(0x08060f, 1).fillRect(R.x, R.y, R.w, R.h);
+    this._staticT = 1.6; this._staticAlpha = 1;
+    this.lostTxt.setVisible(true);
+    this.time.delayedCall(1500, function () {
+      self.lostTxt.setVisible(false);
+      done();
+    });
+  } else if (a === 'flash') {
     var r = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff).setDepth(390);
     this.tweens.add({ targets: r, alpha: 0, duration: 500,
       onComplete: function () { r.destroy(); done(); } });
@@ -187,61 +489,65 @@ PC.CutsceneScene.prototype.runAction = function (beat, done) {
         onComplete: function () { card.destroy(); t.destroy(); done(); } });
     });
   } else if (a === 'sodatip') {
-    // the fateful cup: slides, tips, fizzes onto the console
-    var cup = this.add.container(W / 2 + 40, H * 0.46).setDepth(60);
+    // the fateful cup on the Ray console (in the footage)
+    var an = this._rayAnchor || { x: R.x + R.w / 2, y: R.y + R.h / 2 };
+    var cup = this.add.container(an.x + 16, an.y - 6).setDepth(11);
     var cg = this.add.graphics();
     cg.fillStyle(0xd93a3a, 1).fillRect(-4, -10, 8, 12);
     cg.fillStyle(0xf7f4ef, 1).fillRect(-4, -12, 8, 3);
-    cg.fillStyle(0x6d6a8e, 1).fillRect(-1, -18, 1, 7);   // straw
+    cg.fillStyle(0x6d6a8e, 1).fillRect(-1, -18, 1, 7);
     cup.add(cg);
+    this.tv.add(cup); this.bgImgs.push(cup);
     if (PC.audio) PC.audio.hiss();
-    this.tweens.add({ targets: cup, angle: 100, x: W / 2 + 26, y: H * 0.485,
+    this.tweens.add({ targets: cup, angle: 100, x: an.x + 6, y: an.y - 2,
       duration: 700, ease: 'Quad.in',
       onComplete: function () {
         for (var i = 0; i < 8; i++) {
-          var s = self.add.rectangle(W / 2 + 22 + Math.random() * 10,
-            H * 0.49, 2, 2, 0xcfd4e8).setDepth(61);
-          self.tweens.add({ targets: s, y: H * 0.52, alpha: 0,
-            duration: 380 + Math.random() * 220, onComplete: (function (r2) {
-              return function () { r2.destroy(); }; })(s) });
+          var s = self.add.rectangle(an.x + 2 + Math.random() * 8, an.y,
+            2, 2, 0xcfd4e8).setDepth(11);
+          self.tv.add(s); self.bgImgs.push(s);
+          self.tweens.add({ targets: s, y: an.y + 8, alpha: 0,
+            duration: 380 + Math.random() * 220 });
         }
         self.time.delayedCall(600, done);
       } });
   } else if (a === 'floodburst') {
-    // the Ray erupts: flash + shake + junk food raining
+    // the Ray erupts INSIDE the footage; camera crew loses it
     this.cameras.main.shake(600, 0.012);
     if (PC.audio) PC.audio.clank();
-    var r2 = this.add.rectangle(W / 2, H / 2, W, H, 0xf2c33c).setDepth(389).setAlpha(0.8);
-    this.tweens.add({ targets: r2, alpha: 0, duration: 700,
-      onComplete: function () { r2.destroy(); } });
+    var src = this._rayAnchor || { x: R.x + R.w / 2, y: R.y + R.h / 2 };
+    var r2 = this.add.rectangle(R.x + R.w / 2, R.y + R.h / 2, R.w, R.h, 0xf2c33c)
+      .setDepth(12).setAlpha(0.8);
+    this.tv.add(r2); this.bgImgs.push(r2);
+    this.tweens.add({ targets: r2, alpha: 0, duration: 700 });
     var stills = ['still_d1_fry', 'still_d1_hotdog', 'still_d1_popcorn', 'still_d1_toast'];
-    for (var i = 0; i < 22; i++) {
+    for (var i = 0; i < 20; i++) {
       (function (i2) {
         self.time.delayedCall(i2 * 45, function () {
-          var im = self.add.image(W / 2, H * 0.45, 'atlas', stills[i2 % stills.length])
-            .setDepth(70).setScale(0.8);
+          var im = self.stamp(stills[i2 % stills.length], src.x, src.y - 12, 0.7);
+          im.setDepth(12);
           self.tweens.add({ targets: im,
-            x: W / 2 + (Math.random() - 0.5) * W * 1.1,
-            y: -20 - Math.random() * 40, angle: Math.random() * 360,
-            duration: 500, ease: 'Quad.out',
+            x: R.x + Math.random() * R.w,
+            y: R.y + 6 + Math.random() * 20, angle: Math.random() * 360,
+            duration: 450, ease: 'Quad.out',
             onComplete: function () {
-              self.tweens.add({ targets: im, y: H + 30, duration: 600,
-                ease: 'Quad.in', onComplete: function () { im.destroy(); } });
+              self.tweens.add({ targets: im, y: R.y + R.h + 20, duration: 550,
+                ease: 'Quad.in' });
             } });
         });
       })(i);
     }
+    this._staticT = 2.2; this._staticAlpha = 0.18;   // transmission wobble
     this.time.delayedCall(1700, done);
   } else if (a === 'portraits6') {
-    // six portraits light up on Danny's wrist-pad call
     var heroes = ['victoria', 'josh', 'kevin', 'carlos', 'nayah', 'danny'];
     var pw = 40, gap = 8;
     var x0 = W / 2 - (heroes.length * (pw + gap) - gap) / 2 + pw / 2;
     var imgs = [];
     heroes.forEach(function (h, i) {
       self.time.delayedCall(i * 180, function () {
-        var im = self.add.image(x0 + i * (pw + gap), H * 0.3, 'atlas', 'portrait_' + h)
-          .setDepth(80).setScale(0.01);
+        var im = self.add.image(x0 + i * (pw + gap), R.y + R.h * 0.35, 'atlas',
+          'portrait_' + h).setDepth(80).setScale(0.01);
         imgs.push(im);
         self.tweens.add({ targets: im, scale: pw / 128, duration: 220, ease: 'Back.out' });
         if (PC.audio) PC.audio.gem();
@@ -272,5 +578,27 @@ PC.CutsceneScene.prototype.runAction = function (beat, done) {
 };
 
 PC.CutsceneScene.prototype.update = function (t, dtMs) {
-  this.box.update(dtMs / 1000);
+  var dt = dtMs / 1000, R = this.scr;
+  this.box.update(dt);
+  // scrolling ticker
+  if (this.tickerTxt.visible && this._tickerText) {
+    this.tickerTxt.x -= dt * 34;
+    if (this.tickerTxt.x < R.x - this.tickerTxt.width) this.tickerTxt.x = R.x + R.w;
+  }
+  // CRT static (also the danny_room idle fuzz)
+  if (this._staticT > 0) {
+    this._staticT -= dt;
+    var g = this.staticG;
+    g.clear();
+    for (var i = 0; i < 90; i++) {
+      var sx = R.x + Math.random() * R.w, sy2 = R.y + Math.random() * R.h;
+      var shade = [0x6d6a8e, 0xcfd4e8, 0x241f3d, 0xf7f4ef][i % 4];
+      g.fillStyle(shade, (0.25 + Math.random() * 0.5) * this._staticAlpha);
+      g.fillRect(sx, sy2, 2 + Math.random() * 5, 1 + Math.random() * 2);
+    }
+    // rolling band
+    var band = R.y + ((t / 12) % R.h);
+    g.fillStyle(0xffffff, 0.06 * this._staticAlpha).fillRect(R.x, band, R.w, 6);
+    if (this._staticT <= 0) g.clear();
+  }
 };
