@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.7: MARK'S FIRST REAL PLAYTEST SWEEP (died
+  ~3:30 twice; long voice-note feedback).** SHIPPED FIXES: (1)
+  classic Pocket Sentry turrets = real sig_turret art (were tinted
+  crates - "still look like little boxes"). (2) Lasso pull REMOVED
+  (Mark: "some function that sucks enemies in... I don't know what
+  that's about") - telegraph + slam cycle stays, no suction. (3)
+  Comet Call: NEVER fires off-screen (waits, retries 0.3s until a
+  foe is visible - no fallback), falls STRAIGHT DOWN (spawn directly
+  above, rotation -PI/4 verticalizes the diagonal art), slowed 200
+  ->330ms. (4) Supply crates spawn only OFF-SCREEN (worldView edge
+  + 40-100px). (5) XP curve softened 1.35/3 -> 1.30/2 ("3 minutes
+  and I'm level 6 barely"). (6) COMET BEAM (classic, inheritable)
+  golden pierce-bolt identity (tint+scale) - "just a copy of
+  Danny's laser". (7) FIDELITY: real PixelLab art for gem_small/
+  med/gold (faceted crystals) + proj_resizer (glowing cyan bolt) -
+  pipeline: gen 48 -> alpha-threshold -> content-crop -> NEAREST to
+  registry size. NEW DOCS for the mother session (Mark requested):
+  docs/MOTHER_SESSION_BRIEFS.md (SFX synth architecture breakdown +
+  data-driven voice-table proposal; map/chunk system context + max
+  quest-map size answer = 8192px ceiling / 4096px recommended slice;
+  asset quality pipeline rule) and docs/ABILITY_ARCHETYPES.md (full
+  taxonomy, doubling-up audit - headline: Pineapple should become
+  pure RETALIATION, dropping the third player-ring; Beam may need
+  held-line laser if gold pass insufficient). ROADMAP ADDED: STORY
+  MODE / QUEST MAP (per-hero missions on a large unique map,
+  portrait-driven objectives, compass; vertical slice = Danny,
+  flooded city, 4096x4096). NOT yet done: per-ability SFX voices
+  (awaiting mother-session architecture), Pineapple rework (awaiting
+  Mark approval), Josh loop epicycle polish (Mark: "first stage
+  works well" - parked). Deaths at ~3:30 on two heroes noted:
+  difficulty is per design (meta-shop investment is the loop), but
+  watch after XP softening.
+
 - **2026-07-27 - v0.14.6: DEV MODE MADE BULLETPROOF (Mark: "the dev
   mode isn't working").** v0.14.5's ?dev=1 likely failed on-device
   via CDN cache or a dropped query string (mobile browsers/home-

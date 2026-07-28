@@ -68,9 +68,16 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
     this.crateAcc = 0;
     var c = this._crate();
     if (c) {
+      // spawn just OUTSIDE the camera view (Mark: "supply boxes should
+      // only spawn offscreen, not onscreen while I'm watching")
+      var wv = cam.worldView;
       var ang = Math.random() * Math.PI * 2;
-      var dist = 120 + Math.random() * 90;
-      var cxp = px + Math.cos(ang) * dist, cyp = py + Math.sin(ang) * dist;
+      var rx = Math.cos(ang), ry = Math.sin(ang);
+      var edge = Math.min(
+        Math.abs(rx) > 0.001 ? (wv.width / 2 + 40) / Math.abs(rx) : 1e9,
+        Math.abs(ry) > 0.001 ? (wv.height / 2 + 40) / Math.abs(ry) : 1e9);
+      var dist = edge + Math.random() * 60;
+      var cxp = px + rx * dist, cyp = py + ry * dist;
       var res = PC.resolveCircle(cxp, cyp, 16);   // don't spawn inside a building
       c.active = true; c.x = res.x; c.y = res.y; c.hp = 1;
       c.sprite.setPosition(c.x, c.y).setVisible(true);
