@@ -93,6 +93,11 @@ PC.Vfx.prototype.update = function (dt) {
       continue;
     }
     var pulse = 0.75 + 0.25 * Math.sin(now * 16);
+    // layer law (ASSET_QUALITY P1): bright edge + soft interior falloff
+    // (a dark rim is impossible on this ADD-blend layer; the falloff
+    // body keeps it from reading as a bare outline)
+    g.fillStyle(r.color, 0.06 * k * pulse);
+    g.fillCircle(r.x, r.y, r.r * 0.92);
     g.lineStyle(2, r.color, (0.35 + 0.45 * k) * pulse);
     g.strokeCircle(r.x, r.y, r.r * (0.85 + 0.15 * pulse));
     g.lineStyle(1, 0xff6b6b, 0.5 * k);

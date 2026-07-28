@@ -550,3 +550,31 @@ Every one lives in `CONFIG.js`.
 
 *End of compendium. If a detail is missing, decide in the spirit of §1's pillars —
 smoothness first — and log the decision in HANDOVER.md.*
+
+
+# APPENDIX A — STYLE-LAW AMENDMENTS (v0.16.0, from docs/ASSET_QUALITY.md)
+
+1. NO-FLAT-FILL LAW: nothing visible in-run is a single flat color.
+   Solid bits >= 3 layers (base + top-left highlight + bottom-right
+   occlusion + 1px rim); rings/glows >= 3 (bright edge + soft falloff
+   + darker rim). Enforced by the layered atlas painters (assets.js)
+   and the vfx toolkit.
+2. COLOR-ROLE LAW (canon): player shots CYAN #35d0ff, enemy shots
+   PINK #ff9ecb, XP LIME #a8e04a, danger telegraphs KETCHUP/CHERRY,
+   fire MUSTARD->CHEESE->KETCHUP, heal MINT #7dd97b. A player effect
+   is never pink.
+3. LIGHT FROM TOP-LEFT, ALWAYS - generated and code-drawn alike.
+4. HUE-SHIFTED RAMPS: highlights toward yellow-white, shadows toward
+   violet (assets.js lite()/shade()).
+5. ADDITIVE GLOW = ENERGY ONLY (shots, comets, level-up). Physical
+   objects/pickups get no additive glow.
+6. SMALL-OBJECT RULE: anything <= 16px on screen is generated big
+   (48-64px) and NEAREST-downscaled - never generated native-tiny.
+7. SCREENSHOT GATE: every new asset verified via the headless
+   harness (3x AND true zoom) before commit.
+8. ENVIRONMENT (docs/ENV_PIPELINE.md): no surface is a bare fillRect;
+   buildings are shadowed objects (cast shadow + contact AO + top-left
+   roof light, baked into the chunk paint); painter contract order:
+   ground tiles -> ground decals -> cast shadows -> buildings/props ->
+   contact AO -> overhead decals. D1 painter already complies; D2-D5
+   sets MUST be built to this contract.
