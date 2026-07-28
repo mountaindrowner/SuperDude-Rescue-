@@ -206,8 +206,21 @@ PC.Quest.prototype.complete = function () {
   // reveals + unlocks the next stage
   if (PC.storyState) PC.storyState.markCleared(this.mission.id);
   var chainEntry = PC.STORY.chainById && PC.STORY.chainById(this.mission.id);
-  scene.won = true;
   scene.recordRunStats(true);
+
+  // v0.19: the city STAYS OPEN between beats (Mark: linear flow, no
+  // menu bounce). Hand off to free roam when the next beat is playable;
+  // the results screen is now only for death / campaign end / a next
+  // beat whose map isn't built yet.
+  var next = PC.STORY.nextInChain ? PC.STORY.nextInChain(this.mission.id) : null;
+  if (next && PC.STORY.beatBuilt(next)) {
+    scene.time.delayedCall(700, function () {
+      scene.enterFreeRoam(next, { tp: self.tpEarned, gold: scene.pickups.gold,
+        kills: scene.kills });
+    });
+    return;
+  }
+  scene.won = true;
   scene.time.delayedCall(600, function () {
     scene.scene.start('PC_Results', {
       time: scene.runT, kills: scene.kills, level: scene.level,

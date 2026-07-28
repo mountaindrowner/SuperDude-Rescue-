@@ -98,6 +98,7 @@ PC.GameScene.prototype.create = function () {
   // STORY-3: the mission engine rides on top of the run
   this.storyPause = false;
   this.quest = null;
+  this.freeRoam = null;              // STORY-5: the between-missions seam
   if (this.region && PC.STORY.missions && this.storyMission &&
       PC.STORY.missions[this.storyMission.id]) {
     this.quest = new PC.Quest(this, this.region,
@@ -120,6 +121,9 @@ PC.GameScene.prototype.create = function () {
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
+  // story beats hand off through a fade (freeroam.launch fades out, the
+  // restarted scene fades back in) - a cut, never a menu
+  if (this.region) cam.fadeIn(280, 0, 0, 0);
   this.ground.update(cam);
 
   // ---- HUD (screen-space) ----
@@ -330,6 +334,7 @@ PC.GameScene.prototype.update = function (time, delta) {
     return;
   }
   if (this.quest) this.quest.update(dt);
+  if (this.freeRoam) this.freeRoam.update(dt);
   this.now += dt;
   this.runT += dt;
 
@@ -450,6 +455,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   // the boss lives (COMPENDIUM 5.1 x1.8 interval) so the fight can breathe.
   var dirScale = (this.boss && !this.boss.dead) ? 0.55 : 1;
   if (this.region) dirScale *= 0.5;            // story: ambient stays thin
+  if (this.freeRoam) dirScale *= 0.25;         // between beats: calm streets
   this.director.update(dt * dirScale, this.runT);
   var rings = [[45, 16, 'fry'], [120, 22, 'popcorn'], [200, 28, 'hotdog']];
   for (var ri = 0; ri < rings.length; ri++) {
@@ -474,6 +480,15 @@ PC.GameScene.prototype.update = function (time, delta) {
     this.debugText.setText('fps ' + Math.round(this.game.loop.actualFps) +
       ' - foes ' + this.enemies.liveCount);
   }
+};
+
+// STORY-5: mission over, city stays open. The swarm scatters, the
+// director calms down, and a marker points at the next story beat.
+PC.GameScene.prototype.enterFreeRoam = function (nextEntry, earned) {
+  if (this.freeRoam || this.dead) return;
+  this.enemies.clearAll(this.fx);
+  if (this.boss && !this.boss.dead) this.boss = null;
+  this.freeRoam = new PC.FreeRoam(this, nextEntry, earned);
 };
 
 // lifetime stats feed the hero-unlock conditions (kits.js HERO_UNLOCKS)

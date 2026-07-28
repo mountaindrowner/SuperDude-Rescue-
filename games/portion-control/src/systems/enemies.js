@@ -58,6 +58,20 @@ PC.EnemySystem.prototype.spawn = function (x, y, def) {
   return e;
 };
 
+// clear the field - the swarm scatters when a story mission ends so the
+// free-roam stretch between beats is calm (v0.19.0)
+PC.EnemySystem.prototype.clearAll = function (fx) {
+  var popped = 0;
+  for (var i = 0; i < this.pool.length; i++) {
+    var e = this.pool[i];
+    if (!e.active) continue;
+    e.active = false;
+    e.sprite.setVisible(false);
+    if (fx && popped++ < 12) fx.burst(e.x, e.y, 'fx_pop', 3, 0.3);
+  }
+  this.liveCount = 0;
+};
+
 PC.EnemySystem.prototype.update = function (dt, px, py) {
   this.animT += dt;
   var flip = Math.floor(this.animT * 6) % 2 === 1;   // shared 6fps flipbook
