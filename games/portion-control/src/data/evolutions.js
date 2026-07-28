@@ -118,7 +118,7 @@ PC.EVOLUTIONS = [
     apply: function (w) { w.name = 'RISTRETTO RAILGUN'; w.instant = true; w.baseDmg = 55; w.maxBonus = 30; } },
   { base: 'pineapple', requires: 'leftovers', name: 'FORTRESS FRUIT',
     desc: 'A mighty aura that heals on payback!',
-    apply: function (w) { w.name = 'FORTRESS FRUIT'; w.dmg = 18; w.radius = 48; w.retDmg = 55; w.retR = 110; w.heal = 6; } },
+    apply: function (w) { w.name = 'FORTRESS FRUIT'; w.spikes = 16; w.dmg = 48; w.heal = 6; } },
   // ---- hero-rework evolutions (Tasks 6-8) ----
   { base: 'sentrybot', requires: 'duplicator', name: 'SWARM PROTOCOL',
     desc: 'Twin turbo bots + rapid deploys!',
