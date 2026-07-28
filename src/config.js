@@ -86,7 +86,7 @@ PC.VIC_SENTRY_BOT = true;      // bot pal + Vic-only Deploy button
 PC.CARLOS_COMET_CALL = true;   // falling comets on the farthest foe
 PC.NAYAH_HAYMAKER = true;      // lifesteal brawler (seeds -> shared pool)
 PC.SALT_AURA = true;           // Salt Shaker = Seasoned debuff aura
-PC.JOSH_PULLSLAM = true;       // Rope Cyclone pull-then-slam special
+PC.JOSH_PULLSLAM = false;      // RETIRED v0.14.8 (Mark cut pull+slam; lasso = pure loop)
 
 // Dev flag (PHASE2 §3): true = every hero selectable. FLIPPED FALSE
 // v0.13.0 (Mark: "make some more characters unlockable, all except the
