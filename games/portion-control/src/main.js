@@ -39,12 +39,26 @@ window.PC = window.PC || {};
   // build tag on every screen (Mark: "add the version number to all
   // screens so I can tell" which build is live vs cached)
   PC.stampVersion = function (scene) {
-    return scene.add.text(PC.RENDER.W - 3, PC.RENDER.H - 3,
+    var t = scene.add.text(PC.RENDER.W - 3, PC.RENDER.H - 3,
       PC.VERSION + (PC.DEV_MODE ? ' DEV' : ''), {
       fontFamily: 'monospace', fontSize: '8px',
       color: PC.DEV_MODE ? '#ff6b6b' : '#6d6a8e',
       fontStyle: PC.DEV_MODE ? 'bold' : 'normal',
     }).setOrigin(1, 1).setDepth(999);
+    // secret toggle: 5 fast taps on the stamp flips dev mode (query
+    // strings get eaten by some mobile browsers/CDN redirects)
+    t.setInteractive(new Phaser.Geom.Rectangle(-30, -22, t.width + 60, t.height + 44),
+      Phaser.Geom.Rectangle.Contains);
+    t.on('pointerdown', function () {
+      var now = Date.now();
+      if (!t._taps || now - t._lastTap > 3000) t._taps = 0;
+      t._lastTap = now;
+      if (++t._taps >= 5) {
+        PC.setDevMode(!PC.DEV_MODE);
+        window.location.reload();
+      }
+    });
+    return t;
   };
   // crisp text: default every Text object to SCALE resolution so glyph
   // canvases are dense enough for the zoomed camera

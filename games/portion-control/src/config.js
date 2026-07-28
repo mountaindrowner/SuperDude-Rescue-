@@ -93,8 +93,24 @@ PC.JOSH_PULLSLAM = true;       // Rope Cyclone pull-then-slam special
 // admin version... everything unlocked so I could test") - all
 // heroes selectable + test-wallet gold top-up + red DEV badge on the
 // version stamp. The plain URL stays the real player experience.
-PC.DEV_MODE = /[?&]dev=1/.test(
-  (typeof window !== 'undefined' && window.location.search) || '');
+// three ways in, because mobile browsers/CDNs love dropping query
+// strings: ?dev=1, #dev, or the persisted toggle (tap the version
+// stamp 5x fast on any menu; persists until toggled off the same way)
+PC.DEV_MODE = false;
+try {
+  var _q = (window.location.search || '') + (window.location.hash || '');
+  if (/[?&#]dev(=1)?\b/.test(_q)) {
+    PC.DEV_MODE = true;
+    localStorage.setItem('portioncontrol.dev', '1');   // sticky once visited
+  } else {
+    PC.DEV_MODE = localStorage.getItem('portioncontrol.dev') === '1';
+  }
+} catch (e) {}
+PC.setDevMode = function (on) {
+  try { localStorage.setItem('portioncontrol.dev', on ? '1' : '0'); } catch (e) {}
+  PC.DEV_MODE = !!on;
+  PC.DEV_ALL_UNLOCKED = !!on;
+};
 PC.DEV_ALL_UNLOCKED = PC.DEV_MODE;
 if (PC.DEV_MODE) {
   try {

@@ -12,6 +12,19 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.6: DEV MODE MADE BULLETPROOF (Mark: "the dev
+  mode isn't working").** v0.14.5's ?dev=1 likely failed on-device
+  via CDN cache or a dropped query string (mobile browsers/home-
+  screen links eat queries). Now THREE ways in: `?dev=1`, `#dev`,
+  or the SECRET TOGGLE - tap the version stamp 5x fast on any menu
+  (generous hit area) -> flips `portioncontrol.dev` in localStorage
+  + reloads. Dev is STICKY once activated (persists on the plain
+  URL until toggled off the same way). Verified headless: query on,
+  sticky on plain URL, 5-tap-equivalent off, hash on. HARNESS TRAP
+  (twice now): addInitScript localStorage.clear() runs on EVERY
+  navigation - seed-once guard required; and same-page #hash
+  navigation doesn't re-run scripts (go via about:blank).
+
 - **2026-07-27 - v0.14.5: DEVELOPER MODE via ?dev=1 (Mark: "give me
   an admin version... everything unlocked so I could test").**
   config.js: `PC.DEV_MODE` from the URL query -> DEV_ALL_UNLOCKED
