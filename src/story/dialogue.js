@@ -17,6 +17,7 @@ PC.SPEAKERS = {
   sal:    { name: 'SAL',         portrait: 'portrait_sal',      pitch: 0.72 },
   pip:    { name: 'PIP',         portrait: 'portrait_pip',      pitch: 1.5 },
   chomp:  { name: 'CHOMP',       portrait: 'portrait_chomp',    pitch: 1.1, wave: 'square' },
+  anchor: { name: 'ACN NEWS',    portrait: 'portrait_anchor',   pitch: 1.05 },
 };
 
 PC.DialogueBox = function (scene) {

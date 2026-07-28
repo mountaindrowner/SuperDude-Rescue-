@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-28 - v0.18.2: NEWSCAST INTRO CINEMATIC (Mark: "the intro
+  is barely understandable... maybe it's a newscast. We're looking
+  at an old style tube TV and on it is a newscast").** cutscene.js
+  rebuilt around a CRT presentation: Danny's garage room (shelf,
+  tools, floor, glow spill) -> tube TV (bezel/speaker grille/dials/
+  rabbit ears/brand plate; body+tube-glass render BELOW the footage,
+  details above) -> footage plays inside a GeometryMask'd container
+  with scanlines/vignette/glare + real CRT static + power-on line.
+  ACN news chrome: BREAKING banner, scrolling ticker, blinking LIVE
+  bug, ACN corner bug. Footage scenes: news_desk (NEW anchor
+  portrait behind an ACN desk, window skyline w/ ADVENTURE TOWER +
+  the Ray glinting on top, story-graphic inset), demo (close-up
+  stage w/ bunting + the Nourish-Ray device + REAL sprites:
+  char_danny_idle presenting, NEW cs_bloom/cs_sal(cart)/cs_pip minis
+  + a 7-person crowd from NEW cs_civ_a/b/c back-view sprites),
+  flood (night, stage buried in food stills), danny_room (TV drops
+  to idle static, Danny steps IN FRONT of the set for "I did this."
+  + wrist-pad portraits6 + GO). scripts.js: spec IV.0 cast lines
+  VERBATIM; two new ACN anchor linking lines + chrome/scene beats.
+  New beat type { chrome: {banner,ticker,live} }. ASSETS (7 gens,
+  ~1143 left): portrait_anchor (npc-portrait recipe) + 6 48px
+  cutscene figures (crowd prompts "seen from behind" direction:
+  north). SPEAKERS += anchor ("ACN NEWS", pitch 1.05). GOTCHAS
+  BURNED: (1) anything that fills the screen rect at bezel/detail
+  depth blacks out the whole masked footage layer - tube glass and
+  bezel BODY must be depth-below-footage, only out-of-window details
+  on top (cost two debug rounds); (2) text meant to sit over chrome
+  graphics must be a top-level depth-21 object, not a container
+  child (container depth < chromeG). Verified headless
+  (verify-newscast.js): all 7 phases screenshotted, lands on
+  PC_Missions, zero errors/frame warnings; verify-intro +
+  verify-linear regressions green.
+
 - **2026-07-28 - v0.18.1: DEFEAT PORTRAITS (Mark: "Generate defeat
   portraits too").** All 6 heroes now have a KO/defeat expression
   variant (portrait_<hero>_ko.png, 128px) shown framed on the
