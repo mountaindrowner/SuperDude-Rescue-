@@ -63,7 +63,9 @@ PC.PLAYER = { HP: 100, SPEED: 190, PICKUP_R: 72, IFRAMES: 0.6, MEDKIT_HEAL: 35 }
 // ---- XP & leveling (COMPENDIUM 5.3) ----
 PC.XP = {
   GEM_SMALL: 1, GEM_MED: 5, GEM_GOLD: 20,
-  FIRST: 5, CURVE_MULT: 1.35, CURVE_ADD: 3,
+  // Mark playtest 2026-07-27: "3 minutes and I'm level six barely...
+  // ramp up a little faster" - curve softened 1.35/3 -> 1.30/2
+  FIRST: 5, CURVE_MULT: 1.30, CURVE_ADD: 2,
   WEAPON_SLOTS: 4, PASSIVE_SLOTS: 4,
 };
 

@@ -29,8 +29,8 @@ PC.SentryWeapon = function (scene) {
   this.turrets = [];
   for (var i = 0; i < 3; i++) {
     this.turrets.push({ active: false, x: 0, y: 0, t: 0, fireT: 0,
-      sprite: scene.add.image(0, 0, 'atlas', 'pickup_crate')
-        .setScale(0.7).setDepth(7).setTint(0x9adfff).setVisible(false) });
+      sprite: scene.add.image(0, 0, 'atlas', 'sig_turret')
+        .setScale(0.8).setDepth(7).setVisible(false) });
   }
 };
 PC.SentryWeapon.prototype.desc = function () {
@@ -309,7 +309,7 @@ PC.BeamWeapon.prototype.update = function (dt, scene) {
       bd *= 2; scene._lastCrit = true;   // Carlos flavor: comets crit extra
     }
     scene.bullets.fire(scene.px + ox, scene.py - 6, best.x, best.y,
-      { speed: 700, dmg: bd, frame: 'proj_resizer',
+      { speed: 700, dmg: bd, frame: 'proj_resizer', tint: 0xf2c33c, scale: 1.9,
         pierce: 99, life: 1.5 });
   }
   scene.fx.burst(scene.px, scene.py - 6, 'fx_muzzle', 2, 0.1);
@@ -348,16 +348,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
     }
     if (this._pulling) {
       this._pulling -= dt;
-      var pR = (this.rMax + 26) * scene.stats.areaMult;
       var ppx = scene.px, ppy = scene.py - 4;
-      scene.enemies.hash.eachNear(ppx, ppy, function (e) {
-        var dx = ppx - e.x, dy = ppy - e.y;
-        var d2 = dx * dx + dy * dy;
-        if (d2 > pR * pR) return;
-        var d = Math.sqrt(d2) || 1;
-        e.x += dx / d * 240 * dt;
-        e.y += dy / d * 240 * dt;
-      });
       if (this._pulling <= 0) {
         this._pulling = 0; this._slamT = 5;
         this._spinup = 0.25;          // the lasso must spin back up after a slam

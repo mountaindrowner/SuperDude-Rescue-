@@ -189,9 +189,12 @@ PC.CometWeapon.prototype._call = function (scene, target, delay) {
     if (target.active) { tx = target.x; ty = target.y; }
     // sig_comet art is drawn mid-fall: head bottom-left, tail up-right -
     // matches the (+24,-170) -> target travel line with no rotation.
-    var streak = scene.add.image(tx + 24, ty - 170, 'atlas', 'sig_comet')
-      .setDepth(15);
-    scene.tweens.add({ targets: streak, x: tx, y: ty, duration: 200, ease: 'Quad.in',
+    // straight-down fall, slowed so it reads (Mark: "pointing at an
+    // angle... should be pointing straight down... slow down a little");
+    // the art's tail runs diagonally, so -45deg makes it vertical
+    var streak = scene.add.image(tx, ty - 190, 'atlas', 'sig_comet')
+      .setDepth(15).setRotation(-Math.PI / 4);
+    scene.tweens.add({ targets: streak, y: ty, duration: 330, ease: 'Quad.in',
       onComplete: function () {
         streak.destroy();
         var R = self.impactR * scene.stats.areaMult;
@@ -244,11 +247,11 @@ PC.CometWeapon.prototype.update = function (dt, scene) {
               e.y > cam.y + 44 && e.y < cam.bottom - 16;
     list.push({ e: e, d: dx * dx + dy * dy, vis: vis });
   }
+  // Mark on-device: comets should NEVER land off-screen - if nothing
+  // is visible yet, WAIT (retry fast) until something is
+  list = list.filter(function (x) { return x.vis; });
   if (!list.length) { this.cdT = 0.3; return; }
-  list.sort(function (a, b) {
-    if (a.vis !== b.vis) return a.vis ? -1 : 1;
-    return b.d - a.d;
-  });
+  list.sort(function (a, b) { return b.d - a.d; });
   this.cdT = this.cd * scene.stats.cdMult;
   for (var n = 0; n < Math.min(this.comets, list.length); n++) {
     this._call(scene, list[n].e, n * 160);
