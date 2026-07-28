@@ -12,6 +12,18 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.8: PULL-SLAM FULLY CUT (Mark: "I don't like
+  the telegraph and slam shockwave for Josh, it doesn't make
+  sense").** The whole Task-9 pull/slam block is gone from
+  LassoWeapon (JOSH_PULLSLAM flag retired=false); the lasso is now
+  PURE spinning-loop damage - it winds up once at run start
+  (spinup 0.25 -> 1 over ~1s) and then just swings. Josh's kit
+  masterize (dizzy on loop touch) unchanged. Bot rolls 66/4 - his
+  variance is engagement-dependent (fleeing bot sometimes outruns
+  the swarm entirely); constant loop uptime replaces slam burst,
+  net similar. His identity is now entirely the level-growing
+  cowboy loop.
+
 - **2026-07-27 - v0.14.7: MARK'S FIRST REAL PLAYTEST SWEEP (died
   ~3:30 twice; long voice-note feedback).** SHIPPED FIXES: (1)
   classic Pocket Sentry turrets = real sig_turret art (were tinted

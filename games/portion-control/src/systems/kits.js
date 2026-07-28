@@ -336,39 +336,9 @@ PC.LassoWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) this.dmg = 18;
 };
 PC.LassoWeapon.prototype.update = function (dt, scene) {
-  // Task 9 (approved): every ~5s the rope PULLS the crowd in for
-  // 0.5s, then SLAMS them away - Josh is THE crowd-control hero
-  if (PC.JOSH_PULLSLAM) {
-    this._slamT = (this._slamT === undefined ? 3 : this._slamT) - dt;
-    if (this._slamT <= 0 && !this._pulling) {
-      this._pulling = 0.5;
-      if (scene.vfx) scene.vfx.telegraphRing(scene.px, scene.py - 4,
-        (this.rMax + 26) * scene.stats.areaMult, 500, 0xb5793f);
-      if (PC.audio) PC.audio.telegraph();
-    }
-    if (this._pulling) {
-      this._pulling -= dt;
-      var ppx = scene.px, ppy = scene.py - 4;
-      if (this._pulling <= 0) {
-        this._pulling = 0; this._slamT = 5;
-        this._spinup = 0.25;          // the lasso must spin back up after a slam
-        var sR = (this.rMax + 20) * scene.stats.areaMult;
-        var sdmg = PC.rollDmg(scene, this.dmg * 2 * (this.mastery || 1));
-        var stun = this.stun;
-        scene.fx.burst(ppx, ppy, 'fx_nova', 3, 0.3);
-        if (scene.vfx) scene.vfx.shake(2.5, 100);
-        scene.enemies.hash.eachNear(ppx, ppy, function (e) {
-          var dx = e.x - ppx, dy = e.y - ppy;
-          var d2 = dx * dx + dy * dy;
-          if (d2 > sR * sR) return;
-          var d = Math.sqrt(d2) || 1;
-          PC.damageEnemy(scene, e, sdmg, dx / d * 2.4, dy / d * 2.4, scene._onKillCb);
-          if (stun) e.slowUntil = scene.now + 0.8;
-        });
-        if (PC.audio) PC.audio.pop();
-      }
-    }
-  }
+  // (pull-slam removed v0.14.8 - Mark: "I don't like the telegraph
+  // and slam shockwave for Josh, it doesn't make sense." The lasso is
+  // now pure spinning-loop damage; it winds up once at run start.)
   // v0.14.2 lasso morph (Mark: "begins as a small rotating circle at
   // the end of the lasso which gradually ends at the full loop
   // around"): the rope from Josh's hand ends in a CLOSED loop that
@@ -376,7 +346,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
   // spins up until the loop is the full circle around him. Damage is
   // whatever the drawn loop touches, so the post-slam wind-up (small
   // loop) is a real vulnerability window.
-  if (this._spinup === undefined) this._spinup = 1;
+  if (this._spinup === undefined) this._spinup = 0.25;   // winds up once at run start
   this._spinup = Math.min(1, this._spinup + dt / 1.4);
   var spin = this._spinup;
   this._spinA = (this._spinA || 0) + dt * (9 - 4 * spin);   // small = fast twirl
