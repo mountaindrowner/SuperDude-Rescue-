@@ -12,6 +12,23 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.14.4: LASSO FINAL FORM - LEVEL-DRIVEN COWBOY
+  SWING (Mark: "tiny loop swings WIDE around him... every time he
+  levels it up, it increases the size of the loop and brings it in
+  ...the bigger it gets, the closer it comes").** Geometry now keyed
+  to WEAPON LEVEL, not spin-up: `k=(level-1)/(max-1); loopR=(16+
+  (r-16)*k)*(0.35+0.65*spin); orbit=(r-loopR)*(1-k)`. L1 = small
+  loop swinging WIDE at rope's end (threat range ~r but thin
+  coverage); each level grows the loop and reels the swing inward;
+  L5 = the complete circle centered on him. Post-slam spin-up now
+  only TIGHTENS the loop briefly (vulnerability window preserved).
+  Rope+knot attached at every stage; damage = the drawn loop.
+  Tuning: base dmg 9->10 to keep L1 viable (bot rolls 23/40, mean
+  ~32 = mid-pack; 13 at dmg 9 too thin, 72 at dmg 11 too hot).
+  Verified L1/L3/L5 freeze-frames. This is the FOURTH lasso
+  iteration and Mark's spec is now fully expressed - don't rework
+  the geometry again without new direction.
+
 - **2026-07-27 - v0.14.3: LASSO COWBOY SWING (Mark's final read:
   "small rotating circle at the end of a rope... revolves around
   him like a cowboy... gradually the circle gets bigger and the

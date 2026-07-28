@@ -322,7 +322,7 @@ PC.BeamWeapon.prototype.update = function (dt, scene) {
 PC.LassoWeapon = function (scene) {
   this.key = 'lasso'; this.name = 'ROPE CYCLONE';
   this.level = 1; this.max = 5;
-  this.rMin = 36; this.rMax = 64; this.dmg = 9; this.tickCd = 0.5;
+  this.rMin = 36; this.rMax = 64; this.dmg = 10; this.tickCd = 0.5;
   this.gfx = scene.add.graphics().setDepth(9);
 };
 PC.LassoWeapon.prototype.desc = function () {
@@ -393,11 +393,14 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
   var r = (this.rMin + (this.rMax - this.rMin) * (0.5 + 0.5 * Math.sin(scene.now * 5.2))) * am;
   var lead = this._spinA;
   var pxp = scene.px, pyp = scene.py - 4;
-  var loopR = 7 + (r - 7) * spin;                 // loop size: tiny -> full
-  // cowboy swing (Mark v0.14.3): the little loop REVOLVES around him
-  // close-in on a short rope, and as it grows the swing centers onto
-  // the player until the loop IS the full circle around him
-  var orbit = (1 - spin) * (loopR + 12);
+  // cowboy swing, LEVEL-driven (Mark v0.14.4): at L1 a small loop
+  // swings WIDE at the end of the rope; each level grows the loop and
+  // reels the swing inward, until max level is the complete circle
+  // around him. The post-slam spin-up briefly TIGHTENS the loop (the
+  // vulnerability window) without changing where it swings.
+  var k = (this.level - 1) / (this.max - 1);      // 0 at L1 -> 1 at max
+  var loopR = (16 + (r - 16) * k) * (0.35 + 0.65 * spin);
+  var orbit = (r - loopR) * (1 - k);              // wide swing -> centered
   var cx2 = pxp + Math.cos(lead) * orbit;
   var cy2 = pyp + Math.sin(lead) * orbit;
   var g = this.gfx;
