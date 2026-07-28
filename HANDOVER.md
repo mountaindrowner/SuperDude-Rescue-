@@ -12,6 +12,33 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.17.1: STORY-2 SHIPPED - the authored CENTRAL
+  DISTRICT region map.** KEY DECISION (guardrail-driven): ONE
+  rendering path - block = 512px = one native fabric street cell,
+  map = 15x15 blocks = EXACTLY 7680px; the existing paintChunkD1
+  paints every in-bounds chunk untouched and the region OVERLAYS
+  landmarks/border/void (spec's 20x20@384 rescaled, topology
+  preserved). NEW: src/data/story/map1.js (10 landmarks in block
+  coords w/ per-landmark color+accent; spawn at the Mission
+  Board), src/story/region.js (PC.Region: world-px landmark rects
+  lot-inset 20px; chunkSolids = fabric solids minus landmark lots
+  plus slab-with-south-door-bay collision (72px door, walk-in
+  60px); paintChunk = fabric -> hazard-stripe map rim -> void grid
+  beyond -> landmark plates; plates are LAYER-LAW placeholders:
+  cast shadow + roof light/occlusion/rim + lit south face + door
+  glow + windows + seeded roof vents + name signage; open
+  landmarks (plaza/demo stage) = textured ground feature, no
+  solid). PLUGGABLE SEAMS: PC.chunkSolids now = PC.
+  defaultChunkSolids unless PC.installRegion(region) overrides;
+  PC.Ground takes an optional painter. GameScene: reads PC.STORY.
+  pendingMap (set by title STORY, cleared by QUICK RUN), spawns at
+  region spawn, clamps movement to bounds. VERIFIED: spawn 4089/
+  3936 on 7680 map, slab collision pushes out, door bay walkable,
+  OOB pushes in, quick-run regression = default solids + no
+  region, zero errors; screenshot tour (board/cityhall/bank/plaza/
+  corner) - bank door bay + hazard corner look right. NEXT:
+  STORY-3 quest/compass + Stage-1 chain (B1-B5).
+
 - **2026-07-27 - v0.17.0: STORY-1 SHIPPED (Mark: "Build.") - the
   dialogue engine + cutscene runner + THE INTRO CINEMATIC.** New:
   `src/story/dialogue.js` (PC.DialogueBox: bottom lab-panel,

@@ -134,11 +134,13 @@ PC.TitleScene.prototype.create = function () {
     return t;
   }
   var start = button(H * 0.565, '>> STORY <<', '#a8e04a', 0xa8e04a, function () {
+    PC.STORY.pendingMap = 'central';        // GameScene picks this up
     self.scene.start('PC_Cutscene', { script: PC.STORY.scripts.intro,
-      next: 'PC_Select' });   // temp next until Stage 1 lands (STORY-3)
+      next: 'PC_Select' });   // select -> the Central District map
   });
   this.tweens.add({ targets: start, alpha: 0.45, duration: 620, yoyo: true, repeat: -1 });
   button(H * 0.565 + 38, 'QUICK RUN', '#35d0ff', 0x35d0ff, function () {
+    if (PC.STORY) PC.STORY.pendingMap = null;
     self.scene.start('PC_Select');
   });
   button(H * 0.565 + 76, 'POWER-UPS', '#f2c33c', 0xf2c33c, function () {
