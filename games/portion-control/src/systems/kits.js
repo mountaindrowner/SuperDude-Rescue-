@@ -86,7 +86,7 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
       if (PC.VFX_V2 && scene.vfx) scene.vfx.muzzleFlash(tu.x, tu.y - 8);
       scene.bullets.fire(tu.x, tu.y - 8, best.x, best.y,
         { speed: 460, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet', life: 0.6 });
-      if (PC.audio) PC.audio.shoot();
+      if (PC.audio) PC.audio.weaponVoice('sentry');
     } else { tu.fireT = 0.2; }
   }
 };
@@ -141,7 +141,7 @@ PC.SeedWeapon.prototype.update = function (dt, scene) {
       .setAlpha(0).setVisible(true);
     scene.tweens.add({ targets: p.sprite, alpha: 0.55, duration: 180 });
     scene.fx.burst(tx, ty, 'fx_spark', 3, 0.2);
-    if (PC.audio) PC.audio.shoot();
+    if (PC.audio) PC.audio.weaponVoice('seeds');
   }
   var dmg = this.dmg, r = this.radius * scene.stats.areaMult, self = this;
   for (var j = 0; j < this.patches.length; j++) {
@@ -320,7 +320,7 @@ PC.StrikeWeapon.prototype.update = function (dt, scene) {
             scene.hitBoss(bx, by, dmg, 0, 0);
           }
         }
-        if (PC.audio) PC.audio.pop();
+        if (PC.audio) PC.audio.weaponVoice('strike');
       };
       if (PC.VFX_V2 && scene.vfx) {
         // Task 4: a visible bomb FALLS onto the point, then detonates
@@ -380,7 +380,7 @@ PC.BeamWeapon.prototype.update = function (dt, scene) {
         pierce: 99, life: 1.5 });
   }
   scene.fx.burst(scene.px, scene.py - 6, 'fx_muzzle', 2, 0.1);
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('beam');
 };
 
 // ---------------------------------------------------------------
@@ -403,6 +403,7 @@ PC.LassoWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) this.dmg = 18;
 };
 PC.LassoWeapon.prototype.update = function (dt, scene) {
+  if (PC.audio) PC.audio.weaponVoice('lasso');   // rope loop voice
   // (pull-slam removed v0.14.8 - Mark: "I don't like the telegraph
   // and slam shockwave for Josh, it doesn't make sense." The lasso is
   // now pure spinning-loop damage; it winds up once at run start.)

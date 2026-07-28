@@ -93,7 +93,7 @@ PC.KetchupWeapon.prototype.update = function (dt, scene) {
             } });
         })(t.x, t.y, n * 150);
       }
-      if (PC.audio) PC.audio.shoot();
+      if (PC.audio) PC.audio.weaponVoice('ketchup');
     } else { this.cdT = 0.4; }
   }
   // puddles: slow + light dmg tick
@@ -139,6 +139,7 @@ PC.MicrowaveWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) { this.halfArc = 0.24; this.dmg = 15; }
 };
 PC.MicrowaveWeapon.prototype.update = function (dt, scene) {
+  if (PC.audio) PC.audio.weaponVoice('microwave');   // sweep hum loop
   this.angle += this.degS * Math.PI / 180 * dt;
   var L = this.length * scene.stats.areaMult;
   var pxp = scene.px, pyp = scene.py - 4;
@@ -228,7 +229,7 @@ PC.FridgeWeapon.prototype.update = function (dt, scene) {
       wl.ang = aim + Math.PI / 2;                // perpendicular to aim
       wl.t = this.life * (scene.stats.durMult || 1);
       scene.fx.burst(wl.x, wl.y, 'fx_freeze', 1, 0.3);
-      if (PC.audio) PC.audio.ui();
+      if (PC.audio) PC.audio.weaponVoice('fridge');
     }
   } else {
     // BUNKER FRIDGE evolution: 4 walls orbit the player

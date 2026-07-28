@@ -227,7 +227,7 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
   } else {
     scene.fx.burst(scene.px + aim.ax * 18, scene.py - 4 + aim.ay * 12, 'fx_muzzle', 2, 0.1);
   }
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('resizer');
 };
 
 // -- Portion Blaster (COMPENDIUM 7.2): 40-degree cone burst, short range.
@@ -264,7 +264,7 @@ PC.BlasterWeapon.prototype.update = function (dt, scene) {
       scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
       { speed: 420, dmg: dmg, frame: 'proj_pellet', life: 0.35 });
   }
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('blaster');
 };
 
 // -- Whisk Cyclone (COMPENDIUM 7.3): orbiting whisks, always on.
@@ -291,6 +291,7 @@ PC.WhiskWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) { this.dmg = 22; this.degS = 220; }
 };
 PC.WhiskWeapon.prototype.update = function (dt, scene) {
+  if (PC.audio) PC.audio.weaponVoice('whisk');   // orbit loop voice
   var radius = this.radius * scene.stats.areaMult;
   this.angle += (this.degS * Math.PI / 180) * dt;
   var dmg = this.dmg * (this.mastery || 1) * scene.stats.dmgMult;
@@ -385,7 +386,7 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
         scene.hitBoss(scene.boss.x, scene.boss.y, dmg, 0, 0);
       }
     }
-    if (PC.audio) PC.audio.pop();
+    if (PC.audio) PC.audio.weaponVoice('salt');
   }
   var g = this.gfx;
   g.clear();
@@ -447,7 +448,7 @@ PC.DroneWeapon.prototype.update = function (dt, scene) {
       scene.bullets.fire(dxp, dyp, best.x, best.y,
         { speed: 480, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet',
           tint: 0x7dd97b, life: 0.7 });
-      if (PC.audio) PC.audio.shoot();
+      if (PC.audio) PC.audio.weaponVoice('drone');
     } else { d.fireT = 0.25; }
   }
 };
@@ -488,7 +489,7 @@ PC.FreezeWeapon.prototype.update = function (dt, scene) {
       { speed: 500, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet',
         tint: 0x9adfff, slowMs: this.slowMs, life: 0.9 });
   }
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('freeze');
 };
 
 // =====================================================================

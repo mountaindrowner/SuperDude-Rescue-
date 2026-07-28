@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.15.0: PER-ABILITY SFX VOICES (mother-session
+  deliverable docs/SFX_VOICES.md, built to spec).** audio.js gains
+  VOICE_FAM (12 family timbre defaults) + VOICES (26 weapon rows:
+  wave/base Hz/glide/dur/noise/reps/gap; espresso, ketchup, and
+  comet are 2-layer sequences - windup->pop, thwup->splat,
+  sky-whistle->crash) + one combinator playVoice(key): per-key
+  throttle gap (anti-cacophony rule 2), +-cents pitch jitter per
+  trigger (rule 3), burst reps, family air/wave/gain fallbacks.
+  Public API: PC.audio.weaponVoice(key) - safe to call every frame
+  (continuous weapons DO: whisk/lasso/microwave call it per-frame
+  and the gap becomes their tick loop, rule 1; grease per-segment,
+  salt per-aura-tick). ALL 26 activation sites rewired off the
+  shared shoot()/pop() onto their own voice; impacts still use the
+  shared rate-limited pop/splat (rule 6); the 18 existing event SFX
+  untouched (additive, flag PC.SFX_VOICES). Earcon test (spec 6.4):
+  dev-mode [SFX TEST] button top-left of the title plays all 26 in
+  sequence at 0.5s spacing. Verified headless: 26 scheduled, full
+  playthrough zero errors; all-weapons audit zero errors/warnings.
+  Register spacing per spec keeps the live mix legible (minions
+  HIGH / shots MID / strikes+fire LOW). Mark should ear-test on
+  device via ?dev=1 -> [ SFX TEST ], then a live run.
+
 - **2026-07-27 - v0.14.9: PINEAPPLE RETALIATION + KEVIN'S AIMED
   STRIKE BUTTON (both Mark-approved this session).** (1) PINEAPPLE
   GUARD rework per Mark's spec: completely DORMANT until the player
