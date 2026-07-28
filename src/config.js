@@ -87,6 +87,7 @@ PC.CARLOS_COMET_CALL = true;   // falling comets on the farthest foe
 PC.NAYAH_HAYMAKER = true;      // lifesteal brawler (seeds -> shared pool)
 PC.SALT_AURA = true;           // Salt Shaker = Seasoned debuff aura
 PC.JOSH_PULLSLAM = false;      // RETIRED v0.14.8 (Mark cut pull+slam; lasso = pure loop)
+PC.SFX_VOICES = true;          // per-weapon voice table (docs/SFX_VOICES.md, v0.15.0)
 
 // Dev flag (PHASE2 §3): true = every hero selectable. FLIPPED FALSE
 // v0.13.0 (Mark: "make some more characters unlockable, all except the

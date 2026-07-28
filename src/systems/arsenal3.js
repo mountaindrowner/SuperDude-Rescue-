@@ -35,7 +35,7 @@ PC.CutterWeapon.prototype.update = function (dt, scene) {
         frame: 'proj_whisk', scale: 1.7, tint: 0xf2c33c,
         boomerang: this.out, pierce: 99, life: this.out + 0.2 });
   }
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('cutter');
 };
 
 // ---------------------------------------------------------------
@@ -104,7 +104,7 @@ PC.ZapWeapon.prototype.update = function (dt, scene) {
     cur = nx;
   }
   this.flashT = 0.16;
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('zap');
 };
 
 // ---------------------------------------------------------------
@@ -148,6 +148,7 @@ PC.GreaseWeapon.prototype.update = function (dt, scene) {
     s0.t = this.life * (scene.stats.durMult || 1); s0.tick = 0;
     s0.img.setPosition(s0.x, s0.y)
       .setScale(this.segR / 24 * scene.stats.areaMult).setAlpha(0.5).setVisible(true);
+    if (PC.audio) PC.audio.weaponVoice('grease');   // fire fwoosh per segment
   }
   var r = this.segR * scene.stats.areaMult, dmg = this.dmg, slow = this.slow, self = this;
   for (var j = 0; j < this.segs.length; j++) {
@@ -213,7 +214,7 @@ PC.JawWeapon.prototype.update = function (dt, scene) {
         frame: 'proj_resizer', scale: this.scale * scene.stats.areaMult,
         tint: 0xf7f4ef, bounces: this.bounces, life: 3 });
   }
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('jaw');
 };
 
 // ---------------------------------------------------------------
@@ -246,7 +247,7 @@ PC.SprinkleWeapon.prototype.update = function (dt, scene) {
       { speed: 260, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
         frame: 'proj_pellet', tint: 0x35d0ff, homing: this.seek, life: 1.6 });   // cyan (color law)
   }
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('sprinkle');
 };
 
 // ---------------------------------------------------------------
@@ -312,7 +313,7 @@ PC.SkilletWeapon.prototype.update = function (dt, scene) {
   this._swing(scene, ang);
   if (this.both) this._swing(scene, ang + Math.PI);
   this.flashT = 0.14; this.flashAng = ang;
-  if (PC.audio) PC.audio.pop();
+  if (PC.audio) PC.audio.weaponVoice('skillet');
 };
 
 // ---------------------------------------------------------------
@@ -355,7 +356,7 @@ PC.VortexWeapon.prototype.update = function (dt, scene) {
         this.cdT = this.cd * scene.stats.cdMult;
         this.active = { x: pick.x, y: pick.y, t: this.dur, tick: 0 };
         this.img.setPosition(pick.x, pick.y).setScale(1).setAlpha(0.9).setVisible(true);
-        if (PC.audio) PC.audio.ui();
+        if (PC.audio) PC.audio.weaponVoice('vortex');
       } else { this.cdT = 0.4; }
     }
     return;
@@ -431,7 +432,7 @@ PC.EspressoWeapon.prototype.update = function (dt, scene) {
     scene.fx.burst(pxp, pyp - 6, 'fx_nova', 2, 0.25);
   }
   this.charge = 0;
-  if (PC.audio) PC.audio.shoot();
+  if (PC.audio) PC.audio.weaponVoice('espresso');
 };
 
 // ---------------------------------------------------------------
@@ -475,5 +476,5 @@ PC.PineappleWeapon.prototype.update = function (dt, scene) {
     scene.hp = Math.min(PC.PLAYER.HP + (scene.stats.bonusHp || 0), scene.hp + this.heal);
     scene.drawHud();
   }
-  if (PC.audio) PC.audio.pop();
+  if (PC.audio) PC.audio.weaponVoice('pineapple');
 };

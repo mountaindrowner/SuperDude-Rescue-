@@ -108,7 +108,7 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
         scene.bullets.fire(b.x, b.y - 4, b.target.x, b.target.y,
           { speed: 500, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
             frame: 'proj_pellet', life: 0.6 });
-        if (PC.audio) PC.audio.shoot();
+        if (PC.audio) PC.audio.weaponVoice('sentrybot');
       }
       continue;
     }
@@ -152,7 +152,7 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
           scene.bullets.fire(t.x, t.y - 9, tb.x, tb.y,
             { speed: 520, dmg: PC.rollDmg(scene, (this.dmg + 8) * (this.mastery || 1)),
               frame: 'proj_pellet', life: 0.7 });
-          if (PC.audio) PC.audio.shoot();
+          if (PC.audio) PC.audio.weaponVoice('sentrybot');
         } else { t.fireT = 0.2; }
       }
     }
@@ -194,6 +194,7 @@ PC.CometWeapon.prototype._call = function (scene, target, delay) {
     // the art's tail runs diagonally, so -45deg makes it vertical
     var streak = scene.add.image(tx, ty - 190, 'atlas', 'sig_comet')
       .setDepth(15).setRotation(-Math.PI / 4);
+    if (PC.audio) PC.audio.weaponVoice('comet');   // sky whistle -> crash
     scene.tweens.add({ targets: streak, y: ty, duration: 330, ease: 'Quad.in',
       onComplete: function () {
         streak.destroy();
@@ -332,7 +333,7 @@ PC.HaymakerWeapon.prototype.update = function (dt, scene) {
     }
   }
   this.flashT = 0.1;
-  if (PC.audio && Math.random() < 0.5) PC.audio.pop();
+  if (PC.audio) PC.audio.weaponVoice('haymaker');
 };
 
 // ---------------------------------------------------------------

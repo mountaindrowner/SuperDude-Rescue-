@@ -123,7 +123,105 @@ window.PC = window.PC || {};
     }, 110);
   }
 
+  // ---- per-weapon SFX voices (docs/SFX_VOICES.md, mother-session
+  // table, v0.15.0). Family defaults + per-weapon deltas -> one
+  // combinator. Continuous weapons call weaponVoice() every frame and
+  // the per-key gap turns that into their tick loop (anti-cacophony
+  // rule 1); everything else is throttled/event by the same gap.
+  var VOICE_FAM = {
+    shot:    { w: 'sine',     air: 0, gap: 0.12, jit: 40, g: 0.14 },
+    orbiter: { w: 'triangle', air: 1, gap: 0.25, jit: 30, g: 0.06 },
+    aura:    { w: 'sine',     air: 0, gap: 0.13, jit: 80, g: 0.06 },
+    zone:    { w: 'triangle', air: 1, gap: 0.20, jit: 40, g: 0.12 },
+    minion:  { w: 'square',   air: 0, gap: 0.13, jit: 45, g: 0.10 },
+    strike:  { w: 'square',   air: 1, gap: 0.12, jit: 25, g: 0.18 },
+    boomer:  { w: 'sawtooth', air: 1, gap: 0.08, jit: 30, g: 0.12 },
+    chain:   { w: 'sawtooth', air: 0, gap: 0.10, jit: 80, g: 0.12 },
+    melee:   { w: 'square',   air: 0, gap: 0.11, jit: 45, g: 0.14 },
+    control: { w: 'sine',     air: 1, gap: 0.15, jit: 25, g: 0.14 },
+    homing:  { w: 'triangle', air: 1, gap: 0.13, jit: 60, g: 0.08 },
+    sweep:   { w: 'sawtooth', air: 1, gap: 0.22, jit: 10, g: 0.08 },
+  };
+  var VOICES = {
+    resizer:   { f: 'shot', b: 620, g0: 1, g1: 1.7, d: 0.08, n: 0.03, nl: 2000, gap: 0.09 },
+    blaster:   { f: 'shot', w: 'square', b: 480, g0: 1, g1: 0.7, d: 0.10, n: 0.12, nl: 1500, reps: 3, gap: 0.18 },
+    beam:      { f: 'shot', w: 'sawtooth', b: 700, g0: 1, g1: 1.02, d: 0.09, n: 0.02, nl: 3000, g: 0.07, gap: 0.14 },
+    espresso:  { f: 'shot', gap: 0.4, layers: [
+      { w: 'triangle', f0: 300, f1: 900, d: 0.5, g: 0.08, air: 1 },
+      { t: 0.5, w: 'sine', f0: 900, f1: 600, d: 0.09, g: 0.16, n: 0.05, nl: 2000 }] },
+    whisk:     { f: 'orbiter', b: 520, g0: 1, g1: 1.3, d: 0.12, n: 0.02, nl: 1800, gap: 0.25 },
+    lasso:     { f: 'orbiter', w: 'sine', b: 200, g0: 1, g1: 1.5, d: 0.16, n: 0.02, nl: 1200, gap: 0.33 },
+    salt:      { f: 'aura', b: 900, g0: 1, g1: 1, d: 0.05, n: 0.10, nl: 4000, gap: 0.13 },
+    pineapple: { f: 'aura', w: 'square', b: 420, g0: 1, g1: 1.8, d: 0.12, n: 0.15, nl: 2500, g: 0.16, gap: 0.3 },
+    seeds:     { f: 'zone', w: 'sine', b: 360, g0: 1, g1: 0.6, d: 0.09, n: 0.03, nl: 1500, gap: 0.2 },
+    grease:    { f: 'zone', w: 'sawtooth', b: 160, g0: 1, g1: 1, d: 0.18, n: 0.18, nl: 900, g: 0.08, gap: 0.17 },
+    ketchup:   { f: 'zone', gap: 0.25, layers: [
+      { w: 'triangle', f0: 300, f1: 480, d: 0.12, g: 0.12, air: 1 },
+      { t: 0.12, w: 'triangle', f0: 200, f1: 120, d: 0.10, g: 0.10, n: 0.16, nl: 1200 }] },
+    drone:     { f: 'minion', b: 1000, g0: 1, g1: 1.4, d: 0.05, n: 0.04, nl: 3000, gap: 0.12 },
+    sentry:    { f: 'minion', b: 560, g0: 1, g1: 0.8, d: 0.07, n: 0.10, nl: 2000, gap: 0.15 },
+    sentrybot: { f: 'minion', w: 'triangle', b: 700, g0: 1, g1: 1.3, d: 0.09, n: 0.05, nl: 2500, reps: 2, gap: 0.14 },
+    strike:    { f: 'strike', b: 150, g0: 1, g1: 0.5, d: 0.22, n: 0.20, nl: 1000, gap: 0.16 },
+    comet:     { f: 'strike', gap: 0.3, layers: [
+      { w: 'sine', f0: 1200, f1: 250, d: 0.32, g: 0.12, air: 1 },
+      { t: 0.3, w: 'sine', f0: 200, f1: 90, d: 0.16, g: 0.16, n: 0.22, nl: 900 }] },
+    cutter:    { f: 'boomer', b: 600, g0: 1, g1: 1.5, d: 0.10, n: 0.05, nl: 2500, reps: 2, gap: 0.3 },
+    jaw:       { f: 'boomer', w: 'triangle', b: 500, g0: 1, g1: 1.6, d: 0.08, n: 0.03, nl: 2000, gap: 0.08 },
+    zap:       { f: 'chain', b: 900, g0: 1, g1: 1, d: 0.06, n: 0.16, nl: 5000, gap: 0.10 },
+    skillet:   { f: 'melee', b: 420, g0: 1, g1: 0.6, d: 0.09, n: 0.14, nl: 2500, gap: 0.16 },
+    haymaker:  { f: 'melee', b: 300, g0: 1, g1: 0.8, d: 0.06, n: 0.08, nl: 1800, reps: 2, gap: 0.11 },
+    freeze:    { f: 'control', b: 700, g0: 1, g1: 0.57, d: 0.16, n: 0.14, nl: 3000, gap: 0.18 },
+    fridge:    { f: 'control', w: 'square', b: 140, g0: 1, g1: 0.7, d: 0.14, n: 0.16, nl: 1000, gap: 0.2 },
+    vortex:    { f: 'control', b: 200, g0: 1, g1: 2.5, d: 0.20, n: 0.10, nl: 1500, gap: 0.3 },
+    sprinkle:  { f: 'homing', b: 950, g0: 1, g1: 1.3, d: 0.05, n: 0.02, nl: 3000, reps: 4, gap: 0.13 },
+    microwave: { f: 'sweep', b: 380, g0: 1, g1: 1.12, d: 0.16, n: 0.03, nl: 2500, gap: 0.22 },
+  };
+  var vLast = {};
+  function playVoice(key) {
+    if (!PC.SFX_VOICES || !ctx) return;
+    var v = VOICES[key];
+    if (!v) return;
+    var fam = VOICE_FAM[v.f] || {};
+    var gap = v.gap !== undefined ? v.gap : (fam.gap || 0.12);
+    var t = ctx.currentTime;
+    if (vLast[key] && t - vLast[key] < gap) return;
+    vLast[key] = t;
+    var jit = v.jit !== undefined ? v.jit : (fam.jit || 40);
+    var j = Math.pow(2, ((Math.random() * 2 - 1) * jit) / 1200);
+    if (v.layers) {
+      for (var li = 0; li < v.layers.length; li++) (function (L) {
+        var go = function () {
+          tone(L.w, L.f0 * j, L.f1 * j, L.d, L.g, null, 0.006, !!L.air);
+          if (L.n) noise(L.d * 0.8, L.n, L.nl || 2000);
+        };
+        if (L.t) setTimeout(go, L.t * 1000); else go();
+      })(v.layers[li]);
+      return;
+    }
+    var wave = v.w || fam.w || 'sine';
+    var gain = v.g !== undefined ? v.g : (fam.g || 0.12);
+    var reps = v.reps || 1;
+    for (var i = 0; i < reps; i++) (function (i2) {
+      var go = function () {
+        tone(wave, v.b * v.g0 * j, v.b * v.g1 * j, v.d, gain, null, 0.006, !!fam.air);
+        if (v.n) noise(v.d * 0.8, v.n, v.nl || 2000);
+      };
+      if (i2) setTimeout(go, i2 * v.d * 600); else go();
+    })(i);
+  }
+
   PC.audio = {
+    // fire a weapon's voice (throttled per-key; safe to call every frame)
+    weaponVoice: function (key) { playVoice(key); },
+    // debug earcon test: all 26 voices in sequence (dev mode)
+    earconTest: function () {
+      if (!ensure()) return;
+      var keys = Object.keys(VOICES);
+      keys.forEach(function (k, i) {
+        setTimeout(function () { vLast[k] = 0; playVoice(k); }, i * 500);
+      });
+      return keys.length;
+    },
     unlock: function () {
       if (!ensure()) return;
       if (ctx.state === 'suspended') ctx.resume();

@@ -141,6 +141,16 @@ PC.TitleScene.prototype.create = function () {
     self.scene.start('PC_Shop');
   });
 
+  if (PC.DEV_MODE) {
+    var sfxT = this.add.text(6, 6, '[ SFX TEST ]', {
+      fontFamily: 'monospace', fontSize: '8px', color: '#ff6b6b', fontStyle: 'bold',
+    }).setInteractive({ useHandCursor: true });
+    sfxT.on('pointerdown', function () {
+      if (PC.audio) { PC.audio.unlock(); PC.audio.stopMusic(); PC.audio.earconTest(); }
+    });
+    this.menu.add(sfxT);
+  }
+
   var goldT = this.add.text(W / 2, H * 0.585 + 72, '$ ' + PC.meta.gold(), {
     fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
   }).setOrigin(0.5);
