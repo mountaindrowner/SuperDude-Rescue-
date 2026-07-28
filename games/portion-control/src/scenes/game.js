@@ -14,7 +14,18 @@ PC.GameScene.prototype.create = function () {
   PC.applyRenderScale(this);
   this.cameras.main.setBackgroundColor(0x2a2544);
 
-  this.ground = new PC.Ground(this, 1);
+  // STORY-2: authored region map (set by the title's STORY flow via
+  // PC.STORY.pendingMap). Region overlays the same city fabric with
+  // landmarks + bounds; patrol/quick-run path is untouched (null).
+  this.region = null;
+  if (PC.STORY && PC.STORY.pendingMap && PC.STORY.maps[PC.STORY.pendingMap]) {
+    this.region = new PC.Region(PC.STORY.maps[PC.STORY.pendingMap]);
+  }
+  PC.installRegion(this.region);
+  var regionSelf = this;
+  this.ground = new PC.Ground(this, 1, this.region
+    ? function (sc, g2, cx2, cy2) { regionSelf.region.paintChunk(sc, g2, cx2, cy2); }
+    : null);
   // screen-space UI lives in a world-space container pinned to the
   // camera's worldView corner every frame - the ONLY reliable way to
   // anchor UI under a zoomed camera (sf-0 + zoom mispositions, seen
@@ -24,7 +35,8 @@ PC.GameScene.prototype.create = function () {
   this.uiAttach = function (o) { uiSelf.ui.add(o); return o; };
   this.moveInput = new PC.MoveInput(this);
 
-  this.px = 0; this.py = 0;
+  this.px = this.region ? this.region.spawnX : 0;
+  this.py = this.region ? this.region.spawnY : 0;
   this.facing = 1;
   this.aimX = 1; this.aimY = 0;      // last movement direction = fire direction
   this.moving = false;
@@ -310,6 +322,10 @@ PC.GameScene.prototype.update = function (time, delta) {
   if (this.moving) {
     this.px += v.x * spd * dt;
     this.py += v.y * spd * dt;
+    if (this.region) {
+      this.px = Math.max(20, Math.min(this.region.size - 20, this.px));
+      this.py = Math.max(20, Math.min(this.region.size - 20, this.py));
+    }
     if (v.x > 0.01) this.facing = 1;
     else if (v.x < -0.01) this.facing = -1;
     this.aimX = v.x; this.aimY = v.y;

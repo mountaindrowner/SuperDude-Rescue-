@@ -13,9 +13,10 @@ PC.hash01 = function (x, y, salt) {
   return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 };
 
-PC.Ground = function (scene, district) {
+PC.Ground = function (scene, district, painter) {
   this.scene = scene;
   this.d = district || 1;
+  this.painter = painter || PC.paintChunkD1;   // region maps swap this in
   this.live = {};                 // "cx,cy" -> slot
   this.slots = [];
   for (var i = 0; i < 12; i++) {
@@ -70,7 +71,7 @@ PC.Ground.prototype.update = function (cam) {
 PC.Ground.prototype._bake = function (slot, cx, cy) {
   var g = slot.canvas.getContext('2d');
   g.clearRect(0, 0, PC.CHUNK, PC.CHUNK);
-  PC.paintChunkD1(this.scene, g, cx, cy);
+  this.painter(this.scene, g, cx, cy);
   var tex = this.scene.textures.get(slot.key);
   if (tex && tex.refresh) tex.refresh();       // push canvas -> GPU
   slot.inUse = true;

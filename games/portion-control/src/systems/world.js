@@ -48,7 +48,9 @@ window.PC = window.PC || {};
   var QUADS = [[14, 14, 178, 178], [334, 14, 498, 178], [14, 334, 178, 498], [334, 334, 498, 498]];
   var solidsCache = {};
   var solidsCacheN = 0;
-  PC.chunkSolids = function (cx, cy) {
+  // the fabric's own solids; PC.chunkSolids is PLUGGABLE (region.js
+  // overrides it for authored story maps, restores this default after)
+  PC.defaultChunkSolids = function (cx, cy) {
     var k = cx + ',' + cy;
     if (solidsCache[k]) return solidsCache[k];
     if (solidsCacheN > 300) { solidsCache = {}; solidsCacheN = 0; }
@@ -67,6 +69,7 @@ window.PC = window.PC || {};
     solidsCache[k] = out; solidsCacheN++;
     return out;
   };
+  PC.chunkSolids = PC.defaultChunkSolids;
 
 
 
