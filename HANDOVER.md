@@ -12,6 +12,30 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.16.1: CHARGED COMET BEAM + DIFFICULTY RAMP +
+  ECONOMY (Mark's verdicts).** (1) COMET BEAM total rework ("too
+  much like Danny's laser... a charged beam that slowly coalesces,
+  then shoots on a BIG beam, then stops, once every ~10s"): now a
+  state machine idle(cd 10) -> charge 0.9s (converging motes + a
+  growing white-hot orb, shrinkRing, windup SFX layer) -> FIRE
+  0.55s (thick 3-layer lance: gold glow / orange body / white core,
+  width 26->40 by level, range 430, anchored to the player,
+  direction locked at charge, corridor ticks every 0.22s + boss
+  line-hit) -> stop. Levels: dmg 50/70/-/-/95, L3 wider+cd8.5, L4
+  twin beams, L5 cosmic lance; duplicator adds beams; COMET
+  BARRAGE evo = 3 lances cd 5.5 dmg 110. New layered beam voice
+  (rise 0.85s -> blast). BeamWeapon now takes scene (both ctor
+  call sites updated). (2) DIFFICULTY ("still a little too easy...
+  ramp sooner"): spawn phases compressed ~1min earlier (hotdogs at
+  1:40, pretzels at 3:30, caps 45/85/130/190/260/300, perTick 3 in
+  the last 90s), ring events earlier+bigger (45s/16, 120s/22,
+  200s/28), TIMESCALE HP 0.06->0.10 DMG 0.02->0.04 per min. (3)
+  ECONOMY (delegated): kill-coin drop 10%->13% at value 2 (gold
+  now scales with performance = varies run to run). VALIDATED:
+  full 320s bot run = 570 kills, minHp 26, 112 dmg absorbed,
+  survived to the boss - danger arc restored; first-100s kills
+  85->98. Beam freeze-frames verified (charge orb + lance).
+
 - **2026-07-27 - v0.16.0: ASSET QUALITY PIPELINE + PUNCH LIST (Mark:
   "pipeline and asset quality first"; mother-session docs archived
   as docs/ASSET_QUALITY.md + docs/ENV_PIPELINE.md).** THE BIG MOVE:

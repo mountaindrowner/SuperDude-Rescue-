@@ -61,10 +61,9 @@ PC.EVOLUTIONS = [
       w.count = 10; w.dmg = 50; w.radius = 46; w.cd = 4;
     } },
   { base: 'beam', requires: 'duplicator', name: 'COMET BARRAGE',
-    desc: 'A barrage of piercing comets!',
+    desc: 'Triple lances, rapid recharge!',
     apply: function (w) {
-      w.name = 'COMET BARRAGE';
-      w.beams = 4; w.dmg = 24; w.cd = 0.8;
+      w.name = 'COMET BARRAGE'; w.beams = 3; w.cd = 5.5; w.dmg = 110;
     } },
   { base: 'lasso', requires: 'servo', name: 'CYCLONE TITAN',
     desc: 'A colossal dizzying ring!',

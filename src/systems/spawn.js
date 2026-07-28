@@ -15,13 +15,15 @@ PC.ENEMY_DEFS = {
 
 // ---- phases: [tStart, tEnd, intervalStart, intervalEnd, roster, perTick, liveCap] ----
 // roster = [ [key, weight], ... ]. interval lerps within the phase.
+// v0.16.1 compressed ~1min earlier (Mark: "ramp up a little sooner,
+// especially if five minutes is the cutoff")
 PC.SPAWN_PHASES = [
-  [0,   60,  1.7, 1.35, [['fry', 1]], 1, 40],
-  [60,  120, 1.35, 1.05, [['fry', 7], ['popcorn', 3]], 1, 70],
-  [120, 180, 1.05, 0.8,  [['fry', 5], ['popcorn', 2], ['hotdog', 3]], 1, 110],
-  [180, 240, 0.8, 0.55,  [['fry', 4], ['popcorn', 2], ['hotdog', 3], ['toast', 2]], 2, 170],
-  [240, 300, 0.55, 0.32, [['fry', 3], ['popcorn', 2], ['hotdog', 3], ['toast', 2], ['pretzel', 2]], 2, 240],
-  [300, 1e9, 0.30, 0.22, [['fry', 3], ['popcorn', 2], ['hotdog', 3], ['toast', 3], ['pretzel', 3]], 3, 300],
+  [0,   45,  1.6, 1.2,  [['fry', 1]], 1, 45],
+  [45,  100, 1.2, 0.9,  [['fry', 7], ['popcorn', 3]], 1, 85],
+  [100, 150, 0.9, 0.65, [['fry', 5], ['popcorn', 2], ['hotdog', 3]], 2, 130],
+  [150, 210, 0.65, 0.45,[['fry', 4], ['popcorn', 2], ['hotdog', 3], ['toast', 2]], 2, 190],
+  [210, 300, 0.45, 0.28,[['fry', 3], ['popcorn', 2], ['hotdog', 3], ['toast', 2], ['pretzel', 2]], 3, 260],
+  [300, 1e9, 0.26, 0.20,[['fry', 3], ['popcorn', 2], ['hotdog', 3], ['toast', 3], ['pretzel', 3]], 3, 300],
 ];
 
 PC.SpawnDirector = function (scene) {

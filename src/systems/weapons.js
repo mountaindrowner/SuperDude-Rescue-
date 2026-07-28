@@ -604,7 +604,7 @@ PC.drawCards = function (scene) {
       { key: 'strike', title: 'RESCUE STRIKE', desc: "Kevin's marked air strafe",
         make: function (sc) { return new PC.StrikeWeapon(sc); } },
       { key: 'beam', title: 'COMET BEAM', desc: "Carlos' far-piercing comet",
-        make: function (sc) { return new PC.BeamWeapon(); } },
+        make: function (sc) { return new PC.BeamWeapon(sc); } },
       { key: 'lasso', title: 'ROPE CYCLONE', desc: "Josh's spinning rope ring",
         make: function (sc) { return new PC.LassoWeapon(sc); } },
     ];
