@@ -293,6 +293,28 @@ window.PC = window.PC || {};
       tone('triangle', 659.3, 0, 0.09, 0.16, null, 0.006, true);      // E
       setTimeout(function () { tone('triangle', 987.8, 0, 0.14, 0.18, null, 0.006, true); }, 70); // B (P5 up)
     },
+    // story dialogue blip (STORY-1): one soft tick per few letters,
+    // pitched per speaker (CHOMP uses square = robotic)
+    textBlip: function (pitch, wave) {
+      tone(wave || 'triangle', 460 * (pitch || 1), 520 * (pitch || 1),
+        0.035, 0.05);
+    },
+    // cutscene music cues - synth stub loops per mood until Suno
+    // tracks land; each is a soft two-note pad via the music bus
+    musicCue: function (tag) {
+      if (!ensure()) return;
+      this.stopMusic();
+      var NOTES = { hopeful: [392, 494], tense: [196, 208],
+                    lift: [330, 415], warm: [262, 330],
+                    boss: [147, 156], triumphant: [392, 523] };
+      var pair = NOTES[tag] || NOTES.hopeful;
+      var step = 0;
+      musicTimer = setInterval(function () {
+        var f = pair[step++ % 2];
+        tone('triangle', f, f, 0.9, 0.05, musicGain, 0.05, true);
+        if (tag === 'tense' || tag === 'boss') noise(0.06, 0.02, 900);
+      }, 1000);
+    },
     // title sequence (v0.13.0): heavy door clank + pneumatic hiss
     clank: function () {
       tone('square', 190, 60, 0.16, 0.28);

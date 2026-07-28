@@ -12,6 +12,30 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.17.0: STORY-1 SHIPPED (Mark: "Build.") - the
+  dialogue engine + cutscene runner + THE INTRO CINEMATIC.** New:
+  `src/story/dialogue.js` (PC.DialogueBox: bottom lab-panel,
+  portrait well, speaker tag, typewriter ~40ch/s, per-speaker
+  textBlip pitch via PC.SPEAKERS table incl. NPCs; tap = reveal,
+  tap = advance), `src/story/cutscene.js` (PC_Cutscene scene: beat
+  list {say|scene|action|music|wait}, [SKIP >], scene painters
+  plaza_sunny/plaza_flooded - sun+clouds vs stars+moon, skyline,
+  demo stage w/ Ray emitter, crowd dots vs hash-scattered food-
+  still flood piles; actions: flash/shake/smashcut/sodatip (the
+  fateful cup tips + fizz)/floodburst (eruption of atlas food +
+  gold flash)/portraits6 (wrist-pad call-up)/confetti+chant),
+  `src/data/story/scripts.js` (IV.0 intro VERBATIM). audio.js:
+  textBlip(pitch, wave) + musicCue(tag) synth pad stubs (hopeful/
+  tense/lift/warm/boss/triumphant - Suno slots in later). NPC
+  PORTRAITS generated (4 gens): bloom/sal/pip/chomp at 128 (64
+  native x2). TITLE: >> STORY << is now the primary entry (temp
+  next: PC_Select until Stage 1), QUICK RUN keeps the survivor
+  mode, POWER-UPS third. Verified headless: full intro playthrough
+  tap-by-tap, all beats fire, lands on select, zero errors/frame
+  warnings; screenshots at Pip line / floodburst / aftermath /
+  portraits6. NEXT: STORY-2 region-JSON loader + Central District
+  7680px map (per docs/STORY_BUILD_PLAN.md).
+
 - **2026-07-27 - STORY MODE PLANNED (docs/STORY_BUILD_PLAN.md).**
   Mark delivered the locked mother-session spec (docs/STORY_SPEC.md
   "Junk-Food Flood" + STORY_CAST_ADDENDUM.md) and asked for a

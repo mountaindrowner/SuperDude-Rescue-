@@ -38,6 +38,11 @@ window.PC = window.PC || {};
     add('char_' + c.k + '_idle', c.size, c.size, 'creature', c.c1, c.c2, 1);
     add('portrait_' + c.k, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', c.c1, c.c2);
   });
+  // story NPC portraits (STORY-1; real PNGs via manifest)
+  ['bloom', 'sal', 'pip', 'chomp'].forEach(function (n) {
+    add('portrait_' + n, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', P.CLOUD, P.GRAPE);
+  });
+
   // The District 1 rescued teammate - stays a stasis-pod placeholder
   // until Mark names which roster hero is in Big Frank's cage.
   add('hero_placeholder', 48, 64, 'herofig', P.CYAN, P.CLOUD);
