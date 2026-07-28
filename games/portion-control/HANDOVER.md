@@ -12,6 +12,23 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - STORY MODE PLANNED (docs/STORY_BUILD_PLAN.md).**
+  Mark delivered the locked mother-session spec (docs/STORY_SPEC.md
+  "Junk-Food Flood" + STORY_CAST_ADDENDUM.md) and asked for a
+  construction plan. Plan written: reconciliations table (Coins ==
+  existing gold/shop = Sal's Corner Store; TP = new currency ->
+  Garage permanent sig start-levels + gate tools; current quick-run
+  survives as PATROL; Stage 1 == existing Big Frank/Vic rescue;
+  spec boss names win over registry placeholders; d5 re-themed
+  sludge for Sewers), new-systems file map (story/dialogue,
+  cutscene, region, quest, hub, garage + data/story/*), art budget
+  (~20 gens for the vertical slice, ~150 total staged), and the
+  build order: v0.17.0 dialogue+intro cinematic -> region maps ->
+  quest/compass Stage-1 chain -> v0.18.0 hub+Garage = THE VERTICAL
+  SLICE, then Maps 2-5 and the Tower finale. Feature-flag
+  PC.STORY_MODE; patrol path untouched when off. AWAITING Mark's
+  go on the plan (or he just says build).
+
 - **2026-07-27 - v0.16.1: CHARGED COMET BEAM + DIFFICULTY RAMP +
   ECONOMY (Mark's verdicts).** (1) COMET BEAM total rework ("too
   much like Danny's laser... a charged beam that slowly coalesces,
