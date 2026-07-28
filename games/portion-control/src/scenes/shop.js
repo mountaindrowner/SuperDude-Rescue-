@@ -8,6 +8,10 @@ PC.ShopScene = function () { Phaser.Scene.call(this, { key: 'PC_Shop' }); };
 PC.ShopScene.prototype = Object.create(Phaser.Scene.prototype);
 PC.ShopScene.prototype.constructor = PC.ShopScene;
 
+PC.ShopScene.prototype.init = function (data) {
+  this._back = (data && data.back) || 'PC_Title';   // mission map passes itself
+};
+
 PC.ShopScene.prototype.create = function () {
   PC.applyRenderScale(this);
   PC.stampVersion(this);
@@ -29,7 +33,7 @@ PC.ShopScene.prototype.create = function () {
   }).setOrigin(0, 0).setInteractive({ useHandCursor: true });
   back.on('pointerdown', function () {
     if (PC.audio) PC.audio.ui();
-    self.scene.start('PC_Title');
+    self.scene.start(self._back);
   });
 
   // grid

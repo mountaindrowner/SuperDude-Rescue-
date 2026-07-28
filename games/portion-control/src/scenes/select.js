@@ -196,6 +196,7 @@ PC.SelectScene.prototype.redraw = function (picked) {
 
 PC.SelectScene.prototype.launch = function (hero) {
   try { localStorage.setItem('portioncontrol.hero', hero.id); } catch (e) {}
+  if (PC.STORY) PC.STORY.pendingMission = null;   // select = quick run, never story
   if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
   this.scene.start('PC_Game');
 };

@@ -194,14 +194,27 @@ PC.Quest.prototype.complete = function () {
     PC.meta.setFlag('clear_' + this.mission.id);
     PC.meta.setFlag('wonD1');
   }
-  PC.unlockHero('victoria');
+  // the mission's rescue beat names who joins the roster
+  var rescueHero = null;
+  for (var ri = 0; ri < this.mission.objectives.length; ri++) {
+    if (this.mission.objectives[ri].type === 'rescue') {
+      rescueHero = this.mission.objectives[ri].hero;
+    }
+  }
+  if (rescueHero) PC.unlockHero(rescueHero);
+  // linear spine (v0.18): bank the campaign clear so the mission map
+  // reveals + unlocks the next stage
+  if (PC.storyState) PC.storyState.markCleared(this.mission.id);
+  var chainEntry = PC.STORY.chainById && PC.STORY.chainById(this.mission.id);
   scene.won = true;
   scene.recordRunStats(true);
   scene.time.delayedCall(600, function () {
     scene.scene.start('PC_Results', {
       time: scene.runT, kills: scene.kills, level: scene.level,
       gold: scene.pickups.gold, win: true, story: true,
-      tp: self.tpEarned, rescued: 'VIC',
+      tp: self.tpEarned, hero: scene.hero.id,
+      rescued: (chainEntry && chainEntry.rescued) || 'A TEAMMATE',
+      rescuedArt: rescueHero ? 'char_' + rescueHero + '_idle' : null,
     });
   });
 };
@@ -313,7 +326,7 @@ PC.Quest.prototype.rescueSequence = function (o) {
   var bx = mk.cx, by = mk.y + mk.h - 40;
   scene.storyPause = true;
   var cage = scene.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.4).setDepth(11);
-  var hero = scene.add.image(bx, by - 4, 'atlas', 'char_victoria_idle')
+  var hero = scene.add.image(bx, by - 4, 'atlas', 'char_' + (o.hero || 'victoria') + '_idle')
     .setScale(0.9).setDepth(12).setVisible(false);
   if (PC.audio) PC.audio.chest();
   scene.time.delayedCall(500, function () {

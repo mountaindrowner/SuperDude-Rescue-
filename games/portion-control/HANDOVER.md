@@ -12,6 +12,61 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-28 - v0.18.0: THE LINEAR STORY SPINE (Mark: "I really
+  don't want a hero select... you're given the character and then
+  given the mission... you unlock more and more of a mission map -
+  as you play it reveals and unlocks the next mission for you to
+  select if you lose or leave the game").** Story mode NEVER shows
+  PC_Select anymore. NEW: src/data/story/chain.js (the 6-stage
+  linear campaign table verbatim from STORY_SPEC Part II/IV: stage1
+  THE BIG OOPS/central -> stage2 GONE WILD/park -> stage3 SUGAR
+  RUSH/suburbs -> stage4 SIGNAL LOST/labs -> stage5 GOING DEEP/
+  sewers -> finale TO THE TOP/tower; each entry ASSIGNS the hero -
+  rescue rotation: you play each stage as the hero rescued in the
+  previous one, danny->vic->josh->kevin->carlos->nayah. MARK TO
+  REVIEW that assignment - trivially editable per-entry in
+  chain.js), src/story/state.js (PC.storyState: localStorage
+  'portioncontrol.story' {introSeen, cleared, revealSeen}; status(i)
+  = cleared | active | soon (unlocked but map unbuilt = SIGNAL
+  SCRAMBLED) | tease (fogged ??? one past the frontier) | hidden;
+  DEV mode reveals all + [RESET STORY] button), src/scenes/
+  missions.js (PC_Missions: the MISSION MAP - snaking node path
+  climbing to a tower glyph over a textured board, lit route dots on
+  cleared segments, per-state node art, assigned-hero portrait
+  chips, tap node -> mission BRIEF sheet w/ blurb + "YOU PLAY AS"
+  hero + GO, NEW MISSION UNLOCKED reveal fanfare once per fresh
+  node, Sal's Store + Title footer, TP + coin wallet). FLOW: title
+  STORY -> intro cutscene ONCE (introSeen) -> mission map forever
+  after; GO sets PC.STORY.pendingMission {id,map,hero} -> GameScene
+  forces this.hero from the chain (localStorage hero ignored) +
+  region from entry.map + quest from missions[entry.id] (mission1
+  now registered by MISSION id 'stage1', 'central' kept as alias);
+  quest.complete() generalized (rescue hero read from the rescue
+  beat, rescued name/art from the chain) + marks storyState cleared
+  -> results (win OR lose) routes story back to PC_Missions, where
+  the next node reveals; lose = pick the mission again (Mark's
+  resume-on-loss). Quick run untouched: QUICK RUN/select clear
+  pendingMission, free hero pick, no region/quest. Shop takes a
+  {back} param so the mission map returns to itself. VERIFIED
+  (scratchpad verify-linear.js, ALL GREEN): fresh save -> STORY ->
+  cutscene -> map (stage1 active/stage2 tease/rest hidden as fogged
+  waypoints) -> real UI taps node+GO -> hero forced danny w/
+  localStorage=josh -> full B1-B5 bot run -> TP 125 + vic unlocked
+  + stage1 cleared -> map shows cleared check + stage2 SIGNAL
+  SCRAMBLED + reveal fanfare -> replay -> forced death -> results
+  lose (danny portrait) -> map -> quick-run regression (victoria
+  free-pick, no quest). Full battery re-run green (mission/region/
+  intro/title-seq/dev/shop; verify-dev's localStorage error is its
+  own about:blank init-script artifact, not game code). GOTCHA
+  LEARNED: interactive zones under an overlay must setDepth ABOVE
+  it - Phaser input sorts by depth, and the brief's dim rectangle
+  (depth 30) ate the GO zone's taps until the zone went to 40.
+  KNOWN STAGE-2+ WORK: quest chant + fetch-item icon + defend waves
+  are stage1-flavored; generalize when park map lands. NEXT per
+  STORY_BUILD_PLAN: hub landmarks in-world (Garage TP UI, Sal's
+  storefront, Mission Board as in-world map trigger) OR straight to
+  Map 2 art batch + mission chain - Mark's call.
+
 - **2026-07-27 - v0.17.2: STORY-3 SHIPPED - THE MISSION ENGINE +
   FULL STAGE 1 (Mark: "Fire away... test everything").** NEW:
   src/story/quest.js (PC.Quest rides inside GameScene: objective
