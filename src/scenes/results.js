@@ -13,8 +13,11 @@ PC.ResultsScene.prototype.create = function () {
   PC.stampVersion(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   var d = this.data2, win = !!d.win;
-  // hero unlocks earned this run (stats were recorded by the game scene)
+  // hero unlocks earned this run (stats were recorded by the game scene).
+  // Story missions celebrate the RESCUE instead - patrol-style stat
+  // unlocks still register, but silently (no competing banner).
   var freshHeroes = PC.checkHeroUnlocks ? PC.checkHeroUnlocks() : [];
+  if (d.story) freshHeroes = [];
   this.cameras.main.setBackgroundColor(win ? 0x142a1a : 0x1b1530);
   var m = Math.floor((d.time || 0) / 60), s = Math.floor((d.time || 0) % 60);
 
@@ -55,7 +58,8 @@ PC.ResultsScene.prototype.create = function () {
     'TIME  ' + m + ':' + (s < 10 ? '0' : '') + s +
     '\nPOPS  ' + (d.kills || 0) +
     '\nLEVEL ' + (d.level || 1) +
-    '\nGOLD  $ ' + (d.gold || 0), {
+    '\nGOLD  $ ' + (d.gold || 0) +
+    (d.tp ? '\nTECH  +' + d.tp + ' TP' : ''), {
     fontFamily: 'monospace', fontSize: '12px', color: '#cfd4e8', align: 'center', lineSpacing: 4,
   }).setOrigin(0.5).setDepth(2);
 

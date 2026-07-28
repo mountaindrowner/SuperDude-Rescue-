@@ -12,6 +12,34 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-27 - v0.17.2: STORY-3 SHIPPED - THE MISSION ENGINE +
+  FULL STAGE 1 (Mark: "Fire away... test everything").** NEW:
+  src/story/quest.js (PC.Quest rides inside GameScene: objective
+  chain state machine, edge-of-screen compass w/ on-target hover
+  marker, objective banner w/ live progress + defend bar, in-game
+  dialogue via PC.DialogueBox uiAttached w/ scene.storyPause world
+  gate, TP awards via PC.meta.bump('tp'), THE CHANT + confetti,
+  cage-crack rescue sequence) + src/data/story/mission1.js (Stage 1
+  "THE BIG OOPS" B1-B5, dialogue VERBATIM from spec IV.1). Beat
+  types: clear (ring-spawn tracked swarm at landmark, kill-count),
+  fetch (3 fuse items = pulsing battery icons, guard swarms on
+  approach, walk-over collect, Sal's chili-dog line at the diner),
+  defend (in-zone cumulative timer + wave spawns + progress bar),
+  boss (Big Frank spawned at the Bank on approach; onBossDefeated
+  rerouted to quest), rescue (cage crack -> Vic reveal -> script ->
+  CHANT -> mission complete). GameScene wiring: quest tick +
+  storyPause gate, notifyKill, timer-boss disabled in story,
+  ambient director x0.5 in story, results shows TECH +N TP; story
+  results suppress the patrol unlock banner (Vic's rescue is the
+  moment; stat unlocks still register silently). VERIFIED: scripted
+  bot played the ENTIRE mission B1->B5: TP exactly 125 (5x10 + 50 +
+  25 first-clear), Victoria unlocked, clear_stage1 flagged, zero
+  errors/warnings; design shots: banner+marker over City Hall
+  swarm, Big Frank at the Bank, Vic-in-cage rescue w/ typed
+  dialogue, DISTRICT CLEARED w/ TECH +125. Regression battery
+  (intro/region/title/dev/audit/shop) run in progress - results
+  recorded next entry. NEXT: STORY-4 hub + Garage = vertical slice.
+
 - **2026-07-27 - v0.17.1: STORY-2 SHIPPED - the authored CENTRAL
   DISTRICT region map.** KEY DECISION (guardrail-driven): ONE
   rendering path - block = 512px = one native fabric street cell,
