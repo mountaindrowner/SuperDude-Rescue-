@@ -104,7 +104,8 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
       b.fireGap -= dt;
       if (b.fireGap <= 0 && b.target) {
         b.fireGap = 0.08; b.firing--;
-        if (scene.vfx) scene.vfx.muzzleFlash(b.x, b.y - 4);
+        if (scene.vfx) scene.vfx.muzzleFlash(b.x, b.y - 4, 0x35d0ff,
+          Math.atan2(b.target.y - b.y, b.target.x - b.x));
         scene.bullets.fire(b.x, b.y - 4, b.target.x, b.target.y,
           { speed: 500, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
             frame: 'proj_pellet', life: 0.6 });
@@ -148,7 +149,8 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
         }
         if (tb) {
           t.fireT = 0.25;
-          if (scene.vfx) scene.vfx.muzzleFlash(t.x, t.y - 9, 0xf2c33c);
+          if (scene.vfx) scene.vfx.muzzleFlash(t.x, t.y - 9, 0xf2c33c,
+            Math.atan2(tb.y - t.y, tb.x - t.x));
           scene.bullets.fire(t.x, t.y - 9, tb.x, tb.y,
             { speed: 520, dmg: PC.rollDmg(scene, (this.dmg + 8) * (this.mastery || 1)),
               frame: 'proj_pellet', life: 0.7 });

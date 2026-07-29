@@ -12,6 +12,63 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-29 - v0.23.0: THE VFX QUALITY PASS (Mark: "let's make sure
+  we sift through our animations and make sure they have that premium
+  feeling quality... take your time, don't do a quick pass").**
+  **THE SHARED LESSON**: every effect Mark disliked was a ROUND,
+  UNDIRECTED primitive - a circle for a splash, a ring for fire, an orb
+  for a bolt. The fix each time was SHAPE + DIRECTION. All new painters
+  are scanline-drawn (fillRect per column) so edges stay crisp pixel art
+  instead of the soft anti-aliased curves arc() gives.
+  **1. DANNY'S BOLT** (assets.js `bolt` kind): `proj_resizer` was a real
+  PNG of a round blob - REMOVED FROM THE MANIFEST so the new procedural
+  art wins; re-registered NON-SQUARE (22x10) so rotation reads. Profile
+  is deliberately asymmetric - long thin tail swelling to a blunt round
+  nose at 78% - because a shape that tapers at BOTH ends reads as a lens
+  and loses its heading. Layers: outer glow, body, front-loaded heat,
+  white-hot core, tail wisp. `proj_drone_bolt` too.
+  **2. BOLT BEHAVIOUR** (weapons.js): rotation is now recomputed EVERY
+  FRAME from (dx,dy) - homing/boomerang shots used to keep their launch
+  angle forever, which nobody noticed while the art was a circle. New
+  46-strong GHOST pool: each after-image copies the bullet's own frame +
+  rotation and fades/flattens, so the streak always matches the shot.
+  Plus sparkle flecks.
+  **3. THE ON-SCREEN LAW** (Mark: "it's firing too far off screen"):
+  new `PC.onScreen(scene,x,y,inset)` + `PC.viewReach(scene)`. aimAt now
+  refuses off-screen targets AND clamps any weapon's range to half the
+  viewport; bullets fizzle (spark) 4px inside the view edge instead of
+  sailing hundreds of px into the dark. Danny's nominal 420 range vs a
+  ~156px half-screen was the whole complaint. Balance re-measured after:
+  415 kills / 321s / no deaths - targeting got BETTER, not starved.
+  **4. KETCHUP** (assets.js `splat` + `puddle`): the splash is 7
+  irregular overlapping lobes (never a circle) with 16 STREAKED droplets
+  flung outward; the lingering puddle is the same idea settled, plus wet
+  gloss. Landing now = big rotated splat + impact flash + 7 small
+  rotated sauce gobs that land a beat later + a shake. fx.burst gained
+  `scale`, and `fx.burstRot` randomises the angle so repeated splashes
+  never look stamped.
+  **5. FLAMES** (assets.js `flame` + vfx heatBed + arsenal3): each
+  burning segment is now THREE animated flame tongues (4-frame loop,
+  per-lick phase/height/lean) standing on a HEAT BED - five stacked ADD
+  bands red->orange->yellow that read as the gradient Mark asked for.
+  Replaces one tinted ring. `PC.Vfx.heatBed(x,y,r,i)` is stateless:
+  callers re-submit every frame, the renderer owns the look.
+  **6. MUZZLE**: was a 12px blob on turrets only. Now a DIRECTIONAL
+  20x13 cone (bright narrow at the barrel, widening + fading to nothing)
+  with back-blast rays, aimed by an angle argument - and fired on EVERY
+  energy shot from BulletSystem.fire, not just turrets.
+  **7. ZOOM**: BASE 340 -> 312 (~8% closer) per "I would still zoom up
+  again just a little bit"; it also pulls the firing boundary in.
+  TOOLING: `scratchpad/fx-sheet.js` renders any set of atlas frames
+  blown up (FX_ROWS env var) - the iteration loop for painters without
+  playing the game. VERIFIED (verify-vfx.js ALL GREEN): heading
+  orientation in 8 directions incl. after a homing turn, edge stop
+  (travelled 158 vs half-width 156), off-screen targets refused,
+  after-images present and fading, ketchup lands as a splat, grease
+  burns as 3 flame tongues on a heat bed. park/freeroam/garage
+  regressions green. GOTCHA: pi and -pi are the same heading - compare
+  angles modulo 2pi or a correct implementation looks broken.
+
 - **2026-07-29 - v0.22.0: BOSS ANIMATION STATES + BEAT 4 (Mark: "make
   sure the Broccolisk has multiple animations to make them look good...
   let's move on with the next step").** HALF THE CAMPAIGN IS NOW

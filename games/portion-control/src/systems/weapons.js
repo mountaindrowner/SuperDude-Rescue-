@@ -13,6 +13,41 @@ PC.BulletSystem = function (scene) {
         .setBlendMode(Phaser.BlendModes.ADD).setScale(1.4).setVisible(false),
     });
   }
+  // AFTER-IMAGE POOL (v0.23.0). Mark: "should have a little bit of a
+  // trail behind it too, a bit of a sparkle, an after image." A ghost is
+  // a copy of the bullet's own frame + rotation that fades and shrinks
+  // in place, so the streak always matches the shot that made it.
+  this.ghosts = [];
+  for (var gi = 0; gi < 46; gi++) {
+    this.ghosts.push({ active: false, t: 0, dur: 0.20,
+      img: scene.add.image(0, 0, 'atlas', 'proj_resizer').setDepth(7)
+        .setBlendMode(Phaser.BlendModes.ADD).setVisible(false) });
+  }
+};
+
+PC.BulletSystem.prototype._ghost = function (b) {
+  var gh = null;
+  for (var i = 0; i < this.ghosts.length; i++) {
+    if (!this.ghosts[i].active) { gh = this.ghosts[i]; break; }
+  }
+  if (!gh) return;                       // cap hit: skip, never allocate
+  gh.active = true; gh.t = 0;
+  var s = b.sprite;
+  gh.img.setFrame(s.frame.name).setPosition(b.x, b.y).setRotation(s.rotation)
+    .setScale(s.scaleX * 0.92, s.scaleY * 0.72).setAlpha(0.5)
+    .setTint(s.tintTopLeft).setVisible(true);
+};
+
+PC.BulletSystem.prototype._updateGhosts = function (dt) {
+  for (var i = 0; i < this.ghosts.length; i++) {
+    var gh = this.ghosts[i];
+    if (!gh.active) continue;
+    gh.t += dt;
+    var k = gh.t / gh.dur;
+    if (k >= 1) { gh.active = false; gh.img.setVisible(false); continue; }
+    gh.img.setAlpha(0.5 * (1 - k));
+    gh.img.setScale(gh.img.scaleX, gh.img.scaleY * (1 - dt * 3));
+  }
 };
 
 PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
@@ -42,6 +77,12 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
     .setPosition(x, y).setRotation(Math.atan2(dy, dx)).setVisible(true);
   if (spec.scale) b.sprite.setScale(spec.scale);
   if (spec.tint) b.sprite.setTint(spec.tint); else b.sprite.clearTint();
+  // an aimed flash at the barrel on every energy shot (v0.23.0) - the
+  // muzzle used to be a turret-only garnish
+  if (glow && this.scene.vfx && PC.VFX_V2) {
+    this.scene.vfx.muzzleFlash(x + b.dx * 5, y + b.dy * 5,
+      spec.tint || 0x35d0ff, Math.atan2(dy, dx));
+  }
 };
 
 PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
@@ -88,11 +129,31 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     b.x += b.dx * b.spd * dt;
     b.y += b.dy * b.spd * dt;
     b.sprite.setPosition(b.x, b.y);
-    if (b.retT || b.bounces) b.sprite.rotation += 12 * dt;   // spin
+    // ORIENTATION (v0.23.0): shaped bolts must point where they are
+    // ACTUALLY going, every frame - homing and boomerang shots change
+    // heading mid-flight and used to keep their launch angle forever.
+    // Spinning types (returning/ricochet) keep tumbling instead.
+    if (b.retT || b.bounces) b.sprite.rotation += 12 * dt;
+    else b.sprite.setRotation(Math.atan2(b.dy, b.dx));
+    // SCREEN EDGE: a shot that leaves the view is spent. Fizzle it just
+    // inside the boundary so it reads as reaching the edge of the
+    // action, not blinking out at a random distance.
+    if (!PC.onScreen(this.scene, b.x, b.y, 4)) {
+      b.active = false; b.sprite.setVisible(false);
+      if (this.scene.fx) {
+        this.scene.fx.burst(b.x, b.y, 'fx_spark', 3, 0.14, 0x35d0ff);
+      }
+      continue;
+    }
+    // after-image streak + an occasional sparkle fleck
     b.trailT = (b.trailT || 0) + dt;
-    if (b.trailT > 0.045 && this.scene.juice) {
+    if (b.trailT > 0.032) {
       b.trailT = 0;
-      this.scene.juice.trail(b.x, b.y);
+      this._ghost(b);
+      if (this.scene.juice && Math.random() < 0.45) {
+        this.scene.juice.trail(b.x - b.dx * 6 + (Math.random() - 0.5) * 4,
+                               b.y - b.dy * 6 + (Math.random() - 0.5) * 4);
+      }
     }
     if (this.scene.pickups && this.scene.pickups.hitAt(b.x, b.y)) {
       b.active = false; b.sprite.setVisible(false); continue;
@@ -134,6 +195,7 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
       } else { b.active = false; b.sprite.setVisible(false); }
     }
   }
+  this._updateGhosts(dt);
 };
 
 // single damage path for every weapon: flash + knockback + kill routing.
@@ -159,16 +221,40 @@ PC.damageEnemy = function (scene, e, dmg, dirx, diry, onKill) {
 // AWAY from chasers - Danny scored 15 kills vs Victoria's 84 purely
 // because fleeing pointed his gun at nothing; VS-style auto-aim
 // falls back to the nearest foe in ANY direction) ----
+// ---- ON-SCREEN LAW (v0.23.0) ----------------------------------------
+// Mark: "it's firing too far off screen. It should only fire onto things
+// on screen and close by... there should be an edge at the edge of the
+// screen." Everything that shoots asks this first, so no weapon can
+// spend its cooldown on a target the player can't even see. `inset`
+// pulls the boundary a few px INSIDE the view so the action stays
+// comfortably on screen rather than clipping at the exact edge.
+PC.onScreen = function (scene, x, y, inset) {
+  var v = scene.cameras.main.worldView;
+  var m = inset === undefined ? 10 : inset;
+  return x > v.x + m && x < v.x + v.width - m &&
+         y > v.y + m && y < v.y + v.height - m;
+};
+
+// how far a shot may travel before it is off screen no matter the
+// heading - used to cap weapon ranges to something honest
+PC.viewReach = function (scene) {
+  var v = scene.cameras.main.worldView;
+  return Math.max(v.width, v.height) * 0.5;
+};
+
 PC.aimAt = function (scene, range) {
   var ax = scene.aimX, ay = scene.aimY;
   var al = Math.sqrt(ax * ax + ay * ay) || 1;
   ax /= al; ay /= al;
-  var best = null, bestD = range * range;
-  var near = null, nearD = range * range;
+  // never reach beyond the screen, whatever the weapon asked for
+  var lim = Math.min(range, PC.viewReach(scene));
+  var best = null, bestD = lim * lim;
+  var near = null, nearD = lim * lim;
   var pool = scene.enemies.pool;
   for (var i = 0; i < pool.length; i++) {
     var e = pool[i];
     if (!e.active) continue;
+    if (!PC.onScreen(scene, e.x, e.y, 6)) continue;     // on-screen only
     var dx = e.x - scene.px, dy = e.y - scene.py;
     var d = dx * dx + dy * dy;
     if (d >= nearD) continue;

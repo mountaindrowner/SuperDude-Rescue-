@@ -33,7 +33,26 @@ PC.KetchupWeapon.prototype.applyLevel = function () {
 PC.KetchupWeapon.prototype._land = function (scene, x, y) {
   var r = this.burstR * scene.stats.areaMult;
   var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
-  scene.fx.burst(x, y, 'fx_pop', 4, 0.3);
+  // v0.23.0 IMPACT (Mark: "when the ketchup lands it should be landing
+  // on like a splash, a big blobby splash, not just a cube or that
+  // round shape"): the blobby splat frames, a white flash of impact,
+  // and gobs of sauce thrown outward that land a beat later.
+  scene.fx.burstRot(x, y, 'fx_splat', 4, 0.44, 0xff6b6b, 1.45 * scene.stats.areaMult);
+  scene.fx.burst(x, y, 'fx_pop', 4, 0.15, 0xffd0c0, 0.9);   // impact flash
+  // gobs of sauce thrown clear, landing a beat after the main hit. Small
+  // rotated splats (not white sparks) so every piece reads as ketchup.
+  var gobs = 7;
+  for (var gi = 0; gi < gobs; gi++) {
+    (function (i2) {
+      var ga = (i2 / gobs) * Math.PI * 2 + Math.random() * 0.6;
+      var gd = r * (0.62 + Math.random() * 0.8);
+      scene.time.delayedCall(55 + i2 * 16, function () {
+        scene.fx.burstRot(x + Math.cos(ga) * gd, y + Math.sin(ga) * gd * 0.7,
+          'fx_splat', 4, 0.3, 0xff6b6b, 0.26 + Math.random() * 0.16);
+      });
+    })(gi);
+  }
+  if (scene.vfx) scene.vfx.shake(1.6, 90);
   scene.enemies.hash.eachNear(x, y, function (e) {
     var dx = e.x - x, dy = e.y - y;
     if (dx * dx + dy * dy > r * r) return;
@@ -57,6 +76,7 @@ PC.KetchupWeapon.prototype._land = function (scene, x, y) {
   p.active = true; p.x = x; p.y = y;
   p.t = this.puddleLife * (scene.stats.durMult || 1); p.tick = 0;
   p.img.setPosition(x, y).setScale(1.4 * scene.stats.areaMult)
+    .setAngle(Math.random() * 360)          // no two puddles look stamped
     .setAlpha(0.6).setVisible(true);
   if (PC.audio) PC.audio.splat();
 };

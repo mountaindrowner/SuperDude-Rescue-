@@ -117,9 +117,19 @@ PC.GreaseWeapon = function (scene) {
   this.lastX = 0; this.lastY = 0; this.acc = 0;
   this.segs = [];
   for (var i = 0; i < 12; i++) {
+    // v0.23.0: each burning segment is a cluster of real animated flame
+    // tongues standing on a heat bed, not one tinted ring. Mark: "let's
+    // try to animate real flames and a general gradient red space that
+    // designates where the flames are coming from."
+    var licks = [];
+    for (var L = 0; L < 3; L++) {
+      licks.push(scene.add.image(0, 0, 'atlas', 'fx_flame_1')
+        .setOrigin(0.5, 1)                       // flames grow UP from the ground
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(7).setVisible(false));
+    }
     this.segs.push({ active: false, x: 0, y: 0, t: 0, tick: 0,
-      img: scene.add.image(0, 0, 'atlas', 'fx_puddle_1')
-        .setTint(0xff9d3b).setAlpha(0.5).setDepth(3).setVisible(false) });
+      seed: i * 1.37, licks: licks });
   }
 };
 PC.GreaseWeapon.prototype.desc = function () {
@@ -146,8 +156,6 @@ PC.GreaseWeapon.prototype.update = function (dt, scene) {
     s0 = s0 || old;
     s0.active = true; s0.x = scene.px; s0.y = scene.py;
     s0.t = this.life * (scene.stats.durMult || 1); s0.tick = 0;
-    s0.img.setPosition(s0.x, s0.y)
-      .setScale(this.segR / 24 * scene.stats.areaMult).setAlpha(0.5).setVisible(true);
     if (PC.audio) PC.audio.weaponVoice('grease');   // fire fwoosh per segment
   }
   var r = this.segR * scene.stats.areaMult, dmg = this.dmg, slow = this.slow, self = this;
@@ -155,19 +163,35 @@ PC.GreaseWeapon.prototype.update = function (dt, scene) {
     var sj = this.segs[j];
     if (!sj.active) continue;
     sj.t -= dt;
-    if (sj.t <= 0) { sj.active = false; sj.img.setVisible(false); continue; }
-    if (PC.VFX_V2) {
-      // living fire: flicker + color ramp mustard->cheese->ketchup as it ages
-      var age = 1 - sj.t / (this.life * (scene.stats.durMult || 1));
-      sj.img.setTint(age < 0.35 ? 0xff9d3b : age < 0.7 ? 0xf2c33c : 0xd93a3a)
-        .setAlpha((0.38 + 0.2 * Math.sin(scene.now * 13 + j * 2.1)) * Math.min(1, sj.t))
-        .setScale((this.segR / 24 * scene.stats.areaMult) * (0.9 + 0.12 * Math.sin(scene.now * 9 + j)));
-      if (Math.random() < dt * 2.2) {
-        scene.fx.burst(sj.x + (Math.random() - 0.5) * 14, sj.y - 6 - Math.random() * 8,
-          'fx_spark', 2, 0.28, 0xff9d3b);   // drifting embers
-      }
-    } else {
-      sj.img.setAlpha(0.5 * Math.min(1, sj.t));
+    if (sj.t <= 0) {
+      sj.active = false;
+      for (var lk = 0; lk < sj.licks.length; lk++) sj.licks[lk].setVisible(false);
+      continue;
+    }
+    var life = this.life * (scene.stats.durMult || 1);
+    var fade = Math.min(1, sj.t / (life * 0.45));     // dies down, not out
+    var spread = r * 0.62;
+    // the heat bed the flames stand on (drawn by vfx as a gradient)
+    if (PC.VFX_V2 && scene.vfx) {
+      scene.vfx.heatBed(sj.x, sj.y, r * 1.05, 0.55 + 0.45 * fade);
+    }
+    // three tongues, each with its own phase, height and lean
+    for (var lk2 = 0; lk2 < sj.licks.length; lk2++) {
+      var im = sj.licks[lk2];
+      var ph2 = scene.now * 9 + sj.seed + lk2 * 2.1;
+      var frame = 1 + (Math.floor(scene.now * 14 + sj.seed * 3 + lk2) % 4);
+      var offX = Math.sin(sj.seed + lk2 * 2.4) * spread * 0.7 + Math.sin(ph2 * 0.7) * 2;
+      var tall = (0.62 + 0.38 * Math.abs(Math.sin(ph2 * 0.53 + lk2))) * fade;
+      im.setFrame('fx_flame_' + frame)
+        .setPosition(Math.round(sj.x + offX), Math.round(sj.y + 5 + lk2))
+        .setScale((r / 26) * (0.75 + 0.35 * (lk2 === 1 ? 1 : 0.7)),
+                  (r / 26) * (0.55 + 0.9 * tall))
+        .setAlpha((0.72 + 0.2 * Math.sin(ph2)) * fade)
+        .setVisible(true);
+    }
+    if (PC.VFX_V2 && Math.random() < dt * 3.0) {
+      scene.fx.burst(sj.x + (Math.random() - 0.5) * spread * 2,
+        sj.y - 10 - Math.random() * 14, 'fx_spark', 2, 0.32, 0xff9d3b);  // embers
     }
     sj.tick -= dt;
     if (sj.tick > 0) continue;

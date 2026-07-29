@@ -83,7 +83,8 @@ PC.SentryWeapon.prototype.update = function (dt, scene) {
     }
     if (best) {
       tu.fireT = this.fireCd;
-      if (PC.VFX_V2 && scene.vfx) scene.vfx.muzzleFlash(tu.x, tu.y - 8);
+      if (PC.VFX_V2 && scene.vfx) scene.vfx.muzzleFlash(tu.x, tu.y - 8, 0x35d0ff,
+        Math.atan2(best.y - tu.y, best.x - tu.x));
       scene.bullets.fire(tu.x, tu.y - 8, best.x, best.y,
         { speed: 460, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet', life: 0.6 });
       if (PC.audio) PC.audio.weaponVoice('sentry');

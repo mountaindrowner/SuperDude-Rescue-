@@ -19,6 +19,21 @@ PC.Vfx = function (scene) {
     this.fields.push({ active: false, x: 0, y: 0, r: 0, t: 0, dur: 0,
                        c1: 0, c2: 0, seed: j * 1.7 });
   }
+  // v0.23.0 heat beds: re-submitted every frame by whatever is burning
+  // (Mark: "a general gradient red space that designates where the
+  // flames are coming from"). Drawn as stacked ADD bands = a gradient.
+  this.heat = [];
+  this._heatN = 0;
+};
+
+// register a burning patch for THIS frame. Cheap and stateless: callers
+// just describe where the fire is, the renderer owns how it looks.
+PC.Vfx.prototype.heatBed = function (x, y, r, intensity) {
+  if (this._heatN >= 24) return;
+  var h = this.heat[this._heatN];
+  if (!h) { h = { x: 0, y: 0, r: 0, i: 0 }; this.heat.push(h); }
+  h.x = x; h.y = y; h.r = r; h.i = intensity === undefined ? 1 : intensity;
+  this._heatN++;
 };
 
 // pulsing danger-red ring that previews where an AoE lands
@@ -59,9 +74,12 @@ PC.Vfx.prototype.lingeringField = function (x, y, radius, ms, c1, c2) {
   return s;
 };
 
-// small bright burst at a spawn point (pooled via fx.js)
-PC.Vfx.prototype.muzzleFlash = function (x, y, color) {
-  this.scene.fx.burst(x, y, 'fx_muzzle', 2, 0.12, color || 0x35d0ff);
+// directional muzzle flash at the barrel (v0.23.0). Pass the firing
+// angle in radians and the cone points down the shot; without one it
+// still works, it just isn't aimed.
+PC.Vfx.prototype.muzzleFlash = function (x, y, color, angle) {
+  var f = this.scene.fx.burst(x, y, 'fx_muzzle', 2, 0.12, color || 0x35d0ff);
+  if (f && angle !== undefined) f.sprite.setRotation(angle);
 };
 
 // radial spark on hit (enemy white-flash already lives in damageEnemy)
@@ -103,6 +121,22 @@ PC.Vfx.prototype.update = function (dt) {
     g.lineStyle(1, 0xff6b6b, 0.5 * k);
     g.strokeCircle(r.x, r.y, r.r * 0.55 * pulse);
   }
+  // ---- heat beds: a soft red->orange->yellow gradient pool under the
+  // flames, so fire sits ON the ground instead of floating. Five ADD
+  // bands of shrinking radius read as a continuous falloff.
+  var BANDS = [[0xd93a3a, 1.00, 0.055], [0xff5a2b, 0.78, 0.065],
+               [0xff9d3b, 0.56, 0.075], [0xf2c33c, 0.34, 0.085],
+               [0xfff6e0, 0.16, 0.070]];
+  for (i = 0; i < this._heatN; i++) {
+    var hb = this.heat[i];
+    var flick = 0.86 + 0.14 * Math.sin(now * 17 + hb.x * 0.05 + hb.y * 0.03);
+    for (var bnd = 0; bnd < BANDS.length; bnd++) {
+      g.fillStyle(BANDS[bnd][0], BANDS[bnd][2] * hb.i * flick);
+      g.fillCircle(hb.x, hb.y, hb.r * BANDS[bnd][1] * (bnd ? flick : 1));
+    }
+  }
+  this._heatN = 0;                            // consumed; re-submit next frame
+
   for (i = 0; i < this.fields.length; i++) {
     var f = this.fields[i];
     if (!f.active) continue;

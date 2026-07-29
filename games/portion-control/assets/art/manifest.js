@@ -65,7 +65,6 @@ PC.ART_MANIFEST = [
   'enemy_d1_toast_walk_2',
   'proj_whisk',
   'proj_pellet',
-  'proj_resizer',
   'pickup_crate',
   'pickup_health',
   'pickup_magnet',
