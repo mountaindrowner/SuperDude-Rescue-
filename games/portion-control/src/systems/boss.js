@@ -11,8 +11,13 @@ PC.BOSS_D1 = { key: 'boss_d1_frank', size: 128, hp: 3000, spd: 100, contact: 20,
 // script, the health bar, the defeat flow - is shared.
 PC.BOSSES = {
   frank: PC.BOSS_D1,
+  // `anims` maps a STATE to an extra frame set (v0.22.0). Missing sets
+  // fall back to the walk flipbook, so a boss can ship with as much or
+  // as little animation as its art batch has produced.
   broccolisk: { key: 'boss_d2_broc', size: 128, hp: 3400, spd: 108,
-                contact: 20, name: 'THE BROCCOLISK' },
+                contact: 20, name: 'THE BROCCOLISK',
+                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
+                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
 };
 
 PC.Boss = function (scene, x, y, id) {
@@ -29,6 +34,7 @@ PC.Boss = function (scene, x, y, id) {
   this.chargeVX = 0; this.chargeVY = 0;
 
   this.artKey = d.key;             // per-boss art (the walk anim reads this)
+  this.anims = d.anims || null;    // optional per-state frame sets
   this.sprite = scene.add.image(x, y, 'atlas', d.key + '_walk_1').setDepth(11).setScale(1.15);
   this.shadow = scene.add.image(x, y + 26, 'atlas', 'fx_pop_1')
     .setTint(0x0a0812).setAlpha(0.35).setScale(3.2, 1.4).setDepth(4);
@@ -128,10 +134,37 @@ PC.Boss.prototype.update = function (dt, px, py) {
     if (this.stateT > 1.1) { this.state = 'active'; this.stateT = 0; }
   }
 
-  // walk-frame flipbook + bob
-  var fr = 1 + (Math.floor(this.animT * 6) % 4);
-  this.sprite.setFrame(this.artKey + '_walk_' + fr);
+  // frame flipbook + bob. A state with its own art (wind-up, lunge)
+  // plays that set; anything else uses the 4-frame walk cycle. The
+  // texture check means a half-finished art batch degrades to walking
+  // instead of showing the missing-frame box.
+  var set = 'walk', frames = 4, fps = 6;
+  var a = this.anims && this.anims[this.state];
+  if (a && scene.textures.get('atlas').has(this.artKey + '_' + a.set + '_1')) {
+    set = a.set; frames = a.frames; fps = a.fps;
+  }
+  var fr = 1 + (Math.floor(this.animT * fps) % frames);
+  this.sprite.setFrame(this.artKey + '_' + set + '_' + fr);
   this.sprite.setPosition(Math.round(this.x), Math.round(this.y) + Math.round(Math.sin(this.animT * 5) * 2));
+  // POSE AMPLIFICATION (v0.22.0). Generated pose art stays close to the
+  // reference by design - at 128px on a phone the difference is too
+  // subtle to read on its own. So the states also deform in code: the
+  // wind-up REARS UP and tilts back, the strike STRETCHES along its
+  // heading. Same VS "code-side life" law the hero walk-bob uses.
+  var baseS = 1.15;
+  if (this.state === 'telegraph') {
+    var w = Math.min(1, this.stateT / 0.55);
+    this.sprite.setScale(baseS * (1 + 0.18 * w), baseS * (1 + 0.34 * w));
+    this.sprite.setAngle(-9 * w);
+  } else if (this.state === 'charge') {
+    this.sprite.setScale(baseS * 1.30, baseS * 0.84);
+    this.sprite.setAngle((this.chargeVX < 0 ? 7 : -7) + Math.sin(this.animT * 24) * 3);
+  } else {
+    this.sprite.setScale(baseS, baseS);
+    this.sprite.setAngle(0);
+  }
+  // face the player (the art is drawn facing left)
+  if (this.state !== 'charge') this.sprite.setFlipX(px > this.x);
   this.shadow.setPosition(this.x, this.y + 28);
 
   // ---- contact damage to the player (respects i-frames) ----

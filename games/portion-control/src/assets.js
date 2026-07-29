@@ -109,6 +109,11 @@ window.PC = window.PC || {};
     { k: 'boss_d5_mother_p2', s: 160, c1: P.BERRY, c2: P.CHERRY },
   ];
   BOSSES.forEach(function (b) { creature(b.k, b.s, b.c1, b.c2, 4); });
+  // extra per-state boss frame sets (v0.22.0 - boss.js `anims`)
+  [['boss_d2_broc_rear', 128, P.MINT, P.LIME],
+   ['boss_d2_broc_lunge', 128, P.MINT, P.LIME]].forEach(function (b) {
+    for (var i = 1; i <= 2; i++) add(b[0] + '_' + i, b[1], b[1], 'creature', b[2], b[3], i);
+  });
 
   // -- projectiles : 1 frame, rotated in code. Cyan = player, Pink = enemy --
   ['resizer:12', 'pellet:8', 'whisk:16', 'drone_bolt:8', 'salt:8', 'freeze:10',
