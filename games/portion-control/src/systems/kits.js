@@ -623,6 +623,16 @@ PC.applyHeroKit = function (scene) {
   var w = kit.weapon(scene);
   w.mastery = 1.25;
   if (kit.masterize) kit.masterize(w);
+  // GARAGE (v0.20.0): Tech Points pre-level YOUR signature, so a tuned
+  // hero starts the mission at level 1+rank. Exclusive by construction -
+  // this only ever touches the hero you're actually playing.
+  if (PC.GARAGE) {
+    var gr = PC.GARAGE.rank(scene.hero.id);
+    for (var gi = 0; gi < gr && w.level < w.max; gi++) {
+      w.level++;
+      if (w.applyLevel) w.applyLevel();
+    }
+  }
   scene.weapons = [w];
 };
 

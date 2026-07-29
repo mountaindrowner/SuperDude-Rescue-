@@ -120,10 +120,14 @@ PC.MissionsScene.prototype.create = function () {
     z.on('pointerdown', function () { if (PC.audio) { PC.audio.unlock(); PC.audio.ui(); } fn(); });
     return t;
   };
-  mkBtn(8, W * 0.44, "SAL'S STORE", '#a8e04a', function () {
+  var bw = (W - 24) / 3;
+  mkBtn(8, bw, "SAL'S", '#a8e04a', function () {
     self.scene.start('PC_Shop', { back: 'PC_Missions' });
   });
-  mkBtn(W * 0.44 + 16, W - (W * 0.44 + 16) - 8, 'TITLE', '#6d6a8e', function () {
+  mkBtn(12 + bw, bw, 'GARAGE', '#35d0ff', function () {
+    self.scene.start('PC_Garage', { back: 'PC_Missions' });
+  });
+  mkBtn(16 + bw * 2, bw, 'TITLE', '#6d6a8e', function () {
     self.scene.start('PC_Title');
   });
   if (PC.DEV_MODE) {

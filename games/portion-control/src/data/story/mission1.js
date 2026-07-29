@@ -10,6 +10,21 @@ PC.STORY.missions = PC.STORY.missions || {};
 PC.STORY.missions.stage1 = {
   id: 'stage1',
   name: 'STAGE 1: THE BIG OOPS',
+  // v0.20.0 - Vic's radio tutorial (Mark: "maybe it starts off with
+  // Time Tech Vic giving Super Dude Danny a quick rundown... and
+  // through him, the player, a quick rundown of how the game is
+  // played"). Plays ONCE per save, before B1. She is still trapped in
+  // the Bank at this point, which is why it's radio-only.
+  // NOTE: these six lines are NEW (not in the locked spec) - Mark to
+  // review; they are also flagged DRAFT in docs/VOICE_SCRIPT.md.
+  tutorial: [
+    { say: { speaker: 'vic', text: "Okay boss, wrist-pad's live. I can see everything you see — let's get you moving." } },
+    { say: { speaker: 'vic', text: "Drag anywhere to walk. Your gear fires on its own — you just pick the fights." } },
+    { say: { speaker: 'vic', text: "See those fries? Pop 'em. Everything you beat drops something worth having." } },
+    { say: { speaker: 'vic', text: "That gold arrow is your objective. Follow it and you'll never be lost — that's the whole job." } },
+    { say: { speaker: 'vic', text: "Between jobs the city's yours. Poke around, grab what you find, spend it at Sal's or the Garage. Then back to the arrow." } },
+    { say: { speaker: 'vic', text: "Alright. Adventure City's waiting, boss. Go be Super Dude." } },
+  ],
   objectives: [
     { // B1 - clear the swarm at City Hall Plaza
       type: 'clear', at: 'cityhall', count: 22, banner: 'CLEAR CITY HALL PLAZA',

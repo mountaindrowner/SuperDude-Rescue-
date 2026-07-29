@@ -12,6 +12,48 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-28 - v0.20.0: THE GARAGE (TP SINK) + WALK-IN STORES + VIC'S
+  TUTORIAL.** Closes the economy loop and the onboarding gap.
+  **ECONOMY, final shape** (Mark: "maybe they all share buffs, but each
+  one only has their unique ability"): COINS -> Sal's Corner Store =
+  shared team passives (unchanged); TECH POINTS -> the Garage = YOUR
+  hero's own signature. NEW `src/data/garage.js` (PC.GARAGE: COSTS
+  [60,120,200] TP for ranks 1-3, rank/nextCost/canBuy/buy, nextDesc()
+  reads the weapon's OWN per-level desc so the store can't lie) + `src/
+  scenes/garage.js` (PC_Garage: one row per hero w/ portrait, kit name,
+  LV, next effect, cost, level pips; locked heroes dimmed to "??? /
+  RESCUE THEM FIRST"). A rank PRE-LEVELS the signature: kits.js
+  applyHeroKit runs w.level++/applyLevel() rank times after masterize,
+  so a tuned hero STARTS at level 1+rank (capped at 3 of 5 so in-run
+  level-ups still climb). Exclusive by construction - it only ever
+  touches the hero being played, so Danny can never get Kevin's Air
+  Support. **WALK-IN STORES**: NEW `src/story/doors.js` (PC.Doors -
+  pulsing doormats at the store/garage lots, proximity ENTER prompt +
+  E key; entering PAUSES PC_Game and LAUNCHES the store as an overlay,
+  closing resumes the SAME run - HP, objective, everything). shop.js +
+  garage.js share an `{overlay, resume}` init contract w/ a close()
+  that stops+resumes instead of scene.start. Mission map footer is now
+  SAL'S / GARAGE / TITLE. **TUTORIAL**: mission1 gained a `tutorial`
+  beat list (6 Vic radio lines: drag to walk / gear auto-fires / pop
+  the fries / follow the gold arrow / free roam + spend / go) that
+  PC.Quest plays once ever (PC.storyState.tutorialSeen) before
+  objective 0. THOSE 6 LINES ARE STILL MARK-REVIEW (also DRAFT in
+  docs/VOICE_SCRIPT.md). TWO GOTCHAS BURNED: (1) a PAUSED Phaser scene
+  still RENDERS, and the stores are registered before PC_Game, so an
+  overlay needs `scene.bringToTop()` or it draws underneath the frozen
+  street; (2) doors.update() must run ABOVE the storyPause gate or the
+  doormats blink out every time anyone talks - and door lots must be
+  anchored to the region's carved door BAY (mk.y+mk.h-30), not outside
+  the lot, because a fabric building can sit flush against the south
+  wall (that's what hid Sal's door). VERIFIED (verify-garage.js ALL
+  GREEN): tutorial fires once + hands off + never replays; garage
+  prompt -> pause -> overlay -> buy (TP 500->440, rank 1, Kevin
+  untouched) -> close -> same run resumes at hp 42 on objective 0 ->
+  next run Danny starts at signature LEVEL 2; Sal's overlay round trip.
+  Full battery green (freeroam/linear/shop/newscast). NEXT: side-quest
+  encounters in free roam, then Map 2 (Adventure Park) art + mission
+  chain to make beat 3 playable.
+
 - **2026-07-28 - v0.19.0: THE FREE-ROAM SEAM (Mark's linear-flow
   direction: "you're thrown into the gameplay... free roaming around
   the city, finishing objectives... a,b,c,d,e,f,g... there's just

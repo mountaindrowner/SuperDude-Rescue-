@@ -51,10 +51,13 @@ PC.storyState = (function () {
       if (i === cur + 1) return 'tease';
       return 'hidden';
     },
+    // Vic's opening radio tutorial plays exactly once per save
+    tutorialSeen: function () { return !!data.tutorialSeen; },
+    markTutorialSeen: function () { data.tutorialSeen = true; save(); },
     revealSeen: function (id) { return !!data.revealSeen[id]; },
     markRevealSeen: function (id) { data.revealSeen[id] = true; save(); },
     reset: function () {
-      data = { introSeen: false, cleared: {}, revealSeen: {} };
+      data = { introSeen: false, tutorialSeen: false, cleared: {}, revealSeen: {} };
       save();
     },
   };

@@ -82,8 +82,8 @@ window.PC = window.PC || {};
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: [PC.BootScene, PC.TitleScene, PC.SelectScene, PC.ShopScene,
-            PC.CutsceneScene, PC.MissionsScene, PC.GameScene, PC.ResultsScene,
-            PC.GalleryScene],
+            PC.GarageScene, PC.CutsceneScene, PC.MissionsScene, PC.GameScene,
+            PC.ResultsScene, PC.GalleryScene],
   };
 
   PC.game = new Phaser.Game(config);
