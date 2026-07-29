@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-28 - v0.20.1: INTRO GATING FIX (Mark on-device: "I'm
+  playing .20 but where's the intro cinematic?").** ROOT CAUSE:
+  `PC_Missions.create()` called `storyState.setIntroSeen()` just for
+  BEING OPENED, so any save that had ever reached the mission map -
+  including every save from v0.18/v0.19 - was permanently flagged and
+  STORY jumped straight past the newscast. FIX: the flag is now set in
+  title.js at the moment the cutscene is actually launched, and the
+  mission map no longer touches it. ADDED a `[ REPLAY INTRO ]` link
+  (top-right of the mission map) so the newscast can be rewatched any
+  time without wiping progress - also covers a kid who taps SKIP.
+  Verified (probe-replay.js): fresh save plays it, returning save
+  skips to the map, REPLAY works and leaves cleared stages cleared;
+  linear + newscast regressions green. NOTE for existing saves: the
+  flag is already set, so use REPLAY INTRO (or dev [RESET STORY]).
+
 - **2026-07-28 - v0.20.0: THE GARAGE (TP SINK) + WALK-IN STORES + VIC'S
   TUTORIAL.** Closes the economy loop and the onboarding gap.
   **ECONOMY, final shape** (Mark: "maybe they all share buffs, but each
