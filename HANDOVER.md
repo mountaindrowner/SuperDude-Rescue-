@@ -12,6 +12,38 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-29 - v0.22.0: BOSS ANIMATION STATES + BEAT 4 (Mark: "make
+  sure the Broccolisk has multiple animations to make them look good...
+  let's move on with the next step").** HALF THE CAMPAIGN IS NOW
+  PLAYABLE (beats 1-4 of 8). **BOSS ANIMS**: PC.BOSSES entries take an
+  optional `anims` map of STATE -> {set, frames, fps}; the boss already
+  had a real state machine (intro/active/telegraph/charge) that was
+  wearing the walk cycle throughout. Broccolisk now plays `rear` (2f)
+  on the wind-up and `lunge` (2f) on the strike. Art: 4 new frames via
+  pixflux + init_image off walk_1. **KEY LESSON**: init_image at
+  strength 260 keeps identity so well that the generated poses were
+  nearly indistinguishable at 128px - generated pose art ALONE does not
+  read. Fixed with POSE AMPLIFICATION in code (the VS "code-side life"
+  law): telegraph scales 1.18x/1.34x + tilts -9deg over 0.55s (rears
+  up), charge scales 1.30x/0.84x + tilts into its heading with a
+  vibration (stretched strike), and the sprite now flips to face the
+  player. That combination reads instantly; the art gives the detail,
+  the transform gives the silhouette. Missing frame sets fall back to
+  the walk cycle via a texture check, so Big Frank is untouched and any
+  future boss can ship with partial animation. **BEAT 4**: NEW
+  `src/data/story/mission4.js` - "CRITTER PATROL", Josh's park
+  spotlight (clear the amphitheater 18 / round up 3 CRITTER CRATEs at
+  aviary+carousel+pens / settle the pens 45s, 105 TP, no boss, no
+  rescue). DATA-ONLY - no engine work at all, which is the pipeline
+  paying off. Its dialogue is NEW and in-voice (Josh: "Sleepin' like
+  lambs. Well. The lambs are. The ostrich has opinions.") - MARK TO
+  REVIEW. VERIFIED (verify-beat4.js ALL GREEN): each fight state uses
+  its own frame set, Big Frank falls back to walking, beat 4 loads as
+  Josh w/ ROPE CYCLONE on the park fabric, all three objectives play,
+  105 TP banked, chain points at beat 5. park/freeroam regressions
+  green. NEXT: Map 3 (Sweet Suburbs) for beat 5 + rescue Kevin, or
+  side-quest encounters in free roam.
+
 - **2026-07-29 - v0.21.0: MAP 2 - ADVENTURE PARK IS PLAYABLE (beat 3).**
   The campaign is now two maps deep and the data-driven map pipeline is
   PROVEN: a whole new district cost one painter + two data files.
