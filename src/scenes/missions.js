@@ -19,7 +19,6 @@ PC.MissionsScene.prototype.create = function () {
   PC.applyRenderScale(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x0d0a1c);
-  PC.storyState.setIntroSeen();          // reaching the map = intro done
   this._briefUi = [];
 
   // ---- backdrop: night-city map feel (stars + skyline + grid) ----
@@ -130,6 +129,17 @@ PC.MissionsScene.prototype.create = function () {
   mkBtn(16 + bw * 2, bw, 'TITLE', '#6d6a8e', function () {
     self.scene.start('PC_Title');
   });
+  // rewatch the newscast any time - it only auto-plays once, and a kid
+  // who tapped SKIP shouldn't lose it forever
+  var replay = this.add.text(W - 6, 44, '[ REPLAY INTRO ]', {
+    fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e', fontStyle: 'bold',
+  }).setOrigin(1, 0).setDepth(5).setInteractive({ useHandCursor: true });
+  replay.on('pointerdown', function () {
+    if (PC.audio) { PC.audio.unlock(); PC.audio.ui(); }
+    self.scene.start('PC_Cutscene', { script: PC.STORY.scripts.intro,
+      next: 'PC_Missions' });
+  });
+
   if (PC.DEV_MODE) {
     var rs = this.add.text(6, 44, '[ RESET STORY ]', {
       fontFamily: 'monospace', fontSize: '8px', color: '#ff6b6b', fontStyle: 'bold',

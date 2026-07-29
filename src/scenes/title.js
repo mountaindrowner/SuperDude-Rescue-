@@ -137,6 +137,10 @@ PC.TitleScene.prototype.create = function () {
   // the story assigns hero + mission, so PC_Select never appears here
   var start = button(H * 0.565, '>> STORY <<', '#a8e04a', 0xa8e04a, function () {
     if (PC.storyState.introSeen()) { self.scene.start('PC_Missions'); return; }
+    // mark it HERE, at the moment we actually show it - the mission map
+    // used to set the flag just by being opened, so anyone whose save
+    // had ever reached the map could never see the intro again
+    PC.storyState.setIntroSeen();
     self.scene.start('PC_Cutscene', { script: PC.STORY.scripts.intro,
       next: 'PC_Missions' });
   });
