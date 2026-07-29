@@ -9,7 +9,19 @@ PC.ShopScene.prototype = Object.create(Phaser.Scene.prototype);
 PC.ShopScene.prototype.constructor = PC.ShopScene;
 
 PC.ShopScene.prototype.init = function (data) {
-  this._back = (data && data.back) || 'PC_Title';   // mission map passes itself
+  data = data || {};
+  this._back = data.back || 'PC_Title';    // mission map passes itself
+  this._overlay = !!data.overlay;          // walked in from the world: the
+  this._resume = data.resume || 'PC_Game'; // run is paused behind us
+};
+
+PC.ShopScene.prototype.close = function () {
+  if (this._overlay) {
+    this.scene.stop();
+    this.scene.resume(this._resume);
+    return;
+  }
+  this.scene.start(this._back);
 };
 
 PC.ShopScene.prototype.create = function () {
@@ -33,7 +45,7 @@ PC.ShopScene.prototype.create = function () {
   }).setOrigin(0, 0).setInteractive({ useHandCursor: true });
   back.on('pointerdown', function () {
     if (PC.audio) PC.audio.ui();
-    self.scene.start(self._back);
+    self.close();
   });
 
   // grid

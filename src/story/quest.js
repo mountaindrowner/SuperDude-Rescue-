@@ -42,7 +42,13 @@ PC.Quest = function (scene, region, mission) {
     if (self.box.active) self.box.tap();
   });
 
-  this.next();                    // arm objective 0
+  // v0.20.0: Vic's radio tutorial runs once ever, before objective 0
+  if (mission.tutorial && PC.storyState && !PC.storyState.tutorialSeen()) {
+    PC.storyState.markTutorialSeen();
+    this.playScript(mission.tutorial, function () { self.next(); });
+  } else {
+    this.next();                  // arm objective 0
+  }
 };
 
 // ---- helpers ----

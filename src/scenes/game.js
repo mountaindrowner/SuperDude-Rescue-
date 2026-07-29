@@ -99,6 +99,7 @@ PC.GameScene.prototype.create = function () {
   this.storyPause = false;
   this.quest = null;
   this.freeRoam = null;              // STORY-5: the between-missions seam
+  this.doors = this.region ? new PC.Doors(this) : null;   // walk-in stores
   if (this.region && PC.STORY.missions && this.storyMission &&
       PC.STORY.missions[this.storyMission.id]) {
     this.quest = new PC.Quest(this, this.region,
@@ -328,6 +329,9 @@ PC.GameScene.prototype.update = function (time, delta) {
   }
   if (this.cardsOpen) return;                 // world paused during the pick
   var dt = Math.min(PC.DT_CLAMP, delta / 1000);
+  // storefront doormats keep drawing through dialogue (they'd blink out
+  // every time someone talked otherwise); Doors hides its own prompt
+  if (this.doors) this.doors.update();
   if (this.storyPause) {                       // story dialogue: world holds
     if (this.quest) this.quest.update(dt);
     this.ground.update(this.cameras.main);
