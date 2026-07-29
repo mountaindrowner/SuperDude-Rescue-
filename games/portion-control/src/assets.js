@@ -102,6 +102,7 @@ window.PC = window.PC || {};
   var BOSSES = [
     { k: 'boss_d1_frank',   s: 128, c1: P.KETCHUP, c2: P.CRUST },
     { k: 'boss_d2_melon',   s: 128, c1: P.MINT,    c2: P.KETCHUP },
+    { k: 'boss_d2_broc',    s: 128, c1: P.MINT,    c2: P.LIME },
     { k: 'boss_d3_cake',    s: 128, c1: P.PINK,    c2: P.CHEESE },
     { k: 'boss_d4_vending', s: 144, c1: P.STEEL,   c2: P.KETCHUP },
     { k: 'boss_d5_mother',  s: 160, c1: P.BERRY,   c2: P.STEEL },

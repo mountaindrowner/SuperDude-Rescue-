@@ -18,6 +18,11 @@ PC.Quest = function (scene, region, mission) {
   this._waveAcc = 0;
   this.tpEarned = 0;
   this.done = false;
+  // objective swarms pull from the REGION's roster, so the park spawns
+  // feral produce and the city spawns street food (v0.21.0)
+  this.ringKinds = (region.def.spawnSet === 'park')
+    ? ['apple', 'apple', 'peeler', 'tomato']
+    : ['fry', 'fry', 'popcorn', 'hotdog'];
 
   // dialogue box pinned to the camera (world-space ui container)
   this.box = new PC.DialogueBox(scene);
@@ -169,8 +174,7 @@ PC.Quest.prototype.ring = function (x, y, n, track) {
   for (var i = 0; i < n; i++) {
     var a = (i / n) * Math.PI * 2 + Math.random() * 0.3;
     var r = 170 + Math.random() * 90;
-    var kinds = ['fry', 'fry', 'popcorn', 'hotdog'];
-    var d = PC.ENEMY_DEFS[kinds[i % kinds.length]];
+    var d = PC.ENEMY_DEFS[this.ringKinds[i % this.ringKinds.length]];
     var e = scene.enemies.spawn(x + Math.cos(a) * r, y + Math.sin(a) * r, {
       key: d.key, still: d.still, size: d.size, xp: d.xp, kbMult: d.kbMult,
       spd: d.spd, hp: d.hp, dmg: d.dmg,
@@ -310,7 +314,8 @@ PC.Quest.prototype.update = function (dt) {
         this.state = 'active';
         var mk3 = this.region.landmark(o.at);
         scene.bossSpawned = true;
-        scene.boss = new PC.Boss(scene, mk3.cx, mk3.cy + mk3.h / 2 + 140);
+        scene.boss = new PC.Boss(scene, mk3.cx, mk3.cy + mk3.h / 2 + 140, o.boss);
+        scene.bossBanner(scene.boss.name);
         if (PC.audio && PC.audio.roar) PC.audio.roar();
         this.playScript(o.intro, null);
       }

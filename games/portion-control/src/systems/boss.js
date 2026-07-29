@@ -6,9 +6,18 @@ window.PC = window.PC || {};
 
 PC.BOSS_D1 = { key: 'boss_d1_frank', size: 128, hp: 3000, spd: 100, contact: 20, name: 'BIG FRANK' };
 
-PC.Boss = function (scene, x, y) {
+// v0.21.0: bosses are now a table keyed by id; a mission's boss beat
+// names one (`boss: 'broccolisk'`), and everything else - the fight
+// script, the health bar, the defeat flow - is shared.
+PC.BOSSES = {
+  frank: PC.BOSS_D1,
+  broccolisk: { key: 'boss_d2_broc', size: 128, hp: 3400, spd: 108,
+                contact: 20, name: 'THE BROCCOLISK' },
+};
+
+PC.Boss = function (scene, x, y, id) {
   this.scene = scene;
-  var d = PC.BOSS_D1;
+  var d = PC.BOSSES[id] || PC.BOSS_D1;
   this.x = x; this.y = y;
   this.hp = d.hp; this.maxHp = d.hp;
   this.spd = d.spd; this.contact = d.contact; this.r = d.size / 2 - 18;
@@ -19,6 +28,7 @@ PC.Boss = function (scene, x, y) {
   this.dead = false; this.defeated = false;
   this.chargeVX = 0; this.chargeVY = 0;
 
+  this.artKey = d.key;             // per-boss art (the walk anim reads this)
   this.sprite = scene.add.image(x, y, 'atlas', d.key + '_walk_1').setDepth(11).setScale(1.15);
   this.shadow = scene.add.image(x, y + 26, 'atlas', 'fx_pop_1')
     .setTint(0x0a0812).setAlpha(0.35).setScale(3.2, 1.4).setDepth(4);
@@ -120,7 +130,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
 
   // walk-frame flipbook + bob
   var fr = 1 + (Math.floor(this.animT * 6) % 4);
-  this.sprite.setFrame(PC.BOSS_D1.key + '_walk_' + fr);
+  this.sprite.setFrame(this.artKey + '_walk_' + fr);
   this.sprite.setPosition(Math.round(this.x), Math.round(this.y) + Math.round(Math.sin(this.animT * 5) * 2));
   this.shadow.setPosition(this.x, this.y + 28);
 

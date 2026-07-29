@@ -554,8 +554,13 @@ PC.GameScene.prototype.spawnBoss = function () {
   this.tweens.add({ targets: flash, alpha: 0, duration: 500, onComplete: function () { flash.destroy(); } });
   this.cameras.main.shake(400, 0.01);
   if (PC.audio) PC.audio.roar();
-  // banner
-  var banner = this.add.text(W / 2, H * 0.32, 'BIG FRANK\nAPPEARS!', {
+  this.bossBanner(this.boss.name);
+};
+
+// shared "<NAME> APPEARS!" card (story bosses raise it from the quest)
+PC.GameScene.prototype.bossBanner = function (name) {
+  var W = PC.RENDER.W, H = PC.RENDER.H;
+  var banner = this.add.text(W / 2, H * 0.32, (name || 'BIG FRANK') + '\nAPPEARS!', {
     fontFamily: 'monospace', fontSize: '20px', color: '#ff6b6b', fontStyle: 'bold',
     align: 'center', stroke: '#1b1530', strokeThickness: 3,
   }).setOrigin(0.5).setDepth(151).setScale(0.5);

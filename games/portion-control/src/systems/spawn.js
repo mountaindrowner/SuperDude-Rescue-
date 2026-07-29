@@ -11,6 +11,13 @@ PC.ENEMY_DEFS = {
   hotdog:  { key: 'enemy_d1_hotdog',  spd: 70,  hp: 30, dmg: 9,  xp: 2, size: 32, still: 'still_d1_hotdog',  kbMult: 0.8 },
   toast:   { key: 'enemy_d1_toast',   spd: 60,  hp: 24, dmg: 8,  xp: 2, size: 32, still: 'still_d1_toast',   kbMult: 0.8 },
   pretzel: { key: 'enemy_d1_pretzel', spd: 46,  hp: 90, dmg: 13, xp: 3, size: 48, still: 'still_d1_pretzel', kbMult: 0.35 },
+  // d2 feral produce (MAP 2 - Adventure Park). Same four-tier shape as
+  // d1 so the ramp feels identical; the flavour is what changes.
+  apple:   { key: 'enemy_d2_apple',   spd: 86,  hp: 11, dmg: 6,  xp: 1, size: 24, still: 'still_d2_apple',   kbMult: 1 },
+  peeler:  { key: 'enemy_d2_peeler',  spd: 104, hp: 8,  dmg: 5,  xp: 1, size: 28, still: 'still_d2_peeler',  kbMult: 1 },
+  tomato:  { key: 'enemy_d2_tomato',  spd: 72,  hp: 30, dmg: 9,  xp: 2, size: 32, still: 'still_d2_tomato',  kbMult: 0.8 },
+  banana:  { key: 'enemy_d2_banana',  spd: 62,  hp: 26, dmg: 8,  xp: 2, size: 40, still: 'still_d2_banana',  kbMult: 0.8 },
+  melon:   { key: 'enemy_d2_melon',   spd: 44,  hp: 95, dmg: 13, xp: 3, size: 48, still: 'still_d2_melon',   kbMult: 0.35 },
 };
 
 // ---- phases: [tStart, tEnd, intervalStart, intervalEnd, roster, perTick, liveCap] ----
@@ -26,14 +33,30 @@ PC.SPAWN_PHASES = [
   [300, 1e9, 0.26, 0.20,[['fry', 3], ['popcorn', 2], ['hotdog', 3], ['toast', 3], ['pretzel', 3]], 3, 300],
 ];
 
+// per-map rosters: same phase timings, different creatures. A region
+// picks one with `spawnSet` in its map data (default = the d1 street food).
+PC.SPAWN_SETS = {
+  d1: PC.SPAWN_PHASES,
+  park: [
+    [0,   45,  1.6, 1.2,  [['apple', 1]], 1, 45],
+    [45,  100, 1.2, 0.9,  [['apple', 7], ['peeler', 3]], 1, 85],
+    [100, 150, 0.9, 0.65, [['apple', 5], ['peeler', 2], ['tomato', 3]], 2, 130],
+    [150, 210, 0.65, 0.45,[['apple', 4], ['peeler', 2], ['tomato', 3], ['banana', 2]], 2, 190],
+    [210, 300, 0.45, 0.28,[['apple', 3], ['peeler', 2], ['tomato', 3], ['banana', 2], ['melon', 2]], 3, 260],
+    [300, 1e9, 0.26, 0.20,[['apple', 3], ['peeler', 2], ['tomato', 3], ['banana', 3], ['melon', 3]], 3, 300],
+  ],
+};
+
 PC.SpawnDirector = function (scene) {
   this.scene = scene;
   this.acc = 0;
   this.ringDone = {};        // one-shot events keyed by phase index
+  var set = scene.region && scene.region.def.spawnSet;
+  this.phases = PC.SPAWN_SETS[set] || PC.SPAWN_PHASES;
 };
 
 PC.SpawnDirector.prototype._phase = function (t) {
-  var P = PC.SPAWN_PHASES;
+  var P = this.phases || PC.SPAWN_PHASES;
   for (var i = 0; i < P.length; i++) if (t >= P[i][0] && t < P[i][1]) return P[i];
   return P[P.length - 1];
 };

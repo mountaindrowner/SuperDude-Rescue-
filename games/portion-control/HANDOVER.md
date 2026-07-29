@@ -12,6 +12,44 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-29 - v0.21.0: MAP 2 - ADVENTURE PARK IS PLAYABLE (beat 3).**
+  The campaign is now two maps deep and the data-driven map pipeline is
+  PROVEN: a whole new district cost one painter + two data files.
+  NEW `src/systems/world_park.js` (PC.paintChunkPark - same 512px block
+  geometry as the city so COLLISION IS FREE AND IDENTICAL: road bands
+  become gravel garden paths w/ stone edging, and the deterministic
+  quadrant "buildings" are repainted as HEDGE BLOCKS straight from the
+  same PC.defaultChunkSolids rects. Lawn gets world-aligned mow stripes,
+  tufts, clover + tiny wildflowers; hedges get cast shadow, lit top
+  face, canopy lumps and occasional topiary). NEW `src/data/story/
+  map2.js` (8 landmarks: Park Gates / Greenhouse / Zoo Enclosures /
+  Big Pond (open) / Carousel (open) / Aviary Tower / Amphitheater /
+  Ranger Station; `fabric:'park'`, `spawnSet:'park'`) + `src/data/story/
+  mission3.js` ("GONE WILD" B1-B5: clear the gates 20 / cap 3 VINE CAPS
+  / hold the pond dock 50s / BROCCOLISK / rescue JOSH; spec IV.2 cast
+  lines VERBATIM, connective lines new). PLUGGABLE SEAMS ADDED: region
+  picks its ground painter from `def.fabric`; `PC.SPAWN_SETS` gives
+  each map its own roster (director reads `region.def.spawnSet`);
+  `PC.BOSSES` table + `new PC.Boss(scene,x,y,id)` so a boss beat names
+  its boss (`boss:'broccolisk'`, 3400hp); `scene.bossBanner(name)`
+  shared by patrol + story. ART (19 gens, ~1124 left): 5 feral produce
+  (apple/tomato/melon/banana/peeler, walk x2 + inert still each, frame
+  B via init_image per PIXELLAB recipe 4) + THE BROCCOLISK 4 frames
+  (64 -> x2 NEAREST to 128). All registered in manifest.js - the d2
+  slots were procedural placeholders before. TWO BUGS THE HARNESS
+  CAUGHT (both invisible to a smoke test): boss.js line 132 animated
+  the walk cycle off `PC.BOSS_D1.key` so the Broccolisk WORE BIG
+  FRANK'S SPRITE while reporting the right name/hp - now `this.artKey`;
+  and PC.Quest.ring() hardcoded ['fry','fry','popcorn','hotdog'] so
+  park objective swarms were street food - now `this.ringKinds` off the
+  region's spawnSet. VERIFIED (verify-park.js ALL GREEN): park loads w/
+  park fabric + produce set + 8 landmarks, objective swarm is d2, boss
+  is the Broccolisk w/ its own art, all 5 beats play, Josh unlocked,
+  stage3 banked at 125 TP, and CENTRAL IS UNCHANGED (city fabric,
+  street food, 2 doors). freeroam/garage/linear regressions green.
+  NEXT: beat 4 (Josh's park spotlight mission) is a data-only file;
+  then side-quest encounters in free roam, or Map 3 (Sweet Suburbs).
+
 - **2026-07-28 - v0.20.1: INTRO GATING FIX (Mark on-device: "I'm
   playing .20 but where's the intro cinematic?").** ROOT CAUSE:
   `PC_Missions.create()` called `storyState.setIntroSeen()` just for
