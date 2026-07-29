@@ -83,7 +83,11 @@ PC.Region.prototype.paintChunk = function (scene, g, cx, cy) {
     for (var vx = 0; vx < C; vx += 64) { g.beginPath(); g.moveTo(vx, 0); g.lineTo(vx, C); g.stroke(); }
     for (var vy = 0; vy < C; vy += 64) { g.beginPath(); g.moveTo(0, vy); g.lineTo(C, vy); g.stroke(); }
   } else {
-    PC.paintChunkD1(scene, g, cx, cy);
+    // ground fabric per map (v0.21.0): city streets or park lawn. Both
+    // use the SAME block geometry + solids, so only the paint differs.
+    var paint = (this.def.fabric === 'park' && PC.paintChunkPark)
+      ? PC.paintChunkPark : PC.paintChunkD1;
+    paint(scene, g, cx, cy);
   }
   // hazard border stripe along the playfield rim
   g.save();
