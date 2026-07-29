@@ -10,7 +10,7 @@ PC.BulletSystem = function (scene) {
     this.pool.push({
       active: false, x: 0, y: 0, dx: 0, dy: 0, spd: 0, dmg: 0, pierce: 0, life: 0,
       sprite: scene.add.image(0, 0, 'atlas', 'proj_resizer').setDepth(8)
-        .setBlendMode(Phaser.BlendModes.ADD).setScale(1.4).setVisible(false),
+        .setBlendMode(Phaser.BlendModes.ADD).setScale(1.1).setVisible(false),
     });
   }
   // AFTER-IMAGE POOL (v0.23.0). Mark: "should have a little bit of a
@@ -18,7 +18,7 @@ PC.BulletSystem = function (scene) {
   // a copy of the bullet's own frame + rotation that fades and shrinks
   // in place, so the streak always matches the shot that made it.
   this.ghosts = [];
-  for (var gi = 0; gi < 46; gi++) {
+  for (var gi = 0; gi < 72; gi++) {
     this.ghosts.push({ active: false, t: 0, dur: 0.20,
       img: scene.add.image(0, 0, 'atlas', 'proj_resizer').setDepth(7)
         .setBlendMode(Phaser.BlendModes.ADD).setVisible(false) });
@@ -73,7 +73,7 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   var glow = spec.frame !== 'proj_pellet';   // fries = solid, beam = glow
   b.sprite.setFrame(spec.frame || 'proj_resizer')
     .setBlendMode(glow ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
-    .setScale(glow ? 1.4 : 1.2)
+    .setScale(glow ? 1.1 : 1.2)
     .setPosition(x, y).setRotation(Math.atan2(dy, dx)).setVisible(true);
   if (spec.scale) b.sprite.setScale(spec.scale);
   if (spec.tint) b.sprite.setTint(spec.tint); else b.sprite.clearTint();
@@ -147,10 +147,10 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     }
     // after-image streak + an occasional sparkle fleck
     b.trailT = (b.trailT || 0) + dt;
-    if (b.trailT > 0.032) {
+    if (b.trailT > 0.022) {
       b.trailT = 0;
       this._ghost(b);
-      if (this.scene.juice && Math.random() < 0.45) {
+      if (this.scene.juice && Math.random() < 0.7) {
         this.scene.juice.trail(b.x - b.dx * 6 + (Math.random() - 0.5) * 4,
                                b.y - b.dy * 6 + (Math.random() - 0.5) * 4);
       }

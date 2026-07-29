@@ -122,7 +122,7 @@ PC.GreaseWeapon = function (scene) {
     // try to animate real flames and a general gradient red space that
     // designates where the flames are coming from."
     var licks = [];
-    for (var L = 0; L < 3; L++) {
+    for (var L = 0; L < 4; L++) {
       licks.push(scene.add.image(0, 0, 'atlas', 'fx_flame_1')
         .setOrigin(0.5, 1)                       // flames grow UP from the ground
         .setBlendMode(Phaser.BlendModes.ADD)
@@ -184,12 +184,12 @@ PC.GreaseWeapon.prototype.update = function (dt, scene) {
       var tall = (0.62 + 0.38 * Math.abs(Math.sin(ph2 * 0.53 + lk2))) * fade;
       im.setFrame('fx_flame_' + frame)
         .setPosition(Math.round(sj.x + offX), Math.round(sj.y + 5 + lk2))
-        .setScale((r / 26) * (0.75 + 0.35 * (lk2 === 1 ? 1 : 0.7)),
-                  (r / 26) * (0.55 + 0.9 * tall))
+        .setScale((r / 38) * (0.75 + 0.35 * (lk2 === 1 ? 1 : 0.7)),
+                  (r / 38) * (0.55 + 0.9 * tall))
         .setAlpha((0.72 + 0.2 * Math.sin(ph2)) * fade)
         .setVisible(true);
     }
-    if (PC.VFX_V2 && Math.random() < dt * 3.0) {
+    if (PC.VFX_V2 && Math.random() < dt * 5.0) {
       scene.fx.burst(sj.x + (Math.random() - 0.5) * spread * 2,
         sj.y - 10 - Math.random() * 14, 'fx_spark', 2, 0.32, 0xff9d3b);  // embers
     }

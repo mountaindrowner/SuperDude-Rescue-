@@ -125,8 +125,8 @@ window.PC = window.PC || {};
   // rotation BulletSystem already applies actually reads. Mark: "almost
   // like a little beam of light... the front part should always be
   // oriented in the direction that it's being shot."
-  add('proj_resizer', 22, 10, 'bolt', P.CYAN, P.CLOUD);
-  add('proj_drone_bolt', 14, 7, 'bolt', P.CYAN, P.CLOUD);
+  add('proj_resizer', 30, 14, 'bolt', P.CYAN, P.CLOUD);
+  add('proj_drone_bolt', 20, 10, 'bolt', P.CYAN, P.CLOUD);
   ['toast:12', 'tomato:10', 'seed:8', 'soda:10', 'candle:10', 'ice_shard:10'].forEach(function (s) {
     var p = s.split(':');
     add('eproj_' + p[0], +p[1], +p[1], 'proj', P.PINK, P.CHERRY);
@@ -143,19 +143,19 @@ window.PC = window.PC || {};
   function fx(key, n, size, c1, c2, kind) {
     for (var i = 1; i <= n; i++) add(key + '_' + i, size, size, kind || 'burst', c1, c2, i);
   }
-  fx('fx_pop', 4, 32, P.WHITE, P.CLOUD);
-  fx('fx_spark', 3, 16, P.CLOUD, P.WHITE);
+  fx('fx_pop', 4, 40, P.WHITE, P.CLOUD);
+  fx('fx_spark', 3, 22, P.CLOUD, P.WHITE);
   fx('fx_levelup', 4, 48, P.LIME, P.MINT, 'ring');
   fx('fx_nova', 3, 64, P.CYAN, P.CLOUD, 'ring');
   fx('fx_aura', 2, 64, P.MINT, P.LIME, 'ring');
   fx('fx_cyclone', 2, 40, P.CLOUD, P.STEEL, 'ring');
-  fx('fx_puddle', 2, 48, P.KETCHUP, P.CHERRY, 'puddle');
+  fx('fx_puddle', 2, 64, P.KETCHUP, P.CHERRY, 'puddle');
   fx('fx_freeze', 1, 24, P.CYAN, P.CLOUD);
   // directional (non-square) muzzle flash, oriented by the shooter
-  for (var mz = 1; mz <= 2; mz++) add('fx_muzzle_' + mz, 20, 13, 'muzzle', P.CYAN, P.WHITE, mz);
+  for (var mz = 1; mz <= 2; mz++) add('fx_muzzle_' + mz, 28, 18, 'muzzle', P.CYAN, P.WHITE, mz);
   // v0.23.0: the blobby impact splash + the living flame tongue
-  fx('fx_splat', 4, 44, P.KETCHUP, P.CHERRY, 'splat');
-  fx('fx_flame', 4, 28, P.MUSTARD, P.CHEESE, 'flame');
+  fx('fx_splat', 4, 60, P.KETCHUP, P.CHERRY, 'splat');
+  fx('fx_flame', 4, 40, P.MUSTARD, P.CHEESE, 'flame');
 
   // -- icons: one per weapon key (26) + one per passive key (10). --
   // 48px native (pixflux generation size, no rescale); cards draw at 0.8.
@@ -396,7 +396,7 @@ window.PC = window.PC || {};
     // escaping light, and short back-blast rays. Was a plain 12px blob -
     // the one effect that fires on literally every shot deserved shape.
     muzzle: function (g, a) {
-      var w = a.w, h = a.h, cy = h / 2, cx = w * 0.30;
+      var w = a.w, h = a.h, cy = h / 2, cx = w * 0.20;
       var k = a.f === 2 ? 0.72 : 1;            // 2nd frame: collapsing
       // forward cone: narrow and bright at the barrel, widening and
       // FADING toward the tip so it dissipates instead of ending in a
@@ -404,9 +404,9 @@ window.PC = window.PC || {};
       g.fillStyle = hex(a.c1);
       for (var x = Math.round(cx); x < w; x++) {
         var t = (x - cx) / (w - cx);
-        var hh = (h / 2) * (0.22 + 0.78 * t) * k;
+        var hh = (h / 2) * (0.26 + 0.90 * t) * k;
         if (hh < 0.5) continue;
-        g.globalAlpha = Math.pow(1 - t, 1.7) * 0.95 * k;   // gone by the tip
+        g.globalAlpha = Math.pow(1 - t, 1.15) * 0.95 * k;  // fades to the tip
         g.fillRect(x, Math.round(cy - hh), 1, Math.max(1, Math.round(hh * 2)));
       }
       // two bright inner streaks down the middle of the cone
@@ -423,12 +423,21 @@ window.PC = window.PC || {};
       g.fillRect(Math.round(cx), Math.round(cy - h * 0.42 * k), 1, Math.round(h * 0.2 * k));
       g.fillRect(Math.round(cx), Math.round(cy + h * 0.24 * k), 1, Math.round(h * 0.2 * k));
       g.globalAlpha = 1;
+      // ejected sparks riding the cone
+      g.fillStyle = hex(lite(a.c1, 0.6)); g.globalAlpha = 0.85 * k;
+      for (var sp = 0; sp < 3; sp++) {
+        var sa = (sp - 1) * 0.34;
+        var sd = w * (0.46 + sp % 2 * 0.20);
+        g.fillRect(Math.round(cx + Math.cos(sa) * sd),
+                   Math.round(cy + Math.sin(sa) * sd), 2, 2);
+      }
+      g.globalAlpha = 1;
       // white-hot core at the barrel
       g.fillStyle = '#ffffff';
-      var cr = Math.max(1.5, h * 0.26 * k);
+      var cr = Math.max(1.5, h * 0.19 * k);
       g.beginPath(); g.arc(cx, cy, cr, 0, Math.PI * 2); g.fill();
       g.fillStyle = hex(lite(a.c2 || a.c1, 0.5)); g.globalAlpha = 0.8;
-      g.beginPath(); g.arc(cx, cy, cr * 1.7, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx, cy, cr * 1.45, 0, Math.PI * 2); g.fill();
       g.globalAlpha = 1;
     },
 
@@ -497,8 +506,8 @@ window.PC = window.PC || {};
       lobeSet(0.42, lite(a.c1, 0.35), 1);           // wet highlight core
       // flung droplets: many, small, and STREAKED along their fling
       // direction so they read as thrown liquid, not scattered squares
-      for (var d = 0; d < 16; d++) {
-        var da = (d / 16) * Math.PI * 2 + (seed % 5) * 0.4 + ((seed >> d) % 5) * 0.09;
+      for (var d = 0; d < 22; d++) {
+        var da = (d / 22) * Math.PI * 2 + (seed % 5) * 0.4 + ((seed >> d) % 5) * 0.09;
         var dd = R * (0.92 + 0.38 * k) + ((seed >> (d + 2)) % 4);
         var dx0 = c + Math.cos(da) * dd, dy0 = c + Math.sin(da) * dd * 0.74;
         var len = 2 + ((seed >> d) % 3);

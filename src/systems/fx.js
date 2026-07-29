@@ -61,6 +61,11 @@ PC.FxSystem.prototype.update = function (dt) {
     if (f.prefix) {
       var idx = 1 + Math.min(f.frames - 1, Math.floor((f.t / f.dur) * f.frames));
       f.sprite.setFrame(f.prefix + '_' + idx);
+      // v0.23.1: never let an effect POP out of existence - the last
+      // third of every burst fades. Cheap, and it's the difference
+      // between "an animation ended" and "the smoke cleared".
+      var k = f.t / f.dur;
+      f.sprite.setAlpha(k > 0.66 ? 1 - (k - 0.66) / 0.34 : 1);
     } else if (f.fade) {
       f.sprite.setAlpha(1 - f.t / f.dur);
     }
