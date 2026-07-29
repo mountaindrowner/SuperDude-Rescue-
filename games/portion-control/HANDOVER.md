@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-29 - v0.23.1: VFX DENSITY + PARTICLE BUMP (Mark on v0.23.0:
+  "they're fantastic... increase the pixel density a little bit and
+  particle effects maybe just a little bit").** THE METHOD, stated so it
+  can be repeated: these effects are CODE-DRAWN into the atlas at a
+  NATIVE frame size, then displayed at a scale. Density = raise the
+  native size and lower the display scale by roughly the same factor -
+  the on-screen footprint barely moves while the number of source pixels
+  inside it goes up. (Do NOT push display scale below ~1.0: nearest-
+  neighbour would start DROPPING source pixels and it shimmers.)
+  Applied ~1.4x: bolt 22x10 -> 30x14 (display 1.4 -> 1.1), splat 44 ->
+  60 (1.45 -> 1.15), flame 28 -> 40 (divisor 26 -> 38), puddle 48 -> 64
+  (1.4 -> 1.05), muzzle 20x13 -> 28x18, pop 32 -> 40, spark 16 -> 22.
+  PARTICLES up a notch: bullet trail interval 32ms -> 22ms w/ the ghost
+  pool 46 -> 72, sparkle chance 0.45 -> 0.7, splat droplets 16 -> 22,
+  ketchup gobs 7 -> 11, flame tongues 3 -> 4 per segment, embers 3.0 ->
+  5.0/s, muzzle ejects 3 sparks. FX cap 260 has room; measured 57-60fps
+  with 8 bolts + trails on screen. ALSO: `fx.update` now FADES the last
+  third of every burst - nothing pops out of existence any more, which
+  is the difference between "an animation ended" and "the smoke
+  cleared". Muzzle re-tuned for the bigger canvas (core was swamping
+  the cone at 28x18). All green: verify-vfx + park + freeroam.
+
 - **2026-07-29 - v0.23.0: THE VFX QUALITY PASS (Mark: "let's make sure
   we sift through our animations and make sure they have that premium
   feeling quality... take your time, don't do a quick pass").**
