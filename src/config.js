@@ -14,7 +14,11 @@ PC.VERSION = 'v' + (window.PC_BUILD || 'dev');
 // the game out a little so I can see more of the map"). 270 -> 340.
 PC.RENDER = {
   W: 480, H: 270,              // set live by main.js from BASE + device aspect
-  BASE: 340,                   // portrait width / landscape height (the zoom)
+  BASE: 312,                   // portrait width / landscape height (the zoom)
+  // 270 -> 340 (round 10 "zoom out so I can see more of the map")
+  // 340 -> 312 (v0.23.0, Mark: "I would still zoom up again just a
+  // little bit") - ~8% closer, which also pulls the on-screen firing
+  // boundary in and makes the shaped bolts read at their real size.
   // internal render scale (PHASE2 4-B "4K feel"): the canvas backing store
   // is logical*SCALE with camera zoom SCALE - same framing, denser pixels.
   // v0.13.0 (Mark: "text still looks a little blurry"): SCALE now matches

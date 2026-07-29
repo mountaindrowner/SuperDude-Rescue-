@@ -116,11 +116,17 @@ window.PC = window.PC || {};
   });
 
   // -- projectiles : 1 frame, rotated in code. Cyan = player, Pink = enemy --
-  ['resizer:12', 'pellet:8', 'whisk:16', 'drone_bolt:8', 'salt:8', 'freeze:10',
+  ['pellet:8', 'whisk:16', 'salt:8', 'freeze:10',
    'ketchup_lob:12', 'micro_spark:8'].forEach(function (s) {
     var p = s.split(':');
     add('proj_' + p[0], +p[1], +p[1], 'proj', P.CYAN, P.CLOUD);
   });
+  // directional energy bolts (v0.23.0): NON-SQUARE and shaped, so the
+  // rotation BulletSystem already applies actually reads. Mark: "almost
+  // like a little beam of light... the front part should always be
+  // oriented in the direction that it's being shot."
+  add('proj_resizer', 22, 10, 'bolt', P.CYAN, P.CLOUD);
+  add('proj_drone_bolt', 14, 7, 'bolt', P.CYAN, P.CLOUD);
   ['toast:12', 'tomato:10', 'seed:8', 'soda:10', 'candle:10', 'ice_shard:10'].forEach(function (s) {
     var p = s.split(':');
     add('eproj_' + p[0], +p[1], +p[1], 'proj', P.PINK, P.CHERRY);
@@ -145,7 +151,11 @@ window.PC = window.PC || {};
   fx('fx_cyclone', 2, 40, P.CLOUD, P.STEEL, 'ring');
   fx('fx_puddle', 2, 48, P.KETCHUP, P.CHERRY, 'puddle');
   fx('fx_freeze', 1, 24, P.CYAN, P.CLOUD);
-  fx('fx_muzzle', 2, 12, P.CYAN, P.WHITE);
+  // directional (non-square) muzzle flash, oriented by the shooter
+  for (var mz = 1; mz <= 2; mz++) add('fx_muzzle_' + mz, 20, 13, 'muzzle', P.CYAN, P.WHITE, mz);
+  // v0.23.0: the blobby impact splash + the living flame tongue
+  fx('fx_splat', 4, 44, P.KETCHUP, P.CHERRY, 'splat');
+  fx('fx_flame', 4, 28, P.MUSTARD, P.CHEESE, 'flame');
 
   // -- icons: one per weapon key (26) + one per passive key (10). --
   // 48px native (pixflux generation size, no rescale); cards draw at 0.8.
@@ -375,16 +385,205 @@ window.PC = window.PC || {};
       }
       g.globalAlpha = 1;
     },
-    puddle: function (g, a) {    // layer law: rim + base + inner shade + glint
-      blob(g, 2, a.h / 2, a.w - 4, a.h / 2 - 2, a.c1);
-      g.fillStyle = hex(shade(a.c1, 0.35));                   // inner occlusion
-      g.beginPath();
-      g.ellipse(a.w / 2 + 1, a.h * 0.76, a.w * 0.26, a.h * 0.12, 0, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = hex(a.c2);
-      g.fillRect(a.w / 4, a.h * 0.6, 3, 2); g.fillRect(a.w * 0.6, a.h * 0.7, 4, 2);
-      g.fillStyle = hex(lite(a.c1, 0.5));                     // top-left glint
-      g.fillRect(a.w * 0.3, a.h * 0.56, 4, 1);
+    // ---- v0.23.0 VFX PASS (Mark: "not just a cube or that round shape";
+    // "a little beam of light... always pointing in the right direction";
+    // "animate real flames"). These three painters replace the round
+    // primitives with SHAPED, directional, irregular art. All scanline-
+    // drawn (fillRect per column/row) so edges stay crisp pixel art
+    // instead of the soft anti-aliased curves arc() produces. ----
+
+    // a DIRECTIONAL muzzle flash pointing +X: hot core, a forward cone of
+    // escaping light, and short back-blast rays. Was a plain 12px blob -
+    // the one effect that fires on literally every shot deserved shape.
+    muzzle: function (g, a) {
+      var w = a.w, h = a.h, cy = h / 2, cx = w * 0.30;
+      var k = a.f === 2 ? 0.72 : 1;            // 2nd frame: collapsing
+      // forward cone: narrow and bright at the barrel, widening and
+      // FADING toward the tip so it dissipates instead of ending in a
+      // hard blue edge
+      g.fillStyle = hex(a.c1);
+      for (var x = Math.round(cx); x < w; x++) {
+        var t = (x - cx) / (w - cx);
+        var hh = (h / 2) * (0.22 + 0.78 * t) * k;
+        if (hh < 0.5) continue;
+        g.globalAlpha = Math.pow(1 - t, 1.7) * 0.95 * k;   // gone by the tip
+        g.fillRect(x, Math.round(cy - hh), 1, Math.max(1, Math.round(hh * 2)));
+      }
+      // two bright inner streaks down the middle of the cone
+      g.fillStyle = hex(lite(a.c1, 0.45));
+      for (var x2 = Math.round(cx); x2 < w * 0.82; x2++) {
+        var t2 = (x2 - cx) / (w - cx);
+        g.globalAlpha = (1 - t2) * 0.8 * k;
+        g.fillRect(x2, Math.round(cy - 1), 1, 2);
+      }
+      g.globalAlpha = 1;
+      // back-blast rays
+      g.fillStyle = hex(lite(a.c1, 0.3)); g.globalAlpha = 0.7 * k;
+      g.fillRect(0, Math.round(cy), Math.round(w * 0.24), 1);
+      g.fillRect(Math.round(cx), Math.round(cy - h * 0.42 * k), 1, Math.round(h * 0.2 * k));
+      g.fillRect(Math.round(cx), Math.round(cy + h * 0.24 * k), 1, Math.round(h * 0.2 * k));
+      g.globalAlpha = 1;
+      // white-hot core at the barrel
+      g.fillStyle = '#ffffff';
+      var cr = Math.max(1.5, h * 0.26 * k);
+      g.beginPath(); g.arc(cx, cy, cr, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(lite(a.c2 || a.c1, 0.5)); g.globalAlpha = 0.8;
+      g.beginPath(); g.arc(cx, cy, cr * 1.7, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+    },
+
+    // an elongated energy BOLT pointing +X (rotation 0 = travelling right,
+    // which is what BulletSystem sets from atan2(dy,dx)). Teardrop
+    // profile: pointed nose, fat shoulder, tapered tail.
+    bolt: function (g, a) {
+      var w = a.w, h = a.h, cy = h / 2;
+      // half-height profile: a long THIN TAIL that swells to a BLUNT
+      // ROUND NOSE near the front. Asymmetric on purpose - Mark: "there's
+      // a front part, there's a back part". A shape that tapers at both
+      // ends reads as a lens and loses its direction.
+      var SHOULDER = 0.78;
+      function prof(t) {
+        if (t <= 0 || t >= 1) return 0;
+        if (t < SHOULDER) return Math.pow(t / SHOULDER, 1.45);   // slow swell
+        return Math.sqrt(1 - Math.pow((t - SHOULDER) / (1 - SHOULDER), 2)); // round cap
+      }
+      function band(scaleH, x0, x1, color, alpha, yOff) {
+        g.globalAlpha = alpha === undefined ? 1 : alpha;
+        g.fillStyle = hex(color);
+        for (var x = Math.floor(x0); x < Math.ceil(x1); x++) {
+          var t = (x - x0) / (x1 - x0);
+          var hh = prof(t) * (h / 2) * scaleH;
+          if (hh < 0.5) continue;
+          g.fillRect(x, Math.round(cy - hh) + (yOff || 0), 1, Math.max(1, Math.round(hh * 2)));
+        }
+        g.globalAlpha = 1;
+      }
+      band(1.0, 0, w, a.c1, 0.28);                       // soft outer glow
+      band(0.74, 0, w, a.c1, 1);                         // body
+      band(0.44, w * 0.30, w, lite(a.c1, 0.5), 1);       // inner heat (front-loaded)
+      band(0.22, w * 0.50, w, '#ffffff', 0.95);          // white-hot core
+      // a 1px wisp running the whole tail so the back never just stops
+      g.globalAlpha = 0.5; g.fillStyle = hex(lite(a.c1, 0.25));
+      g.fillRect(0, Math.round(cy), Math.round(w * 0.34), 1);
+      g.globalAlpha = 1;
+    },
+
+    // a BLOBBY splash - overlapping lobes of different sizes, never a
+    // circle - with droplets flung outward. Frames expand + thin out.
+    splat: function (g, a) {
+      var c = a.w / 2, seed = hash(a.key), n = 4;
+      var k = a.f ? a.f / n : 0.6;                  // 0..1 progress
+      var R = (a.w / 2 - 2) * (0.42 + 0.58 * k);
+      var lobes = 7;
+      function lobeSet(rMult, color, alpha) {
+        g.globalAlpha = alpha === undefined ? 1 : alpha;
+        g.fillStyle = hex(color);
+        for (var i = 0; i < lobes; i++) {
+          var ang = (i / lobes) * Math.PI * 2 + (seed % 11) * 0.21;
+          // irregular: each lobe sits at its own distance with its own size
+          var wob = 0.55 + ((seed >> i) % 9) / 9 * 0.75;
+          var lr = R * 0.42 * wob * rMult;
+          var ld = R * (0.30 + ((seed >> (i + 3)) % 7) / 7 * 0.42) * rMult;
+          g.beginPath();
+          g.arc(c + Math.cos(ang) * ld, c + Math.sin(ang) * ld * 0.72, lr, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.beginPath();                              // the mass in the middle
+        g.arc(c, c, R * 0.52 * rMult, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+      }
+      lobeSet(1.0, shade(a.c1, 0.4), 0.9);          // dark under-splash
+      lobeSet(0.86, a.c1, 1);                       // body
+      lobeSet(0.42, lite(a.c1, 0.35), 1);           // wet highlight core
+      // flung droplets: many, small, and STREAKED along their fling
+      // direction so they read as thrown liquid, not scattered squares
+      for (var d = 0; d < 16; d++) {
+        var da = (d / 16) * Math.PI * 2 + (seed % 5) * 0.4 + ((seed >> d) % 5) * 0.09;
+        var dd = R * (0.92 + 0.38 * k) + ((seed >> (d + 2)) % 4);
+        var dx0 = c + Math.cos(da) * dd, dy0 = c + Math.sin(da) * dd * 0.74;
+        var len = 2 + ((seed >> d) % 3);
+        g.globalAlpha = 0.9 - 0.35 * k;
+        g.fillStyle = hex(d % 4 === 0 ? lite(a.c1, 0.3) : a.c1);
+        for (var s2 = 0; s2 < len; s2++) {          // 1px streak outward
+          g.fillRect(Math.round(dx0 + Math.cos(da) * s2),
+                     Math.round(dy0 + Math.sin(da) * s2 * 0.74),
+                     s2 === 0 ? 2 : 1, s2 === 0 ? 2 : 1);
+        }
+        g.globalAlpha = 1;
+      }
+      g.fillStyle = hex(lite(a.c1, 0.6));           // one bright gloss dot
+      g.fillRect(Math.round(c - R * 0.28), Math.round(c - R * 0.30), 3, 2);
+    },
+
+    // a FLAME TONGUE: wide guttering base, wavy narrowing tip, layered
+    // red -> orange -> yellow -> white. The wave shifts per frame so the
+    // 4 frames read as fire moving, not a pulsing blob.
+    flame: function (g, a) {
+      var w = a.w, h = a.h, cx = w / 2, n = 4;
+      var ph = (a.f || 1) / n * Math.PI * 2;
+      // one layer = a tapering tongue with a sine wobble down its axis
+      function tongue(width, height, color, alpha, wob, yBase) {
+        g.globalAlpha = alpha;
+        g.fillStyle = hex(color);
+        for (var y = 0; y < height; y++) {
+          var t = y / height;                       // 0 base -> 1 tip
+          var half = width * 0.5 * Math.pow(1 - t, 0.7) * (1 - 0.15 * Math.sin(t * 9 + ph));
+          if (half < 0.5) continue;
+          var off = Math.sin(t * 3.2 + ph) * wob * t;
+          var yy = Math.round(yBase - y);
+          g.fillRect(Math.round(cx + off - half), yy, Math.max(1, Math.round(half * 2)), 1);
+        }
+        g.globalAlpha = 1;
+      }
+      // per-frame flicker: each frame is a different height + lean, so
+      // the 4-frame loop reads as fire MOVING rather than pulsing
+      var lick = 0.86 + 0.14 * Math.sin(ph * 1.5);
+      var lean = Math.sin(ph) * w * 0.06;
+      var base = h - 2;
+      tongue(w * 0.74, h * 0.92 * lick, '#d93a3a', 0.5, w * 0.13 + lean, base);
+      tongue(w * 0.50, h * 0.80 * lick, '#ff6b3b', 0.85, w * 0.15 + lean, base);
+      tongue(w * 0.31, h * 0.62 * lick, '#f2c33c', 0.95, w * 0.16 + lean, base);
+      tongue(w * 0.15, h * 0.40 * lick, '#fff6e0', 0.95, w * 0.17 + lean, base);
+      // embers popping off the tip
+      g.fillStyle = '#f2c33c'; g.globalAlpha = 0.8;
+      for (var e = 0; e < 3; e++) {
+        var ea = ph + e * 2.1;
+        g.fillRect(Math.round(cx + Math.sin(ea) * w * 0.28),
+                   Math.round(base - h * (0.86 + 0.05 * Math.sin(ea * 2))), 2, 2);
+      }
+      g.globalAlpha = 1;
+    },
+
+    puddle: function (g, a) {    // now an irregular SETTLED splat, not an
+      // ellipse: uneven lobes, droplet flecks, wet gloss (v0.23.0)
+      var c = a.w / 2, cy = a.h * 0.62, seed = hash(a.key), i;
+      var R = a.w / 2 - 3;
+      function pool(rMult, color, alpha) {
+        g.globalAlpha = alpha; g.fillStyle = hex(color);
+        for (i = 0; i < 8; i++) {
+          var ang = (i / 8) * Math.PI * 2 + (seed % 7) * 0.3;
+          var wob = 0.5 + ((seed >> i) % 9) / 9 * 0.7;
+          g.beginPath();
+          g.arc(c + Math.cos(ang) * R * 0.42 * rMult,
+                cy + Math.sin(ang) * R * 0.26 * rMult,
+                R * 0.40 * wob * rMult, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.beginPath(); g.ellipse(c, cy, R * 0.62 * rMult, R * 0.36 * rMult, 0, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+      }
+      pool(1.0, shade(a.c1, 0.45), 0.85);           // dark spread edge
+      pool(0.82, a.c1, 1);                          // body
+      pool(0.34, shade(a.c1, 0.18), 1);             // deeper middle
+      g.fillStyle = hex(a.c2);                      // flecks that broke off
+      for (i = 0; i < 5; i++) {
+        var fa = i * 1.9 + (seed % 4);
+        g.fillRect(Math.round(c + Math.cos(fa) * R * 1.02),
+                   Math.round(cy + Math.sin(fa) * R * 0.58), 2, 2);
+      }
+      g.fillStyle = hex(lite(a.c1, 0.55));          // wet gloss, up-left
+      g.fillRect(Math.round(c - R * 0.34), Math.round(cy - R * 0.26), 5, 2);
+      g.fillRect(Math.round(c - R * 0.10), Math.round(cy - R * 0.32), 3, 1);
     },
     icon: function (g, a) {
       blob(g, 0, 0, a.w, a.h, a.c2);

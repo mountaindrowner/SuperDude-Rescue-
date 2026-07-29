@@ -21,13 +21,25 @@ PC.FxSystem.prototype._get = function () {
   return null;   // FX cap hit: drop the effect, never allocate
 };
 
-// animated burst: frames named prefix_1..n over dur seconds
-PC.FxSystem.prototype.burst = function (x, y, prefix, frames, dur, tint) {
+// animated burst: frames named prefix_1..n over dur seconds.
+// `scale` (v0.23.0) lets one frame set serve both a big hero impact and
+// the little satellite gobs thrown off it, instead of needing two sizes.
+PC.FxSystem.prototype.burst = function (x, y, prefix, frames, dur, tint, scale) {
   var f = this._get(); if (!f) return;
   f.active = true; f.t = 0; f.dur = dur; f.prefix = prefix; f.frames = frames; f.fade = false;
   var s = f.sprite;
-  s.setPosition(x, y).setFrame(prefix + '_1').setAlpha(1).setScale(1).setVisible(true);
+  s.setPosition(x, y).setFrame(prefix + '_1').setAlpha(1)
+    .setScale(scale || 1).setAngle(0).setVisible(true);
   if (tint) s.setTint(tint); else s.clearTint();
+  return f;
+};
+
+// same, but randomly rotated - kills the "every splash is the identical
+// stamp" tell when several land near each other
+PC.FxSystem.prototype.burstRot = function (x, y, prefix, frames, dur, tint, scale) {
+  var f = this.burst(x, y, prefix, frames, dur, tint, scale);
+  if (f) f.sprite.setAngle(Math.random() * 360);
+  return f;
 };
 
 // static frame that fades out - drawn at 55% scale: the Resizer SHRINKS
