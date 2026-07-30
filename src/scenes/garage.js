@@ -108,6 +108,7 @@ PC.GarageScene.prototype.refresh = function () {
     var kitName = (PC.KITS && PC.KITS[id]) ? PC.KITS[id].kitName : '';
     r.kit.setText(unlocked ? kitName : 'RESCUE THEM FIRST')
       .setColor(unlocked ? '#35d0ff' : '#45356e');
+    PC.ui.fit(r.kit.setFontSize(8), W - 100, 7);      // R3
     r.eff.setText(unlocked ? PC.GARAGE.nextDesc(id) : '');
     r.cost.setText(!unlocked ? '' : next === null ? 'MAX' : next + ' TP')
       .setColor(next === null ? '#a8e04a' : afford ? '#f2c33c' : '#6d6a8e');

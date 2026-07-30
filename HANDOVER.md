@@ -12,6 +12,42 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-30 - v0.25.0: THE TEXT STANDARD (Mark's on-device shot:
+  "inspect all text and text boxes for dialogs, they almost always spill
+  out and are too small or not formatted well. Create some rules to
+  standardize quality").** THE AUDIT: 98 text objects using FIFTEEN font
+  sizes from 6px to 26px with no system, and only 7 declaring a wrap
+  width - 91 could overflow. Level-up cards explained what they DID in
+  7px. NEW `src/systems/ui.js` = the standard: six roles (micro 8 /
+  caption 9 / body 11 / label 13 / title 18 / display 26), PC.SAFE 10 +
+  PC.SAFE_BOTTOM 16, and helpers `PC.ui.text/fit/panelFor/measure/
+  clampRect`. Rules R1-R7 written up in `docs/UI_TEXT_STANDARD.md`
+  (pick a role not a px; sentences never below body; variable text MUST
+  wrap or fit(); panels MEASURED from their text; safe area; stroke over
+  gameplay; a dialogue box never exceeds 45% of screen height).
+  DIALOGUE BOX REBUILT - it was the actual failure in the screenshot:
+  fixed 74px tall regardless of content, text column starting 6px INSIDE
+  the portrait well, 9px body copy, ▼ in the very corner, and the panel
+  8px off the bottom (under the home indicator) with the version stamp
+  printed inside it. Now it MEASURES the line and grows, the column
+  clears the portrait, body is 11px, ▼ is inset, and it clears
+  SAFE_BOTTOM. The in-game build stamp moved TOP-right, because
+  bottom-right is dialogue territory. Cards: title 8->11, desc 7->9.
+  fit() applied to mission titles, mission-map node labels and garage
+  kit names. TWO BUGS THE SCREENSHOT EXPOSED: (1) "foes -31" - onKill
+  decremented liveCount unconditionally, so overlapping damage (two
+  bullets, an AoE tick) double-counted the same enemy and the counter
+  drifted negative AND kills/gems were double-awarded; now guarded on
+  e.active + clamped at 0. (2) the fps readout and dev SWARM button were
+  visible in normal builds; both are DEV_MODE-only now. VERIFIED
+  (verify-text.js) at THREE phone shapes (19.5:9, 16:9, landscape) with
+  short / real / deliberately-overlong copy: text never crosses the box,
+  box always fits name+text+padding and never shrinks as copy grows,
+  clears the bottom safe area, column clears the portrait, body >= 11px,
+  box under 45% of screen height. linear/freeroam/garage/park green.
+  DEBT: the other ~90 text objects still use literal sizes - not broken
+  (fixed strings, fixed boxes) but new work should use PC.ui.
+
 - **2026-07-29 - v0.24.0: MAP LAYOUT PASS (Mark's whole-map critique via
   tools/map_atlas.js).** THE STRUCTURAL FIX - "it shouldn't cover
   streets": landmark rects were block-sized minus a 20px inset, so every
