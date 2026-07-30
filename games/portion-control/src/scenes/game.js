@@ -141,10 +141,14 @@ PC.GameScene.prototype.create = function () {
   this.goldText = this.add.text(4, 27, '', {
     fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c',
   }).setDepth(101);
-  this.debugText = this.add.text(2, PC.RENDER.H - 12, '', {
+  this.debugText = this.add.text(PC.SAFE, PC.RENDER.H - PC.SAFE_BOTTOM - 10, '', {
     fontFamily: 'monospace', fontSize: '8px', color: '#a8e04a',
-  }).setDepth(101);
-  this.verText = this.add.text(PC.RENDER.W - 3, PC.RENDER.H - 11, PC.VERSION, {
+  }).setDepth(101).setVisible(!!PC.DEV_MODE);
+  // R5: the build stamp lives TOP-right in game. It used to sit bottom-
+  // right, which is exactly where the dialogue box and its ▼ land - so a
+  // conversation always had the version number printed inside it.
+  this.verText = this.add.text(PC.RENDER.W - PC.SAFE,
+    PC.DEV_MODE ? 30 : 18, PC.VERSION, {
     fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101);
   this._dbgAcc = 0;
@@ -159,6 +163,7 @@ PC.GameScene.prototype.create = function () {
     if (ev && ev.stopPropagation) ev.stopPropagation();
     this.stress();
   }, this);
+  this.swarmBtn.setVisible(!!PC.DEV_MODE);
 
   [this.bossBar, this.hud, this.timerText, this.killText, this.levelText,
    this.goldText, this.debugText, this.verText, this.swarmBtn]
@@ -207,10 +212,15 @@ PC.GameScene.prototype.gainXp = function (v) {
 };
 
 PC.GameScene.prototype.onKill = function (e) {
+  // guard: overlapping damage (two bullets, an AoE tick) can call this
+  // twice for the same enemy in one frame. Without the guard the live
+  // counter drifts NEGATIVE and kills/gems get double-awarded - that's
+  // the "foes -31" in Mark's v0.20.1 screenshot.
+  if (!e.active) return;
   e.active = false;
   e.sprite.setVisible(false);
   e.sprite.clearTint();
-  this.enemies.liveCount--;
+  this.enemies.liveCount = Math.max(0, this.enemies.liveCount - 1);
   this.kills++;
   if (this.quest) this.quest.notifyKill(e);
   this.killText.setText('POPS ' + this.kills);
@@ -277,15 +287,15 @@ PC.GameScene.prototype.showCards = function () {
     var icon = self.add.image(cx, cy - 32, 'atlas', card.icon)
       .setScale(0.8).setDepth(202);
     var title = self.add.text(cx, cy + 2, card.title, {
-      fontFamily: 'monospace', fontSize: '8px', color: '#f7f4ef', fontStyle: 'bold',
-      align: 'center', wordWrap: { width: cw - 8 },
+      fontFamily: 'monospace', fontSize: '11px', color: '#f7f4ef', fontStyle: 'bold',
+      align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 3,
     }).setOrigin(0.5).setDepth(202);
     var sub = self.add.text(cx, cy + 22, card.sub, {
       fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(202);
     var desc = self.add.text(cx, cy + 42, card.desc, {
-      fontFamily: 'monospace', fontSize: '7px', color: '#cfd4e8',
-      align: 'center', wordWrap: { width: cw - 8 },
+      fontFamily: 'monospace', fontSize: '9px', color: '#cfd4e8',
+      align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 3,
     }).setOrigin(0.5).setDepth(202);
     ui.push(panel, icon, title, sub, desc);
     panel.on('pointerdown', function () { self.pickCard(card); });
@@ -481,8 +491,10 @@ PC.GameScene.prototype.update = function (time, delta) {
     this._dbgAcc = 0;
     var m = Math.floor(this.runT / 60), sec = Math.floor(this.runT % 60);
     this.timerText.setText(m + ':' + (sec < 10 ? '0' : '') + sec);
-    this.debugText.setText('fps ' + Math.round(this.game.loop.actualFps) +
-      ' - foes ' + this.enemies.liveCount);
+    if (PC.DEV_MODE) {
+      this.debugText.setText('fps ' + Math.round(this.game.loop.actualFps) +
+        ' - foes ' + this.enemies.liveCount);
+    }
   }
 };
 

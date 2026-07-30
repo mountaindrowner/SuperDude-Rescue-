@@ -218,10 +218,12 @@ PC.MissionsScene.prototype.buildNode = function (entry, i, pt) {
   // label beside the node (opposite side of the screen edge)
   var lx = pt.x < PC.RENDER.W / 2 ? pt.x + 22 : pt.x - 22;
   var align = pt.x < PC.RENDER.W / 2 ? 0 : 1;
+  var maxLabel = (pt.x < PC.RENDER.W / 2 ? PC.RENDER.W - lx : lx) - 12;
   var name = this.add.text(lx, pt.y - 8, entry.title, {
     fontFamily: 'monospace', fontSize: '8px', fontStyle: 'bold',
     color: st === 'cleared' ? '#a8e04a' : st === 'active' ? '#f7f4ef' : '#c9a06a',
   }).setOrigin(align, 0).setDepth(4);
+  PC.ui.fit(name, maxLabel, 7);
   var sub = st === 'soon' ? 'SIGNAL SCRAMBLED - COMING SOON'
           : st === 'cleared' ? entry.place + ' - CLEARED'
           : entry.place;
@@ -229,6 +231,7 @@ PC.MissionsScene.prototype.buildNode = function (entry, i, pt) {
     fontFamily: 'monospace', fontSize: '7px',
     color: st === 'soon' ? '#ff9d3b' : '#6d6a8e',
   }).setOrigin(align, 0).setDepth(4);
+  PC.ui.fit(subT, maxLabel, 6);
   node.ui.push(name, subT);
   // assigned-hero chip on playable nodes: the story GIVES you the hero
   if (st === 'cleared' || st === 'active') {
@@ -261,9 +264,11 @@ PC.MissionsScene.prototype.openBrief = function (entry, status) {
   var g = this.add.graphics().setDepth(31);
   PC.labPanel(g, 8, py, W - 16, ph, { rivets: true, base: 0x1c1733, edge: 0xf2c33c });
   ui.push(dim, g);
-  ui.push(this.add.text(W / 2, py + 10, entry.title, {
+  var briefTitle = this.add.text(W / 2, py + 10, entry.title, {
     fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
-  }).setOrigin(0.5, 0).setDepth(32));
+  }).setOrigin(0.5, 0).setDepth(32);
+  PC.ui.fit(briefTitle, W - 40);          // R3: mission names vary in length
+  ui.push(briefTitle);
   ui.push(this.add.text(W / 2, py + 24, entry.place +
     (status === 'cleared' ? '  [ CLEARED - PATROL AGAIN ]' : ''), {
     fontFamily: 'monospace', fontSize: '7px', color: '#6d6a8e', fontStyle: 'bold',
