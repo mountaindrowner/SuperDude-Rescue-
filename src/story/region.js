@@ -6,24 +6,41 @@
 // beyond it. Memory model unchanged (same 512px chunk slots).
 window.PC = window.PC || {};
 
-PC.BLOCK = 512;                   // 1 story block == 1 fabric street cell
+PC.BLOCK = 512;                   // 1 fabric street cell
+
+// ---- LAND PARCELS (v0.24.0) -----------------------------------------
+// Mark, reviewing the whole-map renders: "it shouldn't cover streets."
+// The fabric puts a 128px road band at 192..320 of every 512 cell, so
+// the actual LAND between streets is a 384px square that straddles the
+// cell boundary. Landmarks are now sized and placed in PARCELS, not
+// cells, so every lot edge lands exactly on a street edge - no more
+// rectangles slicing a road in half and leaving slivers.
+//   parcel p spans x = 512p + 320 .. 512p + 704
+PC.PARCEL = { ORIGIN: 320, SIZE: 384, STRIDE: 512 };
+PC.parcelRect = function (c0, r0, c1, r1) {
+  var P = PC.PARCEL;
+  return {
+    x: c0 * P.STRIDE + P.ORIGIN,
+    y: r0 * P.STRIDE + P.ORIGIN,
+    w: (c1 - c0) * P.STRIDE + P.SIZE,
+    h: (r1 - r0) * P.STRIDE + P.SIZE,
+  };
+};
 
 PC.Region = function (def) {
   this.def = def;
   this.size = def.blocks * PC.BLOCK;             // world px, 0..size
-  // landmark rects in world px (lot-inset so plates sit inside blocks,
-  // clear of the road bands: fabric roads live at 192..320 per cell)
+  // landmark rects in world px, snapped to the parcel grid
   this.marks = [];
   for (var i = 0; i < def.landmarks.length; i++) {
     var L = def.landmarks[i];
-    var x = L.c0 * PC.BLOCK + 20;
-    var y = L.r0 * PC.BLOCK + 20;
-    var w = (L.c1 - L.c0 + 1) * PC.BLOCK - 40;
-    var h = (L.r1 - L.r0 + 1) * PC.BLOCK - 40;
+    var r = PC.parcelRect(L.c0, L.r0, L.c1, L.r1);
     this.marks.push({ id: L.id, name: L.name, open: !!L.open,
+      shape: L.shape || 'rect',                  // rect | round | organic
+      fenced: !!L.fenced,                         // draws an enclosure ring
       color: L.color, accent: L.accent,
-      x: x, y: y, w: w, h: h,
-      cx: x + w / 2, cy: y + h / 2 });
+      x: r.x, y: r.y, w: r.w, h: r.h,
+      cx: r.x + r.w / 2, cy: r.y + r.h / 2 });
   }
   this.spawnX = (def.spawn.c + 0.5) * PC.BLOCK + 96;
   this.spawnY = (def.spawn.r + 0.5) * PC.BLOCK + 96;
@@ -127,29 +144,91 @@ PC.Region.prototype.paintChunk = function (scene, g, cx, cy) {
 // placeholder landmark plate, quality-styled per the layer law: cast
 // shadow, slab body, roof lighting, rim, signage. Real PixelLab set
 // pieces replace these plate-by-plate later with zero code changes.
+// trace an ORGANIC outline inside a rect: an ellipse whose radius is
+// perturbed by a couple of sine terms keyed to the landmark id. Mark:
+// "shouldn't be just straight lines that create the park outline...
+// should be wavy, like an actual park."
+PC.Region.prototype._organicPath = function (g, mk, lx, ly, inset, wobble) {
+  var w = mk.w - inset * 2, h = mk.h - inset * 2;
+  var cx = lx + mk.w / 2, cy = ly + mk.h / 2;
+  var seed = 0;
+  for (var si = 0; si < mk.id.length; si++) seed = (seed * 31 + mk.id.charCodeAt(si)) | 0;
+  var ph = (seed % 100) / 100 * Math.PI * 2;
+  var STEPS = 48;
+  g.beginPath();
+  for (var i = 0; i <= STEPS; i++) {
+    var a = (i / STEPS) * Math.PI * 2;
+    var k = 1 + wobble * (Math.sin(a * 3 + ph) * 0.6 + Math.sin(a * 5 - ph * 1.7) * 0.4);
+    var px = cx + Math.cos(a) * (w / 2) * k;
+    var py = cy + Math.sin(a) * (h / 2) * k;
+    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+  }
+  g.closePath();
+};
+
 PC.Region.prototype.paintLandmark = function (g, mk, lx, ly) {
-  var w = mk.w, h = mk.h;
-  if (mk.open) {
-    // ground feature: inlaid plaza ring + accent centerpiece
-    g.fillStyle = 'rgba(10,8,18,0.25)';
-    g.fillRect(lx + 6, ly + 6, w, h);
-    g.fillStyle = mk.color; g.fillRect(lx, ly, w, h);
-    // no-flat law: slab seams + specks on the open ground
-    g.fillStyle = 'rgba(0,0,0,0.18)';
+  var w = mk.w, h = mk.h, i;
+  if (mk.open && mk.shape === 'round') {
+    // WATER / ring features: concentric organic bands, no corners at all
+    var self0 = this;
+    g.fillStyle = 'rgba(10,8,18,0.28)';
+    this._organicPath(g, mk, lx + 7, ly + 8, 4, 0.05); g.fill();
+    g.fillStyle = mk.color;                       // shore
+    this._organicPath(g, mk, lx, ly, 2, 0.05); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.06)';       // shallows
+    this._organicPath(g, mk, lx, ly, Math.min(w, h) * 0.10, 0.04); g.fill();
+    g.fillStyle = 'rgba(0,0,0,0.16)';             // deep middle
+    this._organicPath(g, mk, lx, ly, Math.min(w, h) * 0.24, 0.03); g.fill();
+    g.strokeStyle = mk.accent; g.lineWidth = 3; g.globalAlpha = 0.6;
+    this._organicPath(g, mk, lx, ly, 2, 0.05); g.stroke();
+    g.globalAlpha = 1;
+    // surface ripples
+    g.strokeStyle = 'rgba(255,255,255,0.10)'; g.lineWidth = 2;
+    for (i = 0; i < 7; i++) {
+      var rx = lx + w * (0.2 + PC.hash01(i, 41, 3) * 0.6);
+      var ry = ly + h * (0.2 + PC.hash01(i, 42, 4) * 0.6);
+      g.beginPath(); g.ellipse(rx, ry, 16 + i * 3, 5 + i, 0, 0, Math.PI * 2); g.stroke();
+    }
+  } else if (mk.open) {
+    // open GROUND feature with a soft irregular edge instead of a slab
+    g.fillStyle = 'rgba(10,8,18,0.22)';
+    this._organicPath(g, mk, lx + 6, ly + 7, 6, 0.07); g.fill();
+    g.fillStyle = mk.color;
+    this._organicPath(g, mk, lx, ly, 4, 0.07); g.fill();
+    g.save();
+    this._organicPath(g, mk, lx, ly, 4, 0.07); g.clip();
+    g.fillStyle = 'rgba(0,0,0,0.16)';
     for (var sx2 = 0; sx2 <= w; sx2 += 64) g.fillRect(lx + sx2, ly, 1, h);
     for (var sy2 = 0; sy2 <= h; sy2 += 64) g.fillRect(lx, ly + sy2, w, 1);
     g.fillStyle = 'rgba(255,246,224,0.05)';
     for (var sp = 0; sp < 60; sp++) {
       g.fillRect(lx + PC.hash01(sp, 31, 7) * w, ly + PC.hash01(sp, 32, 8) * h, 2, 2);
     }
-    g.strokeStyle = mk.accent; g.lineWidth = 3;
-    g.globalAlpha = 0.55; g.strokeRect(lx + 8, ly + 8, w - 16, h - 16);
+    g.restore();
+    g.strokeStyle = mk.accent; g.lineWidth = 3; g.globalAlpha = 0.55;
+    this._organicPath(g, mk, lx, ly, 4, 0.07); g.stroke();
     g.globalAlpha = 1;
-    g.beginPath(); g.arc(lx + w / 2, ly + h / 2, Math.min(w, h) * 0.18, 0, Math.PI * 2);
-    g.strokeStyle = mk.accent; g.lineWidth = 4; g.stroke();
-    g.fillStyle = mk.accent; g.globalAlpha = 0.25;
-    g.beginPath(); g.arc(lx + w / 2, ly + h / 2, Math.min(w, h) * 0.10, 0, Math.PI * 2); g.fill();
-    g.globalAlpha = 1;
+    // FENCED enclosure (Mark: "create a sectioned off space for the zoo")
+    if (mk.fenced) {
+      g.strokeStyle = mk.accent; g.lineWidth = 4; g.globalAlpha = 0.85;
+      this._organicPath(g, mk, lx, ly, 14, 0.055); g.stroke();
+      g.globalAlpha = 1;
+      // posts around the run
+      g.fillStyle = '#4a3a28';
+      var pcx = lx + w / 2, pcy = ly + h / 2;
+      for (i = 0; i < 26; i++) {
+        var pa = (i / 26) * Math.PI * 2;
+        if (pa > 1.25 && pa < 1.95) continue;          // gate gap, south side
+        g.fillRect(Math.round(pcx + Math.cos(pa) * (w / 2 - 14) * 0.98) - 2,
+                   Math.round(pcy + Math.sin(pa) * (h / 2 - 14) * 0.98) - 3, 4, 7);
+      }
+    } else {
+      g.beginPath(); g.arc(lx + w / 2, ly + h / 2, Math.min(w, h) * 0.18, 0, Math.PI * 2);
+      g.strokeStyle = mk.accent; g.lineWidth = 4; g.stroke();
+      g.fillStyle = mk.accent; g.globalAlpha = 0.25;
+      g.beginPath(); g.arc(lx + w / 2, ly + h / 2, Math.min(w, h) * 0.10, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+    }
   } else {
     // cast shadow (SE) + contact halo
     g.fillStyle = 'rgba(10,8,18,0.30)';

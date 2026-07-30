@@ -56,6 +56,16 @@ PC.Quest = function (scene, region, mission) {
   }
 };
 
+// v0.24.0: where an objective actually happens AT a landmark. Solid
+// lots put the action on the apron outside their south face; OPEN lots
+// (plazas, ponds, the park gates) put it in the middle, because there
+// is no building to stand outside of. Several beats used to hardcode
+// "+ h/2 + 80" and quietly landed outside open landmarks entirely.
+PC.Quest.prototype.spotOf = function (mk, pad) {
+  if (!mk) return null;
+  return { x: mk.cx, y: mk.open ? mk.cy : mk.cy + mk.h / 2 + (pad || 40) };
+};
+
 // ---- helpers ----
 PC.Quest.prototype.cur = function () { return this.mission.objectives[this.idx]; };
 PC.Quest.prototype.targetXY = function () {
@@ -69,8 +79,7 @@ PC.Quest.prototype.targetXY = function () {
     }
     return null;
   }
-  var mk = this.region.landmark(o.at);
-  return mk ? { x: mk.cx, y: mk.cy + (mk.open ? 0 : mk.h / 2 + 40) } : null;
+  return this.spotOf(this.region.landmark(o.at));
 };
 
 // play a beat list as in-game dialogue (world paused via storyPause)
@@ -259,8 +268,8 @@ PC.Quest.prototype.update = function (dt) {
       var dx = t.x - px, dy = t.y - py;
       if (dx * dx + dy * dy < 220 * 220) {
         this.state = 'active';
-        var mk = this.region.landmark(o.at);
-        this.tracked = this.ring(mk.cx, mk.cy + mk.h / 2 + 80, o.count, true);
+        var sp = this.spotOf(this.region.landmark(o.at), 80);
+        this.tracked = this.ring(sp.x, sp.y, o.count, true);
         if (PC.audio) PC.audio.telegraph();
       }
     } else if (this.state === 'active' && this.tracked.length === 0) {
@@ -289,9 +298,10 @@ PC.Quest.prototype.update = function (dt) {
     if (left === 0) this.finishObjective(o);
   } else if (o.type === 'defend') {
     var mk2 = this.region.landmark(o.at);
+    var zone = this.spotOf(mk2, 60);
     var inZone = false;
-    if (mk2) {
-      var zx = mk2.cx - px, zy = (mk2.cy + mk2.h / 2 + 60) - py;
+    if (zone) {
+      var zx = zone.x - px, zy = zone.y - py;
       inZone = zx * zx + zy * zy < o.radius * o.radius;
     }
     if (this.state === 'travel' && inZone) {
@@ -303,7 +313,7 @@ PC.Quest.prototype.update = function (dt) {
       this._waveAcc += dt;
       if (this._waveAcc > 4.5) {
         this._waveAcc = 0;
-        this.ring(mk2.cx, mk2.cy + mk2.h / 2 + 60, 8, false);
+        this.ring(zone.x, zone.y, 8, false);
       }
       if (this.defendT >= o.secs) this.finishObjective(o);
     }
@@ -312,9 +322,9 @@ PC.Quest.prototype.update = function (dt) {
       var bdx = t.x - px, bdy = t.y - py;
       if (bdx * bdx + bdy * bdy < 300 * 300 && !scene.bossSpawned) {
         this.state = 'active';
-        var mk3 = this.region.landmark(o.at);
+        var bs = this.spotOf(this.region.landmark(o.at), 140);
         scene.bossSpawned = true;
-        scene.boss = new PC.Boss(scene, mk3.cx, mk3.cy + mk3.h / 2 + 140, o.boss);
+        scene.boss = new PC.Boss(scene, bs.x, bs.y, o.boss);
         scene.bossBanner(scene.boss.name);
         if (PC.audio && PC.audio.roar) PC.audio.roar();
         this.playScript(o.intro, null);
