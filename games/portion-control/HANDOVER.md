@@ -12,6 +12,43 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-29 - v0.24.0: MAP LAYOUT PASS (Mark's whole-map critique via
+  tools/map_atlas.js).** THE STRUCTURAL FIX - "it shouldn't cover
+  streets": landmark rects were block-sized minus a 20px inset, so every
+  lot bulldozed the fabric's road bands and left slivers. Landmarks are
+  now placed in LAND PARCELS: the fabric puts a 128px road at 192..320
+  of each 512 cell, so the land between streets is a 384px square
+  straddling the cell boundary. `PC.PARCEL` + `PC.parcelRect(c0,r0,c1,r1)`
+  in region.js; map data coords are PARCEL indices now, and 1 parcel =
+  "1 square" in Mark's sizing language. MARK'S SIZES, applied: City Hall
+  4, Bloom Tower 4 (squarely centred), Frostbite Bank 4, Central Plaza
+  6, Substation 2, Sal's 1, Diner 1, Garage 1, Mission Board 1,
+  Nourish-Ray Stage 1 (it was oversized AND unreadable - "I don't even
+  know what that's supposed to be"; still needs its own painter).
+  PARK SHAPES, per Mark: landmarks take `shape` and `fenced`. New
+  `_organicPath()` traces a sine-perturbed ellipse keyed to the landmark
+  id, so open lots get WAVY outlines instead of rectangles ("should be
+  wavy, like an actual park"); `shape:'round'` gives the pond concentric
+  water bands + ripples and the carousel a disc; `fenced:true` rings the
+  Zoo Enclosures with a post fence and a south gate gap (Mark: "create a
+  sectioned off space for the zoo"). ENGINE FIX the layout exposed:
+  several quest beats hardcoded "+ h/2 + 80" to put the action on the
+  apron OUTSIDE a building's south face - correct for solid lots, but it
+  landed objectives outside OPEN ones entirely (the now-open Park Gates
+  never triggered). New `PC.Quest.spotOf(mk, pad)` is the single source
+  of truth: open lots use their centre, solid lots the apron. Used by
+  targetXY, the clear ring, the defend zone + its waves, and the boss
+  spawn. Harnesses now travel via `quest.targetXY()`/`spotOf()` rather
+  than recomputing offsets, so future map shapes can't break them.
+  (Test gotcha: with Vic's tutorial running, objective 0 is unarmed and
+  targetXY is legitimately null - wait for idx>=0 first.) All green:
+  park / beat4 / freeroam / linear / garage / region.
+  STILL OPEN from the critique, in value order: the filler fabric is
+  uniform wallpaper (wants block TYPES - dense/sparse/lot/plaza), the
+  landmark plates are still flat colour slabs needing per-landmark
+  interior painters, and ~40% of each map has no reason to be visited
+  (side quests + loot).
+
 - **2026-07-29 - v0.23.1: VFX DENSITY + PARTICLE BUMP (Mark on v0.23.0:
   "they're fantastic... increase the pixel density a little bit and
   particle effects maybe just a little bit").** THE METHOD, stated so it
