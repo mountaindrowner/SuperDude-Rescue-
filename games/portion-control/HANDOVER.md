@@ -12,6 +12,48 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-30 - v0.26.0: THE ORGANIC PARK (Mark: "a natural feeling
+  park, mostly no straight lines... same level of attention to detail
+  that you gave the city. Then subject your design to an agent to judge
+  your work and then loop that").** `src/systems/world_park.js` is now
+  `PC.ParkLayout`, a full organic layout engine that replaces the city
+  grid for `fabric:'park'`: a hand-authored node graph (entrance -> hub
+  -> 3 loops + 2 dead-end spurs) rendered as sine-perturbed WINDING
+  paths; a deterministic TREE LATTICE (88px cells, value-noise density
+  with a treeline boost near the map edge) shared verbatim by the
+  painter AND `solidsForChunk` so collision always matches pixels;
+  grand oaks (r 42-62) / oaks / maples / pines / bushes / rocks /
+  stumps / logs; soft-edged grass mottle + flower clusters from the
+  same noise field; 5 organic ponds; lamps/benches/trail signs bucketed
+  along the paths; a swingset+slide+seesaw playground on a sand blob;
+  brick-pillar PARK GATES with an ADVENTURE PARK arch and a clipped
+  HEDGE perimeter; and the deliberately RIGID zoo pocket - gravel
+  grid, central walkway, 2x2 THEMED habitats (savanna/jungle/ice/
+  waterhole) with plush-style painted animals, feed troughs, double-
+  rail fences, bunting, ticket booth, CITY ZOO arch. NEW
+  `src/systems/critters.js`: pooled ambient squirrels/birds/rabbits
+  (PixelLab sprites) that idle, hop, and SCURRY from the player; they
+  spawn INSIDE the viewport away from the player - the first draft
+  spawned them off-screen and nobody ever saw one. region.js: Big Pond
+  got daytime water (#38678a base, dithered band seams, sparkle), lily
+  pad clusters, 10px ducks with V-wakes, and a plank PIER that is the
+  mission dock (quest.spotOf water branch); greenhouse/aviary/ranger
+  got roof painters. THE JUDGE LOOP (3 rounds, per Mark's instruction):
+  an agent re-read Mark's verbatim brief against full renders each
+  round. R1 kills: grass mottle on the 8px lattice read as BRICK
+  (fix: unaligned soft fills); trees smaller than the player read as
+  agave (fix: grand tier + sharper clustering); zoo was an empty tan
+  floor. R2 kill, the important lesson: the zoo pens are ~626x396 EACH,
+  so absolute dressing counts ("3 animals") vanished into flat colour
+  fields - ALL habitat density now SCALES WITH PEN AREA (~14 animals/
+  pen + props; rule: every screen-sized patch shows an animal + a
+  prop). R3 verdict: SHIP. Verified: verify-park / beat4 / linear /
+  freeroam / garage all green, zero page errors. DEBT (judge's queued
+  polish list): amphitheater + carousel are the last two POIs that read
+  as debug geometry at map scale; pine/rosette still the weakest tree
+  shape; hedge lit-lobes could use one notch more contrast vs grass;
+  small-pond ducks only on r>120 ponds.
+
 - **2026-07-30 - v0.25.0: THE TEXT STANDARD (Mark's on-device shot:
   "inspect all text and text boxes for dialogs, they almost always spill
   out and are too small or not formatted well. Create some rules to
