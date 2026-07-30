@@ -63,6 +63,9 @@ PC.Quest = function (scene, region, mission) {
 // "+ h/2 + 80" and quietly landed outside open landmarks entirely.
 PC.Quest.prototype.spotOf = function (mk, pad) {
   if (!mk) return null;
+  // water lots (the Big Pond) are unwalkable - the action happens on the
+  // painted dock at the south shore instead of in the middle of the lake
+  if (mk.water) return { x: mk.cx, y: mk.y + mk.h - 14 };
   return { x: mk.cx, y: mk.open ? mk.cy : mk.cy + mk.h / 2 + (pad || 40) };
 };
 
@@ -163,7 +166,8 @@ PC.Quest.prototype.spawnItems = function (o) {
   this.items = [];
   o.items.forEach(function (it) {
     var mk = self.region.landmark(it.at);
-    var x = mk.cx, y = mk.cy + (mk.open ? 0 : mk.h / 2 + 60);
+    var sp = self.spotOf(mk, 60);        // water lots -> the dock, etc.
+    var x = sp.x, y = sp.y;
     var img = scene.add.image(x, y, 'atlas', 'icon_passive_battery')
       .setScale(0.62).setDepth(6);
     scene.tweens.add({ targets: img, y: y - 5, duration: 700, yoyo: true,

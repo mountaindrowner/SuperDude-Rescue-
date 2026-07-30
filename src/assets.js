@@ -44,6 +44,10 @@ window.PC = window.PC || {};
   ['bloom', 'sal', 'pip', 'chomp', 'anchor'].forEach(function (n) {
     add('portrait_' + n, PC.SIZE.PORTRAIT, PC.SIZE.PORTRAIT, 'portrait', P.CLOUD, P.GRAPE);
   });
+  // park critters (v0.26.0): 2-frame ambient wildlife
+  ['critter_squirrel', 'critter_bird', 'critter_rabbit'].forEach(function (n) {
+    for (var ci = 1; ci <= 2; ci++) add(n + '_' + ci, 32, 32, 'creature', P.CRUST, P.COCOA, ci);
+  });
   // newscast cutscene figures (v0.18.2): crowd from behind + npc minis
   ['cs_civ_a', 'cs_civ_b', 'cs_civ_c', 'cs_bloom', 'cs_sal', 'cs_pip'].forEach(function (n) {
     add(n, 48, 48, 'creature', P.CLOUD, P.GRAPE, 1);
