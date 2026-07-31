@@ -14,11 +14,16 @@ PC.VERSION = 'v' + (window.PC_BUILD || 'dev');
 // the game out a little so I can see more of the map"). 270 -> 340.
 PC.RENDER = {
   W: 480, H: 270,              // set live by main.js from BASE + device aspect
-  BASE: 312,                   // portrait width / landscape height (the zoom)
+  BASE: 400,                   // portrait width / landscape height (the zoom)
   // 270 -> 340 (round 10 "zoom out so I can see more of the map")
   // 340 -> 312 (v0.23.0, Mark: "I would still zoom up again just a
   // little bit") - ~8% closer, which also pulls the on-screen firing
   // boundary in and makes the shaped bolts read at their real size.
+  // 312 -> 400 (v0.27.2, Mark: "still too close to the character...
+  // zoom out the camera or the frame more, maybe another 25-30%").
+  // +28% view. The TEXT STANDARD was calibrated at 312, so ui.js
+  // scales PC.TYPE/SAFE by BASE/312 - UI text keeps its physical
+  // size while the world gets smaller.
   // internal render scale (PHASE2 4-B "4K feel"): the canvas backing store
   // is logical*SCALE with camera zoom SCALE - same framing, denser pixels.
   // v0.13.0 (Mark: "text still looks a little blurry"): SCALE now matches
@@ -57,7 +62,9 @@ PC.CULL_MARGIN = 40;           // off-camera cull margin px (Perf Bible 7)
 PC.DT_CLAMP = 0.05;            // seconds (Perf Bible 6)
 
 // ---- controls & feel (COMPENDIUM 4) ----
-PC.JOY = { DEAD: 8, RADIUS: 62 };
+// logical px; 62 was tuned at BASE 312 - scaled with the zoom so the
+// physical thumb travel stays identical (v0.27.2)
+PC.JOY = { DEAD: 10, RADIUS: 79 };
 PC.SHAKE = { MAX_PX: 3, MS: 120 };
 PC.HURT_FLASH_MS = 80;
 

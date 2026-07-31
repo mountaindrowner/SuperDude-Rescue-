@@ -25,10 +25,12 @@ PC.SPEAKERS = {
 };
 
 // ---- layout constants, all derived from the text standard ----
-var PAD = 9;              // inner padding of the box
-var PORT = 52;            // portrait art size
-var WELL = PORT + 10;     // portrait well (frame around it)
-var GAP = 10;             // gap between the well and the text column
+// scaled by PC.uiK so the box keeps its physical size across zoom
+// changes (v0.27.2 BASE 312 -> 400), same as the type roles
+var PAD = PC.uiK(9);      // inner padding of the box
+var PORT = PC.uiK(52);    // portrait art size
+var WELL = PORT + PC.uiK(10);   // portrait well (frame around it)
+var GAP = PC.uiK(10);     // gap between the well and the text column
 var MIN_LINES = 2;        // never shorter than this, so 1-liners don't jitter
 
 PC.DialogueBox = function (scene) {

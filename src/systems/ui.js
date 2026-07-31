@@ -23,16 +23,22 @@
 window.PC = window.PC || {};
 
 // ---- R1: the type scale (logical px) --------------------------------
+// The role sizes were CALIBRATED at BASE 312 (v0.25.0). When the zoom
+// changes (v0.27.2: BASE 400), logical px shrink on screen - so the
+// whole scale multiplies by UI_K to keep text at its calibrated
+// PHYSICAL size. Roles stay the only lever; never hand-compensate.
+PC.UI_K = (PC.RENDER && PC.RENDER.BASE ? PC.RENDER.BASE : 312) / 312;
+PC.uiK = function (n) { return Math.round(n * PC.UI_K); };
 PC.TYPE = {
-  micro:   { size: 8,  line: 2 },   // version/fps stamps ONLY
-  caption: { size: 9,  line: 3 },   // secondary labels, costs, hints
-  body:    { size: 11, line: 4 },   // sentences: dialogue, descriptions
-  label:   { size: 13, line: 4 },   // buttons, banners, row titles
-  title:   { size: 18, line: 5 },   // screen headers
-  display: { size: 26, line: 6 },   // logo / hero moments
+  micro:   { size: PC.uiK(8),  line: PC.uiK(2) },   // version/fps stamps ONLY
+  caption: { size: PC.uiK(9),  line: PC.uiK(3) },   // secondary labels, costs, hints
+  body:    { size: PC.uiK(11), line: PC.uiK(4) },   // sentences: dialogue, descriptions
+  label:   { size: PC.uiK(13), line: PC.uiK(4) },   // buttons, banners, row titles
+  title:   { size: PC.uiK(18), line: PC.uiK(5) },   // screen headers
+  display: { size: PC.uiK(26), line: PC.uiK(6) },   // logo / hero moments
 };
-PC.SAFE = 10;          // keep-clear margin from any screen edge
-PC.SAFE_BOTTOM = 16;   // extra room at the bottom (home indicator)
+PC.SAFE = PC.uiK(10);          // keep-clear margin from any screen edge
+PC.SAFE_BOTTOM = PC.uiK(16);   // extra room at the bottom (home indicator)
 
 PC.ui = {
   // build a Phaser text style for a role
