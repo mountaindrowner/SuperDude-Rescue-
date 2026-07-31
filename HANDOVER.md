@@ -52,7 +52,16 @@
   dx/dy spread + icon override; Pip's line rides pickup 1) -> defend
   ballfield 60s -> LAYER CAKE COLOSSUS (hp 4200, rear/lunge anims) ->
   rescue KEVIN. quest.ringKinds is table-driven now (suburb ring bug:
-  d1 street food spawned on the cul-de-sac clear). Park detail layer
+  d1 street food spawned on the cul-de-sac clear).
+  **v0.27.1 CORRECTION (Mark):** the "PixelLab balance $0" claim above
+  was THE DOCUMENTED MISTAKE (PIXELLAB.md billing note, now promoted
+  to the top of that file): /v1/balance always reads $0 - the real
+  meter is /v2/balance (subscription generations; ~1092 remain). REAL
+  PixelLab art for the whole d3 roster + LAYER CAKE COLOSSUS (walk x4
+  + rear/lunge) generated via the proven pl-batch-d2 recipe (22 gens,
+  pl-batch-d3.py) and manifest-registered - the handart_d3.js painters
+  are now the offline fallback layer they were designed to be.
+  Park detail layer
   same session: real CAROUSEL painter (the round-water branch was
   painting lily pads + ducks ON the carousel), terraced AMPHITHEATER
   with stage, softened pine, hedge contrast. JUDGE LOOP (2 rounds):
