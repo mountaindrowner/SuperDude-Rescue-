@@ -23,6 +23,7 @@ PC.Quest = function (scene, region, mission) {
   this.ringKinds = ({
     park:   ['apple', 'apple', 'peeler', 'tomato'],
     suburb: ['donut', 'donut', 'chipbit', 'cupcake'],
+    junk:   ['zipper', 'zipper', 'sodacan', 'chipbag'],
   })[region.def.spawnSet] || ['fry', 'fry', 'popcorn', 'hotdog'];
 
   // dialogue box pinned to the camera (world-space ui container)
@@ -103,11 +104,85 @@ PC.Quest.prototype.playScript = function (beats, onDone) {
       self.box.show(b.say, step);
     } else if (b.action === 'chant') {
       self.chant(step);
+    } else if (b.action === 'reveal') {
+      self.towerReveal(step);
     } else {
       step();
     }
   }
   step();
+};
+
+// THE REVEAL (mission 6): the world dims, a cyan signal arc traces up
+// the screen to a distant Adventure Tower silhouette, holds, releases.
+// Carlos's dialogue frames it; this is the pure visual beat.
+PC.Quest.prototype.towerReveal = function (done) {
+  var scene = this.scene;
+  var W = PC.RENDER.W, H = PC.RENDER.H;
+  var ui = [];
+  var dim = scene.add.rectangle(W / 2, H / 2, W, H, 0x0b0818, 0)
+    .setDepth(290);
+  ui.push(dim);
+  scene.uiAttach(dim);
+  // the tower silhouette rises at the top of the frame
+  var g = scene.add.graphics().setDepth(291).setAlpha(0);
+  var tx = W / 2, ty = H * 0.16;
+  g.fillStyle(0x1b1530, 1);
+  g.fillRect(tx - 26, ty - 40, 52, 90);                 // shaft
+  g.fillRect(tx - 38, ty + 30, 76, 20);                 // base flare
+  g.fillRect(tx - 14, ty - 62, 28, 26);                 // crown
+  g.fillStyle(0x45356e, 1);
+  g.fillRect(tx - 22, ty - 36, 6, 82); g.fillRect(tx + 16, ty - 36, 6, 82);
+  g.fillStyle(0xb45ce8, 1);                             // the Ray's glow
+  g.fillCircle(tx, ty - 66, 9);
+  g.fillStyle(0xff9ecb, 1);
+  g.fillCircle(tx, ty - 66, 4);
+  for (var i = 0; i < 4; i++) {                         // lit windows
+    g.fillStyle(0x35d0ff, 0.8);
+    g.fillRect(tx - 8, ty - 26 + i * 20, 5, 8); g.fillRect(tx + 4, ty - 26 + i * 20, 5, 8);
+  }
+  ui.push(g); scene.uiAttach(g);
+  // the signal arc, drawn point by point from the bottom to the crown
+  var arc = scene.add.graphics().setDepth(292);
+  ui.push(arc); scene.uiAttach(arc);
+  var t = { v: 0 };
+  scene.tweens.add({ targets: dim, fillAlpha: 0.55, duration: 500 });
+  scene.tweens.add({ targets: g, alpha: 1, duration: 700, delay: 300 });
+  scene.tweens.add({
+    targets: t, v: 1, duration: 1600, delay: 700, ease: 'Sine.inOut',
+    onUpdate: function () {
+      arc.clear();
+      var x0 = W / 2 - 10, y0 = H * 0.86;
+      var steps = Math.floor(26 * t.v);
+      arc.lineStyle(3, 0x35d0ff, 0.9);
+      arc.beginPath();
+      for (var s = 0; s <= steps; s++) {
+        var tt = s / 26;
+        var xx = x0 + (tx - x0) * tt + Math.sin(tt * Math.PI) * 60;
+        var yy = y0 + ((ty - 66) - y0) * tt;
+        if (s === 0) arc.moveTo(xx, yy); else arc.lineTo(xx, yy);
+      }
+      arc.strokePath();
+      if (steps > 0) {
+        var ht = steps / 26;
+        arc.fillStyle(0xf7f4ef, 1);
+        arc.fillCircle(x0 + (tx - x0) * ht + Math.sin(ht * Math.PI) * 60,
+                       y0 + ((ty - 66) - y0) * ht, 4);
+      }
+    },
+    onComplete: function () {
+      // pulse on arrival, hold a beat, then release
+      if (PC.audio && PC.audio.fanfare) PC.audio.fanfare();
+      scene.cameras.main.flash(300, 180, 92, 232);
+      scene.time.delayedCall(1400, function () {
+        ui.forEach(function (o) {
+          scene.tweens.add({ targets: o, alpha: 0, duration: 500,
+            onComplete: function () { o.destroy(); } });
+        });
+        scene.time.delayedCall(550, done);
+      });
+    },
+  });
 };
 
 // THE CHANT (call-and-response, fires at every rescue)

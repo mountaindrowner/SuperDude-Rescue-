@@ -584,13 +584,30 @@ window.PC = window.PC || {};
         r * 0.26, 0, Math.PI * 2);
       g.fill();
     }
+    // deep under-lobe shadows on the SE (one value step wasn't
+    // surviving the render - park judge round 3)
+    g.fillStyle = 'rgba(10,16,10,0.22)';
+    for (i = 0; i < 3; i++) {
+      a = 0.5 + i * 0.7;
+      g.beginPath();
+      g.ellipse(x + Math.cos(a) * r * 0.42, y + Math.sin(a) * r * 0.4,
+        r * 0.22, r * 0.09, a, 0, Math.PI * 2);
+      g.fill();
+    }
     g.fillStyle = hi;
     g.beginPath(); g.arc(x - r * 0.3, y - r * 0.32, r * 0.14, 0, Math.PI * 2); g.fill();
-    // leaf speckle
-    for (i = 0; i < 8; i++) {
+    g.beginPath(); g.arc(x - r * 0.12, y - r * 0.44, r * 0.09, 0, Math.PI * 2); g.fill();
+    // leaf speckle scaled to canopy area + single-pixel glints
+    var nSp = Math.max(8, Math.round(r * r / 140));
+    for (i = 0; i < nSp; i++) {
       g.fillStyle = i % 2 ? dark : lite;
       g.fillRect(x + (h2(seed, i, 62) - 0.5) * r * 1.4,
                  y + (h2(seed, i, 63) - 0.5) * r * 1.4, 2, 2);
+    }
+    g.fillStyle = 'rgba(255,246,224,0.5)';
+    for (i = 0; i < Math.max(2, Math.round(r / 14)); i++) {
+      g.fillRect(x - r * 0.4 + h2(seed, i, 64) * r * 0.6,
+                 y - r * 0.5 + h2(seed, i, 66) * r * 0.5, 1, 1);
     }
   };
 

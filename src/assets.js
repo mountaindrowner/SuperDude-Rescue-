@@ -117,7 +117,9 @@ window.PC = window.PC || {};
   [['boss_d2_broc_rear', 128, P.MINT, P.LIME],
    ['boss_d2_broc_lunge', 128, P.MINT, P.LIME],
    ['boss_d3_cake_rear', 128, P.PINK, P.CHEESE],
-   ['boss_d3_cake_lunge', 128, P.PINK, P.CHEESE]].forEach(function (b) {
+   ['boss_d3_cake_lunge', 128, P.PINK, P.CHEESE],
+   ['boss_d4_vending_rear', 144, P.STEEL, P.KETCHUP],
+   ['boss_d4_vending_lunge', 144, P.STEEL, P.KETCHUP]].forEach(function (b) {
     for (var i = 1; i <= 2; i++) add(b[0] + '_' + i, b[1], b[1], 'creature', b[2], b[3], i);
   });
 

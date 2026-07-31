@@ -44,6 +44,12 @@ PC.Critters.prototype._trySpawn = function () {
   if (scene.region) {
     var S = scene.region.size;
     if (x < 80 || y < 80 || x > S - 80 || y > S - 80) return;
+    // never inside the zoo enclosures - a park squirrel standing in
+    // the penguin pen breaks the diorama (park judge)
+    var pens = scene.region.layout && scene.region.layout.marks &&
+               scene.region.layout.marks.pens;
+    if (pens && x > pens.x - 20 && x < pens.x + pens.w + 20 &&
+        y > pens.y - 20 && y < pens.y + pens.h + 20) return;
   }
   var rp = PC.resolveCircle(x, y, 8);
   c.active = true; c.x = rp.x; c.y = rp.y;
