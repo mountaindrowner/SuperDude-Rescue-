@@ -32,8 +32,8 @@ PC.Quest = function (scene, region, mission) {
 
   // objective banner (top, under the HUD)
   this.bannerGfx = scene.add.graphics().setDepth(101);
-  this.bannerTxt = scene.add.text(W / 2, 30, '', {
-    fontFamily: 'monospace', fontSize: '9px', color: '#f7f4ef', fontStyle: 'bold',
+  this.bannerTxt = scene.add.text(W / 2, PC.uiK(30), '', {
+    fontFamily: 'monospace', fontSize: PC.uiK(9) + 'px', color: '#f7f4ef', fontStyle: 'bold',
   }).setOrigin(0.5, 0).setDepth(102);
   scene.uiAttach(this.bannerGfx);
   scene.uiAttach(this.bannerTxt);

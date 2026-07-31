@@ -130,35 +130,38 @@ PC.GameScene.prototype.create = function () {
   this.ground.update(cam);
 
   // ---- HUD (screen-space) ----
+  // font sizes + row offsets ride PC.uiK so the HUD keeps its physical
+  // size across zoom changes (v0.27.2 BASE 312 -> 400)
+  var K = PC.uiK;
   this.hud = this.add.graphics().setDepth(100);
-  this.timerText = this.add.text(PC.RENDER.W / 2, 4, '0:00', {
-    fontFamily: 'monospace', fontSize: '12px', color: '#f7f4ef',
+  this.timerText = this.add.text(PC.RENDER.W / 2, K(4), '0:00', {
+    fontFamily: 'monospace', fontSize: K(12) + 'px', color: '#f7f4ef',
   }).setOrigin(0.5, 0).setDepth(101);
-  this.killText = this.add.text(PC.RENDER.W - 4, 4, 'POPS 0', {
-    fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c',
+  this.killText = this.add.text(PC.RENDER.W - 4, K(4), 'POPS 0', {
+    fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f2c33c',
   }).setOrigin(1, 0).setDepth(101);
-  this.levelText = this.add.text(4, 16, 'LV 1', {
-    fontFamily: 'monospace', fontSize: '9px', color: '#a8e04a',
+  this.levelText = this.add.text(4, K(16), 'LV 1', {
+    fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#a8e04a',
   }).setDepth(101);
-  this.goldText = this.add.text(4, 27, '', {
-    fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c',
+  this.goldText = this.add.text(4, K(27), '', {
+    fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f2c33c',
   }).setDepth(101);
-  this.debugText = this.add.text(PC.SAFE, PC.RENDER.H - PC.SAFE_BOTTOM - 10, '', {
-    fontFamily: 'monospace', fontSize: '8px', color: '#a8e04a',
+  this.debugText = this.add.text(PC.SAFE, PC.RENDER.H - PC.SAFE_BOTTOM - K(10), '', {
+    fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#a8e04a',
   }).setDepth(101).setVisible(!!PC.DEV_MODE);
   // R5: the build stamp lives TOP-right in game. It used to sit bottom-
   // right, which is exactly where the dialogue box and its ▼ land - so a
   // conversation always had the version number printed inside it.
   this.verText = this.add.text(PC.RENDER.W - PC.SAFE,
-    PC.DEV_MODE ? 30 : 18, PC.VERSION, {
-    fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
+    PC.DEV_MODE ? K(30) : K(18), PC.VERSION, {
+    fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101);
   this._dbgAcc = 0;
   this.drawHud();
 
   // dev swarm button (works on touch - Mark can't press T on a phone)
-  this.swarmBtn = this.add.text(PC.RENDER.W - 4, 18, '[SWARM]', {
-    fontFamily: 'monospace', fontSize: '9px', color: '#6d6a8e',
+  this.swarmBtn = this.add.text(PC.RENDER.W - 4, K(18), '[SWARM]', {
+    fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101)
     .setInteractive({ useHandCursor: true });
   this.swarmBtn.on('pointerdown', function (p, lx, ly, ev) {
@@ -236,23 +239,23 @@ PC.GameScene.prototype.onKill = function (e) {
 };
 
 PC.GameScene.prototype.drawHud = function () {
-  var g = this.hud;
+  var g = this.hud, K = PC.uiK;
   g.clear();
   // HP bar (Cherry) top-left
-  var hpw = 70;
-  g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 3, hpw + 2, 8);
+  var hpw = K(70);
+  g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 3, hpw + 2, K(8));
   g.fillStyle(PC.PAL.CHERRY, 1).fillRect(4, 4,
-    Math.max(0, hpw * this.hp / (PC.PLAYER.HP + (this.stats.bonusHp || 0))), 6);
+    Math.max(0, hpw * this.hp / (PC.PLAYER.HP + (this.stats.bonusHp || 0))), K(8) - 2);
   // XP bar (Lime) under it
-  g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 12, hpw + 2, 4);
-  g.fillStyle(PC.PAL.LIME, 1).fillRect(4, 13, Math.max(0, hpw * Math.min(1, this.xp / this.xpNext)), 2);
+  g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, K(12), hpw + 2, K(4));
+  g.fillStyle(PC.PAL.LIME, 1).fillRect(4, K(12) + 1, Math.max(0, hpw * Math.min(1, this.xp / this.xpNext)), K(4) - 2);
   if (this.goldText && this.pickups) this.goldText.setText('$ ' + this.pickups.gold);
 };
 
 // small rising label (heals, pickups)
 PC.GameScene.prototype.floatText = function (str, color) {
   var t = this.add.text(this.player.x, this.player.y - 30, str, {
-    fontFamily: 'monospace', fontSize: '10px',
+    fontFamily: 'monospace', fontSize: PC.uiK(10) + 'px',
     color: '#' + ('00000' + (color || 0xffffff).toString(16)).slice(-6), fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(102);
   this.tweens.add({ targets: t, y: t.y - 16, alpha: 0, duration: 700,
@@ -268,12 +271,12 @@ PC.GameScene.prototype.showCards = function () {
   var scrim = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0818, 0.72)
     .setDepth(200);
   ui.push(scrim);
-  ui.push(this.add.text(W / 2, H / 2 - 96, 'LEVEL UP! PICK ONE', {
-    fontFamily: 'monospace', fontSize: '13px', color: '#a8e04a', fontStyle: 'bold',
+  ui.push(this.add.text(W / 2, H / 2 - PC.uiK(96), 'LEVEL UP! PICK ONE', {
+    fontFamily: 'monospace', fontSize: PC.uiK(13) + 'px', color: '#a8e04a', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(201));
   var cards = PC.drawCards(this);
   this._shownCards = cards;   // testability hook (balance bots)
-  var cw = 78, ch = 120, gap = 8;
+  var cw = PC.uiK(78), ch = PC.uiK(120), gap = 8;
   var x0 = W / 2 - (cards.length * (cw + gap) - gap) / 2 + cw / 2;
   cards.forEach(function (card, i) {
     var cx = x0 + i * (cw + gap), cy = H / 2;
@@ -286,17 +289,17 @@ PC.GameScene.prototype.showCards = function () {
       self.tweens.add({ targets: panel, scaleX: 1.04, scaleY: 1.04,
         duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
-    var icon = self.add.image(cx, cy - 32, 'atlas', card.icon)
+    var icon = self.add.image(cx, cy - PC.uiK(32), 'atlas', card.icon)
       .setScale(0.8).setDepth(202);
-    var title = self.add.text(cx, cy + 2, card.title, {
-      fontFamily: 'monospace', fontSize: '11px', color: '#f7f4ef', fontStyle: 'bold',
+    var title = self.add.text(cx, cy + PC.uiK(2), card.title, {
+      fontFamily: 'monospace', fontSize: PC.uiK(11) + 'px', color: '#f7f4ef', fontStyle: 'bold',
       align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 3,
     }).setOrigin(0.5).setDepth(202);
-    var sub = self.add.text(cx, cy + 22, card.sub, {
-      fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c', fontStyle: 'bold',
+    var sub = self.add.text(cx, cy + PC.uiK(22), card.sub, {
+      fontFamily: 'monospace', fontSize: PC.uiK(9) + 'px', color: '#f2c33c', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(202);
-    var desc = self.add.text(cx, cy + 42, card.desc, {
-      fontFamily: 'monospace', fontSize: '9px', color: '#cfd4e8',
+    var desc = self.add.text(cx, cy + PC.uiK(42), card.desc, {
+      fontFamily: 'monospace', fontSize: PC.uiK(9) + 'px', color: '#cfd4e8',
       align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 3,
     }).setOrigin(0.5).setDepth(202);
     ui.push(panel, icon, title, sub, desc);
@@ -576,7 +579,7 @@ PC.GameScene.prototype.spawnBoss = function () {
 PC.GameScene.prototype.bossBanner = function (name) {
   var W = PC.RENDER.W, H = PC.RENDER.H;
   var banner = this.add.text(W / 2, H * 0.32, (name || 'BIG FRANK') + '\nAPPEARS!', {
-    fontFamily: 'monospace', fontSize: '20px', color: '#ff6b6b', fontStyle: 'bold',
+    fontFamily: 'monospace', fontSize: PC.uiK(20) + 'px', color: '#ff6b6b', fontStyle: 'bold',
     align: 'center', stroke: '#1b1530', strokeThickness: 3,
   }).setOrigin(0.5).setDepth(151).setScale(0.5);
   this.uiAttach(banner);
@@ -638,7 +641,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
   var self = this, W = PC.RENDER.W, H = PC.RENDER.H;
   // DISTRICT CLEARED banner
   var t1 = this.add.text(W / 2, H * 0.3, 'DISTRICT CLEARED!', {
-    fontFamily: 'monospace', fontSize: '20px', color: '#a8e04a', fontStyle: 'bold',
+    fontFamily: 'monospace', fontSize: PC.uiK(20) + 'px', color: '#a8e04a', fontStyle: 'bold',
     stroke: '#1b1530', strokeThickness: 3,
   }).setOrigin(0.5).setDepth(151).setScale(0.4);
   this.uiAttach(t1);
@@ -662,7 +665,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
     // sparkle ring of coins/gems joy
     for (var i = 0; i < 10; i++) self.fx.burst(bx + (Math.random() - 0.5) * 40, by - 8 + (Math.random() - 0.5) * 30, 'fx_spark', 3, 0.4);
     var t2 = self.add.text(W / 2, H * 0.4, 'TEAMMATE RESCUED!', {
-      fontFamily: 'monospace', fontSize: '15px', color: '#f2c33c', fontStyle: 'bold',
+      fontFamily: 'monospace', fontSize: PC.uiK(15) + 'px', color: '#f2c33c', fontStyle: 'bold',
       stroke: '#1b1530', strokeThickness: 3,
     }).setOrigin(0.5).setDepth(151);
     self.uiAttach(t2);
