@@ -16,7 +16,7 @@
      PC.VERSION) and cache-busts every script + art URL, so a device can
      never mix files from two builds (the v0.11.3 "purple squares" bug
      was exactly that: new weapon code + a stale cached asset registry). -->
-<script>window.PC_BUILD = '0.26.0';</script>
+<script>window.PC_BUILD = '0.27.0';</script>
 <script>
 (function () {
   var files = [
@@ -24,11 +24,13 @@
     'assets/art/manifest.js',
     'src/config.js',
     'src/handart.js',
+    'src/handart_d3.js',
     'src/assets.js',
     'src/systems/input.js',
     'src/systems/ui.js',
     'src/systems/world.js',
     'src/systems/world_park.js',
+    'src/systems/world_suburb.js',
     'src/systems/critters.js',
     'src/systems/ground.js',
     'src/systems/spatialhash.js',
@@ -52,10 +54,12 @@
     'src/data/story/chain.js',
     'src/data/story/map1.js',
     'src/data/story/map2.js',
+    'src/data/story/map3.js',
     'src/data/story/mission1.js',
     'src/data/story/mission2.js',
     'src/data/story/mission3.js',
     'src/data/story/mission4.js',
+    'src/data/story/mission5.js',
     'src/story/state.js',
     'src/story/dialogue.js',
     'src/story/cutscene.js',

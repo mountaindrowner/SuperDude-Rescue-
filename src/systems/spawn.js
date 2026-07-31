@@ -18,6 +18,13 @@ PC.ENEMY_DEFS = {
   tomato:  { key: 'enemy_d2_tomato',  spd: 72,  hp: 30, dmg: 9,  xp: 2, size: 32, still: 'still_d2_tomato',  kbMult: 0.8 },
   banana:  { key: 'enemy_d2_banana',  spd: 62,  hp: 26, dmg: 8,  xp: 2, size: 40, still: 'still_d2_banana',  kbMult: 0.8 },
   melon:   { key: 'enemy_d2_melon',   spd: 44,  hp: 95, dmg: 13, xp: 3, size: 48, still: 'still_d2_melon',   kbMult: 0.35 },
+  // d3 rogue desserts (MAP 3 - Sweet Suburbs). Same tier shape, stats a
+  // shade hotter than the park - this is stage 5.
+  donut:   { key: 'enemy_d3_donut',    spd: 92,  hp: 12,  dmg: 6,  xp: 1, size: 24, still: 'still_d3_donut',    kbMult: 1 },
+  chipbit: { key: 'enemy_d3_chip_bit', spd: 112, hp: 8,   dmg: 5,  xp: 1, size: 16, still: 'still_d3_chip_bit', kbMult: 1 },
+  cupcake: { key: 'enemy_d3_cupcake',  spd: 74,  hp: 34,  dmg: 9,  xp: 2, size: 32, still: 'still_d3_cupcake',  kbMult: 0.8 },
+  frosting:{ key: 'enemy_d3_sludge',   spd: 56,  hp: 40,  dmg: 10, xp: 2, size: 48, still: 'still_d3_sludge',   kbMult: 0.6 },
+  golemite:{ key: 'enemy_d3_golemite', spd: 46,  hp: 100, dmg: 14, xp: 3, size: 48, still: 'still_d3_golemite', kbMult: 0.35 },
 };
 
 // ---- phases: [tStart, tEnd, intervalStart, intervalEnd, roster, perTick, liveCap] ----
@@ -44,6 +51,14 @@ PC.SPAWN_SETS = {
     [150, 210, 0.65, 0.45,[['apple', 4], ['peeler', 2], ['tomato', 3], ['banana', 2]], 2, 190],
     [210, 300, 0.45, 0.28,[['apple', 3], ['peeler', 2], ['tomato', 3], ['banana', 2], ['melon', 2]], 3, 260],
     [300, 1e9, 0.26, 0.20,[['apple', 3], ['peeler', 2], ['tomato', 3], ['banana', 3], ['melon', 3]], 3, 300],
+  ],
+  suburb: [
+    [0,   45,  1.6, 1.2,  [['donut', 1]], 1, 45],
+    [45,  100, 1.2, 0.9,  [['donut', 7], ['chipbit', 3]], 1, 85],
+    [100, 150, 0.9, 0.65, [['donut', 5], ['chipbit', 2], ['cupcake', 3]], 2, 130],
+    [150, 210, 0.65, 0.45,[['donut', 4], ['chipbit', 2], ['cupcake', 3], ['frosting', 2]], 2, 190],
+    [210, 300, 0.45, 0.28,[['donut', 3], ['chipbit', 2], ['cupcake', 3], ['frosting', 2], ['golemite', 2]], 3, 260],
+    [300, 1e9, 0.26, 0.20,[['donut', 3], ['chipbit', 2], ['cupcake', 3], ['frosting', 3], ['golemite', 3]], 3, 300],
   ],
 };
 

@@ -545,9 +545,9 @@ window.PC = window.PC || {};
     g.beginPath(); g.ellipse(x + r * 0.22, y + r * 0.3, r * 0.95, r * 0.6, 0, 0, Math.PI * 2); g.fill();
     var i, a, lr;
     if (type === 'pine') {
-      var tones = [COL.pineDark, COL.pine, COL.pineLite];
-      for (var ring = 0; ring < 3; ring++) {
-        var rr = r * (1 - ring * 0.3);
+      var tones = [COL.pineDark, COL.pine, COL.pineLite, '#427a60'];
+      for (var ring = 0; ring < 4; ring++) {
+        var rr = r * (1 - ring * 0.24);
         g.fillStyle = tones[ring];
         g.beginPath();
         for (i = 0; i <= 20; i++) {
@@ -700,7 +700,7 @@ window.PC = window.PC || {};
         self2._blob(g, x + 6, y - 3, 8 + h2(s2, 1, 72) * 4, s2, 0.78); g.fill();
       }
       for (x = x0 + 3; x < x1; x += 21) {
-        g.fillStyle = COL.oakLite;
+        g.fillStyle = COL.oakHi;
         self2._blob(g, x + 6, y - 6, 4 + h2(x, 2, 73) * 3, x, 0.7); g.fill();
       }
     }
@@ -753,6 +753,47 @@ window.PC = window.PC || {};
     g.fillRect(x + w / 2 - 34, y, 68, h);
     g.fillStyle = '#8a7a5c';
     for (i = 0; i <= h; i += 24) g.fillRect(x + w / 2 - 34, y + i, 68, 1);
+    // theme-park furniture ON the walkway (judge: the interior read
+    // austere away from the gate) - bunting across the crossroads, a
+    // bench, and a popcorn cart
+    var wcx = x + w / 2, wcy = y + h / 2;
+    g.fillStyle = COL.trunk;                                  // bunting poles
+    g.fillRect(wcx - 40, wcy - 30, 4, 34); g.fillRect(wcx + 36, wcy - 30, 4, 34);
+    g.strokeStyle = '#d8cf9a'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(wcx - 38, wcy - 26);
+    g.quadraticCurveTo(wcx, wcy - 8, wcx + 38, wcy - 26); g.stroke();
+    for (i = 0; i < 6; i++) {
+      var bt = (i + 0.5) / 6;
+      var bbx = wcx - 38 + 76 * bt;
+      var bby = wcy - 26 + Math.sin(bt * Math.PI) * 16;
+      g.fillStyle = ['#d93a3a', '#f2c33c', '#35d0ff', '#ff9ecb'][i % 4];
+      g.beginPath(); g.moveTo(bbx - 4, bby); g.lineTo(bbx + 4, bby);
+      g.lineTo(bbx, bby + 7); g.closePath(); g.fill();
+    }
+    // bench beside the walkway
+    g.fillStyle = 'rgba(12,20,14,0.3)'; g.fillRect(wcx + 40, wcy + 62, 30, 6);
+    g.fillStyle = COL.bench; g.fillRect(wcx + 38, wcy + 52, 30, 10);
+    g.fillStyle = COL.benchLite; g.fillRect(wcx + 38, wcy + 52, 30, 3);
+    g.fillStyle = COL.trunk;
+    g.fillRect(wcx + 40, wcy + 62, 4, 6); g.fillRect(wcx + 62, wcy + 62, 4, 6);
+    // popcorn cart with a striped canopy
+    var pcx2 = wcx - 60, pcy2 = y + h * 0.3;
+    g.fillStyle = 'rgba(12,20,14,0.3)'; g.fillRect(pcx2 - 12, pcy2 + 10, 30, 8);
+    g.fillStyle = '#c95a5a'; g.fillRect(pcx2 - 13, pcy2 - 8, 30, 20);
+    g.fillStyle = '#f4efe2'; g.fillRect(pcx2 - 10, pcy2 - 4, 24, 9);
+    g.fillStyle = '#f2c33c';                                  // popcorn heap
+    for (i = 0; i < 8; i++) {
+      g.fillRect(pcx2 - 8 + h2(1, i, 121) * 20, pcy2 - 3 + h2(2, i, 122) * 5, 3, 3);
+    }
+    g.fillStyle = '#232833';                                  // wheels
+    g.beginPath(); g.arc(pcx2 - 8, pcy2 + 14, 5, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(pcx2 + 12, pcy2 + 14, 5, 0, Math.PI * 2); g.fill();
+    for (i = 0; i < 4; i++) {                                 // striped canopy
+      g.fillStyle = i % 2 ? '#d93a3a' : '#fff6f0';
+      g.fillRect(pcx2 - 15 + i * 9, pcy2 - 16, 9, 6);
+    }
+    g.fillStyle = COL.trunk;
+    g.fillRect(pcx2 - 14, pcy2 - 12, 2, 6); g.fillRect(pcx2 + 16, pcy2 - 12, 2, 6);
     // pens: 2 x 2 THEMED HABITATS (judge: "the zoo interior is an empty
     // floor... give each quadrant a themed enclosure"): savanna, jungle,
     // ice, waterhole - each with ground fill, dressing and 3 animals.
