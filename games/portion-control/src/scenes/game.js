@@ -100,7 +100,10 @@ PC.GameScene.prototype.create = function () {
   this.quest = null;
   this.freeRoam = null;              // STORY-5: the between-missions seam
   this.doors = this.region ? new PC.Doors(this) : null;   // walk-in stores
-  this.critters = (this.region && this.region.layout && PC.Critters)
+  // ambient wildlife belongs to the green maps only - a squirrel in the
+  // junk-flooded Labs breaks the fiction (v0.28.0)
+  this.critters = (this.region && this.region.layout && PC.Critters &&
+    (this.region.def.fabric === 'park' || this.region.def.fabric === 'suburb'))
     ? new PC.Critters(this) : null;    // ambient park wildlife
   if (this.region && PC.STORY.missions && this.storyMission &&
       PC.STORY.missions[this.storyMission.id]) {

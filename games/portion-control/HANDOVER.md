@@ -12,6 +12,51 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-31 - v0.28.0: SUPER DUDE LABS (Map 4 / beat 6) + THE
+  REVEAL.** The fourth fabric: INDUSTRY (`src/systems/world_labs.js`
+  PC.LabsLayout) - strict Manhattan service roads (hazard-stripe
+  edges, glowing cyan lab seams, dashed junctions), warehouse/server-
+  shed filler walked along the roads, chain-link YARDS (tank farms /
+  crate stacks / cable spools, gate gaps), OVERHEAD PIPE RUNS that
+  cross roads on stanchions (SE-displaced shadow sells the height),
+  conveyor belts, floodlights/valves/forklifts, oil stains + grates -
+  and the mutated-JUNK story layer (purple goo, glinting junk piles,
+  sparking wires, can heaps) heaviest around Central Control, whose
+  roof is cracked open and erupting. Landmarks: Front Gate (booth,
+  barrier arms, SUPER DUDE LABS sign), Reactor Yard (dome NORTH of
+  the yard so the defend ring is walkable - a solid dome centered on
+  the quest spot made B3 unwinnable, caught by verify-labs), vault
+  (bolted plating + giant hatch wheel), roofless Assembly Hall
+  corridor, twin Cooling Towers, Antenna Array (glow ring + dishes +
+  lattice mast), Central Control, Loading Docks. Mission 6 "SIGNAL
+  LOST" (`mission6.js`, spec cast lines VERBATIM + new connective
+  lines in VOICE_SCRIPT.md): clear gate -> 3 blueprint pages at the
+  vault -> stabilize reactor 70s -> VENDING BEHEMOTH (hp 5000,
+  rear/lunge) -> rescue CARLOS at the Antenna Array, where
+  {action:'reveal'} plays THE REVEAL (quest.towerReveal: world dims,
+  Adventure Tower silhouette rises, a cyan signal arc traces up to
+  the Ray's glow, flash, release) before the chant. d4 roster is
+  REAL PixelLab art from day one (pl-batch-d4.py, 22 gens: zipper/
+  chipbag/soda/burger/microwave + boss walk x4 + poses; ~1068 gens
+  remain). Critters gated to park/suburb fabrics (a squirrel wandered
+  into the labs). Spawn set 'junk' + ringKinds row. verify-labs.js
+  B1-B5 ALL GREEN incl. the reveal; full battery green.
+  JUDGE LOOP (3 rounds): R1 kills - hall floor painted OVER its own
+  belts (set-piece FLOORS now paint before belts), vault a flat mauve
+  field (panel grid + giant south vault door), antenna a 2px mast
+  (real lattice tower + kiosk at ring center), pipes read flat
+  (stanchion LEGS + displaced shadow). R2 lesson - the fx contact-
+  sheet tool screenshots THROUGH the game canvas and silently broke
+  when BASE grew to 400; sheets are now composed from the PNGs with
+  PIL (canvas sized from content, clipping impossible). R3 - boss
+  frames from separate generations DRIFT (brown trim on rear_2/
+  lunge_1, green moss on lunge_2); a shared-palette quantize can't
+  fix mis-colored source REGIONS - the 3 bad frames were REGENERATED
+  off clean pair-mates with explicit color anchoring + negative_
+  description, then all 8 remapped to walk_1's 14-color palette
+  (audit by the judge's own metric: drift px 3276-5220 -> 45-900 =
+  legit snack-window content). Labs SHIP; park re-confirmed SHIP.
+
 - **2026-07-31 - v0.27.0: SWEET SUBURBS (Map 3 / beat 5) + park detail
   layer (Mark: "add that layer of detailing, and let's build the next
   map... think about it logically, what the design philosophy should

@@ -22,6 +22,10 @@ PC.BOSSES = {
                 contact: 24, name: 'LAYER CAKE COLOSSUS',
                 anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
                          charge:    { set: 'lunge', frames: 2, fps: 10 } } },
+  vendingBehemoth: { key: 'boss_d4_vending', size: 144, hp: 5000, spd: 78,
+                contact: 26, name: 'VENDING BEHEMOTH',
+                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
+                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
 };
 
 PC.Boss = function (scene, x, y, id) {

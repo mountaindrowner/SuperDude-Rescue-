@@ -25,6 +25,14 @@ PC.ENEMY_DEFS = {
   cupcake: { key: 'enemy_d3_cupcake',  spd: 74,  hp: 34,  dmg: 9,  xp: 2, size: 32, still: 'still_d3_cupcake',  kbMult: 0.8 },
   frosting:{ key: 'enemy_d3_sludge',   spd: 56,  hp: 40,  dmg: 10, xp: 2, size: 48, still: 'still_d3_sludge',   kbMult: 0.6 },
   golemite:{ key: 'enemy_d3_golemite', spd: 46,  hp: 100, dmg: 14, xp: 3, size: 48, still: 'still_d3_golemite', kbMult: 0.35 },
+  // d4 mutated junk food (MAP 4 - Super Dude Labs). Stage 6: the
+  // hottest tier yet. (COMPENDIUM behaviors - zipper jitter, soda
+  // spit, chipbag split - are future engine work; stats carry it.)
+  zipper:  { key: 'enemy_d4_zipper',    spd: 108, hp: 14,  dmg: 7,  xp: 1, size: 24, still: 'still_d4_zipper',    kbMult: 1 },
+  chipbag: { key: 'enemy_d4_chipbag',   spd: 60,  hp: 44,  dmg: 11, xp: 2, size: 32, still: 'still_d4_chipbag',   kbMult: 0.7 },
+  sodacan: { key: 'enemy_d4_soda',      spd: 52,  hp: 36,  dmg: 9,  xp: 2, size: 32, still: 'still_d4_soda',      kbMult: 0.8 },
+  burger:  { key: 'enemy_d4_burger',    spd: 42,  hp: 120, dmg: 15, xp: 3, size: 48, still: 'still_d4_burger',    kbMult: 0.3 },
+  menace:  { key: 'enemy_d4_microwave', spd: 34,  hp: 70,  dmg: 11, xp: 3, size: 40, still: 'still_d4_microwave', kbMult: 0.5 },
 };
 
 // ---- phases: [tStart, tEnd, intervalStart, intervalEnd, roster, perTick, liveCap] ----
@@ -59,6 +67,14 @@ PC.SPAWN_SETS = {
     [150, 210, 0.65, 0.45,[['donut', 4], ['chipbit', 2], ['cupcake', 3], ['frosting', 2]], 2, 190],
     [210, 300, 0.45, 0.28,[['donut', 3], ['chipbit', 2], ['cupcake', 3], ['frosting', 2], ['golemite', 2]], 3, 260],
     [300, 1e9, 0.26, 0.20,[['donut', 3], ['chipbit', 2], ['cupcake', 3], ['frosting', 3], ['golemite', 3]], 3, 300],
+  ],
+  junk: [
+    [0,   45,  1.5, 1.1,  [['zipper', 1]], 1, 50],
+    [45,  100, 1.1, 0.85, [['zipper', 7], ['sodacan', 3]], 1, 90],
+    [100, 150, 0.85, 0.6, [['zipper', 5], ['sodacan', 2], ['chipbag', 3]], 2, 140],
+    [150, 210, 0.6, 0.42, [['zipper', 4], ['sodacan', 2], ['chipbag', 3], ['menace', 2]], 2, 200],
+    [210, 300, 0.42, 0.26,[['zipper', 3], ['sodacan', 2], ['chipbag', 3], ['menace', 2], ['burger', 2]], 3, 270],
+    [300, 1e9, 0.24, 0.19,[['zipper', 3], ['sodacan', 2], ['chipbag', 3], ['menace', 3], ['burger', 3]], 3, 300],
   ],
 };
 

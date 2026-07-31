@@ -7,21 +7,21 @@
 > Machine-readable twin: **`docs/voice_lines.csv`** (one row per line,
 > ready for batch generation).
 
-**Totals: 107 lines, 6,391 characters of dialogue.**
+**Totals: 122 lines, 7,617 characters of dialogue.**
 
 | Status | Lines | Meaning |
 |---|---|---|
-| SHIPPED | 46 | In the game right now — recording these makes the playable slice fully voiced. |
-| WRITTEN | 55 | Locked dialogue for scenes not built yet (Stages 2-5, finale, flavor). Safe to record — the text will not change. |
+| SHIPPED | 65 | In the game right now — recording these makes the playable slice fully voiced. |
+| WRITTEN | 51 | Locked dialogue for scenes not built yet (Stages 2-5, finale, flavor). Safe to record — the text will not change. |
 | DRAFT | 6 | Claude-drafted tutorial lines, **not yet approved by Mark**. Do not record until signed off. |
 
 | Character | Lines | Characters of text |
 |---|---|---|
-| TIMETECH VIC | 20 | 1,370 |
-| SUPER DUDE DANNY | 28 | 1,305 |
+| SUPER DUDE DANNY | 34 | 1,785 |
+| TIMETECH VIC | 22 | 1,544 |
+| GALAXY GUIDE CARLOS | 15 | 1,181 |
 | CAPTAIN KEVIN | 14 | 966 |
 | NATRIX NAYAH | 11 | 656 |
-| GALAXY GUIDE CARLOS | 8 | 609 |
 | ZOOKEEPER JOSH | 8 | 538 |
 | MAYOR ADA BLOOM | 7 | 315 |
 | ACN NEWS ANCHOR | 2 | 242 |
@@ -209,14 +209,29 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 | `vo_s3_017_kevin` | CAPTAIN KEVIN | Rescue button. Command voice, calm and total. | "Team — on me." |
 | `vo_s3_018_vic` | TIMETECH VIC | Radio outro, dry, points at the Labs. NEW. | "Three rescued, boss. The Labs went dark an hour ago — Carlos is next." |
 
-### STAGE 4 "SIGNAL LOST" - Super Dude Labs (Part IV.4)  *(WRITTEN)*
+### STAGE 4 "SIGNAL LOST" - Super Dude Labs (Part IV.4; in-game beat 6, v0.28.0)  *(SHIPPED)*
 
 | File ID | Character | Delivery | Line |
 |---|---|---|---|
 | `vo_s4_001_carlos` | GALAXY GUIDE CARLOS | Radio intro. Calm, cosmic, a little ominous. Weight on "wants." | "I've been watching the pattern from the array… it's not random, Danny. The Ray wants something. Come find me — I'll show you the big picture." |
-| `vo_s4_002_carlos` | GALAXY GUIDE CARLOS | THE REVEAL. Tracing an arc up to Adventure Tower. Awe, not fear. | "There. It climbed to the top of Adventure Tower and… grew. It's not a ray anymore. It's thinking." |
-| `vo_s4_003_danny` | SUPER DUDE DANNY | Quiet. The guilt returning. | "It's alive. Like everything else I broke." |
-| `vo_s4_004_carlos` | GALAXY GUIDE CARLOS | The thesis of the whole game. Gentle, certain. | "Then we don't break it. We reach it." |
+| `vo_s4_002_danny` | SUPER DUDE DANNY | Surveying his own mutated labs. Rueful, then resolved. NEW. | "My own labs. It mutated MY OWN LABS. Okay. Badge's still in my other coat, so we're doing this the loud way." |
+| `vo_s4_003_carlos` | GALAXY GUIDE CARLOS | Gate cleared; pointing at the vault. NEW. | "Gate's clear. The blueprints for the Ray are still in the Prototype Vault — you'll want those for what comes next." |
+| `vo_s4_004_danny` | SUPER DUDE DANNY | At the sealed vault. Focused. NEW. | "Vault's sealed tight and frosted in... junk. Three pages, then I'm out." |
+| `vo_s4_005_carlos` | GALAXY GUIDE CARLOS | Blueprint page one. Reading, alarmed by the math. NEW. | "Page one. Power intake. See how big that number is? Keep moving." |
+| `vo_s4_006_danny` | SUPER DUDE DANNY | Blueprint page two. Sheepish self-own. NEW. | "Page two. I really thought 'unlimited portions' sounded friendlier on paper." |
+| `vo_s4_007_carlos` | GALAXY GUIDE CARLOS | Full set recovered; pivot to the reactor. NEW. | "That's the full set. Now — the reactor's cooking itself. Buy the vent team some time." |
+| `vo_s4_008_vic` | TIMETECH VIC | Radio, dry. NEW. | "Blueprints secured, boss. Reactor Yard's next — it went orange on my board two minutes ago." |
+| `vo_s4_009_carlos` | GALAXY GUIDE CARLOS | Defend brief. Calm precision. NEW. | "The junk keeps feeding on the reactor's charge. Hold the containment ring while it vents — seventy seconds." |
+| `vo_s4_010_danny` | SUPER DUDE DANNY | Standing on the glowing circle. Deadpan. NEW. | "Standing on the glowing circle. Every childhood dream, wrong reasons." |
+| `vo_s4_011_carlos` | GALAXY GUIDE CARLOS | Defend done; the boss powers on. Ominous beat. NEW. | "Reactor's stable. Danny… something very large just powered on in Central Control. It has a COIN SLOT." |
+| `vo_s4_012_danny` | SUPER DUDE DANNY | Boss reveal. Disbelief into gallows humor. NEW. | "That's the break-room vending machine. It ate the OTHER machines. It's still blinking EXACT CHANGE ONLY." |
+| `vo_s4_013_carlos` | GALAXY GUIDE CARLOS | Boss kickoff. NEW. | "Then let's give it its refund. Watch the dispensing tray!" |
+| `vo_s4_014_danny` | SUPER DUDE DANNY | Boss down. Kid-logic victory line. NEW. | "Out of order. Permanently. …I'm keeping the quarter." |
+| `vo_s4_015_carlos` | GALAXY GUIDE CARLOS | Found at the array, welcoming Danny to the big picture. NEW. | "Right on time. Come look at the big picture." |
+| `vo_s4_016_carlos` | GALAXY GUIDE CARLOS | THE REVEAL. Tracing an arc up to Adventure Tower. Awe, not fear. | "There. It climbed to the top of Adventure Tower and… grew. It's not a ray anymore. It's thinking." |
+| `vo_s4_017_danny` | SUPER DUDE DANNY | Quiet. The guilt returning. | "It's alive. Like everything else I broke." |
+| `vo_s4_018_carlos` | GALAXY GUIDE CARLOS | The thesis of the whole game. Gentle, certain. | "Then we don't break it. We reach it." |
+| `vo_s4_019_vic` | TIMETECH VIC | Radio outro; points UNDER the city. NEW. | "Four rescued. One signal left on the board, boss — it's coming from UNDER the city." |
 
 ### STAGE 5 "GOING DEEP" - The Underground / Sewers (Part IV.5)  *(WRITTEN)*
 
@@ -312,8 +327,8 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 
 ## 4. ELEVENLABS NOTES
 
-- **Cost estimate:** ~6,391 characters total. Recording only the SHIPPED set
-  (the playable slice) is ~2,667 characters — small enough to fit a starter tier.
+- **Cost estimate:** ~7,617 characters total. Recording only the SHIPPED set
+  (the playable slice) is ~4,208 characters — small enough to fit a starter tier.
 - **Use v3 audio tags** for the emotional beats — they do a lot of work here.
   Examples worth trying: `[whispers] I did this.` /
   `[shouting] Super Dude... GO!` / `[sad] ...did I... not help?` /
