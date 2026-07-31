@@ -18,6 +18,10 @@ PC.BOSSES = {
                 contact: 20, name: 'THE BROCCOLISK',
                 anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
                          charge:    { set: 'lunge', frames: 2, fps: 10 } } },
+  cakeColossus: { key: 'boss_d3_cake', size: 128, hp: 4200, spd: 94,
+                contact: 24, name: 'LAYER CAKE COLOSSUS',
+                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
+                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
 };
 
 PC.Boss = function (scene, x, y, id) {

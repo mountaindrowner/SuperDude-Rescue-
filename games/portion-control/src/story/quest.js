@@ -18,11 +18,12 @@ PC.Quest = function (scene, region, mission) {
   this._waveAcc = 0;
   this.tpEarned = 0;
   this.done = false;
-  // objective swarms pull from the REGION's roster, so the park spawns
-  // feral produce and the city spawns street food (v0.21.0)
-  this.ringKinds = (region.def.spawnSet === 'park')
-    ? ['apple', 'apple', 'peeler', 'tomato']
-    : ['fry', 'fry', 'popcorn', 'hotdog'];
+  // objective swarms pull from the REGION's roster, so each map's rings
+  // match its creatures (v0.21.0; table-driven since v0.27.0)
+  this.ringKinds = ({
+    park:   ['apple', 'apple', 'peeler', 'tomato'],
+    suburb: ['donut', 'donut', 'chipbit', 'cupcake'],
+  })[region.def.spawnSet] || ['fry', 'fry', 'popcorn', 'hotdog'];
 
   // dialogue box pinned to the camera (world-space ui container)
   this.box = new PC.DialogueBox(scene);
@@ -167,9 +168,11 @@ PC.Quest.prototype.spawnItems = function (o) {
   o.items.forEach(function (it) {
     var mk = self.region.landmark(it.at);
     var sp = self.spotOf(mk, 60);        // water lots -> the dock, etc.
-    var x = sp.x, y = sp.y;
-    var img = scene.add.image(x, y, 'atlas', 'icon_passive_battery')
-      .setScale(0.62).setDepth(6);
+    // it.dx/dy spread multiple items across ONE landmark (mission5: the
+    // three kids are all at the School); o.icon reskins the pickup.
+    var x = sp.x + (it.dx || 0), y = sp.y + (it.dy || 0);
+    var img = scene.add.image(x, y, 'atlas', o.icon || 'icon_passive_battery')
+      .setScale(o.icon ? 0.8 : 0.62).setDepth(6);
     scene.tweens.add({ targets: img, y: y - 5, duration: 700, yoyo: true,
       repeat: -1, ease: 'Sine.inOut' });
     var glow = scene.add.image(x, y, 'atlas', 'fx_nova_1')

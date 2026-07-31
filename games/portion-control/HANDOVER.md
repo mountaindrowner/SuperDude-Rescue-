@@ -12,6 +12,74 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-07-31 - v0.27.0: SWEET SUBURBS (Map 3 / beat 5) + park detail
+  layer (Mark: "add that layer of detailing, and let's build the next
+  map... think about it logically, what the design philosophy should
+  be").** THE PHILOSOPHY, now doctrine: each map gets its own GEOMETRY.
+  Central = grid (order). Park = organic (no straight lines). Suburbs =
+  CURVES WITH REPETITION - crescent streets ending in cul-de-sac
+  circles, houses repeating with small variations; the dessert flood
+  VIOLATES that domestic order and its gradient (heaviest at the
+  Bakery, thinning to the Welcome Sign) silently points the player at
+  the boss. NEW `src/systems/world_suburb.js` PC.SuburbLayout (drop-in
+  sibling of ParkLayout - region.js just branches on fabric): gentler
+  sine-curved street network w/ sidewalks + dashed centerlines + 4
+  turnaround circles (manhole + chalk hopscotch), houses WALKED ALONG
+  the streets (anti-overlap hash; pastel body + roof-plane/ridge +
+  fenced backyard + yard prop pool/playset/grill + mailbox + bushes),
+  driveways as ROTATED slabs connecting each house to its own street
+  anchor (captured at build time) with the family car parked at the
+  driveway's angle, frosting ROOF drifts + eave drips where flood>0.55,
+  suburban shade-tree lattice (rim treeline; area-scaled), candy
+  lattice (gumdrops solid/canes/cherries/drifts), 2 authored frosting
+  RIVERS out of the Bakery, ice-cream trucks/lamps/hydrants along
+  streets. Landmarks: Welcome Sign, frosting-lake Community Pool
+  (loungers/umbrellas/floaties/towels), School (courtyard wings, roof
+  court, "HELP!" banner + faces at windows = the trapped-kids story
+  hook), Rec Center BALLFIELD (defend), Water Tower tank, THE BIG OAK
+  (area-scaled canopy tufts + tire swing at the player approach),
+  Block Party ruins (striped pop-up tents, tipped tables/grill,
+  balloons), THE BAKERY (dark roof + frosting eruption + rivulets +
+  scalloped awning + display windows w/ little cakes). ART: PixelLab
+  balance hit $0 - the d3 dessert roster (donut/chip bit/cupcake/
+  frosting sludge/cookie golemite; walk x2 + stills) and the LAYER
+  CAKE COLOSSUS (walk x4 + rear/lunge poses) are procedural painters
+  in NEW `src/handart_d3.js` (PC.HANDART layer: real art > handart >
+  generic blobs, so future PixelLab PNGs replace them with zero code
+  changes). Mission 5 "SUGAR RUSH" (`mission5.js`, spec cast lines
+  VERBATIM; connective lines new - Mark to review in VOICE_SCRIPT.md):
+  clear cul-de-sac -> free 3 kids at the School (fetch w/ NEW per-item
+  dx/dy spread + icon override; Pip's line rides pickup 1) -> defend
+  ballfield 60s -> LAYER CAKE COLOSSUS (hp 4200, rear/lunge anims) ->
+  rescue KEVIN. quest.ringKinds is table-driven now (suburb ring bug:
+  d1 street food spawned on the cul-de-sac clear). Park detail layer
+  same session: real CAROUSEL painter (the round-water branch was
+  painting lily pads + ducks ON the carousel), terraced AMPHITHEATER
+  with stage, softened pine, hedge contrast. JUDGE LOOP (2 rounds):
+  R1 ITERATE - 4 of 8 landmarks failed at play scale (Big Oak flat
+  green fields; Bakery front bare + sign truncated to "THE B" - a
+  canvas textAlign STATE LEAK from id-keyed painters into the shared
+  name plate, fix at the source; School slab w/o story hook; Block
+  Party invisible) + driveways floating + pool south bare + 2 enemy
+  retints. All applied; area-scaling reused (the zoo-pen lesson).
+  R2 kills: driveway slab crossed a road (anchor = street CENTERLINE
+  -> clamp at the curb), and TWO landmarks failed the LOT-FRACTION
+  TRAP - a 1600px lot's props placed by fraction land outside the
+  ~400px viewport centered on the door column; dressing must be
+  DOOR/CENTER-ANCHORED (school banner, bakery windows/rivulets/vents).
+  R3 verdict: SHIP; the same round re-judged the PARK and its last
+  three notes shipped too (pier -> T-head destination w/ railing +
+  lantern + varied planks + flanking reeds/pads + water dither; zoo
+  walkway bunting/bench/popcorn cart; bakery drip taper + cherry
+  shadow tint). VERIFIED: verify-suburbs.js B1-B5 end to end ALL
+  GREEN + full battery (park/linear/freeroam/garage/beat4) green,
+  zero errors.
+  NEXT: Map 4 SUPER DUDE LABS (stage6, rescue Carlos, VENDING
+  BEHEMOTH, the Tower reveal) - spec'd in STORY_SPEC Map 4; needs a
+  'labs' fabric (industrial: conveyor yards, pipe banks - a THIRD
+  geometry variant: rigid but diagonal/industrial?) + d4 junk roster
+  (art: handart_d3 pattern until PixelLab top-up).
+
 - **2026-07-30 - v0.26.0: THE ORGANIC PARK (Mark: "a natural feeling
   park, mostly no straight lines... same level of attention to detail
   that you gave the city. Then subject your design to an agent to judge

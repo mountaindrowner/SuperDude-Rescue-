@@ -7,22 +7,22 @@
 > Machine-readable twin: **`docs/voice_lines.csv`** (one row per line,
 > ready for batch generation).
 
-**Totals: 95 lines, 5,568 characters of dialogue.**
+**Totals: 107 lines, 6,391 characters of dialogue.**
 
 | Status | Lines | Meaning |
 |---|---|---|
-| SHIPPED | 28 | In the game right now — recording these makes the playable slice fully voiced. |
-| WRITTEN | 61 | Locked dialogue for scenes not built yet (Stages 2-5, finale, flavor). Safe to record — the text will not change. |
+| SHIPPED | 46 | In the game right now — recording these makes the playable slice fully voiced. |
+| WRITTEN | 55 | Locked dialogue for scenes not built yet (Stages 2-5, finale, flavor). Safe to record — the text will not change. |
 | DRAFT | 6 | Claude-drafted tutorial lines, **not yet approved by Mark**. Do not record until signed off. |
 
 | Character | Lines | Characters of text |
 |---|---|---|
-| TIMETECH VIC | 19 | 1,301 |
-| SUPER DUDE DANNY | 23 | 1,006 |
+| TIMETECH VIC | 20 | 1,370 |
+| SUPER DUDE DANNY | 28 | 1,305 |
+| CAPTAIN KEVIN | 14 | 966 |
 | NATRIX NAYAH | 11 | 656 |
 | GALAXY GUIDE CARLOS | 8 | 609 |
 | ZOOKEEPER JOSH | 8 | 538 |
-| CAPTAIN KEVIN | 8 | 511 |
 | MAYOR ADA BLOOM | 7 | 315 |
 | ACN NEWS ANCHOR | 2 | 242 |
 | CHOMP | 5 | 224 |
@@ -186,16 +186,28 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 | `vo_s2_005_danny` | SUPER DUDE DANNY | Rescue. | "Can you wrangle the rest?" |
 | `vo_s2_006_josh` | ZOOKEEPER JOSH | Rescue button line. Total quiet confidence. | "Son, wranglin's all I do." |
 
-### STAGE 3 "SUGAR RUSH" - Sweet Suburbs (Part IV.3)  *(WRITTEN)*
+### STAGE 3 "SUGAR RUSH" - Sweet Suburbs (Part IV.3; in-game beat 5, v0.27.0)  *(SHIPPED)*
 
 | File ID | Character | Delivery | Line |
 |---|---|---|---|
 | `vo_s3_001_kevin` | CAPTAIN KEVIN | Radio intro. Warm authority. "together" is the key word. | "Danny, the whole neighborhood's snowed in — frosting to the rooftops. Folks are trapped. Let's get 'em out, together." |
-| `vo_s3_002_pip` | PIP | Trapped in the school, thrilled rather than scared. | "I KNEW you'd come, Super Dude!" |
-| `vo_s3_003_danny` | SUPER DUDE DANNY | Gentle, protective, teaching a kid the lesson. | "Stick close, Pip. Heroes look out for each other." |
-| `vo_s3_004_kevin` | CAPTAIN KEVIN | Rescue. A hand on Danny's shoulder. Proud, plain-spoken. | "You called a crew instead of going it alone. That's the smartest thing you've done all week." |
-| `vo_s3_005_danny` | SUPER DUDE DANNY | Rescue. Deferring to the captain. | "Take point, Captain?" |
-| `vo_s3_006_kevin` | CAPTAIN KEVIN | Rescue button. Command voice, calm and total. | "Team — on me." |
+| `vo_s3_002_danny` | SUPER DUDE DANNY | Taking in the absurdity, then committing. NEW connective line. | "Frosting to the— Kevin, there is a HOUSE with a CHERRY on it. Okay. Digging in." |
+| `vo_s3_003_kevin` | CAPTAIN KEVIN | After the cul-de-sac clears. Steady, next objective. NEW. | "Good start. The school's the worst of it — the kids got stuck inside when the frosting came down." |
+| `vo_s3_004_danny` | SUPER DUDE DANNY | Setting off for the school. Determined. NEW. | "Three kids still inside. Doors are frosted shut. Not for long." |
+| `vo_s3_005_pip` | PIP | Trapped in the school, thrilled rather than scared. | "I KNEW you'd come, Super Dude!" |
+| `vo_s3_006_danny` | SUPER DUDE DANNY | Gentle, protective, teaching a kid the lesson. | "Stick close, Pip. Heroes look out for each other." |
+| `vo_s3_007_kevin` | CAPTAIN KEVIN | Third kid freed. Quiet pride. NEW. | "That's every kid accounted for. Well done, Danny." |
+| `vo_s3_008_kevin` | CAPTAIN KEVIN | Pivot to the shelter. NEW. | "Folks are sheltering at the Rec Center — and the sugar horde is sniffing around the ballfield." |
+| `vo_s3_009_kevin` | CAPTAIN KEVIN | Defend brief. Calm command. NEW. | "Hold the ballfield, Danny. Sixty seconds and the shelter doors are sealed." |
+| `vo_s3_010_danny` | SUPER DUDE DANNY | Two words, grinning, bat-ready. NEW. | "Batter up." |
+| `vo_s3_011_kevin` | CAPTAIN KEVIN | Defend done; the boss stirs. Ominous but level. NEW. | "Doors sealed. …You hear that? Something big just left the Bakery. Something with candles." |
+| `vo_s3_012_danny` | SUPER DUDE DANNY | Boss reveal. Awe then alarm. NEW. | "That is the biggest birthday cake I have ever seen. And it is FURIOUS." |
+| `vo_s3_013_kevin` | CAPTAIN KEVIN | Boss fight kickoff. Urgent command. NEW. | "Watch the frosting fists! I'm right behind you — GO!" |
+| `vo_s3_014_danny` | SUPER DUDE DANNY | Boss down, catching his breath, kid-logic joke. NEW. | "Aaand it's a sheet cake. Somebody bring forks. NOT for eating! Evidence forks!" |
+| `vo_s3_015_kevin` | CAPTAIN KEVIN | Rescue. A hand on Danny's shoulder. Proud, plain-spoken. | "You called a crew instead of going it alone. That's the smartest thing you've done all week." |
+| `vo_s3_016_danny` | SUPER DUDE DANNY | Rescue. Deferring to the captain. | "Take point, Captain?" |
+| `vo_s3_017_kevin` | CAPTAIN KEVIN | Rescue button. Command voice, calm and total. | "Team — on me." |
+| `vo_s3_018_vic` | TIMETECH VIC | Radio outro, dry, points at the Labs. NEW. | "Three rescued, boss. The Labs went dark an hour ago — Carlos is next." |
 
 ### STAGE 4 "SIGNAL LOST" - Super Dude Labs (Part IV.4)  *(WRITTEN)*
 
@@ -300,8 +312,8 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 
 ## 4. ELEVENLABS NOTES
 
-- **Cost estimate:** ~5,568 characters total. Recording only the SHIPPED set
-  (the playable slice) is ~1,523 characters — small enough to fit a starter tier.
+- **Cost estimate:** ~6,391 characters total. Recording only the SHIPPED set
+  (the playable slice) is ~2,667 characters — small enough to fit a starter tier.
 - **Use v3 audio tags** for the emotional beats — they do a lot of work here.
   Examples worth trying: `[whispers] I did this.` /
   `[shouting] Super Dude... GO!` / `[sad] ...did I... not help?` /
