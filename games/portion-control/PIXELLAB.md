@@ -3,6 +3,17 @@
 > The complete, battle-tested knowledge of the PixelLab AI connection.
 > Read this before generating ANY art.
 >
+> ## ⚠ BILLING: WE DO NOT USE CREDITS. `/v1/balance` ALWAYS READS $0.
+>
+> Mark's account is a SUBSCRIPTION billed in GENERATIONS. The ONLY
+> real meter is **`GET /v2/balance`** →
+> `subscription: {generations: N, total: 2000}`. The `usd: 0.0` in
+> either endpoint is the unused pay-as-you-go wallet and means
+> NOTHING. Two separate sessions have now seen $0.00, declared
+> "PixelLab is out of credits", and shipped placeholder art that had
+> to be regenerated. If you think the account is empty, you are
+> wrong — check `/v2/balance` and keep going.
+>
 > ## THE HEADLINE (2026-07-22): USE THE V2 API
 >
 > There are TWO APIs. Everything below the v1 section was learned on
