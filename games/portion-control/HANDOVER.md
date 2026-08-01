@@ -12,6 +12,27 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-01 - v0.30.1: HP GAUGE + THE LOADOUT TRAY (Mark: "easier to
+  read hp bar and a section under that, that shows which abilities and
+  weapons have been chosen and filling out the boxes. Like vampire
+  survivor does").** HP was a 70x8 sliver of flat colour; it's now a
+  framed gauge - dark socket, lit top edge on the fill, segment ticks
+  every 25 HP, the number printed on the bar, and the fill shifts
+  CHERRY -> CHEESE -> KETCHUP as it drops, so "am I hurt" is readable
+  without counting pixels. THE TRAY: two rows of slot boxes under the
+  bars - 4 weapons (cyan) over 4 passives (lime) - each filled slot
+  showing its icon on a slate bed with a rank pip on a dark chip, gold
+  frame + ★ when maxed or evolved; empty slots stay near-black with a
+  dash so a kid can SEE what's still open. The whole block is inset off
+  the screen edge and the run stats moved below it. TWO PHASER GOTCHAS
+  worth keeping: (1) a Container renders children in ADD order and
+  IGNORES their depth, so the slot icons had to be attached AFTER the
+  hud graphics or the opaque box beds painted over them - hence
+  `attachLoadout()` called last; (2) icon frames are NOT a uniform
+  source size, so a fixed setScale let some art spill out of its box -
+  use setDisplaySize. Full battery green (ease/linear/map/labs/
+  suburbs/park/freeroam/garage/beat4).
+
 - **2026-08-01 - v0.30.0: THE PROGRESSION REWORK (Mark: "make the game
   a little easier, the enemy spawns are overwhelming... I don't think
   our players should level up in story mode, it should only be
