@@ -140,7 +140,36 @@ PC.GameScene.prototype.create = function () {
   this.timerText = this.add.text(PC.RENDER.W / 2, K(4), '0:00', {
     fontFamily: 'monospace', fontSize: K(12) + 'px', color: '#f7f4ef',
   }).setOrigin(0.5, 0).setDepth(101);
-  this.killText = this.add.text(PC.RENDER.W - 4, K(4), 'POPS 0', {
+  // PAUSE/MAP button, top-right (Mark: "a map view when the player
+  // presses pause... it'll help with navigation"). Story runs only -
+  // a quick run has no district to navigate.
+  // GameScene is ONE instance reused for every run, so these must be
+  // cleared on every create - a quick run (no region) would otherwise
+  // re-attach the DESTROYED buttons left by the last story run
+  this.mapBtn = null; this.mapBtnG = null; this.mapZone = null;
+  var mapTop = K(3);
+  if (this.region) {
+    this.mapBtnG = this.add.graphics().setDepth(101);
+    this.mapBtnG.fillStyle(0x1c1733, 0.9);
+    this.mapBtnG.fillRect(PC.RENDER.W - K(34), mapTop, K(31), K(19));
+    this.mapBtnG.lineStyle(2, 0x35d0ff, 0.9);
+    this.mapBtnG.strokeRect(PC.RENDER.W - K(34), mapTop, K(31), K(19));
+    this.mapBtnG.fillStyle(0x35d0ff, 0.85);        // folded-map glyph
+    this.mapBtnG.fillRect(PC.RENDER.W - K(30), mapTop + K(5), K(7), K(9));
+    this.mapBtnG.fillStyle(0x35d0ff, 0.55);
+    this.mapBtnG.fillRect(PC.RENDER.W - K(23), mapTop + K(4), K(7), K(9));
+    this.mapBtn = this.add.text(PC.RENDER.W - K(14), mapTop + K(6), 'MAP', {
+      fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#35d0ff', fontStyle: 'bold',
+    }).setOrigin(0.5, 0).setDepth(102);
+    this.mapZone = this.add.zone(PC.RENDER.W - K(19), mapTop + K(10), K(44), K(30))
+      .setInteractive({ useHandCursor: true });
+    this.mapZone.on('pointerdown', function (p, lx, ly, ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      this.openMap();
+    }, this);
+  }
+  this.killText = this.add.text(PC.RENDER.W - 4,
+    this.region ? K(25) : K(4), 'POPS 0', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f2c33c',
   }).setOrigin(1, 0).setDepth(101);
   this.levelText = this.add.text(4, K(16), 'LV 1', {
@@ -156,14 +185,15 @@ PC.GameScene.prototype.create = function () {
   // right, which is exactly where the dialogue box and its ▼ land - so a
   // conversation always had the version number printed inside it.
   this.verText = this.add.text(PC.RENDER.W - PC.SAFE,
-    PC.DEV_MODE ? K(30) : K(18), PC.VERSION, {
+    (this.region ? K(37) : 0) + (PC.DEV_MODE ? K(30) : K(18)), PC.VERSION, {
     fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101);
   this._dbgAcc = 0;
   this.drawHud();
 
   // dev swarm button (works on touch - Mark can't press T on a phone)
-  this.swarmBtn = this.add.text(PC.RENDER.W - 4, K(18), '[SWARM]', {
+  this.swarmBtn = this.add.text(PC.RENDER.W - 4,
+    (this.region ? K(37) : 0) + K(18), '[SWARM]', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101)
     .setInteractive({ useHandCursor: true });
@@ -174,8 +204,11 @@ PC.GameScene.prototype.create = function () {
   this.swarmBtn.setVisible(!!PC.DEV_MODE);
 
   [this.bossBar, this.hud, this.timerText, this.killText, this.levelText,
-   this.goldText, this.debugText, this.verText, this.swarmBtn]
-    .forEach(this.uiAttach);
+   this.goldText, this.debugText, this.verText, this.swarmBtn,
+   this.mapBtnG, this.mapBtn, this.mapZone]
+    .forEach(function (o) { if (o) this.uiAttach(o); }, this);
+  this.input.keyboard.on('keydown-M', function () { this.openMap(); }, this);
+  this.input.keyboard.on('keydown-ESC', function () { this.openMap(); }, this);
 
   this.input.keyboard.on('keydown-G', function () { this.scene.start('PC_Gallery'); }, this);
   this.input.keyboard.on('keydown-T', function () { this.stress(); }, this);
@@ -263,6 +296,18 @@ PC.GameScene.prototype.floatText = function (str, color) {
   }).setOrigin(0.5).setDepth(102);
   this.tweens.add({ targets: t, y: t.y - 16, alpha: 0, duration: 700,
     onComplete: function () { t.destroy(); } });
+};
+
+// ---- the district map: pause the run, show where everything is ----
+PC.GameScene.prototype.openMap = function () {
+  if (!this.region || this.cardsOpen || this.storyPause || this.dead) return;
+  if (this.scene.isPaused()) return;
+  if (PC.audio) { PC.audio.unlock(); PC.audio.ui(); }
+  this.scene.pause();
+  this.scene.launch('PC_MapView', { overlay: true, resume: 'PC_Game' });
+  // a paused scene still RENDERS and PC_MapView is registered before
+  // PC_Game, so without this the map draws under the frozen street
+  this.scene.bringToTop('PC_MapView');
 };
 
 // ---- M4: the 3-card pick (pause world, choose, resume) ----

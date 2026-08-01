@@ -119,14 +119,22 @@ PC.MissionsScene.prototype.create = function () {
     z.on('pointerdown', function () { if (PC.audio) { PC.audio.unlock(); PC.audio.ui(); } fn(); });
     return t;
   };
-  var bw = (W - 24) / 3;
+  var bw = (W - 28) / 4;
   mkBtn(8, bw, "SAL'S", '#a8e04a', function () {
     self.scene.start('PC_Shop', { back: 'PC_Missions' });
   });
   mkBtn(12 + bw, bw, 'GARAGE', '#35d0ff', function () {
     self.scene.start('PC_Garage', { back: 'PC_Missions' });
   });
-  mkBtn(16 + bw * 2, bw, 'TITLE', '#6d6a8e', function () {
+  // scout the district you're about to drop into (v0.29.0)
+  mkBtn(16 + bw * 2, bw, 'MAP', '#f2c33c', function () {
+    var ci = PC.storyState.currentIndex();          // resolved at tap time
+    var beat = PC.STORY.CHAIN[Math.min(ci, PC.STORY.CHAIN.length - 1)];
+    var mapId = (beat && PC.STORY.maps[beat.map]) ? beat.map : 'central';
+    self.scene.start('PC_MapView', { back: 'PC_Missions', mapId: mapId,
+      missionId: beat && PC.STORY.missions[beat.id] ? beat.id : null });
+  });
+  mkBtn(20 + bw * 3, bw, 'TITLE', '#6d6a8e', function () {
     self.scene.start('PC_Title');
   });
   // rewatch the newscast any time - it only auto-plays once, and a kid
