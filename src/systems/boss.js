@@ -218,6 +218,11 @@ PC.Boss.prototype._drawBar = function () {
 
 PC.Boss.prototype.die = function () {
   this.dead = true;
+  // the boss's parting gift (v0.30.0, Mark: "give the bosses a power up
+  // drop that the players can use - it can be a previously made
+  // upgrade"). With story runs no longer levelling, this IS the in-run
+  // power spike, so it drops where the boss fell and waits to be taken.
+  if (this.scene.dropBossPower) this.scene.dropBossPower(this.x, this.y);
   this.scene.onBossDefeated();     // single-path win trigger
 };
 

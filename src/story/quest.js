@@ -262,6 +262,10 @@ PC.Quest.prototype.spawnItems = function (o) {
 // spawn a guarding/objective swarm ring around a point
 PC.Quest.prototype.ring = function (x, y, n, track) {
   var scene = this.scene, out = [];
+  // v0.30.0 ease knob: a tracked ring IS the objective count, so it
+  // scales on `clear`; untracked guard swarms scale on `ring`
+  var ez = PC.ease ? PC.ease(scene) : null;
+  if (ez) n = Math.max(3, Math.round(n * (track ? ez.clear : ez.ring)));
   for (var i = 0; i < n; i++) {
     var a = (i / n) * Math.PI * 2 + Math.random() * 0.3;
     var r = 170 + Math.random() * 90;
@@ -327,6 +331,7 @@ PC.Quest.prototype.complete = function () {
       time: scene.runT, kills: scene.kills, level: scene.level,
       gold: scene.pickups.gold, win: true, story: true,
       tp: self.tpEarned, hero: scene.hero.id,
+      xp: scene.bankedXp || 0, xpTp: scene.bankedTp ? scene.bankedTp() : 0,
       rescued: (chainEntry && chainEntry.rescued) || 'A TEAMMATE',
       rescuedArt: rescueHero ? 'char_' + rescueHero + '_idle' : null,
     });
@@ -352,6 +357,9 @@ PC.Quest.prototype.update = function (dt) {
         this.state = 'active';
         var sp = this.spotOf(this.region.landmark(o.at), 80);
         this.tracked = this.ring(sp.x, sp.y, o.count, true);
+        // the ease knob can spawn fewer than o.count - the counter must
+        // read off what ACTUALLY spawned or it never reaches its total
+        this.clearTotal = this.tracked.length;
         if (PC.audio) PC.audio.telegraph();
       }
     } else if (this.state === 'active' && this.tracked.length === 0) {
@@ -469,7 +477,8 @@ PC.Quest.prototype.drawHudBits = function () {
   // banner text with live progress
   var label = o.banner || '';
   if (o.type === 'clear' && this.state === 'active') {
-    label += '  ' + (o.count - this.tracked.length) + '/' + o.count;
+    var tot = this.clearTotal || o.count;
+    label += '  ' + (tot - this.tracked.length) + '/' + tot;
   } else if (o.type === 'fetch') {
     var got = 0;
     for (var i = 0; i < this.items.length; i++) if (this.items[i].taken) got++;

@@ -114,6 +114,9 @@ PC.SpawnDirector.prototype.update = function (dt, runT) {
   var interval = ph[2] + (ph[3] - ph[2]) * Math.min(1, lerp);
   var liveCap = ph[6];
   var scene = this.scene, enemies = scene.enemies;
+  // v0.30.0: the single ease knob (PC.EASE) - longer gaps, smaller crowd
+  var ez = PC.ease ? PC.ease(scene) : null;
+  if (ez) { interval *= ez.interval; liveCap = Math.round(liveCap * ez.cap); }
 
   this.acc += dt;
   if (this.acc >= interval && enemies.liveCount < liveCap) {
@@ -133,6 +136,8 @@ PC.SpawnDirector.prototype.update = function (dt, runT) {
 // off-screen ring EVENT: N enemies in a circle closing in (COMPENDIUM 8)
 PC.SpawnDirector.prototype.ring = function (nn, key, minutes) {
   var scene = this.scene, cam = scene.cameras.main;
+  var ez = PC.ease ? PC.ease(scene) : null;
+  if (ez) nn = Math.max(4, Math.round(nn * ez.ring));
   var cx = cam.worldView.centerX, cy = cam.worldView.centerY;
   var rr = Math.max(PC.RENDER.W, PC.RENDER.H) * 0.7 + 40;
   var def = this._pick([[key, 1]], minutes);

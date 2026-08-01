@@ -78,6 +78,7 @@ PC.XP = {
   // ramp up a little faster" - curve softened 1.35/3 -> 1.30/2
   FIRST: 5, CURVE_MULT: 1.30, CURVE_ADD: 2,
   WEAPON_SLOTS: 4, PASSIVE_SLOTS: 4,
+  PER_TP: 10,        // story mode: banked XP -> TECH at the results desk
 };
 
 // ---- run structure (COMPENDIUM 5.1) ----
@@ -158,8 +159,28 @@ PC.selectedHero = function () {
 
 // ---- in-run enemy time scaling (COMPENDIUM 5.5) ----
 // v0.16.1 (Mark: "feels a little too easy... ramp up sooner" on the
-// 5-min run): in-run scaling doubled-ish so minute 3+ has teeth
-PC.TIMESCALE = { HP_PER_MIN: 0.10, DMG_PER_MIN: 0.04 };
+// 5-min run): in-run scaling doubled-ish so minute 3+ has teeth.
+// v0.30.0 softened: STORY runs no longer level up mid-mission (Mark's
+// call), so enemies can't keep outgrowing a power curve that stopped
+// climbing. Quick run keeps its own harder tier below.
+PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.025 };
+
+// ---- THE EASE KNOB (v0.30.0) ----------------------------------------
+// Mark: "let's make the game a little easier, the enemy spawns are
+// overwhelming." ONE place to tune pressure instead of hand-editing
+// four spawn tables: the director multiplies its interval / live cap
+// through these, and quest swarms scale their counts. Story missions
+// get the calmer tier because they're OBJECTIVE runs with a fixed
+// loadout - a survival ramp there just walls the player.
+//   interval > 1 = longer gaps between spawns   (fewer enemies)
+//   cap      < 1 = smaller live crowd            (less overwhelm)
+PC.EASE = {
+  QUICK: { interval: 1.25, cap: 0.80, ring: 0.85, clear: 0.85 },
+  STORY: { interval: 1.55, cap: 0.60, ring: 0.70, clear: 0.70 },
+};
+PC.ease = function (scene) {
+  return (scene && scene.storyMission) ? PC.EASE.STORY : PC.EASE.QUICK;
+};
 
 // ---- pickups (COMPENDIUM 5.6) ----
 PC.DROPS = { HEALTH: 0.012, MAGNET: 0.004, BOMB: 0.0015, HEALTH_HEAL: 30 };

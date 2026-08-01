@@ -116,6 +116,7 @@ PC.GameScene.prototype.create = function () {
   this.hp = PC.PLAYER.HP + (this.stats.bonusHp || 0);
   this.invUntil = 0;
   this.xp = 0; this.level = 1; this.xpNext = PC.XP.FIRST;
+  this.bankedXp = 0;                 // story mode: XP is currency, not levels
   this.kills = 0;
   this.runT = 0;
   this.dead = false;
@@ -123,6 +124,7 @@ PC.GameScene.prototype.create = function () {
   this._rings = {};
   this.pickups = new PC.PickupSystem(this);
   this.boss = null; this.bossSpawned = false; this.won = false;
+  this.bossDrop = null;              // one scene instance, every run resets
   this.bossBar = this.add.graphics().setDepth(103);
 
   var cam = this.cameras.main;
@@ -239,6 +241,19 @@ PC.GameScene.prototype.stress = function () {
 PC.GameScene.prototype.gainXp = function (v) {
   if (PC.audio) PC.audio.gem();
   this.xp += v * this.xpMult;
+  // STORY MODE (v0.30.0, Mark: "I don't think our players should level
+  // up in story mode - it should only be gathering exp and cash and
+  // then upgrading after completions or losses"). XP is BANKED, never
+  // spent on a mid-run card pick: no menu interrupts an objective, and
+  // the loadout you walked in with is the loadout you fight with. New
+  // power comes from the shops between missions and from boss drops.
+  // Quick run keeps the classic level-and-pick loop untouched.
+  if (this.storyMission) {
+    this.bankedXp = Math.floor(this.xp);
+    this.levelText.setText('XP ' + this.bankedXp);
+    this.drawHud();
+    return;
+  }
   while (this.xp >= this.xpNext) {
     this.xp -= this.xpNext;
     this.level++;
@@ -250,6 +265,11 @@ PC.GameScene.prototype.gainXp = function (v) {
   }
   if (this.pendingLevels > 0 && !this.cardsOpen) this.showCards();
   this.drawHud();
+};
+
+// XP banked this run -> TECH at the results desk (10 XP = 1 TP)
+PC.GameScene.prototype.bankedTp = function () {
+  return Math.floor((this.bankedXp || 0) / PC.XP.PER_TP);
 };
 
 PC.GameScene.prototype.onKill = function (e) {
@@ -282,9 +302,13 @@ PC.GameScene.prototype.drawHud = function () {
   g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 3, hpw + 2, K(8));
   g.fillStyle(PC.PAL.CHERRY, 1).fillRect(4, 4,
     Math.max(0, hpw * this.hp / (PC.PLAYER.HP + (this.stats.bonusHp || 0))), K(8) - 2);
-  // XP bar (Lime) under it
+  // XP bar (Lime) under it. Story: fills toward the next TECH chunk, so
+  // banking still has a visible heartbeat without a level-up menu.
+  var frac = this.storyMission
+    ? ((this.bankedXp || 0) % PC.XP.PER_TP) / PC.XP.PER_TP
+    : this.xp / this.xpNext;
   g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, K(12), hpw + 2, K(4));
-  g.fillStyle(PC.PAL.LIME, 1).fillRect(4, K(12) + 1, Math.max(0, hpw * Math.min(1, this.xp / this.xpNext)), K(4) - 2);
+  g.fillStyle(PC.PAL.LIME, 1).fillRect(4, K(12) + 1, Math.max(0, hpw * Math.min(1, frac)), K(4) - 2);
   if (this.goldText && this.pickups) this.goldText.setText('$ ' + this.pickups.gold);
 };
 
@@ -296,6 +320,68 @@ PC.GameScene.prototype.floatText = function (str, color) {
   }).setOrigin(0.5).setDepth(102);
   this.tweens.add({ targets: t, y: t.y - 16, alpha: 0, duration: 700,
     onComplete: function () { t.destroy(); } });
+};
+
+// ---- THE BOSS DROP (v0.30.0) --------------------------------------
+// A defeated boss leaves a supply chest. Walking over it GRANTS one of
+// the existing upgrades outright - no menu, no three-way decision, just
+// a reveal - because in story mode this is the only power spike inside
+// a mission and it should feel like a trophy, not homework.
+PC.GameScene.prototype.dropBossPower = function (x, y) {
+  if (this.bossDrop) return;
+  var self = this;
+  var glow = this.add.image(x, y, 'atlas', 'fx_nova_1')
+    .setScale(1.1).setDepth(5).setAlpha(0.55)
+    .setBlendMode(Phaser.BlendModes.ADD).setTint(0xf2c33c);
+  this.tweens.add({ targets: glow, scale: 1.6, alpha: 0.2,
+    duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  var img = this.add.image(x, y, 'atlas', 'pickup_chest_1').setDepth(6).setScale(1.1);
+  this.tweens.add({ targets: img, y: y - 6, duration: 750,
+    yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  var hint = this.add.text(x, y - 26, 'POWER-UP', {
+    fontFamily: 'monospace', fontSize: PC.uiK(8) + 'px', color: '#f2c33c',
+    fontStyle: 'bold', stroke: '#120e24', strokeThickness: 3,
+  }).setOrigin(0.5).setDepth(7);
+  this.tweens.add({ targets: hint, alpha: 0.45, duration: 600, yoyo: true, repeat: -1 });
+  this.bossDrop = { x: x, y: y, img: img, glow: glow, hint: hint };
+  if (PC.audio) PC.audio.chest();
+};
+
+PC.GameScene.prototype.updateBossDrop = function () {
+  var d = this.bossDrop;
+  var dx = this.px - d.x, dy = this.py - d.y;
+  if (dx * dx + dy * dy > 34 * 34) return;
+  // pick the most exciting thing on offer: a brand new weapon beats a
+  // rank-up, and a plain heal is the last resort
+  var cards = (PC.drawCards ? PC.drawCards(this) : []) || [];
+  var card = null, i;
+  for (i = 0; i < cards.length && !card; i++) if (cards[i].kind === 'weapon-new') card = cards[i];
+  for (i = 0; i < cards.length && !card; i++) if (cards[i].kind === 'evolve') card = cards[i];
+  for (i = 0; i < cards.length && !card; i++) if (cards[i].kind !== 'heal') card = cards[i];
+  if (!card && cards.length) card = cards[0];
+  d.img.destroy(); d.glow.destroy(); d.hint.destroy();
+  this.bossDrop = null;
+  if (!card) return;
+  PC.applyCard(this, card);
+  if (PC.audio) { PC.audio.fanfare(); PC.audio.cardSelect(); }
+  this.fx.burst(this.px, this.py - 8, 'fx_levelup', 4, 0.7);
+  this.cameras.main.shake(180, 0.004);
+  this.drawHud();
+  // the reveal: one banner, no decision
+  var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
+  var g = this.add.graphics().setDepth(150);
+  PC.labPanel(g, W / 2 - PC.uiK(84), H * 0.34, PC.uiK(168), PC.uiK(40),
+    { rivets: true, base: 0x2a2210, edge: 0xf2c33c });
+  var t1 = PC.ui.text(this, W / 2, H * 0.34 + PC.uiK(6), 'POWER-UP!', 'caption',
+    { color: '#f2c33c', align: 'center' }).setOrigin(0.5, 0).setDepth(151);
+  var t2 = PC.ui.text(this, W / 2, H * 0.34 + PC.uiK(19), card.title || 'UPGRADE', 'label',
+    { color: '#f7f4ef', align: 'center' }).setOrigin(0.5, 0).setDepth(151);
+  PC.ui.fit(t2, PC.uiK(156));
+  [g, t1, t2].forEach(this.uiAttach);
+  this.time.delayedCall(2200, function () {
+    self.tweens.add({ targets: [g, t1, t2], alpha: 0, duration: 500,
+      onComplete: function () { g.destroy(); t1.destroy(); t2.destroy(); } });
+  });
 };
 
 // ---- the district map: pause the run, show where everything is ----
@@ -396,6 +482,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   // every time someone talked otherwise); Doors hides its own prompt
   if (this.doors) this.doors.update();
   if (this.critters) this.critters.update(dt);
+  if (this.bossDrop) this.updateBossDrop();
   if (this.storyPause) {                       // story dialogue: world holds
     if (this.quest) this.quest.update(dt);
     this.ground.update(this.cameras.main);
@@ -603,9 +690,12 @@ PC.GameScene.prototype.die = function () {
   this.player.setVisible(false);
   var self = this;
   this.time.delayedCall(700, function () {
+    // a LOSS still pays out (Mark: "upgrading after completions or
+    // losses") - the banked XP converts to TECH either way
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
       gold: self.pickups.gold, win: false, story: !!self.quest,
-      tp: self.quest ? self.quest.tpEarned : 0, hero: self.hero.id });
+      tp: self.quest ? self.quest.tpEarned : 0, hero: self.hero.id,
+      xp: self.bankedXp || 0, xpTp: self.bankedTp() });
   });
 };
 
@@ -721,6 +811,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
   // to results
   this.time.delayedCall(2800, function () {
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
-      gold: self.pickups.gold, win: true, rescued: PC.D1_RESCUE.name });
+      gold: self.pickups.gold, win: true, rescued: PC.D1_RESCUE.name,
+      xp: self.bankedXp || 0, xpTp: self.bankedTp() });
   });
 };
