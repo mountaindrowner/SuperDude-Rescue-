@@ -55,15 +55,28 @@ PC.ResultsScene.prototype.create = function () {
   }
 
   var statG = this.add.graphics();
-  PC.labPanel(statG, W / 2 - 70, H * 0.68 - 38, 140, 76, { rivets: true });
-  this.add.text(W / 2, H * 0.68,
-    'TIME  ' + m + ':' + (s < 10 ? '0' : '') + s +
+  // THE PAYOUT (v0.30.0). Story runs bank XP instead of levelling, so
+  // the desk converts it to TECH here - on a WIN and on a LOSS alike
+  // (Mark: "upgrading after completions or losses"). Coins already
+  // persist the moment they're picked up.
+  var xpTp = d.xpTp || 0;
+  if (xpTp > 0 && PC.meta) PC.meta.bump('tp', xpTp);
+  var story = !!d.story || d.xp !== undefined;
+  var rows = 'TIME  ' + m + ':' + (s < 10 ? '0' : '') + s +
     '\nPOPS  ' + (d.kills || 0) +
-    '\nLEVEL ' + (d.level || 1) +
+    (story ? '\nXP    ' + (d.xp || 0) : '\nLEVEL ' + (d.level || 1)) +
     '\nGOLD  $ ' + (d.gold || 0) +
-    (d.tp ? '\nTECH  +' + d.tp + ' TP' : ''), {
+    ((d.tp || xpTp) ? '\nTECH  +' + ((d.tp || 0) + xpTp) + ' TP' : '');
+  var rowN = rows.split('\n').length;
+  PC.labPanel(statG, W / 2 - 70, H * 0.68 - 38, 140, 18 + rowN * 16, { rivets: true });
+  this.add.text(W / 2, H * 0.68, rows, {
     fontFamily: 'monospace', fontSize: '12px', color: '#cfd4e8', align: 'center', lineSpacing: 4,
   }).setOrigin(0.5).setDepth(2);
+  if (xpTp > 0) {
+    this.add.text(W / 2, H * 0.68 + 8 + rowN * 8, '(' + (d.xp || 0) + ' XP BANKED)', {
+      fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
+    }).setOrigin(0.5, 0).setDepth(2);
+  }
 
   if (freshHeroes.length) {
     var bnG = this.add.graphics().setDepth(10);

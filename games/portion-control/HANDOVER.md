@@ -12,6 +12,45 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-01 - v0.30.0: THE PROGRESSION REWORK (Mark: "make the game
+  a little easier, the enemy spawns are overwhelming... I don't think
+  our players should level up in story mode, it should only be
+  gathering exp and cash and then upgrading after completions or
+  losses... give the bosses a power up drop... players only gain
+  abilities by buying them or defeating bosses").** Four changes that
+  only work TOGETHER, which is the thing to understand before tuning
+  any of them: in a survivors-like the spawn ramp is balanced against
+  an in-run power curve, so removing level-ups without flattening the
+  ramp would have made minute 4 unwinnable - the exact overwhelm Mark
+  reported, worse. THE EASE KNOB: `PC.EASE` in config.js, two tiers
+  (QUICK / STORY), multiplied into the director's interval + live cap
+  and into quest ring/clear counts - ONE place to tune pressure
+  instead of four spawn tables. Story at 4:00 went 643 spawns/min @
+  cap 260 -> 415 @ 156 (measured by verify-ease, not eyeballed).
+  `PC.TIMESCALE` HP/DMG per minute softened 0.10/0.04 -> 0.06/0.025
+  for the same reason. NO STORY LEVELLING: gainXp banks
+  `scene.bankedXp` and returns - no card pick ever interrupts an
+  objective, the HUD reads `XP nnn`, and the XP bar fills toward the
+  next TECH chunk so banking still has a heartbeat. Quick run keeps
+  the classic level-and-pick loop untouched (it's the arcade mode).
+  THE PAYOUT: results converts banked XP -> TP at 10:1 on a WIN and on
+  a LOSS - a defeat is now productive, which is what makes the
+  "upgrade after completions or losses" loop honest. Coins already
+  persisted on pickup. BOSS DROPS: `PC.Boss.die` calls
+  `scene.dropBossPower()`, leaving a glowing chest where the boss
+  fell; walking over it GRANTS one existing upgrade via PC.applyCard -
+  new weapon > evolution > rank-up, never a heal - with a one-line
+  reveal banner. No menu, no decision: in story mode this is the only
+  power spike inside a mission and it should feel like a trophy.
+  NET SHAPE: abilities now come from Sal's (coins), the Garage (TP,
+  now fed by every run), and bosses. GOTCHA FIXED: fx.burst asked for
+  5 frames of a 4-frame fx_levelup set. New harness verify-ease.js;
+  full battery green (linear/park/labs/suburbs/freeroam/map/garage/
+  beat4). OPEN QUESTION for Mark after he plays it: with a fixed
+  loadout, a mission with no boss (e.g. beat 4) has no power spike at
+  all - if that reads flat, the fix is a mid-mission supply crate that
+  grants like the boss drop, NOT re-enabling level-ups.
+
 - **2026-08-01 - v0.29.0: THE DISTRICT MAP (Mark: "put a map view when
   the player presses pause or goes to the menu for story mode - it'll
   help with navigation").** The districts are 7680px square and the
