@@ -174,10 +174,18 @@ PC.GameScene.prototype.create = function () {
     this.region ? K(25) : K(4), 'POPS 0', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f2c33c',
   }).setOrigin(1, 0).setDepth(101);
-  this.levelText = this.add.text(4, K(16), 'LV 1', {
+  // HP readout printed on the gauge itself
+  this.hpText = this.add.text(0, 0, '', {
+    fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f7f4ef',
+    fontStyle: 'bold', stroke: '#0b0818', strokeThickness: 3,
+  }).setOrigin(0.5).setDepth(102);
+  // the tray sits under the bars, so the run stats move below it
+  this.buildLoadout();
+  var statY = K(5) + K(14) + K(8) + K(5) + K(9) + 2 * this.slotBox + this.slotGap + K(7);
+  this.levelText = this.add.text(PC.SAFE - K(6), statY, 'LV 1', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#a8e04a',
   }).setDepth(101);
-  this.goldText = this.add.text(4, K(27), '', {
+  this.goldText = this.add.text(PC.SAFE - K(6), statY + K(11), '', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f2c33c',
   }).setDepth(101);
   this.debugText = this.add.text(PC.SAFE, PC.RENDER.H - PC.SAFE_BOTTOM - K(10), '', {
@@ -207,8 +215,9 @@ PC.GameScene.prototype.create = function () {
 
   [this.bossBar, this.hud, this.timerText, this.killText, this.levelText,
    this.goldText, this.debugText, this.verText, this.swarmBtn,
-   this.mapBtnG, this.mapBtn, this.mapZone]
+   this.mapBtnG, this.mapBtn, this.mapZone, this.hpText]
     .forEach(function (o) { if (o) this.uiAttach(o); }, this);
+  this.attachLoadout();
   this.input.keyboard.on('keydown-M', function () { this.openMap(); }, this);
   this.input.keyboard.on('keydown-ESC', function () { this.openMap(); }, this);
 
@@ -294,21 +303,140 @@ PC.GameScene.prototype.onKill = function (e) {
   if (PC.audio) PC.audio.pop();
 };
 
+// ---- THE LOADOUT TRAY (v0.30.1) -----------------------------------
+// Mark: "a section under that, that shows which abilities and weapons
+// have been chosen and filling out the boxes. Like vampire survivor
+// does." Two rows of slot boxes under the bars - weapons on top (cyan),
+// passives below (gold). Empty slots are dim outlines you can see
+// waiting to be filled; a filled slot shows its icon plus rank pips,
+// and goes gold-framed when it's maxed or evolved.
+PC.GameScene.prototype.buildLoadout = function () {
+  var K = PC.uiK, self = this;
+  this.slotBox = K(20); this.slotGap = K(3);
+  this.slotIcons = [];
+  var n = (PC.XP.WEAPON_SLOTS || 4) + (PC.XP.PASSIVE_SLOTS || 4);
+  for (var i = 0; i < n; i++) {
+    var im = this.add.image(0, 0, 'atlas', 'icon_weapon_resizer')
+      .setDepth(101).setVisible(false);
+    var pip = this.add.text(0, 0, '', {
+      fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#f7f4ef',
+      fontStyle: 'bold', stroke: '#0b0818', strokeThickness: 3,
+    }).setOrigin(1, 1).setDepth(102).setVisible(false);
+    this.slotIcons.push({ im: im, pip: pip });
+  }
+};
+
+// icons attach to the UI container LAST: a Phaser Container renders its
+// children in ADD order, so anything added after the `hud` graphics sits
+// above the slot beds - add these first and the boxes paint over them
+PC.GameScene.prototype.attachLoadout = function () {
+  for (var i = 0; i < this.slotIcons.length; i++) {
+    this.uiAttach(this.slotIcons[i].im);
+    this.uiAttach(this.slotIcons[i].pip);
+  }
+};
+
+PC.GameScene.prototype.drawLoadout = function (g, top) {
+  if (!this.slotIcons) return;
+  var K = PC.uiK, B = this.slotBox, GAP = this.slotGap;
+  var WSLOTS = PC.XP.WEAPON_SLOTS || 4, PSLOTS = PC.XP.PASSIVE_SLOTS || 4;
+  var pk = [], k;
+  for (k in this.passives) if (this.passives[k] > 0) pk.push(k);
+  var self = this;
+
+  function row(y, count, filled, accent) {
+    for (var i = 0; i < count; i++) {
+      var x = PC.SAFE - K(6) + i * (B + GAP);
+      var has = !!filled[i];
+      // a FILLED slot gets a lighter slate bed so the icon reads; an
+      // empty one stays near-black so the tray shows what's still open
+      g.fillStyle(0x0b0818, 0.92).fillRect(x, y, B, B);
+      if (has) g.fillStyle(0x39344f, 1).fillRect(x + 2, y + 2, B - 4, B - 4);
+      g.lineStyle(2, has ? filled[i].col : 0x3a3550, has ? 1 : 0.9);
+      g.strokeRect(x + 1, y + 1, B - 2, B - 2);
+      if (!has) {
+        // an empty socket reads as a waiting slot, not a bug
+        g.lineStyle(1, 0x3a3550, 0.8);
+        g.beginPath();
+        g.moveTo(x + B * 0.32, y + B / 2); g.lineTo(x + B * 0.68, y + B / 2);
+        g.strokePath();
+      } else {
+        // dark chip behind the rank pip so the digit never fights the art
+        g.fillStyle(0x0b0818, 0.85).fillRect(x + B - K(9), y + B - K(9), K(8), K(8));
+      }
+    }
+  }
+
+  // gather what's in each row
+  var wf = [], pf = [], i;
+  for (i = 0; i < WSLOTS; i++) {
+    var w = this.weapons[i];
+    wf.push(w ? { icon: PC.WEAPON_ICONS[w.key] || 'icon_weapon_resizer',
+                  lvl: w.level, maxed: w.evolved || w.level >= w.max,
+                  col: (w.evolved || w.level >= w.max) ? 0xf2c33c : 0x35d0ff } : null);
+  }
+  for (i = 0; i < PSLOTS; i++) {
+    var key = pk[i], def = key && PC.PASSIVES[key];
+    pf.push(def ? { icon: def.icon, lvl: this.passives[key],
+                    maxed: this.passives[key] >= def.max,
+                    col: this.passives[key] >= def.max ? 0xf2c33c : 0xa8e04a } : null);
+  }
+  row(top, WSLOTS, wf, 0x35d0ff);
+  row(top + B + GAP, PSLOTS, pf, 0xa8e04a);
+
+  // icons + rank pips ride on top of the boxes
+  var all = wf.concat(pf);
+  for (i = 0; i < this.slotIcons.length; i++) {
+    var s = this.slotIcons[i], f = all[i];
+    if (!f) { s.im.setVisible(false); s.pip.setVisible(false); continue; }
+    var ri = i < WSLOTS ? i : i - WSLOTS;
+    var bx = PC.SAFE - K(6) + ri * (B + GAP), by = top + (i < WSLOTS ? 0 : B + GAP);
+    // setDisplaySize, not setScale: the icon frames are NOT all the same
+    // source size, so a fixed scale let some art spill out of its box
+    s.im.setFrame(f.icon).setVisible(true)
+      .setPosition(bx + B / 2, by + B / 2)
+      .setDisplaySize(B - K(7), B - K(7));
+    s.pip.setText(f.maxed ? '★' : String(f.lvl))
+      .setColor(f.maxed ? '#f2c33c' : '#f7f4ef')
+      .setVisible(true).setPosition(bx + B - 1, by + B - 1);
+  }
+};
+
 PC.GameScene.prototype.drawHud = function () {
   var g = this.hud, K = PC.uiK;
   g.clear();
-  // HP bar (Cherry) top-left
-  var hpw = K(70);
-  g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, 3, hpw + 2, K(8));
-  g.fillStyle(PC.PAL.CHERRY, 1).fillRect(4, 4,
-    Math.max(0, hpw * this.hp / (PC.PLAYER.HP + (this.stats.bonusHp || 0))), K(8) - 2);
+  // ---- HP bar (v0.30.1, Mark: "easier to read hp bar") -------------
+  // was a 70x8 sliver of flat colour. Now: a framed gauge with a dark
+  // socket, a lit top edge on the fill, segment ticks every 25 HP so
+  // you can read damage at a glance, and the number printed on it.
+  var maxHp = PC.PLAYER.HP + (this.stats.bonusHp || 0);
+  var hpw = K(104), hph = K(14);
+  var L = PC.SAFE - K(6), T = K(5);          // clear of the screen edge
+  var frac2 = Math.max(0, Math.min(1, this.hp / maxHp));
+  g.fillStyle(0x0b0818, 0.92).fillRect(L, T, hpw + 4, hph + 4);      // socket
+  g.fillStyle(PC.PAL.INK, 1).fillRect(L + 1, T + 1, hpw + 2, hph + 2);
+  var hpCol = frac2 > 0.5 ? PC.PAL.CHERRY : (frac2 > 0.25 ? PC.PAL.CHEESE : PC.PAL.KETCHUP);
+  g.fillStyle(hpCol, 1).fillRect(L + 2, T + 2, Math.max(0, hpw * frac2), hph);
+  g.fillStyle(0xffffff, 0.28).fillRect(L + 2, T + 2, Math.max(0, hpw * frac2), K(3));
+  g.fillStyle(0x0b0818, 0.45);                                        // segments
+  for (var seg = 25; seg < maxHp; seg += 25) {
+    g.fillRect(L + 2 + hpw * (seg / maxHp), T + 2, 1, hph);
+  }
+  g.lineStyle(1, 0xcfd4e8, 0.55).strokeRect(L + 1.5, T + 1.5, hpw + 2, hph + 2);
+  if (this.hpText) {
+    this.hpText.setText(Math.max(0, Math.ceil(this.hp)) + '/' + Math.round(maxHp));
+    this.hpText.setPosition(L + 2 + hpw / 2, T + 2 + hph / 2);
+  }
   // XP bar (Lime) under it. Story: fills toward the next TECH chunk, so
   // banking still has a visible heartbeat without a level-up menu.
+  var xpy = T + hph + K(8);
   var frac = this.storyMission
     ? ((this.bankedXp || 0) % PC.XP.PER_TP) / PC.XP.PER_TP
     : this.xp / this.xpNext;
-  g.fillStyle(PC.PAL.INK, 0.8).fillRect(3, K(12), hpw + 2, K(4));
-  g.fillStyle(PC.PAL.LIME, 1).fillRect(4, K(12) + 1, Math.max(0, hpw * Math.min(1, frac)), K(4) - 2);
+  g.fillStyle(PC.PAL.INK, 0.9).fillRect(L + 1, xpy, hpw + 2, K(5));
+  g.fillStyle(PC.PAL.LIME, 1).fillRect(L + 2, xpy + 1, Math.max(0, hpw * Math.min(1, frac)), K(5) - 2);
+  g.lineStyle(1, 0x6d6a8e, 0.5).strokeRect(L + 0.5, xpy - 0.5, hpw + 3, K(5) + 1);
+  this.drawLoadout(g, xpy + K(9));
   if (this.goldText && this.pickups) this.goldText.setText('$ ' + this.pickups.gold);
 };
 
