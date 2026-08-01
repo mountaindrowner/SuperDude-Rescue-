@@ -12,6 +12,35 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-01 - v0.29.0: THE DISTRICT MAP (Mark: "put a map view when
+  the player presses pause or goes to the menu for story mode - it'll
+  help with navigation").** The districts are 7680px square and the
+  camera shows ~400 of that, so the compass arrow alone never answered
+  "where am I / what's around me." NEW `src/scenes/mapview.js`
+  PC_MapView, an overlay scene on the shop/garage contract
+  ({overlay, resume} pauses the run; {back, mapId, missionId} previews
+  from the menu). It draws a SCHEMATIC from each layout engine's OWN
+  geometry - park polylines + ponds, suburb streets + culs + frosting
+  rivers, labs road bands with glowing seams, city street grid - so a
+  district reads as itself at a glance. On it: numbered landmark lots
+  (legend below), the live objective as a pulsing gold ring, walk-in
+  storefronts wearing $ / G chips instead of an index (one chip per
+  lot - stacked markers collided), YOU as a pinging green dot, the
+  free-roam board as NEXT, plus an objective strip with distance +
+  8-point compass and a MISSION checklist (done / now / coming).
+  ENTRY: a [MAP] button top-right in story runs only (a quick run has
+  no district), M or ESC on desktop; and a 4th MAP button on the
+  mission map footer. THE BUG THIS SHOOK OUT (worth remembering):
+  GameScene is ONE instance reused for every run, so conditionally-
+  created HUD objects persist as DESTROYED objects into the next
+  create - the quick run re-attached the story run's dead buttons and
+  Phaser threw `undefined.sys` inside uiAttach. Null every optional
+  HUD field at the top of create. New harness verify-map.js: MAP
+  pauses + opens on top, nothing moves or takes damage while it's up,
+  RESUME restores the same spot, the clock is frozen, and the menu
+  preview runs with no game behind it - across all four districts.
+  Full battery green (linear/freeroam/garage/park/suburbs/labs/text).
+
 - **2026-07-31 - v0.28.0: SUPER DUDE LABS (Map 4 / beat 6) + THE
   REVEAL.** The fourth fabric: INDUSTRY (`src/systems/world_labs.js`
   PC.LabsLayout) - strict Manhattan service roads (hazard-stripe
