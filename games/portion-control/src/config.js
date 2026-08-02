@@ -174,9 +174,12 @@ PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.025 };
 // loadout - a survival ramp there just walls the player.
 //   interval > 1 = longer gaps between spawns   (fewer enemies)
 //   cap      < 1 = smaller live crowd            (less overwhelm)
+// v0.30.2 (Mark on-device: "the enemy spawn rate is crazy... maybe cut
+// it in half"): story interval 1.55 -> 2.4 and cap 0.60 -> 0.42, i.e.
+// roughly half the spawns per minute AND half the crowd of v0.30.0.
 PC.EASE = {
-  QUICK: { interval: 1.25, cap: 0.80, ring: 0.85, clear: 0.85 },
-  STORY: { interval: 1.55, cap: 0.60, ring: 0.70, clear: 0.70 },
+  QUICK: { interval: 1.45, cap: 0.70, ring: 0.80, clear: 0.80 },
+  STORY: { interval: 2.40, cap: 0.42, ring: 0.55, clear: 0.60 },
 };
 PC.ease = function (scene) {
   return (scene && scene.storyMission) ? PC.EASE.STORY : PC.EASE.QUICK;

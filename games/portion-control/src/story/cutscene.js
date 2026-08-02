@@ -29,12 +29,17 @@ PC.CutsceneScene.prototype.create = function () {
   this.cameras.main.setBackgroundColor(0x0d0a1c);
 
   // ---- the TV screen rect (4:3.2-ish tube, centered above the box) ----
-  var sw = Math.min(W - 44, 300);
+  // v0.30.2: these were pixel constants tuned at BASE 312. After the
+  // v0.27.2 zoom-out (BASE 400) the set stopped filling the frame and
+  // floated high - Mark: "the TV... it's off center". Everything is
+  // proportional to the viewport now, and the set is centred in the
+  // space ABOVE the dialogue box rather than in the whole screen.
+  var boxTop = H - PC.uiK(96);               // where the dialogue box starts
+  var topPad = PC.uiK(30);                   // room for the antenna
+  var sw = Math.round(Math.min(W - PC.uiK(34), (boxTop - topPad) / 0.82));
   var sh = Math.round(sw * 0.82);
-  var availH = H - 96;                       // dialogue box + margins
-  if (sh > availH - 70) sh = availH - 70;
   var sx = Math.round((W - sw) / 2);
-  var sy = Math.round(38 + (availH - sh) / 2) - 6;
+  var sy = Math.round(topPad + (boxTop - topPad - sh) / 2);
   this.scr = { x: sx, y: sy, w: sw, h: sh };
 
   this.paintRoom();
@@ -415,6 +420,51 @@ PC.CutsceneScene.prototype.paintScene = function (name) {
     return;
   }
 
+  if (name === 'danny_interview') {
+    // v0.30.2 (Mark: "whenever Super Dude Danny is alone and he's like
+    // thinking, it should really be another interview... he's saying,
+    // what are you gonna do? I'm gonna find the team"). Danny answers
+    // the press ON CAMERA instead of brooding alone - it keeps the whole
+    // intro inside the newscast framing and gives him a public promise.
+    var W3 = R.w, dep = 12;
+    g.fillStyle(0x1a1630, 1).fillRect(R.x, R.y, R.w, R.h);          // night plaza
+    g.fillStyle(0x241f3d, 1).fillRect(R.x, R.y + R.h * 0.62, R.w, R.h * 0.38);
+    g.fillStyle(0x120e24, 1);                                        // skyline
+    for (var s3 = 0; s3 < 7; s3++) {
+      var bw3 = R.w * (0.07 + PC.hash01(s3, 61, 3) * 0.07);
+      var bh3 = R.h * (0.16 + PC.hash01(s3, 62, 4) * 0.24);
+      g.fillRect(R.x + s3 * (R.w / 7) + 4, R.y + R.h * 0.62 - bh3, bw3, bh3);
+    }
+    g.fillStyle(0xf2c33c, 0.5);                                      // lit windows
+    for (s3 = 0; s3 < 22; s3++) {
+      g.fillRect(R.x + 8 + PC.hash01(s3, 63, 5) * (R.w - 16),
+                 R.y + R.h * 0.34 + PC.hash01(s3, 64, 6) * R.h * 0.26, 2, 3);
+    }
+    // camera-light bloom on the pavement
+    g.fillStyle(0xffffff, 0.06);
+    g.fillEllipse ? g.fillEllipse(R.x + R.w * 0.5, R.y + R.h * 0.82, R.w * 0.7, R.h * 0.2)
+                  : g.fillRect(R.x + R.w * 0.2, R.y + R.h * 0.74, R.w * 0.6, R.h * 0.16);
+    // stamp() centres its image, and the news banner eats the bottom
+    // ~14% of the screen - stand them ON a ground line at 0.70h so both
+    // figures sit clear of the chrome
+    var ground = R.y + R.h * 0.70;
+    var sc3 = R.h / 150;                       // figures scale with the set
+    this.stamp('cs_reporter', R.x + R.w * 0.26, ground - 48 * sc3 * 0.42, sc3 * 0.92);
+    this.stamp('cs_danny_mic', R.x + R.w * 0.66, ground - 48 * sc3 * 0.5, sc3 * 1.1);
+    g.fillStyle(0x0a0716, 0.35);               // contact shadows
+    g.fillEllipse(R.x + R.w * 0.26, ground + 2, 46 * sc3 * 0.5, 10 * sc3 * 0.5);
+    g.fillEllipse(R.x + R.w * 0.66, ground + 2, 52 * sc3 * 0.5, 11 * sc3 * 0.5);
+    // press flashes popping in the dark
+    var self3 = this;
+    [0.08, 0.4, 0.86].forEach(function (fx3, i3) {
+      var fl = self3.add.rectangle(R.x + R.w * fx3, R.y + R.h * 0.5,
+        R.w * 0.3, R.h * 0.5, 0xffffff, 0).setDepth(24);
+      self3.tv.add(fl);
+      self3.tweens.add({ targets: fl, fillAlpha: 0.22, duration: 90,
+        yoyo: true, repeat: -1, delay: 400 + i3 * 900, repeatDelay: 1500 + i3 * 700 });
+    });
+    return;
+  }
   if (name === 'danny_room') {
     // the TV drops to idle static; Danny himself steps into the room
     g.fillStyle(0x08060f, 1).fillRect(R.x, R.y, R.w, R.h);

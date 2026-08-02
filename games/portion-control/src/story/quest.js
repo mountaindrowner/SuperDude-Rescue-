@@ -487,14 +487,22 @@ PC.Quest.prototype.drawHudBits = function () {
     label += '  ' + Math.min(o.secs, Math.floor(this.defendT)) + '/' + o.secs + 's';
   }
   this.bannerTxt.setText(label).setVisible(true);
-  PC.labPanel(g, W / 2 - this.bannerTxt.width / 2 - 10, 27,
-    this.bannerTxt.width + 20, 15, { base: 0x1c1733, edge: 0x45356e, radius: 3 });
-  // defend progress bar
+  // R4: MEASURE the panel from the text. These were hardcoded (y 27,
+  // h 15) and stopped matching the moment the type scale moved with the
+  // zoom in v0.27.2 - the text hung below its own bar (Mark: "CLEAR
+  // CITY HALL PLAZA is not centered on its bar").
+  var padX = PC.uiK(10), padY = PC.uiK(3);
+  var bx = W / 2 - this.bannerTxt.width / 2 - padX;
+  var by = this.bannerTxt.y - padY;
+  var bh = this.bannerTxt.height + padY * 2;
+  PC.labPanel(g, bx, by, this.bannerTxt.width + padX * 2, bh,
+    { base: 0x1c1733, edge: 0x45356e, radius: 3 });
+  // defend progress bar, hung off the bottom of that panel
   if (o.type === 'defend' && this.state === 'active') {
-    var bw = 90;
-    g.fillStyle(0x120e24, 0.9).fillRect(W / 2 - bw / 2, 45, bw, 5);
-    g.fillStyle(0xf2c33c, 1).fillRect(W / 2 - bw / 2, 45,
-      bw * Math.min(1, this.defendT / o.secs), 5);
+    var bw = PC.uiK(90), byy = by + bh + PC.uiK(3);
+    g.fillStyle(0x120e24, 0.9).fillRect(W / 2 - bw / 2, byy, bw, PC.uiK(5));
+    g.fillStyle(0xf2c33c, 1).fillRect(W / 2 - bw / 2, byy,
+      bw * Math.min(1, this.defendT / o.secs), PC.uiK(5));
   }
   // compass: edge arrow toward the target when it's off-screen
   var t = this.targetXY();

@@ -49,7 +49,8 @@ window.PC = window.PC || {};
     for (var ci = 1; ci <= 2; ci++) add(n + '_' + ci, 32, 32, 'creature', P.CRUST, P.COCOA, ci);
   });
   // newscast cutscene figures (v0.18.2): crowd from behind + npc minis
-  ['cs_civ_a', 'cs_civ_b', 'cs_civ_c', 'cs_bloom', 'cs_sal', 'cs_pip'].forEach(function (n) {
+  ['cs_civ_a', 'cs_civ_b', 'cs_civ_c', 'cs_bloom', 'cs_sal', 'cs_pip',
+   'cs_reporter', 'cs_danny_mic'].forEach(function (n) {
     add(n, 48, 48, 'creature', P.CLOUD, P.GRAPE, 1);
   });
 
