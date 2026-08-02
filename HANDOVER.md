@@ -12,6 +12,43 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-01 - v0.30.2: ON-DEVICE FEEDBACK BATCH 1.** Mark played a
+  long session and filed ~19 notes; this is the half that was breaking
+  the session. **THE BIG ONE - STALE INDEX:** he had been playing
+  v0.29.0 while believing it was v0.30.1, which invalidated four of his
+  observations (no HP gauge, level-ups still firing, spawns still
+  brutal). `?v=` busts every SCRIPT but index.html itself has no
+  buster, so a CDN can serve an old index forever. FIX: `version.json`
+  + a boot check in index.html that fetches it uncacheable and, if the
+  build differs, reloads ONCE against a fresh URL (sessionStorage
+  guard, no loop). **version.json is now part of the version-lockstep
+  set with PC_BUILD.** THE REST: the "persistent cone on the character"
+  was `itemGlow`, a muzzle-cone sprite pinned to the hero and pulsing
+  forever - CUT, and `vfx.muzzleFlash` is now a no-op so every call
+  site stays valid (Mark: "the muzzle flash effect is not good"). The
+  objective banner's panel was hardcoded at y 27 h 15 while the TEXT
+  moved with the type scale in v0.27.2, so the text hung below its own
+  bar - the panel is MEASURED from the text now (the same R4 lesson as
+  the dialogue box; watch for other hardcoded panels). The intro TV was
+  sized in pixel constants tuned at BASE 312 and floated small and high
+  after the zoom-out - the set is proportional to the viewport now and
+  centred in the space ABOVE the dialogue box. Spawn pressure halved
+  again (story 415 -> 268 spawns/min, cap 156 -> 109). NEW SCENE
+  `danny_interview` replaces the brooding `danny_room` beat: Danny
+  answers the press on camera ("I'm gonna find my team - and we're
+  gonna put this city back together"), with two new PixelLab stamps
+  (cs_reporter, cs_danny_mic) and press-flash pops. Battery green.
+  **STILL OPEN from that session, in Mark's words** (next batches):
+  ability descriptions must be dummy-proof ("increased weapon area -
+  what does that mean, for what weapons?"); the bouncing candy weapon
+  should look like real hard candies and vary between them; city
+  buildings need per-building uniqueness; the VOTE NAYAH FOR MAYOR
+  poster Easter egg is missing; the Nourish-Ray Stage and the Mission
+  Board don't read as anything; buildings have openings you can't
+  enter (walk-on-top confusion); side quests still unbuilt; the finale
+  tower node on the mission map needs detail; and BANKED for later -
+  combining weapons/abilities into OP combos.
+
 - **2026-08-01 - v0.30.1: HP GAUGE + THE LOADOUT TRAY (Mark: "easier to
   read hp bar and a section under that, that shows which abilities and
   weapons have been chosen and filling out the boxes. Like vampire

@@ -78,11 +78,11 @@ PC.GameScene.prototype.create = function () {
   this.passives = {};
   PC.applyHeroKit(this);            // signature weapon + hero passive (kits.js)
   if (PC.meta) PC.meta.applyAll(this);   // permanent shop power-ups (WP-METASHOP)
-  // item glow: a soft pulsing light on the hero's held item while walking
-  // (VS-law: code-side life, no new frames). Offset flips with facing.
-  this.itemGlow = this.kit.glow ? this.add.image(0, 0, 'atlas', 'fx_muzzle_1')
-    .setBlendMode(Phaser.BlendModes.ADD).setDepth(11)
-    .setTint(this.kit.glow.color).setVisible(true) : null;
+  // v0.30.2 CUT (Mark: "there's like this persistent cone that's on the
+  // [character]... it's not a good idea, I don't like it"). It was a
+  // muzzle-cone sprite pinned to the hero and pulsing forever - it read
+  // as a bug, not a light. The hero's own art carries the look now.
+  this.itemGlow = null;
   this._onKillCb = function (e) { self.onKill(e); };
   this.pendingLevels = 0;
   this.cardsOpen = false;

@@ -34,10 +34,16 @@ PC.STORY.scripts.intro = [
     ticker: 'DOWNTOWN BURIED IN SNACKS  +++  REPORTS: THE FOOD IS... MOVING?  +++  STAY INDOORS, ADVENTURE CITY' } },
   { say: { speaker: 'anchor', text: "Day two of the Junk-Food Flood. The streets are buried. And folks… viewers are reporting the food is FIGHTING BACK." } },
   { say: { speaker: 'bloom', text: "Danny, it won't stop! It's — it's ALIVE!" } },
-  { scene: 'danny_room' },
-  { say: { speaker: 'danny', text: "I did this." } },
+  // v0.30.2: Danny answers the PRESS instead of brooding alone in his
+  // room (Mark: "it should really be another interview... what are you
+  // gonna do? I'm gonna find the team, and we're gonna fix this")
+  { scene: 'danny_interview' },
+  { chrome: { banner: 'SUPER DUDE DANNY RESPONDS', live: true,
+    ticker: 'INVENTOR FACES THE PRESS  +++  CITY ASKS: CAN HE UNDO IT?' } },
+  { say: { speaker: 'anchor', text: "Super Dude Danny! The whole city is buried. What are you going to DO?" } },
+  { say: { speaker: 'danny', text: "I did this. So I'm going to fix it." } },
   { music: 'lift' },
-  { say: { speaker: 'danny', text: "…but I know who can help me fix it." } },
+  { say: { speaker: 'danny', text: "I'm gonna find my team — and we're gonna put this city back together. Every last crumb." } },
   { action: 'portraits6' },
   { say: { speaker: 'danny', text: "Crew — Adventure City needs us. Super Dude… GO!" } },
 ];

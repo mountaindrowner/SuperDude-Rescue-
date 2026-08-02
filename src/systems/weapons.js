@@ -311,7 +311,7 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
   if (PC.VFX_V2 && scene.vfx) {
     scene.vfx.shrinkRing(scene.px + aim.ax * 16, scene.py - 4 + aim.ay * 10, 12, 220);
   } else {
-    scene.fx.burst(scene.px + aim.ax * 18, scene.py - 4 + aim.ay * 12, 'fx_muzzle', 2, 0.1);
+    // (muzzle burst cut in v0.30.2 with the rest of the flash pass)
   }
   if (PC.audio) PC.audio.weaponVoice('resizer');
 };

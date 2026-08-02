@@ -16,7 +16,30 @@
      PC.VERSION) and cache-busts every script + art URL, so a device can
      never mix files from two builds (the v0.11.3 "purple squares" bug
      was exactly that: new weapon code + a stale cached asset registry). -->
-<script>window.PC_BUILD = '0.30.1';</script>
+<script>window.PC_BUILD = '0.30.2';</script>
+<script>
+// SELF-HEALING CACHE (v0.30.2). The ?v= stamp busts every SCRIPT, but
+// index.html itself has no buster - so a CDN/browser can keep serving
+// an old index forever and the whole build silently stays stale. (Mark
+// played v0.29.0 for a day believing it was v0.30.1.) This asks the
+// server for the real build number with an uncacheable query and, if it
+// differs, reloads ONCE against a fresh URL. Bump version.json with
+// PC_BUILD - they are a lockstep pair.
+(function () {
+  try {
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.build || j.build === window.PC_BUILD) return;
+        var k = 'pc.reload.' + j.build;
+        if (sessionStorage.getItem(k)) return;      // never loop
+        sessionStorage.setItem(k, '1');
+        location.replace(location.pathname + '?b=' + j.build);
+      })
+      .catch(function () {});
+  } catch (e) {}
+})();
+</script>
 <script>
 (function () {
   var files = [

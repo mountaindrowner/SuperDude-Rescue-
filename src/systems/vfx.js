@@ -77,7 +77,12 @@ PC.Vfx.prototype.lingeringField = function (x, y, radius, ms, c1, c2) {
 // directional muzzle flash at the barrel (v0.23.0). Pass the firing
 // angle in radians and the cone points down the shot; without one it
 // still works, it just isn't aimed.
-PC.Vfx.prototype.muzzleFlash = function (x, y, color, angle) {
+// v0.30.2: CUT (Mark: "the muzzle flash on the character, let's get rid
+// of that... it doesn't work"). Left as a no-op so every call site
+// stays valid - the shaped bolt already reads as the shot.
+PC.Vfx.prototype.muzzleFlash = function () { return null; };
+
+PC.Vfx.prototype._muzzleFlashOld = function (x, y, color, angle) {
   var f = this.scene.fx.burst(x, y, 'fx_muzzle', 2, 0.12, color || 0x35d0ff);
   if (f && angle !== undefined) f.sprite.setRotation(angle);
 };

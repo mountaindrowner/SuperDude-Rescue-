@@ -211,6 +211,8 @@ PC.ART_MANIFEST = [
   'cs_bloom',
   'cs_sal',
   'cs_pip',
+  'cs_reporter',
+  'cs_danny_mic',
   'portrait_danny_ko',
   'portrait_carlos_ko',
   'portrait_josh_ko',
