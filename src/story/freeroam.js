@@ -98,6 +98,12 @@ PC.FreeRoam.prototype.launch = function () {
   var scene = this.scene, self = this;
   if (PC.audio) PC.audio.ui();
   PC.STORY.pendingMission = this.next;
+  // v0.31.0 (Mark: "when missions start why does the player start in
+  // the farthest corner?"): the restart used to respawn at the district
+  // ENTRY - you walked to the board, pressed START, and teleported back
+  // across the map. Same-map missions now begin where you're standing.
+  PC.STORY.pendingSpawn = (this.next && this.next.map === scene.storyMission.map)
+    ? { x: scene.px, y: scene.py } : null;
   // a fade, not a menu: the city dissolves straight into the next beat
   scene.cameras.main.fadeOut(500, 0, 0, 0);
   scene.cameras.main.once('camerafadeoutcomplete', function () {

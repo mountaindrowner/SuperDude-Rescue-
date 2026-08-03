@@ -95,7 +95,7 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
     if (i >= this.bots) { b.img.setVisible(false); continue; }
     var side = i === 0 ? -1 : 1;
     var hx = scene.px + side * 22 * scene.facing - 10 * scene.facing;
-    var hy = scene.py - 6 + Math.sin(this.t * 4 + i * 2) * 3;
+    var hy = PC.fireY(scene) + Math.sin(this.t * 4 + i * 2) * 3;
     b.x += (hx - b.x) * Math.min(1, dt * 6);
     b.y += (hy - b.y) * Math.min(1, dt * 6);
     b.img.setPosition(Math.round(b.x), Math.round(b.y)).setVisible(true)
@@ -296,7 +296,7 @@ PC.HaymakerWeapon.prototype.update = function (dt, scene) {
       var R = this.reach * scene.stats.areaMult;
       g.lineStyle(3, 0xf7f4ef, 0.7 * (this.flashT / 0.1));
       g.beginPath();
-      g.arc(scene.px, scene.py - 6, R * 0.8, this.flashAng - 0.5, this.flashAng + 0.5);
+      g.arc(scene.px, PC.fireY(scene), R * 0.8, this.flashAng - 0.5, this.flashAng + 0.5);
       g.strokePath();
     }
   }

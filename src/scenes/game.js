@@ -37,8 +37,12 @@ PC.GameScene.prototype.create = function () {
   this.uiAttach = function (o) { uiSelf.ui.add(o); return o; };
   this.moveInput = new PC.MoveInput(this);
 
-  this.px = this.region ? this.region.spawnX : 0;
-  this.py = this.region ? this.region.spawnY : 0;
+  // a mission launched from the free-roam board starts where the player
+  // stood, not back at the district entry (v0.31.0)
+  var ps = PC.STORY && PC.STORY.pendingSpawn;
+  if (PC.STORY) PC.STORY.pendingSpawn = null;
+  this.px = (this.region && ps) ? ps.x : this.region ? this.region.spawnX : 0;
+  this.py = (this.region && ps) ? ps.y : this.region ? this.region.spawnY : 0;
   this.facing = 1;
   this.aimX = 1; this.aimY = 0;      // last movement direction = fire direction
   this.moving = false;
@@ -148,30 +152,33 @@ PC.GameScene.prototype.create = function () {
   // GameScene is ONE instance reused for every run, so these must be
   // cleared on every create - a quick run (no region) would otherwise
   // re-attach the DESTROYED buttons left by the last story run
+  // v0.31.0 (Mark: "the top area is cluttered... let's move map to the
+  // bottom"): the MAP button lives bottom-right now, above the home
+  // indicator, leaving the top strip to timer / POPS / banner.
   this.mapBtn = null; this.mapBtnG = null; this.mapZone = null;
-  var mapTop = K(3);
   if (this.region) {
+    var mbY = PC.RENDER.H - PC.SAFE_BOTTOM - K(22);
+    var mbX = PC.RENDER.W - PC.SAFE - K(30);
     this.mapBtnG = this.add.graphics().setDepth(101);
     this.mapBtnG.fillStyle(0x1c1733, 0.9);
-    this.mapBtnG.fillRect(PC.RENDER.W - K(34), mapTop, K(31), K(19));
+    this.mapBtnG.fillRect(mbX, mbY, K(34), K(20));
     this.mapBtnG.lineStyle(2, 0x35d0ff, 0.9);
-    this.mapBtnG.strokeRect(PC.RENDER.W - K(34), mapTop, K(31), K(19));
+    this.mapBtnG.strokeRect(mbX, mbY, K(34), K(20));
     this.mapBtnG.fillStyle(0x35d0ff, 0.85);        // folded-map glyph
-    this.mapBtnG.fillRect(PC.RENDER.W - K(30), mapTop + K(5), K(7), K(9));
+    this.mapBtnG.fillRect(mbX + K(3), mbY + K(5), K(7), K(10));
     this.mapBtnG.fillStyle(0x35d0ff, 0.55);
-    this.mapBtnG.fillRect(PC.RENDER.W - K(23), mapTop + K(4), K(7), K(9));
-    this.mapBtn = this.add.text(PC.RENDER.W - K(14), mapTop + K(6), 'MAP', {
+    this.mapBtnG.fillRect(mbX + K(10), mbY + K(4), K(7), K(10));
+    this.mapBtn = this.add.text(mbX + K(25), mbY + K(6), 'MAP', {
       fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#35d0ff', fontStyle: 'bold',
     }).setOrigin(0.5, 0).setDepth(102);
-    this.mapZone = this.add.zone(PC.RENDER.W - K(19), mapTop + K(10), K(44), K(30))
+    this.mapZone = this.add.zone(mbX + K(17), mbY + K(10), K(48), K(34))
       .setInteractive({ useHandCursor: true });
     this.mapZone.on('pointerdown', function (p, lx, ly, ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       this.openMap();
     }, this);
   }
-  this.killText = this.add.text(PC.RENDER.W - 4,
-    this.region ? K(25) : K(4), 'POPS 0', {
+  this.killText = this.add.text(PC.RENDER.W - 4, K(4), 'POPS 0', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#f2c33c',
   }).setOrigin(1, 0).setDepth(101);
   // HP readout printed on the gauge itself
@@ -181,8 +188,11 @@ PC.GameScene.prototype.create = function () {
   }).setOrigin(0.5).setDepth(102);
   // the tray sits under the bars, so the run stats move below it
   this.buildLoadout();
-  var statY = K(5) + K(14) + K(8) + K(5) + K(9) + 2 * this.slotBox + this.slotGap + K(7);
-  this.levelText = this.add.text(PC.SAFE - K(6), statY, 'LV 1', {
+  // story runs skip the XP bar, so the stat column sits higher there
+  var statY = K(5) + K(14) + K(8) + 2 * this.slotBox + this.slotGap + K(7) +
+              (this.region ? 0 : K(14));
+  this.levelText = this.add.text(PC.SAFE - K(6), statY,
+    this.region ? 'TECH +0' : 'LV 1', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#a8e04a',
   }).setDepth(101);
   this.goldText = this.add.text(PC.SAFE - K(6), statY + K(11), '', {
@@ -195,15 +205,14 @@ PC.GameScene.prototype.create = function () {
   // right, which is exactly where the dialogue box and its ▼ land - so a
   // conversation always had the version number printed inside it.
   this.verText = this.add.text(PC.RENDER.W - PC.SAFE,
-    (this.region ? K(37) : 0) + (PC.DEV_MODE ? K(30) : K(18)), PC.VERSION, {
+    PC.DEV_MODE ? K(30) : K(18), PC.VERSION, {
     fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101);
   this._dbgAcc = 0;
   this.drawHud();
 
   // dev swarm button (works on touch - Mark can't press T on a phone)
-  this.swarmBtn = this.add.text(PC.RENDER.W - 4,
-    (this.region ? K(37) : 0) + K(18), '[SWARM]', {
+  this.swarmBtn = this.add.text(PC.RENDER.W - 4, K(30), '[SWARM]', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#6d6a8e',
   }).setOrigin(1, 0).setDepth(101)
     .setInteractive({ useHandCursor: true });
@@ -259,7 +268,8 @@ PC.GameScene.prototype.gainXp = function (v) {
   // Quick run keeps the classic level-and-pick loop untouched.
   if (this.storyMission) {
     this.bankedXp = Math.floor(this.xp);
-    this.levelText.setText('XP ' + this.bankedXp);
+    // ONE currency name on screen (v0.31.0): the counter IS tech, live
+    this.levelText.setText('TECH +' + this.bankedTp());
     this.drawHud();
     return;
   }
@@ -313,6 +323,8 @@ PC.GameScene.prototype.onKill = function (e) {
 PC.GameScene.prototype.buildLoadout = function () {
   var K = PC.uiK, self = this;
   this.slotBox = K(20); this.slotGap = K(3);
+  // the right edge of the HUD column - the quest banner keeps clear of it
+  this.hudRight = PC.SAFE - K(6) + (PC.XP.WEAPON_SLOTS || 4) * (this.slotBox + this.slotGap) + K(6);
   this.slotIcons = [];
   var n = (PC.XP.WEAPON_SLOTS || 4) + (PC.XP.PASSIVE_SLOTS || 4);
   for (var i = 0; i < n; i++) {
@@ -427,16 +439,21 @@ PC.GameScene.prototype.drawHud = function () {
     this.hpText.setText(Math.max(0, Math.ceil(this.hp)) + '/' + Math.round(maxHp));
     this.hpText.setPosition(L + 2 + hpw / 2, T + 2 + hph / 2);
   }
-  // XP bar (Lime) under it. Story: fills toward the next TECH chunk, so
-  // banking still has a visible heartbeat without a level-up menu.
-  var xpy = T + hph + K(8);
-  var frac = this.storyMission
-    ? ((this.bankedXp || 0) % PC.XP.PER_TP) / PC.XP.PER_TP
-    : this.xp / this.xpNext;
-  g.fillStyle(PC.PAL.INK, 0.9).fillRect(L + 1, xpy, hpw + 2, K(5));
-  g.fillStyle(PC.PAL.LIME, 1).fillRect(L + 2, xpy + 1, Math.max(0, hpw * Math.min(1, frac)), K(5) - 2);
-  g.lineStyle(1, 0x6d6a8e, 0.5).strokeRect(L + 0.5, xpy - 0.5, hpw + 3, K(5) + 1);
-  this.drawLoadout(g, xpy + K(9));
+  // v0.31.0 (Mark: "get rid of the exp bar... are tech points the same
+  // as exp? that's all confusing"): STORY shows NO XP anywhere - gems
+  // feed a live TECH counter (drawn as text below the tray) and that's
+  // the whole economy: coins for Sal's, TECH for the Garage. Quick run
+  // keeps its XP/level bar - levelling is that mode's loop.
+  var xpy = T + hph + K(4);
+  if (!this.storyMission) {
+    xpy = T + hph + K(8);
+    var frac = this.xp / this.xpNext;
+    g.fillStyle(PC.PAL.INK, 0.9).fillRect(L + 1, xpy, hpw + 2, K(5));
+    g.fillStyle(PC.PAL.LIME, 1).fillRect(L + 2, xpy + 1, Math.max(0, hpw * Math.min(1, frac)), K(5) - 2);
+    g.lineStyle(1, 0x6d6a8e, 0.5).strokeRect(L + 0.5, xpy - 0.5, hpw + 3, K(5) + 1);
+    xpy += K(5);
+  }
+  this.drawLoadout(g, xpy + K(4));
   if (this.goldText && this.pickups) this.goldText.setText('$ ' + this.pickups.gold);
 };
 

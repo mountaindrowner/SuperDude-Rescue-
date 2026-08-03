@@ -366,7 +366,7 @@ PC.BeamWeapon.prototype.applyLevel = function () {
   else if (this.level === 5) { this.dmg = 95; this.cd = 7.5; this.width = 40; }
 };
 PC.BeamWeapon.prototype._corridor = function (scene, ang, w2, dmg) {
-  var pxp = scene.px, pyp = scene.py - 4;
+  var pxp = scene.px, pyp = PC.fireY(scene);
   var ca = Math.cos(ang), sa = Math.sin(ang);
   var range = this.range;
   scene.enemies.hash.eachNear(pxp + ca * range * 0.5, pyp + sa * range * 0.5, function () {});
@@ -396,7 +396,7 @@ PC.BeamWeapon.prototype._corridor = function (scene, ang, w2, dmg) {
 PC.BeamWeapon.prototype.update = function (dt, scene) {
   var g = this.gfx;
   g.clear();
-  var pxp = scene.px, pyp = scene.py - 4;
+  var pxp = scene.px, pyp = PC.fireY(scene);
   if (this.state === 'idle') {
     this.cdT -= dt;
     if (this.cdT > 0) return;
@@ -492,7 +492,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
   var am = scene.stats.areaMult;
   var r = (this.rMin + (this.rMax - this.rMin) * (0.5 + 0.5 * Math.sin(scene.now * 5.2))) * am;
   var lead = this._spinA;
-  var pxp = scene.px, pyp = scene.py - 4;
+  var pxp = scene.px, pyp = PC.fireY(scene);
   // cowboy swing, LEVEL-driven (Mark v0.14.4): at L1 a small loop
   // swings WIDE at the end of the rope; each level grows the loop and
   // reels the swing inward, until max level is the complete circle

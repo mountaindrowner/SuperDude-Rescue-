@@ -18,10 +18,15 @@ PC.STORY.maps.central = {
   landmarks: [
     { id: 'cityhall',   name: 'CITY HALL',          c0: 6,  r0: 1,  c1: 7,  r1: 2,  color: '#4d688f', accent: '#f2c33c' },
     { id: 'bloomtower', name: 'BLOOM TOWER',        c0: 11, r0: 1,  c1: 12, r1: 2,  color: '#665882', accent: '#ff9ecb' },
-    { id: 'demostage',  name: 'NOURISH-RAY STAGE',  c0: 7,  r0: 4,  c1: 7,  r1: 4,  color: '#241f3d', accent: '#35d0ff', open: true },
+    // v0.31.0 (Mark: "the nourish ray stage is confusing, doesn't fit
+    // the story") - it IS the story: the wrecked plaza stage where the
+    // demo went wrong. Renamed + custom wreck painter so it reads.
+    { id: 'demostage',  name: 'THE DEMO SITE',      c0: 7,  r0: 4,  c1: 7,  r1: 4,  color: '#241f3d', accent: '#b45ce8', open: true },
     { id: 'garage',     name: 'SUPER DUDE GARAGE',  c0: 1,  r0: 5,  c1: 1,  r1: 5,  color: '#5a5388', accent: '#35d0ff' },
     { id: 'store',      name: "SAL'S CORNER STORE", c0: 11, r0: 5,  c1: 11, r1: 5,  color: '#6e5866', accent: '#a8e04a' },
-    { id: 'board',      name: 'MISSION BOARD',      c0: 7,  r0: 6,  c1: 7,  r1: 6,  color: '#40567a', accent: '#f2c33c' },
+    // v0.31.0: an OPEN kiosk now, not a mystery building - a signboard
+    // you walk up to between missions (Mark asked twice what it was)
+    { id: 'board',      name: 'MISSION BOARD',      c0: 7,  r0: 6,  c1: 7,  r1: 6,  color: '#2e2a45', accent: '#f2c33c', open: true },
     { id: 'plaza',      name: 'CENTRAL PLAZA',      c0: 5,  r0: 8,  c1: 7,  r1: 9,  color: '#2e2a45', accent: '#35d0ff', open: true },
     { id: 'substation', name: 'THE SUBSTATION',     c0: 11, r0: 9,  c1: 12, r1: 9,  color: '#3c2f38', accent: '#f2c33c' },
     { id: 'diner',      name: 'THE OLD DINER',      c0: 2,  r0: 11, c1: 2,  r1: 11, color: '#564a6c', accent: '#ff6b6b' },

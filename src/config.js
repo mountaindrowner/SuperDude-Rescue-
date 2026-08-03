@@ -185,6 +185,13 @@ PC.ease = function (scene) {
   return (scene && scene.storyMission) ? PC.EASE.STORY : PC.EASE.QUICK;
 };
 
+// where player shots ORIGINATE (v0.31.0, Mark: "all shots should come
+// from the center of the characters, right now they're coming from
+// their feet"). px/py is the sprite's feet anchor; centre mass sits
+// roughly 16 logical px up on every hero at their normalized scale.
+PC.FIRE_LIFT = 16;
+PC.fireY = function (scene) { return scene.py - PC.FIRE_LIFT; };
+
 // ---- pickups (COMPENDIUM 5.6) ----
 PC.DROPS = { HEALTH: 0.012, MAGNET: 0.004, BOMB: 0.0015, HEALTH_HEAL: 30 };
 

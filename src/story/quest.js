@@ -397,13 +397,23 @@ PC.Quest.prototype.update = function (dt) {
     if (this.state === 'travel' && inZone) {
       this.state = 'active';
       if (PC.audio) PC.audio.telegraph();
+      // SUPPLY DROP (v0.31.0, Mark: "defend substation mission is
+      // unbeatable at the current progression"). With fixed loadouts a
+      // hold is the hardest beat in a mission, so arming one airdrops a
+      // power chest at the zone - the same walk-over grant as a boss
+      // drop. One free upgrade, exactly when the wall would hit.
+      if (scene.dropBossPower && !scene.bossDrop) {
+        scene.dropBossPower(zone.x + 40, zone.y - 20);
+      }
     }
     if (this.state === 'active') {
       if (inZone) this.defendT += dt;
       this._waveAcc += dt;
-      if (this._waveAcc > 4.5) {
+      // waves were a flat 4.5s / 8 enemies on top of ambient spawns -
+      // far too hot for a base kit; slower cadence, eased size
+      if (this._waveAcc > 7) {
         this._waveAcc = 0;
-        this.ring(zone.x, zone.y, 8, false);
+        this.ring(zone.x, zone.y, 6, false);
       }
       if (this.defendT >= o.secs) this.finishObjective(o);
     }
@@ -487,12 +497,19 @@ PC.Quest.prototype.drawHudBits = function () {
     label += '  ' + Math.min(o.secs, Math.floor(this.defendT)) + '/' + o.secs + 's';
   }
   this.bannerTxt.setText(label).setVisible(true);
+  // v0.31.0 (Mark: "the top weapon blocks and quest title are
+  // overlapping"): the banner centres in the space RIGHT of the HUD
+  // column instead of the whole screen, so it can never sit on the tray
+  var hudR = this.scene.hudRight || 0;
+  var bcx = Math.max((hudR + W) / 2, W / 2);
+  PC.ui.fit(this.bannerTxt, W - hudR - PC.uiK(26));
+  this.bannerTxt.setX(bcx);
   // R4: MEASURE the panel from the text. These were hardcoded (y 27,
   // h 15) and stopped matching the moment the type scale moved with the
   // zoom in v0.27.2 - the text hung below its own bar (Mark: "CLEAR
   // CITY HALL PLAZA is not centered on its bar").
   var padX = PC.uiK(10), padY = PC.uiK(3);
-  var bx = W / 2 - this.bannerTxt.width / 2 - padX;
+  var bx = bcx - this.bannerTxt.width / 2 - padX;
   var by = this.bannerTxt.y - padY;
   var bh = this.bannerTxt.height + padY * 2;
   PC.labPanel(g, bx, by, this.bannerTxt.width + padX * 2, bh,
