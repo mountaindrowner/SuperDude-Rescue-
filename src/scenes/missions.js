@@ -96,14 +96,47 @@ PC.MissionsScene.prototype.create = function () {
       route.fillCircle(a.x + (b.x - a.x) * t2, a.y + (b.y - a.y) * t2, 1.4);
     }
   }
-  // tower glyph crowning the final node
+  // ADVENTURE TOWER crowning the final node (v0.31.1, Mark: "the final
+  // level graphic... I can't tell what it is yet. Give that a little
+  // more detail"). A real skyline piece now: stepped silhouette, lit
+  // window grid, ledges, antenna - and the Ray pulsing at the crown.
   var tw = pts[n - 1];
   var towG = this.add.graphics().setDepth(2);
-  towG.fillStyle(0x241f3d, 1).fillRect(tw.x - 7, tw.y - 46, 14, 26);
-  towG.fillStyle(0x45356e, 1).fillRect(tw.x - 4, tw.y - 54, 8, 10);
-  towG.fillStyle(0x35d0ff, 0.9).fillRect(tw.x - 1, tw.y - 60, 2, 7);
-  towG.fillStyle(0xf2c33c, 0.8);
-  towG.fillRect(tw.x - 5, tw.y - 42, 3, 3); towG.fillRect(tw.x + 2, tw.y - 36, 3, 3);
+  var K2 = PC.uiK;
+  var tbx = tw.x, tby = tw.y + K2(10);              // compact: clears the header
+  towG.fillStyle(0x0b0818, 0.5);                    // grounding shadow
+  towG.fillEllipse(tbx + 2, tby + 3, K2(30), K2(6));
+  // stepped body: wide base -> shaft -> crown block
+  towG.fillStyle(0x241f3d, 1);
+  towG.fillRect(tbx - K2(13), tby - K2(11), K2(26), K2(11));
+  towG.fillRect(tbx - K2(9), tby - K2(34), K2(18), K2(23));
+  towG.fillRect(tbx - K2(5), tby - K2(43), K2(10), K2(9));
+  towG.fillStyle(0x45356e, 1);                      // lit left faces
+  towG.fillRect(tbx - K2(13), tby - K2(11), K2(3), K2(11));
+  towG.fillRect(tbx - K2(9), tby - K2(34), K2(3), K2(23));
+  towG.fillRect(tbx - K2(5), tby - K2(43), K2(2), K2(9));
+  towG.fillStyle(0x6d6a8e, 1);                      // ledges between tiers
+  towG.fillRect(tbx - K2(14), tby - K2(12), K2(28), K2(1.5));
+  towG.fillRect(tbx - K2(10), tby - K2(35), K2(20), K2(1.5));
+  towG.fillRect(tbx - K2(6), tby - K2(44), K2(12), K2(1.5));
+  towG.fillStyle(0xf2c33c, 0.85);                   // window grid
+  for (var wy2 = 0; wy2 < 4; wy2++) {
+    for (var wx2 = 0; wx2 < 3; wx2++) {
+      if ((wy2 * 3 + wx2) % 4 === 1) continue;      // a few dark windows
+      towG.fillRect(tbx - K2(5) + wx2 * K2(5), tby - K2(31) + wy2 * K2(5), K2(2), K2(3));
+    }
+  }
+  towG.fillStyle(0x35d0ff, 0.9);                    // crown windows
+  towG.fillRect(tbx - K2(3), tby - K2(41), K2(2), K2(2));
+  towG.fillRect(tbx + K2(1), tby - K2(41), K2(2), K2(2));
+  towG.fillStyle(0x6d6a8e, 1);                      // antenna mast
+  towG.fillRect(tbx - 1, tby - K2(50), 2, K2(7));
+  // THE RAY at the crown: layered glow + pulsing core
+  towG.fillStyle(0xb45ce8, 0.18); towG.fillCircle(tbx, tby - K2(53), K2(9));
+  towG.fillStyle(0xb45ce8, 0.4); towG.fillCircle(tbx, tby - K2(53), K2(5));
+  var rayCore = this.add.circle(tw.x, tby - K2(53), K2(3), 0xff9ecb, 1).setDepth(3);
+  this.tweens.add({ targets: rayCore, scale: 1.5, alpha: 0.55,
+    duration: 800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
   chain.forEach(function (entry, i2) { self.buildNode(entry, i2, pts[i2]); });
 

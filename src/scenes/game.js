@@ -95,7 +95,18 @@ PC.GameScene.prototype.create = function () {
     this.time.delayedCall(800, function () {
       if (msSelf.dead || msSelf.won) return;
       msSelf.floatText('MUSTARD SEED!', 0x7dd97b);
-      msSelf.gainXp(msSelf.xpNext - msSelf.xp);
+      if (msSelf.storyMission) {
+        // story has no level-ups (v0.30.0), so the seed grants the way
+        // a boss drop does: one upgrade outright, matching its promise
+        var cards = PC.drawCards ? PC.drawCards(msSelf) : [];
+        var pick = null;
+        for (var ci = 0; ci < cards.length && !pick; ci++) {
+          if (cards[ci].kind !== 'heal') pick = cards[ci];
+        }
+        if (pick) { PC.applyCard(msSelf, pick); msSelf.drawHud(); }
+      } else {
+        msSelf.gainXp(msSelf.xpNext - msSelf.xp);
+      }
     });
   }
 

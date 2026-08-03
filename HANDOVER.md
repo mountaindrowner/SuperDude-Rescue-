@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-02 - v0.31.1: CLARITY + FLAVOR BATCH (Mark's carry-forward
+  list).** DESCRIPTION LAW: every passive, shop power-up and the
+  jawbreaker's level lines rewritten dummy-proof - name the concrete
+  effect AND what it applies to ("Blasts, rings & swings reach 12%
+  wider", "ALL weapons hit 8% harder per rank", "Anything you SHOOT
+  flies faster"), no stat jargon (Mark: "increased weapon area - what
+  does that mean, for what weapons?"). SHARP EYES desc no longer says
+  XP (gems are the currency word now). MUSTARD SEED honors its promise
+  in story mode: with no level-ups it grants one upgrade outright at
+  run start (boss-drop grant path) instead of banking 5 useless XP.
+  JAWBREAKER: three REAL hard-candy sprites generated (pinwheel swirl,
+  wrapped strawberry - the grandma candy - and a striped mint); each
+  shot picks one at random, untinted and SOLID (the bullet system
+  ADD-blends everything but pellets - candy frames are excluded or
+  they'd glow like plasma), tumbling as it caroms. ADVENTURE TOWER on
+  the mission map is a real skyline piece now: stepped silhouette,
+  lit window grid with dark gaps, ledges, antenna, and the Ray as a
+  layered purple glow with a pulsing pink core - compact enough to
+  clear the header (first draft collided with it). Battery green.
+  STILL OPEN: city building uniqueness + VOTE NAYAH poster; side
+  quests; weapon-combo system (banked).
+
 - **2026-08-02 - v0.31.0: ON-DEVICE FEEDBACK BATCH 2 (Mark, confirmed
   on-latest this time).** ECONOMY CLARITY: story mode shows NO XP
   anywhere - the counter reads `TECH +n` live as gems are collected

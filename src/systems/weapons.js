@@ -70,7 +70,9 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   b.homing = spec.homing || 0;           // homing: steer rad/s
   b.bounces = spec.bounces || 0;         // ricochet: redirects left
   b.scale0 = spec.scale || 0;
-  var glow = spec.frame !== 'proj_pellet';   // fries = solid, beam = glow
+  // fries + candies = SOLID objects, energy = additive glow
+  var glow = spec.frame !== 'proj_pellet' &&
+             String(spec.frame || '').indexOf('candy') < 0;
   b.sprite.setFrame(spec.frame || 'proj_resizer')
     .setBlendMode(glow ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
     .setScale(glow ? 1.1 : 1.2)
@@ -583,27 +585,31 @@ PC.FreezeWeapon.prototype.update = function (dt, scene) {
 // =====================================================================
 // passives compose on the hero-kit base (st.heroDmg/heroCd/heroSpd,
 // default 1) so a hero bonus is never wiped by a card level.
+// DESCRIPTION LAW (v0.31.1, Mark: "increased weapon area - what does
+// that exactly mean and what does it mean for WHAT weapons? make sure
+// it's dummy proof"): every desc names the concrete effect AND what it
+// applies to. No stat jargon a kid has to decode.
 PC.PASSIVES = {
   battery: { name: 'BIGGER BATTERY', icon: 'icon_passive_battery', max: 5,
-             desc: '+8% damage', apply: function (st, lv) { st.dmgMult = (st.heroDmg || 1) * (1 + 0.08 * lv); } },
+             desc: 'ALL weapons hit 8% harder per rank', apply: function (st, lv) { st.dmgMult = (st.heroDmg || 1) * (1 + 0.08 * lv); } },
   fan:     { name: 'COOLING FAN', icon: 'icon_passive_fan', max: 5,
-             desc: '-6% cooldowns', apply: function (st, lv) { st.cdMult = (st.heroCd || 1) * (1 - 0.06 * lv); } },
+             desc: 'ALL weapons fire sooner (6% per rank)', apply: function (st, lv) { st.cdMult = (st.heroCd || 1) * (1 - 0.06 * lv); } },
   shoes:   { name: 'RUNNING SHOES', icon: 'icon_passive_shoes', max: 5,
-             desc: '+6% move speed', apply: function (st, lv) { st.spdMult = (st.heroSpd || 1) * (1 + 0.06 * lv); } },
+             desc: 'You run 6% faster per rank', apply: function (st, lv) { st.spdMult = (st.heroSpd || 1) * (1 + 0.06 * lv); } },
   magnet:  { name: 'SNACK MAGNET', icon: 'icon_passive_magnet', max: 3,
-             desc: '+20% pickup range', apply: function (st, lv) { st.pickupMult = (st.metaPickup || 1) * (1 + 0.2 * lv); } },
+             desc: 'Gems & coins fly to you from farther away', apply: function (st, lv) { st.pickupMult = (st.metaPickup || 1) * (1 + 0.2 * lv); } },
   lens:    { name: 'FOCUS LENS', icon: 'icon_passive_lens', max: 3,
-             desc: '+15% shot speed', apply: function (st, lv) { st.projMult = (st.metaProj || 1) * (1 + 0.15 * lv); } },
+             desc: 'Anything you SHOOT flies 15% faster', apply: function (st, lv) { st.projMult = (st.metaProj || 1) * (1 + 0.15 * lv); } },
   servo:   { name: 'SERVO MOTOR', icon: 'icon_passive_servo', max: 3,
-             desc: '+12% weapon area', apply: function (st, lv) { st.areaMult = (st.metaArea || 1) * (1 + 0.12 * lv); } },
+             desc: 'Blasts, rings & swings reach 12% wider', apply: function (st, lv) { st.areaMult = (st.metaArea || 1) * (1 + 0.12 * lv); } },
   coat:    { name: 'PADDED APRON', icon: 'icon_passive_coat', max: 3,
-             desc: 'Block 1 damage per hit', apply: function (st, lv) { st.armor = lv + (st.metaArmor || 0); } },
+             desc: 'Every hit hurts you 1 less per rank', apply: function (st, lv) { st.armor = lv + (st.metaArmor || 0); } },
   duplicator: { name: 'DUPLICATOR TRAY', icon: 'icon_passive_duplicator', max: 2,
-             desc: '+1 projectile per rank', apply: function (st, lv) { st.extraProj = lv + (st.metaExtraProj || 0); } },
+             desc: 'Shooting weapons fire +1 extra shot', apply: function (st, lv) { st.extraProj = lv + (st.metaExtraProj || 0); } },
   slowcooker: { name: 'SLOW COOKER', icon: 'icon_passive_slowcooker', max: 3,
-             desc: '+25% effect duration', apply: function (st, lv) { st.durMult = 1 + 0.25 * lv; } },
+             desc: 'Slows, freezes & burns last 25% longer', apply: function (st, lv) { st.durMult = 1 + 0.25 * lv; } },
   leftovers: { name: 'LEFTOVERS', icon: 'icon_passive_leftovers', max: 3,
-             desc: '+15 max HP and slow regen',
+             desc: '+15 max HP and heals a little all the time',
              apply: function (st, lv) { st.bonusHp = 15 * lv + (st.metaHp || 0); st.regen = 0.5 * lv + (st.metaRegen || 0); } },
 };
 // every weapon key owns its icon frame: icon_weapon_<key>
