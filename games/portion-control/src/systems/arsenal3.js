@@ -29,8 +29,8 @@ PC.CutterWeapon.prototype.update = function (dt, scene) {
   for (var n = 0; n < this.cutters; n++) {
     var ang = Math.atan2(aim.target ? aim.target.y - scene.py : aim.ay,
                          aim.target ? aim.target.x - scene.px : aim.ax) + n * 0.5;
-    scene.bullets.fire(scene.px, scene.py - 4,
-      scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
+    scene.bullets.fire(scene.px, PC.fireY(scene),
+      scene.px + Math.cos(ang) * 100, PC.fireY(scene) + Math.sin(ang) * 100,
       { speed: 340, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
         frame: 'proj_whisk', scale: 1.7, tint: 0xf2c33c,
         boomerang: this.out, pierce: 99, life: this.out + 0.2 });
@@ -79,7 +79,7 @@ PC.ZapWeapon.prototype.update = function (dt, scene) {
   this.cdT = this.cd * scene.stats.cdMult;
   var g = this.gfx;
   g.clear().setAlpha(1);
-  var fx0 = scene.px, fy0 = scene.py - 6;
+  var fx0 = scene.px, fy0 = PC.fireY(scene);
   var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
   var hitList = [];
   for (var j = 0; j <= this.jumps && cur; j++) {
@@ -233,7 +233,7 @@ PC.JawWeapon.prototype.update = function (dt, scene) {
   if (!aim.target) { this.cdT = 0.3; return; }
   this.cdT = this.cd * scene.stats.cdMult;
   for (var n = 0; n < this.count; n++) {
-    scene.bullets.fire(scene.px, scene.py - 4, aim.target.x, aim.target.y,
+    scene.bullets.fire(scene.px, PC.fireY(scene), aim.target.x, aim.target.y,
       { speed: 300, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
         frame: 'proj_resizer', scale: this.scale * scene.stats.areaMult,
         tint: 0xf7f4ef, bounces: this.bounces, life: 3 });
@@ -266,8 +266,8 @@ PC.SprinkleWeapon.prototype.update = function (dt, scene) {
   var count = this.count + (scene.stats.extraProj || 0) * 2;
   for (var n = 0; n < count; n++) {
     var a = (n / count) * Math.PI * 2 + Math.random() * 0.5;
-    scene.bullets.fire(scene.px, scene.py - 6,
-      scene.px + Math.cos(a) * 50, scene.py - 6 + Math.sin(a) * 50,
+    scene.bullets.fire(scene.px, PC.fireY(scene),
+      scene.px + Math.cos(a) * 50, PC.fireY(scene) + Math.sin(a) * 50,
       { speed: 260, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
         frame: 'proj_pellet', tint: 0x35d0ff, homing: this.seek, life: 1.6 });   // cyan (color law)
   }
@@ -298,7 +298,7 @@ PC.SkilletWeapon.prototype.applyLevel = function () {
 PC.SkilletWeapon.prototype._swing = function (scene, ang) {
   var R = this.reach * scene.stats.areaMult, half = this.halfArc;
   var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
-  var pxp = scene.px, pyp = scene.py - 4;
+  var pxp = scene.px, pyp = PC.fireY(scene);
   scene.enemies.hash.eachNear(pxp, pyp, function (e) {
     var dx = e.x - pxp, dy = e.y - pyp;
     var d2 = dx * dx + dy * dy;
@@ -325,7 +325,7 @@ PC.SkilletWeapon.prototype.update = function (dt, scene) {
     if (this.flashT > 0) {
       var R = this.reach * scene.stats.areaMult;
       g.fillStyle(0xcfd4e8, 0.3 * (this.flashT / 0.14));
-      g.slice(scene.px, scene.py - 4, R, this.flashAng - this.halfArc,
+      g.slice(scene.px, PC.fireY(scene), R, this.flashAng - this.halfArc,
               this.flashAng + this.halfArc, false);
       g.fillPath();
     }
@@ -448,7 +448,7 @@ PC.EspressoWeapon.prototype.update = function (dt, scene) {
   var dmg = PC.rollDmg(scene, (this.baseDmg + this.maxBonus * this.charge) * (this.mastery || 1));
   var tx = aim.target ? aim.target.x : scene.px + aim.ax * 300;
   var ty = aim.target ? aim.target.y : scene.py + aim.ay * 300;
-  scene.bullets.fire(scene.px, scene.py - 6, tx, ty,
+  scene.bullets.fire(scene.px, PC.fireY(scene), tx, ty,
     { speed: 660, dmg: dmg, frame: 'proj_resizer',
       scale: 1.6 + this.charge, tint: 0xb5793f, pierce: 99, life: 1.1 });
   if (this.splash) {
@@ -487,7 +487,7 @@ PC.PineappleWeapon.prototype.update = function (dt, scene) {
   this.lastHurtSeen = scene.lastHurtT;
   var n = this.spikes + (scene.stats.extraProj || 0);
   var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1));
-  var pxp = scene.px, pyp = scene.py - 4;
+  var pxp = scene.px, pyp = PC.fireY(scene);
   for (var i = 0; i < n; i++) {
     var a = (i / n) * Math.PI * 2 + Math.random() * 0.15;
     scene.bullets.fire(pxp, pyp, pxp + Math.cos(a) * 100, pyp + Math.sin(a) * 100,

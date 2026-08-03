@@ -303,13 +303,13 @@ PC.ResizerWeapon.prototype.update = function (dt, scene) {
     var spread = (n - (amount - 1) / 2) * 0.12;
     var dx = tx - scene.px, dy = ty - scene.py;
     var ang = Math.atan2(dy, dx) + spread;
-    scene.bullets.fire(scene.px, scene.py - 4,
-      scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
+    scene.bullets.fire(scene.px, PC.fireY(scene),
+      scene.px + Math.cos(ang) * 100, PC.fireY(scene) + Math.sin(ang) * 100,
       { speed: this.speed, dmg: dmg, frame: 'proj_resizer', pierce: this.pierce,
         slowMs: this.shrinkMs || 0, shrinkFx: 450 });
   }
   if (PC.VFX_V2 && scene.vfx) {
-    scene.vfx.shrinkRing(scene.px + aim.ax * 16, scene.py - 4 + aim.ay * 10, 12, 220);
+    scene.vfx.shrinkRing(scene.px + aim.ax * 16, PC.fireY(scene) + aim.ay * 10, 12, 220);
   } else {
     // (muzzle burst cut in v0.30.2 with the rest of the flash pass)
   }
@@ -346,8 +346,8 @@ PC.BlasterWeapon.prototype.update = function (dt, scene) {
   for (var n = 0; n < pellets; n++) {
     var ang = base + (this.ring ? n / pellets * arc
                                : (n / (pellets - 1) - 0.5) * arc);
-    scene.bullets.fire(scene.px, scene.py - 4,
-      scene.px + Math.cos(ang) * 100, scene.py - 4 + Math.sin(ang) * 100,
+    scene.bullets.fire(scene.px, PC.fireY(scene),
+      scene.px + Math.cos(ang) * 100, PC.fireY(scene) + Math.sin(ang) * 100,
       { speed: 420, dmg: dmg, frame: 'proj_pellet', life: 0.35 });
   }
   if (PC.audio) PC.audio.weaponVoice('blaster');
@@ -436,7 +436,7 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
     if (this.cdT <= 0) {
       this.cdT = 0.4 * scene.stats.cdMult;
       var adx = PC.rollDmg(scene, this.dmg * 0.45 * (this.mastery || 1));
-      var pxa = scene.px, pya = scene.py - 4;
+      var pxa = scene.px, pya = PC.fireY(scene);
       var pct = this.seasonPct || 0.25;
       scene.enemies.hash.eachNear(pxa, pya, function (e) {
         var dx = e.x - pxa, dy = e.y - pya;
@@ -449,16 +449,16 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
     var g0 = this.gfx;
     g0.clear();
     g0.lineStyle(2, 0xf7f4ef, 0.22 + 0.1 * Math.sin(scene.now * 7));
-    g0.strokeCircle(scene.px, scene.py - 4, R);
+    g0.strokeCircle(scene.px, PC.fireY(scene), R);
     g0.lineStyle(1, 0xf2c33c, 0.18 + 0.1 * Math.sin(scene.now * 9 + 2));
-    g0.strokeCircle(scene.px, scene.py - 4, R * 0.85);
+    g0.strokeCircle(scene.px, PC.fireY(scene), R * 0.85);
     return;
   }
   this.cdT -= dt;
   if (this.cdT <= 0) {
     this.cdT = this.cd * scene.stats.cdMult;
     this.pulseT = 0.25;
-    var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1)), pxp = scene.px, pyp = scene.py - 4;
+    var dmg = PC.rollDmg(scene, this.dmg * (this.mastery || 1)), pxp = scene.px, pyp = PC.fireY(scene);
     scene.enemies.hash.eachNear(pxp, pyp, function (e) {
       var dx = e.x - pxp, dy = e.y - pyp;
       var d2 = dx * dx + dy * dy;
@@ -480,7 +480,7 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
     this.pulseT -= dt;
     var k = 1 - Math.max(0, this.pulseT) / 0.25;
     g.lineStyle(3, 0xf7f4ef, 0.6 * (1 - k));
-    g.strokeCircle(scene.px, scene.py - 4, R * (0.4 + 0.6 * k));
+    g.strokeCircle(scene.px, PC.fireY(scene), R * (0.4 + 0.6 * k));
   }
 };
 
@@ -571,7 +571,7 @@ PC.FreezeWeapon.prototype.update = function (dt, scene) {
   this.cdT = this.cd * scene.stats.cdMult;
   var bolts = this.bolts + (scene.stats.extraProj || 0);
   for (var n = 0; n < Math.min(bolts, targets.length); n++) {
-    scene.bullets.fire(scene.px, scene.py - 6, targets[n].e.x, targets[n].e.y,
+    scene.bullets.fire(scene.px, PC.fireY(scene), targets[n].e.x, targets[n].e.y,
       { speed: 500, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)), frame: 'proj_pellet',
         tint: 0x9adfff, slowMs: this.slowMs, life: 0.9 });
   }

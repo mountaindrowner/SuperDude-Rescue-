@@ -284,6 +284,177 @@ PC.Region.prototype._paintAmphi = function (g, mk, lx, ly) {
   }
 };
 
+// THE DEMO SITE (v0.31.0): the wrecked stage where the Nourish-Ray demo
+// went wrong - ground zero of the whole story. Broken platform, torn
+// "THE END OF HUNGER" banner, a scorch blast where the Ray fired, the
+// first goo, toppled speakers, hazard tape.
+PC.Region.prototype._paintDemoSite = function (g, mk, lx, ly) {
+  var w = mk.w, h = mk.h, i;
+  var cx = lx + w / 2, cy = ly + h / 2;
+  // scorch blast radiating from centre stage
+  g.fillStyle = 'rgba(8,6,14,0.5)';
+  this._organicPath(g, mk, lx, ly, w * 0.24, 0.06); g.fill();
+  g.strokeStyle = 'rgba(8,6,14,0.35)'; g.lineWidth = 5;
+  for (i = 0; i < 9; i++) {
+    var sa = (i / 9) * Math.PI * 2 + 0.3;
+    g.beginPath(); g.moveTo(cx + Math.cos(sa) * w * 0.1, cy + Math.sin(sa) * h * 0.1);
+    g.lineTo(cx + Math.cos(sa) * w * (0.3 + PC.hash01(i, 120, 3) * 0.12),
+             cy + Math.sin(sa) * h * (0.3 + PC.hash01(i, 121, 4) * 0.12));
+    g.stroke();
+  }
+  // the stage platform, one corner collapsed
+  var sx2 = cx - w * 0.24, sy2 = cy - h * 0.16, sw2 = w * 0.48, sh2 = h * 0.3;
+  g.fillStyle = 'rgba(8,6,14,0.4)'; g.fillRect(sx2 + 5, sy2 + 6, sw2, sh2);
+  g.fillStyle = '#4a3a55'; g.fillRect(sx2, sy2, sw2, sh2);
+  g.fillStyle = '#5d4a6b';
+  for (i = 0; i < sh2 / 10; i++) g.fillRect(sx2, sy2 + i * 10, sw2, 4);
+  g.save(); g.translate(sx2 + sw2 * 0.86, sy2 + sh2 * 0.8); g.rotate(0.34);
+  g.fillStyle = '#3a2c45'; g.fillRect(-sw2 * 0.18, -sh2 * 0.2, sw2 * 0.36, sh2 * 0.4);
+  g.restore();
+  g.fillStyle = '#241f3d';                              // stage skirt
+  g.fillRect(sx2, sy2 + sh2, sw2, 10);
+  // banner poles + the torn banner
+  g.fillStyle = '#514e6b';
+  g.fillRect(sx2 - 8, sy2 - 58, 6, 64); g.fillRect(sx2 + sw2 + 2, sy2 - 58, 6, 64);
+  g.fillStyle = '#f2c33c';
+  g.fillRect(sx2 - 2, sy2 - 52, sw2 * 0.62, 22);        // left shred
+  g.save(); g.translate(sx2 + sw2 * 0.78, sy2 - 41); g.rotate(0.5);
+  g.fillRect(-sw2 * 0.1, -11, sw2 * 0.2, 22);           // hanging shred
+  g.restore();
+  g.font = 'bold 12px monospace'; g.textAlign = 'left';
+  g.fillStyle = '#241f3d';
+  g.fillText('THE END OF HU-', sx2 + 6, sy2 - 37);
+  // toppled speaker stacks + mic stand
+  g.fillStyle = '#221e38';
+  g.save(); g.translate(sx2 - 22, sy2 + sh2 - 6); g.rotate(-1.2);
+  g.fillRect(-9, -13, 18, 26); g.restore();
+  g.fillStyle = '#514e6b'; g.fillRect(sx2 - 30, sy2 + sh2 + 2, 26, 4);
+  g.strokeStyle = '#6d6a8e'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx + 10, sy2 + sh2 - 4); g.lineTo(cx + 22, sy2 + sh2 - 30); g.stroke();
+  g.fillStyle = '#221e38'; g.fillCircle ? g.fillCircle(cx + 23, sy2 + sh2 - 33, 4)
+    : g.fillRect(cx + 20, sy2 + sh2 - 36, 6, 6);
+  // the FIRST goo: purple splats crawling off the stage
+  for (i = 0; i < 7; i++) {
+    g.fillStyle = i % 2 ? '#8f4fc4' : '#5d3583';
+    var gx2 = cx + (PC.hash01(i, 122, 5) - 0.5) * w * 0.7;
+    var gy2 = cy + h * 0.16 + PC.hash01(i, 123, 6) * h * 0.24;
+    this._organicPath(g, { x: gx2 - 12, y: gy2 - 7, w: 24, h: 14,
+      id: 'goo' + i, cx: gx2, cy: gy2 }, gx2 - 12, gy2 - 7, 2, 0.2);
+    g.fill();
+  }
+  // hazard tape line across the front
+  var ty2 = ly + h - 24;
+  g.fillStyle = '#514e6b';
+  g.fillRect(lx + w * 0.1, ty2 - 8, 4, 26); g.fillRect(lx + w * 0.86, ty2 - 8, 4, 26);
+  for (i = 0; i < (w * 0.76) / 14; i++) {
+    g.fillStyle = i % 2 ? '#f2c33c' : '#2a2833';
+    g.fillRect(lx + w * 0.1 + 4 + i * 14, ty2 - 2, 14, 7);
+  }
+};
+
+// CENTRAL PLAZA (v0.31.0, Mark: "central plaza is boring"): ringed
+// paving, a working fountain, planters, benches, flags
+PC.Region.prototype._paintPlaza = function (g, mk, lx, ly) {
+  var w = mk.w, h = mk.h, i;
+  var cx = lx + w / 2, cy = ly + h / 2;
+  // two-tone ring paving
+  for (i = 6; i >= 1; i--) {
+    g.fillStyle = i % 2 ? '#3a3550' : '#332e48';
+    g.beginPath();
+    g.ellipse(cx, cy, w * 0.08 * i, h * 0.09 * i, 0, 0, Math.PI * 2); g.fill();
+  }
+  g.strokeStyle = 'rgba(255,246,224,0.06)'; g.lineWidth = 2;
+  for (i = 0; i < 8; i++) {
+    var ra3 = (i / 8) * Math.PI * 2;
+    g.beginPath(); g.moveTo(cx, cy);
+    g.lineTo(cx + Math.cos(ra3) * w * 0.48, cy + Math.sin(ra3) * h * 0.54); g.stroke();
+  }
+  // the fountain
+  g.fillStyle = 'rgba(8,6,14,0.4)';
+  g.beginPath(); g.ellipse(cx + 5, cy + 6, w * 0.13, h * 0.12, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#57544d';
+  g.beginPath(); g.ellipse(cx, cy, w * 0.13, h * 0.12, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#38678a';
+  g.beginPath(); g.ellipse(cx, cy, w * 0.1, h * 0.09, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#4f87ad';
+  g.beginPath(); g.ellipse(cx - w * 0.02, cy - h * 0.02, w * 0.05, h * 0.04, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#8a877d';
+  g.beginPath(); g.ellipse(cx, cy - 4, w * 0.025, h * 0.02, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(255,255,255,0.5)';                 // spray
+  for (i = 0; i < 7; i++) {
+    g.fillRect(cx - 10 + PC.hash01(i, 124, 3) * 20, cy - 14 - PC.hash01(i, 125, 4) * 10, 2, 4);
+  }
+  // corner planters + benches + flag poles
+  [[0.14, 0.16], [0.86, 0.16], [0.14, 0.84], [0.86, 0.84]].forEach(function (p, pi2) {
+    var px3 = lx + w * p[0], py3 = ly + h * p[1];
+    g.fillStyle = '#57544d'; g.fillRect(px3 - 14, py3 - 9, 28, 18);
+    g.fillStyle = '#3d5a33'; g.fillRect(px3 - 11, py3 - 6, 22, 12);
+    g.fillStyle = '#4f7a3f';
+    g.beginPath(); g.ellipse(px3 - 4, py3 - 2, 7, 5, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(px3 + 5, py3 + 1, 6, 4, 0, 0, Math.PI * 2); g.fill();
+  });
+  [[0.5, 0.14, 0], [0.5, 0.86, 0], [0.16, 0.5, 1], [0.84, 0.5, 1]].forEach(function (b) {
+    var bx3 = lx + w * b[0], by3 = ly + h * b[1];
+    g.fillStyle = 'rgba(8,6,14,0.35)'; g.fillRect(bx3 - 15, by3 + 3, 30, 6);
+    g.fillStyle = '#6b5334'; g.fillRect(bx3 - 16, by3 - 5, 32, 9);
+    g.fillStyle = '#7d6340'; g.fillRect(bx3 - 16, by3 - 5, 32, 3);
+  });
+  [[0.32, 0.2], [0.68, 0.2]].forEach(function (f2, fi) {
+    var fx3 = lx + w * f2[0], fy3 = ly + h * f2[1];
+    g.fillStyle = '#cfd4e8'; g.fillRect(fx3 - 1, fy3 - 34, 3, 38);
+    g.fillStyle = fi ? '#35d0ff' : '#f2c33c';
+    g.beginPath(); g.moveTo(fx3 + 2, fy3 - 33); g.lineTo(fx3 + 20, fy3 - 28);
+    g.lineTo(fx3 + 2, fy3 - 23); g.closePath(); g.fill();
+  });
+};
+
+// THE MISSION BOARD (v0.31.0): a kiosk that reads as what it does -
+// a big signboard of pinned mission notices under a spotlight
+PC.Region.prototype._paintBoardKiosk = function (g, mk, lx, ly) {
+  var w = mk.w, h = mk.h, i;
+  var cx = lx + w / 2, cy = ly + h / 2;
+  // paved pad
+  g.fillStyle = '#3a3550';
+  this._organicPath(g, mk, lx, ly, w * 0.18, 0.05); g.fill();
+  g.fillStyle = 'rgba(255,246,224,0.05)';
+  for (i = 0; i < 5; i++) g.fillRect(lx + w * 0.24, ly + h * 0.3 + i * 12, w * 0.52, 1);
+  // spotlight pool in front of the board
+  g.fillStyle = 'rgba(242,195,60,0.10)';
+  g.beginPath(); g.ellipse(cx, cy + h * 0.16, w * 0.2, h * 0.12, 0, 0, Math.PI * 2); g.fill();
+  // the board: posts, panel, roof cap
+  var bw2 = w * 0.44, bh2 = h * 0.3;
+  var bx2 = cx - bw2 / 2, by2 = cy - h * 0.24;
+  g.fillStyle = 'rgba(8,6,14,0.4)'; g.fillRect(bx2 + 4, by2 + 5, bw2, bh2 + 16);
+  g.fillStyle = '#4a3a28';
+  g.fillRect(bx2 - 6, by2 - 4, 7, bh2 + 22); g.fillRect(bx2 + bw2 - 1, by2 - 4, 7, bh2 + 22);
+  g.fillStyle = '#241f3d'; g.fillRect(bx2, by2, bw2, bh2);
+  g.fillStyle = '#f2c33c'; g.fillRect(bx2, by2, bw2, 3);
+  g.fillStyle = '#5d4a33'; g.fillRect(bx2 - 10, by2 - 12, bw2 + 20, 9);  // roof cap
+  g.fillStyle = '#6b5334'; g.fillRect(bx2 - 10, by2 - 12, bw2 + 20, 3);
+  g.font = 'bold 11px monospace'; g.textAlign = 'center';
+  g.fillStyle = '#f2c33c';
+  g.fillText('MISSIONS', cx, by2 + 14);
+  // pinned notices - one glowing gold "next mission" note
+  var cols = ['#cfd4e8', '#ff9ecb', '#a8e04a', '#9ecfde', '#cfd4e8'];
+  for (i = 0; i < 5; i++) {
+    var nx2 = bx2 + 8 + (i % 3) * (bw2 / 3);
+    var ny2 = by2 + 20 + Math.floor(i / 3) * 18;
+    g.fillStyle = cols[i]; g.fillRect(nx2, ny2, bw2 / 4, 13);
+    g.fillStyle = '#d93a3a'; g.fillRect(nx2 + bw2 / 8 - 1, ny2 - 1, 3, 3);   // pin
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    g.fillRect(nx2 + 2, ny2 + 4, bw2 / 4 - 5, 1); g.fillRect(nx2 + 2, ny2 + 7, bw2 / 4 - 7, 1);
+  }
+  g.fillStyle = '#f2c33c';
+  g.fillRect(bx2 + bw2 - bw2 / 4 - 8, by2 + 20, bw2 / 4, 13);   // the NEXT note
+  g.fillStyle = '#241f3d';
+  g.font = 'bold 8px monospace';
+  g.fillText('GO!', bx2 + bw2 - bw2 / 8 - 8, by2 + 30);
+  // floodlight up top
+  g.fillStyle = '#3a3f4a'; g.fillRect(cx - 2, by2 - 24, 4, 13);
+  g.fillStyle = '#f2c33c'; g.fillRect(cx - 5, by2 - 30, 10, 7);
+  g.fillStyle = '#fff6e0'; g.fillRect(cx - 3, by2 - 28, 6, 4);
+};
+
 // the Rec Center ballfield: dirt diamond, bases, mound, foul lines,
 // backstop - the defend point of the suburbs mission
 PC.Region.prototype._paintBallfield = function (g, mk, lx, ly) {
@@ -534,6 +705,12 @@ PC.Region.prototype.paintLandmark = function (g, mk, lx, ly) {
       this._paintAmphi(g, mk, lx, ly);
     } else if (mk.id === 'rec') {
       this._paintBallfield(g, mk, lx, ly);
+    } else if (mk.id === 'demostage') {
+      this._paintDemoSite(g, mk, lx, ly);
+    } else if (mk.id === 'plaza') {
+      this._paintPlaza(g, mk, lx, ly);
+    } else if (mk.id === 'board') {
+      this._paintBoardKiosk(g, mk, lx, ly);
     } else {
       g.beginPath(); g.arc(lx + w / 2, ly + h / 2, Math.min(w, h) * 0.18, 0, Math.PI * 2);
       g.strokeStyle = mk.accent; g.lineWidth = 4; g.stroke();

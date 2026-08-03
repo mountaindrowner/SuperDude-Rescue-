@@ -51,7 +51,8 @@ PC.STORY.missions.stage1 = {
       ],
     },
     { // B3 - defend the Substation for 60s
-      type: 'defend', at: 'substation', secs: 60, radius: 200,
+      // 60s was unbeatable on the fixed stage-1 loadout (Mark on-device)
+      type: 'defend', at: 'substation', secs: 40, radius: 200,
       banner: 'DEFEND THE SUBSTATION',
       intro: [
         { say: { speaker: 'danny', text: "Vic? VIC! Hang on — I'm booting the grid. Just gotta hold this spot!" } },

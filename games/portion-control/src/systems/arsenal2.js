@@ -162,7 +162,7 @@ PC.MicrowaveWeapon.prototype.update = function (dt, scene) {
   if (PC.audio) PC.audio.weaponVoice('microwave');   // sweep hum loop
   this.angle += this.degS * Math.PI / 180 * dt;
   var L = this.length * scene.stats.areaMult;
-  var pxp = scene.px, pyp = scene.py - 4;
+  var pxp = scene.px, pyp = PC.fireY(scene);
   var g = this.gfx;
   g.clear();
   var dmg = this.dmg, half = this.halfArc, tickCd = this.tickCd, self = this;
@@ -259,7 +259,7 @@ PC.FridgeWeapon.prototype.update = function (dt, scene) {
       var oa = this.orbitA + o * Math.PI / 2;
       ow.active = true;
       ow.x = scene.px + Math.cos(oa) * 55;
-      ow.y = scene.py - 4 + Math.sin(oa) * 55;
+      ow.y = PC.fireY(scene) + Math.sin(oa) * 55;
       ow.ang = oa + Math.PI / 2;
       ow.t = 1;
     }

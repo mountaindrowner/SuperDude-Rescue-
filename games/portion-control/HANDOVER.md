@@ -12,6 +12,38 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-02 - v0.31.0: ON-DEVICE FEEDBACK BATCH 2 (Mark, confirmed
+  on-latest this time).** ECONOMY CLARITY: story mode shows NO XP
+  anywhere - the counter reads `TECH +n` live as gems are collected
+  (Mark: "are tech points the same as exp? that's all confusing").
+  Two currencies on screen, ever: coins (Sal's) + TECH (Garage). The
+  XP bar survives only in quick run, where levelling is the loop.
+  TOP DECLUTTERED: MAP button moved to bottom-right above the home
+  indicator; the objective banner centres in the space RIGHT of the
+  HUD column (`scene.hudRight`) so it can never overlap the tray.
+  FIRE ORIGIN: all shots now leave from CENTRE MASS - `PC.fireY(scene)`
+  (py - FIRE_LIFT 16) replaced every hand-rolled `scene.py - 4/6`
+  across weapons/kits/arsenals/heroes2 (they came from the feet).
+  DEFENDS BEATABLE: arming a defend AIRDROPS a power chest at the zone
+  (same walk-over grant as boss drops) - with fixed loadouts the hold
+  was the wall (Mark: "defend substation is unbeatable"); waves also
+  slowed 4.5s/8 -> 7s/6 and stage1's hold cut 60s -> 40s.
+  START WHERE YOU STOOD: same-map missions launched from the free-roam
+  board no longer teleport you back to the district entry
+  (PC.STORY.pendingSpawn carries the position through the restart).
+  MAP 1 REWORK: the Nourish-Ray Stage is now THE DEMO SITE - the
+  wrecked demo stage where the story began (broken platform, torn
+  "THE END OF HU-" banner, scorch blast, the first purple goo, hazard
+  tape); Central Plaza got ring paving + fountain + planters/benches/
+  flags; the Mission Board is an OPEN KIOSK that reads as what it does
+  (signboard of pinned notices, MISSIONS header, gold GO! note,
+  floodlight) - Mark asked twice what that building was, because it
+  WAS just a building. Full battery green.
+  STILL OPEN (carry-forward): dummy-proof ability descriptions;
+  jawbreaker as real hard candies; city building uniqueness + VOTE
+  NAYAH poster; finale tower node art; side quests; weapon-combo
+  system (banked).
+
 - **2026-08-01 - v0.30.2: ON-DEVICE FEEDBACK BATCH 1.** Mark played a
   long session and filed ~19 notes; this is the half that was breaking
   the session. **THE BIG ONE - STALE INDEX:** he had been playing
