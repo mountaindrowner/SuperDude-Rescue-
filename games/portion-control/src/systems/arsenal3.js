@@ -217,8 +217,10 @@ PC.JawWeapon = function () {
   this.count = 1; this.scale = 2;
 };
 PC.JawWeapon.prototype.desc = function () {
-  return ['', 'A candy that caroms off foes', 'Damage up!', 'Extra bounce!',
-          'Fires two!', 'Giant gobstopper!'][Math.min(this.level + 1, 5)] || 'Damage up!';
+  return ['', 'Throws a hard candy that bounces foe to foe',
+          'Candy hits harder', 'Bounces 2 more times',
+          'Throws TWO candies', 'Giant gobstopper - huge & harder'
+         ][Math.min(this.level + 1, 5)] || 'Candy hits harder';
 };
 PC.JawWeapon.prototype.applyLevel = function () {
   if (this.level === 2) this.dmg = 20;
@@ -232,11 +234,18 @@ PC.JawWeapon.prototype.update = function (dt, scene) {
   var aim = PC.aimAt(scene, 280);
   if (!aim.target) { this.cdT = 0.3; return; }
   this.cdT = this.cd * scene.stats.cdMult;
+  // v0.31.1 (Mark: "it looks like a comet... it really should just be
+  // a hard candy, maybe it's swapped between different candies").
+  // Each shot IS a recognizable sweet - pinwheel, wrapped strawberry,
+  // striped mint - untinted so the art's own colors read, tumbling as
+  // it caroms (bounced shots already spin in BulletSystem).
+  var CANDIES = ['proj_candy_pinwheel', 'proj_candy_strawberry', 'proj_candy_mint'];
   for (var n = 0; n < this.count; n++) {
     scene.bullets.fire(scene.px, PC.fireY(scene), aim.target.x, aim.target.y,
       { speed: 300, dmg: PC.rollDmg(scene, this.dmg * (this.mastery || 1)),
-        frame: 'proj_resizer', scale: this.scale * scene.stats.areaMult,
-        tint: 0xf7f4ef, bounces: this.bounces, life: 3 });
+        frame: CANDIES[(Math.random() * CANDIES.length) | 0],
+        scale: this.scale * 0.85 * scene.stats.areaMult,
+        bounces: this.bounces, life: 3 });
   }
   if (PC.audio) PC.audio.weaponVoice('jaw');
 };

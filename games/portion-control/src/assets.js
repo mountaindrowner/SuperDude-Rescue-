@@ -126,7 +126,8 @@ window.PC = window.PC || {};
 
   // -- projectiles : 1 frame, rotated in code. Cyan = player, Pink = enemy --
   ['pellet:8', 'whisk:16', 'salt:8', 'freeze:10',
-   'ketchup_lob:12', 'micro_spark:8'].forEach(function (s) {
+   'ketchup_lob:12', 'micro_spark:8',
+   'candy_pinwheel:16', 'candy_strawberry:16', 'candy_mint:16'].forEach(function (s) {
     var p = s.split(':');
     add('proj_' + p[0], +p[1], +p[1], 'proj', P.CYAN, P.CLOUD);
   });
