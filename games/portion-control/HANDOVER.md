@@ -12,6 +12,41 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.33.0: MARK'S POST-AUDIT BATCH.** Four asks from
+  his review of the campaign audit. (1) RUSH MODE: QUICK RUN renamed
+  on the title (only UI spot it's named). (2) EARNED CHESTS: the free
+  supply chest at defend-ARM and boss-ARM is gone (Mark: "abilities
+  need to be EARNED... unless you beat a boss or collect resources");
+  the chest now drops as the REWARD for completing a hold, and bosses
+  pay on the kill as before. (3) RECOVERY FROM THE TABLES: story
+  kills roll medkits at 3% (rush stays 1.5%); crates + the checkpoint
+  patch-up unchanged. (4) VIC'S PAD (src/story/tutorial.js, new
+  file + index.html): the opening tutorial is a full-screen
+  transmission TO THE PLAYER - scrim, cyan pad frame, INCOMING
+  header with blinking signal bars, Vic portrait, five taps with one
+  icon per idea (~40 words replacing six radio paragraphs); same
+  once-per-save flag. BALANCE FALLOUT of earned chests: stage 1
+  re-walled (bot lost the Frank duel 3 straight), root-caused the
+  duel itself - the 320px/s lunge vs 190px/s player means RUNNING
+  AWAY mathematically never escapes; only a sideways dodge in the
+  0.7s telegraph survives. EASE knob grew bossCharge 0.75 (story
+  lunge 240px/s - a head-start retreat now escapes a full lunge) +
+  bossHp 0.42 (buys back the removed arm chest). ALSO FIXED, found
+  by the gate runs: killing a story boss set scene.won which made
+  die() A NO-OP for the whole rescue tail - the bot once finished a
+  mission at -56 HP immortal; `won` now clears when the quest takes
+  over, hp floors at 1 there, and contact/puddle damage stops
+  applying once dead. GATE DATA (fresh-save bot, weak dueler): duel
+  win rate ~1 in 3-4 at rank 0-1; every loss pays 40-60 TECH so
+  rank 1-2 arrive within two retries. Humans read telegraphs far
+  better than the bot - MARK SHOULD FEEL THE FRANK DUEL ON DEVICE
+  and rule; softening levers if wanted: bossHp 0.35, bossContact
+  0.6, or a first-boss-only mercy. verify-v33 (7 checks: rename,
+  pad flow, earned chests, odds) + verify-mission (updated: pre-mark
+  tutorialSeen - the pad has its own harness; and the v0.19 freeroam
+  final-wait fix) + ease/linear/freeroam/garage/map + beam/comet/
+  lasso ALL GREEN, zero page errors. Version pair 0.33.0.
+
 - **2026-08-04 - v0.32.0: FULL-CAMPAIGN BOT AUDIT -> STORY BALANCE +
   THE BOSS-AIM BUG.** Mark: "Greatest system to play the game. Try it
   out... test the economy of tech and in cash... see what's too easy.
