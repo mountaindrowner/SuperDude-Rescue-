@@ -91,6 +91,11 @@ PC.Quest.prototype.targetXY = function () {
     }
     return null;
   }
+  if (o.type === 'sequence') {
+    var nx2 = this.items[this.seqNext];
+    if (nx2) return { x: nx2.x, y: nx2.y };
+    return null;
+  }
   if (o.type === 'reach') {
     // the FAR SIDE of the landmark, not its middle - the arrow leads
     // the crossing (only 'south' is used so far; add sides as needed)
@@ -254,6 +259,15 @@ PC.Quest.prototype.next = function () {
       scene.drawHud();
     }
   }
+  // clear any leftover objective visuals (green switches, hold rings)
+  for (var iv = 0; iv < this.items.length; iv++) {
+    var lv = this.items[iv];
+    if (lv.img && lv.img.scene) lv.img.destroy();
+    if (lv.glow && lv.glow.scene) lv.glow.destroy();
+    if (lv.num && lv.num.scene) lv.num.destroy();
+  }
+  this.items = [];
+  if (this.itemGfx) { this.itemGfx.destroy(); this.itemGfx = null; }
   this.idx++;
   if (this.idx >= this.mission.objectives.length) { this.complete(); return; }
   var o = this.cur();
@@ -261,6 +275,7 @@ PC.Quest.prototype.next = function () {
   this.tracked = [];
   this._armed = false;
   if (o.type === 'fetch') this.spawnItems(o);
+  if (o.type === 'sequence') this.spawnSwitches(o);
   this.playScript(o.intro, null);   // intro plays immediately (radio style)
 };
 
@@ -282,7 +297,43 @@ PC.Quest.prototype.spawnItems = function (o) {
       .setBlendMode(Phaser.BlendModes.ADD).setTint(0x35d0ff);
     scene.tweens.add({ targets: glow, alpha: 0.15, duration: 600, yoyo: true, repeat: -1 });
     self.items.push({ x: x, y: y, img: img, glow: glow, taken: false,
-      line: it.line, guarded: false });
+      line: it.line, guarded: false, holdT: 0 });
+  });
+  // v0.37.0 hold-to-take (Mark: "make the valves a moment... keep it
+  // simple so there's no room for glitches"): pure timer + distance.
+  // Standing near an item fills its ring; walking away PAUSES the
+  // timer (never resets - friendly and unbreakable).
+  if (o.hold) {
+    this.itemGfx = scene.add.graphics().setDepth(7);
+  }
+};
+
+// ---- ORDERED SWITCHES (v0.37.0, Mark's pick of the labs idea):
+// numbered stations flipped in order. Wrong one = harmless buzz +
+// reset; the numbers are VISIBLE, so the "puzzle" is just walking
+// 1-2-3 while the map pressures you. No physics, no state that can
+// desync - a counter and some distance checks. ----
+PC.Quest.prototype.spawnSwitches = function (o) {
+  var self = this, scene = this.scene;
+  this.items = [];
+  this.seqNext = 0;
+  this._seqLock = false;             // after a wrong touch, back off first
+  o.items.forEach(function (it, n) {
+    var mk = self.region.landmark(it.at);
+    var sp = self.spotOf(mk, 60);
+    var x = sp.x + (it.dx || 0), y = sp.y + (it.dy || 0);
+    var img = scene.add.image(x, y, 'atlas', o.icon || 'icon_passive_battery')
+      .setScale(0.8).setDepth(6);
+    var glow = scene.add.image(x, y, 'atlas', 'fx_nova_1')
+      .setScale(0.7).setDepth(5).setAlpha(0.5)
+      .setBlendMode(Phaser.BlendModes.ADD).setTint(0xf2c33c);
+    scene.tweens.add({ targets: glow, alpha: 0.15, duration: 600, yoyo: true, repeat: -1 });
+    var num = scene.add.text(x, y - 26, String(n + 1), {
+      fontFamily: 'monospace', fontSize: '16px', color: '#f2c33c',
+      fontStyle: 'bold', stroke: '#120e24', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(7);
+    self.items.push({ x: x, y: y, img: img, glow: glow, num: num,
+      taken: false, line: it.line, guarded: false });
   });
 };
 
@@ -393,6 +444,7 @@ PC.Quest.prototype.update = function (dt) {
       this.finishObjective(o);
     }
   } else if (o.type === 'fetch') {
+    if (this.itemGfx) this.itemGfx.clear();
     for (var i = 0; i < this.items.length; i++) {
       var it = this.items[i];
       if (it.taken) continue;
@@ -402,7 +454,35 @@ PC.Quest.prototype.update = function (dt) {
         it.guarded = true;
         this.ring(it.x, it.y, 7, false);        // guard swarm (untracked)
       }
-      if (d2 < 26 * 26) {
+      if (o.hold) {
+        // the valve moment (v0.37.0): stand close and crank; walking
+        // away PAUSES the ring, never resets it
+        var near = d2 < 44 * 44;
+        if (near) {
+          it.holdT += dt;
+          this._holdTick = (this._holdTick || 0) + dt;
+          if (this._holdTick > 0.45) {
+            this._holdTick = 0;
+            if (PC.audio) PC.audio.ui();
+          }
+        }
+        var frac = Math.min(1, (it.holdT || 0) / o.hold);
+        if (frac > 0 && frac < 1) {
+          this.itemGfx.lineStyle(5, 0x2c3b38, 0.9);
+          this.itemGfx.strokeCircle(it.x, it.y, 24);
+          this.itemGfx.lineStyle(5, near ? 0xa8e04a : 0xf2c33c, 1);
+          this.itemGfx.beginPath();
+          this.itemGfx.arc(it.x, it.y, 24, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
+          this.itemGfx.strokePath();
+        }
+        if ((it.holdT || 0) >= o.hold) {
+          it.taken = true;
+          it.img.destroy(); it.glow.destroy();
+          if (PC.audio) PC.audio.chest();
+          scene.floatText(o.itemName + '!', 0x35d0ff);
+          if (it.line) this.playScript([{ say: it.line }], null);
+        }
+      } else if (d2 < 26 * 26) {
         it.taken = true;
         it.img.destroy(); it.glow.destroy();
         if (PC.audio) PC.audio.chest();
@@ -413,6 +493,42 @@ PC.Quest.prototype.update = function (dt) {
     var left = 0;
     for (var j = 0; j < this.items.length; j++) if (!this.items[j].taken) left++;
     if (left === 0) this.finishObjective(o);
+  } else if (o.type === 'sequence') {
+    // ORDERED SWITCHES: flip 1-2-3 by walking to them; a wrong switch
+    // buzzes and resets, and nothing re-triggers until you step back.
+    // A counter plus distance checks - no state that can wedge.
+    var anyNear = false;
+    for (var sq = 0; sq < this.items.length; sq++) {
+      var sw = this.items[sq];
+      var sdx2 = sw.x - px, sdy2 = sw.y - py;
+      var sd2 = sdx2 * sdx2 + sdy2 * sdy2;
+      if (sd2 < 70 * 70) anyNear = true;
+      if (this._seqLock || sw.taken || sd2 >= 34 * 34) continue;
+      if (sq === this.seqNext) {
+        sw.taken = true;
+        this.seqNext++;
+        sw.img.setTint(0x7dd97b);
+        sw.glow.setTint(0x7dd97b);
+        sw.num.setColor('#a8e04a');
+        if (PC.audio) PC.audio.chest();
+        scene.floatText('POWER ' + this.seqNext + '/' + this.items.length + '!', 0xa8e04a);
+        if (sw.line) this.playScript([{ say: sw.line }], null);
+        if (!sw.guarded) { sw.guarded = true; this.ring(sw.x, sw.y, 6, false); }
+      } else {
+        this._seqLock = true;
+        this.seqNext = 0;
+        for (var rs = 0; rs < this.items.length; rs++) {
+          var rw = this.items[rs];
+          rw.taken = false;
+          rw.img.clearTint(); rw.glow.setTint(0xf2c33c);
+          rw.num.setColor('#f2c33c');
+        }
+        if (PC.audio) PC.audio.hurt();
+        scene.floatText('WRONG ORDER - START OVER!', 0xff6b6b);
+      }
+    }
+    if (this._seqLock && !anyNear) this._seqLock = false;
+    if (this.items.length && this.seqNext >= this.items.length) this.finishObjective(o);
   } else if (o.type === 'defend') {
     var mk2 = this.region.landmark(o.at);
     var zone = this.spotOf(mk2, 60);
@@ -551,6 +667,8 @@ PC.Quest.prototype.drawHudBits = function () {
     var got = 0;
     for (var i = 0; i < this.items.length; i++) if (this.items[i].taken) got++;
     label += '  ' + got + '/' + this.items.length;
+  } else if (o.type === 'sequence') {
+    label += '  ' + this.seqNext + '/' + this.items.length;
   } else if (o.type === 'defend' && this.state === 'active') {
     label += '  ' + Math.min(o.secs, Math.floor(this.defendT)) + '/' + o.secs + 's';
   }

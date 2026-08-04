@@ -28,19 +28,21 @@ PC.STORY.missions.stage6 = {
         { say: { speaker: 'carlos', text: "Gate's clear. The blueprints for the Ray are still in the Prototype Vault — you'll want those for what comes next." } },
       ],
     },
-    { // B2 - recover the Ray blueprints from the Vault
-      type: 'fetch', banner: 'RECOVER THE RAY BLUEPRINTS',
-      itemName: 'BLUEPRINT PAGE', icon: 'icon_passive_lens',
+    { // B2 - REROUTE THE VAULT POWER (v0.37.0, Mark's pick): three
+      // numbered breakers around the Vault, flipped IN ORDER, unlock
+      // the blueprints. Wrong order = harmless buzz + restart.
+      type: 'sequence', banner: 'REROUTE THE VAULT POWER',
+      icon: 'icon_passive_battery',
       items: [
-        { at: 'vault', dx: -160, dy: -10,
-          line: { speaker: 'carlos', text: "Page one. Power intake. See how big that number is? Keep moving." } },
-        { at: 'vault', dx: 150, dy: 30,
-          line: { speaker: 'danny', text: "Page two. I really thought 'unlimited portions' sounded friendlier on paper." } },
-        { at: 'vault', dx: -10, dy: 120,
-          line: { speaker: 'carlos', text: "That's the full set. Now — the reactor's cooking itself. Buy the vent team some time." } },
+        { at: 'vault', dx: -190, dy: -20,
+          line: { speaker: 'carlos', text: "Breaker one — intake. See how big that power number is? Keep going." } },
+        { at: 'vault', dx: 180, dy: 40,
+          line: { speaker: 'danny', text: "Two. I really thought 'unlimited portions' sounded friendlier on paper." } },
+        { at: 'vault', dx: -20, dy: 150,
+          line: { speaker: 'carlos', text: "Three — the vault's open. Blueprints are ours. Now the reactor's cooking itself; buy the vent team some time." } },
       ],
       intro: [
-        { say: { speaker: 'danny', text: "Vault's sealed tight and frosted in... junk. Three pages, then I'm out." } },
+        { say: { speaker: 'danny', text: "Vault's power-locked and frosted in junk. Three breakers, IN ORDER — one, two, three. My own security system, working against me. Classic." } },
       ],
       done: [
         { say: { speaker: 'vic', text: "Blueprints secured, boss. Reactor Yard's next — it went orange on my board two minutes ago." } },

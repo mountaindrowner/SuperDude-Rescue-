@@ -12,6 +12,28 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.37.0: SIGNATURE OBJECTIVES, KEPT SIMPLE (Mark:
+  "create some variation... keep them simple so there's no possible
+  errors").** Two new objective behaviors, both pure timer/distance
+  logic on the proven quest engine. (1) VALVE HOLD (stage 7 B2, now
+  CRANK THE VALVES): fetch grew an optional `hold: seconds` - standing
+  within 44px fills a progress ring (green when close, gold when
+  paused); walking away PAUSES, never resets; audio tick while
+  cranking. (2) ORDERED SWITCHES (stage 6 B2, now REROUTE THE VAULT
+  POWER, replacing the blueprint fetch): new 'sequence' type - three
+  NUMBERED breakers around the Vault flipped 1-2-3; the right one
+  chimes + turns green + spawns a guard ring; a wrong one buzzes,
+  resets all, and locks out until the player steps 70px back (no
+  re-trigger machine-gunning); compass points at the next pending
+  switch; banner counts x/3. Carlos/Danny page quips folded into the
+  switch lines. Cleanup: next() destroys leftover item/switch visuals
+  + the hold gfx (scene-reuse safe). DEFERRED per Mark's caution: park
+  herding (build only if provably unbreakable); REJECTED: suburbs
+  river crossing; train-riding shelved (the risky one). Battery:
+  verify-objectives 6/6 (no instant take, pause-not-reset,
+  wrong-order lockout + recovery, completion) + mission/ease/subway
+  regressions green, zero page errors. Version pair 0.37.0.
+
 - **2026-08-04 - v0.36.0: THE UNDERGROUND TWISTS (Mark: "add twisting
   and turning spaces... a real subway hub connecting to sewers, not
   just straight lines").** The sewer fabric's third geometry pass:
