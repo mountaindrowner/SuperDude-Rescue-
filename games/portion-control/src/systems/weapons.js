@@ -266,6 +266,21 @@ PC.aimAt = function (scene, range) {
     if ((dx * ax + dy * ay) / dl < 0.82) continue;
     bestD = d; best = e;
   }
+  // the BOSS is not in the enemy pool, so auto-aim never targeted him -
+  // duel shots streamed along the walk direction and only clipped the
+  // boss by accident (v0.32.0 campaign bot: every stage-1 duel lost at
+  // full health while bullets chased popcorn). He's a target like any
+  // other; being huge, he's usually the nearest thing on screen anyway.
+  var bz = scene.boss;
+  if (bz && !bz.dead && PC.onScreen(scene, bz.x, bz.y, 6)) {
+    var zdx = bz.x - scene.px, zdy = bz.y - scene.py;
+    var zd = zdx * zdx + zdy * zdy;
+    if (zd < nearD) { nearD = zd; near = bz; }
+    if (zd < bestD) {
+      var zdl = Math.sqrt(zd) || 1;
+      if ((zdx * ax + zdy * ay) / zdl >= 0.82) { bestD = zd; best = bz; }
+    }
+  }
   return { ax: ax, ay: ay, target: best || near };
 };
 
