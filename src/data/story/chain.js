@@ -55,7 +55,7 @@ PC.STORY.CHAIN = [
     blurb: "Carlos has been reading the Ray's pattern from the antenna array. It's not random." },
 
   { id: 'stage7', map: 'sewers', hero: 'danny',
-    title: 'STAGE 7: GOING DEEP', place: 'THE UNDERGROUND',
+    title: 'STAGE 7: DOWN THE DRAIN', place: 'THE UNDERGROUND',
     rescued: 'NAYAH',
     blurb: 'Down into the gross tunnels. Nayah is already having fun down there. Somehow.' },
 

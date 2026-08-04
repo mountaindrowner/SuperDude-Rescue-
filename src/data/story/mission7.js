@@ -1,4 +1,4 @@
-// mission7.js - STAGE 7: "GOING DEEP" (STORY_SPEC Map 5 + IV.5).
+// mission7.js - STAGE 7: "DOWN THE DRAIN" (was "GOING DEEP" - Mark: sounds inappropriate) (STORY_SPEC Map 5 + IV.5).
 // The Underground: clear Junction Alpha, restore the Pump Works (3
 // guarded valves), SURVIVE THE SURGE across the Catwalk Maze (the new
 // 'reach' objective), beat THE GLOOP KING at the Deep Sump, rescue
@@ -11,7 +11,7 @@ PC.STORY.missions = PC.STORY.missions || {};
 
 PC.STORY.missions.stage7 = {
   id: 'stage7',
-  name: 'STAGE 7: GOING DEEP',
+  name: 'STAGE 7: DOWN THE DRAIN',
   objectives: [
     { // B1 - clear Junction Chamber Alpha
       type: 'clear', at: 'junction', count: 22, banner: 'CLEAR JUNCTION ALPHA',

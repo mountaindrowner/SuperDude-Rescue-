@@ -216,10 +216,10 @@ LINES = [
          "Four rescued. One signal left on the board, boss — it's coming from UNDER the city."),
     ]),
 
-    # ---------- STAGE 7 "GOING DEEP" (SHIPPED v0.34.0 as mission7;
+    # ---------- STAGE 7 "DOWN THE DRAIN" (SHIPPED v0.34.0 as mission7;
     # the four spec lines are verbatim, the rest are Claude connective
     # tissue - DRAFT until Mark signs off) ----------
-    ('s7', 'SHIPPED', 'STAGE 7 "GOING DEEP" - The Underground / Sewers (mission7.js)', [
+    ('s7', 'SHIPPED', 'STAGE 7 "DOWN THE DRAIN" - The Underground / Sewers (mission7.js)', [
         ('vic', 'Soft-gate line at the sealed grate. Dry, practical. (SPEC VERBATIM)',
          "Main grate's sealed solid. Good thing I built you a Hydro-Drill — go buy it, boss."),
         ('nayah', 'Radio intro. Laughing, delighted by the danger. (SPEC VERBATIM)',
