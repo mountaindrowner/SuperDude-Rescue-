@@ -177,9 +177,16 @@ PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.025 };
 // v0.30.2 (Mark on-device: "the enemy spawn rate is crazy... maybe cut
 // it in half"): story interval 1.55 -> 2.4 and cap 0.60 -> 0.42, i.e.
 // roughly half the spawns per minute AND half the crowd of v0.30.0.
+// v0.32.0 (full-campaign bot audit): bossHp/bossContact joined the
+// knob. Bosses were tuned for quick run, where a 5-weapon leveled
+// build exists by boss time - a story hero meets them with a near-base
+// kit, so 3000-5000 HP meant 2-3 minute kite fights where every touch
+// took 20-26 HP (the bot lost stage 5 three times TO the boss, twice
+// from full health). Story bosses keep the same moves at survivable
+// numbers; quick run is unchanged.
 PC.EASE = {
-  QUICK: { interval: 1.45, cap: 0.70, ring: 0.80, clear: 0.80 },
-  STORY: { interval: 2.40, cap: 0.42, ring: 0.55, clear: 0.60 },
+  QUICK: { interval: 1.45, cap: 0.70, ring: 0.80, clear: 0.80, bossHp: 1, bossContact: 1 },
+  STORY: { interval: 2.40, cap: 0.42, ring: 0.55, clear: 0.60, bossHp: 0.5, bossContact: 0.75 },
 };
 PC.ease = function (scene) {
   return (scene && scene.storyMission) ? PC.EASE.STORY : PC.EASE.QUICK;
