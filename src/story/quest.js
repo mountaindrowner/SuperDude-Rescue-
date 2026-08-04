@@ -226,6 +226,20 @@ PC.Quest.prototype.next = function () {
     this.tpEarned += 10;
     if (PC.meta) PC.meta.bump('tp', 10);
     scene.floatText('+10 TP', 0x35d0ff);
+    // CHECKPOINT PATCH-UP (v0.32.0). Story missions chain 3-5 fights
+    // with no leveling and only lucky crate medkits between them, so
+    // HP loss compounded across objectives - the campaign bot entered
+    // stage 1's boss at 2 HP after surviving everything before it.
+    // Finishing a job heals a third of the bar: attrition resets per
+    // objective, dying WITHIN one still bites.
+    var mh = PC.PLAYER.HP + (scene.stats.bonusHp || 0);
+    if (scene.hp < mh) {
+      scene.hp = Math.min(mh, scene.hp + Math.round(mh / 3));
+      scene.floatText('PATCHED UP!', 0x7dd97b);
+      if (scene.fx) scene.fx.burst(scene.px, scene.py - 10, 'fx_spark', 4, 0.3);
+      if (PC.audio && PC.audio.heal) PC.audio.heal();
+      scene.drawHud();
+    }
   }
   this.idx++;
   if (this.idx >= this.mission.objectives.length) { this.complete(); return; }
@@ -413,7 +427,12 @@ PC.Quest.prototype.update = function (dt) {
       // far too hot for a base kit; slower cadence, eased size
       if (this._waveAcc > 7) {
         this._waveAcc = 0;
-        this.ring(zone.x, zone.y, 6, false);
+        // don't pile waves onto an already-lost crowd: a player pushed
+        // out of the zone pauses the timer but used to keep RECEIVING
+        // waves - the crowd only ever grew and re-entry became
+        // impossible (campaign bot survived 400s+ at two defends
+        // without ever finishing them)
+        if (scene.enemies.liveCount < 45) this.ring(zone.x, zone.y, 6, false);
       }
       if (this.defendT >= o.secs) this.finishObjective(o);
     }

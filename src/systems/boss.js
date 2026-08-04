@@ -34,6 +34,12 @@ PC.Boss = function (scene, x, y, id) {
   this.x = x; this.y = y;
   this.hp = d.hp; this.maxHp = d.hp;
   this.spd = d.spd; this.contact = d.contact; this.r = d.size / 2 - 18;
+  // story tier fights with a near-base kit - same boss, kid numbers
+  var ez = PC.ease ? PC.ease(scene) : null;
+  if (ez && ez.bossHp && ez.bossHp !== 1) {
+    this.hp = this.maxHp = Math.round(d.hp * ez.bossHp);
+    this.contact = Math.round(d.contact * ez.bossContact);
+  }
   this.name = d.name;
   this.state = 'intro'; this.stateT = 0;
   this.chargeCd = 6; this.splatCd = 4; this.animT = 0;

@@ -134,6 +134,7 @@ PC.GameScene.prototype.create = function () {
   this.bankedXp = 0;                 // story mode: XP is currency, not levels
   this.kills = 0;
   this.runT = 0;
+  this.spawnT = 0;                 // story spawn clock (scene is REUSED)
   this.dead = false;
   this.director = new PC.SpawnDirector(this);
   this._rings = {};
@@ -767,12 +768,29 @@ PC.GameScene.prototype.update = function (time, delta) {
   var dirScale = (this.boss && !this.boss.dead) ? 0.55 : 1;
   if (this.region) dirScale *= 0.5;            // story: ambient stays thin
   if (this.freeRoam) dirScale *= 0.25;         // between beats: calm streets
-  this.director.update(dt * dirScale, this.runT);
+  // STORY SPAWN CLOCK (v0.32.0). Quick run's difficulty curve is wall-
+  // clock because power growth is wall-clock (leveling). Story has NO
+  // leveling, but walking/fetching burned the same clock - a slow
+  // traveler reached the late phases (0.3s interval, cap 260) with a
+  // base kit and got buried (campaign bot: 129 live enemies at a
+  // t=210s defend, zero stage wins). Story missions advance the
+  // director on their own clock instead: full speed only while an
+  // objective is HOT (clear/defend/boss active), quarter speed while
+  // traveling, and capped before the deep-run phases ever arrive.
+  // Enemy hp/dmg time-scaling rides the same clock, so late-mission
+  // strays stop being spongy too. Quick run: spawnT === runT, no cap.
+  if (this.region) {
+    var qHot = this.quest && !this.quest.done && this.quest.state === 'active';
+    this.spawnT = Math.min(210, (this.spawnT || 0) + dt * (qHot ? 1 : 0.25));
+  } else this.spawnT = this.runT;
+  this.director.update(dt * dirScale, this.spawnT);
+  // timeline ring events ride the spawn clock, themed to the map's roster
   var rings = [[45, 16, 'fry'], [120, 22, 'popcorn'], [200, 28, 'hotdog']];
+  var rk = this.quest && this.quest.ringKinds;
   for (var ri = 0; ri < rings.length; ri++) {
-    if (this.runT >= rings[ri][0] && !this._rings[ri]) {
+    if (this.spawnT >= rings[ri][0] && !this._rings[ri]) {
       this._rings[ri] = true;
-      this.director.ring(rings[ri][1], rings[ri][2], this.runT / 60);
+      this.director.ring(rings[ri][1], rk ? rk[ri % rk.length] : rings[ri][2], this.spawnT / 60);
     }
   }
 
