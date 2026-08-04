@@ -54,8 +54,19 @@
   after ~1-2 missions, deep ranks long-tail; LOSS payouts kept every
   retry meaningful (bot could always buy something after 2 losses).
   Defend zones centered on solid landmarks (park) are slightly awkward
-  - flagged, not changed. Campaign bot data: scratchpad
-  botplay_report_baseline.json vs botplay_report.json.
+  - flagged, not changed. FIXED-BUILD RESULTS: stage1 WIN 1st try
+  (257s, Frank duel 100->36 dipping to 3 - a real climax), stage2 WIN
+  1st try (154s, minHP 88), stage4 WIN 1st try (297s, minHP 21),
+  stage3 attempt1 beat defend+boss and timed out only in the final
+  rescue cutscene (harness 7-min cap); stage5 played FRESH-SAVE
+  (conservative, ~half real player power) = 2 duel losses then WIN on
+  attempt 3 with garage rank 1; stage6 fresh-save stalled on the
+  Behemoth duel but a focused boss-diag PROVED mechanics sound (aim
+  locked BOSS, ~23 DPS landing continuously -> ~40s kill at real
+  stage-6 power). Remaining bot failures were its own nav/kiting
+  ceilings, documented in the logs. LOW-PRIORITY EDGE to verify
+  someday: one stage5 win sampled hp=-4 mid-final-beat - possible
+  race between the mission-complete heal and the death check.
 
 - **2026-08-02 - v0.31.1: CLARITY + FLAVOR BATCH (Mark's carry-forward
   list).** DESCRIPTION LAW: every passive, shop power-up and the
