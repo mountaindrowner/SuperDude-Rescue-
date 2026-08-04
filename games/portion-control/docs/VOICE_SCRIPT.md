@@ -233,7 +233,7 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 | `vo_s4_018_carlos` | GALAXY GUIDE CARLOS | The thesis of the whole game. Gentle, certain. | "Then we don't break it. We reach it." |
 | `vo_s4_019_vic` | TIMETECH VIC | Radio outro; points UNDER the city. NEW. | "Four rescued. One signal left on the board, boss — it's coming from UNDER the city." |
 
-### STAGE 7 "GOING DEEP" - The Underground / Sewers (mission7.js)  *(SHIPPED)*
+### STAGE 7 "DOWN THE DRAIN" - The Underground / Sewers (mission7.js)  *(SHIPPED)*
 
 | File ID | Character | Delivery | Line |
 |---|---|---|---|
