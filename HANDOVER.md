@@ -12,6 +12,51 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.32.0: FULL-CAMPAIGN BOT AUDIT -> STORY BALANCE +
+  THE BOSS-AIM BUG.** Mark: "Greatest system to play the game. Try it
+  out... test the economy of tech and in cash... see what's too easy.
+  Do the whole game as much as we have." Built a PLAYER BOT harness
+  (scratchpad bot-play.js): drives the real MoveInput vector, dodges
+  crowds, orbits clear rings, kites bosses, steps out of ketchup
+  puddles, breaks crates when hurt, taps dialogue, and SHOPS between
+  attempts (Garage TECH first, then Sal's priority list). 3 attempts
+  per beat, 7-min cap, full economy sampling. BASELINE (v0.31.1):
+  **1 win in 18 attempts, 5 of 6 stages hard walls.** Root causes:
+  (1) wall-clock spawn phases + no story leveling - travel/fetch burn
+  clock so late objectives met phase-5 pressure (129 live at a t=210s
+  defend) on a base kit; (2) zero HP recovery between objectives -
+  attrition compounded (bot entered stage1's boss at 2 HP); (3) defend
+  spiral - pushed out pauses the timer but waves kept spawning, crowd
+  only grew (two 400s+ uncompletable holds); (4) bosses quick-run-tuned
+  (3000-5000 HP, 20-26 contact vs ~22 DPS kit); and (5) **a real bug:
+  PC.aimAt only scanned enemies.pool - AUTO-AIM COULD NEVER TARGET THE
+  BOSS** (scene.boss is separate), duel shots streamed along the walk
+  direction and hit Frank by accident. FIXES (story tier only, quick
+  run untouched): story spawn clock (game.js spawnT - full rate only
+  while an objective is hot, 0.25x traveling, capped 210s; timeline
+  rings ride it + theme per map roster); checkpoint patch-up (+1/3 max
+  HP per objective complete, quest.js next()); defend wave guard (no
+  new waves past 45 live); EASE bossHp 0.5 / bossContact 0.75
+  (boss.js); boss beat arms with a supply chest like defends; and the
+  aim fix (boss is a first-class aimAt target - benefits quick run
+  too). VERIFIED: stages 1+2 now WIN FIRST TRY (stage1: full HP at
+  every checkpoint, ~100s Frank duel dipping to 3 HP - a real climax;
+  stage2 154s comfortable); stage3 attempt1 beat defend+boss and timed
+  out only in the final rescue cutscene at the harness's 7-min cap.
+  Remaining stage3 "failures" were bot-nav artifacts (minHP 69-100,
+  lost in the park's organic geometry - kids can see). Battery green
+  (ease/linear/freeroam/garage/map/mission + beam/comet/lasso);
+  verify-mission's final wait updated for the v0.19 freeroam seam
+  (was stale, expected PC_Results). ECONOMY (measured): guaranteed TP
+  m1-m6 = 125/105/125/105/125/125 = 710 + ~10-30 kill TECH per
+  mission; Garage max 380/hero -> campaign funds ~2 maxed heroes;
+  coins ~0.26/kill + crate fans (15-30) + boss fan -> first Sal's rank
+  after ~1-2 missions, deep ranks long-tail; LOSS payouts kept every
+  retry meaningful (bot could always buy something after 2 losses).
+  Defend zones centered on solid landmarks (park) are slightly awkward
+  - flagged, not changed. Campaign bot data: scratchpad
+  botplay_report_baseline.json vs botplay_report.json.
+
 - **2026-08-02 - v0.31.1: CLARITY + FLAVOR BATCH (Mark's carry-forward
   list).** DESCRIPTION LAW: every passive, shop power-up and the
   jawbreaker's level lines rewritten dummy-proof - name the concrete
