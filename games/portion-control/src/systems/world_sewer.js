@@ -31,11 +31,17 @@ window.PC = window.PC || {};
   }
 
   var COL = {
-    rock: '#151d1c', rockLite: '#1d2826', rockDark: '#0d1312',
-    crack: '#0a100f',
-    floor: '#3a4c48', floorLite: '#465b56', floorDark: '#31413e',
-    seam: '#2c3b38',
-    skirt: '#232f2c', skirtLip: '#57706a', edgeShadow: 'rgba(5,9,8,0.6)',
+    // READABILITY LAW (v0.39.0, Mark on-device: "I don't know if I'm
+    // under or in... anything not walkable should be rock, bordered by
+    // walls"): rock is FLAT near-black - no boulders, no cracks, no
+    // mid-tones that read as a roof. Floor is clearly lighter. The
+    // boundary gets a REAL brick wall edge, drawn only where floor
+    // truly meets rock.
+    rock: '#0c1110', rockMottle: '#090d0c',
+    floor: '#4a5a52', floorLite: '#56695f', floorDark: '#404f48',
+    seam: '#37453e',
+    wallBrick: '#6b5844', wallBrickDark: '#4e3f2e', wallLip: '#9ab5a8',
+    wallVoid: '#040706',
     water: '#14383f', waterLite: '#1d5560', waterGlint: '#35d0ff',
     moss: '#5a7a4a', mossGlow: '#7a9a66',
     mush: '#8fd14f', mushSpot: '#d9f2a8', mushStem: '#c9c2a6',
@@ -43,8 +49,8 @@ window.PC = window.PC || {};
     pipe: '#6e4a2f', pipeLite: '#b5793f', pipeDark: '#4d3421',
     metal: '#514e6b', metalLite: '#6d6a8e',
     iron: '#4a4038', ironLite: '#8a7a60', rust: '#7a5030',
-    goo: '#6a7a1e', gooLite: '#8fb03f', gooDark: '#4a5514',
-    gooOutline: '#3a430e', gooBubble: '#c8d96a',
+    goo: '#7fb043', gooLite: '#a3d45f', gooDark: '#4f7328',
+    gooOutline: '#2f4a17', gooBubble: '#d9f2a8',
     lagoon: '#454e10', lagoonRim: '#262a08', junkDark: '#2e3310',
     glowCyan: '#35d0ff', beam: 'rgba(255,243,196,0.26)',
     brick: '#7a5a48', brickDark: '#5c4436', brickLite: '#8d6c58',
@@ -199,39 +205,15 @@ window.PC = window.PC || {};
   PC.SewerLayout.prototype.paintChunk = function (scene, g, cx, cy) {
     var x0 = cx * CH, y0 = cy * CH, self = this;
 
-    // ---- 1. solid rock everywhere. JUDGE LAW (round 2): rock must
-    // never carry a grid - a grid reads as floor tile. Rock is
-    // near-black mass with IRREGULAR boulder chunks and cracks. ----
+    // ---- 1. solid rock: FLAT near-black. Texture is the enemy of
+    // readability here - the old boulder blobs read as a ceiling. ----
     g.fillStyle = COL.rock;
     g.fillRect(0, 0, CH, CH);
-    for (var bo = 0; bo < 16; bo++) {
-      var bx2 = h2(cx * 9 + bo, cy, 21) * CH, by2 = h2(cx, cy * 9 + bo, 22) * CH;
-      var bs2 = 26 + h2(bo, cx + cy, 23) * 64;
-      var tone = h2(bo, cx, 24);
-      g.fillStyle = tone > 0.55 ? COL.rockLite : COL.rockDark;
-      g.beginPath();
-      // lumpy 6-gon boulder
-      for (var vv = 0; vv < 6; vv++) {
-        var va = vv * Math.PI / 3 + h2(bo, vv, 25) * 0.5;
-        var vr = bs2 * (0.7 + h2(vv, bo, 26) * 0.5);
-        var vxp = bx2 + Math.cos(va) * vr, vyp = by2 + Math.sin(va) * vr * 0.8;
-        if (vv === 0) g.moveTo(vxp, vyp); else g.lineTo(vxp, vyp);
-      }
-      g.closePath(); g.fill();
-    }
-    // rock cracks
-    g.strokeStyle = COL.crack; g.lineWidth = 2;
-    for (var ck = 0; ck < 6; ck++) {
-      var s1 = h2(cx, cy, 30 + ck), s2 = h2(cx, cy, 40 + ck);
-      if (s1 > 0.7) continue;
-      var px = s1 * CH, py = s2 * CH;
-      g.beginPath(); g.moveTo(px, py);
-      for (var st = 0; st < 4; st++) {
-        px += (h2(cx + st, cy + ck, 50) - 0.5) * 90;
-        py += 24 + h2(cx + ck, cy + st, 51) * 40;
-        g.lineTo(px, py);
-      }
-      g.stroke();
+    g.fillStyle = COL.rockMottle;
+    for (var rm2 = 0; rm2 < 9; rm2++) {
+      var rmx = h2(cx * 9 + rm2, cy, 21) * CH, rmy = h2(cx, cy * 9 + rm2, 22) * CH;
+      var rms = 40 + h2(rm2, cx + cy, 23) * 70;
+      g.beginPath(); g.ellipse(rmx, rmy, rms, rms * 0.7, 0, 0, Math.PI * 2); g.fill();
     }
 
     // ---- 2. carve: clip to every carved shape touching this chunk ----
@@ -264,19 +246,7 @@ window.PC = window.PC || {};
         g.beginPath(); g.moveTo(jx, sy); g.lineTo(jx, Math.min(CH, sy + 48)); g.stroke();
       }
     }
-    // wet shine: sparse single-pixel glints + faint puddles
-    for (var gl2 = 0; gl2 < 14; gl2++) {
-      var glx = h2(cx * 11 + gl2, cy, 64) * CH, gly = h2(cx, cy * 11 + gl2, 65) * CH;
-      if (!this.carvedAt(x0 + glx, y0 + gly)) continue;
-      g.fillStyle = 'rgba(168,216,204,0.55)';
-      g.fillRect(glx, gly, 2, 1);
-    }
-    for (var pu = 0; pu < 8; pu++) {
-      var pux = h2(cx * 3 + pu, cy, 61) * CH, puy = h2(cx, cy * 3 + pu, 62) * CH;
-      if (!this.carvedAt(x0 + pux, y0 + puy)) continue;
-      g.fillStyle = 'rgba(53,208,255,0.05)';
-      g.beginPath(); g.ellipse(pux, puy, 26 + h2(pu, cx, 63) * 30, 12, 0, 0, Math.PI * 2); g.fill();
-    }
+    // (wet glints + ambient puddles removed v0.39.0 - noise, not info)
 
     // ---- water gutters down corridor centers ----
     this._gutters(g, cx, cy);
@@ -293,27 +263,56 @@ window.PC = window.PC || {};
     }
     g.restore();
 
-    // ---- 3. wall treatment: boundary strokes clipped to the carve,
-    // so every shape kind (rect / circle / winding poly) gets the same
-    // lip -> masonry skirt -> edge shadow depth statement ----
-    g.save();
-    g.beginPath();
-    for (var si2 = 0; si2 < shapes.length; si2++) traceShape(g, shapes[si2], x0, y0);
-    g.clip();
-    g.lineJoin = 'round';
-    var passes = [[58, COL.skirtLip], [52, COL.skirt], [24, COL.edgeShadow]];
-    for (var pp = 0; pp < passes.length; pp++) {
-      g.lineWidth = passes[pp][0];
-      g.strokeStyle = passes[pp][1];
-      g.beginPath();
-      for (var si3 = 0; si3 < shapes.length; si3++) traceShape(g, shapes[si3], x0, y0);
-      g.stroke();
-    }
-    g.restore();
+    // ---- 3. THE WALL EDGE (v0.39.0): scan 16px cells; wherever floor
+    // touches rock, draw a real brick wall band on that side - void
+    // gap at the boundary, brick course, bright lip toward the floor.
+    // Cell-tested from carvedAt itself, so it only ever appears at TRUE
+    // rock boundaries - no phantom lines across open rooms. ----
+    this._wallEdges(g, cx, cy);
 
     // ---- 4. pipes along corridors + goo flood (over everything) ----
     this._pipes(g, cx, cy);
     this._gooPass(g, cx, cy);
+  };
+
+  PC.SewerLayout.prototype._wallEdges = function (g, cx, cy) {
+    var x0 = cx * CH, y0 = cy * CH, T = 16;
+    for (var ly2 = 0; ly2 < CH; ly2 += T) {
+      for (var lx2 = 0; lx2 < CH; lx2 += T) {
+        var wx = x0 + lx2 + T / 2, wy = y0 + ly2 + T / 2;
+        if (!this.carvedAt(wx, wy)) continue;
+        var nN = !this.carvedAt(wx, wy - T);
+        var nS = !this.carvedAt(wx, wy + T);
+        var nW = !this.carvedAt(wx - T, wy);
+        var nE = !this.carvedAt(wx + T, wy);
+        if (!(nN || nS || nW || nE)) continue;
+        var brickOff = (Math.floor((x0 + lx2) / T) % 2) * 5;
+        if (nN) {
+          g.fillStyle = COL.wallVoid;  g.fillRect(lx2, ly2, T, 4);
+          g.fillStyle = COL.wallBrick; g.fillRect(lx2, ly2 + 4, T, 12);
+          g.fillStyle = COL.wallBrickDark; g.fillRect(lx2 + brickOff, ly2 + 4, 2, 12);
+          g.fillStyle = COL.wallLip;   g.fillRect(lx2, ly2 + 16, T, 3);
+        }
+        if (nS) {
+          g.fillStyle = COL.wallVoid;  g.fillRect(lx2, ly2 + T - 4, T, 4);
+          g.fillStyle = COL.wallBrick; g.fillRect(lx2, ly2 + T - 16, T, 12);
+          g.fillStyle = COL.wallBrickDark; g.fillRect(lx2 + brickOff, ly2 + T - 16, 2, 12);
+          g.fillStyle = COL.wallLip;   g.fillRect(lx2, ly2 + T - 19, T, 3);
+        }
+        if (nW) {
+          g.fillStyle = COL.wallVoid;  g.fillRect(lx2, ly2, 4, T);
+          g.fillStyle = COL.wallBrick; g.fillRect(lx2 + 4, ly2, 12, T);
+          g.fillStyle = COL.wallBrickDark; g.fillRect(lx2 + 4, ly2 + brickOff, 12, 2);
+          g.fillStyle = COL.wallLip;   g.fillRect(lx2 + 16, ly2, 3, T);
+        }
+        if (nE) {
+          g.fillStyle = COL.wallVoid;  g.fillRect(lx2 + T - 4, ly2, 4, T);
+          g.fillStyle = COL.wallBrick; g.fillRect(lx2 + T - 16, ly2, 12, T);
+          g.fillStyle = COL.wallBrickDark; g.fillRect(lx2 + T - 16, ly2 + brickOff, 12, 2);
+          g.fillStyle = COL.wallLip;   g.fillRect(lx2 + T - 19, ly2, 3, T);
+        }
+      }
+    }
   };
 
   // every carve shape that touches chunk (cx,cy), in WORLD coords.
@@ -596,7 +595,7 @@ window.PC = window.PC || {};
   PC.SewerLayout.prototype._gooPass = function (g, cx, cy) {
     var x0 = cx * CH, y0 = cy * CH;
     var depth = Math.max(0, Math.min(1, (y0 / this.size) * 1.5 - 0.15));
-    var n = Math.round(1 + depth * 9);
+    var n = Math.round(depth * 6);
     for (var i = 0; i < n; i++) {
       var gx = h2(cx * 7 + i, cy, 91) * CH, gy = h2(cx, cy * 7 + i, 92) * CH;
       if (!this.carvedAt(x0 + gx, y0 + gy)) continue;
@@ -681,7 +680,7 @@ window.PC = window.PC || {};
       var R = Math.min(w, h) * 0.36;
       g.strokeStyle = COL.stoneBrick; g.lineWidth = 22;
       g.beginPath(); g.arc(mcx, mcy, R, 0, Math.PI * 2); g.stroke();
-      g.strokeStyle = COL.skirtLip; g.lineWidth = 5;
+      g.strokeStyle = COL.wallLip; g.lineWidth = 5;
       g.beginPath(); g.arc(mcx, mcy, R + 13, 0, Math.PI * 2); g.stroke();
       g.beginPath(); g.arc(mcx, mcy, R - 13, 0, Math.PI * 2); g.stroke();
       // compass spokes
@@ -864,11 +863,11 @@ window.PC = window.PC || {};
       // COLLAPSED RESERVOIR: drained basin, cracks radiating FROM the
       // remaining pool's rim (judge: not from open floor), rubble
       // unlit rubble band above the basin (round 3: no empty strips)
-      g.fillStyle = COL.rockDark;
+      g.fillStyle = COL.rockMottle;
       g.fillRect(lx, ly, w, h * 0.12);
       for (var ub = 0; ub < 10; ub++) {
         var ubx = lx + h2(ub, 21, 151) * w, ubs = 8 + h2(21, ub, 152) * 16;
-        g.fillStyle = COL.rockLite;
+        g.fillStyle = COL.wallBrickDark;
         g.beginPath(); g.arc(ubx, ly + h * 0.06, ubs, 0, Math.PI * 2); g.fill();
       }
       g.strokeStyle = COL.stoneBrickLite; g.lineWidth = 8;
@@ -880,7 +879,7 @@ window.PC = window.PC || {};
       var por = w * 0.14;
       g.fillStyle = COL.water;
       g.beginPath(); g.ellipse(pox, poy, por, por * 0.55, 0, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = COL.crack; g.lineWidth = 4;
+      g.strokeStyle = COL.wallVoid; g.lineWidth = 4;
       for (var cr = 0; cr < 5; cr++) {
         var ca = cr * (Math.PI * 2 / 5) + 0.5;
         var cpx = pox + Math.cos(ca) * por, cpy = poy + Math.sin(ca) * por * 0.55;
@@ -897,7 +896,7 @@ window.PC = window.PC || {};
         var rbx = mcx + (h2(rb, 9, 124) - 0.5) * w * 0.5;
         var rby = mcy + (h2(9, rb, 125) - 0.5) * h * 0.5;
         var rbs = 10 + h2(rb, rb, 126) * 16;
-        g.fillStyle = COL.rockLite;
+        g.fillStyle = COL.wallBrickDark;
         g.beginPath(); g.arc(rbx, rby, rbs, 0, Math.PI * 2); g.fill();
         g.fillStyle = COL.rock;
         g.beginPath(); g.arc(rbx + rbs * 0.2, rby + rbs * 0.24, rbs * 0.7, 0, Math.PI * 2); g.fill();
