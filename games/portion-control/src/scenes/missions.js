@@ -336,7 +336,7 @@ PC.MissionsScene.prototype.openBrief = function (entry, status) {
   // must engage the Garage to progress"). Stage 7's Main Grate needs
   // the HYDRO-DRILL; the button walks you to the Garage instead.
   var gated = entry.id === 'stage7' && PC.GARAGE && PC.GARAGE.hasGear &&
-              !PC.GARAGE.hasGear('hydrodrill');
+              !PC.GARAGE.hasGear('hydrodrill') && !PC.UNLOCK_ALL;
   var gg = this.add.graphics().setDepth(32);
   if (gated) {
     PC.labPanel(gg, 16, py + ph - 30, 168, 22, { rivets: true, base: 0x33240f, edge: 0xf2c33c });

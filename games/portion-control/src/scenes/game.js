@@ -109,6 +109,24 @@ PC.GameScene.prototype.create = function () {
       }
     });
   }
+  // ?unlock=1 preview: two free upgrades at story-run start so any
+  // stage is testable on a fresh kit (runtime-only - nothing saved)
+  if (PC.UNLOCK_ALL && this.storyMission) {
+    var ulSelf = this;
+    this.time.delayedCall(1200, function () {
+      if (ulSelf.dead || ulSelf.won) return;
+      ulSelf.floatText('PREVIEW LOADOUT!', 0x35d0ff);
+      for (var ug = 0; ug < 2; ug++) {
+        var uCards = PC.drawCards ? PC.drawCards(ulSelf) : [];
+        var uPick = null;
+        for (var uc = 0; uc < uCards.length && !uPick; uc++) {
+          if (uCards[uc].kind !== 'heal') uPick = uCards[uc];
+        }
+        if (uPick) PC.applyCard(ulSelf, uPick);
+      }
+      ulSelf.drawHud();
+    });
+  }
 
   // STORY-3: the mission engine rides on top of the run
   this.storyPause = false;
