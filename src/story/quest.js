@@ -446,6 +446,14 @@ PC.Quest.prototype.update = function (dt) {
         scene.boss = new PC.Boss(scene, bs.x, bs.y, o.boss);
         scene.bossBanner(scene.boss.name);
         if (PC.audio && PC.audio.roar) PC.audio.roar();
+        // same supply chest the defend beat arms with (v0.32.0): the
+        // duel was the last beat a story kit met bare - even with
+        // eased boss HP the campaign bot lost every stage-1 fight 1v1
+        // at full health. One upgrade as the fight starts, same as
+        // every other hard beat.
+        if (scene.dropBossPower && !scene.bossDrop) {
+          scene.dropBossPower(px + 60, py);
+        }
         this.playScript(o.intro, null);
       }
     }
