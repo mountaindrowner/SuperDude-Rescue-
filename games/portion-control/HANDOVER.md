@@ -12,6 +12,25 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.36.0: THE UNDERGROUND TWISTS (Mark: "add twisting
+  and turning spaces... a real subway hub connecting to sewers, not
+  just straight lines").** The sewer fabric's third geometry pass:
+  every NON-ring tunnel now serpentines (centerline offset +-104px by
+  smooth noise, baked into carvedAt so collision still equals pixels),
+  junction chambers went lumpy-organic (8 hashed spoke radii lerped by
+  angle), and DIAGONAL interchange connectors cut between junction
+  nodes (~10 hashed segments, 184px wide). THE SUBWAY RING STAYS
+  ENGINEERING-STRAIGHT - the train needs it, and the contrast is the
+  design: bored transit tunnels vs hand-dug winding sewers. Paint
+  side: _shapesFor emits sampled POLYGONS for winding strips/lumpy
+  chambers/diagonal quads; the wall treatment unified into clipped
+  boundary strokes (lip under, masonry skirt, edge shadow - works for
+  any shape); water gutters and wall pipes are stroked polylines that
+  follow their tunnel's curve; ring rails/bridges unchanged. Map view
+  schematic deliberately stays straight-line (subway-map style).
+  verify-subway 4/4 green after the rework, probes + full atlas zero
+  page errors. Version pair 0.36.0.
+
 - **2026-08-04 - v0.35.0: THE LOOP LINE + GLOOP KING REGEN (Mark's
   round on the sewers).** (1) SEWER/SUBWAY COMBO (Mark: "the subway
   rotates around the whole map slowly and it's a constant threat"):
