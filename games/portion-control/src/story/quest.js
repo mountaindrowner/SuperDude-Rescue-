@@ -236,7 +236,7 @@ PC.Quest.prototype.next = function () {
     if (scene.hp < mh) {
       scene.hp = Math.min(mh, scene.hp + Math.round(mh / 3));
       scene.floatText('PATCHED UP!', 0x7dd97b);
-      if (scene.fx) scene.fx.burst(scene.px, scene.py - 10, 'fx_spark', 4, 0.3);
+      if (scene.fx) scene.fx.burst(scene.px, scene.py - 10, 'fx_spark', 3, 0.3);
       if (PC.audio && PC.audio.heal) PC.audio.heal();
       scene.drawHud();
     }
