@@ -12,6 +12,20 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.38.0: ?unlock=1 PREVIEW MODE (Mark: "a version
+  with all the new levels unlocked so I can try them").** Same live
+  build, opt-in by URL param: every BUILT stage shows ACTIVE on the
+  mission map (finale stays SIGNAL SCRAMBLED), the stage-7 Hydro-Drill
+  seal is bypassed, and story runs get a PREVIEW LOADOUT banner + two
+  free upgrades at start (the boss-drop grant path) so late stages are
+  testable on a fresh kit. Runtime-only by design: the story save and
+  meta wallet are never written by the mode, so dropping the param
+  resumes normal progression exactly where it was. The self-healing
+  cache reload now PRESERVES query params (it used to strip ?unlock on
+  the version-mismatch reload). verify-unlock: 5 checks green (flag,
+  all-active, unsealed brief, loadout grant, and param-off = normal
+  gating untouched). Version pair 0.38.0.
+
 - **2026-08-04 - v0.37.0: SIGNATURE OBJECTIVES, KEPT SIMPLE (Mark:
   "create some variation... keep them simple so there's no possible
   errors").** Two new objective behaviors, both pure timer/distance

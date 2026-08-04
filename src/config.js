@@ -12,6 +12,16 @@ PC.VERSION = 'v' + (window.PC_BUILD || 'dev');
 // BASE = the portrait short-edge logical size = the zoom level. Bigger =
 // more of the map on screen, sprites appear smaller (Mark round 10: "zoom
 // the game out a little so I can see more of the map"). 270 -> 340.
+// ---- ?unlock=1 preview mode (v0.38.0, Mark: "a version with all the
+// new levels unlocked so I can try them") ----------------------------
+// Same live build, opt-in by URL. Opens every BUILT stage on the
+// mission map, bypasses the Hydro-Drill seal, and hands story runs two
+// free upgrades at start so late stages are testable on a fresh kit.
+// Runtime-only: the story save and meta wallet are never written by
+// the mode itself, so dropping the param resumes normal progression.
+PC.UNLOCK_ALL = false;
+try { PC.UNLOCK_ALL = /[?&]unlock/.test(window.location.search); } catch (e) {}
+
 PC.RENDER = {
   W: 480, H: 270,              // set live by main.js from BASE + device aspect
   BASE: 400,                   // portrait width / landscape height (the zoom)

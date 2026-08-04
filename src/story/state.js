@@ -45,6 +45,10 @@ PC.storyState = (function () {
       if (!entry) return 'hidden';
       if (data.cleared[entry.id]) return 'cleared';
       var built = PC.STORY.beatBuilt(entry);
+      // ?unlock=1 preview mode (v0.38.0): every built stage is
+      // playable for testing - the SAVE is untouched, so removing the
+      // param restores normal progression exactly where it was
+      if (PC.UNLOCK_ALL) return built ? 'active' : 'soon';
       if (PC.DEV_MODE) return built ? 'active' : 'soon';
       var cur = this.currentIndex();
       if (i === cur) return built ? 'active' : 'soon';
