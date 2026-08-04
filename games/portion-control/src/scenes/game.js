@@ -746,8 +746,10 @@ PC.GameScene.prototype.update = function (time, delta) {
     }
   }
 
-  // contact damage via 3x3 hash query + timestamp i-frames
-  if (this.now > this.invUntil) {
+  // contact damage via 3x3 hash query + timestamp i-frames.
+  // !dead guard (v0.33.0): damage kept applying through the death anim
+  // and a last-frame win, so the bar could read deep negative
+  if (this.now > this.invUntil && !this.dead) {
     var hitDmg = 0;
     this.enemies.hash.eachNear(this.px, this.py, function (e) {
       var dx = e.x - self.px, dy = e.y - self.py;
@@ -948,7 +950,15 @@ PC.GameScene.prototype.onBossDefeated = function () {
   // to the quest engine instead)
   this.time.delayedCall(1100, function () {
     self.time.timeScale = 1;
-    if (self.quest) { self.quest.onBossDown(); return; }
+    if (self.quest) {
+      // a story boss kill is an OBJECTIVE, not the mission: `won` must
+      // not stick, or die() no-ops for the whole rescue tail and the
+      // player walks it unkillable at negative HP (bot: won at -56)
+      self.won = false;
+      self.hp = Math.max(1, self.hp);
+      self.quest.onBossDown();
+      return;
+    }
     self._rescueSequence(b.x, b.y);
   }, [], this);
 };

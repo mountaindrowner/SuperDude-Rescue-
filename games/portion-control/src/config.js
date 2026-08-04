@@ -185,8 +185,18 @@ PC.TIMESCALE = { HP_PER_MIN: 0.06, DMG_PER_MIN: 0.025 };
 // from full health). Story bosses keep the same moves at survivable
 // numbers; quick run is unchanged.
 PC.EASE = {
-  QUICK: { interval: 1.45, cap: 0.70, ring: 0.80, clear: 0.80, bossHp: 1, bossContact: 1 },
-  STORY: { interval: 2.40, cap: 0.42, ring: 0.55, clear: 0.60, bossHp: 0.5, bossContact: 0.75 },
+  QUICK: { interval: 1.45, cap: 0.70, ring: 0.80, clear: 0.80, bossHp: 1, bossContact: 1, bossCharge: 1 },
+  // bossHp 0.5 -> 0.42 (v0.33.0): chests became EARNED (defend reward /
+  // boss kill, no arm gifts) which re-walled stage 1 - the bot lost the
+  // Frank duel three straight at 0.5. The shorter bar buys back what
+  // the free chest used to cover; the 3000->5000 base staircase keeps
+  // later bosses relatively meaner.
+  // bossCharge 0.75 (v0.33.0): the lunge is 320px/s vs player 190 -
+  // running AWAY (every kid's instinct) mathematically cannot escape
+  // it; only a sideways dodge in the 0.7s telegraph survives. At 240
+  // px/s a head-start retreat escapes a full-length lunge, so the
+  // natural response works and the duel stops being a touch-race.
+  STORY: { interval: 2.40, cap: 0.42, ring: 0.55, clear: 0.60, bossHp: 0.42, bossContact: 0.75, bossCharge: 0.75 },
 };
 PC.ease = function (scene) {
   return (scene && scene.storyMission) ? PC.EASE.STORY : PC.EASE.QUICK;

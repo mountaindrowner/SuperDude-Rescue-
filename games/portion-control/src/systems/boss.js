@@ -139,7 +139,10 @@ PC.Boss.prototype.update = function (dt, px, py) {
     this.tele.lineStyle(10, 0xd93a3a, 0.35).lineBetween(this.x, this.y, ex, ey);
     if (this.stateT > 0.7) {
       this.state = 'charge'; this.stateT = 0; this.tele.setVisible(false);
-      this.chargeVX = this._teleDx * 320; this.chargeVY = this._teleDy * 320;
+      // story lunges at 240px/s so plain running away can escape (the
+      // ease knob's bossCharge; quick run keeps the full 320)
+      var ezc = PC.ease ? (PC.ease(scene).bossCharge || 1) : 1;
+      this.chargeVX = this._teleDx * 320 * ezc; this.chargeVY = this._teleDy * 320 * ezc;
       this.sprite.clearTint();
       if (PC.audio) PC.audio.roar();
     }
@@ -183,7 +186,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
 
   // ---- contact damage to the player (respects i-frames) ----
   var cdx = px - this.x, cdy = py - this.y;
-  if (cdx * cdx + cdy * cdy < (this.r + 12) * (this.r + 12) && scene.now > scene.invUntil) {
+  if (cdx * cdx + cdy * cdy < (this.r + 12) * (this.r + 12) && scene.now > scene.invUntil && !scene.dead) {
     scene.hp -= Math.max(1, this.contact * scene.dmgTakenMult - scene.stats.armor);
     scene.lastHurtT = scene.now;
     scene.invUntil = scene.now + PC.PLAYER.IFRAMES;
@@ -205,7 +208,7 @@ PC.Boss.prototype._updatePuddles = function (dt, px, py) {
     if (p.life <= 0) { p.active = false; p.img.setVisible(false); continue; }
     p.img.setAlpha(0.75 * Math.min(1, p.life));
     var dx = px - p.x, dy = py - p.y;
-    if (dx * dx + dy * dy < (p.r) * (p.r) && p.tick <= 0 && this.scene.now > this.scene.invUntil - 0.4) {
+    if (dx * dx + dy * dy < (p.r) * (p.r) && p.tick <= 0 && this.scene.now > this.scene.invUntil - 0.4 && !this.scene.dead) {
       p.tick = 0.5;
       this.scene.hp -= 4;                                    // 8 dmg/s while inside
       this.scene.drawHud();
