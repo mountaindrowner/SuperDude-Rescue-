@@ -69,6 +69,27 @@ window.PC = window.PC || {};
         w: (L.c1 - L.c0 + 1) * CH - 32, h: (L.r1 - L.r0 + 1) * CH - 32,
       });
     }
+    // TWISTS (v0.35.1, Mark: "add twisting and turning spaces... it
+    // shouldn't just be straight lines"): non-ring tunnels serpentine
+    // (bend baked into carvedAt), chambers go lumpy, and DIAGONAL
+    // connector tunnels cut between junction nodes like a real
+    // interchange. The subway ring stays engineering-straight - the
+    // train needs it, and the contrast sells both identities.
+    this.diags = [];
+    for (var di = 3; di <= this.blocks - 5; di += 2) {
+      for (var dj = 3; dj <= this.blocks - 5; dj += 2) {
+        if (h2(di, dj, 66) > 0.16) continue;
+        var down = h2(di, dj, 67) < 0.5;
+        var dj2 = down ? dj + 2 : dj - 2;
+        if (dj2 < 3 || dj2 > this.blocks - 3) continue;
+        this.diags.push({
+          x1: di * CH + CH / 2, y1: dj * CH + CH / 2,
+          x2: (di + 2) * CH + CH / 2, y2: dj2 * CH + CH / 2,
+        });
+      }
+    }
+    this._spokeCache = {};
+
     // schematic export for PC_MapView: the tunnel network as data
     this.tunnels = { v: [], h: [], chambers: [], hw: HW };
     for (var tc = 1; tc < this.blocks; tc += 2) {
@@ -91,6 +112,32 @@ window.PC = window.PC || {};
     return 240 + r * 130;                       // radius 240..318
   };
 
+  // serpentine offset of a non-ring tunnel's centerline at coord t
+  PC.SewerLayout.prototype._bendV = function (c, y) {
+    if (c === 1 || c === this.blocks - 1) return 0;      // subway: straight
+    return (smooth(c * 997, y, 1300, 23) * 2 - 1) * 104;
+  };
+  PC.SewerLayout.prototype._bendH = function (r, x) {
+    if (r === 1 || r === this.blocks - 1) return 0;
+    return (smooth(x, r * 997, 1300, 24) * 2 - 1) * 104;
+  };
+  // 8 lumpy spoke radii per chamber (cached), lerped by angle
+  PC.SewerLayout.prototype._spokes = function (i, j, R) {
+    var key = i + '_' + j, sp = this._spokeCache[key];
+    if (!sp) {
+      sp = [];
+      for (var k = 0; k < 8; k++) sp.push(R * (0.78 + 0.42 * h2(i * 8 + k, j, 61)));
+      this._spokeCache[key] = sp;
+    }
+    return sp;
+  };
+  PC.SewerLayout.prototype._chamberRAt = function (i, j, R, ang) {
+    var sp = this._spokes(i, j, R);
+    var a = ((ang / (Math.PI / 4)) % 8 + 8) % 8;
+    var k0 = Math.floor(a), f = a - k0;
+    return sp[k0 % 8] * (1 - f) + sp[(k0 + 1) % 8] * f;
+  };
+
   PC.SewerLayout.prototype.markAt = function (x, y) {
     for (var i = 0; i < this.marks.length; i++) {
       var m = this.marks[i];
@@ -102,20 +149,30 @@ window.PC = window.PC || {};
   PC.SewerLayout.prototype.carvedAt = function (x, y) {
     if (x < 0 || y < 0 || x >= this.size || y >= this.size) return false;
     if (this.markAt(x, y)) return true;
-    // vertical tunnels on odd block columns
+    // vertical tunnels on odd block columns (serpentine off-ring)
     var c = Math.round((x - CH / 2) / CH);
     if ((c % 2) === 1 && c > 0 && c < this.blocks &&
-        Math.abs(x - (c * CH + CH / 2)) < HW) return true;
+        Math.abs(x - (c * CH + CH / 2 + this._bendV(c, y))) < HW) return true;
     // horizontal tunnels on odd block rows
     var r = Math.round((y - CH / 2) / CH);
     if ((r % 2) === 1 && r > 0 && r < this.blocks &&
-        Math.abs(y - (r * CH + CH / 2)) < HW) return true;
-    // junction chambers
+        Math.abs(y - (r * CH + CH / 2 + this._bendH(r, x))) < HW) return true;
+    // lumpy junction chambers
     var ci = Math.round((x - CH / 2) / CH), cj = Math.round((y - CH / 2) / CH);
     var R = this._chamber(ci, cj);
     if (R) {
       var dx = x - (ci * CH + CH / 2), dy = y - (cj * CH + CH / 2);
-      if (dx * dx + dy * dy < R * R) return true;
+      var dd = Math.sqrt(dx * dx + dy * dy);
+      if (dd < this._chamberRAt(ci, cj, R, Math.atan2(dy, dx))) return true;
+    }
+    // diagonal interchange connectors
+    for (var dg = 0; dg < this.diags.length; dg++) {
+      var D = this.diags[dg];
+      var vx = D.x2 - D.x1, vy = D.y2 - D.y1;
+      var wx = x - D.x1, wy = y - D.y1;
+      var tt = Math.max(0, Math.min(1, (wx * vx + wy * vy) / (vx * vx + vy * vy)));
+      var ex = D.x1 + vx * tt - x, ey = D.y1 + vy * tt - y;
+      if (ex * ex + ey * ey < 92 * 92) return true;
     }
     return false;
   };
@@ -183,11 +240,7 @@ window.PC = window.PC || {};
 
     g.save();
     g.beginPath();
-    for (var si = 0; si < shapes.length; si++) {
-      var sh = shapes[si];
-      if (sh.kind === 'rect') g.rect(sh.x - x0, sh.y - y0, sh.w, sh.h);
-      else { g.moveTo(sh.x - x0 + sh.r, sh.y - y0); g.arc(sh.x - x0, sh.y - y0, sh.r, 0, Math.PI * 2); }
-    }
+    for (var si = 0; si < shapes.length; si++) traceShape(g, shapes[si], x0, y0);
     g.clip();
 
     // floor base: wet flagstone in OFFSET courses (brick-like, not the
@@ -240,42 +293,20 @@ window.PC = window.PC || {};
     }
     g.restore();
 
-    // ---- 3. wall skirt: a lip along every carved edge (pseudo-depth) ----
+    // ---- 3. wall treatment: boundary strokes clipped to the carve,
+    // so every shape kind (rect / circle / winding poly) gets the same
+    // lip -> masonry skirt -> edge shadow depth statement ----
     g.save();
     g.beginPath();
-    for (var si2 = 0; si2 < shapes.length; si2++) {
-      var s3 = shapes[si2];
-      if (s3.kind === 'rect') g.rect(s3.x - x0, s3.y - y0, s3.w, s3.h);
-      else { g.moveTo(s3.x - x0 + s3.r, s3.y - y0); g.arc(s3.x - x0, s3.y - y0, s3.r, 0, Math.PI * 2); }
-    }
+    for (var si2 = 0; si2 < shapes.length; si2++) traceShape(g, shapes[si2], x0, y0);
     g.clip();
-    // near-black cast shadow hugging the wall, then a wide masonry
-    // skirt, then a bright lip - the "carved out of rock" statement
-    g.lineWidth = 12;
-    g.strokeStyle = COL.edgeShadow;
-    for (var si2b = 0; si2b < shapes.length; si2b++) {
-      var s3b = shapes[si2b];
+    g.lineJoin = 'round';
+    var passes = [[58, COL.skirtLip], [52, COL.skirt], [24, COL.edgeShadow]];
+    for (var pp = 0; pp < passes.length; pp++) {
+      g.lineWidth = passes[pp][0];
+      g.strokeStyle = passes[pp][1];
       g.beginPath();
-      if (s3b.kind === 'rect') g.rect(s3b.x - x0 + 6, s3b.y - y0 + 6, s3b.w - 12, s3b.h - 12);
-      else g.arc(s3b.x - x0, s3b.y - y0, Math.max(10, s3b.r - 6), 0, Math.PI * 2);
-      g.stroke();
-    }
-    g.lineWidth = 26;
-    g.strokeStyle = COL.skirt;
-    for (var si3 = 0; si3 < shapes.length; si3++) {
-      var s4 = shapes[si3];
-      g.beginPath();
-      if (s4.kind === 'rect') g.rect(s4.x - x0 + 20, s4.y - y0 + 20, s4.w - 40, s4.h - 40);
-      else g.arc(s4.x - x0, s4.y - y0, Math.max(10, s4.r - 20), 0, Math.PI * 2);
-      g.stroke();
-    }
-    g.lineWidth = 5;
-    g.strokeStyle = COL.skirtLip;
-    for (var si4 = 0; si4 < shapes.length; si4++) {
-      var s5 = shapes[si4];
-      g.beginPath();
-      if (s5.kind === 'rect') g.rect(s5.x - x0 + 34, s5.y - y0 + 34, s5.w - 68, s5.h - 68);
-      else g.arc(s5.x - x0, s5.y - y0, Math.max(8, s5.r - 34), 0, Math.PI * 2);
+      for (var si3 = 0; si3 < shapes.length; si3++) traceShape(g, shapes[si3], x0, y0);
       g.stroke();
     }
     g.restore();
@@ -285,45 +316,95 @@ window.PC = window.PC || {};
     this._gooPass(g, cx, cy);
   };
 
-  // every carve shape that touches chunk (cx,cy), in WORLD coords
+  // every carve shape that touches chunk (cx,cy), in WORLD coords.
+  // Winding corridors and lumpy chambers come out as POLYGONS sampled
+  // from the same math carvedAt uses, so paint always matches solids.
   PC.SewerLayout.prototype._shapesFor = function (cx, cy) {
-    var out = [], x0 = cx * CH, y0 = cy * CH;
-    // landmark rects
+    var out = [], x0 = cx * CH, y0 = cy * CH, self = this;
     for (var i = 0; i < this.marks.length; i++) {
       var m = this.marks[i];
       if (m.x < x0 + CH && m.x + m.w > x0 && m.y < y0 + CH && m.y + m.h > y0) {
         out.push({ kind: 'rect', x: m.x, y: m.y, w: m.w, h: m.h });
       }
     }
-    // vertical corridors (odd cols near this chunk)
+    // vertical corridors: straight ring = rect, sewer lines = poly strip
     for (var c = cx - 1; c <= cx + 1; c++) {
       if ((c % 2) !== 1 || c <= 0 || c >= this.blocks) continue;
       var vx = c * CH + CH / 2;
-      if (vx + HW > x0 && vx - HW < x0 + CH) {
+      if (vx + HW + 110 < x0 || vx - HW - 110 > x0 + CH) continue;
+      if (c === 1 || c === this.blocks - 1) {
         out.push({ kind: 'rect', x: vx - HW, y: 0, w: HW * 2, h: this.size });
+        continue;
       }
+      var L = [], Rr = [];
+      for (var sy = y0 - 96; sy <= y0 + CH + 96; sy += 64) {
+        var bcx = vx + this._bendV(c, sy);
+        L.push([bcx - HW, sy]); Rr.push([bcx + HW, sy]);
+      }
+      out.push({ kind: 'poly', pts: L.concat(Rr.reverse()) });
     }
     // horizontal corridors
     for (var r = cy - 1; r <= cy + 1; r++) {
       if ((r % 2) !== 1 || r <= 0 || r >= this.blocks) continue;
       var vy = r * CH + CH / 2;
-      if (vy + HW > y0 && vy - HW < y0 + CH) {
+      if (vy + HW + 110 < y0 || vy - HW - 110 > y0 + CH) continue;
+      if (r === 1 || r === this.blocks - 1) {
         out.push({ kind: 'rect', x: 0, y: vy - HW, w: this.size, h: HW * 2 });
+        continue;
       }
+      var T = [], B = [];
+      for (var sx = x0 - 96; sx <= x0 + CH + 96; sx += 64) {
+        var bcy = vy + this._bendH(r, sx);
+        T.push([sx, bcy - HW]); B.push([sx, bcy + HW]);
+      }
+      out.push({ kind: 'poly', pts: T.concat(B.reverse()) });
     }
-    // junction chambers (check a 3x3 of block indices around the chunk)
+    // lumpy junction chambers as 16-gons off the spoke radii
     for (var j = cy - 1; j <= cy + 1; j++) {
       for (var i2 = cx - 1; i2 <= cx + 1; i2++) {
         var R = this._chamber(i2, j);
         if (!R) continue;
         var chx = i2 * CH + CH / 2, chy = j * CH + CH / 2;
-        if (chx + R > x0 && chx - R < x0 + CH && chy + R > y0 && chy - R < y0 + CH) {
-          out.push({ kind: 'circle', x: chx, y: chy, r: R });
+        var maxR = R * 1.2;
+        if (chx + maxR < x0 || chx - maxR > x0 + CH || chy + maxR < y0 || chy - maxR > y0 + CH) continue;
+        var pts = [];
+        for (var k = 0; k < 16; k++) {
+          var a = k * Math.PI / 8;
+          var rr2 = this._chamberRAt(i2, j, R, a);
+          pts.push([chx + Math.cos(a) * rr2, chy + Math.sin(a) * rr2]);
         }
+        out.push({ kind: 'poly', pts: pts });
       }
+    }
+    // diagonal connectors as quads
+    for (var dg = 0; dg < this.diags.length; dg++) {
+      var D = this.diags[dg];
+      var lo = Math.min(D.x1, D.x2) - 92, hi = Math.max(D.x1, D.x2) + 92;
+      var lo2 = Math.min(D.y1, D.y2) - 92, hi2 = Math.max(D.y1, D.y2) + 92;
+      if (hi < x0 || lo > x0 + CH || hi2 < y0 || lo2 > y0 + CH) continue;
+      var vx2 = D.x2 - D.x1, vy2 = D.y2 - D.y1;
+      var vl = Math.hypot(vx2, vy2) || 1;
+      var nx = -vy2 / vl * 92, ny = vx2 / vl * 92;
+      out.push({ kind: 'poly', pts: [
+        [D.x1 + nx, D.y1 + ny], [D.x2 + nx, D.y2 + ny],
+        [D.x2 - nx, D.y2 - ny], [D.x1 - nx, D.y1 - ny]] });
     }
     return out;
   };
+
+  // trace any shape into the current path (local coords)
+  function traceShape(g, sh, x0, y0) {
+    if (sh.kind === 'rect') g.rect(sh.x - x0, sh.y - y0, sh.w, sh.h);
+    else if (sh.kind === 'circle') {
+      g.moveTo(sh.x - x0 + sh.r, sh.y - y0);
+      g.arc(sh.x - x0, sh.y - y0, sh.r, 0, Math.PI * 2);
+    } else {
+      var pts = sh.pts;
+      g.moveTo(pts[0][0] - x0, pts[0][1] - y0);
+      for (var i = 1; i < pts.length; i++) g.lineTo(pts[i][0] - x0, pts[i][1] - y0);
+      g.closePath();
+    }
+  }
 
   // the LOOP LINE ring (v0.35.0 sewer/subway combo): cols+rows 1 and 17
   PC.SewerLayout.prototype._isTrackCol = function (c) { return c === 1 || c === this.blocks - 1; };
@@ -375,19 +456,32 @@ window.PC = window.PC || {};
       var vx = c * CH + CH / 2 - x0;
       if (vx + GW / 2 < 0 || vx - GW / 2 > CH) continue;
       if (this._isTrackCol(c)) { this._railsV(g, vx, x0, y0); continue; }
-      g.fillStyle = COL.water; g.fillRect(vx - GW / 2, 0, GW, CH);
+      // the water channel snakes with its tunnel
+      g.lineJoin = 'round'; g.lineCap = 'round';
+      g.strokeStyle = COL.floorDark; g.lineWidth = GW + 6;
+      g.beginPath();
+      for (var wy0 = -64; wy0 <= CH + 64; wy0 += 48) {
+        var wxc = vx + this._bendV(c, y0 + wy0);
+        if (wy0 === -64) g.moveTo(wxc, wy0); else g.lineTo(wxc, wy0);
+      }
+      g.stroke();
+      g.strokeStyle = COL.water; g.lineWidth = GW;
+      g.beginPath();
+      for (var wy1 = -64; wy1 <= CH + 64; wy1 += 48) {
+        var wxc1 = vx + this._bendV(c, y0 + wy1);
+        if (wy1 === -64) g.moveTo(wxc1, wy1); else g.lineTo(wxc1, wy1);
+      }
+      g.stroke();
       g.fillStyle = COL.waterLite;
       for (var wy = 0; wy < CH; wy += 28) {
         var wn = smooth(x0 + vx, y0 + wy, 60, 17);
-        g.fillRect(vx - GW / 2 + 4, wy + wn * 10, GW - 8, 3);
+        g.fillRect(vx + this._bendV(c, y0 + wy) - GW / 2 + 4, wy + wn * 10, GW - 8, 3);
       }
-      g.strokeStyle = COL.floorDark; g.lineWidth = 3;
-      g.strokeRect(vx - GW / 2, -2, GW, CH + 4);
-      // little bridges where flagstone crosses the gutter
       for (var by = ((-(y0 % 256)) + 256) % 256; by < CH; by += 256) {
-        g.fillStyle = COL.brick; g.fillRect(vx - GW / 2 - 4, by - 14, GW + 8, 28);
+        var bxc = vx + this._bendV(c, y0 + by);
+        g.fillStyle = COL.brick; g.fillRect(bxc - GW / 2 - 4, by - 14, GW + 8, 28);
         g.strokeStyle = COL.brickLite; g.lineWidth = 1;
-        g.strokeRect(vx - GW / 2 - 4, by - 14, GW + 8, 28);
+        g.strokeRect(bxc - GW / 2 - 4, by - 14, GW + 8, 28);
       }
     }
     for (var r = cy - 1; r <= cy + 1; r++) {
@@ -395,18 +489,31 @@ window.PC = window.PC || {};
       var vy = r * CH + CH / 2 - y0;
       if (vy + GW / 2 < 0 || vy - GW / 2 > CH) continue;
       if (this._isTrackRow(r)) { this._railsH(g, vy, x0, y0); continue; }
-      g.fillStyle = COL.water; g.fillRect(0, vy - GW / 2, CH, GW);
+      g.lineJoin = 'round'; g.lineCap = 'round';
+      g.strokeStyle = COL.floorDark; g.lineWidth = GW + 6;
+      g.beginPath();
+      for (var hx0 = -64; hx0 <= CH + 64; hx0 += 48) {
+        var hyc = vy + this._bendH(r, x0 + hx0);
+        if (hx0 === -64) g.moveTo(hx0, hyc); else g.lineTo(hx0, hyc);
+      }
+      g.stroke();
+      g.strokeStyle = COL.water; g.lineWidth = GW;
+      g.beginPath();
+      for (var hx1 = -64; hx1 <= CH + 64; hx1 += 48) {
+        var hyc1 = vy + this._bendH(r, x0 + hx1);
+        if (hx1 === -64) g.moveTo(hx1, hyc1); else g.lineTo(hx1, hyc1);
+      }
+      g.stroke();
       g.fillStyle = COL.waterLite;
       for (var wx = 0; wx < CH; wx += 28) {
         var wn2 = smooth(x0 + wx, y0 + vy, 60, 18);
-        g.fillRect(wx + wn2 * 10, vy - GW / 2 + 4, 3, GW - 8);
+        g.fillRect(wx + wn2 * 10, vy + this._bendH(r, x0 + wx) - GW / 2 + 4, 3, GW - 8);
       }
-      g.strokeStyle = COL.floorDark; g.lineWidth = 3;
-      g.strokeRect(-2, vy - GW / 2, CH + 4, GW);
       for (var bx = ((-(x0 % 256)) + 256) % 256; bx < CH; bx += 256) {
-        g.fillStyle = COL.brick; g.fillRect(bx - 14, vy - GW / 2 - 4, 28, GW + 8);
+        var byc = vy + this._bendH(r, x0 + bx);
+        g.fillStyle = COL.brick; g.fillRect(bx - 14, byc - GW / 2 - 4, 28, GW + 8);
         g.strokeStyle = COL.brickLite; g.lineWidth = 1;
-        g.strokeRect(bx - 14, vy - GW / 2 - 4, 28, GW + 8);
+        g.strokeRect(bx - 14, byc - GW / 2 - 4, 28, GW + 8);
       }
     }
   };
@@ -437,31 +544,48 @@ window.PC = window.PC || {};
   PC.SewerLayout.prototype._pipes = function (g, cx, cy) {
     var x0 = cx * CH, y0 = cy * CH;
     // vertical corridors get a pipe on their west wall face
+    g.lineJoin = 'round'; g.lineCap = 'round';
     for (var c = cx - 1; c <= cx + 1; c++) {
       if ((c % 2) !== 1 || c <= 0 || c >= this.blocks) continue;
       if (h2(c, 0, 81) > 0.7) continue;
-      var vx = c * CH + CH / 2 - HW + 10 - x0;
-      if (vx < -12 || vx > CH + 12) continue;
-      g.fillStyle = COL.pipeDark; g.fillRect(vx - 5, 0, 10, CH);
-      g.fillStyle = COL.pipe; g.fillRect(vx - 3, 0, 6, CH);
-      g.fillStyle = COL.pipeLite; g.fillRect(vx - 3, 0, 2, CH);
+      var vxn = c * CH + CH / 2 - HW + 10 - x0;
+      if (vxn < -130 || vxn > CH + 130) continue;
+      var passesV = [[10, COL.pipeDark], [6, COL.pipe], [2, COL.pipeLite]];
+      for (var pv = 0; pv < passesV.length; pv++) {
+        g.lineWidth = passesV[pv][0]; g.strokeStyle = passesV[pv][1];
+        g.beginPath();
+        for (var py0 = -48; py0 <= CH + 48; py0 += 48) {
+          var pxx2 = vxn + this._bendV(c, y0 + py0);
+          if (py0 === -48) g.moveTo(pxx2, py0); else g.lineTo(pxx2, py0);
+        }
+        g.stroke();
+      }
       for (var py2 = ((-(y0 % 160)) + 160) % 160; py2 < CH; py2 += 160) {
-        g.fillStyle = COL.metal; g.fillRect(vx - 7, py2, 14, 8);
-        g.fillStyle = COL.metalLite; g.fillRect(vx - 7, py2, 14, 2);
+        var pbx = vxn + this._bendV(c, y0 + py2);
+        g.fillStyle = COL.metal; g.fillRect(pbx - 7, py2, 14, 8);
+        g.fillStyle = COL.metalLite; g.fillRect(pbx - 7, py2, 14, 2);
       }
     }
     // horizontal corridors get one on the north wall face
     for (var r = cy - 1; r <= cy + 1; r++) {
       if ((r % 2) !== 1 || r <= 0 || r >= this.blocks) continue;
       if (h2(0, r, 82) > 0.7) continue;
-      var vy = r * CH + CH / 2 - HW + 10 - y0;
-      if (vy < -12 || vy > CH + 12) continue;
-      g.fillStyle = COL.pipeDark; g.fillRect(0, vy - 5, CH, 10);
-      g.fillStyle = COL.pipe; g.fillRect(0, vy - 3, CH, 6);
-      g.fillStyle = COL.pipeLite; g.fillRect(0, vy - 3, CH, 2);
+      var vyn = r * CH + CH / 2 - HW + 10 - y0;
+      if (vyn < -130 || vyn > CH + 130) continue;
+      var passesH = [[10, COL.pipeDark], [6, COL.pipe], [2, COL.pipeLite]];
+      for (var ph = 0; ph < passesH.length; ph++) {
+        g.lineWidth = passesH[ph][0]; g.strokeStyle = passesH[ph][1];
+        g.beginPath();
+        for (var px0 = -48; px0 <= CH + 48; px0 += 48) {
+          var pyy2 = vyn + this._bendH(r, x0 + px0);
+          if (px0 === -48) g.moveTo(px0, pyy2); else g.lineTo(px0, pyy2);
+        }
+        g.stroke();
+      }
       for (var px2 = ((-(x0 % 160)) + 160) % 160; px2 < CH; px2 += 160) {
-        g.fillStyle = COL.metal; g.fillRect(px2, vy - 7, 8, 14);
-        g.fillStyle = COL.metalLite; g.fillRect(px2, vy - 7, 8, 2);
+        var pby = vyn + this._bendH(r, x0 + px2);
+        g.fillStyle = COL.metal; g.fillRect(px2, pby - 7, 8, 14);
+        g.fillStyle = COL.metalLite; g.fillRect(px2, pby - 7, 8, 2);
       }
     }
   };
