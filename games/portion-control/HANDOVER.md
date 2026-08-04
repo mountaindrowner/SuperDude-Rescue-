@@ -12,6 +12,45 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.34.0: MAP 5 - THE UNDERGROUND (the whole Sewers,
+  Mark: "complete the entire sewers... same design intricacy and
+  philosophy").** The fifth fabric and the first INVERTED one:
+  world_sewer.js carves tunnels OUT of solid rock - corridors 256px
+  wide on the odd block lines (walls 768 thick), junction chambers
+  where lines cross, eight spec caverns; carvedAt() is the ONE
+  deterministic source for painter + solids, corridor bounds sit
+  exactly on the 64px solid grid so collision === pixels. THREE judge
+  rounds to SHIP (verdict: "the most distinctive map of the five"):
+  round 1 killed the grid-textured rock (a grid reads as FLOOR - rock
+  is now near-black irregular boulder mass), round 2 split the three
+  green grammars (moss = desaturated wall-hugging patches; sludge =
+  dark-olive outlined puddles with bubbles, zone-gated so clean rooms
+  stay clean; mushrooms = cap-on-stem with spots + glow pools, fungal
+  only) and built the light logic (grate daylight beam, mushroom glow,
+  cistern treasure pool = the only bright spots), round 3 densified
+  the mushroom clusters + scaled the Gloop King's junk throne to a
+  real centerpiece (stepped junk base, gold-trim tapering seat back +
+  finial). Judge residuals (non-blocking, future polish): catwalk
+  ripple dashes + pipe couplings, reservoir upper-strip rubble.
+  MISSION 7 GOING DEEP (stage7, spec IV.5 lines verbatim): clear
+  Junction Alpha -> 3 guarded VALVE WHEELs (pumps/fungal/reservoir)
+  -> SURVIVE THE SURGE, the new 'reach' quest type (stepping onto the
+  Catwalk Maze arms it; goo boils up around the player every 5s until
+  they exit the far side - the timer is the crowd) -> THE GLOOP KING
+  (5600 base HP, story-eased like all bosses) -> rescue NAYAH +
+  chant. d5 roster blob/drip/moldy/eggy/heap + boss, 23 PixelLab
+  pieces (24 generations, ~1035 left), follow-up frames quantized to
+  frame-1 palettes. HYDRO-DRILL soft gate per spec I.2: Garage grew a
+  GEAR strip (one-time TP gadgets, appears once the Labs are cleared;
+  drill 150 TP) and the stage7 node shows SEALED + Vic's verbatim
+  gate line + a button that walks you to the Garage. The Old Cistern
+  pays a once-per-save coin+gem jackpot on first entry. Map view
+  draws the tunnel schematic (dark rock, lit corridors, chambers).
+  VO script regenerated: 133 lines, stage-7 spec lines SHIPPED, 11
+  new connective lines DRAFT pending Mark. Battery green
+  (ease/linear/map + probes, zero page errors). Version pair 0.34.0.
+  NEXT: the FINALE - Adventure Tower vertical ascent + CHOMP.
+
 - **2026-08-04 - v0.33.0: MARK'S POST-AUDIT BATCH.** Four asks from
   his review of the campaign audit. (1) RUSH MODE: QUICK RUN renamed
   on the title (only UI spot it's named). (2) EARNED CHESTS: the free

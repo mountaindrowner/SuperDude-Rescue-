@@ -384,9 +384,9 @@ window.PC = window.PC || {};
       if (!nearWall) continue;
       var big = h2(i, cx + cy, 73);
       g.fillStyle = COL.moss;
-      g.beginPath(); g.ellipse(mx, my, 8 + big * 10, 5 + big * 5, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(mx, my, 10 + big * 14, 6 + big * 7, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = COL.mossGlow;
-      g.fillRect(mx - 1, my - 1, 3, 2);
+      g.beginPath(); g.ellipse(mx, my, 5 + big * 6, 3 + big * 3, 0, 0, Math.PI * 2); g.fill();
     }
   };
 
@@ -429,10 +429,14 @@ window.PC = window.PC || {};
   PC.SewerLayout.prototype._gooPass = function (g, cx, cy) {
     var x0 = cx * CH, y0 = cy * CH;
     var depth = Math.max(0, Math.min(1, (y0 / this.size) * 1.5 - 0.15));
-    var n = Math.round(2 + depth * 10);
+    var n = Math.round(1 + depth * 9);
     for (var i = 0; i < n; i++) {
       var gx = h2(cx * 7 + i, cy, 91) * CH, gy = h2(cx, cy * 7 + i, 92) * CH;
       if (!this.carvedAt(x0 + gx, y0 + gy)) continue;
+      // biome identity (judge round 3): clean zones stay clean, the
+      // fungal cavern belongs to the mushrooms
+      var inMk = this.markAt(x0 + gx, y0 + gy);
+      if (inMk && (inMk.id === 'grate' || inMk.id === 'cistern' || inMk.id === 'fungal')) continue;
       var s = 10 + h2(i, cx, 93) * (14 + depth * 26);
       g.strokeStyle = COL.gooOutline; g.lineWidth = 3;
       g.fillStyle = COL.goo;
@@ -586,14 +590,18 @@ window.PC = window.PC || {};
         var na = -0.6 + pm * 0.9;
         g.beginPath(); g.moveTo(pxx, pyy - 22);
         g.lineTo(pxx + Math.cos(na) * 11, pyy - 22 + Math.sin(na) * 11); g.stroke();
-        // fat floor pipe with a bolted flange
-        g.fillStyle = COL.pipeDark; g.fillRect(pxx - 9, pyy + 42, 18, h * 0.14);
-        g.fillStyle = COL.pipeLite; g.fillRect(pxx - 9, pyy + 42, 5, h * 0.14);
-        g.fillStyle = COL.metal; g.fillRect(pxx - 14, pyy + 40, 28, 8);
+        // solid machine block under the dome, then the floor pipe
+        g.fillStyle = COL.iron; g.fillRect(pxx - 26, pyy + 42, 52, 30);
+        g.fillStyle = COL.ironLite; g.fillRect(pxx - 26, pyy + 42, 52, 5);
+        g.fillStyle = COL.ironLite;
+        g.fillRect(pxx - 20, pyy + 58, 4, 4); g.fillRect(pxx + 16, pyy + 58, 4, 4);
+        g.fillStyle = COL.pipeDark; g.fillRect(pxx - 9, pyy + 72, 18, h * 0.09);
+        g.fillStyle = COL.pipeLite; g.fillRect(pxx - 9, pyy + 72, 5, h * 0.09);
+        g.fillStyle = COL.metal; g.fillRect(pxx - 16, pyy + 70, 32, 8);
         // feed pipe up to the manifold
         g.fillStyle = COL.pipeDark; g.fillRect(pxx - 7, ly + h * 0.26, 14, h * 0.1);
         // valve pedestal south of each pump: gray column + RED handwheel
-        var vy2 = ly + h * 0.74;
+        var vy2 = ly + h * 0.64;
         g.fillStyle = COL.shadow;
         g.beginPath(); g.ellipse(pxx + 5, vy2 + 16, 26, 9, 0, 0, Math.PI * 2); g.fill();
         g.fillStyle = COL.metal; g.fillRect(pxx - 12, vy2 - 10, 24, 26);
@@ -609,10 +617,15 @@ window.PC = window.PC || {};
       // FUNGAL CAVERN: real mushrooms - cap on stem, pale spots, dark
       // outline like an entity, and a big soft glow (the map's second
       // light source after the grate beam)
-      for (var f = 0; f < 12; f++) {
-        var fx3 = lx + (0.1 + h2(f, 1, 101) * 0.8) * w;
-        var fy3 = ly + (0.1 + h2(1, f, 102) * 0.8) * h;
-        var fs = 14 + h2(f, f, 103) * 22;
+      // clusters of 2-3 around anchor points, one hero mushroom per
+      // cluster (judge round 3: mushrooms must OUTNUMBER sludge here)
+      for (var f = 0; f < 44; f++) {
+        var anchor = Math.floor(f / 3) + (f % 3);
+        var ax3 = lx + (0.12 + h2(anchor, 1, 106) * 0.76) * w;
+        var ay3 = ly + (0.12 + h2(1, anchor, 107) * 0.76) * h;
+        var fx3 = ax3 + (h2(f, 4, 108) - 0.5) * 110;
+        var fy3 = ay3 + (h2(4, f, 109) - 0.5) * 90;
+        var fs = (f % 3 === 0) ? 30 + h2(f, f, 103) * 26 : 12 + h2(f, f, 103) * 14;
         // glow pool first (under everything)
         g.fillStyle = COL.mushGlow;
         g.beginPath(); g.arc(fx3, fy3 - fs * 0.2, fs * 1.9, 0, Math.PI * 2); g.fill();
@@ -643,9 +656,9 @@ window.PC = window.PC || {};
       // every lane, rails on every edge, ripple dashes in the water
       g.fillStyle = COL.water; g.fillRect(lx, ly, w, h);
       g.strokeStyle = '#2a4a6a'; g.lineWidth = 2;
-      for (var wv = 0; wv < 34; wv++) {
+      for (var wv = 0; wv < 60; wv++) {
         var wvx = lx + h2(wv, 5, 111) * w, wvy = ly + h2(5, wv, 112) * h;
-        g.beginPath(); g.moveTo(wvx, wvy); g.lineTo(wvx + 16 + h2(wv, 6, 113) * 22, wvy); g.stroke();
+        g.beginPath(); g.moveTo(wvx, wvy); g.lineTo(wvx + 24 + h2(wv, 6, 113) * 30, wvy); g.stroke();
       }
       var laneW = 56;
       var hLanes = [0.2, 0.5, 0.8], vLanes = [0.16, 0.49, 0.82];
@@ -683,6 +696,14 @@ window.PC = window.PC || {};
     } else if (id === 'reservoir') {
       // COLLAPSED RESERVOIR: drained basin, cracks radiating FROM the
       // remaining pool's rim (judge: not from open floor), rubble
+      // unlit rubble band above the basin (round 3: no empty strips)
+      g.fillStyle = COL.rockDark;
+      g.fillRect(lx, ly, w, h * 0.12);
+      for (var ub = 0; ub < 10; ub++) {
+        var ubx = lx + h2(ub, 21, 151) * w, ubs = 8 + h2(21, ub, 152) * 16;
+        g.fillStyle = COL.rockLite;
+        g.beginPath(); g.arc(ubx, ly + h * 0.06, ubs, 0, Math.PI * 2); g.fill();
+      }
       g.strokeStyle = COL.stoneBrickLite; g.lineWidth = 8;
       g.strokeRect(lx + w * 0.12, ly + h * 0.12, w * 0.76, h * 0.76);
       g.fillStyle = COL.floorDark;
@@ -764,35 +785,58 @@ window.PC = window.PC || {};
       g.fillRect(lx + w * 0.12, mcy + h * 0.3, 24, 10);
       g.fillRect(lx + w * 0.8, mcy - h * 0.2, 12, 22);
       g.beginPath(); g.arc(lx + w * 0.18, mcy - h * 0.26, 12, 0, Math.PI * 2); g.fill();
-      // THE JUNK THRONE (north): stacked crates + pipes + gold-trim seat
-      var thx = mcx, thy = ly + h * 0.13;
+      // THE JUNK THRONE (north): the boss-arena centerpiece at proper
+      // scale (judge round 3) - wide stepped junk base, tall tapering
+      // seat back, continuous gold trim + finial, warm spotlight pool
+      var thx = mcx, thy = ly + h * 0.16;
+      g.fillStyle = 'rgba(255,243,196,0.12)';
+      g.beginPath(); g.ellipse(thx, thy + 70, 190, 52, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = COL.shadow;
-      g.beginPath(); g.ellipse(thx, thy + 52, 86, 16, 0, 0, Math.PI * 2); g.fill();
-      // junk mound
+      g.beginPath(); g.ellipse(thx, thy + 92, 180, 26, 0, 0, Math.PI * 2); g.fill();
+      // stepped junk base: three tiers of trash silhouette
       g.fillStyle = COL.junkDark;
       g.beginPath();
-      g.moveTo(thx - 84, thy + 48); g.lineTo(thx - 52, thy - 6); g.lineTo(thx - 20, thy + 16);
-      g.lineTo(thx - 2, thy - 26); g.lineTo(thx + 18, thy + 12); g.lineTo(thx + 52, thy - 10);
-      g.lineTo(thx + 84, thy + 48); g.closePath(); g.fill();
-      // crates
-      g.fillStyle = '#5c4436'; g.fillRect(thx - 58, thy + 16, 30, 24);
-      g.strokeStyle = '#8d6c58'; g.lineWidth = 2; g.strokeRect(thx - 58, thy + 16, 30, 24);
-      g.fillStyle = '#5c4436'; g.fillRect(thx + 30, thy + 20, 26, 20);
-      g.strokeRect(thx + 30, thy + 20, 26, 20);
-      // pipes poking out
-      g.fillStyle = COL.pipeLite; g.fillRect(thx - 30, thy - 18, 7, 30);
-      g.fillStyle = COL.pipeDark; g.fillRect(thx + 20, thy - 12, 6, 26);
-      // the seat: gold-trim backrest + cushion
+      g.moveTo(thx - 180, thy + 88); g.lineTo(thx - 150, thy + 46); g.lineTo(thx - 96, thy + 58);
+      g.lineTo(thx - 70, thy + 12); g.lineTo(thx - 26, thy + 30);
+      g.lineTo(thx, thy - 22); g.lineTo(thx + 30, thy + 26); g.lineTo(thx + 74, thy + 8);
+      g.lineTo(thx + 102, thy + 54); g.lineTo(thx + 152, thy + 44); g.lineTo(thx + 180, thy + 88);
+      g.closePath(); g.fill();
+      // junk detail: tires, crates, pipes at readable size
+      g.fillStyle = '#20240b';
+      g.beginPath(); g.arc(thx - 118, thy + 62, 26, 0, Math.PI * 2); g.fill();
+      g.fillStyle = COL.junkDark;
+      g.beginPath(); g.arc(thx - 118, thy + 62, 12, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#5c4436'; g.fillRect(thx - 80, thy + 40, 46, 36);
+      g.strokeStyle = '#8d6c58'; g.lineWidth = 3; g.strokeRect(thx - 80, thy + 40, 46, 36);
+      g.beginPath(); g.moveTo(thx - 80, thy + 40); g.lineTo(thx - 34, thy + 76); g.stroke();
+      g.fillStyle = '#5c4436'; g.fillRect(thx + 52, thy + 36, 40, 42);
+      g.strokeRect(thx + 52, thy + 36, 40, 42);
+      g.fillStyle = COL.pipeLite; g.fillRect(thx - 148, thy + 12, 10, 44);
+      g.fillStyle = COL.pipeDark; g.fillRect(thx + 118, thy + 20, 9, 40);
+      g.fillStyle = COL.pipeLite; g.fillRect(thx + 96, thy - 4, 8, 30);
+      // the tall seat back: tapering slab with continuous gold trim
+      g.fillStyle = '#2a2e0d';
+      g.beginPath();
+      g.moveTo(thx - 44, thy + 34); g.lineTo(thx - 30, thy - 58);
+      g.lineTo(thx + 30, thy - 58); g.lineTo(thx + 44, thy + 34);
+      g.closePath(); g.fill();
+      g.strokeStyle = '#f2c33c'; g.lineWidth = 4;
+      g.beginPath();
+      g.moveTo(thx - 44, thy + 34); g.lineTo(thx - 30, thy - 58);
+      g.lineTo(thx + 30, thy - 58); g.lineTo(thx + 44, thy + 34);
+      g.stroke();
+      // gold finial on top
       g.fillStyle = '#f2c33c';
-      g.fillRect(thx - 22, thy - 8, 44, 6);
-      g.fillRect(thx - 26, thy - 2, 52, 4);
+      g.beginPath(); g.arc(thx, thy - 66, 9, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffe28a'; g.fillRect(thx - 2, thy - 78, 4, 12);
+      // the cushion seat: purple with a full gold band
       g.fillStyle = '#8f4fc4';
-      g.fillRect(thx - 18, thy + 2, 36, 12);
-      g.fillStyle = '#f2c33c';
-      g.fillRect(thx - 24, thy + 2, 5, 14); g.fillRect(thx + 19, thy + 2, 5, 14);
-      // goo drip skirt under the throne
+      g.fillRect(thx - 34, thy + 6, 68, 26);
+      g.strokeStyle = '#f2c33c'; g.lineWidth = 4;
+      g.strokeRect(thx - 34, thy + 6, 68, 26);
+      // goo drip skirt under the whole heap
       g.fillStyle = COL.gooLite;
-      g.beginPath(); g.ellipse(thx, thy + 46, 62, 10, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(thx, thy + 86, 120, 14, 0, 0, Math.PI * 2); g.fill();
 
     } else if (id === 'cistern') {
       // OLD CISTERN: true brown-brick vault, columns with brick-ring
@@ -821,18 +865,19 @@ window.PC = window.PC || {};
           g.beginPath(); g.arc(colx, coly, 22, 0, Math.PI * 2); g.fill();
           g.strokeStyle = COL.brickDark; g.lineWidth = 2;
           g.beginPath(); g.arc(colx, coly, 22, 0, Math.PI * 2); g.stroke();
-          // brick courses on the ring
-          for (var seg = 0; seg < 6; seg++) {
-            var sa = seg * Math.PI / 3 + 0.26;
-            g.beginPath();
-            g.moveTo(colx + Math.cos(sa) * 13, coly + Math.sin(sa) * 13);
-            g.lineTo(colx + Math.cos(sa) * 22, coly + Math.sin(sa) * 22);
-            g.stroke();
-          }
+          g.beginPath(); g.arc(colx, coly, 15, 0, Math.PI * 2); g.stroke();
+          g.fillStyle = '#3a2c22';
+          g.beginPath(); g.arc(colx, coly, 8, 0, Math.PI * 2); g.fill();
           g.fillStyle = COL.brickLite;
-          g.beginPath(); g.arc(colx - 5, coly - 5, 10, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.arc(colx - 6, coly - 6, 6, 0, Math.PI * 2); g.fill();
         }
       }
+      // edge vignette so the vault's brightness pools at the treasure
+      g.fillStyle = 'rgba(10,14,12,0.35)';
+      g.fillRect(lx, ly, w, 34); g.fillRect(lx, ly + h - 34, w, 34);
+      g.fillRect(lx, ly, 34, h); g.fillRect(lx + w - 34, ly, 34, h);
+      g.fillStyle = 'rgba(255,226,138,0.08)';
+      g.beginPath(); g.arc(mcx, mcy, 120, 0, Math.PI * 2); g.fill();
       // the coin pile: mound + individual coins + star twinkles
       g.fillStyle = '#b5793f';
       g.beginPath(); g.ellipse(mcx, mcy + 4, 26, 11, 0, 0, Math.PI * 2); g.fill();
