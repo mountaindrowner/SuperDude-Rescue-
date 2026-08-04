@@ -320,8 +320,12 @@ PC.GameScene.prototype.onKill = function (e) {
   if (e.still) this.fx.still(e.x, e.y, e.still, 0.4);
   this.gems.spawn(e.x, e.y, e.xp);
   var roll = Math.random();
-  if (roll < 0.015) this.pickups.drop(e.x, e.y, 'medkit', PC.PLAYER.MEDKIT_HEAL);
-  else if (roll < 0.13) this.pickups.drop(e.x, e.y, 'coin', 2);
+  // story kills roll medkits at double odds (v0.33.0, Mark: recovery
+  // should come from the tables - "random drops of health... whenever
+  // you kill an enemy or when you see those boxes" - not from gifts)
+  var mkOdds = this.storyMission ? 0.03 : 0.015;
+  if (roll < mkOdds) this.pickups.drop(e.x, e.y, 'medkit', PC.PLAYER.MEDKIT_HEAL);
+  else if (roll < 0.115 + mkOdds) this.pickups.drop(e.x, e.y, 'coin', 2);
   if (PC.audio) PC.audio.pop();
 };
 
