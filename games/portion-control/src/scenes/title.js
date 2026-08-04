@@ -145,7 +145,7 @@ PC.TitleScene.prototype.create = function () {
       next: 'PC_Missions' });
   });
   this.tweens.add({ targets: start, alpha: 0.45, duration: 620, yoyo: true, repeat: -1 });
-  button(H * 0.565 + 38, 'QUICK RUN', '#35d0ff', 0x35d0ff, function () {
+  button(H * 0.565 + 38, 'RUSH MODE', '#35d0ff', 0x35d0ff, function () {
     if (PC.STORY) PC.STORY.pendingMission = null;
     self.scene.start('PC_Select');
   });

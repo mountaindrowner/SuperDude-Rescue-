@@ -49,10 +49,16 @@ PC.Quest = function (scene, region, mission) {
     if (self.box.active) self.box.tap();
   });
 
-  // v0.20.0: Vic's radio tutorial runs once ever, before objective 0
+  // v0.20.0: Vic's tutorial runs once ever, before objective 0.
+  // v0.33.0: it's a full-screen PAD TRANSMISSION to the player now
+  // (PC.TutorialPad) - icons, five taps - not the six-paragraph radio.
   if (mission.tutorial && PC.storyState && !PC.storyState.tutorialSeen()) {
     PC.storyState.markTutorialSeen();
-    this.playScript(mission.tutorial, function () { self.next(); });
+    if (PC.TutorialPad) {
+      new PC.TutorialPad(scene, function () { self.next(); });
+    } else {
+      this.playScript(mission.tutorial, function () { self.next(); });
+    }
   } else {
     this.next();                  // arm objective 0
   }
@@ -411,14 +417,6 @@ PC.Quest.prototype.update = function (dt) {
     if (this.state === 'travel' && inZone) {
       this.state = 'active';
       if (PC.audio) PC.audio.telegraph();
-      // SUPPLY DROP (v0.31.0, Mark: "defend substation mission is
-      // unbeatable at the current progression"). With fixed loadouts a
-      // hold is the hardest beat in a mission, so arming one airdrops a
-      // power chest at the zone - the same walk-over grant as a boss
-      // drop. One free upgrade, exactly when the wall would hit.
-      if (scene.dropBossPower && !scene.bossDrop) {
-        scene.dropBossPower(zone.x + 40, zone.y - 20);
-      }
     }
     if (this.state === 'active') {
       if (inZone) this.defendT += dt;
@@ -434,7 +432,16 @@ PC.Quest.prototype.update = function (dt) {
         // without ever finishing them)
         if (scene.enemies.liveCount < 45) this.ring(zone.x, zone.y, 6, false);
       }
-      if (this.defendT >= o.secs) this.finishObjective(o);
+      if (this.defendT >= o.secs) {
+        // v0.33.0 (Mark: "abilities need to be EARNED, not just given
+        // ... unless you beat a boss or you collect resources"): the
+        // chest is the REWARD for completing the hold, not a gift for
+        // showing up. Boss chests likewise moved back to kill-only.
+        if (scene.dropBossPower && !scene.bossDrop) {
+          scene.dropBossPower(zone.x + 40, zone.y - 20);
+        }
+        this.finishObjective(o);
+      }
     }
   } else if (o.type === 'boss') {
     if (this.state === 'travel' && t) {
@@ -446,14 +453,6 @@ PC.Quest.prototype.update = function (dt) {
         scene.boss = new PC.Boss(scene, bs.x, bs.y, o.boss);
         scene.bossBanner(scene.boss.name);
         if (PC.audio && PC.audio.roar) PC.audio.roar();
-        // same supply chest the defend beat arms with (v0.32.0): the
-        // duel was the last beat a story kit met bare - even with
-        // eased boss HP the campaign bot lost every stage-1 fight 1v1
-        // at full health. One upgrade as the fight starts, same as
-        // every other hard beat.
-        if (scene.dropBossPower && !scene.bossDrop) {
-          scene.dropBossPower(px + 60, py);
-        }
         this.playScript(o.intro, null);
       }
     }
