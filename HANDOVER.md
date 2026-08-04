@@ -12,6 +12,25 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.39.0: SEWER READABILITY OVERHAUL (Mark on-device:
+  "I don't know if I'm under or in or if there's a roof... anything
+  not walkable should be rock, bordered by walls... reconsider").**
+  Root cause: the rock's boulder texture put mid-tone shapes over the
+  dark that read as a CEILING, and the wall treatment was decorative
+  banding, not walls. The fix is the classic top-down dungeon grammar:
+  (1) rock is FLAT near-black (#0c1110) with barely-visible mottle -
+  no boulders, no cracks, no mid-tones; (2) floor lifted to a clearly
+  lighter flagstone (#4a5a52 family) - hard two-value world;
+  (3) REAL WALL EDGES: 16px cell scan off carvedAt draws a warm brick
+  course (void gap -> #6b5844 brick w/ joint ticks -> pale lip) ONLY
+  where floor truly meets rock - no phantom bands across open rooms
+  (the old clipped-stroke approach drew corridor edges through
+  chambers); (4) noise cut: wet glints, ambient puddles, rock cracks
+  all removed; goo recolored to bright slime green MATCHING the d5
+  mobs (was swamp-olive) and density reduced to near-sump only.
+  Landmark painters remapped to the new palette. Probes + full atlas
+  zero errors. Version pair 0.39.0.
+
 - **2026-08-04 - v0.38.0: ?unlock=1 PREVIEW MODE (Mark: "a version
   with all the new levels unlocked so I can try them").** Same live
   build, opt-in by URL param: every BUILT stage shows ACTIVE on the
