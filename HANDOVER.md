@@ -12,6 +12,31 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.35.0: THE LOOP LINE + GLOOP KING REGEN (Mark's
+  round on the sewers).** (1) SEWER/SUBWAY COMBO (Mark: "the subway
+  rotates around the whole map slowly and it's a constant threat"):
+  the outer ring corridors (cols/rows 1 and 17) now carry subway
+  RAILS instead of water gutters (world_sewer.js _railsV/_railsH -
+  twin steel rails, ties, third-rail warning stripes; the ring passes
+  through the Main Grate cavern, which now reads as the station).
+  src/systems/subway.js: PC.Subway - a 3-car ghost train orbits the
+  16.4k-px ring at 210px/s forever; headlight beam, rumble+shake
+  telegraph within 620px, damages the player through the normal
+  armor/i-frame math (14 contact), and FLATTENS any food monster on
+  the rails (dodge = skill, wake-riding = reward). Sewers-only
+  (game.js guards on region id, nulled per create); map view draws
+  the ring in gold twin rails. verify-subway.js: 4 checks green,
+  zero page errors. (2) GLOOP KING REGENERATED (Mark: the old art's
+  center drip "looks strangely inappropriate"): new 8-frame set with
+  an explicit flat-skirt prompt (wide melting dome, candle-drip
+  skirt, NOTHING central), quantized as before + a crown-gilding
+  pass (frames 2-8 came out pale-crowned; topmost-20px band of each
+  frame remapped to frame 1's gold so the walk cycle can't flicker).
+  (3) Stage 7 renamed DOWN THE DRAIN (v0.34.1, Mark: GOING DEEP
+  sounds inappropriate) - chain, mission, VO script all updated.
+  (4) Full-map atlas render (map-atlas-sewers.js in scratchpad)
+  delivered to Mark. Version pair 0.35.0.
+
 - **2026-08-04 - v0.34.0: MAP 5 - THE UNDERGROUND (the whole Sewers,
   Mark: "complete the entire sewers... same design intricacy and
   philosophy").** The fifth fabric and the first INVERTED one:

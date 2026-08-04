@@ -325,6 +325,47 @@ window.PC = window.PC || {};
     return out;
   };
 
+  // the LOOP LINE ring (v0.35.0 sewer/subway combo): cols+rows 1 and 17
+  PC.SewerLayout.prototype._isTrackCol = function (c) { return c === 1 || c === this.blocks - 1; };
+  PC.SewerLayout.prototype._isTrackRow = function (r) { return r === 1 || r === this.blocks - 1; };
+
+  // subway rails down a track corridor: twin steel rails on dark ties
+  PC.SewerLayout.prototype._railsV = function (g, vx, x0, y0) {
+    var GA = 18;                       // half rail gauge
+    g.fillStyle = '#241f1c';
+    g.fillRect(vx - 34, 0, 68, CH);
+    g.fillStyle = '#4d3421';
+    for (var ty = ((-(y0 % 26)) + 26) % 26; ty < CH; ty += 26) {
+      g.fillRect(vx - 30, ty, 60, 8);
+    }
+    g.fillStyle = '#8b88a8';
+    g.fillRect(vx - GA - 2, 0, 4, CH); g.fillRect(vx + GA - 2, 0, 4, CH);
+    g.fillStyle = '#cfd4e8';
+    g.fillRect(vx - GA - 2, 0, 1, CH); g.fillRect(vx + GA - 2, 0, 1, CH);
+    // third-rail warning stripe on the west edge
+    g.fillStyle = '#f2c33c';
+    for (var wy = ((-(y0 % 64)) + 64) % 64; wy < CH; wy += 64) {
+      g.fillRect(vx - 44, wy, 6, 22);
+    }
+  };
+  PC.SewerLayout.prototype._railsH = function (g, vy, x0, y0) {
+    var GA = 18;
+    g.fillStyle = '#241f1c';
+    g.fillRect(0, vy - 34, CH, 68);
+    g.fillStyle = '#4d3421';
+    for (var tx = ((-(x0 % 26)) + 26) % 26; tx < CH; tx += 26) {
+      g.fillRect(tx, vy - 30, 8, 60);
+    }
+    g.fillStyle = '#8b88a8';
+    g.fillRect(0, vy - GA - 2, CH, 4); g.fillRect(0, vy + GA - 2, CH, 4);
+    g.fillStyle = '#cfd4e8';
+    g.fillRect(0, vy - GA - 2, CH, 1); g.fillRect(0, vy + GA - 2, CH, 1);
+    g.fillStyle = '#f2c33c';
+    for (var wx = ((-(x0 % 64)) + 64) % 64; wx < CH; wx += 64) {
+      g.fillRect(wx, vy - 44, 22, 6);
+    }
+  };
+
   // ---- water gutter strips down the middle of each corridor ----
   PC.SewerLayout.prototype._gutters = function (g, cx, cy) {
     var x0 = cx * CH, y0 = cy * CH;
@@ -333,6 +374,7 @@ window.PC = window.PC || {};
       if ((c % 2) !== 1 || c <= 0 || c >= this.blocks) continue;
       var vx = c * CH + CH / 2 - x0;
       if (vx + GW / 2 < 0 || vx - GW / 2 > CH) continue;
+      if (this._isTrackCol(c)) { this._railsV(g, vx, x0, y0); continue; }
       g.fillStyle = COL.water; g.fillRect(vx - GW / 2, 0, GW, CH);
       g.fillStyle = COL.waterLite;
       for (var wy = 0; wy < CH; wy += 28) {
@@ -352,6 +394,7 @@ window.PC = window.PC || {};
       if ((r % 2) !== 1 || r <= 0 || r >= this.blocks) continue;
       var vy = r * CH + CH / 2 - y0;
       if (vy + GW / 2 < 0 || vy - GW / 2 > CH) continue;
+      if (this._isTrackRow(r)) { this._railsH(g, vy, x0, y0); continue; }
       g.fillStyle = COL.water; g.fillRect(0, vy - GW / 2, CH, GW);
       g.fillStyle = COL.waterLite;
       for (var wx = 0; wx < CH; wx += 28) {

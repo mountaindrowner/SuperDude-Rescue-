@@ -142,6 +142,9 @@ PC.GameScene.prototype.create = function () {
   this.boss = null; this.bossSpawned = false; this.won = false;
   this.bossDrop = null;              // one scene instance, every run resets
   this.bossBar = this.add.graphics().setDepth(103);
+  // THE LOOP LINE (v0.35.0): the sewers' circulating subway hazard
+  this.subway = (this.region && this.region.def.id === 'sewers' && PC.Subway)
+    ? new PC.Subway(this) : null;
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
@@ -826,6 +829,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   // ---- BOSS (M5): Big Frank at the timer, then run his fight ----
   if (!this.region && !this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
   if (this.boss) this.boss.update(dt, this.px, this.py);
+  if (this.subway) this.subway.update(dt);
 
   this.ground.update(this.cameras.main);
 
