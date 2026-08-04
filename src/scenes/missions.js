@@ -332,21 +332,43 @@ PC.MissionsScene.prototype.openBrief = function (entry, status) {
   ui.push(this.add.text(hx, py + 26, 'YOU PLAY AS', {
     fontFamily: 'monospace', fontSize: '6px', color: '#35d0ff', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(33));
-  // GO
+  // GO - unless the map is soft-gated on Garage gear (spec I.2: "you
+  // must engage the Garage to progress"). Stage 7's Main Grate needs
+  // the HYDRO-DRILL; the button walks you to the Garage instead.
+  var gated = entry.id === 'stage7' && PC.GARAGE && PC.GARAGE.hasGear &&
+              !PC.GARAGE.hasGear('hydrodrill');
   var gg = this.add.graphics().setDepth(32);
-  PC.labPanel(gg, 16, py + ph - 30, 96, 22, { rivets: true, base: 0x1c3320, edge: 0xa8e04a });
-  var goT = this.add.text(64, py + ph - 19, '>> GO! <<', {
-    fontFamily: 'monospace', fontSize: '11px', color: '#a8e04a', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(33);
-  this.tweens.add({ targets: goT, alpha: 0.45, duration: 500, yoyo: true, repeat: -1 });
-  var gz = this.add.zone(64, py + ph - 19, 104, 28).setDepth(40)
-    .setInteractive({ useHandCursor: true });
-  gz.on('pointerdown', function () {
-    PC.STORY.pendingMission = entry;
-    if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
-    self.scene.start('PC_Game');
-  });
-  ui.push(gg, goT, gz);
+  if (gated) {
+    PC.labPanel(gg, 16, py + ph - 30, 168, 22, { rivets: true, base: 0x33240f, edge: 0xf2c33c });
+    var lockT = this.add.text(100, py + ph - 19, 'SEALED - GET THE HYDRO-DRILL', {
+      fontFamily: 'monospace', fontSize: '8px', color: '#f2c33c', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(33);
+    var vicT = this.add.text(16, py + 38 + 26, "VIC: \"Main grate's sealed solid. Good thing I built you a Hydro-Drill - go buy it, boss.\"", {
+      fontFamily: 'monospace', fontSize: '7px', color: '#35d0ff', fontStyle: 'bold',
+      wordWrap: { width: W - 92 }, lineSpacing: 2,
+    }).setDepth(33);
+    var lz = this.add.zone(100, py + ph - 19, 176, 28).setDepth(40)
+      .setInteractive({ useHandCursor: true });
+    lz.on('pointerdown', function () {
+      if (PC.audio) PC.audio.ui();
+      self.scene.start('PC_Garage', { back: 'PC_Missions' });
+    });
+    ui.push(gg, lockT, vicT, lz);
+  } else {
+    PC.labPanel(gg, 16, py + ph - 30, 96, 22, { rivets: true, base: 0x1c3320, edge: 0xa8e04a });
+    var goT = this.add.text(64, py + ph - 19, '>> GO! <<', {
+      fontFamily: 'monospace', fontSize: '11px', color: '#a8e04a', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(33);
+    this.tweens.add({ targets: goT, alpha: 0.45, duration: 500, yoyo: true, repeat: -1 });
+    var gz = this.add.zone(64, py + ph - 19, 104, 28).setDepth(40)
+      .setInteractive({ useHandCursor: true });
+    gz.on('pointerdown', function () {
+      PC.STORY.pendingMission = entry;
+      if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
+      self.scene.start('PC_Game');
+    });
+    ui.push(gg, goT, gz);
+  }
   var x = this.add.text(W - 18, py + 6, '[X]', {
     fontFamily: 'monospace', fontSize: '9px', color: '#ff6b6b', fontStyle: 'bold',
   }).setOrigin(1, 0).setDepth(40).setInteractive({ useHandCursor: true });

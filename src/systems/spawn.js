@@ -33,6 +33,14 @@ PC.ENEMY_DEFS = {
   sodacan: { key: 'enemy_d4_soda',      spd: 52,  hp: 36,  dmg: 9,  xp: 2, size: 32, still: 'still_d4_soda',      kbMult: 0.8 },
   burger:  { key: 'enemy_d4_burger',    spd: 42,  hp: 120, dmg: 15, xp: 3, size: 48, still: 'still_d4_burger',    kbMult: 0.3 },
   menace:  { key: 'enemy_d4_microwave', spd: 34,  hp: 70,  dmg: 11, xp: 3, size: 40, still: 'still_d4_microwave', kbMult: 0.5 },
+  // d5 spoiled sludge (MAP 5 - The Underground). Stage 7: the last
+  // roster before the Tower - a shade hotter than the labs junk, with
+  // squishy high-knockback goo instead of armored heavies.
+  blob:    { key: 'enemy_d5_blob',  spd: 90,  hp: 16,  dmg: 7,  xp: 1, size: 24, still: 'still_d5_blob',  kbMult: 1.1 },
+  drip:    { key: 'enemy_d5_drip',  spd: 118, hp: 10,  dmg: 5,  xp: 1, size: 16, still: 'still_d5_drip',  kbMult: 1.2 },
+  moldy:   { key: 'enemy_d5_moldy', spd: 62,  hp: 48,  dmg: 11, xp: 2, size: 32, still: 'still_d5_moldy', kbMult: 0.8 },
+  eggy:    { key: 'enemy_d5_eggy',  spd: 76,  hp: 38,  dmg: 10, xp: 2, size: 32, still: 'still_d5_eggy',  kbMult: 0.9 },
+  heap:    { key: 'enemy_d5_heap',  spd: 36,  hp: 130, dmg: 16, xp: 3, size: 48, still: 'still_d5_heap',  kbMult: 0.35 },
 };
 
 // ---- phases: [tStart, tEnd, intervalStart, intervalEnd, roster, perTick, liveCap] ----
@@ -75,6 +83,14 @@ PC.SPAWN_SETS = {
     [150, 210, 0.6, 0.42, [['zipper', 4], ['sodacan', 2], ['chipbag', 3], ['menace', 2]], 2, 200],
     [210, 300, 0.42, 0.26,[['zipper', 3], ['sodacan', 2], ['chipbag', 3], ['menace', 2], ['burger', 2]], 3, 270],
     [300, 1e9, 0.24, 0.19,[['zipper', 3], ['sodacan', 2], ['chipbag', 3], ['menace', 3], ['burger', 3]], 3, 300],
+  ],
+  goo: [
+    [0,   45,  1.5, 1.1,  [['blob', 1]], 1, 50],
+    [45,  100, 1.1, 0.85, [['blob', 7], ['drip', 3]], 1, 90],
+    [100, 150, 0.85, 0.6, [['blob', 5], ['drip', 2], ['eggy', 3]], 2, 140],
+    [150, 210, 0.6, 0.42, [['blob', 4], ['drip', 2], ['eggy', 3], ['moldy', 2]], 2, 200],
+    [210, 300, 0.42, 0.26,[['blob', 3], ['drip', 2], ['eggy', 3], ['moldy', 2], ['heap', 2]], 3, 270],
+    [300, 1e9, 0.24, 0.19,[['blob', 3], ['drip', 2], ['eggy', 3], ['moldy', 3], ['heap', 3]], 3, 300],
   ],
 };
 

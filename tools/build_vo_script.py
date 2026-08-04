@@ -216,16 +216,42 @@ LINES = [
          "Four rescued. One signal left on the board, boss — it's coming from UNDER the city."),
     ]),
 
-    # ---------- STAGE 5 (WRITTEN, not built) ----------
-    ('s5', 'WRITTEN', 'STAGE 5 "GOING DEEP" - The Underground / Sewers (Part IV.5)', [
-        ('vic', 'Soft-gate line at the sealed grate. Dry, practical.',
+    # ---------- STAGE 7 "GOING DEEP" (SHIPPED v0.34.0 as mission7;
+    # the four spec lines are verbatim, the rest are Claude connective
+    # tissue - DRAFT until Mark signs off) ----------
+    ('s7', 'SHIPPED', 'STAGE 7 "GOING DEEP" - The Underground / Sewers (mission7.js)', [
+        ('vic', 'Soft-gate line at the sealed grate. Dry, practical. (SPEC VERBATIM)',
          "Main grate's sealed solid. Good thing I built you a Hydro-Drill — go buy it, boss."),
-        ('nayah', 'Radio intro. Laughing, delighted by the danger.',
+        ('nayah', 'Radio intro. Laughing, delighted by the danger. (SPEC VERBATIM)',
          "Oh, you're coming DOWN here? Into the gross tunnels? Ha! Finally, someone fun. Last one to the bottom's a rotten egg!"),
-        ('nayah', 'Boss intro. Disgusted and thrilled in equal measure.',
+        ('nayah', 'Boss intro. Disgusted and thrilled in equal measure. (SPEC VERBATIM)',
          "The Gloop King! Ugh, he smells like a forgotten lunchbox. Let's ruin his day!"),
-        ('nayah', 'Rescue. Fearless grin, signing up for the worst idea available.',
+        ('nayah', 'Rescue. Fearless grin, signing up for the worst idea available. (SPEC VERBATIM)',
          "That climb up the Tower? Suicidal. Death-defying. Totally my thing. I'm in."),
+    ]),
+    ('s7d', 'DRAFT', 'STAGE 7 connective lines (Claude-drafted, pending Mark approval)', [
+        ('danny', 'Dry comeback to the rotten-egg taunt.',
+         "Nayah, everything down here IS a rotten egg."),
+        ('nayah', 'Objective done; setting up the pumps.',
+         "Junction's clear! Told you this place was a blast. Now the pumps — they've been dead for days and it REEKS."),
+        ('vic', 'Fetch briefing. Radio, practical.',
+         "Pump Works are offline, boss. Three valve wheels went walking - the sludge carries things. Bring them back and the flow restarts."),
+        ('nayah', 'Mushroom room aside. Grinning.',
+         "Careful in the mushroom room — they glow, they're gorgeous, do NOT lick one. Asking for a friend."),
+        ('nayah', 'Pumps restored; ominous tease.',
+         "Pumps are singing! Whatever you hear next — that gurgling? That's not the pumps."),
+        ('vic', 'The surge warning. Urgent but controlled.',
+         "Restarting the flow woke the whole system - a sludge surge is coming through the Catwalk Maze. Cross it. Do not stop."),
+        ('nayah', 'Screaming encouragement over the surge.',
+         "RUN THE PLANKS, SUPER DUDE! WOOO!"),
+        ('danny', 'Made it across; small comic beat.',
+         "Made it. My shoes did not. RIP, shoes."),
+        ('danny', 'Boss defeated; sealing the king away.',
+         "Long live the king. In a sealed jar. Far away from me."),
+        ('danny', 'The full team moment before the chant.',
+         "That's everyone. Whole team, back together."),
+        ('vic', 'Radio outro; pointing at the finale.',
+         "Five signals, five rescues, zero disasters left - except the big one. The Tower's waiting, boss."),
     ]),
 
     # ---------- FINALE (WRITTEN, not built) ----------

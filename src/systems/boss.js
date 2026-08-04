@@ -26,6 +26,10 @@ PC.BOSSES = {
                 contact: 26, name: 'VENDING BEHEMOTH',
                 anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
                          charge:    { set: 'lunge', frames: 2, fps: 10 } } },
+  gloopKing: { key: 'boss_d5_gloop', size: 144, hp: 5600, spd: 70,
+                contact: 26, name: 'THE GLOOP KING',
+                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
+                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
 };
 
 PC.Boss = function (scene, x, y, id) {

@@ -86,9 +86,15 @@ window.PC = window.PC || {};
     { k: 'enemy_d4_soda',     s: 32, c1: P.KETCHUP, c2: P.STEEL },
     { k: 'enemy_d4_burger',   s: 48, c1: P.CRUST,   c2: P.MUSTARD },
     { k: 'enemy_d4_microwave',s: 40, c1: P.STEEL,   c2: P.CLOUD },
-    // d5 glitch lab
+    // d5 spoiled sludge (MAP 5 sewers - the shipped roster; the old
+    // "glitch lab" nugget/hybrid/spawnling/fridge names stay as inert
+    // fallbacks below in case the compendium roster ever returns)
+    { k: 'enemy_d5_blob',     s: 24, c1: P.LIME,    c2: P.MINT },
+    { k: 'enemy_d5_drip',     s: 16, c1: P.LIME,    c2: P.CYAN },
+    { k: 'enemy_d5_moldy',    s: 32, c1: P.CRUST,   c2: P.MINT },
+    { k: 'enemy_d5_eggy',     s: 32, c1: P.CLOUD,   c2: P.LIME },
+    { k: 'enemy_d5_heap',     s: 48, c1: P.COCOA,   c2: P.LIME },
     { k: 'enemy_d5_nugget',   s: 24, c1: P.BERRY,   c2: P.MUSTARD },
-    { k: 'enemy_d5_blob',     s: 32, c1: P.BERRY,   c2: P.COCOA },
     { k: 'enemy_d5_hybrid',   s: 48, c1: P.BERRY,   c2: P.MINT },
     { k: 'enemy_d5_spawnling',s: 20, c1: P.BERRY,   c2: P.PINK },
     { k: 'enemy_d5_fridge',   s: 48, c1: P.CLOUD,   c2: P.STEEL },
