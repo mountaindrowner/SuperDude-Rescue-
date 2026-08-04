@@ -288,13 +288,24 @@ PC.MapViewScene.prototype._paintRoads = function (g, region, layout, def, ox, oy
     });
   } else if (layout && layout.tunnels) {     // sewers: carved tunnels on rock
     var tn = layout.tunnels, tw = Math.max(2, tn.hw * 2 * k);
+    var vLo = Math.min.apply(null, tn.v), vHi = Math.max.apply(null, tn.v);
     tn.v.forEach(function (x) {
       g.fillStyle(0x31413e, 1); g.fillRect(mx(x) - tw / 2, oy, tw, region.size * k);
-      g.fillStyle(0x1d5560, 0.8); g.fillRect(mx(x) - 0.6, oy, 1.2, region.size * k);
+      if (x === vLo || x === vHi) {          // the Loop Line ring
+        g.fillStyle(0xf2c33c, 0.85); g.fillRect(mx(x) - 1.4, oy, 1, region.size * k);
+        g.fillRect(mx(x) + 0.4, oy, 1, region.size * k);
+      } else {
+        g.fillStyle(0x1d5560, 0.8); g.fillRect(mx(x) - 0.6, oy, 1.2, region.size * k);
+      }
     });
     tn.h.forEach(function (y) {
       g.fillStyle(0x31413e, 1); g.fillRect(ox, my(y) - tw / 2, region.size * k, tw);
-      g.fillStyle(0x1d5560, 0.8); g.fillRect(ox, my(y) - 0.6, region.size * k, 1.2);
+      if (y === vLo || y === vHi) {
+        g.fillStyle(0xf2c33c, 0.85); g.fillRect(ox, my(y) - 1.4, region.size * k, 1);
+        g.fillRect(ox, my(y) + 0.4, region.size * k, 1);
+      } else {
+        g.fillStyle(0x1d5560, 0.8); g.fillRect(ox, my(y) - 0.6, region.size * k, 1.2);
+      }
     });
     tn.chambers.forEach(function (c) {
       g.fillStyle(0x31413e, 1); g.fillCircle(mx(c.x), my(c.y), Math.max(2.5, c.r * k));
