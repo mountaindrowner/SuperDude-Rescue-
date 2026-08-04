@@ -14,6 +14,26 @@ window.PC = window.PC || {};
 PC.GARAGE = {
   COSTS: [60, 120, 200],          // TP for rank 1, 2, 3
 
+  // ---- GEAR: one-time TP gadgets that soft-gate story maps (spec
+  // I.2 "you must engage the Garage to progress"). v0.34.0: the
+  // Hydro-Drill opens the Sewers' sealed Main Grate. ----
+  GEAR: [
+    { id: 'hydrodrill', name: 'HYDRO-DRILL', cost: 150, icon: 'icon_weapon_cutter',
+      desc: "Vic's water-jet cutter. Opens the sealed Main Grate down to THE UNDERGROUND." },
+  ],
+  gearById: function (id) {
+    for (var i = 0; i < this.GEAR.length; i++) if (this.GEAR[i].id === id) return this.GEAR[i];
+    return null;
+  },
+  hasGear: function (id) { return PC.meta ? !!PC.meta.stat('gear_' + id) : false; },
+  buyGear: function (id) {
+    var g = this.gearById(id);
+    if (!g || this.hasGear(id) || this.tp() < g.cost) return false;
+    PC.meta.bump('tp', -g.cost);
+    PC.meta.setFlag('gear_' + id);
+    return true;
+  },
+
   rank: function (heroId) { return PC.meta ? PC.meta.stat('garage_' + heroId) : 0; },
   maxRank: function () { return this.COSTS.length; },
   tp: function () { return PC.meta ? PC.meta.stat('tp') : 0; },

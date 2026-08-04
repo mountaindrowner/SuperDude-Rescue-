@@ -244,7 +244,8 @@ PC.MapViewScene.prototype._pulseRing = function (x, y, r, color) {
 
 // district-tinted paper
 PC.MapViewScene.prototype._paintBase = function (g, def, ox, oy, size) {
-  var base = ({ park: 0x2b4230, suburb: 0x35502f, labs: 0x2e2c38 })[def.fabric] || 0x241f3d;
+  var base = ({ park: 0x2b4230, suburb: 0x35502f, labs: 0x2e2c38,
+                sewer: 0x141c1b })[def.fabric] || 0x241f3d;
   g.fillStyle(base, 1); g.fillRect(ox, oy, size, size);
   g.lineStyle(1, 0xffffff, 0.05);
   for (var i = 1; i < def.blocks; i++) {
@@ -284,6 +285,20 @@ PC.MapViewScene.prototype._paintRoads = function (g, region, layout, def, ox, oy
         if (n === 0) g.moveTo(mx(q.x), my(q.y)); else g.lineTo(mx(q.x), my(q.y));
       });
       g.strokePath();
+    });
+  } else if (layout && layout.tunnels) {     // sewers: carved tunnels on rock
+    var tn = layout.tunnels, tw = Math.max(2, tn.hw * 2 * k);
+    tn.v.forEach(function (x) {
+      g.fillStyle(0x31413e, 1); g.fillRect(mx(x) - tw / 2, oy, tw, region.size * k);
+      g.fillStyle(0x1d5560, 0.8); g.fillRect(mx(x) - 0.6, oy, 1.2, region.size * k);
+    });
+    tn.h.forEach(function (y) {
+      g.fillStyle(0x31413e, 1); g.fillRect(ox, my(y) - tw / 2, region.size * k, tw);
+      g.fillStyle(0x1d5560, 0.8); g.fillRect(ox, my(y) - 0.6, region.size * k, 1.2);
+    });
+    tn.chambers.forEach(function (c) {
+      g.fillStyle(0x31413e, 1); g.fillCircle(mx(c.x), my(c.y), Math.max(2.5, c.r * k));
+      g.lineStyle(1, 0x4a5f5a, 0.8); g.strokeCircle(mx(c.x), my(c.y), Math.max(2.5, c.r * k));
     });
   } else if (layout && layout.roads) {       // labs: axis-aligned bands
     layout.roads.forEach(function (r) {

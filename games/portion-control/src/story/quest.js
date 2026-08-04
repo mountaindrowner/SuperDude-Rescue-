@@ -24,6 +24,7 @@ PC.Quest = function (scene, region, mission) {
     park:   ['apple', 'apple', 'peeler', 'tomato'],
     suburb: ['donut', 'donut', 'chipbit', 'cupcake'],
     junk:   ['zipper', 'zipper', 'sodacan', 'chipbag'],
+    goo:    ['blob', 'blob', 'drip', 'eggy'],
   })[region.def.spawnSet] || ['fry', 'fry', 'popcorn', 'hotdog'];
 
   // dialogue box pinned to the camera (world-space ui container)
@@ -89,6 +90,12 @@ PC.Quest.prototype.targetXY = function () {
       }
     }
     return null;
+  }
+  if (o.type === 'reach') {
+    // the FAR SIDE of the landmark, not its middle - the arrow leads
+    // the crossing (only 'south' is used so far; add sides as needed)
+    var rm = this.region.landmark(o.at);
+    if (rm) return { x: rm.cx, y: rm.y + rm.h + 40 };
   }
   return this.spotOf(this.region.landmark(o.at));
 };
@@ -441,6 +448,31 @@ PC.Quest.prototype.update = function (dt) {
           scene.dropBossPower(zone.x + 40, zone.y - 20);
         }
         this.finishObjective(o);
+      }
+    }
+  } else if (o.type === 'reach') {
+    // v0.34.0 (spec B3 "survive the sludge surge across the Catwalk
+    // Maze - reach the far side"): a pressure crossing. Stepping onto
+    // the landmark arms the surge; goo boils up around the player
+    // every few seconds until they make the far-side exit. The timer
+    // is the crowd - stand still and it swallows you.
+    var mk3 = this.region.landmark(o.at);
+    if (this.state === 'travel' && mk3 &&
+        px > mk3.x && px < mk3.x + mk3.w && py > mk3.y && py < mk3.y + mk3.h) {
+      this.state = 'active';
+      this._surgeAcc = 3.5;                 // first boil comes fast
+      if (PC.audio) PC.audio.telegraph();
+      scene.floatText('THE SURGE IS COMING!', 0x8fb03f);
+    }
+    if (this.state === 'active') {
+      this._surgeAcc += dt;
+      if (this._surgeAcc > 5) {
+        this._surgeAcc = 0;
+        if (scene.enemies.liveCount < 60) this.ring(px, py, 8, false);
+      }
+      if (t) {
+        var sdx = t.x - px, sdy = t.y - py;
+        if (sdx * sdx + sdy * sdy < 90 * 90) this.finishObjective(o);
       }
     }
   } else if (o.type === 'boss') {

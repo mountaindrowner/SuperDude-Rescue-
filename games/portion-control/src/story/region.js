@@ -53,6 +53,7 @@ PC.Region = function (def) {
   this.layout = (def.fabric === 'park' && PC.ParkLayout) ? new PC.ParkLayout(def)
     : (def.fabric === 'suburb' && PC.SuburbLayout) ? new PC.SuburbLayout(def)
     : (def.fabric === 'labs' && PC.LabsLayout) ? new PC.LabsLayout(def)
+    : (def.fabric === 'sewer' && PC.SewerLayout) ? new PC.SewerLayout(def)
     : null;
 };
 

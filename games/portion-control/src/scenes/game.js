@@ -651,6 +651,29 @@ PC.GameScene.prototype.update = function (time, delta) {
   }
   if (this.quest) this.quest.update(dt);
   if (this.freeRoam) this.freeRoam.update(dt);
+  // THE OLD CISTERN (spec Map 5 "loot vault = big TP cache"): first
+  // time any run walks into the vault, the floor erupts in gems and
+  // coins. Once per save - the glint stays painted as a memory.
+  if (this.region && this.region.def.id === 'sewers' &&
+      PC.meta && !PC.meta.stat('cistern_looted')) {
+    var cst = this.region.landmark('cistern');
+    if (cst && this.px > cst.x && this.px < cst.x + cst.w &&
+        this.py > cst.y && this.py < cst.y + cst.h) {
+      PC.meta.setFlag('cistern_looted');
+      this.floatText('THE OLD CISTERN - JACKPOT!', 0xf2c33c);
+      if (PC.audio) PC.audio.chest();
+      for (var cj = 0; cj < 14; cj++) {
+        var ca2 = (cj / 14) * Math.PI * 2, cr2 = 30 + (cj % 4) * 22;
+        this.pickups.drop(this.px + Math.cos(ca2) * cr2,
+                          this.py + Math.sin(ca2) * cr2, 'coin', 5);
+      }
+      for (var gj = 0; gj < 20; gj++) {
+        var ga2 = (gj / 20) * Math.PI * 2, gr2 = 46 + (gj % 5) * 18;
+        this.gems.spawn(this.px + Math.cos(ga2) * gr2,
+                        this.py + Math.sin(ga2) * gr2, 3);
+      }
+    }
+  }
   this.now += dt;
   this.runT += dt;
 

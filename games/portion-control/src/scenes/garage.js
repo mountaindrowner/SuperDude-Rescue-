@@ -45,8 +45,40 @@ PC.GarageScene.prototype.create = function () {
     fontFamily: 'monospace', fontSize: '7px', color: '#6d6a8e', fontStyle: 'bold',
   }).setOrigin(0.5, 0);
 
-  // one row per hero
+  // ---- GEAR strip (v0.34.0): one-time gadgets that open story maps.
+  // Appears once the Labs are cleared - exactly when Vic tells you to
+  // come buy the Hydro-Drill. ----
   var listTop = 56, bottom = H - 10;
+  var showGear = PC.meta && PC.meta.stat('clear_stage6');
+  if (showGear) {
+    var gearY = 54, gearH = 34;
+    listTop = gearY + gearH + 4;
+    this._gearG = this.add.graphics();
+    this.add.image(22, gearY + gearH / 2, 'atlas', 'icon_weapon_cutter')
+      .setDisplaySize(20, 20);
+    this._gearName = this.add.text(38, gearY + 5, '', {
+      fontFamily: 'monospace', fontSize: '9px', color: '#f7f4ef', fontStyle: 'bold',
+    });
+    this._gearDesc = this.add.text(38, gearY + 17, '', {
+      fontFamily: 'monospace', fontSize: '7px', color: '#6d6a8e',
+      wordWrap: { width: W - 110 },
+    });
+    this._gearCost = this.add.text(W - 8, gearY + 5, '', {
+      fontFamily: 'monospace', fontSize: '9px', color: '#f2c33c', fontStyle: 'bold',
+    }).setOrigin(1, 0);
+    var gearZone = this.add.zone(W / 2, gearY + gearH / 2, W - 8, gearH)
+      .setInteractive({ useHandCursor: true });
+    gearZone.on('pointerdown', function () {
+      if (PC.audio) PC.audio.unlock();
+      if (PC.GARAGE.buyGear('hydrodrill')) {
+        if (PC.audio) PC.audio.levelup();
+        self.refresh();
+      } else if (PC.audio) PC.audio.hurt();
+    });
+    this._gearY = gearY; this._gearH = gearH;
+  }
+
+  // one row per hero
   var rowH = Math.min(72, (bottom - listTop) / PC.ROSTER.length);
   // centre the block so tall phones don't leave a dead half-screen
   var top = listTop + Math.max(0, (bottom - listTop - rowH * PC.ROSTER.length) / 2);
@@ -92,6 +124,21 @@ PC.GarageScene.prototype.create = function () {
 PC.GarageScene.prototype.refresh = function () {
   var W = PC.RENDER.W;
   this.tpText.setText('TECH POINTS:  ' + PC.GARAGE.tp() + ' TP');
+  if (this._gearG) {
+    var gear = PC.GARAGE.gearById('hydrodrill');
+    var owned = PC.GARAGE.hasGear('hydrodrill');
+    var affordG = !owned && PC.GARAGE.tp() >= gear.cost;
+    this._gearG.clear();
+    PC.labPanel(this._gearG, 4, this._gearY, W - 8, this._gearH, {
+      base: owned ? 0x1c3320 : (affordG ? 0x33240f : 0x1f1b35),
+      edge: owned ? 0xa8e04a : (affordG ? 0xf2c33c : 0x45356e), radius: 5,
+    });
+    this._gearName.setText(gear.name + (owned ? '  - OWNED' : ''))
+      .setColor(owned ? '#a8e04a' : '#f7f4ef');
+    this._gearDesc.setText(gear.desc);
+    this._gearCost.setText(owned ? 'OK' : gear.cost + ' TP')
+      .setColor(owned ? '#a8e04a' : affordG ? '#f2c33c' : '#6d6a8e');
+  }
   this._rows.forEach(function (r) {
     var id = r.hero.id;
     var unlocked = PC.heroUnlocked(id);

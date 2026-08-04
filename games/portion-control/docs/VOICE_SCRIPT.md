@@ -7,21 +7,21 @@
 > Machine-readable twin: **`docs/voice_lines.csv`** (one row per line,
 > ready for batch generation).
 
-**Totals: 122 lines, 7,617 characters of dialogue.**
+**Totals: 133 lines, 8,455 characters of dialogue.**
 
 | Status | Lines | Meaning |
 |---|---|---|
-| SHIPPED | 65 | In the game right now — recording these makes the playable slice fully voiced. |
-| WRITTEN | 51 | Locked dialogue for scenes not built yet (Stages 2-5, finale, flavor). Safe to record — the text will not change. |
-| DRAFT | 6 | Claude-drafted tutorial lines, **not yet approved by Mark**. Do not record until signed off. |
+| SHIPPED | 69 | In the game right now — recording these makes the playable slice fully voiced. |
+| WRITTEN | 47 | Locked dialogue for scenes not built yet (Stages 2-5, finale, flavor). Safe to record — the text will not change. |
+| DRAFT | 17 | Claude-drafted tutorial lines, **not yet approved by Mark**. Do not record until signed off. |
 
 | Character | Lines | Characters of text |
 |---|---|---|
-| SUPER DUDE DANNY | 34 | 1,785 |
-| TIMETECH VIC | 22 | 1,544 |
+| SUPER DUDE DANNY | 38 | 1,964 |
+| TIMETECH VIC | 25 | 1,886 |
 | GALAXY GUIDE CARLOS | 15 | 1,181 |
+| NATRIX NAYAH | 15 | 973 |
 | CAPTAIN KEVIN | 14 | 966 |
-| NATRIX NAYAH | 11 | 656 |
 | ZOOKEEPER JOSH | 8 | 538 |
 | MAYOR ADA BLOOM | 7 | 315 |
 | ACN NEWS ANCHOR | 2 | 242 |
@@ -233,14 +233,30 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 | `vo_s4_018_carlos` | GALAXY GUIDE CARLOS | The thesis of the whole game. Gentle, certain. | "Then we don't break it. We reach it." |
 | `vo_s4_019_vic` | TIMETECH VIC | Radio outro; points UNDER the city. NEW. | "Four rescued. One signal left on the board, boss — it's coming from UNDER the city." |
 
-### STAGE 5 "GOING DEEP" - The Underground / Sewers (Part IV.5)  *(WRITTEN)*
+### STAGE 7 "GOING DEEP" - The Underground / Sewers (mission7.js)  *(SHIPPED)*
 
 | File ID | Character | Delivery | Line |
 |---|---|---|---|
-| `vo_s5_001_vic` | TIMETECH VIC | Soft-gate line at the sealed grate. Dry, practical. | "Main grate's sealed solid. Good thing I built you a Hydro-Drill — go buy it, boss." |
-| `vo_s5_002_nayah` | NATRIX NAYAH | Radio intro. Laughing, delighted by the danger. | "Oh, you're coming DOWN here? Into the gross tunnels? Ha! Finally, someone fun. Last one to the bottom's a rotten egg!" |
-| `vo_s5_003_nayah` | NATRIX NAYAH | Boss intro. Disgusted and thrilled in equal measure. | "The Gloop King! Ugh, he smells like a forgotten lunchbox. Let's ruin his day!" |
-| `vo_s5_004_nayah` | NATRIX NAYAH | Rescue. Fearless grin, signing up for the worst idea available. | "That climb up the Tower? Suicidal. Death-defying. Totally my thing. I'm in." |
+| `vo_s7_001_vic` | TIMETECH VIC | Soft-gate line at the sealed grate. Dry, practical. (SPEC VERBATIM) | "Main grate's sealed solid. Good thing I built you a Hydro-Drill — go buy it, boss." |
+| `vo_s7_002_nayah` | NATRIX NAYAH | Radio intro. Laughing, delighted by the danger. (SPEC VERBATIM) | "Oh, you're coming DOWN here? Into the gross tunnels? Ha! Finally, someone fun. Last one to the bottom's a rotten egg!" |
+| `vo_s7_003_nayah` | NATRIX NAYAH | Boss intro. Disgusted and thrilled in equal measure. (SPEC VERBATIM) | "The Gloop King! Ugh, he smells like a forgotten lunchbox. Let's ruin his day!" |
+| `vo_s7_004_nayah` | NATRIX NAYAH | Rescue. Fearless grin, signing up for the worst idea available. (SPEC VERBATIM) | "That climb up the Tower? Suicidal. Death-defying. Totally my thing. I'm in." |
+
+### STAGE 7 connective lines (Claude-drafted, pending Mark approval)  *(DRAFT)*
+
+| File ID | Character | Delivery | Line |
+|---|---|---|---|
+| `vo_s7d_001_danny` | SUPER DUDE DANNY | Dry comeback to the rotten-egg taunt. | "Nayah, everything down here IS a rotten egg." |
+| `vo_s7d_002_nayah` | NATRIX NAYAH | Objective done; setting up the pumps. | "Junction's clear! Told you this place was a blast. Now the pumps — they've been dead for days and it REEKS." |
+| `vo_s7d_003_vic` | TIMETECH VIC | Fetch briefing. Radio, practical. | "Pump Works are offline, boss. Three valve wheels went walking - the sludge carries things. Bring them back and the flow restarts." |
+| `vo_s7d_004_nayah` | NATRIX NAYAH | Mushroom room aside. Grinning. | "Careful in the mushroom room — they glow, they're gorgeous, do NOT lick one. Asking for a friend." |
+| `vo_s7d_005_nayah` | NATRIX NAYAH | Pumps restored; ominous tease. | "Pumps are singing! Whatever you hear next — that gurgling? That's not the pumps." |
+| `vo_s7d_006_vic` | TIMETECH VIC | The surge warning. Urgent but controlled. | "Restarting the flow woke the whole system - a sludge surge is coming through the Catwalk Maze. Cross it. Do not stop." |
+| `vo_s7d_007_nayah` | NATRIX NAYAH | Screaming encouragement over the surge. | "RUN THE PLANKS, SUPER DUDE! WOOO!" |
+| `vo_s7d_008_danny` | SUPER DUDE DANNY | Made it across; small comic beat. | "Made it. My shoes did not. RIP, shoes." |
+| `vo_s7d_009_danny` | SUPER DUDE DANNY | Boss defeated; sealing the king away. | "Long live the king. In a sealed jar. Far away from me." |
+| `vo_s7d_010_danny` | SUPER DUDE DANNY | The full team moment before the chant. | "That's everyone. Whole team, back together." |
+| `vo_s7d_011_vic` | TIMETECH VIC | Radio outro; pointing at the finale. | "Five signals, five rescues, zero disasters left - except the big one. The Tower's waiting, boss." |
 
 ### FINALE "TO THE TOP" - Adventure Tower + CHOMP (Part IV.6)  *(WRITTEN)*
 
@@ -327,8 +343,8 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 
 ## 4. ELEVENLABS NOTES
 
-- **Cost estimate:** ~7,617 characters total. Recording only the SHIPPED set
-  (the playable slice) is ~4,208 characters — small enough to fit a starter tier.
+- **Cost estimate:** ~8,455 characters total. Recording only the SHIPPED set
+  (the playable slice) is ~4,559 characters — small enough to fit a starter tier.
 - **Use v3 audio tags** for the emotional beats — they do a lot of work here.
   Examples worth trying: `[whispers] I did this.` /
   `[shouting] Super Dude... GO!` / `[sad] ...did I... not help?` /
