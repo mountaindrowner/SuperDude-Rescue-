@@ -218,7 +218,14 @@ window.PC = window.PC || {};
     var cist = this.marks.filter(function (m) { return m.id === 'cistern'; })[0];
     if (cist) addSign(cist.x + cist.w / 2 + 110, cist.y + 50, 'CITY VAULT - KEEP OUT', null, 'warn');
     var cat = this.marks.filter(function (m) { return m.id === 'catwalk'; })[0];
-    if (cat) addSign(cat.x + cat.w / 2, cat.y - 40, 'SURGE ZONE - DO NOT STOP', null, 'warn');
+    if (cat) {
+      addSign(cat.x + cat.w / 2, cat.y - 40, 'SURGE ZONE - DO NOT STOP', null, 'warn');
+      addSign(cat.x + 140, cat.y + 70, 'STAY ON THE CATWALKS', null, 'warn');
+    }
+    var resv = this.marks.filter(function (m) { return m.id === 'reservoir'; })[0];
+    if (resv) addSign(resv.x + resv.w / 2, resv.y + 76, 'STRUCTURE UNSAFE', null, 'warn');
+    var fung = this.marks.filter(function (m) { return m.id === 'fungal'; })[0];
+    if (fung) addSign(fung.x + fung.w / 2 - 130, fung.y + 66, 'SPORE ZONE - SLOW GOING', null, 'warn');
     // MIND THE TRAIN plates along the ring, every 4th block
     for (var mb = 3; mb < this.blocks - 2; mb += 4) {
       addSign(mb * CH + CH / 2, RL - HW - 34, 'MIND THE TRAIN', null, 'metro');
@@ -312,6 +319,29 @@ window.PC = window.PC || {};
       if (ex * ex + ey * ey < 92 * 92) return true;
     }
     return false;
+  };
+
+  // ---- ZONE EFFECTS (v0.42.0): the map pushes back. Fungal spores
+  // thicken the air; catwalk water is wading-deep off the planks.
+  // Pure rect/band math - the caller just multiplies its speed. ----
+  PC.SewerLayout.prototype.zoneEffectAt = function (x, y) {
+    for (var i = 0; i < this.marks.length; i++) {
+      var m = this.marks[i];
+      if (x < m.x || x >= m.x + m.w || y < m.y || y >= m.y + m.h) continue;
+      if (m.id === 'fungal') return { slow: 0.78, kind: 'spore' };
+      if (m.id === 'catwalk') {
+        // on a plank lane = full speed; in the water = wading
+        var laneW = 56, fx = (x - m.x) / m.w, fy = (y - m.y) / m.h;
+        var hL = [0.2, 0.5, 0.8], vL = [0.16, 0.49, 0.82], k;
+        for (k = 0; k < 3; k++) {
+          if (Math.abs(y - (m.y + m.h * hL[k])) < laneW / 2 + 4) return null;
+          if (Math.abs(x - (m.x + m.w * vL[k])) < laneW / 2 + 4) return null;
+        }
+        return { slow: 0.6, kind: 'water' };
+      }
+      return null;
+    }
+    return null;
   };
 
   // the grid IS the truth: paint, walls and solids all read this
@@ -1046,8 +1076,32 @@ window.PC = window.PC || {};
       }
 
     } else if (id === 'pumps') {
-      // THE PUMP WORKS: three chunky machine bodies with gauge faces,
-      // piston pipes, and RED handwheel pedestals (red = interactive)
+      // THE PUMP WORKS (v0.42.0 definition pass): an industrial hall -
+      // plate floor zone, two riveted pressure tanks, a floor pipe run
+      // linking all three pumps, drain channels to the gutter
+      // industrial plate floor under the machine row
+      g.fillStyle = 'rgba(80,76,90,0.18)';
+      g.fillRect(lx + w * 0.05, ly + h * 0.06, w * 0.9, h * 0.72);
+      g.strokeStyle = 'rgba(120,116,134,0.5)'; g.lineWidth = 1;
+      for (var pfy = ly + h * 0.06; pfy < ly + h * 0.78; pfy += 40) {
+        g.beginPath(); g.moveTo(lx + w * 0.05, pfy); g.lineTo(lx + w * 0.95, pfy); g.stroke();
+      }
+      // two big pressure tanks flanking the hall
+      for (var tk = 0; tk < 2; tk++) {
+        var tkx = lx + w * (tk ? 0.9 : 0.1), tky = ly + h * 0.52;
+        g.fillStyle = COL.shadow;
+        g.beginPath(); g.ellipse(tkx + 6, tky + 10, 34, 16, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#5d5a78';
+        g.beginPath(); g.arc(tkx, tky, 32, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#7f7c9c';
+        g.beginPath(); g.arc(tkx - 9, tky - 9, 13, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = '#4a4762'; g.lineWidth = 2;
+        g.beginPath(); g.arc(tkx, tky, 32, 0, Math.PI * 2); g.stroke();
+        g.beginPath(); g.arc(tkx, tky, 22, 0, Math.PI * 2); g.stroke();
+        // tank feed pipe into the hall
+        g.fillStyle = COL.pipeDark;
+        g.fillRect(Math.min(tkx, lx + w * 0.5), tky - 4, Math.abs(w * 0.4 - 32), 8);
+      }
       g.fillStyle = COL.iron;
       g.fillRect(lx + w * 0.08, ly + h * 0.1, w * 0.84, h * 0.16);
       g.fillStyle = COL.ironLite;
@@ -1114,9 +1168,16 @@ window.PC = window.PC || {};
       }
 
     } else if (id === 'fungal') {
-      // FUNGAL CAVERN: real mushrooms - cap on stem, pale spots, dark
-      // outline like an entity, and a big soft glow (the map's second
-      // light source after the grate beam)
+      // FUNGAL CAVERN (v0.42.0): the whole cavern breathes green - a
+      // moss wash over the floor sets it apart before a single
+      // mushroom is seen, and the hero caps got BIG
+      g.fillStyle = 'rgba(96,168,72,0.16)';
+      g.fillRect(lx, ly, w, h);
+      g.fillStyle = 'rgba(96,168,72,0.12)';
+      for (var fw = 0; fw < 8; fw++) {
+        var fwx = lx + h2(fw, 31, 161) * w, fwy = ly + h2(31, fw, 162) * h;
+        g.beginPath(); g.ellipse(fwx, fwy, 90 + h2(fw, fw, 163) * 80, 60, 0, 0, Math.PI * 2); g.fill();
+      }
       // clusters of 2-3 around anchor points, one hero mushroom per
       // cluster (judge round 3: mushrooms must OUTNUMBER sludge here)
       for (var f = 0; f < 44; f++) {
@@ -1125,7 +1186,7 @@ window.PC = window.PC || {};
         var ay3 = ly + (0.12 + h2(1, anchor, 107) * 0.76) * h;
         var fx3 = ax3 + (h2(f, 4, 108) - 0.5) * 110;
         var fy3 = ay3 + (h2(4, f, 109) - 0.5) * 90;
-        var fs = (f % 3 === 0) ? 30 + h2(f, f, 103) * 26 : 12 + h2(f, f, 103) * 14;
+        var fs = (f % 3 === 0) ? 42 + h2(f, f, 103) * 34 : 14 + h2(f, f, 103) * 18;
         // glow pool first (under everything)
         g.fillStyle = COL.mushGlow;
         g.beginPath(); g.arc(fx3, fy3 - fs * 0.2, fs * 1.9, 0, Math.PI * 2); g.fill();
@@ -1194,41 +1255,48 @@ window.PC = window.PC || {};
       });
 
     } else if (id === 'reservoir') {
-      // COLLAPSED RESERVOIR: drained basin, cracks radiating FROM the
-      // remaining pool's rim (judge: not from open floor), rubble
-      // rubble scattered on ordinary flagstone (judge: NO third
-      // surface value - walkable stays floor-toned, full stop)
-      for (var ub = 0; ub < 10; ub++) {
-        var ubx = lx + h2(ub, 21, 151) * w, ubs = 6 + h2(21, ub, 152) * 12;
+      // COLLAPSED RESERVOIR (v0.42.0, Mark: "needs more defining...
+      // so it makes sense"): a giant drained water tank. Tiered basin
+      // rings with waterline stains, one collapsed corner buried in
+      // rubble with fallen roof beams, the last puddle at the bottom.
+      // rubble scattered on ordinary flagstone (no third value)
+      for (var ub = 0; ub < 8; ub++) {
+        var ubx = lx + h2(ub, 21, 151) * w, ubs = 6 + h2(21, ub, 152) * 10;
         g.fillStyle = COL.floorDark;
         g.beginPath(); g.arc(ubx + 3, ly + h * 0.06 + 3, ubs, 0, Math.PI * 2); g.fill();
         g.fillStyle = COL.stoneBrickLite;
         g.beginPath(); g.arc(ubx, ly + h * 0.06, ubs, 0, Math.PI * 2); g.fill();
-        g.fillStyle = COL.floorLite;
-        g.beginPath(); g.arc(ubx - ubs * 0.25, ly + h * 0.06 - ubs * 0.25, ubs * 0.4, 0, Math.PI * 2); g.fill();
       }
-      g.strokeStyle = COL.stoneBrickLite; g.lineWidth = 8;
-      g.strokeRect(lx + w * 0.12, ly + h * 0.12, w * 0.76, h * 0.76);
-      g.fillStyle = COL.floorDark;
-      g.fillRect(lx + w * 0.16, ly + h * 0.16, w * 0.68, h * 0.68);
-      // the drained basin is still FLOOR: same seam grid as every
-      // corridor so no zone ever reads as a third surface value
+      // the tank wall: thick concrete ring
+      g.strokeStyle = COL.stoneBrickLite; g.lineWidth = 12;
+      g.strokeRect(lx + w * 0.1, ly + h * 0.14, w * 0.8, h * 0.78);
+      g.strokeStyle = COL.wallVoid; g.lineWidth = 3;
+      g.strokeRect(lx + w * 0.1 + 8, ly + h * 0.14 + 8, w * 0.8 - 16, h * 0.78 - 16);
+      // tiered drained basin: three stepped waterline stains going down
+      var tiers = [[0.14, '#455349'], [0.24, '#3d4a42'], [0.34, '#35413b']];
+      for (var tr2 = 0; tr2 < tiers.length; tr2++) {
+        var inset = tiers[tr2][0];
+        g.fillStyle = tiers[tr2][1];
+        g.fillRect(lx + w * inset, ly + h * (inset + 0.04), w * (1 - 2 * inset), h * (0.9 - 2 * inset));
+        g.strokeStyle = '#5a6a5e'; g.lineWidth = 2;
+        g.strokeRect(lx + w * inset, ly + h * (inset + 0.04), w * (1 - 2 * inset), h * (0.9 - 2 * inset));
+      }
+      // basin seams so every tier still reads as walkable floor
       g.strokeStyle = COL.seam; g.lineWidth = 1;
-      for (var bsy = ly + h * 0.16; bsy < ly + h * 0.84; bsy += 48) {
-        g.beginPath(); g.moveTo(lx + w * 0.16, bsy); g.lineTo(lx + w * 0.84, bsy); g.stroke();
+      for (var bsy = ly + h * 0.2; bsy < ly + h * 0.9; bsy += 48) {
+        g.beginPath(); g.moveTo(lx + w * 0.14, bsy); g.lineTo(lx + w * 0.86, bsy); g.stroke();
       }
-      for (var bsx = lx + w * 0.16; bsx < lx + w * 0.84; bsx += 48) {
-        g.beginPath(); g.moveTo(bsx, ly + h * 0.16); g.lineTo(bsx, ly + h * 0.84); g.stroke();
-      }
-      // the remaining puddle - crack origin
-      var pox = mcx + w * 0.12, poy = mcy + h * 0.14;
-      var por = w * 0.14;
+      // the last puddle at the deepest tier
+      var pox = mcx + w * 0.08, poy = mcy + h * 0.16;
       g.fillStyle = COL.water;
-      g.beginPath(); g.ellipse(pox, poy, por, por * 0.55, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(pox, poy, w * 0.13, h * 0.07, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#5a6a5e'; g.lineWidth = 3;
+      g.beginPath(); g.ellipse(pox, poy, w * 0.15, h * 0.085, 0, 0, Math.PI * 2); g.stroke();
+      // cracks radiating from the puddle rim
       g.strokeStyle = COL.wallVoid; g.lineWidth = 4;
       for (var cr = 0; cr < 5; cr++) {
         var ca = cr * (Math.PI * 2 / 5) + 0.5;
-        var cpx = pox + Math.cos(ca) * por, cpy = poy + Math.sin(ca) * por * 0.55;
+        var cpx = pox + Math.cos(ca) * w * 0.13, cpy = poy + Math.sin(ca) * h * 0.07;
         g.beginPath(); g.moveTo(cpx, cpy);
         for (var cs = 0; cs < 2; cs++) {
           cpx += Math.cos(ca) * (26 + h2(cr, cs, 121) * 30) + (h2(cs, cr, 122) - 0.5) * 22;
@@ -1237,11 +1305,18 @@ window.PC = window.PC || {};
         }
         g.stroke();
       }
-      // rubble boulders
-      for (var rb = 0; rb < 8; rb++) {
-        var rbx = mcx + (h2(rb, 9, 124) - 0.5) * w * 0.5;
-        var rby = mcy + (h2(9, rb, 125) - 0.5) * h * 0.5;
-        var rbs = 10 + h2(rb, rb, 126) * 16;
+      // THE COLLAPSE: the NE corner caved in - rubble cone + two
+      // fallen roof beams + a bite taken out of the tank wall
+      var ccx = lx + w * 0.82, ccy = ly + h * 0.22;
+      g.fillStyle = COL.rockMottle;
+      g.beginPath();
+      g.moveTo(ccx - 90, ccy - 40); g.lineTo(ccx + 60, ccy - 70);
+      g.lineTo(ccx + 80, ccy + 60); g.lineTo(ccx - 30, ccy + 80);
+      g.closePath(); g.fill();
+      for (var rb = 0; rb < 9; rb++) {
+        var rbx = ccx + (h2(rb, 9, 124) - 0.5) * 150;
+        var rby = ccy + (h2(9, rb, 125) - 0.5) * 130;
+        var rbs = 8 + h2(rb, rb, 126) * 16;
         g.fillStyle = COL.floorDark;
         g.beginPath(); g.arc(rbx + 3, rby + 3, rbs, 0, Math.PI * 2); g.fill();
         g.fillStyle = COL.stoneBrickLite;
@@ -1249,6 +1324,20 @@ window.PC = window.PC || {};
         g.fillStyle = COL.floorLite;
         g.beginPath(); g.arc(rbx - rbs * 0.25, rby - rbs * 0.25, rbs * 0.4, 0, Math.PI * 2); g.fill();
       }
+      // fallen I-beams
+      g.save();
+      g.translate(ccx - 20, ccy + 10); g.rotate(0.5);
+      g.fillStyle = '#4e4b62'; g.fillRect(-90, -7, 180, 14);
+      g.fillStyle = '#6d6a8e'; g.fillRect(-90, -7, 180, 4);
+      g.restore();
+      g.save();
+      g.translate(ccx + 30, ccy - 30); g.rotate(-0.35);
+      g.fillStyle = '#4e4b62'; g.fillRect(-70, -6, 140, 12);
+      g.fillStyle = '#6d6a8e'; g.fillRect(-70, -6, 140, 3);
+      g.restore();
+      // dust/stain fan spilling from the breach
+      g.fillStyle = 'rgba(90,106,94,0.25)';
+      g.beginPath(); g.ellipse(ccx - 40, ccy + 60, 110, 46, 0.3, 0, Math.PI * 2); g.fill();
 
     } else if (id === 'sump') {
       // THE DEEP SUMP: a DIRTY lagoon (dark, rimmed, junk floating in
