@@ -96,6 +96,76 @@ window.PC = window.PC || {};
     }
     this._spokeCache = {};
 
+    // THE GRID (v0.40.0, Mark: "boundaries more strict... a nice
+    // straight line at the edge... tiling should not mix"): the
+    // analytic carve (serpentines, lumpy chambers, diagonals) is
+    // QUANTIZED once onto the 64px collision grid, then cleaned -
+    // rock islands stranded inside paths become floor, floor pockets
+    // sealed off from the spawn become rock. From here on, this grid
+    // IS the level: collision, paint clip and wall edges all read the
+    // same cells, so every boundary is a hard axis-aligned line.
+    var N = this.gridN = Math.floor(this.size / CELL);
+    var walk = this.grid = new Uint8Array(N * N);
+    var gi, gx, gy;
+    for (gy = 0; gy < N; gy++) {
+      for (gx = 0; gx < N; gx++) {
+        walk[gy * N + gx] =
+          this._analyticCarved(gx * CELL + CELL / 2, gy * CELL + CELL / 2) ? 1 : 0;
+      }
+    }
+    // one smoothing pass: lone nubs join their neighborhood, so the
+    // stepped edges read as deliberate tiles, not noise
+    var snap = new Uint8Array(walk);
+    for (gy = 1; gy < N - 1; gy++) {
+      for (gx = 1; gx < N - 1; gx++) {
+        gi = gy * N + gx;
+        var nOpen = snap[gi - 1] + snap[gi + 1] + snap[gi - N] + snap[gi + N];
+        if (snap[gi] === 1 && nOpen <= 1) walk[gi] = 0;
+        else if (snap[gi] === 0 && nOpen >= 3) walk[gi] = 1;
+      }
+    }
+    // rock ISLANDS: label every rock component; only genuinely tiny
+    // ones (a few stray cells sitting in a walkway) become floor.
+    // (v0.40.0 lesson: the first version removed rock "not connected
+    // to the border" - but the subway ring is a floor MOAT, so every
+    // interior rock mass counted as an island and the map melted into
+    // one plaza. Size is the correct test, not connectivity.)
+    var MIN_ROCK = 12;                       // cells (< ~12 = debris)
+    var seen = new Uint8Array(N * N);
+    for (gi = 0; gi < N * N; gi++) {
+      if (walk[gi] || seen[gi]) continue;
+      var comp = [gi], qh2 = 0;
+      seen[gi] = 1;
+      while (qh2 < comp.length) {
+        var c0 = comp[qh2++], cxg = c0 % N, cyg = (c0 / N) | 0;
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) {
+          var nx2 = cxg + d[0], ny2 = cyg + d[1];
+          if (nx2 < 0 || ny2 < 0 || nx2 >= N || ny2 >= N) return;
+          var ni = ny2 * N + nx2;
+          if (!walk[ni] && !seen[ni]) { seen[ni] = 1; comp.push(ni); }
+        });
+      }
+      if (comp.length < MIN_ROCK) {
+        for (var ci2 = 0; ci2 < comp.length; ci2++) walk[comp[ci2]] = 1;
+      }
+    }
+    // flood FLOOR from the spawn: floor the player can never reach
+    // becomes rock (kills sealed pockets AND guarantees one region)
+    var sgx = Math.floor(((def.spawn.c + 0.5) * CH + 96) / CELL);
+    var sgy = Math.floor(((def.spawn.r + 0.5) * CH + 96) / CELL);
+    var seen2 = new Uint8Array(N * N), q2 = [sgy * N + sgx];
+    seen2[q2[0]] = 1; qh = 0;
+    while (qh < q2.length) {
+      var c1 = q2[qh++], cx1 = c1 % N, cy1 = (c1 / N) | 0;
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) {
+        var nx3 = cx1 + d[0], ny3 = cy1 + d[1];
+        if (nx3 < 0 || ny3 < 0 || nx3 >= N || ny3 >= N) return;
+        var ni2 = ny3 * N + nx3;
+        if (walk[ni2] && !seen2[ni2]) { seen2[ni2] = 1; q2.push(ni2); }
+      });
+    }
+    for (gi = 0; gi < N * N; gi++) if (walk[gi] && !seen2[gi]) walk[gi] = 0;
+
     // schematic export for PC_MapView: the tunnel network as data
     this.tunnels = { v: [], h: [], chambers: [], hw: HW };
     for (var tc = 1; tc < this.blocks; tc += 2) {
@@ -152,7 +222,7 @@ window.PC = window.PC || {};
     return null;
   };
 
-  PC.SewerLayout.prototype.carvedAt = function (x, y) {
+  PC.SewerLayout.prototype._analyticCarved = function (x, y) {
     if (x < 0 || y < 0 || x >= this.size || y >= this.size) return false;
     if (this.markAt(x, y)) return true;
     // vertical tunnels on odd block columns (serpentine off-ring)
@@ -181,6 +251,13 @@ window.PC = window.PC || {};
       if (ex * ex + ey * ey < 92 * 92) return true;
     }
     return false;
+  };
+
+  // the grid IS the truth: paint, walls and solids all read this
+  PC.SewerLayout.prototype.carvedAt = function (x, y) {
+    if (x < 0 || y < 0 || x >= this.size || y >= this.size) return false;
+    var N = this.gridN;
+    return !!this.grid[Math.floor(y / CELL) * N + Math.floor(x / CELL)];
   };
 
   // ---- collision ------------------------------------------------------
@@ -216,13 +293,18 @@ window.PC = window.PC || {};
       g.beginPath(); g.ellipse(rmx, rmy, rms, rms * 0.7, 0, 0, Math.PI * 2); g.fill();
     }
 
-    // ---- 2. carve: clip to every carved shape touching this chunk ----
-    var shapes = this._shapesFor(cx, cy);
-    if (!shapes.length) { this._gooPass(g, cx, cy); return; }
+    // ---- 2. carve: clip to the FLOOR CELLS of this chunk. The grid
+    // is the truth, so every painted edge lands exactly on a cell
+    // line - hard, straight, and identical to the collision. ----
+    var clipRects = this._floorRects(cx, cy);
+    if (!clipRects.length) return;
 
     g.save();
     g.beginPath();
-    for (var si = 0; si < shapes.length; si++) traceShape(g, shapes[si], x0, y0);
+    for (var si = 0; si < clipRects.length; si++) {
+      var crr = clipRects[si];
+      g.rect(crr.x - x0, crr.y - y0, crr.w, crr.h);
+    }
     g.clip();
 
     // floor base: wet flagstone in OFFSET courses (brick-like, not the
@@ -270,9 +352,36 @@ window.PC = window.PC || {};
     // rock boundaries - no phantom lines across open rooms. ----
     this._wallEdges(g, cx, cy);
 
-    // ---- 4. pipes along corridors + goo flood (over everything) ----
+    // ---- 4. pipes + goo, ALSO clipped to floor cells: decor never
+    // bleeds across a boundary onto rock (Mark: "tiling should not
+    // mix with other spaces") ----
+    g.save();
+    g.beginPath();
+    for (var si2 = 0; si2 < clipRects.length; si2++) {
+      var crr2 = clipRects[si2];
+      g.rect(crr2.x - x0, crr2.y - y0, crr2.w, crr2.h);
+    }
+    g.clip();
     this._pipes(g, cx, cy);
     this._gooPass(g, cx, cy);
+    g.restore();
+  };
+
+  // merged horizontal runs of FLOOR cells in a chunk (mirror of
+  // solidsForChunk, other polarity)
+  PC.SewerLayout.prototype._floorRects = function (cx, cy) {
+    var out = [], x0 = cx * CH, y0 = cy * CH;
+    for (var gy = 0; gy < CH; gy += CELL) {
+      var run = null;
+      for (var gx = 0; gx < CH; gx += CELL) {
+        var open = this.carvedAt(x0 + gx + CELL / 2, y0 + gy + CELL / 2);
+        if (open) {
+          if (run) run.w += CELL;
+          else { run = { x: x0 + gx, y: y0 + gy, w: CELL, h: CELL }; out.push(run); }
+        } else run = null;
+      }
+    }
+    return out;
   };
 
   PC.SewerLayout.prototype._wallEdges = function (g, cx, cy) {

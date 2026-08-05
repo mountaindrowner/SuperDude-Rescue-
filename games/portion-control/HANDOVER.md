@@ -12,6 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.40.0: THE GRID (Mark: "boundaries more strict...
+  a nice straight line at the edge... tiling should not mix... black
+  spots in the middle of paths don't make sense").** The sewer carve
+  is now QUANTIZED once at region build onto the 64px collision grid
+  and cleaned: (1) one smoothing pass joins lone nubs so stepped edges
+  read as deliberate tiles; (2) rock components smaller than 12 cells
+  (stray debris in walkways) become floor - NOTE THE LESSON: the first
+  version removed rock "not connected to the map border", but the
+  subway ring is a floor MOAT, so every interior rock mass counted as
+  an island and the whole map melted into one plaza (caught on the
+  atlas render); size is the correct test; (3) floor unreachable from
+  the spawn becomes rock (kills sealed pockets, guarantees ONE
+  region). From then on the grid IS the level: carvedAt is a grid
+  lookup, solids/paint-clip/wall-edges all read the same cells, so
+  every boundary is a hard axis-aligned line and paint === collision
+  by construction. Paint clip switched from sampled polygons to
+  merged floor-cell rects (_floorRects); pipes + goo now draw inside
+  the same clip so decor can never bleed onto rock. The serpentine
+  tunnels survive as stepped tile paths (deliberate, Zelda-like)
+  instead of wobbly curves. Battery: connectivity 100% + all mission
+  points, subway 4/4, objectives (hold + sequence) green, atlas
+  clean. Version pair 0.40.0.
+
 - **2026-08-04 - v0.39.0: SEWER READABILITY OVERHAUL (Mark on-device:
   "I don't know if I'm under or in or if there's a roof... anything
   not walkable should be rock, bordered by walls... reconsider").**
