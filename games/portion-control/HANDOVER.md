@@ -12,6 +12,34 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.41.0: SIGNAGE + STATIONS (Mark: "obvious subway
+  distinction and obvious sewer distinction... signs... obvious
+  subway hubs... take a nice hard look").** The Underground learned
+  to talk. ZONE IDENTITY: wall edges near the Loop Line ring render
+  as pale SUBWAY TILE with a cyan accent lip vs warm sewer brick
+  everywhere else (_nearRing in _wallEdges). STATIONS: 8 platforms
+  (4 ring corners + 4 mid-ring incl. under the Main Grate) - tiled
+  decking, yellow safety line, shadowed columns, bench, LOOP LINE -
+  STATION board; corner stations SPLIT into two decks capped with
+  safety strips so no deck ever runs under a rail, and every
+  track-x-track crossing sits on an 80px dark diamond plate with
+  steel border + X brace. SIGNAGE (canvas fillText, 10px caps,
+  precomputed world-coord list): landmark arrow plates at every
+  cavern approach (first walkable pad N/S/E/W), SEWER ACCESS +
+  AUTHORIZED PERSONNEL ONLY at the grate, NO SWIMMING (sump), CITY
+  VAULT - KEEP OUT (cistern), SURGE ZONE - DO NOT STOP (catwalk),
+  MIND THE TRAIN / LOOP LINE plates along the ring. Z-ORDER LAW:
+  signage is the map's FINAL paint layer - nothing can occlude a
+  sign (a goo blob over the RESERVOIR plate taught us). Also: goo
+  banned from ring corridors (the subway stays swept), pump manifold
+  got seams + rivets (was a flat lavender slab), reservoir basin got
+  the corridor seam grid + stone-toned rubble (no third surface
+  value, no dark spots), catwalk ripples ~2x. Judge ran a hard-look
+  round (ITERATE, 6 findings) + confirmation round: SHIP - "the
+  crossing went from the worst artifact on the map to one of its
+  best set pieces." Probes grew sw_sign + sw_station cameras.
+  Version pair 0.41.0.
+
 - **2026-08-04 - v0.40.0: THE GRID (Mark: "boundaries more strict...
   a nice straight line at the edge... tiling should not mix... black
   spots in the middle of paths don't make sense").** The sewer carve
