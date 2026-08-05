@@ -163,6 +163,9 @@ PC.GameScene.prototype.create = function () {
   // THE LOOP LINE (v0.35.0): the sewers' circulating subway hazard
   this.subway = (this.region && this.region.def.id === 'sewers' && PC.Subway)
     ? new PC.Subway(this) : null;
+  this.sewerFlow = (this.region && this.region.def.id === 'sewers' && PC.SewerFlow)
+    ? new PC.SewerFlow(this) : null;
+  this._zoneKind = null;
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
@@ -703,6 +706,19 @@ PC.GameScene.prototype.update = function (time, delta) {
   var v = this.moveInput.vec;
   this.moving = (v.x !== 0 || v.y !== 0);
   var spd = PC.PLAYER.SPEED * this.stats.spdMult;
+  // sewer zone effects (v0.42.0): spore haze + wading water slow the
+  // player; a tiny label the first time so the kid knows WHY
+  this._zone = null;
+  if (this.region && this.region.layout && this.region.layout.zoneEffectAt) {
+    this._zone = this.region.layout.zoneEffectAt(this.px, this.py);
+    if (this._zone) {
+      spd *= this._zone.slow;
+      if (this._zoneKind !== this._zone.kind) {
+        this._zoneKind = this._zone.kind;
+        this.floatText(this._zone.kind === 'spore' ? 'THICK SPORES...' : 'WADING...', 0xa8e04a);
+      }
+    } else this._zoneKind = null;
+  }
   if (this.moving) {
     this.px += v.x * spd * dt;
     this.py += v.y * spd * dt;
@@ -848,6 +864,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   if (!this.region && !this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
   if (this.boss) this.boss.update(dt, this.px, this.py);
   if (this.subway) this.subway.update(dt);
+  if (this.sewerFlow) this.sewerFlow.update();
 
   this.ground.update(this.cameras.main);
 

@@ -12,6 +12,31 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-04 - v0.42.0: LIVING UNDERGROUND (Mark's map-review batch:
+  animated water, fungal identity, reservoir story, catwalk vision,
+  pump definition).** (1) LIVE WATER: src/systems/sewerflow.js - the
+  terrain is cached, so a thin live overlay animates on top (same
+  trick as the train): flow dashes drift along every sewer gutter
+  toward the sump, shimmer glints cross the Catwalk water, spore
+  motes drift down the Fungal Cavern. VFX-DNA rules (per-line phase
+  seeds, two-clock sines, zero allocation). (2) FUNGAL CAVERN: whole-
+  cavern green moss wash + mossy pools, hero mushrooms up to ~76px,
+  and a ZONE EFFECT - thick spores slow the player to 0.78x inside
+  ("THICK SPORES..." float on entry). (3) CATWALK VISION answered:
+  planks are the fast path; stepping in the water WADES (0.6x slow,
+  "WADING..."), enemies unaffected - the maze now means something
+  without hard walls (zoneEffectAt in world_sewer.js, speed hook in
+  game.js). STAY ON THE CATWALKS sign added. (4) COLLAPSED RESERVOIR
+  rebuilt to tell its story: concrete tank ring, three tiered
+  drained-basin stains stepping down to the last puddle, crack web
+  from the pool rim, and a caved-in NE corner - rubble cone, stone
+  boulders, two fallen I-beams, dust fan + STRUCTURE UNSAFE sign.
+  (5) PUMP WORKS defined: industrial plate-floor zone, two riveted
+  pressure tanks with feed pipes, a floor pipe run linking all three
+  pumps, drain channel to the gutter. SPORE ZONE sign at the fungal
+  approach. Battery: objectives + subway green, probes + atlas zero
+  errors. Version pair 0.42.0.
+
 - **2026-08-04 - v0.41.0: SIGNAGE + STATIONS (Mark: "obvious subway
   distinction and obvious sewer distinction... signs... obvious
   subway hubs... take a nice hard look").** The Underground learned
