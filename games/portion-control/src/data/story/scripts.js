@@ -47,3 +47,13 @@ PC.STORY.scripts.intro = [
   { action: 'portraits6' },
   { say: { speaker: 'danny', text: "Crew — Adventure City needs us. Super Dude… GO!" } },
 ];
+
+// THE CONFRONTATION (v0.45.0) - played IN THE GAME ENGINE on the roof of
+// Adventure Tower the moment Danny steps off the last stair, before the
+// final fight. Lines are VERBATIM from docs/VOICE_SCRIPT.md
+// "FINALE 'TO THE TOP'" (vo_finale_007 .. 009) - do not rewrite them.
+PC.STORY.scripts.confront = [
+  { say: { speaker: 'chomp', text: "HELLO friends! I am CHOMP! I make food so NObody is EVER hungry again! Are you hungry? I can HELP!" } },
+  { say: { speaker: 'danny', text: "CHOMP — you're hurting the city. You have to stop." } },
+  { say: { speaker: 'chomp', text: "But… feeding = helping. More food = more help! I am helping SO much!" } },
+];

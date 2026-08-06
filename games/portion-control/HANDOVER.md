@@ -12,6 +12,55 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.45.0: THE ROOF + THE CONFRONTATION** (Mark: "the
+  final floor to transition to the roof, and the roof is just a large
+  map... one realistically sized roof area, and that's with the final
+  boss... our character moves up on its own, but it's like the playable
+  animation... a cinematic that uses the gameplay engine, so it's the
+  sprite that we play with").
+  **THE ROOF IS NO LONGER A BAND.** It sits above the 17-floor stack as
+  its own 4608x3072 arena (map now 42 blocks / 21504px), wider than the
+  shaft below it, open sky on all four sides. Painted as a ROOF and not
+  a floor: tar membrane in welded panels, gravel ballast round the
+  parapet, and the boss ring painted dead centre. AC banks, vents,
+  plant and the ANTENNA MAST (what the Ray climbed) get their own paint
+  pass, because they sit on solid cells and so fall outside the floor
+  clip - otherwise the roof is a field of anonymous dark boxes.
+  **THE FINAL STAIR IS CENTRED** on the roof, so the player climbs out
+  looking straight down the deck at what is waiting.
+  **THE CONFRONTATION** (`src/story/confront.js`): NOT PC_Cutscene. No
+  scene switch, no second art style - the camera, the world and above
+  all Danny's own walk cycle are the ones the player has had their
+  thumb on all game; the stick is simply taken away. It arms the moment
+  he steps onto the roof (the roof IS the trigger) and runs
+  **walk -> reveal -> talk -> brace -> over**: he paces out to his mark,
+  the camera drifts up to CHOMP who rises, the three written finale
+  lines play shot/reverse-shot (the beats are stepped inside Confront,
+  not quest.playScript, because only that loop knows who is speaking),
+  then the camera pulls back into a wide two-shot and hands control
+  back. Danny's weapons hold fire throughout - he does not shoot
+  something that is still saying hello. CHOMP is drawn in-world as a
+  PLACEHOLDER figure (hopper body, serving-chute grin, conveyor arms,
+  far-too-cheerful eyes, the Ray still socketed in its crown); the real
+  PixelLab batch is the next art job. Its dialogue portrait is already
+  real art.
+  Supporting: new quiet objective type **'arrive'** (reaching the place
+  IS the beat - no ring, no surge, so a cutscene can own what happens
+  next); quest logic holds while the confrontation is armed; the
+  confront claims the frame BEFORE quest.update, or a beat arms its
+  wave on the very frame Danny steps up (caught on a screenshot -
+  "THE SURGE IS COMING!" mid-cutscene); the HUD hides for the wide
+  shot, because it is a world-space container pinned to the camera and
+  a zoom change shrank it into the corner.
+  `src/data/story/mission8.js` is a SKELETON: one 'arrive' objective to
+  the roof. Per-floor beats and the boss fight are deliberately unbuilt
+  (Mark: "after that, we'll figure out the boss battle mechanics").
+  Gates: verify-tower 14999/14999 cells + 92/92 checks; new
+  verify-confront plays the whole sequence and asserts the beat order
+  and that control comes back; objectives suite still 6/6. Zero errors.
+  HARNESS LAW LEARNED: `scene.now` FREEZES during storyPause, so never
+  gate a test's dialogue taps on it.
+
 - **2026-08-06 - v0.44.0 (IN PROGRESS): ADVENTURE TOWER, the sixth
   fabric. NOW SEVENTEEN FLOORS + ROOF** (Mark, on seeing the first
   8-floor build: "Way more floors"). The map grew to 36 blocks

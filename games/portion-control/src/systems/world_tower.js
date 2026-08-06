@@ -69,6 +69,12 @@ window.PC = window.PC || {};
   var PAD_T = 96, IH = 832;          // interior top pad + height
   var SHAFT_W = 448;                 // stairwell width
   var JUT = 1408;                    // how far a balcony pokes into the sky
+  // THE ROOF is not a floor band. It is the one big place in the game
+  // (Mark: "the roof is just a large map... realistically sized roof
+  // area, and that's with the final boss"), so it gets its own slab of
+  // world above the stack, wider than the shaft below it - the crown of
+  // the building, open sky on every side.
+  var ROOF_W = 4608, ROOF_H = 3072, ROOF_GAP = 192;
 
   // THE EIGHTEEN. index 0 = F1 (bottom band) ... index 17 = ROOF (top).
   // A real building program bottom to top, so the climb tells you how
@@ -104,11 +110,17 @@ window.PC = window.PC || {};
     var FX0 = this.fx0 = Math.round((this.size - FW) / 2 / CELL) * CELL;
 
     var i, f, top, r;
+    var lastBand = FLOORS.length - 2;               // F17 is the top BAND
     for (i = 0; i < FLOORS.length; i++) {
       f = FLOORS[i];
       top = this.size - (i + 1) * BAND;
       r = { x: FX0, y: top + PAD_T, w: FW, h: IH };
-      if (f.kind === 'roof') { r = { x: FX0 - 384, y: top + 64, w: FW + 768, h: 896 }; }
+      if (f.kind === 'roof') {
+        var below = this.size - (lastBand + 1) * BAND + PAD_T;   // F17 top edge
+        r = { x: Math.round((this.size - ROOF_W) / 2 / CELL) * CELL,
+              y: below - ROOF_GAP - ROOF_H, w: ROOF_W, h: ROOF_H };
+        top = r.y;
+      }
       var rec = {
         i: i, id: f.id, label: f.label, kind: f.kind,
         top: top, rect: r,
@@ -125,11 +137,25 @@ window.PC = window.PC || {};
     for (i = 0; i < this.floors.length - 1; i++) {
       var lo = this.floors[i], hi = this.floors[i + 1];
       var sx = lo.exit === 'E' ? lo.rect.x + lo.rect.w - SHAFT_W : lo.rect.x;
+      // the final stair is CENTRED: the player climbs out of it looking
+      // straight down the roof at what is waiting, not off to one side
+      if (hi.kind === 'roof') {
+        sx = Math.round((hi.rect.x + hi.rect.w / 2 - SHAFT_W / 2) / CELL) * CELL;
+      }
+      var syTop = hi.kind === 'roof' ? hi.rect.y + hi.rect.h : hi.rect.y + hi.rect.h;
       this.shafts.push({
-        from: i, x: sx, y: hi.rect.y + hi.rect.h, w: SHAFT_W,
-        h: lo.rect.y - (hi.rect.y + hi.rect.h),
+        from: i, x: sx, y: syTop, w: SHAFT_W, h: lo.rect.y - syTop,
       });
     }
+    this.roof = this.floors[this.floors.length - 1];
+    // where the confrontation happens: Danny comes up the last stair,
+    // CHOMP waits at the far (north) end under the antenna mast
+    var rr = this.roof.rect, lastShaft = this.shafts[this.shafts.length - 1];
+    // A confrontation is two figures facing each other, close enough
+    // that one shot holds both. 620px apart, dead centre of the roof.
+    this.stairHead = { x: lastShaft.x + lastShaft.w / 2, y: rr.y + rr.h - 150 };
+    this.dannyMark = { x: rr.x + rr.w / 2, y: rr.y + rr.h * 0.74 };
+    this.chompMark = { x: rr.x + rr.w / 2, y: this.dannyMark.y - 640 };
     // the tower footprint: everything inside is STRUCTURE, outside is SKY
     this.foot = { x: FX0 - 192, y: 0, w: FW + 384, h: this.size };
 
@@ -238,10 +264,19 @@ window.PC = window.PC || {};
         // the last landing before the roof: bare, tense, a few benches
         for (j = 0; j < 4; j++) put(i, r.x + 620 + j * 700, mid - 45, 260, 90, 'bench');
       } else if (f.kind === 'roof') {
-        put(i, r.x + 260, r.y + 130, 380, 200, 'ac');
-        put(i, r.x + r.w - 640, r.y + 130, 380, 200, 'ac');
-        put(i, r.x + 260, r.y + r.h - 330, 380, 200, 'ac');
-        put(i, r.x + r.w - 640, r.y + r.h - 330, 380, 200, 'ac');
+        // plant and vents hug the parapet; the middle stays WIDE OPEN
+        // because the middle is the last fight in the game
+        for (j = 0; j < 4; j++) {
+          put(i, r.x + 180 + j * 300, r.y + 150, 200, 150, 'ac');
+          put(i, r.x + r.w - 380 - j * 300, r.y + r.h - 300, 200, 150, 'ac');
+        }
+        put(i, r.x + 160, r.y + r.h * 0.42, 260, 420, 'plant');
+        put(i, r.x + r.w - 420, r.y + r.h * 0.42, 260, 420, 'plant');
+        put(i, r.x + r.w / 2 - 130, r.y + 120, 260, 260, 'mast');   // antenna base
+        for (j = 0; j < 3; j++) {
+          put(i, r.x + 620 + j * 260, r.y + r.h - 560, 120, 120, 'vent');
+          put(i, r.x + r.w - 740 - j * 260, r.y + 520, 120, 120, 'vent');
+        }
       }
     }
     // bucket by floor: the grid build asks this question ~340,000 times
@@ -254,9 +289,17 @@ window.PC = window.PC || {};
 
   // ---- the analytic shape, before quantization ------------------------
   PC.TowerLayout.prototype._analyticOpen = function (x, y) {
+    var i, f, o, list;
+    // THE ROOF sits above the band stack, so band arithmetic can't find
+    // it - one rect test, and it's the cheapest test in the file
+    var rf = this.roof;
+    if (rf && rectHit(rf.rect, x, y)) {
+      list = this.obsBy[rf.i];
+      for (o = 0; o < list.length; o++) if (rectHit(list[o], x, y)) return false;
+      return true;
+    }
     // which band is this? straight arithmetic, no scan
     var bi = Math.floor((this.size - y) / BAND);
-    var i, f, o, list;
     if (bi >= 0 && bi < this.floors.length) {
       f = this.floors[bi];
       if (rectHit(f.rect, x, y) || (f.jut && rectHit(f.jut, x, y))) {
@@ -377,6 +420,10 @@ window.PC = window.PC || {};
         s.push({ x: f.jut.x + f.jut.w / 2, y: f.jut.y - 34,
                  text: 'OPEN  BALCONY', tone: 'warn' });
       }
+      if (f.kind === 'roof') {
+        s.push({ x: r.x + r.w / 2, y: r.y + r.h - 60,
+                 text: 'ROOF ACCESS - NO ENTRY', tone: 'warn' });
+      }
     }
   };
 
@@ -431,6 +478,11 @@ window.PC = window.PC || {};
 
     // ---- 4. EDGES: every boundary gets a real wall or a railing ----
     this._edges(g, cx, cy);
+
+    // ---- 4b. ROOF PLANT: the AC banks, vents and the antenna mast sit
+    // on solid cells, so they live outside the floor clip and get their
+    // own pass - otherwise the roof is a field of anonymous dark boxes.
+    this._roofPlant(g, cx, cy);
 
     // ---- 5. SIGNAGE LAST: nothing may ever occlude a sign ----
     this._signage(g, cx, cy);
@@ -597,7 +649,33 @@ window.PC = window.PC || {};
         g.strokeStyle = COL.glassLite; g.lineWidth = 2; g.globalAlpha = 0.4;
         g.beginPath(); g.moveTo(lx, ly + r.h / 2); g.lineTo(lx + r.w, ly + r.h / 2);
         g.stroke(); g.globalAlpha = 1;
-      } else if (f.kind === 'deck' || f.kind === 'roof' || f.kind === 'obs' || f.kind === 'green') {
+      } else if (f.kind === 'roof') {
+        // A ROOF, not a floor: tar membrane in big welded panels, a
+        // gravel ballast border, and the arena ring painted dead centre
+        // where the last fight happens.
+        g.fillStyle = '#4b4857'; g.fillRect(lx, ly, r.w, r.h);
+        g.strokeStyle = '#3d3a49'; g.lineWidth = 3;
+        for (j = 0; j < r.w; j += 256) {
+          g.beginPath(); g.moveTo(lx + j, ly); g.lineTo(lx + j, ly + r.h); g.stroke();
+        }
+        for (j = 0; j < r.h; j += 256) {
+          g.beginPath(); g.moveTo(lx, ly + j); g.lineTo(lx + r.w, ly + j); g.stroke();
+        }
+        g.fillStyle = '#565364';                       // gravel ballast band
+        for (j = 0; j < 900; j++) {
+          var gx2 = h2(j, 5, 141), gy2 = h2(5, j, 142);
+          var px2 = lx + gx2 * r.w, py2 = ly + gy2 * r.h;
+          var edge = Math.min(gx2, 1 - gx2, gy2, 1 - gy2);
+          if (edge > 0.13) continue;
+          g.fillRect(px2, py2, 5, 5);
+        }
+        var ccx = lx + r.w / 2, ccy = ly + r.h * 0.45;
+        g.strokeStyle = COL.gold; g.globalAlpha = 0.30; g.lineWidth = 8;
+        g.beginPath(); g.arc(ccx, ccy, 620, 0, Math.PI * 2); g.stroke();
+        g.globalAlpha = 0.18; g.lineWidth = 4;
+        g.beginPath(); g.arc(ccx, ccy, 500, 0, Math.PI * 2); g.stroke();
+        g.globalAlpha = 1;
+      } else if (f.kind === 'deck' || f.kind === 'obs' || f.kind === 'green') {
         // outdoor decking boards, carried out onto the balcony
         g.fillStyle = 'rgba(20,18,32,0.30)';
         var dx0 = f.jut ? Math.min(lx, jx) : lx;
@@ -661,6 +739,57 @@ window.PC = window.PC || {};
           g.fillStyle = CD; g.fillRect(lx + T - 16, ly + off, 12, 2);
           g.fillStyle = CL; g.fillRect(lx + T - 19, ly, 3, T);
         }
+      }
+    }
+  };
+
+  PC.TowerLayout.prototype._roofPlant = function (g, cx, cy) {
+    var x0 = cx * CH, y0 = cy * CH;
+    var rf = this.roof;
+    if (!rf) return;
+    var rr = rf.rect;
+    if (rr.x > x0 + CH || rr.x + rr.w < x0 || rr.y > y0 + CH || rr.y + rr.h < y0) return;
+    var list = this.obsBy[rf.i];
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      if (b.x > x0 + CH || b.x + b.w < x0 || b.y > y0 + CH || b.y + b.h < y0) continue;
+      var lx = b.x - x0, ly = b.y - y0;
+      if (b.t === 'ac') {
+        g.fillStyle = COL.steelDark; g.fillRect(lx, ly, b.w, b.h);
+        g.fillStyle = COL.steel; g.fillRect(lx + 6, ly + 6, b.w - 12, b.h - 12);
+        g.strokeStyle = COL.steelLite; g.lineWidth = 2;
+        for (var v = 12; v < b.w - 12; v += 14) {
+          g.beginPath(); g.moveTo(lx + v, ly + 12); g.lineTo(lx + v, ly + b.h - 12); g.stroke();
+        }
+        g.fillStyle = COL.steelLite;                        // fan housing
+        g.beginPath(); g.arc(lx + b.w / 2, ly + b.h / 2, Math.min(b.w, b.h) * 0.24, 0, Math.PI * 2);
+        g.fill();
+      } else if (b.t === 'vent') {
+        g.fillStyle = COL.steelDark; g.fillRect(lx, ly, b.w, b.h);
+        g.fillStyle = '#2a2733';
+        g.beginPath(); g.arc(lx + b.w / 2, ly + b.h / 2, b.w * 0.32, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = COL.steelLite; g.lineWidth = 3;
+        g.strokeRect(lx + 3, ly + 3, b.w - 6, b.h - 6);
+      } else if (b.t === 'plant') {
+        g.fillStyle = COL.steelDark; g.fillRect(lx, ly, b.w, b.h);
+        g.fillStyle = COL.steel; g.fillRect(lx + 8, ly + 8, b.w - 16, b.h - 16);
+        g.fillStyle = COL.steelDark;                        // pipe runs
+        for (var p2 = 24; p2 < b.h - 24; p2 += 40) g.fillRect(lx + 8, ly + p2, b.w - 16, 10);
+      } else if (b.t === 'mast') {
+        // THE ANTENNA: what the Ray climbed. Guy wires, a lattice, and a
+        // light at the top that has been blinking over this city all game
+        g.fillStyle = COL.steelDark;
+        g.fillRect(lx + b.w * 0.18, ly + b.h * 0.18, b.w * 0.64, b.h * 0.64);
+        g.strokeStyle = COL.steelLite; g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(lx, ly + b.h); g.lineTo(lx + b.w / 2, ly);
+        g.lineTo(lx + b.w, ly + b.h); g.stroke();
+        g.beginPath();
+        g.moveTo(lx, ly); g.lineTo(lx + b.w, ly + b.h); g.stroke();
+        g.beginPath();
+        g.moveTo(lx + b.w, ly); g.lineTo(lx, ly + b.h); g.stroke();
+        g.fillStyle = COL.red;
+        g.beginPath(); g.arc(lx + b.w / 2, ly + b.h / 2, 14, 0, Math.PI * 2); g.fill();
       }
     }
   };

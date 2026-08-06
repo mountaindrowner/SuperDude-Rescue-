@@ -447,10 +447,23 @@ PC.Quest.prototype.update = function (dt) {
     return;
   }
   this.box.update(dt);
+  // THE CONFRONTATION owns the roof (v0.45.0). While it runs, objective
+  // logic holds - otherwise a surge ring or a spawn wave would erupt in
+  // the middle of the cutscene. Its dialogue still flows: it plays
+  // through this same box, which updated above.
+  if (scene.confront && scene.confront.armed()) return;
   var px = scene.px, py = scene.py;
   var t = this.targetXY();
 
-  if (o.type === 'clear') {
+  if (o.type === 'arrive') {
+    // ARRIVE (v0.45.0): reaching the place is the whole objective. No
+    // guard swarm, no surge - used where a cutscene owns what happens
+    // next (the Tower roof) and a spawned wave would trample it.
+    var am = this.region.landmark(o.at);
+    if (am && px > am.x && px < am.x + am.w && py > am.y && py < am.y + am.h) {
+      this.finishObjective(o);
+    }
+  } else if (o.type === 'clear') {
     if (this.state === 'travel' && t) {
       var dx = t.x - px, dy = t.y - py;
       if (dx * dx + dy * dy < 220 * 220) {

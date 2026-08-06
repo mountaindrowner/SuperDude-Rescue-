@@ -165,6 +165,8 @@ PC.GameScene.prototype.create = function () {
     ? new PC.Subway(this) : null;
   this.sewerFlow = (this.region && this.region.def.id === 'sewers' && PC.SewerFlow)
     ? new PC.SewerFlow(this) : null;
+  this.confront = (this.region && this.region.def.id === 'tower' && PC.Confront)
+    ? new PC.Confront(this) : null;
   this._zoneSeen = {};
 
   var cam = this.cameras.main;
@@ -673,6 +675,9 @@ PC.GameScene.prototype.update = function (time, delta) {
     this.ground.update(this.cameras.main);
     return;
   }
+  // the roof cutscene must claim the frame BEFORE objective logic does,
+  // or a quest beat arms its wave on the very frame Danny steps up
+  if (this.confront) this.confront.check();
   if (this.quest) this.quest.update(dt);
   if (this.freeRoam) this.freeRoam.update(dt);
   // THE OLD CISTERN (spec Map 5 "loot vault = big TP cache"): first
@@ -704,6 +709,16 @@ PC.GameScene.prototype.update = function (time, delta) {
   // input -> motion, same frame
   this.moveInput.update();
   var v = this.moveInput.vec;
+  // THE CONFRONTATION (v0.45.0): on the Tower roof the stick is taken
+  // away and the cinematic drives the SAME pipeline - so Danny's walk
+  // cycle, facing and footsteps in the cutscene are the ones the player
+  // has had their thumb on all game.
+  if (this.confront) {
+    if (this.confront.armed()) {
+      this.confront.update(dt);
+      v = this.confront.driveVec();
+    }
+  }
   this.moving = (v.x !== 0 || v.y !== 0);
   var spd = PC.PLAYER.SPEED * this.stats.spdMult;
   // sewer zone effects (v0.42.0): spore haze + wading water slow the
@@ -785,7 +800,11 @@ PC.GameScene.prototype.update = function (time, delta) {
 
   // systems
   this.enemies.update(dt, this.px, this.py);
-  for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
+  // guns down during the roof confrontation: Danny does not open fire on
+  // something that is still saying hello (v0.45.0)
+  if (!(this.confront && this.confront.armed())) {
+    for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
+  }
   var self = this;
   this.bullets.update(dt, this.enemies, this._onKillCb);
   this.juice.update(dt);
