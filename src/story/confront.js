@@ -16,6 +16,11 @@
 window.PC = window.PC || {};
 (function () {
 
+  // how far out the camera sits for the fight itself. 0.8 = a 20% wider
+  // view than normal play (Mark: "zoom out ten percent... maybe even
+  // twenty"). One knob, one place.
+  PC.FIGHT_ZOOM = 0.8;
+
   var WALK_SPD = 0.75;               // fraction of normal speed: a walk,
                                      // not a jog - he is out of breath
 
@@ -154,7 +159,12 @@ window.PC = window.PC || {};
     this.done = true;
     this.vec.x = 0; this.vec.y = 0;
     var cam = s.cameras.main;
-    if (this._baseZoom !== undefined) cam.setZoom(this._baseZoom);
+    // do NOT snap back to normal: the fight is played wider than the
+    // rest of the game, and the wide shot eases straight into it
+    if (this._baseZoom !== undefined) {
+      s.baseZoom = this._baseZoom;
+      s.zoomTarget = this._baseZoom * PC.FIGHT_ZOOM;
+    }
     if (s.ui) s.ui.setVisible(true);
     cam.startFollow(s.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
     // hand the roof over: the figure the player was just talking to
@@ -176,89 +186,63 @@ window.PC = window.PC || {};
   };
 
   // =====================================================================
-  // CHOMP, drawn in-world. PLACEHOLDER FIGURE: real PixelLab art is the
-  // next art job (3 phase forms + the powered-down pose). Built from the
-  // silhouette the story needs - a food machine that grew: a big hopper
-  // body, a serving chute for a mouth that reads as a grin, two conveyor
-  // arms, and friendly round eyes. It has to look like it MEANS well.
+  // CHOMP in the world. REAL ART now (v0.47.0 PixelLab batch): three
+  // phase forms plus the powered-down pose, all built from the same
+  // base machine so it is recognisably the same character getting
+  // buried in its own generosity. The art brief was one line - IT MUST
+  // NEVER LOOK EVIL - because the ending only lands if a child feels
+  // sorry for it. Size escalates in code on top of the art, so phase 3
+  // physically towers over phase 1.
   // =====================================================================
+  var PHASE_ART = ['chomp_p1', 'chomp_p1', 'chomp_p2', 'chomp_p3'];
+  var PHASE_SCALE = [1, 1, 1.18, 1.42];
+
   PC.ChompFigure = function (scene, x, y) {
     this.scene = scene;
     this.x = x; this.y = y;
     this.t = 0;
     this.rise = 0;                    // 0 = folded down, 1 = fully risen
-    this.g = scene.add.graphics().setDepth(18);
+    this.phase = 1;
+    this.serving = 0;                 // >0 while the SERVE pose is held
+    this.powered = false;
+    this.flash = 0;
+    this.g = scene.add.graphics().setDepth(4);        // its shadow
+    this.sprite = scene.add.image(x, y, 'atlas', 'chomp_p1_walk_1')
+      .setOrigin(0.5, 0.92).setDepth(18);
   };
 
   PC.ChompFigure.prototype.update = function (dt, state, stateT) {
     this.t += dt;
     var target = (state === 'walk') ? 0 : 1;
     this.rise += (target - this.rise) * Math.min(1, dt * 1.4);
-    var g = this.g, x = this.x, y = this.y, r = this.rise;
-    var bob = Math.sin(this.t * 1.6) * 5 * r;
+    if (this.serving > 0) this.serving -= dt;
+    var r = this.rise, g = this.g;
     g.clear();
-    if (r < 0.02) return;
+    this.sprite.setVisible(r > 0.02);
+    if (r <= 0.02) return;
 
-    var H = 216 * r, W = 176;
-    var top = y - H + bob;
+    var art = PHASE_ART[this.phase] || 'chomp_p1';
+    var frame = this.powered ? 'chomp_down'
+      : this.serving > 0 ? art + '_serve_1'
+      : art + '_walk_' + (1 + (Math.floor(this.t * 2.2) % 2));
+    this.sprite.setFrame(frame);
 
-    // ---- shadow ----
-    g.fillStyle(0x0a0716, 0.45);
-    g.fillEllipse(x, y + 10, W * 1.05, 40);
+    // it breathes; it does not stomp. A gentle bob keeps it alive
+    // without ever reading as a lunge.
+    var bob = this.powered ? 0 : Math.sin(this.t * 1.6) * 5;
+    var sc = (PHASE_SCALE[this.phase] || 1) * r * (this.powered ? 0.86 : 1);
+    this.sprite.setPosition(this.x, this.y + bob).setScale(sc);
+    this.sprite.setAlpha(1);
+    // damage flash, on the same clock the rest of the game uses
+    this.sprite.setTintFill && (this.scene.now < this.flash
+      ? this.sprite.setTintFill(0xffffff) : this.sprite.clearTint());
 
-    // ---- treads ----
-    g.fillStyle(0x3a3746, 1); g.fillRect(x - W / 2, y - 34, W, 34);
-    g.fillStyle(0x2a2733, 1);
-    for (var tr = 0; tr < 7; tr++) g.fillRect(x - W / 2 + 6 + tr * 24, y - 31, 10, 28);
-
-    // ---- hopper body ----
-    g.fillStyle(0x8b88a8, 1);
-    g.fillRoundedRect(x - W / 2, top, W, H - 40, 26);
-    g.fillStyle(0x6d6a8e, 1);
-    g.fillRoundedRect(x - W / 2 + 14, top + 16, W - 28, H - 90, 20);
-    // riveted bands
-    g.fillStyle(0x514e6b, 1);
-    g.fillRect(x - W / 2, top + H * 0.42, W, 12);
-    g.fillRect(x - W / 2, top + H * 0.62, W, 8);
-
-    // ---- the chute: a wide grin ----
-    var my = top + H * 0.60;
-    g.fillStyle(0x15131c, 1);
-    g.fillRoundedRect(x - 60, my, 120, 40, 11);
-    g.fillStyle(0xf2c33c, 0.85);
-    for (var tk = 0; tk < 6; tk++) g.fillRect(x - 51 + tk * 19, my + 3, 12, 11);
-    g.fillStyle(0xa8e04a, 0.55 + 0.2 * Math.sin(this.t * 3));
-    g.fillRect(x - 54, my + 29, 108, 5);
-
-    // ---- eyes: round, lit, and far too cheerful ----
-    var ey = top + H * 0.28;
-    var blink = (Math.sin(this.t * 0.7) > 0.97) ? 0.15 : 1;
-    g.fillStyle(0x15131c, 1);
-    g.fillEllipse(x - 34, ey, 46, 46 * blink);
-    g.fillEllipse(x + 34, ey, 46, 46 * blink);
-    g.fillStyle(0x35d0ff, 1);
-    g.fillEllipse(x - 34, ey, 29, 29 * blink);
-    g.fillEllipse(x + 34, ey, 29, 29 * blink);
-    g.fillStyle(0xffffff, 0.9);
-    g.fillEllipse(x - 27, ey - 7, 10, 10 * blink);
-    g.fillEllipse(x + 41, ey - 7, 10, 10 * blink);
-
-    // ---- conveyor arms, held out like it wants a hug ----
-    var ay = top + H * 0.46;
-    var sway = Math.sin(this.t * 1.1) * 10;
-    g.fillStyle(0x514e6b, 1);
-    g.fillRoundedRect(x - W / 2 - 68, ay + sway, 72, 26, 10);
-    g.fillRoundedRect(x + W / 2 - 4, ay - sway, 72, 26, 10);
-    g.fillStyle(0x8b88a8, 1);
-    g.fillRoundedRect(x - W / 2 - 82, ay + sway - 8, 34, 42, 10);
-    g.fillRoundedRect(x + W / 2 + 48, ay - sway - 8, 34, 42, 10);
-
-    // ---- the Ray, still socketed in its crown ----
-    g.fillStyle(0xe2574c, 0.9);
-    g.fillTriangle(x - 30, top + 6, x + 30, top + 6, x, top - 40);
-    g.fillStyle(0xf2c33c, 0.5 + 0.3 * Math.sin(this.t * 4));
-    g.fillCircle(x, top - 14, 11);
+    g.fillStyle(0x0a0716, 0.42);
+    g.fillEllipse(this.x, this.y + 6, 150 * sc, 42 * sc);
   };
 
-  PC.ChompFigure.prototype.destroy = function () { this.g.destroy(); };
+  PC.ChompFigure.prototype.destroy = function () {
+    this.g.destroy();
+    this.sprite.destroy();
+  };
 })();

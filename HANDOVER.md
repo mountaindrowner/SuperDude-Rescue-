@@ -12,6 +12,47 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.47.0: CHOMP GETS A FACE + THE FIGHT CAMERA.**
+  Mark: "let's work on the CHOMP asset - give it maybe three phases"
+  and "for the CHOMP fight we should zoom the camera out a little bit,
+  maybe ten percent, maybe even twenty, so they can see more of the
+  fight and it feels more cinematic."
+  **THE ART** (PixelLab batch `pl-batch-chomp.py`, 10 generations,
+  1010 left): three phase forms + a SERVE telegraph pose each + the
+  powered-down pose. The art brief was one line - **IT MUST NEVER LOOK
+  EVIL** - because the ending only lands if a child feels sorry for it.
+  So the same round friendly face and serving-chute grin survive all
+  three phases; what escalates is how much FOOD is fused to it and how
+  bright the stolen Ray burns in its crown. `chomp_down` has DARK BLANK
+  EYES - that one frame is the emotional beat of the whole game.
+  Phase scale escalates in code (1.0 / 1.18 / 1.42) on top of the art
+  so phase 3 physically towers.
+  LESSON (cost a debug round): a PNG on disk and a manifest line are
+  NOT enough to get a frame in the game. **PC.ASSETS in assets.js is
+  what the atlas packs** - without a reserved slot CHOMP shipped
+  INVISIBLE, shadow only. Frames are declared there now.
+  ART LESSON: the first batch came back with three near-identical
+  phases because init_image strength 210 locked the silhouette to
+  phase 1. Dropped to 95 and let the DESCRIPTION drive the shape,
+  keeping continuity through the palette remap instead. Escalation is
+  the whole point of phase art - anchor it loosely.
+  **THE CAMERA**: `PC.FIGHT_ZOOM = 0.8` (a 20% wider view) in
+  confront.js - one knob, one place. The brace wide-shot now eases
+  STRAIGHT INTO the fight zoom instead of snapping back, and
+  `scene.zoomTarget` lerps the camera anywhere on demand.
+  The HUD lives in a world-space container pinned to the camera, so a
+  zoom would shrink it - `game.js` now counter-scales `this.ui` by
+  baseZoom/zoom every frame, so the interface holds its real on-screen
+  size at ANY zoom. (That fix is general; it is why the fight can be
+  played wide at all.)
+  Gates: verify-roof-fight 6/6 and verify-confront still green with
+  the real art in, zero page errors.
+  **STILL TO BUILD: CHOMP'S MOVESET.** It currently stands there and
+  takes it. PORTION SERVE (telegraphed plate ring - the serve_1 pose
+  art is already generated for it), THE CONVEYOR (sweeping belt),
+  BUFFET (radial with gaps), SECONDS! (a greatest-hits wave from all
+  five districts). Then the ending/credits.
+
 - **2026-08-06 - v0.46.0: THE LAST FIGHT, part 1 - CHOMP + THE CREW
   DROP-INS.** Mark's design call: "it's Super Dude Danny versus CHOMP,
   and then every now and then one of the crew steps in or flies in and

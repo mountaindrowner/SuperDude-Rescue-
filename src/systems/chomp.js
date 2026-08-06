@@ -49,6 +49,7 @@ window.PC = window.PC || {};
     this.fig = figure || new PC.ChompFigure(scene, x, y);
     this.fig.x = x; this.fig.y = y;
     this.fig.rise = 1;
+    this.fig.phase = 1;
   };
 
   PC.Chomp.prototype.phaseOf = function () {
@@ -67,6 +68,7 @@ window.PC = window.PC || {};
     var p = this.phaseOf();
     if (p !== this.phase && !this.powering) {
       this.phase = p;
+      if (this.fig) this.fig.phase = p;
       if (s.onChompPhase) s.onChompPhase(p);
     }
 

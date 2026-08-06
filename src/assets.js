@@ -120,6 +120,16 @@ window.PC = window.PC || {};
     { k: 'boss_d5_mother_p2', s: 160, c1: P.BERRY, c2: P.CHERRY },
   ];
   BOSSES.forEach(function (b) { creature(b.k, b.s, b.c1, b.c2, 4); });
+  // CHOMP (v0.47.0): three phase forms + the serve telegraph + the
+  // powered-down pose. Declared here because PC.ASSETS is what the atlas
+  // packs - a PNG on disk and a manifest line are NOT enough, the frame
+  // has to have a slot reserved (this cost a debug round: CHOMP shipped
+  // invisible, shadow only, because nothing reserved its frames).
+  ['chomp_p1', 'chomp_p2', 'chomp_p3'].forEach(function (k) {
+    for (var i = 1; i <= 2; i++) add(k + '_walk_' + i, 192, 192, 'creature', P.CLOUD, P.CYAN, i);
+    add(k + '_serve_1', 192, 192, 'creature', P.CLOUD, P.MUSTARD, 1);
+  });
+  add('chomp_down', 192, 192, 'creature', P.STEEL, P.INK, 1);
   // extra per-state boss frame sets (v0.22.0 - boss.js `anims`)
   [['boss_d2_broc_rear', 128, P.MINT, P.LIME],
    ['boss_d2_broc_lunge', 128, P.MINT, P.LIME],

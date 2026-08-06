@@ -168,6 +168,12 @@ PC.GameScene.prototype.create = function () {
   this.confront = (this.region && this.region.def.id === 'tower' && PC.Confront)
     ? new PC.Confront(this) : null;
   this.allies = null;                // built when the roof fight starts
+  // CINEMATIC ZOOM (v0.47.0, Mark: "for the CHOMP fight we should zoom
+  // the camera out a little bit... maybe even twenty percent, so they
+  // can see more of the fight and it feels more cinematic"). The camera
+  // lerps toward zoomTarget; null means leave it alone.
+  this.baseZoom = this.cameras.main.zoom;
+  this.zoomTarget = null;
   this._zoneSeen = {};
 
   var cam = this.cameras.main;
@@ -653,8 +659,20 @@ PC.GameScene.prototype.pickCard = function (card) {
 
 PC.GameScene.prototype.update = function (time, delta) {
   if (this.dead) return;
-  var wv = this.cameras.main.worldView;
+  var cam0 = this.cameras.main;
+  if (this.zoomTarget && Math.abs(cam0.zoom - this.zoomTarget) > 0.0005) {
+    var dz = Math.min(1, (this.game.loop.delta / 1000) * 2.2);
+    cam0.setZoom(cam0.zoom + (this.zoomTarget - cam0.zoom) * dz);
+  }
+  var wv = cam0.worldView;
   this.ui.setPosition(wv.x, wv.y);
+  // the HUD lives in this world-space container, so a camera zoom would
+  // shrink it too. Counter-scale it and the interface holds its real
+  // on-screen size at any zoom.
+  if (this.baseZoom) {
+    var fix = this.baseZoom / cam0.zoom;
+    if (Math.abs(this.ui.scaleX - fix) > 0.001) this.ui.setScale(fix);
+  }
   // Leftovers regen (arsenal expansion): slow trickle, hud at 1Hz
   if (this.stats.regen > 0 && this.hp > 0) {
     var mh = PC.PLAYER.HP + (this.stats.bonusHp || 0);
@@ -952,6 +970,7 @@ PC.GameScene.prototype.onChompPhase = function (p) {
 // of this hook - for now the fight simply stops and hands to the win.
 PC.GameScene.prototype.onChompDown = function () {
   var self = this;
+  this.zoomTarget = this.baseZoom;         // back to normal for the ending
   if (this.allies) this.allies.running = false;
   this.enemies.clearAll();
   this.storyPause = true;
