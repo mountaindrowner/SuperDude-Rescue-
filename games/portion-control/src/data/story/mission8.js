@@ -22,5 +22,13 @@ PC.STORY.missions.finale = {
         { say: { speaker: 'kevin', text: "Steady climb, team." } },
       ],
     },
+    {
+      // THE LAST FIGHT. Nothing spawns it: PC.Confront already put CHOMP
+      // on the roof and set bossSpawned, so this beat exists to hold the
+      // mission open until onBossDown() closes it. Without it the mission
+      // would COMPLETE the moment Danny stepped onto the roof and the
+      // scene would tear down mid-cutscene (caught by verify-roof-fight).
+      type: 'boss', at: 'roof', boss: 'chomp', banner: 'STOP CHOMP',
+    },
   ],
 };
