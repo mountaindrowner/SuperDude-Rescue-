@@ -10,6 +10,12 @@ window.PC = window.PC || {};
 (function () {
   var CH = PC.CHUNK || 512;
 
+  // the painted bridge decks (every 256px) stay dry - no flow over them
+  function onBridge(v) {
+    var m = ((v % 256) + 256) % 256;
+    return m <= 18 || m >= 238;
+  }
+
   PC.SewerFlow = function (scene) {
     this.scene = scene;
     this.g = scene.add.graphics().setDepth(5);   // above floor, below actors
@@ -37,6 +43,7 @@ window.PC = window.PC || {};
       for (t = y0 - SPACING; t < y1 + SPACING; t += SPACING) {
         var dy = t + phase;
         if (dy < y0 || dy > y1) continue;
+        if (onBridge(dy)) continue;              // dry stone crossing
         var bx = vx + L._bendV(c, dy);
         if (!L.carvedAt(bx, dy)) continue;
         var wob = Math.sin(now * 3 + c + dy * 0.02);
@@ -54,6 +61,7 @@ window.PC = window.PC || {};
       for (t = x0 - SPACING; t < x1 + SPACING; t += SPACING) {
         var dx = t + phase2;
         if (dx < x0 || dx > x1) continue;
+        if (onBridge(dx)) continue;
         var by = vy + L._bendH(r, dx);
         if (!L.carvedAt(dx, by)) continue;
         var wob2 = Math.sin(now * 3 + r + dx * 0.02);
@@ -74,6 +82,7 @@ window.PC = window.PC || {};
         var sx2 = cat.x + ((k * 731 + now * 18) % cat.w);
         var sy2 = cat.y + ((k * 977) % cat.h);
         if (sx2 < x0 || sx2 > x1 || sy2 < y0 || sy2 > y1) continue;
+        if (L.carvedAt(sx2, sy2)) continue;      // planks stay dry (v0.43.0)
         var tw2 = 0.5 + 0.5 * Math.sin(now * 2.2 + k * 1.7);
         g.fillStyle(0x35d0ff, 0.10 + 0.12 * tw2);
         g.fillRect(sx2, sy2, 10 + 8 * tw2, 2);

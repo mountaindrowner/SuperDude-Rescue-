@@ -165,7 +165,7 @@ PC.GameScene.prototype.create = function () {
     ? new PC.Subway(this) : null;
   this.sewerFlow = (this.region && this.region.def.id === 'sewers' && PC.SewerFlow)
     ? new PC.SewerFlow(this) : null;
-  this._zoneKind = null;
+  this._zoneSeen = {};
 
   var cam = this.cameras.main;
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
@@ -713,11 +713,15 @@ PC.GameScene.prototype.update = function (time, delta) {
     this._zone = this.region.layout.zoneEffectAt(this.px, this.py);
     if (this._zone) {
       spd *= this._zone.slow;
-      if (this._zoneKind !== this._zone.kind) {
-        this._zoneKind = this._zone.kind;
-        this.floatText(this._zone.kind === 'spore' ? 'THICK SPORES...' : 'WADING...', 0xa8e04a);
+      // ONCE PER RUN per kind (v0.43.0) - the gutter drains are thin, so
+      // a per-entry label would flicker every few steps down a corridor
+      this._zoneSeen = this._zoneSeen || {};
+      if (!this._zoneSeen[this._zone.kind]) {
+        this._zoneSeen[this._zone.kind] = 1;
+        this.floatText(this._zone.kind === 'spore' ? 'THICK SPORES...' : 'WADING...',
+          this._zone.kind === 'spore' ? 0xa8e04a : 0x35d0ff);
       }
-    } else this._zoneKind = null;
+    }
   }
   if (this.moving) {
     this.px += v.x * spd * dt;
