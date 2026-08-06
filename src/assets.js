@@ -125,11 +125,15 @@ window.PC = window.PC || {};
   // packs - a PNG on disk and a manifest line are NOT enough, the frame
   // has to have a slot reserved (this cost a debug round: CHOMP shipped
   // invisible, shadow only, because nothing reserved its frames).
+  // 320x192: CHOMP is WIDE. Mark: "he's not enough of a stationary
+  // machine" - the first pass was a little robot with legs, which reads
+  // as something that walks at you. It is an appliance bolted to the
+  // roof now, so the frame is 5:3, not square.
   ['chomp_p1', 'chomp_p2', 'chomp_p3'].forEach(function (k) {
-    for (var i = 1; i <= 2; i++) add(k + '_walk_' + i, 192, 192, 'creature', P.CLOUD, P.CYAN, i);
-    add(k + '_serve_1', 192, 192, 'creature', P.CLOUD, P.MUSTARD, 1);
+    for (var i = 1; i <= 2; i++) add(k + '_walk_' + i, 320, 192, 'creature', P.CLOUD, P.CYAN, i);
+    add(k + '_serve_1', 320, 192, 'creature', P.CLOUD, P.MUSTARD, 1);
   });
-  add('chomp_down', 192, 192, 'creature', P.STEEL, P.INK, 1);
+  add('chomp_down', 320, 192, 'creature', P.STEEL, P.INK, 1);
   // extra per-state boss frame sets (v0.22.0 - boss.js `anims`)
   [['boss_d2_broc_rear', 128, P.MINT, P.LIME],
    ['boss_d2_broc_lunge', 128, P.MINT, P.LIME],

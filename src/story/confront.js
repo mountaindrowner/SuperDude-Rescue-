@@ -195,7 +195,11 @@ window.PC = window.PC || {};
   // physically towers over phase 1.
   // =====================================================================
   var PHASE_ART = ['chomp_p1', 'chomp_p1', 'chomp_p2', 'chomp_p3'];
-  var PHASE_SCALE = [1, 1, 1.18, 1.42];
+  // the art is 320px wide and the fight camera shows ~250 world px, so a
+  // 1.0 scale would be wider than the screen. These land phase 1 at ~70%
+  // of the frame and phase 3 filling it, which is the escalation the
+  // stationary art deliberately does NOT do on its own.
+  var PHASE_SCALE = [0.65, 0.65, 0.75, 0.86];
 
   PC.ChompFigure = function (scene, x, y) {
     this.scene = scene;
@@ -208,7 +212,7 @@ window.PC = window.PC || {};
     this.flash = 0;
     this.g = scene.add.graphics().setDepth(4);        // its shadow
     this.sprite = scene.add.image(x, y, 'atlas', 'chomp_p1_walk_1')
-      .setOrigin(0.5, 0.92).setDepth(18);
+      .setOrigin(0.5, 0.95).setDepth(18);      // it stands on its base plate
   };
 
   PC.ChompFigure.prototype.update = function (dt, state, stateT) {
@@ -227,9 +231,11 @@ window.PC = window.PC || {};
       : art + '_walk_' + (1 + (Math.floor(this.t * 2.2) % 2));
     this.sprite.setFrame(frame);
 
-    // it breathes; it does not stomp. A gentle bob keeps it alive
-    // without ever reading as a lunge.
-    var bob = this.powered ? 0 : Math.sin(this.t * 1.6) * 5;
+    // a MACHINE does not bob up and down like a creature - it hums. A
+    // tiny vertical shiver at machine frequency, an order of magnitude
+    // smaller than a footstep, keeps it alive without it ever looking
+    // like something that could walk.
+    var bob = this.powered ? 0 : Math.sin(this.t * 9) * 1.2;
     var sc = (PHASE_SCALE[this.phase] || 1) * r * (this.powered ? 0.86 : 1);
     this.sprite.setPosition(this.x, this.y + bob).setScale(sc);
     this.sprite.setAlpha(1);
@@ -238,7 +244,7 @@ window.PC = window.PC || {};
       ? this.sprite.setTintFill(0xffffff) : this.sprite.clearTint());
 
     g.fillStyle(0x0a0716, 0.42);
-    g.fillEllipse(this.x, this.y + 6, 150 * sc, 42 * sc);
+    g.fillEllipse(this.x, this.y + 4, 300 * sc, 46 * sc);
   };
 
   PC.ChompFigure.prototype.destroy = function () {
