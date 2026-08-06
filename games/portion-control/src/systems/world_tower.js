@@ -62,21 +62,36 @@ window.PC = window.PC || {};
   };
 
   var BAND = 1024;                   // one floor's slice of the map
-  var FX0 = 2304, FW = 4608;         // interior x window
+  var FW = 3584;                     // interior width (floors got NARROWER
+                                     // as the tower got taller - 17 floors
+                                     // of a 9-screen hall is a slog; 7
+                                     // screens is a brisk crossing)
   var PAD_T = 96, IH = 832;          // interior top pad + height
   var SHAFT_W = 448;                 // stairwell width
   var JUT = 1408;                    // how far a balcony pokes into the sky
 
-  // THE NINE. index 0 = F1 (bottom band) ... index 8 = ROOF (top band).
+  // THE EIGHTEEN. index 0 = F1 (bottom band) ... index 17 = ROOF (top).
+  // A real building program bottom to top, so the climb tells you how
+  // high you are without a single number: you start in a marble lobby
+  // and end up in the plant rooms and the penthouse.
   var FLOORS = [
-    { id: 'f1', label: 'F1  MAIN LOBBY',        kind: 'lobby'   },
-    { id: 'f2', label: 'F2  OFFICES',           kind: 'offices' },
-    { id: 'f3', label: 'F3  FOOD COURT',        kind: 'food'    },
-    { id: 'f4', label: 'F4  MECHANICAL',        kind: 'mech'    },
-    { id: 'f5', label: 'F5  SKY DECK',          kind: 'deck',   jut: 1 },
-    { id: 'f6', label: 'F6  ATRIUM',            kind: 'atrium'  },
-    { id: 'f7', label: 'F7  SERVER FLOOR',      kind: 'servers' },
-    { id: 'f8', label: 'F8  OBSERVATION',       kind: 'obs',    jut: -1 },
+    { id: 'f1',  label: 'F1  MAIN LOBBY',       kind: 'lobby'   },
+    { id: 'f2',  label: 'F2  SECURITY & MAIL',  kind: 'mail'    },
+    { id: 'f3',  label: 'F3  FOOD COURT',       kind: 'food'    },
+    { id: 'f4',  label: 'F4  OFFICES',          kind: 'offices' },
+    { id: 'f5',  label: 'F5  MECHANICAL',       kind: 'mech'    },
+    { id: 'f6',  label: 'F6  ARCHIVE',          kind: 'archive' },
+    { id: 'f7',  label: 'F7  SKY DECK',         kind: 'deck',   jut: 1 },
+    { id: 'f8',  label: 'F8  ATRIUM',           kind: 'atrium'  },
+    { id: 'f9',  label: 'F9  ACN STUDIO',       kind: 'studio'  },
+    { id: 'f10', label: 'F10 PLANT ROOM',       kind: 'mech'    },
+    { id: 'f11', label: 'F11 GREENHOUSE',       kind: 'green',  jut: 1 },
+    { id: 'f12', label: 'F12 SERVER FLOOR',     kind: 'servers' },
+    { id: 'f13', label: 'F13 EXECUTIVE',        kind: 'exec'    },
+    { id: 'f14', label: 'F14 OBSERVATION',      kind: 'obs',    jut: -1 },
+    { id: 'f15', label: 'F15 ANTENNA PLANT',    kind: 'antenna' },
+    { id: 'f16', label: 'F16 PENTHOUSE',        kind: 'pent'    },
+    { id: 'f17', label: 'F17 SKY LOBBY',        kind: 'skylob'  },
     { id: 'roof', label: 'ROOFTOP',             kind: 'roof'    },
   ];
 
@@ -86,13 +101,14 @@ window.PC = window.PC || {};
     this.blocks = def.blocks || 18;
     this.size = this.blocks * CH;
     this.floors = [];
+    var FX0 = this.fx0 = Math.round((this.size - FW) / 2 / CELL) * CELL;
 
     var i, f, top, r;
     for (i = 0; i < FLOORS.length; i++) {
       f = FLOORS[i];
       top = this.size - (i + 1) * BAND;
       r = { x: FX0, y: top + PAD_T, w: FW, h: IH };
-      if (f.kind === 'roof') { r = { x: FX0 - 512, y: top + 64, w: FW + 1024, h: 896 }; }
+      if (f.kind === 'roof') { r = { x: FX0 - 384, y: top + 64, w: FW + 768, h: 896 }; }
       var rec = {
         i: i, id: f.id, label: f.label, kind: f.kind,
         top: top, rect: r,
@@ -125,92 +141,138 @@ window.PC = window.PC || {};
     this.tower = { floors: this.floors, shafts: this.shafts, foot: this.foot };
   };
 
-  // ---- per-floor furniture: the thing that makes F2 not F7 ------------
+  // ---- per-floor furniture: the thing that makes F4 not F12 -----------
+  // Seventeen floors need seventeen silhouettes, so each kind is its own
+  // generator. Everything is authored relative to the floor rect, so
+  // widening or restacking the tower never breaks a room.
   PC.TowerLayout.prototype._buildObstacles = function () {
     var obs = this.obs = [];
-    var i, j, k, f, r, x, y;
+    var self = this;
+    var i, j, k, f, r, x, mid;
+    function put(fi, x, y, w, h, t) { obs.push({ f: fi, x: x, y: y, w: w, h: h, t: t }); }
+
     for (i = 0; i < this.floors.length; i++) {
-      f = this.floors[i]; r = f.rect;
-      var mid = r.y + r.h / 2;
-      // structural columns: the repeated motif that says BUILDING. Kept
-      // off the stair ends so a doorway is never plugged.
-      if (f.kind !== 'roof') {
-        for (j = 1; j <= 6; j++) {
-          x = r.x + (r.w * j) / 7;
-          obs.push({ f: i, x: x - 40, y: r.y + 168, w: 80, h: 80, t: 'col' });
-          obs.push({ f: i, x: x - 40, y: r.y + r.h - 248, w: 80, h: 80, t: 'col' });
+      f = this.floors[i]; r = f.rect; mid = r.y + r.h / 2;
+      // per-floor jitter: two MECHANICAL floors or two rack floors must
+      // not be identical twins, or the climb stops feeling like height
+      var jit = Math.round((h2(i, 1, 71) - 0.5) * 180 / CELL) * CELL;
+      var jit2 = Math.round((h2(i, 2, 72) - 0.5) * 120 / CELL) * CELL;
+      var skip = 2 + Math.floor(h2(i, 3, 73) * 2);        // which bay is open
+
+      // structural columns: the repeated motif that says BUILDING, and
+      // the thing that makes a wide room fightable instead of empty.
+      if (f.kind !== 'roof' && f.kind !== 'atrium') {
+        for (j = 1; j <= 5; j++) {
+          x = r.x + (r.w * j) / 6;
+          put(i, x - 36, r.y + 150, 72, 72, 'col');
+          put(i, x - 36, r.y + r.h - 222, 72, 72, 'col');
         }
       }
+
       if (f.kind === 'lobby') {
-        obs.push({ f: i, x: r.x + 1100, y: mid - 88, w: 720, h: 176, t: 'desk' });
-        for (j = 0; j < 4; j++) {
-          obs.push({ f: i, x: r.x + 2500 + j * 460, y: mid - 300, w: 150, h: 150, t: 'planter' });
-          obs.push({ f: i, x: r.x + 2730 + j * 460, y: mid + 150, w: 150, h: 150, t: 'planter' });
+        put(i, r.x + 820, mid - 84, 640, 168, 'desk');
+        for (j = 0; j < 3; j++) {
+          put(i, r.x + 1900 + j * 480, mid - 300, 140, 140, 'planter');
+          put(i, r.x + 2100 + j * 480, mid + 160, 140, 140, 'planter');
         }
-      } else if (f.kind === 'offices') {
-        // CUBICLE MAZE: short wall runs that break sight lines
-        for (j = 0; j < 7; j++) {
+      } else if (f.kind === 'mail') {
+        // pigeonhole banks + a security counter you funnel past
+        for (j = 0; j < 5; j++) put(i, r.x + 380 + jit + j * 620, r.y + 150, 300, 120, 'rack');
+        put(i, r.x + r.w / 2 - 420, mid + 80, 840, 130, 'desk');
+      } else if (f.kind === 'food') {
+        for (j = 0; j < 3; j++) put(i, r.x + 380 + j * 1080, r.y + 150, 560, 150, 'kiosk');
+        for (j = 0; j < 5; j++) put(i, r.x + 440 + j * 660, r.y + r.h - 300, 180, 130, 'table');
+      } else if (f.kind === 'offices' || f.kind === 'exec') {
+        var cw = f.kind === 'exec' ? 460 : 340;        // exec = bigger rooms
+        for (j = 0; j < 6; j++) {
           for (k = 0; k < 3; k++) {
-            x = r.x + 340 + j * 600; y = r.y + 190 + k * 230;
-            if ((j + k) % 3 === 2) continue;              // gaps to weave
-            obs.push({ f: i, x: x, y: y, w: 380, h: 46, t: 'cube' });
-            if (k % 2 === 0) obs.push({ f: i, x: x, y: y, w: 46, h: 190, t: 'cube' });
+            x = r.x + 300 + jit2 + j * 540; var y2 = r.y + 190 + k * 230;
+            if ((j + k + i) % 3 === 2) continue;        // gaps to weave
+            put(i, x, y2, cw, 46, 'cube');
+            if (k % 2 === 0) put(i, x, y2, 46, 190, 'cube');
           }
         }
-      } else if (f.kind === 'food') {
-        for (j = 0; j < 4; j++) {
-          obs.push({ f: i, x: r.x + 420 + j * 1080, y: r.y + 150, w: 620, h: 150, t: 'kiosk' });
+      } else if (f.kind === 'mech' || f.kind === 'antenna') {
+        // heavy plant in the corners, clear center: a boss can live here
+        var flip = (i % 2) ? 1 : 0;                     // F10 is not F5
+        put(i, r.x + 240, r.y + 180 + flip * 40, 540, 250 - flip * 60, 'plant');
+        put(i, r.x + 240 + flip * 320, r.y + r.h - 430, 540, 250, 'plant');
+        put(i, r.x + r.w - 780 - flip * 320, r.y + 180, 540, 250, 'plant');
+        put(i, r.x + r.w - 780, r.y + r.h - 430 - flip * 40, 540, 250 - flip * 60, 'plant');
+        put(i, r.x + r.w / 2 - 100, r.y + 140, 200, 110, 'duct');
+        put(i, r.x + r.w / 2 - 100, r.y + r.h - 250, 200, 110, 'duct');
+      } else if (f.kind === 'archive') {
+        for (j = 0; j < 8; j++) {
+          x = r.x + 240 + jit + j * 400;
+          if (j % 4 === skip) continue;                   // an open aisle
+          put(i, x, r.y + 170, 130, 260, 'rack');
+          put(i, x, r.y + r.h - 430, 130, 260, 'rack');
         }
-        for (j = 0; j < 6; j++) {
-          obs.push({ f: i, x: r.x + 500 + j * 700, y: r.y + r.h - 300, w: 190, h: 130, t: 'table' });
-        }
-      } else if (f.kind === 'mech') {
-        // FRANK MK-II's room: heavy plant around a clear center
-        obs.push({ f: i, x: r.x + 280, y: r.y + 190, w: 620, h: 260, t: 'plant' });
-        obs.push({ f: i, x: r.x + 280, y: r.y + r.h - 450, w: 620, h: 260, t: 'plant' });
-        obs.push({ f: i, x: r.x + r.w - 900, y: r.y + 190, w: 620, h: 260, t: 'plant' });
-        obs.push({ f: i, x: r.x + r.w - 900, y: r.y + r.h - 450, w: 620, h: 260, t: 'plant' });
-        obs.push({ f: i, x: r.x + r.w / 2 - 110, y: r.y + 150, w: 220, h: 120, t: 'duct' });
-        obs.push({ f: i, x: r.x + r.w / 2 - 110, y: r.y + r.h - 270, w: 220, h: 120, t: 'duct' });
       } else if (f.kind === 'deck') {
-        for (j = 0; j < 5; j++) {
-          obs.push({ f: i, x: r.x + 700 + j * 780, y: mid - 70, w: 210, h: 140, t: 'planter' });
-        }
+        for (j = 0; j < 4; j++) put(i, r.x + 620 + j * 720, mid - 66, 190, 132, 'planter');
       } else if (f.kind === 'atrium') {
         // THE LIGHT WELL: a hole through the middle. You walk the ring.
-        obs.push({ f: i, x: r.x + r.w / 2 - 1180, y: r.y + 200, w: 2360, h: r.h - 400, t: 'void' });
+        put(i, r.x + r.w / 2 - 980, r.y + 200, 1960, r.h - 400, 'void');
+      } else if (f.kind === 'studio') {
+        // ACN news set: the desk, the lighting rigs, a control booth
+        put(i, r.x + 700, mid - 90, 620, 180, 'desk');
+        put(i, r.x + r.w - 900, r.y + 170, 660, 250, 'booth');
+        for (j = 0; j < 5; j++) put(i, r.x + 420 + j * 500, r.y + r.h - 280, 90, 90, 'light');
+      } else if (f.kind === 'green') {
+        // Vic's kind of room: planting beds in rows, glass on the jut
+        for (j = 0; j < 6; j++) {
+          put(i, r.x + 300 + jit2 + j * 540, r.y + 180, 380, 110, 'bed');
+          put(i, r.x + 300 + jit2 + j * 540, r.y + r.h - 290, 380, 110, 'bed');
+        }
       } else if (f.kind === 'servers') {
-        for (j = 0; j < 9; j++) {
-          x = r.x + 300 + j * 470;
-          obs.push({ f: i, x: x, y: r.y + 170, w: 150, h: 250, t: 'rack' });
-          obs.push({ f: i, x: x, y: r.y + r.h - 420, w: 150, h: 250, t: 'rack' });
+        for (j = 0; j < 7; j++) {
+          x = r.x + 260 + jit + j * 460;
+          if (j % 4 === skip) continue;                   // an open aisle
+          put(i, x, r.y + 170, 140, 250, 'rack');
+          put(i, x, r.y + r.h - 420, 140, 250, 'rack');
         }
-      } else if (f.kind === 'obs') {
-        obs.push({ f: i, x: r.x + 900, y: mid - 90, w: 900, h: 180, t: 'bar' });
-        for (j = 0; j < 4; j++) {
-          obs.push({ f: i, x: r.x + 2600 + j * 500, y: mid - 240, w: 160, h: 160, t: 'lounge' });
-        }
+      } else if (f.kind === 'obs' || f.kind === 'pent') {
+        put(i, r.x + 700, mid - 85, 800, 170, 'bar');
+        for (j = 0; j < 3; j++) put(i, r.x + 2000 + j * 460, mid - 230, 150, 150, 'lounge');
+      } else if (f.kind === 'skylob') {
+        // the last landing before the roof: bare, tense, a few benches
+        for (j = 0; j < 4; j++) put(i, r.x + 620 + j * 700, mid - 45, 260, 90, 'bench');
       } else if (f.kind === 'roof') {
-        obs.push({ f: i, x: r.x + 300, y: r.y + 140, w: 420, h: 210, t: 'ac' });
-        obs.push({ f: i, x: r.x + r.w - 720, y: r.y + 140, w: 420, h: 210, t: 'ac' });
-        obs.push({ f: i, x: r.x + 300, y: r.y + r.h - 350, w: 420, h: 210, t: 'ac' });
-        obs.push({ f: i, x: r.x + r.w - 720, y: r.y + r.h - 350, w: 420, h: 210, t: 'ac' });
+        put(i, r.x + 260, r.y + 130, 380, 200, 'ac');
+        put(i, r.x + r.w - 640, r.y + 130, 380, 200, 'ac');
+        put(i, r.x + 260, r.y + r.h - 330, 380, 200, 'ac');
+        put(i, r.x + r.w - 640, r.y + r.h - 330, 380, 200, 'ac');
       }
     }
+    // bucket by floor: the grid build asks this question ~340,000 times
+    // on an 18-band tower, so it must not be a linear scan of everything
+    this.obsBy = [];
+    for (i = 0; i < this.floors.length; i++) this.obsBy.push([]);
+    for (i = 0; i < obs.length; i++) this.obsBy[obs[i].f].push(obs[i]);
+    void self;
   };
 
   // ---- the analytic shape, before quantization ------------------------
   PC.TowerLayout.prototype._analyticOpen = function (x, y) {
-    var i, f;
-    for (i = 0; i < this.floors.length; i++) {
-      f = this.floors[i];
-      var inside = rectHit(f.rect, x, y) || (f.jut && rectHit(f.jut, x, y));
-      if (!inside) continue;
-      for (var o = 0; o < this.obs.length; o++) {
-        var b = this.obs[o];
-        if (b.f !== i) continue;
-        if (rectHit(b, x, y)) return false;
+    // which band is this? straight arithmetic, no scan
+    var bi = Math.floor((this.size - y) / BAND);
+    var i, f, o, list;
+    if (bi >= 0 && bi < this.floors.length) {
+      f = this.floors[bi];
+      if (rectHit(f.rect, x, y) || (f.jut && rectHit(f.jut, x, y))) {
+        list = this.obsBy[bi];
+        for (o = 0; o < list.length; o++) if (rectHit(list[o], x, y)) return false;
+        return true;
       }
+    }
+    // the roof band is taller than its rect; neighbours can overlap the
+    // slab, so check the two adjacent bands before giving up
+    for (i = bi - 1; i <= bi + 1; i++) {
+      if (i < 0 || i >= this.floors.length || i === bi) continue;
+      f = this.floors[i];
+      if (!(rectHit(f.rect, x, y) || (f.jut && rectHit(f.jut, x, y)))) continue;
+      list = this.obsBy[i];
+      for (o = 0; o < list.length; o++) if (rectHit(list[o], x, y)) return false;
       return true;
     }
     for (i = 0; i < this.shafts.length; i++) {
@@ -462,10 +524,14 @@ window.PC = window.PC || {};
   // enough that F3 is never mistaken for F7, quiet enough to read as a
   // room and not a texture.
   var WASH = {
-    lobby:  'rgba(242,195,60,0.10)', offices: 'rgba(139,136,168,0.08)',
-    food:   'rgba(226,87,76,0.10)',  mech:    'rgba(242,195,60,0.09)',
+    lobby:  'rgba(242,195,60,0.10)', mail:    'rgba(139,136,168,0.10)',
+    food:   'rgba(226,87,76,0.10)',  offices: 'rgba(139,136,168,0.07)',
+    mech:   'rgba(242,195,60,0.09)', archive: 'rgba(176,138,90,0.11)',
     deck:   'rgba(53,208,255,0.10)', atrium:  'rgba(168,224,74,0.09)',
-    servers:'rgba(46,143,176,0.12)', obs:     'rgba(53,208,255,0.09)',
+    studio: 'rgba(255,158,203,0.10)', green:  'rgba(168,224,74,0.14)',
+    servers:'rgba(46,143,176,0.12)', exec:    'rgba(199,160,113,0.10)',
+    obs:    'rgba(53,208,255,0.09)', antenna: 'rgba(46,143,176,0.09)',
+    pent:   'rgba(242,195,60,0.12)', skylob:  'rgba(139,136,168,0.05)',
     roof:   'rgba(226,87,76,0.08)',
   };
   PC.TowerLayout.prototype._dressFloors = function (g, cx, cy) {
@@ -478,7 +544,27 @@ window.PC = window.PC || {};
       g.fillStyle = WASH[f.kind] || 'rgba(0,0,0,0)';
       g.fillRect(lx - JUT, ly, r.w + JUT * 2, r.h);
 
-      if (f.kind === 'lobby' || f.kind === 'obs') {
+      if (f.kind === 'studio') {
+        // studio floor: taped marks and a lit set circle
+        g.strokeStyle = COL.gold; g.lineWidth = 3; g.globalAlpha = 0.55;
+        g.beginPath(); g.arc(lx + 1010, ly + r.h / 2, 300, 0, Math.PI * 2); g.stroke();
+        g.globalAlpha = 1;
+        g.fillStyle = 'rgba(255,158,203,0.10)';
+        g.fillRect(lx + 600, ly + 120, 900, r.h - 240);
+      } else if (f.kind === 'green') {
+        // soil aisles between the beds
+        g.fillStyle = 'rgba(60,44,26,0.35)';
+        for (j = 0; j < 6; j++) g.fillRect(lx + 300 + j * 540, ly + 170, 380, r.h - 340);
+      } else if (f.kind === 'archive' || f.kind === 'mail') {
+        g.fillStyle = 'rgba(176,138,90,0.08)';
+        g.fillRect(lx, ly + 140, r.w, r.h - 280);
+        g.strokeStyle = COL.seam; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(lx, ly + r.h / 2); g.lineTo(lx + r.w, ly + r.h / 2); g.stroke();
+      } else if (f.kind === 'skylob') {
+        // bare stone and one long light strip: the calm before the roof
+        g.fillStyle = 'rgba(255,255,255,0.06)';
+        g.fillRect(lx + 120, ly + r.h / 2 - 8, r.w - 240, 16);
+      } else if (f.kind === 'lobby' || f.kind === 'obs' || f.kind === 'pent') {
         // a runner carpet down the middle of the room
         g.fillStyle = COL.carpet;
         g.fillRect(lx + 200, ly + r.h / 2 - 150, r.w - 400, 300);
@@ -490,7 +576,7 @@ window.PC = window.PC || {};
         g.fillRect(lx, ly + 100, r.w, 240);
         g.fillStyle = COL.gold; g.globalAlpha = 0.35;
         g.fillRect(lx, ly + 340, r.w, 4); g.globalAlpha = 1;
-      } else if (f.kind === 'mech') {
+      } else if (f.kind === 'mech' || f.kind === 'antenna') {
         g.fillStyle = COL.gold; g.globalAlpha = 0.55;
         for (j = 0; j < r.w; j += 44) {                 // hazard chevrons
           g.beginPath();
@@ -511,7 +597,7 @@ window.PC = window.PC || {};
         g.strokeStyle = COL.glassLite; g.lineWidth = 2; g.globalAlpha = 0.4;
         g.beginPath(); g.moveTo(lx, ly + r.h / 2); g.lineTo(lx + r.w, ly + r.h / 2);
         g.stroke(); g.globalAlpha = 1;
-      } else if (f.kind === 'deck' || f.kind === 'roof' || f.kind === 'obs') {
+      } else if (f.kind === 'deck' || f.kind === 'roof' || f.kind === 'obs' || f.kind === 'green') {
         // outdoor decking boards, carried out onto the balcony
         g.fillStyle = 'rgba(20,18,32,0.30)';
         var dx0 = f.jut ? Math.min(lx, jx) : lx;

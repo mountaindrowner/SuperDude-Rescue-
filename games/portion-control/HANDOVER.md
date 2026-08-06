@@ -13,7 +13,24 @@
 ## WHERE WE ARE (latest first)
 
 - **2026-08-06 - v0.44.0 (IN PROGRESS): ADVENTURE TOWER, the sixth
-  fabric.** Mark: "Now let's begin building the final map." Design
+  fabric. NOW SEVENTEEN FLOORS + ROOF** (Mark, on seeing the first
+  8-floor build: "Way more floors"). The map grew to 36 blocks
+  (18432px) so every band stays a full 1024px tall, and interiors
+  NARROWED 4608 -> 3584 because seventeen 9-screen halls would be a
+  slog. Real building program bottom to top so the climb tells you
+  your height without a number: LOBBY / SECURITY & MAIL / FOOD COURT
+  / OFFICES / MECHANICAL / ARCHIVE / SKY DECK* / ATRIUM / ACN STUDIO
+  / PLANT ROOM / GREENHOUSE* / SERVER FLOOR / EXECUTIVE /
+  OBSERVATION* / ANTENNA PLANT / PENTHOUSE / SKY LOBBY / ROOFTOP
+  (* = balcony out over the city). Same-kind floors are jittered and
+  mirrored per index so F10 is never F5 and F12 is never F6.
+  PERF: the grid build buckets obstacles per floor and finds the band
+  by arithmetic, so a 4x-bigger map builds in **30ms** (the sewers
+  take 36ms). Re-verified: 12554/12554 cells reachable, 92/92 PASS.
+  LENGTH WATCH: 17 crossings of 3584px is ~5-6 min of pure walking
+  before any fighting, so the finale now runs ~12-15 min rather than
+  the 8-10 agreed. Most floors must therefore be TRANSIT with only
+  ~7 objective beats, and the checkpoint heals matter more. Mark: "Now let's begin building the final map." Design
   decided with him: ONE mission, 8 floors + rooftop, ~8-10 min, mid
   checkpoint after Frank Mk-II; the rescued heroes escort ONE AT A
   TIME, handing off at each stairwell; the two exterior floors are
