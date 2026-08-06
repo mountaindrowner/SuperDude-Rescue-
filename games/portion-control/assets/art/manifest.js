@@ -1,6 +1,16 @@
 // manifest.js - real art in assets/art/ as <key>.png (PixelLab batches).
 window.PC = window.PC || {};
 PC.ART_MANIFEST = [
+  'chomp_p1_walk_1',
+  'chomp_p1_walk_2',
+  'chomp_p1_serve_1',
+  'chomp_p2_walk_1',
+  'chomp_p2_walk_2',
+  'chomp_p2_serve_1',
+  'chomp_p3_walk_1',
+  'chomp_p3_walk_2',
+  'chomp_p3_serve_1',
+  'chomp_down',
   'boss_d1_frank_walk_1',
   'boss_d1_frank_walk_2',
   'boss_d1_frank_walk_3',
