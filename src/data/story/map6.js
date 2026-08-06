@@ -1,11 +1,11 @@
 // map6.js - ADVENTURE TOWER (MAP 6, the finale).
-// fabric 'tower' -> PC.TowerLayout. Unlike the other five maps, the
-// landmark rects here are NOT authored geometry - the layout engine
-// owns the nine floor bands and hands them back. These entries exist so
-// the quest system can target a floor by id ('f3', 'roof', ...); the
-// engine overwrites their rects in Region so paint and targeting agree.
-// c0/r0/c1/r1 mirror the bands anyway (BAND 1024 = 2 blocks tall) so
-// anything reading the def raw still lands on the right floor.
+// fabric 'tower' -> PC.TowerLayout. SEVENTEEN FLOORS AND A ROOF (Mark:
+// "way more floors") - the map grew to 36 blocks (18432px) so every
+// band stays a full 1024px tall, and the interiors NARROWED to 3584 so
+// a seventeen-floor climb is brisk instead of a slog.
+// The landmark rects here are not authored geometry: the layout engine
+// owns the bands and Region adopts its rects, so 'go to F12' targets
+// the painted floor. The c0/r0/c1/r1 below mirror the bands anyway.
 window.PC = window.PC || {};
 PC.STORY = PC.STORY || {};
 PC.STORY.maps = PC.STORY.maps || {};
@@ -15,26 +15,44 @@ PC.STORY.maps.tower = {
   name: 'ADVENTURE TOWER',
   fabric: 'tower',
   spawnSet: 'mixed',          // everything the city threw at us, climbing
-  blocks: 18,
-  spawn: { c: 4, r: 17 },     // the lobby doors, bottom band
+  blocks: 36,
+  spawn: { c: 15, r: 35 },     // the lobby doors, bottom band
   landmarks: [
-    { id: 'f1',   name: 'MAIN LOBBY',   c0: 4, r0: 16, c1: 13, r1: 17,
+    { id: 'f1',    name: 'MAIN LOBBY',       c0: 14, r0: 34, c1: 20, r1: 35,
       color: '#5a5768', accent: '#f2c33c', open: true, custom: true },
-    { id: 'f2',   name: 'OFFICES',      c0: 4, r0: 14, c1: 13, r1: 15,
+    { id: 'f2',    name: 'SECURITY & MAIL',  c0: 14, r0: 32, c1: 20, r1: 33,
       color: '#5a5768', accent: '#8b88a8', open: true, custom: true },
-    { id: 'f3',   name: 'FOOD COURT',   c0: 4, r0: 12, c1: 13, r1: 13,
+    { id: 'f3',    name: 'FOOD COURT',       c0: 14, r0: 30, c1: 20, r1: 31,
       color: '#5a5768', accent: '#e2574c', open: true, custom: true },
-    { id: 'f4',   name: 'MECHANICAL',   c0: 4, r0: 10, c1: 13, r1: 11,
+    { id: 'f4',    name: 'OFFICES',          c0: 14, r0: 28, c1: 20, r1: 29,
+      color: '#5a5768', accent: '#8b88a8', open: true, custom: true },
+    { id: 'f5',    name: 'MECHANICAL',       c0: 14, r0: 26, c1: 20, r1: 27,
       color: '#5a5768', accent: '#f2c33c', open: true, custom: true },
-    { id: 'f5',   name: 'SKY DECK',     c0: 4, r0: 8,  c1: 13, r1: 9,
+    { id: 'f6',    name: 'ARCHIVE',          c0: 14, r0: 24, c1: 20, r1: 25,
+      color: '#5a5768', accent: '#b08a5a', open: true, custom: true },
+    { id: 'f7',    name: 'SKY DECK',         c0: 14, r0: 22, c1: 20, r1: 23,
       color: '#5a5768', accent: '#35d0ff', open: true, custom: true },
-    { id: 'f6',   name: 'ATRIUM',       c0: 4, r0: 6,  c1: 13, r1: 7,
+    { id: 'f8',    name: 'ATRIUM',           c0: 14, r0: 20, c1: 20, r1: 21,
       color: '#5a5768', accent: '#a8e04a', open: true, custom: true },
-    { id: 'f7',   name: 'SERVER FLOOR', c0: 4, r0: 4,  c1: 13, r1: 5,
+    { id: 'f9',    name: 'ACN STUDIO',       c0: 14, r0: 18, c1: 20, r1: 19,
+      color: '#5a5768', accent: '#ff9ecb', open: true, custom: true },
+    { id: 'f10',   name: 'PLANT ROOM',       c0: 14, r0: 16, c1: 20, r1: 17,
+      color: '#5a5768', accent: '#f2c33c', open: true, custom: true },
+    { id: 'f11',   name: 'GREENHOUSE',       c0: 14, r0: 14, c1: 20, r1: 15,
+      color: '#5a5768', accent: '#a8e04a', open: true, custom: true },
+    { id: 'f12',   name: 'SERVER FLOOR',     c0: 14, r0: 12, c1: 20, r1: 13,
       color: '#5a5768', accent: '#2e8fb0', open: true, custom: true },
-    { id: 'f8',   name: 'OBSERVATION',  c0: 4, r0: 2,  c1: 13, r1: 3,
+    { id: 'f13',   name: 'EXECUTIVE',        c0: 14, r0: 10, c1: 20, r1: 11,
+      color: '#5a5768', accent: '#c7a071', open: true, custom: true },
+    { id: 'f14',   name: 'OBSERVATION',      c0: 14, r0: 8, c1: 20, r1: 9,
       color: '#5a5768', accent: '#35d0ff', open: true, custom: true },
-    { id: 'roof', name: 'ROOFTOP',      c0: 3, r0: 0,  c1: 14, r1: 1,
+    { id: 'f15',   name: 'ANTENNA PLANT',    c0: 14, r0: 6, c1: 20, r1: 7,
+      color: '#5a5768', accent: '#2e8fb0', open: true, custom: true },
+    { id: 'f16',   name: 'PENTHOUSE',        c0: 14, r0: 4, c1: 20, r1: 5,
+      color: '#5a5768', accent: '#f2c33c', open: true, custom: true },
+    { id: 'f17',   name: 'SKY LOBBY',        c0: 14, r0: 2, c1: 20, r1: 3,
+      color: '#5a5768', accent: '#8b88a8', open: true, custom: true },
+    { id: 'roof',  name: 'ROOFTOP',          c0: 13, r0: 0, c1: 21, r1: 1,
       color: '#5a5768', accent: '#e2574c', open: true, custom: true },
   ],
 };
