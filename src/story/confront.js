@@ -157,6 +157,16 @@ window.PC = window.PC || {};
     if (this._baseZoom !== undefined) cam.setZoom(this._baseZoom);
     if (s.ui) s.ui.setVisible(true);
     cam.startFollow(s.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
+    // hand the roof over: the figure the player was just talking to
+    // BECOMES the boss - no swap, no cut, the same object on screen
+    if (PC.Chomp && !s.boss) {
+      s.boss = new PC.Chomp(s, this.chompAt.x, this.chompAt.y, this.chomp);
+      s.bossSpawned = true;
+      this.chomp = null;              // the fight owns the figure now
+      if (PC.AllySystem && !s.allies) s.allies = new PC.AllySystem(s);
+      if (s.allies) s.allies.start();
+      if (s.floatText) s.floatText('CHOMP', 0xe2574c);
+    }
     if (this._dirUpd && s.director) s.director.update = this._dirUpd;
     if (s.onConfrontDone) s.onConfrontDone();
   };

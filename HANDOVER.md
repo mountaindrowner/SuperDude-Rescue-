@@ -12,6 +12,53 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.46.0: THE LAST FIGHT, part 1 - CHOMP + THE CREW
+  DROP-INS.** Mark's design call: "it's Super Dude Danny versus CHOMP,
+  and then every now and then one of the crew steps in or flies in and
+  they get to help - they're automatically just running around with
+  their ability doing damage." He took all three recommendations:
+  timed fixed-order drop-ins, CHOMP's full four-move "it serves you"
+  moveset, and a hero picking Danny up once per phase.
+  BUILT THIS PASS (deliberately the risky half first - the allies are
+  the only genuinely new AI in the game; if they don't feel good
+  nothing else matters):
+  * `src/systems/chomp.js` - PC.Chomp. DUCK-TYPES as PC.Boss (x, y, r,
+    dead, damage()) so it drops straight into scene.boss and every
+    existing weapon, aim helper and hit path works unchanged. 5200 HP
+    (x0.42 story ease = 2184), three phases at 66%/33% marked on the
+    health bar so a kid can see the fight's shape. It reuses the
+    CONFRONTATION'S OWN FIGURE - the thing you were just talking to
+    becomes the thing you fight, no swap, no cut.
+  * It does not die. `powerDown()` - it sinks, the lights go out, and
+    the two written lines play ("...did I... not help?" / "You wanted
+    to feed everyone..."). An explosion would fight the ending.
+  * `src/systems/allies.js` - PC.AllySystem. Every 25s the next hero in
+    RESCUE order (Victoria, Josh, Kevin, Carlos, Nayah) drops in:
+    growing shadow, landing shake, their own shout, then ~15s running
+    an autonomous patrol around the player and firing their ability at
+    CHOMP through `scene.hitBoss` - the SAME damage door the player's
+    guns use, so an ally can never do something the player couldn't.
+    Phase 3 calls `allIn()` and all five arrive and stay.
+  * THE PICK-UP: `scene.die()` on the roof asks the crew first. One
+    hero hauls Danny up at half HP, once per phase. This is the
+    story's own answer to "is the finale too hard for a seven-year-old".
+  * Phase beats are LINES, not stat bumps: phase 2 = "Here is MORE!",
+    phase 3 = the whole crew + Vic's only shout in the game.
+  BUG THE GATE CAUGHT: the finale mission had ONE objective ('arrive'
+  at the roof), so it COMPLETED the instant Danny stepped up and tore
+  the scene down mid-cutscene (`cameras.main` undefined). mission8 now
+  has a second 'boss' beat that spawns nothing - PC.Confront already
+  set bossSpawned - and exists purely to hold the mission open until
+  onBossDown() closes it.
+  Gates: new `verify-roof-fight.js` 6/6 (handoff, ally lands on the
+  timer, ally does real damage, knockdown gets picked up, phase 3
+  brings all five, powers down instead of dying); verify-confront and
+  the objectives suite still green; zero page errors.
+  **NEXT: CHOMP's moveset** - PORTION SERVE (telegraphed plate ring),
+  THE CONVEYOR (sweeping belt of food), BUFFET (radial with gaps),
+  SECONDS! (a greatest-hits wave from all five districts). Then the
+  real PixelLab art for CHOMP, then the ending/credits.
+
 - **2026-08-06 - v0.45.0: THE ROOF + THE CONFRONTATION** (Mark: "the
   final floor to transition to the roof, and the roof is just a large
   map... one realistically sized roof area, and that's with the final

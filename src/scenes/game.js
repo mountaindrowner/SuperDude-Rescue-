@@ -167,6 +167,7 @@ PC.GameScene.prototype.create = function () {
     ? new PC.SewerFlow(this) : null;
   this.confront = (this.region && this.region.def.id === 'tower' && PC.Confront)
     ? new PC.Confront(this) : null;
+  this.allies = null;                // built when the roof fight starts
   this._zoneSeen = {};
 
   var cam = this.cameras.main;
@@ -806,6 +807,7 @@ PC.GameScene.prototype.update = function (time, delta) {
     for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
   }
   var self = this;
+  if (this.allies) this.allies.update(dt);
   this.bullets.update(dt, this.enemies, this._onKillCb);
   this.juice.update(dt);
   this.vfx.update(dt);
@@ -923,8 +925,73 @@ PC.GameScene.prototype.recordRunStats = function (won) {
   if (won) PC.meta.setFlag('wonD1');
 };
 
+// ---- THE ROOF FIGHT'S STORY BEATS -----------------------------------
+// Phase changes are not stat bumps, they are lines. Phase 3 is where the
+// whole crew arrives at once and Vic gets the only shout he ever gets.
+PC.GameScene.prototype.onChompPhase = function (p) {
+  var self = this;
+  if (p === 2) {
+    this.floatText('HERE IS MORE!', 0xe2574c);
+    if (this.quest && this.quest.box) {
+      this.quest.box.show({ speaker: 'chomp', text: 'Here is MORE!' }, function () {});
+    }
+  } else if (p === 3) {
+    if (this.allies) this.allies.allIn();
+    this.cameras.main.shake(400, 0.008);
+    if (this.quest && this.quest.box) {
+      this.storyPause = true;
+      this.quest.box.show({ speaker: 'vic',
+        text: "Danny - the override's ready! Give it everything!" }, function () {
+        self.storyPause = false;
+      });
+    }
+  }
+};
+
+// It powers down mid-sentence. The rest of the ending is authored on top
+// of this hook - for now the fight simply stops and hands to the win.
+PC.GameScene.prototype.onChompDown = function () {
+  var self = this;
+  if (this.allies) this.allies.running = false;
+  this.enemies.clearAll();
+  this.storyPause = true;
+  var beats = [
+    { speaker: 'chomp', text: '...did I... not help?' },
+    { speaker: 'danny', text: "You wanted to feed everyone. That's a good heart, CHOMP. But helping means listening first." },
+  ];
+  var i = 0;
+  function step() {
+    if (i >= beats.length) {
+      self.storyPause = false;
+      if (self.boss) self.boss.dead = true;
+      self.onBossDefeated();
+      return;
+    }
+    self.quest.box.show(beats[i++], step);
+  }
+  if (this.quest && this.quest.box) step();
+  else { this.storyPause = false; if (this.boss) this.boss.dead = true; this.onBossDefeated(); }
+};
+
 PC.GameScene.prototype.die = function () {
   if (this.dead || this.won) return;
+  // THE CREW PICKS YOU UP (v0.46.0). On the Tower roof, going down does
+  // not end the game the first time in a phase - one of the five drops
+  // in and hauls Danny to his feet. It is the story's own answer to the
+  // difficulty question, and it means a kid cannot wall on the last
+  // screen in the game. Once per phase, so it is a net, not immortality.
+  if (this.allies && this.boss && !this.boss.dead && !this.boss.powering) {
+    var ph = this.boss.phase || 1;
+    var helper = this.allies.tryRevive(ph);
+    if (helper) {
+      var mhA = PC.PLAYER.HP + (this.stats.bonusHp || 0);
+      this.hp = Math.ceil(mhA * 0.5);
+      this.invUntil = this.now + 3.0;
+      this.floatText('ON YOUR FEET!', helper.def.tint);
+      this.drawHud();
+      return;
+    }
+  }
   // AMAZING GRACE (shop flagship): get back up once per run at half HP
   if (this.reviveCharges > 0) {
     this.reviveCharges--;
