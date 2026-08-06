@@ -19,8 +19,11 @@
   (1) **WATER IS SOLID in the Catwalk Maze.** v0.42.0's wading slow
   was a half-measure - if you can walk it, it isn't water. Now
   `_analyticCarved` opens the maze ONLY within 66px of a deck lane,
-  so the planks are the floor and the water is a wall for the player
-  AND the food. The water itself is painted in a new step 1b
+  so the planks are the floor. (The food still ignores terrain - it
+  beelines through anything, engine-wide - so the maze is a PLAYER
+  constraint: they ooze at you across the water while you're held to
+  the walkways. That is the tension the zone is for.) The water is
+  painted in a new step 1b
   UNDER-FLOOR pass (before the floor clip) - dark water, depth
   pooling, ripples - so what you can't walk on still LOOKS like the
   reason you can't.
@@ -47,7 +50,19 @@
   corridors and could never have closed).
   Battery: connectivity 12300/12300 cells reachable + all 12
   objective points PASS, objectives suite 6/6, subway 4/4, unlock
-  5/5, probes + atlas zero errors. Version pair 0.43.0.
+  5/5, probes + atlas zero errors. NEW GATE `verify-catwalk.js` -
+  BFS the collision grid, then DRIVE the player through it with the
+  real MoveInput vector (no teleports): 65 cells / 23 waypoints from
+  the north approach to the surge exit, arrived. "The grid says it's
+  connected" is not proof; a body walking it is. Version pair 0.43.0.
+  **WATCH:** stage7's SURVIVE THE SURGE is where the campaign bot
+  walls (3/3 deaths, minHP 1-9) - it walled there BEFORE this change
+  too (see bots7.log), so it is not a v0.43.0 regression, but the
+  128px decks make the crossing tighter. If it plays too hard for
+  kids, the levers in order are: the surge ring size/interval in
+  quest.js (8 per 5s, already x EASE.ring 0.55), then EASE.STORY.ring,
+  then widening the decks to 256px (4 grid cells - 128 and 256 are
+  the only widths that land on cell lines).
 
 - **2026-08-04 - v0.42.0: LIVING UNDERGROUND (Mark's map-review batch:
   animated water, fungal identity, reservoir story, catwalk vision,
