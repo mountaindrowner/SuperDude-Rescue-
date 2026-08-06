@@ -12,6 +12,50 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.44.0 (IN PROGRESS): ADVENTURE TOWER, the sixth
+  fabric.** Mark: "Now let's begin building the final map." Design
+  decided with him: ONE mission, 8 floors + rooftop, ~8-10 min, mid
+  checkpoint after Frank Mk-II; the rescued heroes escort ONE AT A
+  TIME, handing off at each stairwell; the two exterior floors are
+  OPEN BALCONY ARENAS (no new grapple mechanic - zero glitch risk),
+  so Carlos's Grapnel-Sight stays as the Garage ENTRY gate for the
+  finale node, same shape as the Hydro-Drill gate on stage7.
+  **PERSPECTIVE RULING (the one thing the engine decided):** the game
+  is top-down, so the Tower is NOT a side-on cutaway. Each floor is a
+  floor PLAN seen from above and the nine plans stack as bands up the
+  map - F1 at the bottom edge, ROOF at the top. Walking up the screen
+  is walking up the building.
+  LANDED THIS PASS: `src/systems/world_tower.js` (PC.TowerLayout) +
+  `src/data/story/map6.js` + region dispatch + index wiring.
+  Geometry: BAND 1024/floor, interior 4608x832, stairwells 448 wide
+  through the 192px slab, ends ALTERNATING so every floor is crossed
+  (a switchback climb); balconies jut 1408px into the sky off F5 SKY
+  DECK (east) and F8 OBSERVATION (west); roof band is wider.
+  Three surfaces and only three, so a kid always knows where they
+  stand: FLOOR (lit, walkable), STRUCTURE (concrete guts, solid),
+  SKY (night city far below, solid). Same GRID law as the Underground
+  - quantize once at 64px, flood-seal anything unreachable from the
+  lobby, and let paint/collision/wall-edges all read those cells.
+  Per-floor furniture gives each floor a shape: lobby desk+planters,
+  CUBICLE MAZE on F2, food-court kiosks, Frank's plant room, sky-deck
+  planters, F6 ATRIUM light well (walk the ring), server rack rows,
+  observation bar, rooftop AC units. Floor identity is a faint colour
+  WASH + one honest marking each (no camouflage texture - that lesson
+  came from the sewer rock). Stairwells paint as real steps with
+  handrails and a green landing nose. Floor-number signs on every
+  floor, STAIRS UP at every shaft, OPEN BALCONY on the juts.
+  GATE: new `verify-tower.js` - BFS the real collision grid from the
+  lobby spawn: **8168/8168 cells reachable**, every floor PASSes from
+  BOTH ends, both balconies, all 8 stairwells top and bottom, and all
+  9 quest targets. Atlas renders zero errors.
+  **NEXT, in order:** (1) escort system - one hero follows and
+  auto-fires their signature, handing off at each stairwell; (2)
+  mission8 objectives + the 20 already-WRITTEN finale VO lines; (3)
+  Frank Mk-II mid-boss on F4 + CHOMP 3-phase on the roof (needs a
+  PixelLab batch: 3 phase forms + the powered-down/reboot pose);
+  (4) ending, credits, endless/Patrol unlock; (5) mapview tower
+  schematic + missions-node gate on Grapnel-Sight.
+
 - **2026-08-06 - v0.43.0: THE WALKING SPACES (Mark: "The underground
   is a confusing place. I can walk on water? The catwalk isn't a
   catwalk? What's the point of the bridges?").** Three answers, all

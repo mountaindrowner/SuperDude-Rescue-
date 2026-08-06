@@ -54,7 +54,21 @@ PC.Region = function (def) {
     : (def.fabric === 'suburb' && PC.SuburbLayout) ? new PC.SuburbLayout(def)
     : (def.fabric === 'labs' && PC.LabsLayout) ? new PC.LabsLayout(def)
     : (def.fabric === 'sewer' && PC.SewerLayout) ? new PC.SewerLayout(def)
+    : (def.fabric === 'tower' && PC.TowerLayout) ? new PC.TowerLayout(def)
     : null;
+  // ADVENTURE TOWER (v0.44.0): the layout, not the def, owns the nine
+  // floor bands - it has to, because the stairwells and balconies are
+  // derived geometry. Adopt its rects so a quest that says "go to F6"
+  // targets the actual painted floor and not a parcel guess.
+  if (this.layout && this.layout.floors) {
+    for (var fi = 0; fi < this.layout.floors.length; fi++) {
+      var fl = this.layout.floors[fi], mk = this.landmark(fl.id);
+      if (!mk) continue;
+      mk.x = fl.rect.x; mk.y = fl.rect.y; mk.w = fl.rect.w; mk.h = fl.rect.h;
+      mk.cx = fl.rect.x + fl.rect.w / 2; mk.cy = fl.rect.y + fl.rect.h / 2;
+      mk.floor = fl;
+    }
+  }
 };
 
 PC.Region.prototype.landmark = function (id) {
