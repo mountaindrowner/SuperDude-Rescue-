@@ -12,6 +12,43 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.43.0: THE WALKING SPACES (Mark: "The underground
+  is a confusing place. I can walk on water? The catwalk isn't a
+  catwalk? What's the point of the bridges?").** Three answers, all
+  enforced by the grid so paint == collision:
+  (1) **WATER IS SOLID in the Catwalk Maze.** v0.42.0's wading slow
+  was a half-measure - if you can walk it, it isn't water. Now
+  `_analyticCarved` opens the maze ONLY within 66px of a deck lane,
+  so the planks are the floor and the water is a wall for the player
+  AND the food. The water itself is painted in a new step 1b
+  UNDER-FLOOR pass (before the floor clip) - dark water, depth
+  pooling, ripples - so what you can't walk on still LOOKS like the
+  reason you can't.
+  (2) **The catwalk is a real lattice.** Decks now run on every block
+  line (512px lattice, a superset of the odd tunnel lines, so every
+  tunnel mouth still lands on a deck) instead of three lonely planks
+  in a lake: 6 vertical x 5 horizontal decks, 128px wide, weathered
+  timber (new COL.deck family) with cross-boards, a center stringer
+  beam, and HANDRAILS + posts down both edges. Wall edges over water
+  render as deck curb + rail (and a water-shadow band instead of the
+  black rock void - a black gap read as a hole you could fall
+  through).
+  (3) **The bridges have a point.** The gutter drains (44px channels
+  down every non-ring corridor) now cost you: within 22px of the bent
+  centerline you wade at 0.8x - EXCEPT on a bridge deck. `onBridge()`
+  matches the painted planks exactly (every 256px, +/-15), and the
+  live flow overlay skips them too, so dry-looking stone IS dry. The
+  "WADING..." label fires once per run per kind (a per-entry label
+  flickered every few steps down a corridor).
+  Also: goo banned from the maze (biome identity), catwalk shimmer
+  skips the planks, and quest targeting got `snapWalk()` - any
+  objective point that lands off-floor is pulled to the nearest
+  walkable cell (the surge-exit target sat in the rock band between
+  corridors and could never have closed).
+  Battery: connectivity 12300/12300 cells reachable + all 12
+  objective points PASS, objectives suite 6/6, subway 4/4, unlock
+  5/5, probes + atlas zero errors. Version pair 0.43.0.
+
 - **2026-08-04 - v0.42.0: LIVING UNDERGROUND (Mark's map-review batch:
   animated water, fungal identity, reservoir story, catwalk vision,
   pump definition).** (1) LIVE WATER: src/systems/sewerflow.js - the

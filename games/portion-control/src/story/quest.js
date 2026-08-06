@@ -100,9 +100,31 @@ PC.Quest.prototype.targetXY = function () {
     // the FAR SIDE of the landmark, not its middle - the arrow leads
     // the crossing (only 'south' is used so far; add sides as needed)
     var rm = this.region.landmark(o.at);
-    if (rm) return { x: rm.cx, y: rm.y + rm.h + 40 };
+    if (rm) return this.snapWalk({ x: rm.cx, y: rm.y + rm.h + 40 });
   }
-  return this.spotOf(this.region.landmark(o.at));
+  return this.snapWalk(this.spotOf(this.region.landmark(o.at)));
+};
+
+// Pull a target onto ground the player can actually stand on. The
+// sewers (v0.43.0) carve tunnels on odd block lines, so a landmark's
+// geometric centre-line can land in solid rock - the arrow would then
+// point at a wall and the objective could never close. Layouts that
+// expose carvedAt get a short outward search; everything else is
+// fully walkable and passes straight through.
+PC.Quest.prototype.snapWalk = function (p) {
+  if (!p) return p;
+  var L = this.region && this.region.layout;
+  if (!L || !L.carvedAt || L.carvedAt(p.x, p.y)) return p;
+  var STEP = 48;
+  for (var r = 1; r <= 14; r++) {
+    for (var a = 0; a < 16; a++) {
+      var th = a * Math.PI / 8;
+      var x = p.x + Math.cos(th) * r * STEP;
+      var y = p.y + Math.sin(th) * r * STEP;
+      if (L.carvedAt(x, y)) return { x: x, y: y };
+    }
+  }
+  return p;
 };
 
 // play a beat list as in-game dialogue (world paused via storyPause)

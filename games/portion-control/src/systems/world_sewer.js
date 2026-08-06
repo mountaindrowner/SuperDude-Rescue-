@@ -47,6 +47,7 @@ window.PC = window.PC || {};
     mush: '#8fd14f', mushSpot: '#d9f2a8', mushStem: '#c9c2a6',
     mushGlow: 'rgba(174,240,106,0.22)', mushOutline: '#2a3a14',
     pipe: '#6e4a2f', pipeLite: '#b5793f', pipeDark: '#4d3421',
+    deck: '#8a6a42', deckDark: '#5d4227', deckRail: '#c7a071', deckBeam: '#3a2f22',
     metal: '#514e6b', metalLite: '#6d6a8e',
     iron: '#4a4038', ironLite: '#8a7a60', rust: '#7a5030',
     goo: '#7fb043', gooLite: '#a3d45f', gooDark: '#4f7328',
@@ -95,6 +96,28 @@ window.PC = window.PC || {};
       }
     }
     this._spokeCache = {};
+
+    // CATWALK LANES (v0.43.0, Mark: "I can walk on water? The catwalk
+    // isn't a catwalk?"): inside the Catwalk Maze, WATER IS SOLID -
+    // the only floor is the plank lattice, and the lanes sit exactly
+    // on the tunnel grid lines so every tunnel mouth feeds a catwalk.
+    this.catLanesV = []; this.catLanesH = [];
+    var catMk = null;
+    for (var cmi = 0; cmi < this.marks.length; cmi++) {
+      if (this.marks[cmi].id === 'catwalk') { catMk = this.marks[cmi]; break; }
+    }
+    // Decks run on EVERY block line (512px lattice), which is a superset
+    // of the odd tunnel lines - so every tunnel mouth still lands on a
+    // deck, but the maze itself is a real walkable lattice instead of
+    // three lonely planks in a lake.
+    if (catMk) {
+      for (var lc = 0; lc <= this.blocks; lc++) {
+        var lxc = lc * CH + CH / 2;
+        if (lxc > catMk.x + 40 && lxc < catMk.x + catMk.w - 40) this.catLanesV.push(lxc);
+        if (lxc > catMk.y + 40 && lxc < catMk.y + catMk.h - 40) this.catLanesH.push(lxc);
+      }
+      this.catMk = catMk;
+    }
 
     // THE GRID (v0.40.0, Mark: "boundaries more strict... a nice
     // straight line at the edge... tiling should not mix"): the
@@ -292,7 +315,18 @@ window.PC = window.PC || {};
 
   PC.SewerLayout.prototype._analyticCarved = function (x, y) {
     if (x < 0 || y < 0 || x >= this.size || y >= this.size) return false;
-    if (this.markAt(x, y)) return true;
+    var mk0 = this.markAt(x, y);
+    if (mk0) {
+      if (mk0.id !== 'catwalk') return true;
+      // inside the maze only the plank lattice is floor
+      for (var lv = 0; lv < this.catLanesV.length; lv++) {
+        if (Math.abs(x - this.catLanesV[lv]) < 66) return true;
+      }
+      for (var lh = 0; lh < this.catLanesH.length; lh++) {
+        if (Math.abs(y - this.catLanesH[lh]) < 66) return true;
+      }
+      return false;
+    }
     // vertical tunnels on odd block columns (serpentine off-ring)
     var c = Math.round((x - CH / 2) / CH);
     if ((c % 2) === 1 && c > 0 && c < this.blocks &&
@@ -329,20 +363,30 @@ window.PC = window.PC || {};
       var m = this.marks[i];
       if (x < m.x || x >= m.x + m.w || y < m.y || y >= m.y + m.h) continue;
       if (m.id === 'fungal') return { slow: 0.78, kind: 'spore' };
-      if (m.id === 'catwalk') {
-        // on a plank lane = full speed; in the water = wading
-        var laneW = 56, fx = (x - m.x) / m.w, fy = (y - m.y) / m.h;
-        var hL = [0.2, 0.5, 0.8], vL = [0.16, 0.49, 0.82], k;
-        for (k = 0; k < 3; k++) {
-          if (Math.abs(y - (m.y + m.h * hL[k])) < laneW / 2 + 4) return null;
-          if (Math.abs(x - (m.x + m.w * vL[k])) < laneW / 2 + 4) return null;
-        }
-        return { slow: 0.6, kind: 'water' };
-      }
       return null;
+    }
+    // ankle-deep gutter drains: wading the channel slows you UNLESS you
+    // cross on a bridge. The bridge planks are painted every 256px with
+    // a half-width of 14 (see _gutters), so onBridge matches the paint
+    // exactly - what looks like dry stone IS dry stone (v0.43.0).
+    var c = Math.round((x - CH / 2) / CH);
+    if ((c % 2) === 1 && c > 1 && c < this.blocks - 1 && !this._isTrackCol(c)) {
+      var gx2 = c * CH + CH / 2 + this._bendV(c, y);
+      if (Math.abs(x - gx2) < 22 && !onBridge(y)) return { slow: 0.8, kind: 'water' };
+    }
+    var r = Math.round((y - CH / 2) / CH);
+    if ((r % 2) === 1 && r > 1 && r < this.blocks - 1 && !this._isTrackRow(r)) {
+      var gy2 = r * CH + CH / 2 + this._bendH(r, x);
+      if (Math.abs(y - gy2) < 22 && !onBridge(x)) return { slow: 0.8, kind: 'water' };
     }
     return null;
   };
+
+  // a bridge deck spans +/-14px around every 256px station along the run
+  function onBridge(v) {
+    var m = ((v % 256) + 256) % 256;
+    return m <= 15 || m >= 241;
+  }
 
   // the grid IS the truth: paint, walls and solids all read this
   PC.SewerLayout.prototype.carvedAt = function (x, y) {
@@ -382,6 +426,34 @@ window.PC = window.PC || {};
       var rmx = h2(cx * 9 + rm2, cy, 21) * CH, rmy = h2(cx, cy * 9 + rm2, 22) * CH;
       var rms = 40 + h2(rm2, cx + cy, 23) * 70;
       g.beginPath(); g.ellipse(rmx, rmy, rms, rms * 0.7, 0, 0, Math.PI * 2); g.fill();
+    }
+
+    // ---- 1b. UNDER-FLOOR (v0.43.0): the Catwalk Maze's off-plank
+    // area is WATER, not rock. It's still solid - you can't swim - but
+    // it has to LOOK like the reason you can't walk there. Painted
+    // before the floor clip, so it fills the space the planks don't. ----
+    if (this.catMk) {
+      var cm = this.catMk;
+      if (cm.x < x0 + CH && cm.x + cm.w > x0 && cm.y < y0 + CH && cm.y + cm.h > y0) {
+        var wx = Math.max(cm.x, x0) - x0, wy = Math.max(cm.y, y0) - y0;
+        var ww = Math.min(cm.x + cm.w, x0 + CH) - x0 - wx;
+        var wh = Math.min(cm.y + cm.h, y0 + CH) - y0 - wy;
+        g.fillStyle = COL.water;
+        g.fillRect(wx, wy, ww, wh);
+        g.fillStyle = 'rgba(10,22,34,0.55)';                 // depth pooling
+        for (var dp = 0; dp < 10; dp++) {
+          var dpx = wx + h2(cx * 7 + dp, cy, 131) * ww;
+          var dpy = wy + h2(cx, cy * 7 + dp, 132) * wh;
+          var dps = 50 + h2(dp, cx + cy, 133) * 90;
+          g.beginPath(); g.ellipse(dpx, dpy, dps, dps * 0.55, 0, 0, Math.PI * 2); g.fill();
+        }
+        g.strokeStyle = '#2a4a6a'; g.lineWidth = 2;
+        for (var rp = 0; rp < 44; rp++) {
+          var rpx = wx + h2(rp, cx + 5, 134) * ww, rpy = wy + h2(cy + 5, rp, 135) * wh;
+          g.beginPath(); g.moveTo(rpx, rpy);
+          g.lineTo(rpx + 20 + h2(rp, cy, 136) * 28, rpy); g.stroke();
+        }
+      }
     }
 
     // ---- 2. carve: clip to the FLOOR CELLS of this chunk. The grid
@@ -634,29 +706,39 @@ window.PC = window.PC || {};
         if (!(nN || nS || nW || nE)) continue;
         var brickOff = (Math.floor((x0 + lx2) / T) % 2) * 5;
         var metro = this._nearRing(wx, wy);
-        var CB = metro ? '#cfc9b8' : COL.wallBrick;
-        var CD = metro ? '#9a948a' : COL.wallBrickDark;
-        var CL = metro ? '#2e8fb0' : COL.wallLip;
+        // neighbor is maze WATER (not rock)? then this is a catwalk
+        // edge: plank curb + steel railing instead of a brick wall
+        var mkHere = this.catMk;
+        var overWater = mkHere &&
+          wx >= mkHere.x && wx < mkHere.x + mkHere.w &&
+          wy >= mkHere.y && wy < mkHere.y + mkHere.h;
+        var CB = overWater ? COL.deckDark : metro ? '#cfc9b8' : COL.wallBrick;
+        var CD = overWater ? COL.deckBeam : metro ? '#9a948a' : COL.wallBrickDark;
+        var CL = overWater ? COL.deckRail : metro ? '#2e8fb0' : COL.wallLip;
+        // over water the outer band is the deck's SHADOW on the water,
+        // not the black void of a rock face - a hole there would read
+        // as a gap in the walkway you could fall through
+        var CV = overWater ? '#0d2a31' : COL.wallVoid;
         if (nN) {
-          g.fillStyle = COL.wallVoid;  g.fillRect(lx2, ly2, T, 4);
+          g.fillStyle = CV;  g.fillRect(lx2, ly2, T, 4);
           g.fillStyle = CB; g.fillRect(lx2, ly2 + 4, T, 12);
           g.fillStyle = CD; g.fillRect(lx2 + brickOff, ly2 + 4, 2, 12);
           g.fillStyle = CL;   g.fillRect(lx2, ly2 + 16, T, 3);
         }
         if (nS) {
-          g.fillStyle = COL.wallVoid;  g.fillRect(lx2, ly2 + T - 4, T, 4);
+          g.fillStyle = CV;  g.fillRect(lx2, ly2 + T - 4, T, 4);
           g.fillStyle = CB; g.fillRect(lx2, ly2 + T - 16, T, 12);
           g.fillStyle = CD; g.fillRect(lx2 + brickOff, ly2 + T - 16, 2, 12);
           g.fillStyle = CL;   g.fillRect(lx2, ly2 + T - 19, T, 3);
         }
         if (nW) {
-          g.fillStyle = COL.wallVoid;  g.fillRect(lx2, ly2, 4, T);
+          g.fillStyle = CV;  g.fillRect(lx2, ly2, 4, T);
           g.fillStyle = CB; g.fillRect(lx2 + 4, ly2, 12, T);
           g.fillStyle = CD; g.fillRect(lx2 + 4, ly2 + brickOff, 12, 2);
           g.fillStyle = CL;   g.fillRect(lx2 + 16, ly2, 3, T);
         }
         if (nE) {
-          g.fillStyle = COL.wallVoid;  g.fillRect(lx2 + T - 4, ly2, 4, T);
+          g.fillStyle = CV;  g.fillRect(lx2 + T - 4, ly2, 4, T);
           g.fillStyle = CB; g.fillRect(lx2 + T - 16, ly2, 12, T);
           g.fillStyle = CD; g.fillRect(lx2 + T - 16, ly2 + brickOff, 12, 2);
           g.fillStyle = CL;   g.fillRect(lx2 + T - 19, ly2, 3, T);
@@ -952,7 +1034,8 @@ window.PC = window.PC || {};
       // biome identity (judge round 3): clean zones stay clean, the
       // fungal cavern belongs to the mushrooms
       var inMk = this.markAt(x0 + gx, y0 + gy);
-      if (inMk && (inMk.id === 'grate' || inMk.id === 'cistern' || inMk.id === 'fungal')) continue;
+      if (inMk && (inMk.id === 'grate' || inMk.id === 'cistern' ||
+                   inMk.id === 'fungal' || inMk.id === 'catwalk')) continue;
       if (this._nearRing(x0 + gx, y0 + gy)) continue;   // the subway stays swept
       var s = 10 + h2(i, cx, 93) * (14 + depth * 26);
       g.strokeStyle = COL.gooOutline; g.lineWidth = 3;
@@ -1213,45 +1296,52 @@ window.PC = window.PC || {};
       }
 
     } else if (id === 'catwalk') {
-      // CATWALK MAZE: dark water + a true plank LATTICE - slats on
-      // every lane, rails on every edge, ripple dashes in the water
-      g.fillStyle = COL.water; g.fillRect(lx, ly, w, h);
-      g.strokeStyle = '#2a4a6a'; g.lineWidth = 2;
-      for (var wv = 0; wv < 110; wv++) {
-        var wvx = lx + h2(wv, 5, 111) * w, wvy = ly + h2(5, wv, 112) * h;
-        g.beginPath(); g.moveTo(wvx, wvy); g.lineTo(wvx + 24 + h2(wv, 6, 113) * 30, wvy); g.stroke();
-      }
-      var laneW = 56;
-      var hLanes = [0.2, 0.5, 0.8], vLanes = [0.16, 0.49, 0.82];
-      // decks
-      g.fillStyle = COL.pipeLite;
-      hLanes.forEach(function (t) { g.fillRect(lx, ly + h * t - laneW / 2, w, laneW); });
-      vLanes.forEach(function (t) { g.fillRect(lx + w * t - laneW / 2, ly, laneW, h); });
-      // slats: across EVERY lane, both directions
-      g.strokeStyle = COL.pipeDark; g.lineWidth = 2;
-      hLanes.forEach(function (t) {
-        var yy = ly + h * t - laneW / 2;
+      // CATWALK MAZE: the water is painted UNDER the floor clip (step
+      // 1b) because it is not floor - here we only lay the planks.
+      // plank decks sit exactly on the WALKABLE lanes (the grid is the
+      // truth: these bands match the collision cells, so if it looks
+      // like a plank you can walk it, and if it looks like water you
+      // can't - v0.43.0)
+      var laneW = 128;
+      var vXs = this.catLanesV.map(function (v) { return v - x0; });
+      var hYs = this.catLanesH.map(function (v) { return v - y0; });
+      // 1. weathered timber deck
+      g.fillStyle = COL.deck;
+      hYs.forEach(function (t) { g.fillRect(lx, t - laneW / 2, w, laneW); });
+      vXs.forEach(function (t) { g.fillRect(t - laneW / 2, ly, laneW, h); });
+      // 2. individual boards (the joint lines run ACROSS the walk)
+      g.strokeStyle = COL.deckDark; g.lineWidth = 2;
+      hYs.forEach(function (t) {
         for (var pk = 0; pk < w; pk += 22) {
-          g.beginPath(); g.moveTo(lx + pk, yy); g.lineTo(lx + pk, yy + laneW); g.stroke();
+          g.beginPath(); g.moveTo(lx + pk, t - laneW / 2); g.lineTo(lx + pk, t + laneW / 2); g.stroke();
         }
       });
-      vLanes.forEach(function (t) {
-        var xx = lx + w * t - laneW / 2;
+      vXs.forEach(function (t) {
         for (var pk2 = 0; pk2 < h; pk2 += 22) {
-          g.beginPath(); g.moveTo(xx, ly + pk2); g.lineTo(xx + laneW, ly + pk2); g.stroke();
+          g.beginPath(); g.moveTo(t - laneW / 2, ly + pk2); g.lineTo(t + laneW / 2, ly + pk2); g.stroke();
         }
       });
-      // rails on every deck edge
-      g.strokeStyle = COL.metalLite; g.lineWidth = 3;
-      hLanes.forEach(function (t) {
-        var yy2 = ly + h * t;
-        g.beginPath(); g.moveTo(lx, yy2 - laneW / 2); g.lineTo(lx + w, yy2 - laneW / 2); g.stroke();
-        g.beginPath(); g.moveTo(lx, yy2 + laneW / 2); g.lineTo(lx + w, yy2 + laneW / 2); g.stroke();
+      // 3. HANDRAILS down both edges - the thing that makes a walkway
+      // read as a walkway. Posts every 44px, top rail above them.
+      g.fillStyle = COL.deckRail;
+      var pst = function (px2, py2) { g.fillRect(px2, py2, 4, 4); };
+      hYs.forEach(function (t) {
+        g.fillRect(lx, t - laneW / 2 + 3, w, 3);
+        g.fillRect(lx, t + laneW / 2 - 6, w, 3);
+        for (var q = 0; q < w; q += 44) { pst(lx + q, t - laneW / 2 + 6); pst(lx + q, t + laneW / 2 - 10); }
       });
-      vLanes.forEach(function (t) {
-        var xx2 = lx + w * t;
-        g.beginPath(); g.moveTo(xx2 - laneW / 2, ly); g.lineTo(xx2 - laneW / 2, ly + h); g.stroke();
-        g.beginPath(); g.moveTo(xx2 + laneW / 2, ly); g.lineTo(xx2 + laneW / 2, ly + h); g.stroke();
+      vXs.forEach(function (t) {
+        g.fillRect(t - laneW / 2 + 3, ly, 3, h);
+        g.fillRect(t + laneW / 2 - 6, ly, 3, h);
+        for (var q2 = 0; q2 < h; q2 += 44) { pst(t - laneW / 2 + 6, ly + q2); pst(t + laneW / 2 - 10, ly + q2); }
+      });
+      // 4. center stringer beam under each deck
+      g.strokeStyle = COL.deckBeam; g.lineWidth = 4;
+      hYs.forEach(function (t) {
+        g.beginPath(); g.moveTo(lx, t); g.lineTo(lx + w, t); g.stroke();
+      });
+      vXs.forEach(function (t) {
+        g.beginPath(); g.moveTo(t, ly); g.lineTo(t, ly + h); g.stroke();
       });
 
     } else if (id === 'reservoir') {
