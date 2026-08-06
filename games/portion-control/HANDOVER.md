@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.48.0: CHOMP IS A MACHINE NOW.** Mark on the first
+  art pass: "I don't like that CHOMP, he's not enough of a stationary
+  machine." He was right - it came back as a cute little robot with
+  legs and feet, and legs read as something that WALKS AT YOU. CHOMP
+  never moves and never needed to: it brings the food to you. It is an
+  APPLIANCE.
+  Rebuilt as a wide bolted-down rooftop installation: a huge cafeteria
+  serving counter, two round cyan gauge lamps in the front panel for
+  eyes, a dark dial between them for a nose, a row of serving slots
+  behind a gold rail reading as a grin, vents and a chimney on top, a
+  side control unit, bolts at the base. 320x192 frames (5:3) instead
+  of square - the shape itself has to say "cannot move".
+  METHOD THAT FINALLY WORKED (worth repeating for any future boss):
+  **generate ANCHOR CANDIDATES FIRST.** Three different base machines
+  (`pl-chomp-cand.py`), pick the one that reads right, then derive
+  every phase and pose from that ONE image at init strength **150**.
+  Two earlier batches failed on the two ends of that dial: 210 cloned
+  phase 1 into all three phases, 95 let each phase drift into a
+  different machine. 150 holds the silhouette while the description
+  still lands.
+  Because the art deliberately does NOT morph (a machine shouldn't),
+  the escalation is carried in CODE: PHASE_SCALE 0.65/0.75/0.86 so
+  phase 3 fills the frame. And the idle is now a machine HUM - a 1.2px
+  shiver at 9Hz - not the creature bob it had, which made it look like
+  something that could take a step.
+  PORTRAIT REDONE to match: the old round-robot head against a
+  bolted-down machine broke the one scene the whole game is built
+  toward. `portrait_chomp` is now the machine's front panel.
+  Gates: verify-confront and verify-roof-fight both green, zero errors.
+  **STILL TO BUILD: THE MOVESET.** It stands there and takes it.
+  PORTION SERVE (the serve_1 pose art exists for it), THE CONVEYOR,
+  BUFFET, SECONDS!. Then the ending and credits.
+
 - **2026-08-06 - v0.47.0: CHOMP GETS A FACE + THE FIGHT CAMERA.**
   Mark: "let's work on the CHOMP asset - give it maybe three phases"
   and "for the CHOMP fight we should zoom the camera out a little bit,
