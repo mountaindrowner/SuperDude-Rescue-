@@ -167,6 +167,25 @@ PC.GameScene.prototype.create = function () {
     ? new PC.SewerFlow(this) : null;
   this.confront = (this.region && this.region.def.id === 'tower' && PC.Confront)
     ? new PC.Confront(this) : null;
+  // DEV WARP: stand at the head of the last stair with the climb's
+  // objective already closed, one step below the roof. Walk up and the
+  // confrontation fires exactly as it would after seventeen floors.
+  if (PC.ROOF_WARP && this.region && this.region.def.id === 'tower') {
+    var rwL = this.region.layout;
+    var rwS = rwL.shafts[rwL.shafts.length - 1];
+    this.px = rwS.x + rwS.w / 2;
+    this.py = rwS.y + rwS.h - 40;
+    this.player.setPosition(this.px, this.py);
+    this.cameras.main.centerOn(this.px, this.py);
+    var rwSelf = this;
+    this.time.delayedCall(500, function () {
+      if (rwSelf.quest && rwSelf.quest.box) {
+        var g2 = 0;
+        while (rwSelf.quest.box.active && g2++ < 40) rwSelf.quest.box.tap();
+      }
+      rwSelf.floatText('DEV WARP - WALK UP', 0x35d0ff);
+    });
+  }
   if (PC.CHOMP_TEST && this.region && this.region.def.id === 'tower' && PC.ChompTest) {
     var ctSelf = this;
     this.time.delayedCall(400, function () {

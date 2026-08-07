@@ -33,6 +33,11 @@ PC.CHOMP_TEST = (function () {
   return (m[1] === '1') ? 'both' : m[1];
 })();
 PC.CHOMP_ART = (/[?&]chomp=drawn/.test(location.search)) ? 'drawn' : 'art';
+// ?roof=1 - DEV WARP straight to the top of the last stairwell, so the
+// confrontation and the real fight can be played without climbing
+// seventeen floors first. The tester (?chomptest=) poses the art; this
+// one plays the actual beat.
+PC.ROOF_WARP = /[?&]roof=1/.test(location.search);
 try { PC.UNLOCK_ALL = /[?&]unlock/.test(window.location.search); } catch (e) {}
 
 PC.RENDER = {

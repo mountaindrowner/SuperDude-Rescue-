@@ -64,7 +64,7 @@ PC.TitleScene.prototype.create = function () {
   // ?chomptest= goes STRAIGHT to the roof. The whole point of a dev
   // link is that it is one tap - nobody should have to climb
   // seventeen floors to look at a sprite.
-  if (PC.CHOMP_TEST) {
+  if (PC.CHOMP_TEST || PC.ROOF_WARP) {
     if (PC.storyState) PC.storyState.markTutorialSeen();
     PC.STORY.pendingMission = PC.STORY.chainById('finale');
     this.scene.start('PC_Game');

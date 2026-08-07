@@ -12,6 +12,25 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.52.0: ?roof=1 DEV WARP.** Mark: "how do I travel
+  there fast?" There was no way - the only route to the finale fight
+  was seventeen floors of switchback, which is fine for a player and
+  useless for testing the beat you are actually working on.
+  `?roof=1` jumps from the title straight to the head of the LAST
+  stairwell, one step below the roof, with the climb objective already
+  tapped through. Walk up and the confrontation fires exactly as it
+  would after the full climb - it is the real beat, not a pose.
+  That is the difference from `?chomptest=`: the tester POSES the art
+  side by side; the warp PLAYS the fight.
+  THE DEV LINKS, all one tap, all on this branch via GitHack:
+  * `?roof=1`          play the confrontation + fight
+  * `?chomptest=1`     both CHOMP designs side by side
+  * `?chomptest=art`   the generated cauldron alone
+  * `?chomptest=drawn` the drawn blocky face alone
+  * `?unlock=1`        every built stage active on the mission map
+  Gate: verify-roofwarp asserts it lands below the roof line and that
+  walking up arms the confrontation on its own. Zero errors.
+
 - **2026-08-06 - v0.51.0: the A/B tester becomes a one-tap dev LINK.**
   Mark: "give me the tester link so I can load each one and see what
   they look like separately."
