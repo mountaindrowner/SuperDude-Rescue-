@@ -174,7 +174,6 @@ window.PC = window.PC || {};
         else if (b.digCd <= 0) {
           b.digCd = b.enraged() ? 7 : 10;
           b.state = 'burrow'; b.stateT = 0;
-          b.mx = b.x; b.my = b.y;
           b.guard = 0.25; b.noContact = true;          // shots plink into the dirt
           b.sprite.setVisible(false); b.shadow.setVisible(false);
           if (s.fx) s.fx.burst(b.x, b.y, 'fx_pop', 10, 0.5);
@@ -190,20 +189,31 @@ window.PC = window.PC || {};
           if (PC.audio) PC.audio.splat();
         }
       } else if (b.state === 'burrow') {
-        // the mound: slower than you, so walking away always works
-        var mdx = px - b.mx, mdy = py - b.my, ml = Math.hypot(mdx, mdy) || 1;
-        b.mx += (mdx / ml) * 130 * dt; b.my += (mdy / ml) * 130 * dt;
-        b.x = b.mx; b.y = b.my;                        // hitbox travels with it
-        g.fillStyle(0x6b5537, 0.7); g.fillEllipse(b.mx, b.my, 76, 40);
-        g.fillStyle(0x8a7048, 0.8); g.fillEllipse(b.mx, b.my - 4, 52, 26);
-        ringTell(g, b.mx, b.my, (b.stateT % 0.5) * 2, 80);
-        if (Math.random() < dt * 8 && b.scene.fx) b.scene.fx.burst(b.mx + (Math.random() - 0.5) * 50, b.my, 'fx_pop', 1, 0.25);
-        if (b.stateT > 2.4) {
+        // v0.63.0 (Mark: "the dig animation could disappear then appear
+        // under the player"). It is fully GONE now - no mound to kite.
+        // Instead a reticle shadows you, then LOCKS 0.7s before the
+        // eruption, so stepping off the mark always works (doc 2.3.4:
+        // dodgeable by a perfect player, and it never reads your
+        // buttons, only your position).
+        if (b.stateT < 1.5) {
+          b.mx = px; b.my = py;                        // shadowing you
+          g.lineStyle(3, TELL(), 0.30 + 0.15 * Math.sin(s.now * 10));
+          g.strokeCircle(b.mx, b.my, 66);
+          if (Math.random() < dt * 5 && s.fx) s.fx.burst(b.mx + (Math.random() - 0.5) * 60, b.my + 20, 'fx_pop', 1, 0.2);
+        } else {
+          // LOCKED: the ring tightens on the spot it chose
+          var lk = Math.min(1, (b.stateT - 1.5) / 0.7);
+          ringTell(g, b.mx, b.my, lk, 60);
+          g.fillStyle(TELL(), 0.10 + 0.15 * lk);
+          g.fillCircle(b.mx, b.my, 60 * lk);
+        }
+        if (b.stateT > 2.2) {
           b.state = 'erupt'; b.stateT = 0;
           b.guard = 1; b.noContact = false;
+          b.x = b.mx; b.y = b.my;                      // it surfaces HERE
           b.sprite.setVisible(true); b.shadow.setVisible(true);
           var edx = px - b.mx, edy = py - b.my;
-          if (edx * edx + edy * edy < 80 * 80) hurt(s, 14);
+          if (edx * edx + edy * edy < 70 * 70) hurt(s, 14);
           s.cameras.main.shake(200, 0.008);
           if (s.fx) s.fx.burst(b.mx, b.my, 'fx_spark', 14, 0.5);
           b.vuln = 1.6;                                // surfaced and dazed
@@ -278,86 +288,133 @@ window.PC = window.PC || {};
   };
 
   // ==================================================================
-  // VENDING BEHEMOTH - THE ARTILLERY (District 4, the Labs).
-  // A vending machine does not chase anyone. It PLANTS itself and
-  // vends: aimed can volleys, then a falling snack GRID with safe gaps
-  // (read the gap, doc 8 - rhythm not randomness), a minion restock -
-  // and then it OVERHEATS: SOLD OUT, lights flicker, the longest
-  // punish window of any district boss. The doc's punish economy on a
-  // machine that genuinely cannot corner you.
+  // VENDING BEHEMOTH - THE WALKING MACHINE (District 4, the Labs).
+  // v0.63.0 remake (Mark: "a walking vending machine who goes slowly
+  // but spawns tons of junk food and launches candy corn rockets").
+  // It never stops WALKING at you - slow, heavy, inevitable - and it
+  // fights by vending: RESTOCK flings the front door open and floods
+  // the floor with junk-food minions; the launcher lobs CANDY CORN
+  // ROCKETS onto reticles that lock where you WERE (step off, doc
+  // 2.3.4); every third salvo it OVERHEATS - SOLD OUT, sparks, the
+  // longest punish window before the Tower.
   // ==================================================================
   var Vend = {
-    init: function (b) { b.cycle = 0; b.restockCd = 12; b.grid = []; },
+    init: function (b) {
+      b.rockets = []; b.marks = [];
+      b.launchCd = 4.5; b.restockCd = 7.5; b.salvoN = 0;
+    },
     update: function (b, dt, px, py) {
       var s = b.scene, g = b.gfx;
-      // it only waddles if you leave its range entirely
-      var dx = px - b.x, dy = py - b.y, len = Math.hypot(dx, dy) || 1;
-      if (len > 480 && b.state === 'active') {
-        b.x += (dx / len) * b.spd * dt; b.y += (dy / len) * b.spd * dt;
-      }
-      b.restockCd -= dt;
-      if (b.restockCd <= 0 && b.state === 'active') {
-        b.restockCd = 12;
-        spawnKid(s, b.x - 60, b.y + 30, 'zipper');
-        spawnKid(s, b.x + 60, b.y + 30, 'sodacan');
-        if (s.fx) s.fx.burst(b.x, b.y + 20, 'fx_spark', 8, 0.4);
-      }
-      if (b.state === 'active') {
-        b.stateT2 = (b.stateT2 || 0) + dt;
-        if (b.stateT2 > (b.enraged() ? 2.2 : 3.2)) {
-          b.stateT2 = 0;
-          b.cycle = (b.cycle + 1) % 3;
-          b.state = b.cycle === 2 ? 'gridTell' : 'volleyTell';
-          b.stateT = 0;
-          if (b.state === 'gridTell') this._layGrid(b, px, py);
+
+      // rockets + reticles live independently of state
+      for (var i = b.marks.length - 1; i >= 0; i--) {
+        var m = b.marks[i];
+        m.t += dt;
+        var k = Math.min(1, m.t / m.eta);
+        ringTell(g, m.x, m.y, k, 56);
+        g.fillStyle(TELL(), 0.08 + 0.14 * k);
+        g.fillCircle(m.x, m.y, 56 * k);
+        if (m.t >= m.eta) {
+          b.marks.splice(i, 1);
+          var ddx = px - m.x, ddy = py - m.y;
+          if (ddx * ddx + ddy * ddy < 62 * 62) hurt(s, 13);
+          s.cameras.main.shake(150, 0.006);
+          if (s.fx) { s.fx.burst(m.x, m.y, 'fx_pop', 8, 0.5); s.fx.burst(m.x, m.y, 'fx_spark', 6, 0.4); }
         }
-      } else if (b.state === 'volleyTell') {
-        var aim = Math.atan2(py - b.y, px - b.x);
-        ringTell(g, b.x + Math.cos(aim) * 60, b.y + Math.sin(aim) * 60, Math.min(1, b.stateT / 0.8), 22);
-        if (b.stateT > 0.8) {
-          for (var i = -1; i <= 1; i++) fireShot(b, b.x, b.y, aim + i * 0.2, 270, 11, 0xf2a03c, 12);
-          b.state = 'active'; b.stateT = 0;
+      }
+      for (var r = b.rockets.length - 1; r >= 0; r--) {
+        var rk = b.rockets[r];
+        rk.t += dt;
+        var f = Math.min(1, rk.t / rk.dur);
+        var rx = rk.x0 + (rk.x1 - rk.x0) * f;
+        var ry = rk.y0 + (rk.y1 - rk.y0) * f - Math.sin(f * Math.PI) * 180;
+        if (f >= 1) { b.rockets.splice(r, 1); continue; }
+        // a candy corn in flight: yellow base, orange band, white tip,
+        // nose pointed along the arc, sputtering flame behind it
+        var ang = Math.atan2((rk.y1 - rk.y0) / rk.dur - Math.cos(f * Math.PI) * Math.PI / rk.dur * 180,
+                             (rk.x1 - rk.x0) / rk.dur);
+        var ca = Math.cos(ang), sa = Math.sin(ang);
+        g.fillStyle(0xffd977, 1);
+        g.fillTriangle(rx - ca * 14 - sa * 9, ry - sa * 14 + ca * 9,
+                       rx - ca * 14 + sa * 9, ry - sa * 14 - ca * 9,
+                       rx + ca * 14, ry + sa * 14);
+        g.fillStyle(0xf2a03c, 1);
+        g.fillTriangle(rx - ca * 2 - sa * 6, ry - sa * 2 + ca * 6,
+                       rx - ca * 2 + sa * 6, ry - sa * 2 - ca * 6,
+                       rx + ca * 14, ry + sa * 14);
+        g.fillStyle(0xffffff, 1);
+        g.fillTriangle(rx + ca * 7 - sa * 3, ry + sa * 7 + ca * 3,
+                       rx + ca * 7 + sa * 3, ry + sa * 7 - ca * 3,
+                       rx + ca * 14, ry + sa * 14);
+        g.fillStyle(0xff6b6b, 0.7 + 0.3 * Math.sin(s.now * 30));
+        g.fillCircle(rx - ca * 16, ry - sa * 16, 5);
+      }
+
+      if (b.state === 'active') {
+        // it WALKS. Always. Slowly. At you.
+        var dx = px - b.x, dy = py - b.y, len = Math.hypot(dx, dy) || 1;
+        b.x += (dx / len) * b.spd * dt;
+        b.y += (dy / len) * b.spd * dt;
+        b.launchCd -= dt; b.restockCd -= dt;
+        if (b.restockCd <= 0) { b.state = 'restock'; b.stateT = 0; }
+        else if (b.launchCd <= 0) { b.state = 'launch'; b.stateT = 0; }
+      } else if (b.state === 'restock') {
+        // the door swings open and the floor floods with junk food
+        if (b.stateT > 0.6 && !b._poured) {
+          b._poured = true;
+          var POUR = ['zipper', 'sodacan', 'chipbag', 'zipper', 'sodacan', 'chipbag'];
+          for (var pj = 0; pj < POUR.length; pj++) {
+            var pa = -Math.PI / 2 + (pj / (POUR.length - 1) - 0.5) * 1.8;
+            spawnKid(s, b.x + Math.cos(pa) * 70, b.y + 40 + Math.sin(pa) * 30, POUR[pj]);
+          }
+          if (s.fx) s.fx.burst(b.x, b.y + 30, 'fx_pop', 10, 0.5);
           if (PC.audio) PC.audio.splat();
         }
-      } else if (b.state === 'gridTell') {
-        for (var gi = 0; gi < b.grid.length; gi++) {
-          var c = b.grid[gi];
-          ringTell(g, c.x, c.y, Math.min(1, b.stateT / 1.0), 40);
+        if (b.stateT > 1.3) {
+          b.state = 'active'; b.stateT = 0; b._poured = false;
+          b.restockCd = b.enraged() ? 6.5 : 9;
+          b.vuln = 1.0;                                // the door was open
+        }
+      } else if (b.state === 'launch') {
+        // hatch opens, three rockets go up, reticles LOCK where you are
+        if (b.stateT > 0.5 && !b._fired) {
+          b._fired = true;
+          for (var n = 0; n < 3; n++) {
+            var ox = n === 0 ? 0 : (Math.random() - 0.5) * 180;
+            var oy = n === 0 ? 0 : (Math.random() - 0.5) * 140;
+            var tx = px + ox, ty = py + oy;
+            var dur = 1.1 + n * 0.15;
+            b.marks.push({ x: tx, y: ty, t: 0, eta: dur });
+            b.rockets.push({ x0: b.x, y0: b.y - 50, x1: tx, y1: ty, t: 0, dur: dur });
+          }
+          s.cameras.main.shake(120, 0.004);
+          if (PC.audio) PC.audio.roar();
         }
         if (b.stateT > 1.0) {
-          for (var gj = 0; gj < b.grid.length; gj++) {
-            var c2 = b.grid[gj];
-            var pdx = px - c2.x, pdy = py - c2.y;
-            if (pdx * pdx + pdy * pdy < 52 * 52) hurt(s, 13);
-            if (s.fx) s.fx.burst(c2.x, c2.y, 'fx_pop', 6, 0.4);
+          b.state = 'active'; b.stateT = 0; b._fired = false;
+          b.launchCd = b.enraged() ? 3.6 : 5.5;
+          b.salvoN++;
+          if (b.salvoN % 3 === 0) {
+            // it vended too hard: SOLD OUT
+            b.state = 'overheat'; b.stateT = 0; b.vuln = 2.5;
+            if (s.floatText) s.floatText('SOLD OUT!', 0x35d0ff);
+          } else {
+            b.vuln = 1.1;
           }
-          s.cameras.main.shake(180, 0.007);
-          b.grid.length = 0;
-          // THE OVERHEAT: it vended too hard. Longest window in the game
-          // before the Tower.
-          b.state = 'overheat'; b.stateT = 0; b.vuln = 2.5;
-          if (s.floatText) s.floatText('SOLD OUT!', 0x35d0ff);
         }
       } else if (b.state === 'overheat') {
-        // lights flicker while it reboots
         if (Math.random() < dt * 10 && s.fx) s.fx.burst(b.x + (Math.random() - 0.5) * 60, b.y - 30, 'fx_spark', 1, 0.3);
         if (b.stateT > 2.5) { b.state = 'active'; b.stateT = 0; }
-      }
-    },
-    _layGrid: function (b, px, py) {
-      b.grid.length = 0;
-      // a 3x3 snack grid centred on where you STAND, with two cells
-      // left safe - the answer is read the gap, never tank it
-      var skipA = Math.floor(Math.random() * 9), skipB = (skipA + 4) % 9;
-      for (var i = 0; i < 9; i++) {
-        if (i === skipA || i === skipB) continue;
-        b.grid.push({ x: px + ((i % 3) - 1) * 110, y: py + (Math.floor(i / 3) - 1) * 110 });
       }
     },
     pose: function (b) {
       if (b.state === 'overheat') {
         b.sprite.setScale(b.baseS, b.baseS * (1 - 0.05 * Math.abs(Math.sin(b.animT * 12))));
         b.sprite.setAngle(Math.sin(b.animT * 30) * 2);
+        return true;
+      }
+      if (b.state === 'launch') {
+        b.sprite.setScale(b.baseS, b.baseS * (1 - 0.08 * Math.min(1, b.stateT * 2)));
         return true;
       }
       return false;
