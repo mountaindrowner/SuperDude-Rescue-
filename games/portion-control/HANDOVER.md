@@ -12,6 +12,32 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.50.0: THE CHOMP A/B TESTER + the drawn design gets
+  its shading pass.** Mark: "let's do a dev level tester with both
+  options. I only want more shadowing and detailing and texturing on
+  your design."
+  `?chomptest=1` on the finale drops you on the roof with the cutscene
+  skipped and BOTH CHOMP designs standing side by side at REAL PLAY
+  SCALE, labelled, with Danny between them for size, cycling phase 1 ->
+  2 -> 3 -> powered down every 3.2s. The camera stops following and
+  holds the pair at 0.46 zoom; the HUD hides. A sprite sheet lies about
+  scale - this does not, it is the actual camera on the actual roof.
+  `?chomp=drawn` makes the real fight use the drawn design instead.
+  `src/systems/chomp_drawn.js` is the drawn CHOMP with the detail pass:
+  every surface now has a 3-value ramp with HUE-SHIFTED lights and
+  darks (never a flat lighten/darken), dithered transition bands so a
+  limited palette reads as a gradient, rivets with their own highlight
+  and shadow pixel, panel seams as a dark/light pair, ambient occlusion
+  under every overhang, cast shadow from the brow onto the eyes,
+  scanlines and a specular dot in the eye panels, and scuff wear placed
+  by hand so it never reads as a pattern. Lit from the TOP-LEFT
+  throughout - one light, obeyed everywhere. It renders ONCE into
+  canvas textures at boot, so it costs exactly what a sprite costs.
+  Both designs run through the same PC.ChompFigure, which now takes a
+  style ('art' | 'drawn'), so whichever wins needs no other change.
+  Gates: verify-chomptest (rig arms, all four states cycle), plus
+  verify-roof-fight and verify-confront still green, zero errors.
+
 - **2026-08-06 - v0.49.0: CHOMP IS THE CAULDRON.** Eleven design rounds
   with Mark, ending on his pick: "let's do f5, best so far" - a
   colossal riveted STEW CAULDRON with a heavy gold rim, mint enamel

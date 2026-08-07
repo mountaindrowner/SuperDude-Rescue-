@@ -202,8 +202,12 @@ window.PC = window.PC || {};
   // machine should not morph), so the GROWTH is carried here.
   var PHASE_SCALE = [0.7, 0.7, 0.82, 0.95];
 
-  PC.ChompFigure = function (scene, x, y) {
+  PC.ChompFigure = function (scene, x, y, style) {
     this.scene = scene;
+    // 'art'   = the generated cauldron sprite set
+    // 'drawn' = the hand-drawn blocky face, rendered to canvas textures
+    this.style = style || PC.CHOMP_ART || 'art';
+    if (this.style === 'drawn' && PC.buildChompDrawn) PC.buildChompDrawn(scene);
     this.x = x; this.y = y;
     this.t = 0;
     this.rise = 0;                    // 0 = folded down, 1 = fully risen
@@ -212,8 +216,10 @@ window.PC = window.PC || {};
     this.powered = false;
     this.flash = 0;
     this.g = scene.add.graphics().setDepth(4);        // its shadow
-    this.sprite = scene.add.image(x, y, 'atlas', 'chomp_p1_walk_1')
-      .setOrigin(0.5, 0.9).setDepth(18);       // it sits on its stand
+    this.sprite = (this.style === 'drawn')
+      ? scene.add.image(x, y, 'chompdrawn_p1').setOrigin(0.5, 0.9).setDepth(18)
+      : scene.add.image(x, y, 'atlas', 'chomp_p1_walk_1')
+          .setOrigin(0.5, 0.9).setDepth(18);   // it sits on its stand
   };
 
   PC.ChompFigure.prototype.update = function (dt, state, stateT) {
@@ -226,11 +232,18 @@ window.PC = window.PC || {};
     this.sprite.setVisible(r > 0.02);
     if (r <= 0.02) return;
 
-    var art = PHASE_ART[this.phase] || 'chomp_p1';
-    var frame = this.powered ? 'chomp_down'
-      : this.serving > 0 ? art + '_serve_1'
-      : art + '_walk_' + (1 + (Math.floor(this.t * 2.2) % 2));
-    this.sprite.setFrame(frame);
+    if (this.style === 'drawn') {
+      // the drawn set has one frame per phase (plus the shutdown); its
+      // life comes from the hum and the flash, not a flipbook
+      this.sprite.setTexture(this.powered ? 'chompdrawn_down'
+        : 'chompdrawn_p' + Math.min(3, Math.max(1, this.phase)));
+    } else {
+      var art = PHASE_ART[this.phase] || 'chomp_p1';
+      var frame = this.powered ? 'chomp_down'
+        : this.serving > 0 ? art + '_serve_1'
+        : art + '_walk_' + (1 + (Math.floor(this.t * 2.2) % 2));
+      this.sprite.setFrame(frame);
+    }
 
     // a MACHINE does not bob up and down like a creature - it hums. A
     // tiny vertical shiver at machine frequency, an order of magnitude
