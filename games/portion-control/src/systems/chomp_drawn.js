@@ -147,6 +147,37 @@ window.PC = window.PC || {};
     rect(g, gx0 - 1, gy - 2, gw + 2, 1, M.gold.m);        // lip
     rect(g, gx0 - 1, gy - 1, gw + 2, 1, M.gold.d);
 
+    // ---- GREEBLE (v0.54.0, Mark: "more greeble"). The rule that keeps
+    // greeble from turning into noise: every piece is a THING a
+    // machine would actually have, at three sizes, clustered near
+    // seams and edges rather than sprinkled evenly.
+    // small vent stacks along the shoulder
+    for (var vs = 0; vs < 4; vs++) {
+      var vx2 = m0 + 6 + vs * Math.floor((mw - 14) / 3);
+      slab(g, vx2, 40, 3, 4, M.steel);
+      rect(g, vx2, 40, 3, 1, M.steel.l);
+    }
+    // gauge cluster on the left cheek
+    rect(g, f0 + 2, 30, 8, 6, M.dark.m);
+    rect(g, f0 + 3, 31, 2, 2, M.mint.m);
+    rect(g, f0 + 6, 31, 2, 2, M.amber.m);
+    rect(g, f0 + 3, 34, 5, 1, M.steel.l);
+    // hazard chevrons on the right cheek
+    for (var hz = 0; hz < 3; hz++) {
+      rect(g, f0 + fw - 10 + hz * 3, 30, 2, 6, hz % 2 ? M.dark.m : M.gold.m);
+    }
+    // junction boxes on the plinth
+    for (var jb = 0; jb < 3; jb++) {
+      var jx = b0 + 14 + jb * Math.floor((bw - 28) / 2);
+      slab(g, jx, 47, 5, 4, M.steel);
+      rect(g, jx + 1, 48, 1, 1, M.amber.m);
+    }
+    // a stencilled plate number, because real machines are labelled
+    rect(g, f0 + 3, 45, 7, 3, M.dark.m);
+    rect(g, f0 + 4, 46, 1, 1, M.cream.l);
+    rect(g, f0 + 6, 46, 1, 1, M.cream.l);
+    rect(g, f0 + 8, 46, 1, 1, M.cream.l);
+
     // ---- the stolen Ray in its mount ----
     slab(g, D / 2 - 5, 1, 10, 7, M.steel);
     rect(g, D / 2 - 3, 2, 6, 5, crys.m);

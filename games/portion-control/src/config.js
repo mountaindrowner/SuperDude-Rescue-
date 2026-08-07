@@ -32,7 +32,9 @@ PC.CHOMP_TEST = (function () {
   if (!m) return null;
   return (m[1] === '1') ? 'both' : m[1];
 })();
-PC.CHOMP_ART = (/[?&]chomp=drawn/.test(location.search)) ? 'drawn' : 'art';
+// v0.54.0: the DRAWN design won (Mark: "our drawn version works great").
+// ?chomp=art still brings the generated cauldron back for comparison.
+PC.CHOMP_ART = (/[?&]chomp=art/.test(location.search)) ? 'art' : 'drawn';
 // ?roof=1 - DEV WARP straight to the top of the last stairwell, so the
 // confrontation and the real fight can be played without climbing
 // seventeen floors first. The tester (?chomptest=) poses the art; this

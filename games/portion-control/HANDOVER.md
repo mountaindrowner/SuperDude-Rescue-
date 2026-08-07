@@ -12,6 +12,49 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.54.0: THE DRAWN DESIGN WINS, AND THE ARMS ARE IN.**
+  Mark: "our drawn version works great. More greeble and more extended
+  tubes and wires leading to him would improve his design. And also add
+  the arm segments as well to the fight. Now let's figure out his
+  phases and increase his hp."
+  * **DRAWN IS NOW DEFAULT** (`PC.CHOMP_ART`). `?chomp=art` still
+    brings the generated cauldron back for comparison, and the BOSS
+    TEST node still offers both.
+  * **GREEBLE**: vent stacks along the shoulder, a gauge cluster on one
+    cheek, hazard chevrons on the other, junction boxes on the plinth,
+    a stencilled plate number. The rule that keeps greeble from
+    becoming noise: every piece is a THING a machine would have, at
+    three sizes, clustered near seams and edges rather than sprinkled.
+  * **TETHERS** (`chomp_arms.js`): five feed pipes and slack cables
+    running from roof plant and parapet INTO CHOMP - dark casing, lit
+    core line, a sagging cable alongside, gold socket collars where
+    they meet the roof, and an amber pulse travelling *inward* so they
+    read as feeding it. This is what makes it look plumbed into the
+    building instead of parked on it.
+  * **THE FOUR BOOM ARMS**, drawn in code because a stamped arm is only
+    correct at the angle it was drawn and these sweep through all of
+    them. Three jointed segments with gold hinges, a green panel wing
+    and a lamp at the tip, a health pip under each so a child can see
+    it is a target, and a dead arm hangs drooped and dark and sparking
+    for the rest of the fight.
+  * **THE PHASE SHAPE**: while ANY arm lives the core is armoured to
+    0.28; each kill peels a quarter of that back; all four down and the
+    core takes full damage. Shots land on arms FIRST (hook in
+    scene.hitBoss), so stripping them is the fight's first job rather
+    than an optional distraction. Armour pips sit on the boss bar so
+    the reason your shots bounce is on screen, not a hidden multiplier.
+  * **HP 5200 -> 14000** (5880 after story ease) plus 4x900 arm HP.
+    5200 was dying in under a minute once allies were landing.
+  * GEOMETRY FIX: the stand-off was 640px, which framed the
+    conversation but left CHOMP off the top of the screen once the
+    camera went back to following Danny. 400 keeps the machine in frame
+    at fight zoom and still reads as a stand-off in the wide shot.
+  Gates: new verify-arms (5/5 - arms exist and armour, HP raised,
+  armoured core soaks, arms die one at a time through the real damage
+  door, stripped core takes full damage), plus tower/confront green.
+  **STILL TO BUILD: the moveset.** PORTION SERVE, CONVEYOR, BUFFET,
+  SECONDS! It has arms and armour now, but it still does not attack.
+
 - **2026-08-06 - v0.53.0: THE BOSS TEST NODE.** Mark: "make that final
   fight area a separate node on the map, so I can easily just access it
   and try all the different versions of the boss fight."

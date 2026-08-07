@@ -154,8 +154,13 @@ window.PC = window.PC || {};
     // A confrontation is two figures facing each other, close enough
     // that one shot holds both. 620px apart, dead centre of the roof.
     this.stairHead = { x: lastShaft.x + lastShaft.w / 2, y: rr.y + rr.h - 150 };
-    this.dannyMark = { x: rr.x + rr.w / 2, y: rr.y + rr.h * 0.74 };
-    this.chompMark = { x: rr.x + rr.w / 2, y: this.dannyMark.y - 640 };
+    // 640px apart framed the CONVERSATION nicely but left CHOMP off the
+    // top of the screen once the fight started and the camera went back
+    // to following Danny - you cannot fight what you cannot see. 400
+    // still reads as a stand-off in the wide shot AND keeps the machine
+    // in frame at fight zoom.
+    this.dannyMark = { x: rr.x + rr.w / 2, y: rr.y + rr.h * 0.68 };
+    this.chompMark = { x: rr.x + rr.w / 2, y: this.dannyMark.y - 400 };
     // the tower footprint: everything inside is STRUCTURE, outside is SKY
     this.foot = { x: FX0 - 192, y: 0, w: FW + 384, h: this.size };
 
