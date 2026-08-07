@@ -20,6 +20,13 @@ PC.VERSION = 'v' + (window.PC_BUILD || 'dev');
 // Runtime-only: the story save and meta wallet are never written by
 // the mode itself, so dropping the param resumes normal progression.
 PC.UNLOCK_ALL = false;
+
+// CHOMP ART A/B (v0.50.0, Mark: "let's do a dev level tester with both
+// options"). ?chomptest=1 puts BOTH designs on the roof side by side at
+// play scale with labels; ?chomp=drawn|art picks which one the real
+// fight uses. Runtime only - nothing is saved.
+PC.CHOMP_TEST = /[?&]chomptest=1/.test(location.search);
+PC.CHOMP_ART = (/[?&]chomp=drawn/.test(location.search)) ? 'drawn' : 'art';
 try { PC.UNLOCK_ALL = /[?&]unlock/.test(window.location.search); } catch (e) {}
 
 PC.RENDER = {

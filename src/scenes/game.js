@@ -167,7 +167,18 @@ PC.GameScene.prototype.create = function () {
     ? new PC.SewerFlow(this) : null;
   this.confront = (this.region && this.region.def.id === 'tower' && PC.Confront)
     ? new PC.Confront(this) : null;
+  if (PC.CHOMP_TEST && this.region && this.region.def.id === 'tower' && PC.ChompTest) {
+    var ctSelf = this;
+    this.time.delayedCall(400, function () {
+      if (ctSelf.quest && ctSelf.quest.box) {
+        var guard = 0;
+        while (ctSelf.quest.box.active && guard++ < 40) ctSelf.quest.box.tap();
+      }
+      ctSelf.chompTest = new PC.ChompTest(ctSelf);
+    });
+  }
   this.allies = null;                // built when the roof fight starts
+  this.chompTest = null;             // ?chomptest=1 A/B rig
   // CINEMATIC ZOOM (v0.47.0, Mark: "for the CHOMP fight we should zoom
   // the camera out a little bit... maybe even twenty percent, so they
   // can see more of the fight and it feels more cinematic"). The camera
@@ -825,6 +836,7 @@ PC.GameScene.prototype.update = function (time, delta) {
     for (var wi = 0; wi < this.weapons.length; wi++) this.weapons[wi].update(dt, this);
   }
   var self = this;
+  if (this.chompTest) this.chompTest.update(dt);
   if (this.allies) this.allies.update(dt);
   this.bullets.update(dt, this.enemies, this._onKillCb);
   this.juice.update(dt);
