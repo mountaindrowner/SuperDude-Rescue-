@@ -19,7 +19,7 @@ window.PC = window.PC || {};
 (function () {
 
   var SEG = 3;                     // segments per boom
-  var REACH = 250;                 // fully extended, world px
+  var REACH = 320;                 // fully extended, world px (+30%)
   var SWEEP = 0.55;                // radians either side of rest
   var ARM_HP = 900;
 
@@ -176,7 +176,7 @@ window.PC = window.PC || {};
     // boom segments, each a lozenge with a lit top edge
     for (var i2 = 0; i2 < SEG; i2++) {
       var p0 = pts[i2], p1 = pts[i2 + 1];
-      var w = 15 - i2 * 3;
+      var w = 19 - i2 * 3;          // heavier booms at the +30% scale
       g.lineStyle(w + 4, 0x15131c, 1);
       g.beginPath(); g.moveTo(p0.x, p0.y); g.lineTo(p1.x, p1.y); g.strokePath();
       g.lineStyle(w, hurt ? 0xffffff : 0xc9c1a8, 1);
@@ -188,18 +188,37 @@ window.PC = window.PC || {};
       g.fillStyle(0xe0b232, 1); g.fillCircle(p1.x, p1.y, w * 0.36);
       g.fillStyle(0xffd977, 1); g.fillCircle(p1.x - 1, p1.y - 1, w * 0.16);
     }
-    // THE TIP: a panel wing and the lamp that goes out when it dies
+    // THE HEAD: a serving CLAW, not a panel wing (Mark: "let's have
+    // his arms more threatening"). A pair of hinged jaws that open and
+    // close on their own clock, a red hazard lamp instead of a friendly
+    // amber one, and the jaws flare WIDE while the arm is winding up.
     var tip = pts[SEG];
-    g.fillStyle(0x15131c, 1); g.fillRect(tip.x - 26, tip.y - 15, 52, 30);
-    g.fillStyle(0x3f8a4c, 1); g.fillRect(tip.x - 23, tip.y - 12, 46, 24);
-    g.fillStyle(0x7dd97b, 1); g.fillRect(tip.x - 23, tip.y - 12, 46, 4);
-    for (var pw = -18; pw < 20; pw += 9) {            // panel ribs
-      g.fillStyle(0x2a5c33, 1); g.fillRect(tip.x + pw, tip.y - 10, 2, 20);
+    var wind = a.wind || 0;
+    var jaw = (0.35 + 0.3 * Math.sin(s.now * 2.2 + a.i * 1.4)) + wind * 0.9;
+    var jl = 30, jw = 13;
+    g.fillStyle(0x15131c, 1); g.fillRect(tip.x - 20, tip.y - 13, 40, 26);
+    g.fillStyle(0x4a4760, 1); g.fillRect(tip.x - 17, tip.y - 10, 34, 20);
+    g.fillStyle(0x6d6a8e, 1); g.fillRect(tip.x - 17, tip.y - 10, 34, 4);
+    // the two jaws, hinged off the head
+    for (var jj = -1; jj <= 1; jj += 2) {
+      var off = jj * (10 + jaw * 16);
+      g.fillStyle(0x15131c, 1);
+      g.fillTriangle(tip.x + jj * 12, tip.y - 4, tip.x + jj * 12, tip.y + 4,
+                     tip.x + jj * 12 + off * 0.4 + jj * jl, tip.y + off * 0.5);
+      g.fillStyle(hurt ? 0xffffff : 0xc9c1a8, 1);
+      g.fillTriangle(tip.x + jj * 12, tip.y - 3, tip.x + jj * 12, tip.y + 3,
+                     tip.x + jj * 12 + off * 0.4 + jj * (jl - 4), tip.y + off * 0.5);
+      void jw;
     }
-    var lamp = 0.6 + 0.4 * Math.sin(s.now * 3 + a.i);
-    g.fillStyle(0x15131c, 1); g.fillCircle(tip.x, tip.y, 8);
-    g.fillStyle(hurt ? 0xffffff : 0xf2a03c, powered ? 0.25 : lamp);
-    g.fillCircle(tip.x, tip.y, 5);
+    var lamp = 0.55 + 0.45 * Math.sin(s.now * (wind > 0 ? 12 : 3) + a.i);
+    g.fillStyle(0x15131c, 1); g.fillCircle(tip.x, tip.y, 9);
+    g.fillStyle(hurt ? 0xffffff : (wind > 0 ? 0xff6b6b : 0xe2574c),
+      powered ? 0.25 : lamp);
+    g.fillCircle(tip.x, tip.y, 6);
+    if (wind > 0) {                                   // wind-up flare
+      g.lineStyle(3, 0xff6b6b, 0.5 * wind);
+      g.strokeCircle(tip.x, tip.y, 22 + wind * 16);
+    }
     // health pip under the tip, so a kid can see it is a target
     var f2 = Math.max(0, a.hp / a.maxHp);
     g.fillStyle(0x15131c, 0.8); g.fillRect(tip.x - 22, tip.y + 20, 44, 5);
