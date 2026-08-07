@@ -12,6 +12,17 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.66.0: callout wording pass.** Mark disliked SAUCE
+  STORM / FROSTING TIME / GOO-NADO. Replaced with lines that plainly
+  SAY what the attack is (the callout's job is removing mystery, not
+  landing a pun): KETCHUP RAIN! / STICKY FROSTING! (names the slow
+  effect) / GOO SPIRAL!. Full current set: KETCHUP RAIN, COMING
+  THROUGH, FLORET FLURRY, DOWN I GO, SURPRISE, CUPCAKE SPLIT, STICKY
+  FROSTING, SNACK TIME, CANDY CORN AWAY, SOLD OUT, DOWN THE DRAIN,
+  GOO SPIRAL, RIPPLE TIME, SPLAT SPLAT. All still pass the automated
+  appropriateness screen. district-bosses 17 checks green.
+
+
 - **2026-08-07 - v0.65.0: WALKS THAT READ, THE 60% SPLIT, SPRINKLES,
   AND CALLOUTS.** Mark's batch: the vending machine and cake "do move
   but there's no walking animation"; the cake "doesn't split - maybe a
