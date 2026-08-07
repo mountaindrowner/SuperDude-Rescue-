@@ -61,6 +61,15 @@ PC.TitleScene.prototype.constructor = PC.TitleScene;
 
 PC.TitleScene.prototype.create = function () {
   PC.applyRenderScale(this);
+  // ?chomptest= goes STRAIGHT to the roof. The whole point of a dev
+  // link is that it is one tap - nobody should have to climb
+  // seventeen floors to look at a sprite.
+  if (PC.CHOMP_TEST) {
+    if (PC.storyState) PC.storyState.markTutorialSeen();
+    PC.STORY.pendingMission = PC.STORY.chainById('finale');
+    this.scene.start('PC_Game');
+    return;
+  }
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x0d0a1c);
   this._done = false;

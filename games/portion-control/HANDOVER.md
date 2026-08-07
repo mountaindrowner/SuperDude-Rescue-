@@ -12,6 +12,27 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.51.0: the A/B tester becomes a one-tap dev LINK.**
+  Mark: "give me the tester link so I can load each one and see what
+  they look like separately."
+  `?chomptest=` now takes a MODE and goes straight to the roof from the
+  title - no climbing seventeen floors to look at a sprite:
+  * `?chomptest=1`     both designs side by side (0.46 zoom)
+  * `?chomptest=art`   the generated cauldron alone (0.74 zoom)
+  * `?chomptest=drawn` the drawn blocky face alone (0.74 zoom)
+  Danny stands in frame for SCALE - the entire reason to test in-engine
+  rather than off a contact sheet. All four states cycle every 3.2s.
+  THE RIG IS NOW UNKILLABLE. The first build let the director get its
+  ticks in before the delayed arm fired; enemies chewed through Danny
+  while he posed and the art comparison ended on OVERWHELMED at 0:06.
+  It now clears the field every tick, noops enemies.spawn, empties
+  scene.weapons (his auto-fire was shooting things mid-test) and pins
+  hp/invUntil. A dev rig that can kill you is not a dev rig.
+  LIVE LINK (GitHack, this branch):
+  https://raw.githack.com/mountaindrowner/SuperDude-Rescue-/claude/portion-control-vslice/games/portion-control/index.html?chomptest=1
+  Gates: all three modes verified one-tap, plus roof-fight and confront
+  green, zero errors.
+
 - **2026-08-06 - v0.50.0: THE CHOMP A/B TESTER + the drawn design gets
   its shading pass.** Mark: "let's do a dev level tester with both
   options. I only want more shadowing and detailing and texturing on

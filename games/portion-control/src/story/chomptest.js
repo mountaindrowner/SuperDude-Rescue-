@@ -24,28 +24,52 @@ window.PC = window.PC || {};
     this.step = 0;                 // 0,1,2 = phases; 3 = powered down
 
     var c = L.chompMark;
-    // the generated cauldron on the left, the drawn face on the right
-    this.a = new PC.ChompFigure(scene, c.x - GAP, c.y, 'art');
-    this.b = new PC.ChompFigure(scene, c.x + GAP, c.y, 'drawn');
-    this.a.rise = this.b.rise = 1;
-
-    this.labels = [
-      this._label(c.x - GAP, c.y + 40, 'GENERATED', 0xf2c33c),
-      this._label(c.x + GAP, c.y + 40, 'DRAWN', 0x35d0ff),
-      this._label(c.x, c.y - 210, 'PHASE 1', 0xfff6e0),
-    ];
+    var mode = PC.CHOMP_TEST || 'both';
+    this.figs = [];
+    this.labels = [];
+    if (mode === 'both') {
+      this.a = new PC.ChompFigure(scene, c.x - GAP, c.y, 'art');
+      this.b = new PC.ChompFigure(scene, c.x + GAP, c.y, 'drawn');
+      this.figs = [this.a, this.b];
+      this.labels.push(this._label(c.x - GAP, c.y + 40, 'GENERATED', 0xf2c33c));
+      this.labels.push(this._label(c.x + GAP, c.y + 40, 'DRAWN', 0x35d0ff));
+      this.zoom = ZOOM;
+    } else {
+      this.a = new PC.ChompFigure(scene, c.x, c.y, mode);
+      this.figs = [this.a];
+      this.labels.push(this._label(c.x, c.y + 40,
+        mode === 'drawn' ? 'DRAWN' : 'GENERATED',
+        mode === 'drawn' ? 0x35d0ff : 0xf2c33c));
+      this.zoom = 0.74;                      // one alone gets a closer look
+    }
+    for (var fi = 0; fi < this.figs.length; fi++) this.figs[fi].rise = 1;
+    this.labels.push(this._label(c.x, c.y - 210, 'PHASE 1', 0xfff6e0));
+    this.phaseLabel = this.labels[this.labels.length - 1];
     // Danny stands between them for SCALE - the whole point of testing
     // in-engine rather than on a sprite sheet is seeing how big they
     // read next to the character you actually play.
     scene.px = c.x; scene.py = c.y + 150;
     scene.player.setPosition(scene.px, scene.py);
-    if (scene.enemies) scene.enemies.clearAll();
+    // SPAWN-PROOF the rig. Silencing the director is not enough: it
+    // gets ticks in before the delayed arm fires, and one stray hot dog
+    // standing in front of the boss is exactly what muddies an art
+    // judgement. Shut the door as well as sweeping the floor.
+    if (scene.enemies) {
+      scene.enemies.clearAll();
+      scene.enemies.spawn = function () { return null; };
+    }
     if (scene.director) scene.director.update = function () {};
+    if (scene.pickups && scene.pickups.clearAll) scene.pickups.clearAll();
+    // GUNS DOWN. Danny auto-fires, and in the first build he shot the
+    // one enemy that got in and left its harmless still-sprite corpse
+    // parked in front of the boss for the rest of the test.
+    if (scene.weapons) scene.weapons.length = 0;
+    if (scene.enemies && scene.enemies.clearStills) scene.enemies.clearStills();
     if (scene.confront) { scene.confront.state = 'over'; scene.confront.done = true; }
     // the camera holds the pair; following the player would swing it
     var cam = scene.cameras.main;
     cam.stopFollow();
-    scene.zoomTarget = scene.baseZoom * ZOOM;
+    scene.zoomTarget = scene.baseZoom * this.zoom;
     this._camAt = { x: c.x, y: c.y + 30 };
     cam.centerOn(this._camAt.x, this._camAt.y);
     if (scene.ui) scene.ui.setVisible(false);      // nothing but the test
@@ -67,22 +91,31 @@ window.PC = window.PC || {};
     // the rig stays clean: the director gets one tick in before the
     // delayed arm fires, and one stray hot dog in the middle of an art
     // comparison is exactly the kind of thing that muddies a judgement
-    if (this.scene.enemies && this.scene.enemies.liveCount) this.scene.enemies.clearAll();
+    // A DEV RIG MUST NOT BE ABLE TO KILL YOU. The first build did:
+    // enemies spawned in the 400ms before the rig armed, chewed through
+    // Danny while he stood posing, and the art comparison ended on the
+    // OVERWHELMED screen. Belt and braces - clear the field AND make
+    // him untouchable.
+    var s2 = this.scene;
+    if (s2.enemies) s2.enemies.clearAll();
+    s2.invUntil = s2.now + 999;
+    s2.hp = PC.PLAYER.HP + (s2.stats.bonusHp || 0);
     if (this.t >= HOLD) {
       this.t = 0;
       this.step = (this.step + 1) % 4;
       var powered = this.step === 3;
       var ph = powered ? 3 : this.step + 1;
-      this.a.phase = this.b.phase = ph;
-      this.a.powered = this.b.powered = powered;
-      this.labels[2].setText(powered ? 'POWERED DOWN' : 'PHASE ' + ph);
+      for (var i = 0; i < this.figs.length; i++) {
+        this.figs[i].phase = ph;
+        this.figs[i].powered = powered;
+      }
+      this.phaseLabel.setText(powered ? 'POWERED DOWN' : 'PHASE ' + ph);
     }
-    this.a.update(dt, 'fight', this.t);
-    this.b.update(dt, 'fight', this.t);
+    for (var j = 0; j < this.figs.length; j++) this.figs[j].update(dt, 'fight', this.t);
   };
 
   PC.ChompTest.prototype.destroy = function () {
-    this.a.destroy(); this.b.destroy();
+    for (var i = 0; i < this.figs.length; i++) this.figs[i].destroy();
     for (var i = 0; i < this.labels.length; i++) this.labels[i].destroy();
   };
 })();
