@@ -187,6 +187,13 @@ PC.MissionsScene.prototype.create = function () {
     }).setDepth(5).setInteractive({ useHandCursor: true });
     rs.on('pointerdown', function () { PC.storyState.reset(); self.scene.restart(); });
   }
+  // ---- THE BOSS TEST NODE (v0.53.0, Mark: "make that final fight area
+  // a separate node on the map, so I can easily just access it and try
+  // all the different versions of the boss fight"). It sits OFF the
+  // chain - a red pad clipped to the side of the tower - because it is
+  // not a story beat, it is a workbench. It never touches save state.
+  this.buildBossTest(W, top);
+
   PC.stampVersion(this);
 
   // ---- one-time NEW MISSION reveal on the frontier node ----
@@ -194,6 +201,90 @@ PC.MissionsScene.prototype.create = function () {
   if (cur > 0 && cur < n && !PC.storyState.revealSeen(chain[cur].id)) {
     this.revealFanfare(this._nodes[cur], chain[cur]);
   }
+};
+
+// THE BOSS TEST PAD. Off-chain, always available, launches the roof
+// straight into whichever version you want to look at.
+PC.MissionsScene.prototype.buildBossTest = function (W, top) {
+  var self = this, K = PC.uiK;
+  var bx = W - K(30), by = top + K(34);
+  var g = this.add.graphics().setDepth(4);
+  g.fillStyle(0x0b0818, 0.5).fillEllipse(bx + 1, by + K(9), K(26), K(7));
+  PC.labPanel(g, bx - K(15), by - K(11), K(30), K(22),
+    { base: 0x3a1c22, edge: 0xff6b6b, rivets: true, radius: 4 });
+  g.lineStyle(2, 0xff6b6b, 0.9);
+  g.strokeCircle(bx, by, K(7));
+  g.fillStyle(0xff6b6b, 1);
+  g.fillCircle(bx, by, K(3));
+  var lbl = this.add.text(bx, by + K(14), 'BOSS\nTEST', {
+    fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#ff6b6b',
+    fontStyle: 'bold', align: 'center',
+  }).setOrigin(0.5, 0).setDepth(5);
+  this.tweens.add({ targets: lbl, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+  var z = this.add.zone(bx, by, K(40), K(44)).setDepth(6)
+    .setInteractive({ useHandCursor: true });
+  z.on('pointerdown', function () {
+    if (PC.audio) PC.audio.ui();
+    self.openBossTest();
+  });
+};
+
+// the chooser: every version of the fight, one tap each
+PC.MissionsScene.prototype.openBossTest = function () {
+  var self = this, W = PC.RENDER.W, H = PC.RENDER.H, K = PC.uiK;
+  this.closeBrief();
+  var ui = this._briefUi = [];
+  var ph = K(132), py = (H - ph) / 2;
+  var g = this.add.graphics().setDepth(30);
+  g.fillStyle(0x0b0818, 0.72).fillRect(0, 0, W, H);
+  PC.labPanel(g, K(12), py, W - K(24), ph,
+    { base: 0x241f3d, edge: 0xff6b6b, rivets: true });
+  ui.push(g);
+  ui.push(this.add.text(W / 2, py + K(10), 'ROOFTOP - BOSS TEST', {
+    fontFamily: 'monospace', fontSize: K(11) + 'px', color: '#ff6b6b',
+    fontStyle: 'bold',
+  }).setOrigin(0.5, 0).setDepth(31));
+  ui.push(this.add.text(W / 2, py + K(24), 'straight to the roof', {
+    fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#cfd4e8',
+  }).setOrigin(0.5, 0).setDepth(31));
+
+  // each row sets the runtime flags the roof reads, then starts the game
+  var ROWS = [
+    ['FIGHT: CAULDRON', 0xa8e04a, { art: 'art', test: null }],
+    ['FIGHT: DRAWN',    0x35d0ff, { art: 'drawn', test: null }],
+    ['A/B: SIDE BY SIDE', 0xf2c33c, { art: 'art', test: 'both' }],
+    ['LOOK: CAULDRON',  0xf2c33c, { art: 'art', test: 'art' }],
+    ['LOOK: DRAWN',     0xf2c33c, { art: 'art', test: 'drawn' }],
+  ];
+  for (var i = 0; i < ROWS.length; i++) {
+    (function (row, idx) {
+      var ry = py + K(38) + idx * K(18);
+      var bg = self.add.graphics().setDepth(31);
+      PC.labPanel(bg, K(22), ry, W - K(44), K(15),
+        { base: 0x1c1733, edge: row[1], radius: 3 });
+      var t = self.add.text(W / 2, ry + K(7), row[0], {
+        fontFamily: 'monospace', fontSize: K(9) + 'px', fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(32);
+      t.setColor('#' + row[1].toString(16).padStart(6, '0'));
+      var z = self.add.zone(W / 2, ry + K(7), W - K(44), K(17)).setDepth(33)
+        .setInteractive({ useHandCursor: true });
+      z.on('pointerdown', function () {
+        PC.CHOMP_ART = row[2].art;
+        PC.CHOMP_TEST = row[2].test;
+        PC.ROOF_WARP = !row[2].test;         // a fight warps; a look poses
+        PC.STORY.pendingMission = PC.STORY.chainById('finale');
+        if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
+        self.scene.start('PC_Game');
+      });
+      ui.push(bg, t, z);
+    })(ROWS[i], i);
+  }
+  var x = this.add.text(W - K(18), py + K(6), '[X]', {
+    fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#ff6b6b',
+    fontStyle: 'bold',
+  }).setOrigin(1, 0).setDepth(34).setInteractive({ useHandCursor: true });
+  x.on('pointerdown', function () { self.closeBrief(); });
+  ui.push(x);
 };
 
 // one mission node: ring + state icon + label (+ hero chip when playable)
