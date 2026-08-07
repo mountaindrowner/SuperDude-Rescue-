@@ -814,6 +814,9 @@ PC.GameScene.prototype.update = function (time, delta) {
   // system recomputes this every frame and resets it to 1 when nothing
   // is standing in a puddle, so it can never stick after the fight.
   if (this.armSlow && this.armSlow !== 1) spd *= this.armSlow;
+  // district-boss slow puddles (Cake frosting, Gloop slick) - same
+  // recompute-every-frame contract as armSlow, so it can never stick
+  if (this.bossSlow && this.bossSlow !== 1) spd *= this.bossSlow;
   // sewer zone effects (v0.42.0): spore haze + wading water slow the
   // player; a tiny label the first time so the kid knows WHY
   this._zone = null;
