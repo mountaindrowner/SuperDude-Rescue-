@@ -12,6 +12,65 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.60.0: PHASES THAT READ AS PHASES.** Mark: "we also
+  didn't have phases in the fight with boss model changes? cinematic
+  moments? difficulty spikes?"
+  * **The honest answer was that all three half-existed.** There were
+    already three phases with separate baked body art, a size escalation
+    (0.91 / 1.07 / 1.24), tightening cadence and a line of dialogue -
+    but a gate went past in a shake and a flash, the art delta was two
+    small panels, and the only spike was slightly shorter gaps. So the
+    machinery was there and none of it LANDED.
+  * **THE CINEMATIC** - new `src/systems/chomp_phase.js`. A gate now
+    takes the camera for ~3.3s: push in on CHOMP, it rears and SLAMS
+    every boom into the deck (spark bursts at each tip, 0.020 shake,
+    magenta flash), a letterboxed title card names the phase - PHASE 2
+    SECOND HELPINGS / PHASE 3 EVERYTHING ON THE MENU with a CHOMP line -
+    then the camera hands back. It runs on the same `storyPause` the
+    dialogue uses, so every attack system already stops for it.
+  * **THE MODEL CHANGES ARE REAL NOW.** Phase 2 BOLTS MORE MACHINE ON
+    (a second hopper tier over the brow, fat food canisters clamped to
+    both shoulders, hazard stripes down the plinth, a cracked cheek
+    panel with wiring showing). Phase 3 is the same machine COMING
+    APART while it keeps trying: scorch dithered out of every seam, a
+    torn chest panel with the core glowing white-hot through it, food
+    fused over the chassis in slabs, tines along the brow, extra
+    conduits strapped down the neck - and the live face escalates with
+    it, lenses going from amber to RED.
+  * **THE DIFFICULTY SPIKE** is now in the ARMS, via `arms.overdrive(n)`
+    and a `GEAR` table: cooldowns to 0.72x then 0.52x, blender radius
+    +12%/+26%, server volleys 3 -> 5 pellets, saucer 3 -> 4 puddles,
+    booms swinging 1.35x/1.75x harder. The attractor gets stronger too
+    but is capped so it can NEVER outrun the player - gated.
+  * The phase-2 dialogue box was removed: CHOMP says its piece on the
+    card, and a second box for the same beat is just an interruption.
+    Phase 3 keeps Vic, because another voice reacting is the one thing
+    the card cannot do.
+  * **TWO BUGS, BOTH THE SAME SHAPE AS THE v0.57.0 ONE** - a system
+    that stops the world also stops whatever was supposed to un-stop
+    it:
+    1. The beat froze on its first frame. `storyPause` returns from
+       game.js update BEFORE the boss updates, so nothing drove it and
+       it never handed the camera back. The beat (and the boss's fig,
+       arms and moves, so the slam plays) is now driven from INSIDE the
+       storyPause block.
+    2. The card rendered as a DOUBLE image when two gates overlapped.
+       `enterPhase` now closes a running beat before starting a new one
+       - allies fire right up to the freeze and a big hit can cross two
+       thresholds at once, and the orphaned card would otherwise sit on
+       screen for the rest of the fight.
+  * The card is anchored to the live camera rect in world space rather
+    than parented to `scene.ui`: that container is re-positioned from
+    `worldView` at the TOP of update and this beat moves the camera
+    afterwards, so a screen-space card lands a frame behind a camera
+    travelling several hundred px. Verified by sampling canvas pixels,
+    not by eye.
+  * New gate `verify-phases.js` (7 checks) GREEN; roles, bossdoc,
+    moves, arms, roof-fight, confront and portrait all re-run green.
+    `verify-roof-fight` needed updating, not fixing - the crew now
+    arrives when the phase-3 camera hands back rather than the instant
+    HP crosses the line, which is better staging.
+
 - **2026-08-07 - v0.59.0: FOUR ARMS, FOUR JOBS.** Mark: "let's make the
   arms longer by 75%, let's have those blades at the end spinning, and
   maybe have each arm have a different purpose?"

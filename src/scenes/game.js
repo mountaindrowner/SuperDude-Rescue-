@@ -748,6 +748,18 @@ PC.GameScene.prototype.update = function (time, delta) {
   if (this.critters) this.critters.update(dt);
   if (this.bossDrop) this.updateBossDrop();
   if (this.storyPause) {                       // story dialogue: world holds
+    // ...EXCEPT the phase cinematic, which IS the thing holding the
+    // world. It runs on storyPause so every attack system stops for it,
+    // so it has to be driven from inside the hold or it would freeze on
+    // its first frame and never hand the camera back. The boss's own
+    // visuals tick with it so the slam and the rear-up actually play.
+    if (this.boss && this.boss.beat) {
+      this.boss.beat.update(dt);
+      if (this.boss.beat.done) this.boss.beat = null;
+      if (this.boss.fig) this.boss.fig.update(dt, 'fight', this.boss.t);
+      if (this.boss.arms) this.boss.arms.update(dt);
+      if (this.boss.moves) this.boss.moves.update(dt);   // clears stale tells
+    }
     if (this.quest) this.quest.update(dt);
     this.ground.update(this.cameras.main);
     return;
@@ -1011,14 +1023,13 @@ PC.GameScene.prototype.recordRunStats = function (won) {
 // whole crew arrives at once and Vic gets the only shout he ever gets.
 PC.GameScene.prototype.onChompPhase = function (p) {
   var self = this;
-  if (p === 2) {
-    this.floatText('HERE IS MORE!', 0xe2574c);
-    if (this.quest && this.quest.box) {
-      this.quest.box.show({ speaker: 'chomp', text: 'Here is MORE!' }, function () {});
-    }
-  } else if (p === 3) {
+  // this runs AFTER the phase cinematic hands the camera back, so CHOMP
+  // has already had its say on the title card - a second dialogue box
+  // for the same beat would just be an interruption. Phase 3 still gets
+  // Vic, because a different voice reacting is the thing the card
+  // cannot do.
+  if (p === 3) {
     if (this.allies) this.allies.allIn();
-    this.cameras.main.shake(400, 0.008);
     if (this.quest && this.quest.box) {
       this.storyPause = true;
       this.quest.box.show({ speaker: 'vic',

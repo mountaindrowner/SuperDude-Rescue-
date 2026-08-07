@@ -94,15 +94,32 @@ window.PC = window.PC || {};
   PC.Chomp.prototype.enterPhase = function (n) {
     var s = this.scene;
     this.phase = n;
-    if (this.fig) this.fig.phase = n;
+    if (this.fig) this.fig.phase = n;                // swaps the body art
     this.invulnT = 1.6;
     this.graceT = 1.5;
     if (this.moves) this.moves.amnesty();            // projectile amnesty
     if (this.arms) this.arms.amnesty();              // beams, goop, tells
     if (s.enemies) s.enemies.clearAll();
-    s.cameras.main.shake(420, 0.015);                // transition-only value
-    s.cameras.main.flash(220, 255, 62, 165, true);   // the reserved hue
-    if (s.onChompPhase) s.onChompPhase(n);
+    // THE DIFFICULTY SPIKE. A phase that only changes the gaps between
+    // moves is a number, not a phase - the player has to be able to feel
+    // that the machine came off a leash.
+    if (this.arms) this.arms.overdrive(n);
+    // THE CINEMATIC. It takes the camera, rears, slams every boom into
+    // the deck and names the phase. It also owns the grace window and
+    // the onChompPhase dialogue, so those land AFTER the shot rather
+    // than underneath it.
+    if (PC.ChompPhaseBeat) {
+      // a gate can land while the previous one is still playing - allies
+      // keep firing right up to the freeze, and a big hit can cross two
+      // thresholds at once. Close the old beat properly first or its
+      // card is orphaned on screen forever, under the new one.
+      if (this.beat) { this.beat.finish(); this.beat = null; }
+      this.beat = new PC.ChompPhaseBeat(s, this, n);
+    } else {
+      s.cameras.main.shake(420, 0.015);
+      s.cameras.main.flash(220, 255, 62, 165, true);
+      if (s.onChompPhase) s.onChompPhase(n);
+    }
   };
 
   PC.Chomp.prototype.update = function (dt) {
@@ -112,6 +129,12 @@ window.PC = window.PC || {};
 
     this.fightT += dt;
     if (this.invulnT > 0) this.invulnT -= dt;
+    // the phase cinematic drives the camera and the body while it runs;
+    // everything else is already held off by scene.storyPause
+    if (this.beat) {
+      this.beat.update(dt);
+      if (this.beat.done) this.beat = null;
+    }
     // phase changes are STORY beats, not stat bumps. The gate map makes
     // this IDEMPOTENT (doc 3.2 checkPhaseGate) - each threshold fires
     // exactly once no matter how the HP and time curves cross.
