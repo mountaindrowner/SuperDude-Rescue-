@@ -40,6 +40,12 @@ PC.CHOMP_ART = (/[?&]chomp=art/.test(location.search)) ? 'art' : 'drawn';
 // seventeen floors first. The tester (?chomptest=) poses the art; this
 // one plays the actual beat.
 PC.ROOF_WARP = /[?&]roof=1/.test(location.search);
+// Set when you die IN the roof fight. Boss doc 2.3.8: retry friction is
+// the one difficulty dial that only produces frustration, and replaying
+// a cutscene before a hard boss is named as one of the worst design
+// elements in games. A retry drops you straight back into the fight
+// with the confrontation already spent.
+PC.ROOF_RETRY = false;
 try { PC.UNLOCK_ALL = /[?&]unlock/.test(window.location.search); } catch (e) {}
 
 PC.RENDER = {
