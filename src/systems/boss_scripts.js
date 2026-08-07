@@ -120,7 +120,7 @@ window.PC = window.PC || {};
         b.x += (dx / len) * b.spd * dt;
         b.y += (dy / len) * b.spd * dt;
         b.chargeCd -= dt; b.splatCd -= dt;
-        if (b.splatCd <= 0) { b.splatCd = 9; b.say('SAUCE STORM!'); b.splat(5, 0xd93a3a, 'dmg'); }
+        if (b.splatCd <= 0) { b.splatCd = 9; b.say('KETCHUP RAIN!'); b.splat(5, 0xd93a3a, 'dmg'); }
         if (b.chargeCd <= 0) {
           b.chargeCd = b.enraged() ? 4 : 6;
           b.state = 'telegraph'; b.stateT = 0;
@@ -279,7 +279,7 @@ window.PC = window.PC || {};
         b.mortarCd -= dt;
         if (b.mortarCd <= 0) {
           b.mortarCd = b.enraged() ? 5 : 7;
-          b.say('FROSTING TIME!', 0xff9ecb);
+          b.say('STICKY FROSTING!', 0xff9ecb);
           // pastel party splotches with sprinkles - slow, never chip
           b.splat(b.split ? 5 : 4, PASTELS, 'slow');
           b.vulnAfter = 1.0;
@@ -515,7 +515,7 @@ window.PC = window.PC || {};
             if (s.fx) s.fx.burst(b.x, b.y, 'fx_splash', 10, 0.5);
           } else {
             b.state = nxt; b.stateT = 0; b.emitT = 0; b.burstN = 0;
-            b.say(nxt === 'spiral' ? 'GOO-NADO!' : nxt === 'ringTell' ? 'RIPPLE TIME!' : 'SPLAT SPLAT!', 0xa8e04a);
+            b.say(nxt === 'spiral' ? 'GOO SPIRAL!' : nxt === 'ringTell' ? 'RIPPLE TIME!' : 'SPLAT SPLAT!', 0xa8e04a);
           }
         }
       } else if (b.state === 'spiral') {
