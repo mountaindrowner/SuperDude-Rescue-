@@ -23,7 +23,7 @@ window.PC = window.PC || {};
     hp: 14000,
     contact: 22,
     name: 'CHOMP',
-    r: 96,
+    r: 125,                          // hitbox follows the +30% size
     // phase boundaries as a fraction of max HP
     p2: 0.66, p3: 0.33,
     // while ANY boom arm lives the core is armoured. This is what makes
@@ -59,6 +59,8 @@ window.PC = window.PC || {};
     this.fig.phase = 1;
     // the four booms. They shield the core until they are stripped.
     this.arms = PC.ChompArms ? new PC.ChompArms(scene, this) : null;
+    // the moveset. It serves; it does not attack.
+    this.moves = PC.ChompMoves ? new PC.ChompMoves(scene, this) : null;
   };
 
   // how much of an incoming hit actually lands on the CORE right now
@@ -96,10 +98,12 @@ window.PC = window.PC || {};
       this.fig.powered = true;
       this.fig.update(dt, 'down', this.t);
       if (this.arms) this.arms.update(dt);
+      if (this.moves) this.moves.update(dt);
       return;
     }
     this.fig.update(dt, 'fight', this.t);
     if (this.arms) this.arms.update(dt);
+    if (this.moves) this.moves.update(dt);
 
     // contact: standing inside it hurts, but gently - it is not trying
     // to hurt you, you are standing in the serving area
@@ -159,5 +163,6 @@ window.PC = window.PC || {};
   PC.Chomp.prototype.finalDestroy = function () {
     if (this.fig) this.fig.destroy();
     if (this.arms) this.arms.destroy();
+    if (this.moves) this.moves.destroy();
   };
 })();

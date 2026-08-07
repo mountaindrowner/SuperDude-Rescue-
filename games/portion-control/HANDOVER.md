@@ -12,6 +12,50 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.56.0: THE MOVESET. CHOMP FIGHTS BACK.** Mark:
+  "let's make him 30% bigger and let's have his arms more threatening.
+  Now let's make his phases and attacks and such."
+  * **+30% SIZE** (PHASE_SCALE 0.91/1.07/1.24) and the hitbox followed
+    (r 96 -> 125). At the old scale he read as a set piece rather than
+    something standing in your way.
+  * **THE ARMS ARE WEAPONS NOW**: reach 250 -> 320, heavier booms, and
+    the friendly green panel wing is gone - each head is a pair of
+    hinged JAWS that open and close on their own clock and flare WIDE
+    during a wind-up, with a red hazard lamp that strobes instead of a
+    cheerful amber one.
+  * **`src/systems/chomp_moves.js` - FOUR MOVES**, all of them acts of
+    hospitality, because it cannot conceive that being fed is
+    unwelcome:
+    - PORTION SERVE: a dinner plate painted on the deck under you,
+      filling over 1.35s, then the meal lands. Doubles from phase 2.
+    - CONVEYOR: the arm NEAREST you winds up (jaws flare, the arc it
+      will sweep is painted red on the deck) then swings a belt of food
+      through it. Needs a living arm - which is what makes the arms
+      worth killing rather than optional.
+    - BUFFET: a radial spread from the chute with TWO opposite GAPS, so
+      the answer is always "read the gap", never "tank it".
+    - SECONDS!: a greatest-hits wave, one creature from every district
+      at once. Phase 3 only.
+  * **PHASE CADENCE**: p1 gap 3.4-4.6s and only serve/conveyor (it
+    teaches the plate); p2 2.6-3.6s and adds the buffet; p3 1.9-2.8s
+    with everything. Never the same move twice running.
+  * Everything damaging is drawn in ONE graphics layer and collided by
+    hand against the player, the way the boss puddles work - it never
+    touches the bullet system, so nothing here can leak into normal
+    play. It also holds fire entirely while `storyPause` is up, so a
+    plate can never land mid-dialogue.
+  Gates: new verify-moves 6/6 - it attacks unprompted, walking off the
+  plate avoids it, standing in it costs you, the phases genuinely open
+  up the pool, and it holds fire during dialogue. Face, arms, tower and
+  confront all still green, zero errors.
+  TEST LESSON: the first dodge check failed because the SCHEDULER kept
+  firing during the 2.2s window and a second plate landed on the
+  player - the mechanic was fine, the test was measuring noise. Freeze
+  the scheduler when asserting on a single move.
+  **NEXT, small but visible: `portrait_chomp` is still the generated
+  cauldron** and the drawn design won, so the dialogue portrait no
+  longer matches the thing on screen. Then the ending/credits.
+
 - **2026-08-06 - v0.55.0: CHOMP IS ALIVE.** Mark: "make his eyes follow
   the player character wherever they go, make the mouth open and close
   a bit, maybe a bit of smoke or steam out the top, maybe make his base

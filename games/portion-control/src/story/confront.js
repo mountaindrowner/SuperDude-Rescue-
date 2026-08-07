@@ -200,7 +200,10 @@ window.PC = window.PC || {};
   // about two thirds of the frame and phase 3 nearly filling it - the
   // cauldron art holds its silhouette between phases on purpose (a
   // machine should not morph), so the GROWTH is carried here.
-  var PHASE_SCALE = [0.7, 0.7, 0.82, 0.95];
+  // v0.56.0: +30% across the board (Mark). The last boss should crowd
+  // the frame - at the old scale it read as a set piece rather than a
+  // threat standing in your way.
+  var PHASE_SCALE = [0.91, 0.91, 1.07, 1.24];
 
   PC.ChompFigure = function (scene, x, y, style) {
     this.scene = scene;
