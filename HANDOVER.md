@@ -12,6 +12,25 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.53.0: THE BOSS TEST NODE.** Mark: "make that final
+  fight area a separate node on the map, so I can easily just access it
+  and try all the different versions of the boss fight."
+  A red pad clipped to the side of Adventure Tower on the mission map,
+  OFF the chain - it is not a story beat, it is a workbench, and it
+  never touches save state. Tapping it opens a chooser with every
+  version, one tap each:
+  * FIGHT: CAULDRON   - warp to the stair head, play it for real
+  * FIGHT: DRAWN      - same, with the drawn design
+  * A/B: SIDE BY SIDE - both posed together
+  * LOOK: CAULDRON / LOOK: DRAWN - one posed, closer in
+  The rows just set the runtime flags the roof already reads
+  (PC.CHOMP_ART / PC.CHOMP_TEST / PC.ROOF_WARP) and start the game, so
+  the node and the URL params are the same one mechanism - no second
+  code path to rot. The `?roof=` and `?chomptest=` links still work.
+  Gate: verify-bosstest walks the node, opens the chooser and clicks
+  every row, asserting each one lands on the tower roof in the mode it
+  promised. 5/5, zero errors.
+
 - **2026-08-06 - v0.52.0: ?roof=1 DEV WARP.** Mark: "how do I travel
   there fast?" There was no way - the only route to the finale fight
   was seventeen floors of switchback, which is fine for a player and
