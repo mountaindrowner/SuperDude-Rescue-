@@ -279,7 +279,7 @@ window.PC = window.PC || {};
         b.mortarCd -= dt;
         if (b.mortarCd <= 0) {
           b.mortarCd = b.enraged() ? 5 : 7;
-          b.say('STICKY FROSTING!', 0xff9ecb);
+          b.say('FROSTING SPLASH!', 0xff9ecb);
           // pastel party splotches with sprinkles - slow, never chip
           b.splat(b.split ? 5 : 4, PASTELS, 'slow');
           b.vulnAfter = 1.0;
@@ -515,7 +515,7 @@ window.PC = window.PC || {};
             if (s.fx) s.fx.burst(b.x, b.y, 'fx_splash', 10, 0.5);
           } else {
             b.state = nxt; b.stateT = 0; b.emitT = 0; b.burstN = 0;
-            b.say(nxt === 'spiral' ? 'GOO SPIRAL!' : nxt === 'ringTell' ? 'RIPPLE TIME!' : 'SPLAT SPLAT!', 0xa8e04a);
+            b.say(nxt === 'spiral' ? 'AROUND WE GO!' : nxt === 'ringTell' ? 'RIPPLE TIME!' : 'SPLAT SPLAT!', 0xa8e04a);
           }
         }
       } else if (b.state === 'spiral') {
