@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.64.0: THE GLOOP KING, VISIBLE AND DANMAKU.** Mark:
+  "the gloop king is not visible. Have him more of a bullet hell but
+  for kids."
+  * **THE INVISIBILITY WAS THE CHOMP BUG REPEATED**: boss_d5_gloop_*
+    PNGs existed on disk with manifest lines, but PC.ASSETS only had a
+    slot for `boss_d5_mother` (a stale concept name) - so the atlas
+    never packed him and the sprite rendered nothing. He has been
+    invisible since D5 shipped. Registered walk x4 + rear/lunge x2 at
+    144. The gate now has an INVISIBILITY GUARD: every boss frame set
+    asserted present in the atlas (`tex.has`), because `sprite.
+    visible === true` is a flag, not a pixel.
+  * **KID BULLET HELL** - full script rewrite. He barely moves and
+    fills the room with slow, fat, readable goo:
+    - SPIRAL: two arms of blobs on a lazily turning emitter (105px/s,
+      r13) - the safe lane rotates with it, wide enough to stroll.
+    - RINGS: two expanding rings, offset, each with two WIDE gaps.
+    - FANS: three aimed 5-shot fans with a step-aside beat between.
+    - Every blob flies slower than the player walks (<=130 vs 190) -
+      walking out always works (doc 2.3.4).
+    - After EVERY pattern: 'vent' - he sags, bubbles, and takes double
+      damage for 1.5s. The fight breathes: dodge-phase, punish-phase.
+    - The puddle DIVE stays as his reposition every ~7th beat (guard
+      0.25, never immune), erupting with slick + daze. Drip call kept.
+  * He never fires from OFF SCREEN: beyond 340px he closes at full
+    speed with patterns held - "bullets from nowhere" is the doc's
+    fairness complaint.
+  * anims: spiral/burst/ringTell play the rear (channel) set, erupt
+    the lunge set.
+  * verify-district-bosses updated: 13 checks GREEN (spiral slower
+    than walk speed asserted blob-by-blob, vent window, gapped rings,
+    guarded dive, atlas guard); arena re-run green.
+
+
 - **2026-08-07 - v0.63.0: BOSS ART + REMAKES ROUND (Mark's critique
   batch).** Three notes: walking + special animations for the bosses;
   the Cake Colossus candles read devilish ("would have liked a massive

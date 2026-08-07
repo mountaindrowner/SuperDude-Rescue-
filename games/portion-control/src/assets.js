@@ -118,6 +118,11 @@ window.PC = window.PC || {};
     { k: 'boss_d4_vending', s: 144, c1: P.STEEL,   c2: P.KETCHUP },
     { k: 'boss_d5_mother',  s: 160, c1: P.BERRY,   c2: P.STEEL },
     { k: 'boss_d5_mother_p2', s: 160, c1: P.BERRY, c2: P.CHERRY },
+    // v0.64.0: THE GLOOP KING had PNGs on disk and manifest lines but
+    // NO SLOT HERE, so the atlas never packed him and the boss shipped
+    // INVISIBLE - the exact CHOMP lesson repeated. PC.ASSETS is what
+    // the atlas packs; a PNG + manifest line are NOT enough.
+    { k: 'boss_d5_gloop',   s: 144, c1: P.LIME,    c2: P.MINT },
   ];
   BOSSES.forEach(function (b) { creature(b.k, b.s, b.c1, b.c2, 4); });
   // CHOMP (v0.47.0): three phase forms + the serve telegraph + the
@@ -140,7 +145,9 @@ window.PC = window.PC || {};
    ['boss_d3_cake_rear', 128, P.PINK, P.CHEESE],
    ['boss_d3_cake_lunge', 128, P.PINK, P.CHEESE],
    ['boss_d4_vending_rear', 144, P.STEEL, P.KETCHUP],
-   ['boss_d4_vending_lunge', 144, P.STEEL, P.KETCHUP]].forEach(function (b) {
+   ['boss_d4_vending_lunge', 144, P.STEEL, P.KETCHUP],
+   ['boss_d5_gloop_rear', 144, P.LIME, P.MINT],
+   ['boss_d5_gloop_lunge', 144, P.LIME, P.MINT]].forEach(function (b) {
     for (var i = 1; i <= 2; i++) add(b[0] + '_' + i, b[1], b[1], 'creature', b[2], b[3], i);
   });
 

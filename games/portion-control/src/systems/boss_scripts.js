@@ -422,70 +422,126 @@ window.PC = window.PC || {};
   };
 
   // ==================================================================
-  // THE GLOOP KING - THE TIDE (District 5, the Undercity).
-  // A sewer monarch owns the GROUND. An expanding goo ring with two
-  // gaps (step through, never tank), a puddle DIVE that slides at you
-  // - shots into the puddle still land at 25%, because a boss that is
-  // invulnerable-until-X is the doc's named anti-trope (2.3.9) - an
-  // eruption that leaves a slick, and drips called up from the flow.
+  // THE GLOOP KING - BULLET HEAVEN'S BULLET HELL (District 5).
+  // v0.64.0 (Mark: "have him more of a bullet hell but for kids").
+  // A sewer monarch who barely moves and fills the room with slow,
+  // fat, readable goo - the danmaku fantasy at kid speeds. THE RULES
+  // THAT MAKE IT KID-SAFE, all doc-backed:
+  //   - every blob flies SLOWER than the player walks (<=130 vs 190),
+  //     so walking out of a wave always works (2.3.4)
+  //   - patterns are geometry, not aim-spam: a turning two-armed
+  //     SPIRAL you lane through, expanding RINGS with two wide gaps,
+  //     and aimed FANS with step-aside spacing - rhythm, not
+  //     randomness (doc 8)
+  //   - after EVERY pattern he sags, vents, and takes double damage -
+  //     the fight breathes: dodge-phase, punish-phase (1.2)
+  //   - the puddle DIVE stays as his reposition (guard 0.25, never
+  //     immune - 2.3.9), erupting with a slick and a daze
   // ==================================================================
   var Gloop = {
-    init: function (b) { b.ringCd = 5; b.diveCd = 9; b.dripCd = 14; b.rings = []; },
+    init: function (b) {
+      b.rings = []; b.cyc = 0; b.spiralA = 0; b.emitT = 0; b.burstN = 0;
+      b.dripCd = 14; b.diveN = 0;
+    },
     update: function (b, dt, px, py) {
       var s = b.scene, g = b.gfx;
-      // rings live independently of state so a dive can overlap one
+      // expanding rings live independently of state
       for (var i = b.rings.length - 1; i >= 0; i--) {
         var r0 = b.rings[i];
-        r0.r += 150 * dt;
-        if (r0.r > 340) { b.rings.splice(i, 1); continue; }
-        // draw the ring with its two gaps
-        for (var aa = 0; aa < 24; aa++) {
-          var ang = (aa / 24) * Math.PI * 2;
+        r0.r += 130 * dt;
+        if (r0.r > 360) { b.rings.splice(i, 1); continue; }
+        for (var aa = 0; aa < 22; aa++) {
+          var ang = (aa / 22) * Math.PI * 2;
           var dGap = Math.min(Math.abs(((ang - r0.gap + Math.PI * 3) % (Math.PI * 2)) - Math.PI),
                               Math.abs(((ang - r0.gap - Math.PI + Math.PI * 3) % (Math.PI * 2)) - Math.PI));
-          if (dGap > Math.PI - 0.45) continue;
-          g.fillStyle(0x7a9b3f, 0.85);
-          g.fillCircle(r0.cx + Math.cos(ang) * r0.r, r0.cy + Math.sin(ang) * r0.r * 0.85, 12);
-          g.fillStyle(0xa8e04a, 0.5);
-          g.fillCircle(r0.cx + Math.cos(ang) * r0.r, r0.cy + Math.sin(ang) * r0.r * 0.85 - 3, 6);
+          if (dGap > Math.PI - 0.55) continue;       // two WIDE gaps
+          var bx2 = r0.cx + Math.cos(ang) * r0.r, by2 = r0.cy + Math.sin(ang) * r0.r * 0.85;
+          g.fillStyle(0x556b2f, 0.9); g.fillCircle(bx2, by2 + 3, 12);
+          g.fillStyle(0xa8e04a, 1); g.fillCircle(bx2, by2, 11);
+          g.fillStyle(0xd6f5a8, 0.8); g.fillCircle(bx2 - 3, by2 - 3, 4);
         }
         if (!r0.hit) {
           var pr = Math.hypot(px - r0.cx, (py - r0.cy) / 0.85);
           var pAng = Math.atan2((py - r0.cy) / 0.85, px - r0.cx);
           var pGap = Math.min(Math.abs(((pAng - r0.gap + Math.PI * 3) % (Math.PI * 2)) - Math.PI),
                               Math.abs(((pAng - r0.gap - Math.PI + Math.PI * 3) % (Math.PI * 2)) - Math.PI));
-          if (Math.abs(pr - r0.r) < 24 && pGap <= Math.PI - 0.45) { r0.hit = true; hurt(s, 12); }
+          if (Math.abs(pr - r0.r) < 22 && pGap <= Math.PI - 0.55) { r0.hit = true; hurt(s, 11); }
         }
       }
+      b.dripCd -= dt;
+      if (b.dripCd <= 0 && b.state !== 'dive') {
+        b.dripCd = 15;
+        for (var dc = 0; dc < 3; dc++) {
+          spawnKid(s, b.x + (Math.random() - 0.5) * 160, b.y + (Math.random() - 0.5) * 120, 'drip');
+        }
+      }
+
       if (b.state === 'active') {
+        // he WADDLES, barely - the danmaku boss holds court. But he
+        // never fires from OFF SCREEN: far away he closes at full
+        // speed and holds his patterns (bullets from nowhere is the
+        // doc's fairness complaint), then settles in and performs.
         var dx = px - b.x, dy = py - b.y, len = Math.hypot(dx, dy) || 1;
-        b.x += (dx / len) * b.spd * dt;
-        b.y += (dy / len) * b.spd * dt;
-        b.ringCd -= dt; b.diveCd -= dt; b.dripCd -= dt;
-        if (b.dripCd <= 0) {
-          b.dripCd = 14;
-          for (var dcount = 0; dcount < 3; dcount++) {
-            spawnKid(s, b.x + (Math.random() - 0.5) * 160, b.y + (Math.random() - 0.5) * 120, 'drip');
+        if (len > 340) {
+          b.x += (dx / len) * b.spd * dt; b.y += (dy / len) * b.spd * dt;
+          b.stateT = Math.min(b.stateT, 0.8);
+        } else if (len > 260) {
+          b.x += (dx / len) * b.spd * 0.5 * dt; b.y += (dy / len) * b.spd * 0.5 * dt;
+        }
+        if (b.stateT > 1.1) {
+          b.stateT = 0;
+          // the CYCLE: spiral -> rings -> fans -> (every 2nd loop) dive
+          var seq = ['spiral', 'ringTell', 'burst'];
+          var nxt = seq[b.cyc % 3];
+          b.cyc++;
+          if (b.cyc % 7 === 0) nxt = 'dive';
+          if (nxt === 'dive') {
+            b.state = 'dive'; b.stateT = 0;
+            b.guard = 0.25; b.noContact = true;
+            b.sprite.setVisible(false); b.shadow.setVisible(false);
+            b.mx = b.x; b.my = b.y;
+            if (s.fx) s.fx.burst(b.x, b.y, 'fx_splash', 10, 0.5);
+          } else {
+            b.state = nxt; b.stateT = 0; b.emitT = 0; b.burstN = 0;
           }
         }
-        if (b.ringCd <= 0) { b.ringCd = b.enraged() ? 5 : 7.5; b.state = 'ringTell'; b.stateT = 0; }
-        else if (b.diveCd <= 0) {
-          b.diveCd = b.enraged() ? 9 : 13;
-          b.state = 'dive'; b.stateT = 0;
-          b.guard = 0.25; b.noContact = true;
-          b.sprite.setVisible(false); b.shadow.setVisible(false);
-          b.mx = b.x; b.my = b.y;
-          if (s.fx) s.fx.burst(b.x, b.y, 'fx_splash', 10, 0.5);
+      } else if (b.state === 'spiral') {
+        // TWO ARMS of fat slow blobs on a lazily turning emitter: the
+        // safe lane rotates with it, wide enough to stroll through
+        b.spiralA += dt * (b.enraged() ? 1.5 : 1.1);
+        b.emitT -= dt;
+        if (b.emitT <= 0) {
+          b.emitT = 0.16;
+          for (var arm = 0; arm < 2; arm++) {
+            var sa = b.spiralA + arm * Math.PI;
+            fireShot(b, b.x, b.y, sa, 105, 10, 0xa8e04a, 13);
+          }
         }
+        if (b.stateT > 3.0) { b.state = 'vent'; b.stateT = 0; b.vuln = 1.5; }
       } else if (b.state === 'ringTell') {
-        ringTell(g, b.x, b.y, Math.min(1, b.stateT / 0.8), b.r + 20);
-        if (b.stateT > 0.8) {
+        ringTell(g, b.x, b.y, Math.min(1, b.stateT / 0.7), b.r + 20);
+        if (b.stateT > 0.7) {
           b.rings.push({ cx: b.x, cy: b.y, r: b.r + 10, gap: Math.random() * Math.PI * 2, hit: false });
-          b.state = 'active'; b.stateT = 0; b.vuln = 1.2;
-          if (PC.audio) PC.audio.splat();
+          if (!b._ring2) { b._ring2 = true; b.stateT = 0.25; }   // a second, offset
+          else { b._ring2 = false; b.state = 'vent'; b.stateT = 0; b.vuln = 1.4;
+                 if (PC.audio) PC.audio.splat(); }
         }
+      } else if (b.state === 'burst') {
+        // three aimed FANS with a step-aside beat between them
+        if (b.stateT > 0.55) {
+          b.stateT = 0; b.burstN++;
+          var aim = Math.atan2(py - b.y, px - b.x);
+          for (var f2 = -2; f2 <= 2; f2++) {
+            fireShot(b, b.x, b.y, aim + f2 * 0.30, 130, 10, 0x7dd97b, 11);
+          }
+          if (PC.audio) PC.audio.splat();
+          if (b.burstN >= 3) { b.state = 'vent'; b.stateT = 0; b.vuln = 1.5; }
+        }
+      } else if (b.state === 'vent') {
+        // the breather: he sags and bubbles while the window is open
+        if (Math.random() < dt * 6 && s.fx) s.fx.burst(b.x + (Math.random() - 0.5) * 50, b.y - 20, 'fx_splash', 1, 0.3);
+        if (b.stateT > 1.5) { b.state = 'active'; b.stateT = 0; }
       } else if (b.state === 'dive') {
-        // the puddle slides at you - slower than you walk
         var mdx = px - b.mx, mdy = py - b.my, ml = Math.hypot(mdx, mdy) || 1;
         b.mx += (mdx / ml) * 140 * dt; b.my += (mdy / ml) * 140 * dt;
         b.x = b.mx; b.y = b.my;
@@ -493,13 +549,13 @@ window.PC = window.PC || {};
         g.fillStyle(0x556b2f, 0.75); g.fillEllipse(b.mx, b.my, 110 * wob, 60 * wob);
         g.fillStyle(0x7a9b3f, 0.7); g.fillEllipse(b.mx, b.my, 78 * wob, 42 * wob);
         ringTell(g, b.mx, b.my, (b.stateT % 0.5) * 2, 70);
-        if (b.stateT > 2.6) {
+        if (b.stateT > 2.4) {
           b.state = 'erupt'; b.stateT = 0;
           b.guard = 1; b.noContact = false;
           b.sprite.setVisible(true); b.shadow.setVisible(true);
           var edx = px - b.mx, edy = py - b.my;
           if (edx * edx + edy * edy < 90 * 90) hurt(s, 15);
-          b.splat(2, 0x7a9b3f, 'slow');                 // the slick it leaves
+          b.splat(2, 0x7a9b3f, 'slow');
           s.cameras.main.shake(220, 0.009);
           if (s.fx) s.fx.burst(b.mx, b.my, 'fx_splash', 16, 0.6);
           b.vuln = 1.5;
@@ -509,6 +565,15 @@ window.PC = window.PC || {};
       }
     },
     pose: function (b) {
+      if (b.state === 'vent') {
+        b.sprite.setScale(b.baseS * 1.06, b.baseS * (0.88 + 0.04 * Math.sin(b.animT * 9)));
+        return true;
+      }
+      if (b.state === 'spiral') {
+        b.sprite.setAngle(Math.sin(b.animT * 3) * 5);
+        b.sprite.setScale(b.baseS, b.baseS);
+        return true;
+      }
       if (b.state === 'erupt') {
         b.sprite.setScale(b.baseS * (1 + 0.15 * Math.max(0, 1 - b.stateT * 2)), b.baseS);
         return true;
