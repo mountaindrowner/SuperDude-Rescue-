@@ -12,6 +12,20 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.67.0: callout sanitation, final pass.** Mark:
+  "completely sanitized as close as we can, no room left for
+  questioning" on STICKY FROSTING and GOO SPIRAL. Replaced with
+  FROSTING SPLASH! and AROUND WE GO! - plain nouns and playful
+  phrasing with zero adjectives that could carry a second reading.
+  The automated screen in verify-district-bosses was WIDENED to ban
+  the whole word class outright (sticky/moist/wet/juicy/lick/suck +
+  the existing violence list), so no future line can reintroduce the
+  problem. Current set: KETCHUP RAIN, COMING THROUGH, FLORET FLURRY,
+  DOWN I GO, SURPRISE, CUPCAKE SPLIT, FROSTING SPLASH, SNACK TIME,
+  CANDY CORN AWAY, SOLD OUT, DOWN THE DRAIN, AROUND WE GO, RIPPLE
+  TIME, SPLAT SPLAT. Gate green.
+
+
 - **2026-08-07 - v0.66.0: callout wording pass.** Mark disliked SAUCE
   STORM / FROSTING TIME / GOO-NADO. Replaced with lines that plainly
   SAY what the attack is (the callout's job is removing mystery, not
