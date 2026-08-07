@@ -242,15 +242,19 @@ window.PC = window.PC || {};
   PC.ChompMoves.prototype._conveyor = function () {
     var c = this.chomp, s = this.scene;
     if (!c.arms) return;
-    // the arm nearest the player winds up, then sweeps through them
     var live = c.arms.arms.filter(function (a) { return !a.dead; });
     if (!live.length) return;
-    var best = live[0], bd = 1e9;
+    // PREFER THE BLENDER. Swinging a spinning blade rotor through you is
+    // a coherent thing for that arm to do; swinging the attractor dish
+    // is not. Falls back to the arm nearest the player.
+    var best = null, bd = 1e9;
     for (var i = 0; i < live.length; i++) {
+      if (live[i].role && live[i].role.k === 'blender') { best = live[i]; break; }
       var t = c.arms.tipOf(live[i]);
       var d = (t.x - s.px) * (t.x - s.px) + (t.y - s.py) * (t.y - s.py);
       if (d < bd) { bd = d; best = live[i]; }
     }
+    if (!best) best = live[0];
     var toward = Math.atan2(s.py - c.y, s.px - c.x);
     this.belt = { arm: best, t: 0, from: toward - 0.9, to: toward + 0.9, hit: false };
     best.wind = 1;
@@ -336,7 +340,7 @@ window.PC = window.PC || {};
       g.fillCircle(c2.x - 3, c2.y - 3, 4);
       if (!c2.hit) {
         var dx = s.px - c2.x, dy = s.py - c2.y;
-        if (dx * dx + dy * dy < 34 * 34) { c2.hit = true; this._hurt(CRUMB_DMG); }
+        if (dx * dx + dy * dy < 34 * 34) { c2.hit = true; this._hurt(c2.dmg || CRUMB_DMG); }
       }
     }
   };

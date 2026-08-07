@@ -98,6 +98,7 @@ window.PC = window.PC || {};
     this.invulnT = 1.6;
     this.graceT = 1.5;
     if (this.moves) this.moves.amnesty();            // projectile amnesty
+    if (this.arms) this.arms.amnesty();              // beams, goop, tells
     if (s.enemies) s.enemies.clearAll();
     s.cameras.main.shake(420, 0.015);                // transition-only value
     s.cameras.main.flash(220, 255, 62, 165, true);   // the reserved hue
@@ -168,6 +169,7 @@ window.PC = window.PC || {};
     if (this.powering) return;
     this.powering = true;
     if (this.moves) this.moves.amnesty();            // nothing may kill you now
+    if (this.arms) this.arms.amnesty();
     this.scene.cameras.main.shake(300, 0.006);
     if (PC.audio && PC.audio.bossDie) PC.audio.bossDie();
     if (this.scene.onChompDown) this.scene.onChompDown();
