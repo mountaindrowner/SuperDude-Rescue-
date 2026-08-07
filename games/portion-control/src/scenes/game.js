@@ -158,10 +158,35 @@ PC.GameScene.prototype.create = function () {
   this.runT = 0;
   this.spawnT = 0;                 // story spawn clock (scene is REUSED)
   this.dead = false;
+  // ---- THE BOSS ARENA (v0.62.0, Mark: "a quick boss arena, and I can
+  // select from each one to try them out the way they would fight in
+  // the actual game"). Launched from the missions map's arena pad. The
+  // flag is consumed here; arenaBoss makes PC.ease serve STORY numbers,
+  // banks XP like a mission (no card pauses mid-duel), and picks the
+  // boss's own district roster for the ambient pressure.
+  this.arenaBoss = PC.ARENA_BOSS || null;
+  PC.ARENA_BOSS = null;
+  if (this.arenaBoss) {
+    var AB_SET = { broccolisk: 'park', cakeColossus: 'suburb',
+                   vendingBehemoth: 'junk', gloopKing: 'goo' };
+    this.arenaSet = AB_SET[this.arenaBoss] || null;   // frank = d1 default
+  }
   this.director = new PC.SpawnDirector(this);
   this._rings = {};
   this.pickups = new PC.PickupSystem(this);
   this.boss = null; this.bossSpawned = false; this.won = false;
+  if (this.arenaBoss) {
+    // the boss walks in with its real entrance after a breath; the
+    // quick-run 5-minute Frank timer is pre-empted
+    this.bossSpawned = true;
+    var abSelf = this, abId = this.arenaBoss;
+    this.time.delayedCall(1400, function () {
+      if (abSelf.dead || abSelf.won) return;
+      abSelf.spawnBoss(abId);
+      var d = PC.BOSSES[abId];
+      if (d && abSelf.floatText) abSelf.floatText('ARENA: ' + d.name, 0xff6b6b);
+    });
+  }
   this.bossDrop = null;              // one scene instance, every run resets
   this.bossBar = this.add.graphics().setDepth(103);
   // THE LOOP LINE (v0.35.0): the sewers' circulating subway hazard
@@ -369,7 +394,7 @@ PC.GameScene.prototype.gainXp = function (v) {
   // the loadout you walked in with is the loadout you fight with. New
   // power comes from the shops between missions and from boss drops.
   // Quick run keeps the classic level-and-pick loop untouched.
-  if (this.storyMission) {
+  if (this.storyMission || this.arenaBoss) {
     this.bankedXp = Math.floor(this.xp);
     // ONE currency name on screen (v0.31.0): the counter IS tech, live
     this.levelText.setText('TECH +' + this.bankedTp());
@@ -1132,6 +1157,12 @@ PC.GameScene.prototype.die = function () {
   this.fx.burst(this.px, this.py, 'fx_pop', 4, 0.4);
   this.player.setVisible(false);
   var self = this;
+  // an arena death skips the results desk - back to the chooser so the
+  // next attempt (or the next boss) is one tap away
+  if (this.arenaBoss) {
+    this.time.delayedCall(1000, function () { self.scene.start('PC_Missions'); });
+    return;
+  }
   this.time.delayedCall(700, function () {
     // a LOSS still pays out (Mark: "upgrading after completions or
     // losses") - the banked XP converts to TECH either way
@@ -1143,11 +1174,11 @@ PC.GameScene.prototype.die = function () {
 };
 
 // ---- BOSS spawn: big cinematic entrance (dopamine) ----
-PC.GameScene.prototype.spawnBoss = function () {
+PC.GameScene.prototype.spawnBoss = function (id) {
   this.bossSpawned = true;
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   // spawn off the top edge, drifting toward the player
-  this.boss = new PC.Boss(this, this.px, this.py - Math.max(W, H) * 0.55);
+  this.boss = new PC.Boss(this, this.px, this.py - Math.max(W, H) * 0.55, id);
   // white flash + shake + roar
   var flash = this.uiAttach(this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.7).setDepth(150));
   this.tweens.add({ targets: flash, alpha: 0, duration: 500, onComplete: function () { flash.destroy(); } });
@@ -1267,8 +1298,10 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
     }).setOrigin(0.5).setDepth(151);
     self.uiAttach(t2);
   });
-  // to results
+  // to results - except an arena duel, which bounces straight back to
+  // the chooser to try the next boss
   this.time.delayedCall(2800, function () {
+    if (self.arenaBoss) { self.scene.start('PC_Missions'); return; }
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
       gold: self.pickups.gold, win: true, rescued: PC.D1_RESCUE.name,
       xp: self.bankedXp || 0, xpTp: self.bankedTp() });

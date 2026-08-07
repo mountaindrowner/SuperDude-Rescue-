@@ -216,7 +216,7 @@ PC.MissionsScene.prototype.buildBossTest = function (W, top) {
   g.strokeCircle(bx, by, K(7));
   g.fillStyle(0xff6b6b, 1);
   g.fillCircle(bx, by, K(3));
-  var lbl = this.add.text(bx, by + K(14), 'BOSS\nTEST', {
+  var lbl = this.add.text(bx, by + K(14), 'BOSS\nARENA', {
     fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#ff6b6b',
     fontStyle: 'bold', align: 'center',
   }).setOrigin(0.5, 0).setDepth(5);
@@ -229,55 +229,85 @@ PC.MissionsScene.prototype.buildBossTest = function (W, top) {
   });
 };
 
-// the chooser: every version of the fight, one tap each
+// THE ARENA CHOOSER (v0.62.0, Mark: "a quick boss arena, and I can
+// select from each one to try them out the way they would fight in the
+// actual game"). Every boss in the game, one tap each. District rows
+// launch a quick arena duel at STORY-tier numbers with that district's
+// own roster around it; the CHOMP rows launch the roof as before.
 PC.MissionsScene.prototype.openBossTest = function () {
   var self = this, W = PC.RENDER.W, H = PC.RENDER.H, K = PC.uiK;
   this.closeBrief();
   var ui = this._briefUi = [];
-  var ph = K(132), py = (H - ph) / 2;
+
+  // [label, colour, launch] - null launch = a section header
+  var ROWS = [
+    ['DISTRICT BOSSES', 0xff6b6b, null],
+    ['BIG FRANK',            0xf2c33c, { arena: 'frank' }],
+    ['THE BROCCOLISK',       0x7dd97b, { arena: 'broccolisk' }],
+    ['LAYER CAKE COLOSSUS',  0xff9ecb, { arena: 'cakeColossus' }],
+    ['VENDING BEHEMOTH',     0xf2a03c, { arena: 'vendingBehemoth' }],
+    ['THE GLOOP KING',       0xa8e04a, { arena: 'gloopKing' }],
+    ['CHOMP - THE ROOF', 0xff6b6b, null],
+    ['FIGHT: DRAWN',         0x35d0ff, { art: 'drawn', test: null }],
+    ['FIGHT: CAULDRON',      0xa8e04a, { art: 'art', test: null }],
+    ['A/B: SIDE BY SIDE',    0xf2c33c, { art: 'art', test: 'both' }],
+  ];
+  var rowH = K(17), headH = K(12);
+  var ph = K(34);
+  for (var m = 0; m < ROWS.length; m++) ph += ROWS[m][2] ? rowH : headH;
+  ph += K(8);
+  var py = (H - ph) / 2;
+
   var g = this.add.graphics().setDepth(30);
   g.fillStyle(0x0b0818, 0.72).fillRect(0, 0, W, H);
   PC.labPanel(g, K(12), py, W - K(24), ph,
     { base: 0x241f3d, edge: 0xff6b6b, rivets: true });
   ui.push(g);
-  ui.push(this.add.text(W / 2, py + K(10), 'ROOFTOP - BOSS TEST', {
+  ui.push(this.add.text(W / 2, py + K(9), 'BOSS ARENA', {
     fontFamily: 'monospace', fontSize: K(11) + 'px', color: '#ff6b6b',
     fontStyle: 'bold',
   }).setOrigin(0.5, 0).setDepth(31));
-  ui.push(this.add.text(W / 2, py + K(24), 'straight to the roof', {
-    fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#cfd4e8',
+  ui.push(this.add.text(W / 2, py + K(22), 'story-tier numbers, real rosters', {
+    fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#cfd4e8',
   }).setOrigin(0.5, 0).setDepth(31));
 
-  // each row sets the runtime flags the roof reads, then starts the game
-  var ROWS = [
-    ['FIGHT: CAULDRON', 0xa8e04a, { art: 'art', test: null }],
-    ['FIGHT: DRAWN',    0x35d0ff, { art: 'drawn', test: null }],
-    ['A/B: SIDE BY SIDE', 0xf2c33c, { art: 'art', test: 'both' }],
-    ['LOOK: CAULDRON',  0xf2c33c, { art: 'art', test: 'art' }],
-    ['LOOK: DRAWN',     0xf2c33c, { art: 'art', test: 'drawn' }],
-  ];
+  var ry = py + K(34);
   for (var i = 0; i < ROWS.length; i++) {
-    (function (row, idx) {
-      var ry = py + K(38) + idx * K(18);
+    (function (row) {
+      if (!row[2]) {                                 // section header
+        var hcol = '#' + row[1].toString(16).padStart(6, '0');
+        ui.push(self.add.text(W / 2, ry + headH / 2, '- ' + row[0] + ' -', {
+          fontFamily: 'monospace', fontSize: K(7) + 'px', color: hcol,
+        }).setOrigin(0.5).setDepth(31).setAlpha(0.85));
+        ry += headH;
+        return;
+      }
       var bg = self.add.graphics().setDepth(31);
-      PC.labPanel(bg, K(22), ry, W - K(44), K(15),
+      PC.labPanel(bg, K(22), ry, W - K(44), K(14),
         { base: 0x1c1733, edge: row[1], radius: 3 });
       var t = self.add.text(W / 2, ry + K(7), row[0], {
-        fontFamily: 'monospace', fontSize: K(9) + 'px', fontStyle: 'bold',
+        fontFamily: 'monospace', fontSize: K(8) + 'px', fontStyle: 'bold',
       }).setOrigin(0.5).setDepth(32);
       t.setColor('#' + row[1].toString(16).padStart(6, '0'));
-      var z = self.add.zone(W / 2, ry + K(7), W - K(44), K(17)).setDepth(33)
+      var z = self.add.zone(W / 2, ry + K(7), W - K(44), K(16)).setDepth(33)
         .setInteractive({ useHandCursor: true });
       z.on('pointerdown', function () {
-        PC.CHOMP_ART = row[2].art;
-        PC.CHOMP_TEST = row[2].test;
-        PC.ROOF_WARP = !row[2].test;         // a fight warps; a look poses
-        PC.STORY.pendingMission = PC.STORY.chainById('finale');
+        var L = row[2];
+        if (L.arena) {
+          PC.ARENA_BOSS = L.arena;
+          PC.STORY.pendingMission = null;            // a bare arena, no story state
+        } else {
+          PC.CHOMP_ART = L.art;
+          PC.CHOMP_TEST = L.test;
+          PC.ROOF_WARP = !L.test;                    // a fight warps; a look poses
+          PC.STORY.pendingMission = PC.STORY.chainById('finale');
+        }
         if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
         self.scene.start('PC_Game');
       });
       ui.push(bg, t, z);
-    })(ROWS[i], i);
+      ry += rowH;
+    })(ROWS[i]);
   }
   var x = this.add.text(W - K(18), py + K(6), '[X]', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#ff6b6b',
