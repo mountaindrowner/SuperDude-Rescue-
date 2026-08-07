@@ -16,12 +16,19 @@ window.PC = window.PC || {};
 (function () {
 
   PC.CHOMP_DEF = {
-    hp: 5200,
+    // v0.54.0: the last boss should not fall over. 5200 died in well
+    // under a minute once allies were landing; 14000 plus four 900-HP
+    // arms puts the fight at the length a finale wants. Story ease
+    // still scales all of it for kid numbers.
+    hp: 14000,
     contact: 22,
     name: 'CHOMP',
     r: 96,
     // phase boundaries as a fraction of max HP
     p2: 0.66, p3: 0.33,
+    // while ANY boom arm lives the core is armoured. This is what makes
+    // the arms worth shooting instead of an optional distraction.
+    armour: 0.28,
   };
 
   PC.Chomp = function (scene, x, y, figure) {
@@ -50,6 +57,17 @@ window.PC = window.PC || {};
     this.fig.x = x; this.fig.y = y;
     this.fig.rise = 1;
     this.fig.phase = 1;
+    // the four booms. They shield the core until they are stripped.
+    this.arms = PC.ChompArms ? new PC.ChompArms(scene, this) : null;
+  };
+
+  // how much of an incoming hit actually lands on the CORE right now
+  PC.Chomp.prototype.coreMult = function () {
+    if (!this.arms) return 1;
+    var live = this.arms.alive();
+    if (!live) return 1;
+    // 4 arms -> heavily armoured; each kill peels a quarter of it back
+    return PC.CHOMP_DEF.armour + (1 - PC.CHOMP_DEF.armour) * (1 - live / 4);
   };
 
   PC.Chomp.prototype.phaseOf = function () {
@@ -77,9 +95,11 @@ window.PC = window.PC || {};
       this.fig.rise = Math.max(0.22, this.fig.rise - dt * 0.35);
       this.fig.powered = true;
       this.fig.update(dt, 'down', this.t);
+      if (this.arms) this.arms.update(dt);
       return;
     }
     this.fig.update(dt, 'fight', this.t);
+    if (this.arms) this.arms.update(dt);
 
     // contact: standing inside it hurts, but gently - it is not trying
     // to hurt you, you are standing in the serving area
@@ -97,7 +117,7 @@ window.PC = window.PC || {};
 
   PC.Chomp.prototype.damage = function (dmg) {
     if (this.dead || this.powering) return;
-    this.hp -= dmg;
+    this.hp -= dmg * this.coreMult();
     this.flashUntil = this.scene.now + 0.08;
     if (this.fig) this.fig.flash = this.flashUntil;
     if (this.hp <= 0) { this.hp = 0; this.powerDown(); }
@@ -125,9 +145,19 @@ window.PC = window.PC || {};
     g.fillStyle(0x1b1530, 0.9);
     g.fillRect(9 + (W - 18) * PC.CHOMP_DEF.p2, y, 2, 6);
     g.fillRect(9 + (W - 18) * PC.CHOMP_DEF.p3, y, 2, 6);
+    // ARMOUR PIPS: one per living arm, so the reason your shots are
+    // bouncing is on screen rather than a hidden multiplier
+    if (this.arms) {
+      var live = this.arms.alive();
+      for (var i = 0; i < 4; i++) {
+        g.fillStyle(i < live ? 0xf2c33c : 0x3a3448, 1);
+        g.fillRect(W - 40 + i * 8, y - 8, 6, 5);
+      }
+    }
   };
 
   PC.Chomp.prototype.finalDestroy = function () {
     if (this.fig) this.fig.destroy();
+    if (this.arms) this.arms.destroy();
   };
 })();

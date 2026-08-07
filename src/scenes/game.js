@@ -999,6 +999,15 @@ PC.GameScene.prototype.onChompPhase = function (p) {
 
 // It powers down mid-sentence. The rest of the ending is authored on top
 // of this hook - for now the fight simply stops and hands to the win.
+// all four booms stripped: the core is open, and it is worth saying so
+PC.GameScene.prototype.onChompArmsCleared = function () {
+  this.cameras.main.shake(320, 0.007);
+  if (this.quest && this.quest.box) {
+    this.quest.box.show({ speaker: 'chomp',
+      text: 'My ARMS! How will I SERVE you now?' }, function () {});
+  }
+};
+
 PC.GameScene.prototype.onChompDown = function () {
   var self = this;
   this.zoomTarget = this.baseZoom;         // back to normal for the ending
@@ -1112,6 +1121,14 @@ PC.GameScene.prototype.bossBanner = function (name) {
 PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
   var b = this.boss;
   if (!b || b.dead) return false;
+  // THE ARMS EAT IT FIRST (v0.54.0). A shot that lands on a live boom
+  // damages the boom, not the core - which is the whole reason the
+  // arms are worth stripping.
+  if (b.arms && b.arms.tryHit(x, y, dmg)) {
+    this.fx.burst(x, y, 'fx_spark', 3, 0.16);
+    if (this.juice) this.juice.dmgNum(x, y - 10, dmg, this._lastCrit);
+    return true;
+  }
   var ddx = b.x - x, ddy = b.y - y;
   if (ddx * ddx + ddy * ddy > (b.r + 8) * (b.r + 8)) return false;
   b.damage(dmg, dx, dy);
