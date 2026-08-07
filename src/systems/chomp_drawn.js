@@ -207,6 +207,80 @@ window.PC = window.PC || {};
   }
 
   // ---------------------------------------------------------------
+  // THE DIALOGUE PORTRAIT (v0.58.0).
+  //
+  // The shipped `portrait_chomp` PNG was generated back when CHOMP was
+  // the cauldron design, so the thing the player TALKED to on the roof
+  // was a different machine from the thing that then stood up and
+  // fought them - a mismatch in the single most important scene in the
+  // game. Rather than re-generate art that can drift again, the
+  // portrait is painted from paint() itself: same geometry, same
+  // palette, same light. It cannot go out of sync with the boss
+  // because it IS the boss.
+  //
+  // The body deliberately leaves the sockets and mouth hollow for the
+  // live overlay; a portrait has no overlay, so it bakes a static face
+  // here - eyes forward, meeting the player's, mouth part open like
+  // it is mid-sentence.
+  function paintPortraitFace(g) {
+    // LENSES, looking very slightly down and out at the reader
+    [[G.eyeL, 0.18], [G.eyeR, -0.10]].forEach(function (pair) {
+      var e = pair[0], gz = pair[1];
+      rect(g, e.x, e.y, e.w, e.h, M.amber.d);
+      rect(g, e.x, e.y, e.w, Math.round(e.h * 0.72), M.amber.m);
+      rect(g, e.x, e.y, e.w, 2, M.amber.l);
+      var pw = Math.round(e.w * 0.34), ph = Math.round(e.h * 0.46);
+      var px = Math.round(e.x + e.w / 2 + gz * (e.w / 2 - pw / 2) - pw / 2);
+      var py = Math.round(e.y + e.h / 2 + 0.14 * (e.h / 2 - ph / 2) - ph / 2);
+      rect(g, px, py, pw, ph, M.dark.d);
+      rect(g, px, py, pw, 1, '#35d0ff');              // the lit iris ring
+      rect(g, e.x + 1, e.y + 1, 2, 1, '#ffffff');     // specular, top-left
+    });
+    // MOUTH, part open, slats compressed the way the live one draws them
+    var m = G.mouth, open = Math.round(m.h * 0.72), top = m.y + (m.h - open);
+    rect(g, m.x, top, m.w, open, '#15131c');
+    var slat = Math.max(1, Math.round(open * 0.55));
+    for (var i = 0; i < Math.floor(m.w / 3); i++) {
+      var sx = m.x + Math.round((i * m.w) / Math.floor(m.w / 3));
+      rect(g, sx, top + Math.round((open - slat) / 2), 2, slat, M.steel.l);
+      rect(g, sx, top + Math.round((open - slat) / 2), 1, slat, '#8b88a8');
+    }
+    rect(g, m.x, top, m.w, 1, 'rgba(10,7,22,0.45)');
+  }
+
+  PC.buildChompPortrait = function (scene) {
+    var key = 'portrait_chomp_drawn';
+    if (scene.textures.exists(key)) return key;
+    // 48 design units of head at an exact 3x. The dialogue box scales
+    // whatever it is handed to the well, so the texture is sized for
+    // clean pixels rather than to match the 128px generated portraits.
+    var CROP = 48, ZOOM = 3, S = CROP * ZOOM;
+    var tex = scene.textures.createCanvas(key, S, S);
+    var ctx = tex.getContext();
+    var tmp = document.createElement('canvas');
+    tmp.width = D; tmp.height = D;
+    var tg = tmp.getContext('2d');
+    // phase 2: fed enough to look wrong, not yet the phase-3 mess
+    paint(tg, 2, false);
+    paintPortraitFace(tg);
+    // CROP TO THE HEAD. The whole machine shrunk into a 52px well is a
+    // smudge - the brow, the eyes and the mouth are the only parts that
+    // carry a line of dialogue. The window is centred on the face block
+    // and framed from the vent stacks down to the shoulders.
+    var cw = CROP;
+    var cx = Math.round((G.face.x0 + G.face.x1) / 2 - cw / 2);
+    var cy = Math.round(G.brow.y0 - 3);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, S, S);
+    var bg = ctx.createRadialGradient(S / 2, S * 0.42, 8, S / 2, S * 0.5, S * 0.62);
+    bg.addColorStop(0, '#2a2338'); bg.addColorStop(1, '#14111e');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S);
+    ctx.drawImage(tmp, cx, cy, cw, cw, 0, 0, S, S);   // exact 4x, nearest
+    tex.refresh();
+    return key;
+  };
+
+  // ---------------------------------------------------------------
   // build the four frames into atlas-style canvas textures, once
   PC.buildChompDrawn = function (scene) {
     if (PC._chompDrawnBuilt) return;

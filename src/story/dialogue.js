@@ -98,10 +98,21 @@ PC.DialogueBox.prototype.show = function (beat, onDone) {
   this._layout(this._full);
   this.gfx.setVisible(true);
   var frame = beat.portrait || sp.portrait;
-  if (frame && this.scene.textures.get('atlas').has(frame)) {
-    this.portrait.setFrame(frame).setVisible(true);
+  // A speaker may ship a DRAWN portrait painted from the same geometry as
+  // the thing on screen (CHOMP). It wins over the atlas frame, which for
+  // him is a stale generation of an older design. Built lazily so it
+  // costs nothing until he actually speaks.
+  if (frame === 'portrait_chomp' && PC.buildChompPortrait) {
+    this.portrait.setTexture(PC.buildChompPortrait(this.scene)).setVisible(true);
+  } else if (frame && this.scene.textures.get('atlas').has(frame)) {
+    this.portrait.setTexture('atlas', frame).setVisible(true);
   } else {
     this.portrait.setVisible(false);
+  }
+  // a drawn portrait is sized for clean pixels, not to match the 128px
+  // generated ones - fit whatever we were handed to the well
+  if (this.portrait.visible) {
+    this.portrait.setScale(PORT / (this.portrait.frame.width || 128));
   }
   // R3: a speaker name is variable-length - shrink it rather than let it
   // run under the text column

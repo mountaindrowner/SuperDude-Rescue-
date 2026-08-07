@@ -12,6 +12,38 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.58.0: CHOMP'S PORTRAIT IS THE MACHINE HE ACTUALLY
+  IS.** The shipped `portrait_chomp` PNG was generated back when CHOMP
+  was the CAULDRON design. So on the roof the player talked to one
+  machine and then fought a completely different one, seconds apart, in
+  the most important scene in the game.
+  * **The portrait is now PAINTED FROM `paint()`** - the same function
+    that bakes the boss body, so it uses the same geometry, the same
+    3-value ramps and the same top-left light. It cannot drift from the
+    boss again, because it IS the boss.
+    `PC.buildChompPortrait(scene)` in `chomp_drawn.js`, built lazily the
+    first time he speaks and cached as texture `portrait_chomp_drawn`.
+  * The baked body deliberately leaves the eye sockets and the mouth
+    hollow for `PC.ChompFace` to fill live. A portrait has no live
+    overlay, so `paintPortraitFace()` bakes a static one - lenses
+    forward and slightly down (meeting the reader), iris rings lit,
+    mouth about 70% open like he is mid-sentence.
+  * **CROPPED TO THE HEAD.** The whole machine squeezed into the 52px
+    dialogue well was a smudge. First attempt cropped 32 design units
+    at 4x, which cut both eyes off and read as a grille - the face
+    block is 42 units wide. Landed on **48 units at an exact 3x**
+    (144px texture): brow, both tracking lenses, cheek hardware, mouth
+    slats, neck collars and the shoulder line.
+  * `DialogueBox.show` now **fits whatever texture it is handed** to the
+    well (`PORT / frame.width`) instead of assuming every portrait is
+    128px, and switched `setFrame` -> `setTexture` so a speaker can
+    carry a standalone texture at all. Every other speaker is untouched
+    and still reads its atlas frame - gated.
+  * The stale `portrait_chomp` PNG stays in the manifest on purpose: it
+    is one frame, and it keeps the fallback path alive.
+  * New gate `verify-portrait.js` (4 checks) GREEN, plus confront,
+    roof-fight and bossdoc re-run green.
+
 - **2026-08-07 - v0.57.0: THE FIGHT, AUDITED AGAINST THE BOSS DOC.**
   Mark handed over `bossdesignreference.md` ("the fundamentals of good
   boss fight designs - implement the most that you can into this fight
