@@ -189,20 +189,68 @@ window.PC = window.PC || {};
       rect(g, v.x + 1, v.y, 2, 1, M.dark.m);         // the bore
     });
 
-    // ---- phase dressing: food fusing onto the chassis ----
+    // ---- PHASE DRESSING ------------------------------------------------
+    // The phases have to be legible from a glance at the silhouette, not
+    // just from a number in the code. Phase 2 BOLTS MORE MACHINE ON - it
+    // is trying harder to feed you. Phase 3 is the same machine COMING
+    // APART while it keeps trying, which is the whole tragedy of the
+    // character in one picture.
     if (phase >= 2) {
-      [[m0 - 3, G.shld.y0 + 2], [m0 + mw - 2, G.shld.y0 + 2]].forEach(function (p2) {
-        slab(g, p2[0], p2[1], 6, 5, M.gold);
-        rect(g, p2[0] + 1, p2[1] + 2, 4, 2, M.red.m);
+      // a second hopper tier grafted over the brow: it needs more
+      // capacity, so it built more capacity
+      slab(g, f0 + 4, G.brow.y0 - 6, fw - 8, 7, M.steel);
+      rect(g, f0 + 5, G.brow.y0 - 5, fw - 10, 2, M.amber.m);
+      rivetRow(g, f0 + 6, G.brow.y0 - 4, fw - 12, 7, M.steel);
+      // fat food canisters clamped to both shoulders
+      [[m0 - 5, G.shld.y0 - 1], [m0 + mw - 3, G.shld.y0 - 1]].forEach(function (p2) {
+        slab(g, p2[0], p2[1], 8, 11, M.gold);
+        rect(g, p2[0] + 1, p2[1] + 2, 6, 4, M.red.m);
+        rect(g, p2[0] + 1, p2[1] + 7, 6, 2, M.amber.m);
+        rect(g, p2[0] + 2, p2[1] - 2, 4, 2, M.steel.m);        // feed neck
       });
+      // hazard stripes down the plinth: it is no longer a kitchen
+      for (var hs2 = 0; hs2 < 6; hs2++) {
+        rect(g, b0 + 6 + hs2 * 9, G.base.y0 + 6, 4, 2, M.amber.m);
+      }
+      // a cracked cheek panel with wiring showing through
+      rect(g, f0 + 3, G.face.y0 + 4, 6, 7, M.dark.m);
+      rect(g, f0 + 4, G.face.y0 + 5, 1, 5, M.amber.m);
+      rect(g, f0 + 6, G.face.y0 + 5, 1, 5, M.mint.m);
     }
     if (phase >= 3) {
-      [[f0 - 7, 24], [f0 + fw + 1, 26], [b0 + 2, G.base.y0 - 8],
-       [b0 + bw - 9, G.base.y0 - 8]].forEach(function (p3) {
-        slab(g, p3[0], p3[1], 7, 8, M.cream);
-        rect(g, p3[0] + 1, p3[1] + 2, 5, 3, M.mint.m);
-        rect(g, p3[0] + 1, p3[1] + 2, 5, 1, M.mint.l);
+      // SCORCH. Soot streaking up from every vent and out of the seams.
+      [[f0 + 6, G.face.y0 - 2], [f0 + fw - 12, G.face.y0 - 2],
+       [m0 + 8, G.shld.y0 - 5], [m0 + mw - 14, G.shld.y0 - 5]].forEach(function (sp) {
+        dither(g, sp[0], sp[1], 7, 6, 'rgba(12,9,20,0.55)');
       });
+      // a torn chest panel with the CORE glowing through it - the first
+      // time the fight lets you see what is actually inside
+      var cx3 = D / 2 - 7, cy3 = G.shld.y0 + 1;
+      rect(g, cx3 - 1, cy3 - 1, 16, 9, VOID);
+      rect(g, cx3, cy3, 14, 7, M.dark.d);
+      rect(g, cx3 + 1, cy3 + 1, 12, 5, M.red.m);
+      rect(g, cx3 + 2, cy3 + 2, 10, 2, M.red.l);
+      rect(g, cx3 + 4, cy3 + 2, 6, 1, '#ffffff');
+      for (var tn = 0; tn < 5; tn++) {                          // torn edge
+        rect(g, cx3 + tn * 3, cy3 - 2, 2, 2, M.steel.l);
+      }
+      // food fused right over the chassis in slabs, not neat panels
+      [[f0 - 8, 22], [f0 + fw + 1, 25], [b0 + 3, G.base.y0 - 9],
+       [b0 + bw - 11, G.base.y0 - 9], [m0 + 2, G.shld.y0 - 6]].forEach(function (p3) {
+        slab(g, p3[0], p3[1], 9, 9, M.cream);
+        rect(g, p3[0] + 1, p3[1] + 2, 7, 4, M.mint.m);
+        rect(g, p3[0] + 1, p3[1] + 2, 7, 1, M.mint.l);
+        rect(g, p3[0] + 2, p3[1] + 6, 5, 2, M.red.m);
+      });
+      // tines along the brow: the serving hatch grew teeth
+      for (var tt = 0; tt < 7; tt++) {
+        var tx = f0 + 3 + tt * Math.floor((fw - 6) / 6);
+        rect(g, tx, G.brow.y1, 2, 4, M.cream.m);
+        rect(g, tx, G.brow.y1 + 3, 2, 1, M.cream.d);
+      }
+      // extra conduits strapped down the neck, feeding the new mass
+      rect(g, G.neck.x0 - 4, G.neck.y0 + 1, 2, 5, M.amber.m);
+      rect(g, G.neck.x1 + 2, G.neck.y0 + 1, 2, 5, M.amber.m);
     }
   }
 
@@ -366,25 +414,29 @@ window.PC = window.PC || {};
     this.mouth += (target - this.mouth) * Math.min(1, dt * 6);
 
     var blink = (!powered && Math.sin(this.t * 0.63) > 0.982) ? 0.12 : 1;
-    this._eye(g, G.eyeL, blink, powered);
-    this._eye(g, G.eyeR, blink, powered);
+    // PHASE 3 turns the lenses red. The body art escalates at every gate
+    // and the face has to escalate with it, or the most expressive part
+    // of the machine is the one part that never notices the fight.
+    var hot = (f.phase || 1) >= 3;
+    this._eye(g, G.eyeL, blink, powered, hot);
+    this._eye(g, G.eyeR, blink, powered, hot);
     this._mouth(g, powered);
     this._steam(g, dt, powered);
     void d;
   };
 
-  PC.ChompFace.prototype._eye = function (g, e, blink, powered) {
+  PC.ChompFace.prototype._eye = function (g, e, blink, powered, hot) {
     var a = this._w(e.x, e.y), sc = a.s;
     var w = e.w * sc, h = e.h * sc * blink;
     var cy = a.y + (e.h * sc) / 2;
     // lens: lit top edge, so it still obeys the top-left light
-    g.fillStyle(powered ? 0x22202c : 0xb06a1c, 1);
+    g.fillStyle(powered ? 0x22202c : hot ? 0x8f2f2c : 0xb06a1c, 1);
     g.fillRect(a.x, cy - h / 2, w, h);
-    g.fillStyle(powered ? 0x2a2733 : 0xf2a03c, 1);
+    g.fillStyle(powered ? 0x2a2733 : hot ? 0xe2574c : 0xf2a03c, 1);
     g.fillRect(a.x, cy - h / 2, w, Math.max(1, h * 0.72));
     if (blink < 0.5) return;
     if (!powered) {
-      g.fillStyle(0xffd479, 1);
+      g.fillStyle(hot ? 0xff8f7a : 0xffd479, 1);
       g.fillRect(a.x, cy - h / 2, w, Math.max(1, h * 0.16));
     }
     // THE PUPIL - the tracking part

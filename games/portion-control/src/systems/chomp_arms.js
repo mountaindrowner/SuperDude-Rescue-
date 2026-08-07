@@ -96,6 +96,18 @@ window.PC = window.PC || {};
   var GOOP_LIFE = 7.0;
   var GOOP_R = 96;
 
+  // THE DIFFICULTY SPIKE, per phase. A phase that only shortens the gap
+  // between the core's moves is a number; this is what makes the ARMS
+  // feel like they came off a leash. Index by phase (1..3).
+  var GEAR = {
+    cd:    [1, 1, 0.72, 0.52],     // how fast each appliance re-arms
+    blade: [1, 1, 1.12, 1.26],     // the blender's lethal radius
+    pull:  [1, 1, 1.10, 1.19],     // still under the player's 190
+    shots: [3, 3, 3, 5],           // pellets per server volley
+    goop:  [3, 3, 3, 4],           // puddles per spray
+    sweep: [1, 1, 1.35, 1.75],     // how hard the booms swing about
+  };
+
   function roll(r) { return r[0] + Math.random() * (r[1] - r[0]); }
 
   PC.ChompArms = function (scene, chomp) {
@@ -104,6 +116,7 @@ window.PC = window.PC || {};
     this.g = scene.add.graphics().setDepth(17);       // under the body
     this.arms = [];
     this.goop = [];
+    this.gear = 1;
     var ez = PC.ease ? PC.ease(scene) : null;
     var hp = Math.round(ARM_HP * ((ez && ez.bossHp) || 1));
     for (var i = 0; i < 4; i++) {
@@ -112,8 +125,19 @@ window.PC = window.PC || {};
         i: i, role: role, rest: REST[i], ang: REST[i], hp: hp, maxHp: hp,
         dead: false, t: Math.random() * 6, ext: 0.75, flash: 0,
         deathT: 0, spin: Math.random() * 6, cd: roll(role.cd) + 1.5,
-        state: '', stateT: 0,
+        state: '', stateT: 0, slam: 0,
       });
+    }
+  };
+
+  // called from Chomp.enterPhase: the machine stops being polite
+  PC.ChompArms.prototype.overdrive = function (n) {
+    this.gear = Math.max(1, Math.min(3, n));
+    for (var i = 0; i < this.arms.length; i++) {
+      var a = this.arms[i];
+      a.slam = 0.45;                                 // every boom drives out
+      // re-arm fast so the new gear is felt immediately after the grace
+      a.cd = Math.min(a.cd, 1.4);
     }
   };
 
@@ -206,12 +230,20 @@ window.PC = window.PC || {};
       var a = this.arms[i];
       a.t += dt;
       if (a.dead) { this._drawDead(g, a); continue; }
-      a.spin += dt * a.role.spin * (a.state ? 2.2 : 1);
+      a.spin += dt * a.role.spin * (a.state ? 2.2 : 1) * GEAR.sweep[this.gear];
       // a slow sweep, each arm on its own phase so they never march in
-      // step - the two-clock rule from the VFX notes
+      // step - the two-clock rule from the VFX notes. Later phases swing
+      // the booms harder, so the machine visibly agitates.
       if (!powered) {
-        a.ang = a.rest + Math.sin(a.t * 0.55 + a.i) * SWEEP;
-        a.ext = 0.72 + Math.sin(a.t * 0.9 + a.i * 1.7) * 0.10;
+        var gs = GEAR.sweep[this.gear];
+        a.ang = a.rest + Math.sin(a.t * 0.55 * gs + a.i) * SWEEP * gs;
+        a.ext = 0.72 + Math.sin(a.t * 0.9 * gs + a.i * 1.7) * 0.10;
+        // the transition SLAM: the boom punches out to full reach and
+        // eases back, so the arms are part of the cinematic
+        if (a.slam > 0) {
+          a.slam -= dt;
+          a.ext = 0.72 + 0.28 * Math.min(1, a.slam / 0.30);
+        }
       }
       if (!powered && !s.storyPause && !s.dead) this._role(dt, g, a);
       this._draw(g, a, powered);
@@ -228,7 +260,8 @@ window.PC = window.PC || {};
       // may land on you during a scripted beat (doc 3.4)
       if (c.graceT > 0) return;
       var bx = s.px - tip.x, by = s.py - tip.y;
-      if (bx * bx + by * by < BLADE_R * BLADE_R && this.chomp.moves) {
+      var br = BLADE_R * GEAR.blade[this.gear];
+      if (bx * bx + by * by < br * br && this.chomp.moves) {
         this.chomp.moves._hurt(BLADE_DMG);
         if (s.fx) s.fx.burst(s.px, s.py, 'fx_spark', 5, 0.3);
       }
@@ -249,7 +282,10 @@ window.PC = window.PC || {};
       // a food cannon: a short muzzle tell, then aimed portions
       if (a.state === 'wind') {
         this._tell(g, tip, a.stateT / 0.7, 0xff3ea5);   // it WILL hurt: reserved
-        if (a.stateT >= 0.7) { a.state = ''; a.cd = roll(a.role.cd); this._fire(a, tip); }
+        if (a.stateT >= 0.7) {
+          a.state = ''; a.cd = roll(a.role.cd) * GEAR.cd[this.gear];
+          this._fire(a, tip);
+        }
       }
       return;
     }
@@ -265,10 +301,11 @@ window.PC = window.PC || {};
       }
       var dx = tip.x - s.px, dy = tip.y - s.py;
       var d = Math.max(1, Math.hypot(dx, dy));
-      s.px += (dx / d) * PULL_SPD * dt;
-      s.py += (dy / d) * PULL_SPD * dt;
+      var ps = PULL_SPD * GEAR.pull[this.gear];
+      s.px += (dx / d) * ps * dt;
+      s.py += (dy / d) * ps * dt;
       this._beam(g, tip, s.px, s.py, a.role.tint);
-      if (a.stateT >= 1.4) { a.state = ''; a.cd = roll(a.role.cd); }
+      if (a.stateT >= 1.4) { a.state = ''; a.cd = roll(a.role.cd) * GEAR.cd[this.gear]; }
       return;
     }
 
@@ -278,8 +315,8 @@ window.PC = window.PC || {};
       if (a.state === 'wind') {
         this._tell(g, tip, a.stateT / 0.8, a.role.tint);
         if (a.stateT >= 0.8) {
-          a.state = ''; a.cd = roll(a.role.cd);
-          for (var i = 0; i < 3; i++) {
+          a.state = ''; a.cd = roll(a.role.cd) * GEAR.cd[this.gear];
+          for (var i = 0; i < GEAR.goop[this.gear]; i++) {
             var ang = Math.random() * Math.PI * 2, r = Math.random() * 150;
             this.goop.push({ x: s.px + Math.cos(ang) * r, y: s.py + Math.sin(ang) * r * 0.7,
               life: GOOP_LIFE, seed: Math.random() * 9 });
@@ -297,10 +334,11 @@ window.PC = window.PC || {};
     var s = this.scene, m = this.chomp.moves;
     if (!m) return;
     var base = Math.atan2(s.py - tip.y, s.px - tip.x);
-    for (var i = -1; i <= 1; i++) {
+    var n = GEAR.shots[this.gear], half = (n - 1) / 2;
+    for (var i = -half; i <= half; i++) {
       var ang = base + i * 0.22;
       m.crumbs.push({ x: tip.x, y: tip.y, vx: Math.cos(ang) * 260,
-        vy: Math.sin(ang) * 200, life: 2.6, hit: false, kind: (i + 1) % 3,
+        vy: Math.sin(ang) * 200, life: 2.6, hit: false, kind: (i + 3) % 3,
         dmg: PELLET_DMG });
     }
     if (PC.audio && PC.audio.telegraph) PC.audio.telegraph();
