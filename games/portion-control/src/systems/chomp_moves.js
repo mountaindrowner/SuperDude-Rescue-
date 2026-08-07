@@ -34,11 +34,30 @@ window.PC = window.PC || {};
     3: { gap: [1.9, 2.8], moves: ['serve', 'conveyor', 'buffet', 'seconds'] },
   };
 
+  // ---- THE RESERVED TELEGRAPH COLOUR --------------------------------
+  // Boss doc, Part 1.4: lock ONE hue to "danger, move now" and protect
+  // it religiously. Nothing else in this game may use it - not UI, not
+  // friendly VFX, not decoration. We were using GOLD, which is also
+  // CHOMP's own trim, the pickup colour and half the HUD; that is
+  // exactly the mistake the rule exists to prevent.
+  var TELL = 0xff3ea5;             // magenta. Reserved. Do not reuse.
+  PC.CHOMP_TELL_COLOR = TELL;
+
   var PLATE_R = 132;               // the ring you must leave
   var PLATE_TELL = 1.35;           // seconds of warning before it lands
   var PLATE_DMG = 22;
   var BELT_DMG = 18;
   var CRUMB_DMG = 14;
+
+  // ---- THE POSITIONING WINDOW ---------------------------------------
+  // Boss doc, Appendix: in an auto-attack game the punish window is not
+  // an attack window, it is a POSITIONING window - the boss stops
+  // emitting zone denial and the player can safely stand in high-DPS
+  // range. So every move ends in a real recovery during which CHOMP
+  // cannot act and takes bonus damage, and the size of the recovery
+  // scales with the size of the threat (Part 1.2).
+  var RECOVER = { serve: 1.5, conveyor: 2.1, buffet: 1.4, seconds: 1.1 };
+  var VULN_MULT = 2.0;             // damage multiplier while recovering
 
   PC.ChompMoves = function (scene, chomp) {
     this.scene = scene;
@@ -49,10 +68,18 @@ window.PC = window.PC || {};
     this.belt = null;
     this.acc = 2.2;                                  // a beat to breathe first
     this.last = '';
+    this.recover = 0;                                // >0 = punish window
+    this.recentHitAt = 0;                            // for pity aggression
+    this.shoveCd = 0;                                // anti-camp cooldown
   };
+
+  // is CHOMP in its punish window right now?
+  PC.ChompMoves.prototype.vulnerable = function () { return this.recover > 0; };
 
   PC.ChompMoves.prototype._hurt = function (dmg) {
     var s = this.scene;
+    // DEATH CANCEL (doc 3.4): if the player is already down, nothing in
+    // flight may land on them.
     if (s.dead || s.now < s.invUntil) return;
     s.hp -= dmg;
     s.invUntil = s.now + 0.7;
@@ -67,12 +94,75 @@ window.PC = window.PC || {};
     if (!c || c.dead || c.powering) { this.plates.length = 0; this.crumbs.length = 0; this.belt = null; return; }
     if (s.storyPause) return;                        // never during dialogue
 
-    this.acc -= dt;
-    if (this.acc <= 0) this._pick();
+    // RECOVERY: it stops denying ground, glows, and takes double damage.
+    // This is the whole punish economy in an auto-attack game.
+    if (this.recover > 0) {
+      this.recover -= dt;
+      this._drawRecover(g, c);
+      if (this.recover <= 0) this.acc = Math.max(this.acc, 0.35);
+    }
+
+    // PHASE GRACE (doc 3.4): no attacks for a beat after a gate, which
+    // is the free heal window and a hard reset of the player's rhythm.
+    if (c.graceT > 0) { c.graceT -= dt; this.acc = Math.max(this.acc, 0.2); }
+
+    // PITY AGGRESSION (doc 3.4): a player who has not landed a hit in a
+    // while is struggling and needs MORE openings, not fewer.
+    var pity = (s.now - this.recentHitAt > 15) ? 1.45 : 1;
+
+    this._antiCamp(dt, g, c);
+
+    if (this.recover <= 0 && c.graceT <= 0) {
+      this.acc -= dt / pity;
+      if (this.acc <= 0) this._pick();
+    }
 
     this._plates(dt, g);
     this._beltUpdate(dt, g);
     this._crumbs(dt, g);
+  };
+
+  // the punish window, made obvious: a cyan ring pulsing at the core.
+  // Cyan, never the reserved magenta - this marks SAFE, not danger.
+  PC.ChompMoves.prototype._drawRecover = function (g, c) {
+    var k = Math.min(1, this.recover / 0.6);
+    var pulse = 0.45 + 0.3 * Math.sin(this.scene.now * 7);
+    g.lineStyle(6, 0x35d0ff, 0.5 * k * pulse);
+    g.strokeCircle(c.x, c.y, c.r + 44);
+    g.lineStyle(3, 0xa8e04a, 0.55 * k);
+    g.strokeCircle(c.x, c.y, c.r + 26);
+  };
+
+  // ANTI-CAMP (doc 3.2 onPlayerAdjacent): hugging a stationary boss must
+  // not be free. A short, fast, clearly-telegraphed shove - and it
+  // reacts to POSITION, never to a button press (doc 2.3.3).
+  PC.ChompMoves.prototype._antiCamp = function (dt, g, c) {
+    var s = this.scene;
+    this.shoveCd -= dt;
+    var dx = s.px - c.x, dy = s.py - c.y;
+    var near = dx * dx + dy * dy < (c.r + 60) * (c.r + 60);
+    if (!near) { this._camp = 0; return; }
+    this._camp = (this._camp || 0) + dt;
+    if (this._camp < 0.9 || this.shoveCd > 0) {
+      if (this._camp > 0.35) {                    // the tell, before it fires
+        g.lineStyle(5, TELL, 0.4 + 0.4 * Math.sin(s.now * 16));
+        g.strokeCircle(c.x, c.y, c.r + 54);
+      }
+      return;
+    }
+    this._camp = 0; this.shoveCd = 3.4;
+    this._hurt(12);
+    // stand on the exact centre and dx/dy are both zero, so a delta-based
+    // shove pushes you nowhere - the one spot camping would still be free.
+    // Shove to a fixed RADIUS instead, and fall back to "downhill, toward
+    // the open roof" when there is no direction to preserve.
+    var d = Math.hypot(dx, dy);
+    if (d < 1) { dx = 0; dy = 1; d = 1; }
+    var out = c.r + 120;
+    s.px = c.x + (dx / d) * out; s.py = c.y + (dy / d) * out;
+    if (s.player) s.player.setPosition(s.px, s.py);
+    s.cameras.main.shake(160, 0.005);
+    if (s.floatText) s.floatText('TOO CLOSE!', TELL);
   };
 
   // choose the next move, never the same one twice running
@@ -90,6 +180,9 @@ window.PC = window.PC || {};
     else if (m === 'conveyor') this._conveyor();
     else if (m === 'buffet') this._buffet();
     else this._seconds();
+    // the punish window opens when the move's active frames end. Bigger
+    // commitment, bigger opening (doc 1.2).
+    this._pending = RECOVER[m] || 1.2;
   };
 
   // ---- PORTION SERVE -------------------------------------------------
@@ -118,11 +211,11 @@ window.PC = window.PC || {};
       var k = Math.min(1, p.t / PLATE_TELL);
       if (!p.done) {
         // a dinner plate drawn on the deck, filling up as it arms
-        g.lineStyle(4, 0xf2c33c, 0.75);
+        g.lineStyle(5, TELL, 0.85);
         g.strokeCircle(p.x, p.y, PLATE_R);
-        g.lineStyle(2, 0xffd977, 0.5);
+        g.lineStyle(2, TELL, 0.45);
         g.strokeCircle(p.x, p.y, PLATE_R - 9);
-        g.fillStyle(0xf2a03c, 0.10 + 0.22 * k);
+        g.fillStyle(TELL, 0.10 + 0.20 * k);
         g.fillCircle(p.x, p.y, PLATE_R * k);
         if (p.t >= PLATE_TELL) {
           p.done = true; p.t = 0;
@@ -131,6 +224,7 @@ window.PC = window.PC || {};
           s.cameras.main.shake(200, 0.006);
           if (s.fx) s.fx.burst(p.x, p.y, 'fx_pop', 12, 0.4);
           if (PC.audio && PC.audio.bossHit) PC.audio.bossHit();
+          this._openWindow();
         }
       } else {
         // the meal itself, sitting there for a moment
@@ -176,7 +270,7 @@ window.PC = window.PC || {};
       b.arm.ang = b.from - 0.35;
       b.arm.ext = 0.6;
       // the arc it is about to sweep, painted on the deck
-      g.lineStyle(6, 0xff6b6b, 0.30 + 0.25 * Math.sin(s.now * 14));
+      g.lineStyle(7, TELL, 0.45 + 0.35 * Math.sin(s.now * 14));
       g.beginPath();
       g.arc(c.x, c.y, 260, b.from, b.to);
       g.strokePath();
@@ -201,7 +295,7 @@ window.PC = window.PC || {};
       var dx = s.px - tip.x, dy = s.py - tip.y;
       if (dx * dx + dy * dy < 92 * 92) { b.hit = true; this._hurt(BELT_DMG); }
     }
-    if (k >= 1) { b.arm.wind = 0; this.belt = null; }
+    if (k >= 1) { b.arm.wind = 0; this.belt = null; this._openWindow(); }
   };
 
   // ---- BUFFET --------------------------------------------------------
@@ -222,6 +316,8 @@ window.PC = window.PC || {};
     }
     if (c.fig) c.fig.serving = 0.5;
     if (PC.audio && PC.audio.telegraph) PC.audio.telegraph();
+    var self = this;
+    this.scene.time.delayedCall(700, function () { self._openWindow(); });
   };
 
   PC.ChompMoves.prototype._crumbs = function (dt, g) {
@@ -263,9 +359,27 @@ window.PC = window.PC || {};
       });
     }
     if (s.floatText) s.floatText('HERE IS MORE!', 0xe2574c);
+    this._openWindow();
     if (s.quest && s.quest.box && !s.quest.box.active) {
       s.quest.box.show({ speaker: 'chomp', text: 'Here is MORE!' }, function () {});
     }
+  };
+
+  // the move is over: open the positioning window
+  PC.ChompMoves.prototype._openWindow = function () {
+    if (this._pending) { this.recover = this._pending; this._pending = 0; }
+  };
+
+  // PROJECTILE AMNESTY (doc 3.4): on a phase gate or a death, everything
+  // in flight is despawned. Nothing may kill you during a transition.
+  PC.ChompMoves.prototype.amnesty = function () {
+    this.plates.length = 0;
+    this.crumbs.length = 0;
+    if (this.belt && this.belt.arm) this.belt.arm.wind = 0;
+    this.belt = null;
+    this.recover = 0;
+    this._pending = 0;
+    this.acc = Math.max(this.acc, 1.0);
   };
 
   PC.ChompMoves.prototype.destroy = function () { this.g.destroy(); };

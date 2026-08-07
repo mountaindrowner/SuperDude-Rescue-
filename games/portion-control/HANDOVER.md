@@ -12,6 +12,60 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.57.0: THE FIGHT, AUDITED AGAINST THE BOSS DOC.**
+  Mark handed over `bossdesignreference.md` ("the fundamentals of good
+  boss fight designs - implement the most that you can into this fight
+  with what we currently have"). Every change below cites the rule it
+  answers, so the next session can re-audit against the same document.
+  * **1.4 RESERVED TELEGRAPH COLOUR.** The doc's rule is that one hue
+    means "this will hurt you" and is never used for anything else.
+    Ours was gold - which is also CHOMP's own trim, his arm lamps and
+    the armour pips, i.e. the single worst possible choice. Every
+    telegraph moved to `PC.CHOMP_TELL_COLOR = 0xff3ea5` (magenta),
+    reserved and used nowhere else. The recovery ring got the opposite
+    treatment: cyan, which now reliably means SAFE.
+  * **1.2 + APPENDIX - THE PUNISH WINDOW IS THE BOSS'S OWN ANIMATION.**
+    Every move now ends in a real recovery (`RECOVER`: serve 1.5s,
+    conveyor 2.1s, buffet 1.4s, seconds 1.1s) during which a cyan ring
+    pulses at the core and **all damage is doubled** (`VULN_MULT`). In
+    a bullet-heaven the player doesn't choose when to swing, so the
+    punish has to be positional - stand in it and your existing DPS is
+    worth twice as much. Recovery stopped being a pause and became the
+    reason to move toward him.
+  * **2.3.3 REACT TO POSITION, NEVER TO A BUTTON.** Anti-camp shove:
+    sit inside `r + 60` for 0.9s and he serves you personally - a
+    telegraphed magenta ring, then 12 damage and a shove clear of the
+    core. It reads your POSITION only; there is no input-reading
+    anywhere in the fight.
+  * **1.9 + 3.4 THE TRANSITION IS A SCRIPTED BEAT.** `enterPhase()`
+    now does all four jobs at once: 1.6s invulnerability, projectile
+    **amnesty** (everything in flight despawns - the doc's rule that a
+    transition may never kill you), 1.5s of grace before anything new
+    fires, and a shake + magenta flash so the new phase reads as new.
+  * **APPENDIX - PHASE GATES ON HP *OR* TIME.** DPS in a bullet-heaven
+    varies wildly by build, so an HP-only gate means a weak loadout
+    never sees phase 3 and a strong one skips phase 2 in six seconds.
+    `phaseOf()` returns `max(byHp, byTime)` with time gates at 50s and
+    105s, and a `gates` map makes each threshold fire **exactly once**
+    however the two curves cross.
+  * **3.4 ANTI-FRUSTRATION.** Pity aggression (he eases off after he
+    lands one on you), a death cancel (a move in flight cannot kill
+    you during the power-down), and no guaranteed damage anywhere -
+    every move has a dodge (2.3.4).
+  * **2.3.7 OCCLUSION.** The doc maps the camera complaint straight
+    onto 2D: your boss must never cover the player. Danny went to
+    depth 22 and his ghosts to 21, above the boss body (18) and the
+    live face (19). You can always see yourself.
+  * **2.3.8 RETRY FRICTION.** Dying on the roof sets `PC.ROOF_RETRY`,
+    consumed on the next create - you land back in the fight instead
+    of re-walking the confrontation. Nobody re-watches a cutscene.
+  * **THE ONE REAL BUG THIS FOUND**: the shove was a *delta* along the
+    player-to-core vector, so standing on the exact centre (dx = dy =
+    0) gave it no direction and camping the dead middle was free. It
+    now shoves to a fixed RADIUS with a fallback direction.
+  * New gate `verify-bossdoc.js` (7 checks) - GREEN, plus moves, arms,
+    face, confront, roof-fight and tower all re-run green.
+
 - **2026-08-06 - v0.56.0: THE MOVESET. CHOMP FIGHTS BACK.** Mark:
   "let's make him 30% bigger and let's have his arms more threatening.
   Now let's make his phases and attacks and such."

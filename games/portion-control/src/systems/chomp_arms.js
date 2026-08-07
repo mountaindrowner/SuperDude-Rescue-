@@ -70,6 +70,7 @@ window.PC = window.PC || {};
     if (!best) return false;
     best.hp -= dmg;
     best.flash = this.scene.now + 0.08;
+    if (this.chomp.moves) this.chomp.moves.recentHitAt = this.scene.now;
     if (best.hp <= 0) this._kill(best);
     return true;
   };

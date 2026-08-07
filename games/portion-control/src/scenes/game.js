@@ -55,14 +55,18 @@ PC.GameScene.prototype.create = function () {
   // Danny's so every hero occupies the same world footprint.
   this.hero = this.storyMission ? PC.heroById(this.storyMission.hero)
                                 : PC.selectedHero();
+  // DEPTH 22: above CHOMP's body (18) and its live face (19). Boss doc
+  // 2.3.7 - the most-cited camera complaint in the survey is the boss
+  // covering the player character. In a 2D top-down game that maps
+  // exactly to sprite depth, and the fix is one number.
   this.player = this.add.image(0, 0, 'atlas', this.hero.art + '_walk_1')
-    .setOrigin(0.5, 0.82).setDepth(10).setScale(this.hero.scale);
+    .setOrigin(0.5, 0.82).setDepth(22).setScale(this.hero.scale);
 
   // ghost trail (VS after-image, code-side): 6 pooled ghosts
   this.ghosts = [];
   for (var gi = 0; gi < 6; gi++) {
     this.ghosts.push({ t: 0, life: 0,
-      img: this.add.image(0, 0, 'atlas', this.hero.art + '_walk_1').setOrigin(0.5, 0.82).setDepth(9)
+      img: this.add.image(0, 0, 'atlas', this.hero.art + '_walk_1').setOrigin(0.5, 0.82).setDepth(21)
         .setScale(this.hero.scale).setVisible(false) });
   }
   this._ghostAcc = 0;
@@ -167,10 +171,34 @@ PC.GameScene.prototype.create = function () {
     ? new PC.SewerFlow(this) : null;
   this.confront = (this.region && this.region.def.id === 'tower' && PC.Confront)
     ? new PC.Confront(this) : null;
+  // FAST RETRY: died in the fight, so go straight back INTO the fight -
+  // no climb, no cutscene. Target from the boss doc is under two
+  // seconds from death to fighting again.
+  if (PC.ROOF_RETRY && this.region && this.region.def.id === 'tower') {
+    var rtL = this.region.layout, rtSelf = this;
+    this.px = rtL.dannyMark.x; this.py = rtL.dannyMark.y;
+    this.player.setPosition(this.px, this.py);
+    this.cameras.main.centerOn(this.px, this.py);
+    this.time.delayedCall(120, function () {
+      if (rtSelf.quest && rtSelf.quest.box) {
+        var rg = 0;
+        while (rtSelf.quest.box.active && rg++ < 40) rtSelf.quest.box.tap();
+      }
+      if (rtSelf.confront) { rtSelf.confront.state = 'over'; rtSelf.confront.done = true; }
+      if (!rtSelf.boss && PC.Chomp) {
+        rtSelf.boss = new PC.Chomp(rtSelf, rtL.chompMark.x, rtL.chompMark.y);
+        rtSelf.bossSpawned = true;
+        if (PC.AllySystem && !rtSelf.allies) rtSelf.allies = new PC.AllySystem(rtSelf);
+        if (rtSelf.allies) rtSelf.allies.start();
+      }
+      rtSelf.zoomTarget = rtSelf.baseZoom * (PC.FIGHT_ZOOM || 0.8);
+      rtSelf.floatText('ROUND TWO', 0x35d0ff);
+    });
+  }
   // DEV WARP: stand at the head of the last stair with the climb's
   // objective already closed, one step below the roof. Walk up and the
   // confrontation fires exactly as it would after seventeen floors.
-  if (PC.ROOF_WARP && this.region && this.region.def.id === 'tower') {
+  if (PC.ROOF_WARP && !PC.ROOF_RETRY && this.region && this.region.def.id === 'tower') {
     var rwL = this.region.layout;
     var rwS = rwL.shafts[rwL.shafts.length - 1];
     this.px = rwS.x + rwS.w / 2;
@@ -1010,6 +1038,7 @@ PC.GameScene.prototype.onChompArmsCleared = function () {
 
 PC.GameScene.prototype.onChompDown = function () {
   var self = this;
+  PC.ROOF_RETRY = false;                   // the fight is over; stop warping
   this.zoomTarget = this.baseZoom;         // back to normal for the ending
   if (this.allies) this.allies.running = false;
   this.enemies.clearAll();
@@ -1050,6 +1079,11 @@ PC.GameScene.prototype.die = function () {
       this.drawHud();
       return;
     }
+  }
+  // remember that this death happened IN the boss fight, so the retry
+  // can skip the climb AND the confrontation (boss doc 2.3.8)
+  if (this.region && this.region.def.id === 'tower' && this.boss && !this.boss.dead) {
+    PC.ROOF_RETRY = true;
   }
   // AMAZING GRACE (shop flagship): get back up once per run at half HP
   if (this.reviveCharges > 0) {

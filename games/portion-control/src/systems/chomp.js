@@ -46,6 +46,10 @@ window.PC = window.PC || {};
       this.contact = Math.round(d.contact * (ez.bossContact || 1));
     }
     this.phase = 1;
+    this.graceT = 0;                 // phase-transition grace, seconds
+    this.invulnT = 0;                // scripted transition invulnerability
+    this.gates = {};                 // idempotent: each gate fires once
+    this.fightT = 0;                 // elapsed fight time, for the time gate
     this.dead = false;
     this.powering = false;          // the shutdown, not an explosion
     this.t = 0;
@@ -72,11 +76,32 @@ window.PC = window.PC || {};
     return PC.CHOMP_DEF.armour + (1 - PC.CHOMP_DEF.armour) * (1 - live / 4);
   };
 
+  // PHASE GATES ON HP *OR* TIME (boss doc, Appendix). In a bullet-heaven
+  // player DPS varies wildly by build, so an HP-only gate means a weak
+  // loadout never sees phase 3 and a strong one skips phase 2 in six
+  // seconds. Whichever threshold arrives first wins.
   PC.Chomp.prototype.phaseOf = function () {
     var f = this.hp / this.maxHp;
-    if (f > PC.CHOMP_DEF.p2) return 1;
-    if (f > PC.CHOMP_DEF.p3) return 2;
-    return 3;
+    var byHp = f > PC.CHOMP_DEF.p2 ? 1 : f > PC.CHOMP_DEF.p3 ? 2 : 3;
+    var byTime = this.fightT > 105 ? 3 : this.fightT > 50 ? 2 : 1;
+    return Math.max(byHp, byTime);
+  };
+
+  // THE TRANSITION (doc 1.9 + 3.4): a scripted beat doing three jobs at
+  // once - drama, a free heal window, and a hard reset of the player's
+  // rhythm so the new phase reads as new. Invulnerable, everything in
+  // flight despawned, and nothing attacks for a beat afterwards.
+  PC.Chomp.prototype.enterPhase = function (n) {
+    var s = this.scene;
+    this.phase = n;
+    if (this.fig) this.fig.phase = n;
+    this.invulnT = 1.6;
+    this.graceT = 1.5;
+    if (this.moves) this.moves.amnesty();            // projectile amnesty
+    if (s.enemies) s.enemies.clearAll();
+    s.cameras.main.shake(420, 0.015);                // transition-only value
+    s.cameras.main.flash(220, 255, 62, 165, true);   // the reserved hue
+    if (s.onChompPhase) s.onChompPhase(n);
   };
 
   PC.Chomp.prototype.update = function (dt) {
@@ -84,12 +109,15 @@ window.PC = window.PC || {};
     this.t += dt;
     var s = this.scene;
 
-    // phase changes are STORY beats, not stat bumps
+    this.fightT += dt;
+    if (this.invulnT > 0) this.invulnT -= dt;
+    // phase changes are STORY beats, not stat bumps. The gate map makes
+    // this IDEMPOTENT (doc 3.2 checkPhaseGate) - each threshold fires
+    // exactly once no matter how the HP and time curves cross.
     var p = this.phaseOf();
-    if (p !== this.phase && !this.powering) {
-      this.phase = p;
-      if (this.fig) this.fig.phase = p;
-      if (s.onChompPhase) s.onChompPhase(p);
+    if (p > this.phase && !this.powering && !this.gates[p]) {
+      this.gates[p] = 1;
+      this.enterPhase(p);
     }
 
     if (this.powering) {
@@ -121,7 +149,13 @@ window.PC = window.PC || {};
 
   PC.Chomp.prototype.damage = function (dmg) {
     if (this.dead || this.powering) return;
-    this.hp -= dmg * this.coreMult();
+    if (this.invulnT > 0) return;                    // scripted transition
+    // THE PUNISH ECONOMY: standing in the positioning window and
+    // shooting is worth double. This is what makes recovery a reward
+    // rather than a pause.
+    var mult = this.coreMult() * (this.moves && this.moves.vulnerable() ? 2 : 1);
+    if (this.moves) this.moves.recentHitAt = this.scene.now;
+    this.hp -= dmg * mult;
     this.flashUntil = this.scene.now + 0.08;
     if (this.fig) this.fig.flash = this.flashUntil;
     if (this.hp <= 0) { this.hp = 0; this.powerDown(); }
@@ -133,6 +167,7 @@ window.PC = window.PC || {};
   PC.Chomp.prototype.powerDown = function () {
     if (this.powering) return;
     this.powering = true;
+    if (this.moves) this.moves.amnesty();            // nothing may kill you now
     this.scene.cameras.main.shake(300, 0.006);
     if (PC.audio && PC.audio.bossDie) PC.audio.bossDie();
     if (this.scene.onChompDown) this.scene.onChompDown();
