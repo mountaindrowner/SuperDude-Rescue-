@@ -43,6 +43,10 @@ window.PC = window.PC || {};
 
   function TELL() { return PC.CHOMP_TELL_COLOR || 0xff3ea5; }
 
+  // party pastels for anything frosting-flavoured - never a single red
+  // splotch (v0.65.0, Mark: "it starts looking like blood")
+  var PASTELS = [0xff9ecb, 0xffd977, 0x9be8ff, 0xb4f2a8, 0xc9a8ff];
+
   function hurt(s, dmg) {
     if (s.dead || s.now < s.invUntil) return;
     s.hp -= Math.max(1, Math.round(dmg * (s.dmgTakenMult || 1)) - (s.stats.armor || 0));
@@ -116,10 +120,11 @@ window.PC = window.PC || {};
         b.x += (dx / len) * b.spd * dt;
         b.y += (dy / len) * b.spd * dt;
         b.chargeCd -= dt; b.splatCd -= dt;
-        if (b.splatCd <= 0) { b.splatCd = 9; b.splat(5, 0xd93a3a, 'dmg'); }
+        if (b.splatCd <= 0) { b.splatCd = 9; b.say('SAUCE STORM!'); b.splat(5, 0xd93a3a, 'dmg'); }
         if (b.chargeCd <= 0) {
           b.chargeCd = b.enraged() ? 4 : 6;
           b.state = 'telegraph'; b.stateT = 0;
+          b.say('COMING THROUGH!');
           b._tdx = dx / len; b._tdy = dy / len;
         }
       } else if (b.state === 'telegraph') {
@@ -170,10 +175,11 @@ window.PC = window.PC || {};
         b.x += ((dx / len) * b.spd + (-dy / len) * sway) * dt;
         b.y += ((dy / len) * b.spd + (dx / len) * sway) * dt;
         b.fanCd -= dt; b.digCd -= dt;
-        if (b.fanCd <= 0) { b.fanCd = b.enraged() ? 3.2 : 4.5; b.state = 'fan'; b.stateT = 0; }
+        if (b.fanCd <= 0) { b.fanCd = b.enraged() ? 3.2 : 4.5; b.state = 'fan'; b.stateT = 0; b.say('FLORET FLURRY!'); }
         else if (b.digCd <= 0) {
           b.digCd = b.enraged() ? 7 : 10;
           b.state = 'burrow'; b.stateT = 0;
+          b.say('DOWN I GO!');
           b.guard = 0.25; b.noContact = true;          // shots plink into the dirt
           b.sprite.setVisible(false); b.shadow.setVisible(false);
           if (s.fx) s.fx.burst(b.x, b.y, 'fx_pop', 10, 0.5);
@@ -211,6 +217,7 @@ window.PC = window.PC || {};
           b.state = 'erupt'; b.stateT = 0;
           b.guard = 1; b.noContact = false;
           b.x = b.mx; b.y = b.my;                      // it surfaces HERE
+          b.say('SURPRISE!');
           b.sprite.setVisible(true); b.shadow.setVisible(true);
           var edx = px - b.mx, edy = py - b.my;
           if (edx * edx + edy * edy < 70 * 70) hurt(s, 14);
@@ -242,26 +249,28 @@ window.PC = window.PC || {};
   // ==================================================================
   var Cake = {
     init: function (b) {
-      b.tier = 3; b.mortarCd = 4;
+      b.split = false; b.mortarCd = 4;
       b.baseS = 1.32; b.spd = 76;                      // starts huge and slow
     },
     update: function (b, dt, px, py) {
       var s = b.scene, g = b.gfx;
-      // tier gates, idempotent like CHOMP's
-      var f = b.hp / b.maxHp;
-      var wantTier = f > 2 / 3 ? 3 : f > 1 / 3 ? 2 : 1;
-      if (wantTier < b.tier && b.state !== 'shed') {
-        b.tier = wantTier;
+      // THE SPLIT (v0.65.0, Mark: "a large cake that splits into
+      // multiple cupcakes when you get it to sixty percent"). ONE gate,
+      // one big moment: the colossus bursts apart - four live cupcakes
+      // scatter out of it, and what is left is a smaller, angrier cake.
+      if (!b.split && b.hp <= b.maxHp * 0.6 && b.state !== 'shed') {
+        b.split = true;
         b.state = 'shed'; b.stateT = 0; b.vuln = 2.0; b.noContact = true;
-        // the tier lands beside it as living cupcakes
-        spawnKid(s, b.x - 70, b.y + 20, 'cupcake');
-        spawnKid(s, b.x + 70, b.y + 20, 'cupcake');
-        b.baseS = b.tier === 2 ? 1.08 : 0.88;          // visibly less cake
-        b.spd = b.tier === 2 ? 108 : 138;              // visibly more angry
-        b.r = Math.round(b.r * 0.82);
-        s.cameras.main.shake(260, 0.01);
-        if (s.fx) s.fx.burst(b.x, b.y - 30, 'fx_pop', 16, 0.6);
-        if (s.floatText) s.floatText(b.tier === 2 ? 'A LAYER DOWN!' : 'LAST LAYER!', 0xff9ecb);
+        b.say('CUPCAKE SPLIT!', 0xff9ecb);
+        for (var c4 = 0; c4 < 4; c4++) {
+          var sa2 = (c4 / 4) * Math.PI * 2 + 0.6;
+          spawnKid(s, b.x + Math.cos(sa2) * 85, b.y + 20 + Math.sin(sa2) * 45, 'cupcake');
+        }
+        b.baseS = 0.92; b.spd = 124;                   // less cake, more angry
+        b.r = Math.round(b.r * 0.78);
+        s.cameras.main.shake(280, 0.011);
+        if (s.fx) { s.fx.burst(b.x, b.y - 30, 'fx_pop', 18, 0.7); s.fx.burst(b.x, b.y, 'fx_spark', 10, 0.5); }
+        if (s.floatText) s.floatText('IT SPLIT!', 0xff9ecb);
       }
       if (b.state === 'active') {
         var dx = px - b.x, dy = py - b.y, len = Math.hypot(dx, dy) || 1;
@@ -270,7 +279,9 @@ window.PC = window.PC || {};
         b.mortarCd -= dt;
         if (b.mortarCd <= 0) {
           b.mortarCd = b.enraged() ? 5 : 7;
-          b.splat(4 - b.tier + 3, 0xff9ecb, 'slow');   // more mortar as it sheds
+          b.say('FROSTING TIME!', 0xff9ecb);
+          // pastel party splotches with sprinkles - slow, never chip
+          b.splat(b.split ? 5 : 4, PASTELS, 'slow');
           b.vulnAfter = 1.0;
         }
       } else if (b.state === 'shed') {
@@ -356,8 +367,8 @@ window.PC = window.PC || {};
         b.x += (dx / len) * b.spd * dt;
         b.y += (dy / len) * b.spd * dt;
         b.launchCd -= dt; b.restockCd -= dt;
-        if (b.restockCd <= 0) { b.state = 'restock'; b.stateT = 0; }
-        else if (b.launchCd <= 0) { b.state = 'launch'; b.stateT = 0; }
+        if (b.restockCd <= 0) { b.state = 'restock'; b.stateT = 0; b.say('SNACK TIME!', 0xf2a03c); }
+        else if (b.launchCd <= 0) { b.state = 'launch'; b.stateT = 0; b.say('CANDY CORN AWAY!', 0xffd977); }
       } else if (b.state === 'restock') {
         // the door swings open and the floor floods with junk food
         if (b.stateT > 0.6 && !b._poured) {
@@ -397,7 +408,7 @@ window.PC = window.PC || {};
           if (b.salvoN % 3 === 0) {
             // it vended too hard: SOLD OUT
             b.state = 'overheat'; b.stateT = 0; b.vuln = 2.5;
-            if (s.floatText) s.floatText('SOLD OUT!', 0x35d0ff);
+            b.say('SOLD OUT!', 0x35d0ff);
           } else {
             b.vuln = 1.1;
           }
@@ -497,12 +508,14 @@ window.PC = window.PC || {};
           if (b.cyc % 7 === 0) nxt = 'dive';
           if (nxt === 'dive') {
             b.state = 'dive'; b.stateT = 0;
+            b.say('DOWN THE DRAIN!', 0xa8e04a);
             b.guard = 0.25; b.noContact = true;
             b.sprite.setVisible(false); b.shadow.setVisible(false);
             b.mx = b.x; b.my = b.y;
             if (s.fx) s.fx.burst(b.x, b.y, 'fx_splash', 10, 0.5);
           } else {
             b.state = nxt; b.stateT = 0; b.emitT = 0; b.burstN = 0;
+            b.say(nxt === 'spiral' ? 'GOO-NADO!' : nxt === 'ringTell' ? 'RIPPLE TIME!' : 'SPLAT SPLAT!', 0xa8e04a);
           }
         }
       } else if (b.state === 'spiral') {

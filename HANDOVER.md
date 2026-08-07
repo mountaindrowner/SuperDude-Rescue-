@@ -12,6 +12,45 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.65.0: WALKS THAT READ, THE 60% SPLIT, SPRINKLES,
+  AND CALLOUTS.** Mark's batch: the vending machine and cake "do move
+  but there's no walking animation"; the cake "doesn't split - maybe a
+  large cake that splits into multiple cupcakes at sixty percent"; the
+  red splotches "start looking like blood - make it multicoloured with
+  sprinkles"; and "each boss announces what they're attacking with"
+  plus "an inappropriate check".
+  * **THE WADDLE**: the flipbook alone never read because the
+    strength-300 walk frames were near-clones. Two fixes together:
+    (1) the chassis now PERFORMS the walk - a movement-driven,
+    step-timed squash-and-stretch with side sway and a hop, playing
+    only while the boss actually moves (`b.moving` off real position
+    delta); (2) the stride frames (walk 1 + 3) for cake and vending
+    were regenerated at strength 200 with explicit big-step leaning
+    poses, so the art genuinely alternates under the code motion.
+  * **THE SPLIT**: Cake redesigned to ONE gate at 60% HP - the
+    colossus bursts, FOUR live cupcakes scatter out of it, and what
+    remains is smaller (1.32 -> 0.92) and faster (76 -> 124), stunned
+    wide open through the moment. Idempotent (`b.split`), gated in
+    the suite including a re-trigger probe at 20%.
+  * **SPRINKLES, NOT BLOOD**: `splat()` accepts a tint ARRAY - each
+    frosting blob picks its own pastel (pink/butter/sky/mint/
+    lavender), and slow puddles draw seven coloured sprinkle dashes
+    on top. The gate asserts >= 2 distinct puddle tints and no plain
+    red. Frank keeps his red ketchup - it reads as condiment on a
+    street-food boss and Mark's note was about the cake.
+  * **CALLOUTS**: new `PC.Boss.say(text, tint)` - a bold shout above
+    the boss's head when a move starts, one at a time. 12 wired
+    across all five bosses (SAUCE STORM!, FLORET FLURRY!, CUPCAKE
+    SPLIT!, CANDY CORN AWAY!, GOO-NADO!, ...). Every string was
+    manually reviewed for the VBS audience - food puns only, zero
+    violence words - AND the gate runs an automated screen: fetches
+    boss_scripts.js, extracts every say() string, asserts uppercase
+    food-safe charset and a banned-word list (blood/kill/die/...).
+  * verify-district-bosses now 17 checks GREEN (split-once, pastel
+    tints, overhead callout, appropriateness screen, live waddle
+    sway/squash sampling); arena re-run green.
+
+
 - **2026-08-07 - v0.64.0: THE GLOOP KING, VISIBLE AND DANMAKU.** Mark:
   "the gloop king is not visible. Have him more of a bullet hell but
   for kids."

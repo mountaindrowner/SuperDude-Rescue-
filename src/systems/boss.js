@@ -83,7 +83,30 @@ PC.Boss = function (scene, x, y, id) {
     this.puddles.push({ active: false, x: 0, y: 0, r: 0, life: 0, tick: 0, kind: 'dmg',
       img: scene.add.image(0, 0, 'atlas', 'fx_puddle_1').setTint(0xd93a3a).setAlpha(0.75).setDepth(3).setVisible(false) });
   }
+  this.walkT = 0;                  // drives the waddle (v0.65.0)
+  this.prevX = x; this.prevY = y;
+  this.sayTxt = null;              // one callout at a time
   if (this.script && this.script.init) this.script.init(this);
+};
+
+// THE CALLOUT (v0.65.0, Mark: "each boss announces what they're
+// attacking with, to take away any of the mystery"). A short shout
+// above the head when a move starts. One at a time - a new shout
+// replaces the old. All strings live in the scripts and were reviewed
+// for kid-appropriateness (VBS audience): food puns only, no violence.
+PC.Boss.prototype.say = function (text, tint) {
+  var scene = this.scene;
+  if (this.sayTxt) { this.sayTxt.destroy(); this.sayTxt = null; }
+  var t = scene.add.text(this.x, this.y - this.r - 34, text, {
+    fontFamily: 'monospace', fontSize: PC.uiK(11) + 'px',
+    color: '#' + ('00000' + (tint || 0xffd977).toString(16)).slice(-6),
+    fontStyle: 'bold', stroke: '#0b0818', strokeThickness: 4,
+  }).setOrigin(0.5).setDepth(103);
+  this.sayTxt = t;
+  var self = this;
+  scene.tweens.add({ targets: t, y: t.y - 14, duration: 1400, ease: 'Cubic.out' });
+  scene.tweens.add({ targets: t, alpha: 0, delay: 950, duration: 450,
+    onComplete: function () { t.destroy(); if (self.sayTxt === t) self.sayTxt = null; } });
 };
 
 PC.Boss.prototype.enraged = function () { return this.hp < this.maxHp * 0.25; };
@@ -108,15 +131,18 @@ PC.Boss.prototype.splat = function (n, tint, kind) {
   for (var i = 0; i < n; i++) {
     var a = Math.random() * Math.PI * 2, r = Math.random() * 70;
     var tx = scene.px + Math.cos(a) * r, ty = scene.py + Math.sin(a) * r;
-    (function (px2, py2) {
+    // an ARRAY tint means multicoloured: each blob picks its own pastel
+    // (v0.65.0, Mark: the red splotches "start looking like blood")
+    var bt = Array.isArray(tint) ? tint[Math.floor(Math.random() * tint.length)] : tint;
+    (function (px2, py2, tint2) {
       var warn = scene.add.image(px2, py2, 'atlas', 'fx_pop_1')
         .setTint(PC.CHOMP_TELL_COLOR || 0xff3ea5).setAlpha(0.3).setScale(1.6, 0.9).setDepth(3);
       scene.tweens.add({ targets: warn, alpha: 0.55, scaleX: 2, scaleY: 1.1, duration: 500, yoyo: false,
         onComplete: function () {
           warn.destroy();
-          self._puddle(px2, py2, tint, kind);
+          self._puddle(px2, py2, tint2, kind);
         } });
-    })(tx, ty);
+    })(tx, ty, bt);
   }
   if (PC.audio) PC.audio.splat();
   // a volley is a commitment: the window opens when the last blob lands
@@ -130,6 +156,7 @@ PC.Boss.prototype._puddle = function (x, y, tint, kind) {
     if (p.active) continue;
     p.active = true; p.x = x; p.y = y; p.r = kind === 'slow' ? 44 : 30;
     p.life = kind === 'slow' ? 4.5 : 3; p.tick = 0; p.kind = kind || 'dmg';
+    p.seed = Math.random() * 100;
     p.img.setPosition(x, y).setTint(tint || 0xd93a3a)
       .setScale(kind === 'slow' ? 2.4 : 1.8).setAlpha(0.75).setVisible(true);
     this.scene.fx.burst(x, y, 'fx_spark', 3, 0.2);
@@ -150,6 +177,11 @@ PC.Boss.prototype.update = function (dt, px, py) {
   this.animT += dt; this.stateT += dt;
   var scene = this.scene;
   var g = this.gfx;
+  // movement-driven walk clock: the waddle only plays when it MOVES
+  var mvd = Math.hypot(this.x - this.prevX, this.y - this.prevY);
+  this.moving = mvd > 0.4;
+  if (this.moving) this.walkT += dt;
+  this.prevX = this.x; this.prevY = this.y;
   g.clear();
   scene.bossSlow = 1;                                  // recomputed by puddles
 
@@ -182,7 +214,8 @@ PC.Boss.prototype.update = function (dt, px, py) {
   }
   var fr = 1 + (Math.floor(this.animT * fps) % frames);
   this.sprite.setFrame(this.artKey + '_' + set + '_' + fr);
-  this.sprite.setPosition(Math.round(this.x), Math.round(this.y) + Math.round(Math.sin(this.animT * 5) * 2));
+  var hop = this.moving ? -Math.abs(Math.sin(this.walkT * 4)) * 5 : Math.sin(this.animT * 5) * 2;
+  this.sprite.setPosition(Math.round(this.x), Math.round(this.y) + Math.round(hop));
   // POSE AMPLIFICATION (v0.22.0). Generated pose art stays close to the
   // reference by design - at 128px on a phone the difference is too
   // subtle to read on its own. So the states also deform in code: the
@@ -199,6 +232,15 @@ PC.Boss.prototype.update = function (dt, px, py) {
   } else if (this.state === 'charge') {
     this.sprite.setScale(baseS * 1.30, baseS * 0.84);
     this.sprite.setAngle((this.cvx < 0 ? 7 : -7) + Math.sin(this.animT * 24) * 3);
+  } else if (this.moving) {
+    // THE WADDLE (v0.65.0, Mark: "they do move, but there's no walking
+    // animation"). The flipbook alone was too subtle to read, so the
+    // chassis performs the walk: a step-timed squash-and-stretch with a
+    // side-to-side sway, the boss-scale version of the hero walk bob.
+    var wob = this.walkT * 8;
+    var sq = Math.sin(wob) * 0.07;
+    this.sprite.setScale(baseS * (1 - sq * 0.6), baseS * (1 + sq));
+    this.sprite.setAngle(Math.sin(wob * 0.5) * 5);
   } else {
     this.sprite.setScale(baseS, baseS);
     this.sprite.setAngle(0);
@@ -231,6 +273,16 @@ PC.Boss.prototype._updatePuddles = function (dt, px, py) {
     p.life -= dt; p.tick -= dt;
     if (p.life <= 0) { p.active = false; p.img.setVisible(false); continue; }
     p.img.setAlpha(0.75 * Math.min(1, p.life));
+    // SPRINKLES on frosting puddles: little coloured dashes so the
+    // splotch reads as party frosting, never as anything gorier
+    if (p.kind === 'slow' && !this.dead) {
+      var SPR = [0xffd977, 0x9be8ff, 0xff9ecb, 0xb4f2a8, 0xc9a8ff];
+      for (var sp = 0; sp < 7; sp++) {
+        var sa = (p.seed + sp * 61) % 6.28, sr = ((p.seed * 7 + sp * 37) % 100) / 100 * p.r * 0.8;
+        this.gfx.fillStyle(SPR[(sp + Math.floor(p.seed)) % SPR.length], 0.9 * Math.min(1, p.life));
+        this.gfx.fillRect(p.x + Math.cos(sa) * sr - 2, p.y + Math.sin(sa) * sr * 0.7 - 1, 5, 2);
+      }
+    }
     var dx = px - p.x, dy = py - p.y;
     var inside = dx * dx + dy * dy < (p.r) * (p.r);
     if (inside && p.kind === 'slow') {
@@ -264,6 +316,7 @@ PC.Boss.prototype.die = function () {
 
 PC.Boss.prototype.finalDestroy = function () {
   this.scene.bossSlow = 1;
+  if (this.sayTxt) this.sayTxt.destroy();
   this.sprite.destroy(); this.shadow.destroy(); this.tele.destroy();
   this.gfx.destroy();
   for (var i = 0; i < this.puddles.length; i++) this.puddles[i].img.destroy();
