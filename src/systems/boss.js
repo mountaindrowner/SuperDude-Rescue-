@@ -38,6 +38,8 @@ PC.BOSSES = {
   gloopKing: { key: 'boss_d5_gloop', size: 144, hp: 5600, spd: 70,
                 contact: 26, name: 'THE GLOOP KING',
                 anims: { ringTell: { set: 'rear', frames: 2, fps: 5 },
+                         spiral:   { set: 'rear', frames: 2, fps: 6 },
+                         burst:    { set: 'rear', frames: 2, fps: 8 },
                          erupt:    { set: 'lunge', frames: 2, fps: 10 } } },
 };
 
