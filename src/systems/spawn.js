@@ -98,7 +98,9 @@ PC.SpawnDirector = function (scene) {
   this.scene = scene;
   this.acc = 0;
   this.ringDone = {};        // one-shot events keyed by phase index
-  var set = scene.region && scene.region.def.spawnSet;
+  // the boss arena has no region but wants the boss's own district
+  // roster around it, so the pressure matches the real fight
+  var set = (scene.region && scene.region.def.spawnSet) || scene.arenaSet;
   this.phases = PC.SPAWN_SETS[set] || PC.SPAWN_PHASES;
 };
 

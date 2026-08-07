@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.62.0: THE BOSS ARENA.** Mark: "give me a menu item
+  that allows me to test these bosses without having to select the
+  levels. Just a quick boss arena, and I can select from each one to
+  try them out the way that they would fight in the actual game."
+  * The BOSS TEST pad on the missions map is now the **BOSS ARENA**:
+    one chooser, every boss in the game one tap away. Two sections -
+    the five district bosses, then the three CHOMP roof rows (FIGHT
+    DRAWN / FIGHT CAULDRON / A/B; the two LOOK pose rows were dropped,
+    A/B covers art review).
+  * **"The way they would fight in the actual game" is the load-bearing
+    phrase**, and both of the things it needs key off `scene.
+    storyMission`, which an arena doesn't have. New `PC.ARENA_BOSS`
+    flag (config.js, consumed by PC_Game on boot -> `this.arenaBoss`):
+    - `PC.ease()` now serves **STORY numbers** for an arena scene too
+      (bossHp 0.42, contact 0.75, charge 0.75) - otherwise Mark would
+      duel full quick-run bosses and judge the wrong fight.
+    - `gainXp` **banks** in the arena, so a duel is never interrupted
+      by a quick-run card pick.
+    - `SpawnDirector` takes `scene.arenaSet` when there's no region, so
+      the ambient pressure is the boss's own district roster (broc ->
+      park produce, cake -> desserts, vending -> junk, gloop -> goo).
+  * The boss walks in through the real `spawnBoss` entrance (which now
+    takes an id) after a 1.4s breath, with an `ARENA: <NAME>` banner.
+  * **Both endings bounce straight back to the missions map** - no
+    results desk, no run summary. Win or lose, the next attempt or the
+    next boss is one tap away (doc 2.3.8, retry friction). Story state
+    is never touched; the flag is consumed on boot so it cannot leak
+    into a real mission.
+  * New gate `verify-arena.js` (6 checks) GREEN - includes asserting
+    the Gloop duel is the campaign fight (story HP 2352 = 5600*0.42,
+    own script, goo roster) and that both exits land on PC_Missions.
+    district-bosses, roof-fight and bossdoc re-run green.
+
 - **2026-08-07 - v0.61.0: FIVE BOSSES, FIVE FIGHTS.** Mark: "make sure
   they're all different and related to their setting and their
   character itself and to our boss md file. I want every boss to feel

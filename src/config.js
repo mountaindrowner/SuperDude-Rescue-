@@ -40,6 +40,11 @@ PC.CHOMP_ART = (/[?&]chomp=art/.test(location.search)) ? 'art' : 'drawn';
 // seventeen floors first. The tester (?chomptest=) poses the art; this
 // one plays the actual beat.
 PC.ROOF_WARP = /[?&]roof=1/.test(location.search);
+// BOSS ARENA (v0.62.0): set by the missions map's arena chooser. The
+// next PC_Game boot becomes a workbench duel against this district
+// boss - story-tier numbers, matching district roster, no story state
+// touched. Consumed (nulled) by the scene that reads it.
+PC.ARENA_BOSS = null;
 // Set when you die IN the roof fight. Boss doc 2.3.8: retry friction is
 // the one difficulty dial that only produces frustration, and replaying
 // a cutscene before a hard boss is named as one of the worst design
@@ -235,7 +240,9 @@ PC.EASE = {
   STORY: { interval: 2.40, cap: 0.42, ring: 0.55, clear: 0.60, bossHp: 0.42, bossContact: 0.75, bossCharge: 0.75 },
 };
 PC.ease = function (scene) {
-  return (scene && scene.storyMission) ? PC.EASE.STORY : PC.EASE.QUICK;
+  // the boss arena fights at STORY numbers - the whole point is to feel
+  // the boss the way a kid meets it in the campaign
+  return (scene && (scene.storyMission || scene.arenaBoss)) ? PC.EASE.STORY : PC.EASE.QUICK;
 };
 
 // where player shots ORIGINATE (v0.31.0, Mark: "all shots should come
