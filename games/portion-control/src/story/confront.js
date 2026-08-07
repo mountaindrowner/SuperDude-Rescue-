@@ -195,11 +195,12 @@ window.PC = window.PC || {};
   // physically towers over phase 1.
   // =====================================================================
   var PHASE_ART = ['chomp_p1', 'chomp_p1', 'chomp_p2', 'chomp_p3'];
-  // the art is 320px wide and the fight camera shows ~250 world px, so a
-  // 1.0 scale would be wider than the screen. These land phase 1 at ~70%
-  // of the frame and phase 3 filling it, which is the escalation the
-  // stationary art deliberately does NOT do on its own.
-  var PHASE_SCALE = [0.65, 0.65, 0.75, 0.86];
+  // The art is 256 square and the fight camera shows ~250 world px, so
+  // full scale would fill the screen edge to edge. These land phase 1 at
+  // about two thirds of the frame and phase 3 nearly filling it - the
+  // cauldron art holds its silhouette between phases on purpose (a
+  // machine should not morph), so the GROWTH is carried here.
+  var PHASE_SCALE = [0.7, 0.7, 0.82, 0.95];
 
   PC.ChompFigure = function (scene, x, y) {
     this.scene = scene;
@@ -212,7 +213,7 @@ window.PC = window.PC || {};
     this.flash = 0;
     this.g = scene.add.graphics().setDepth(4);        // its shadow
     this.sprite = scene.add.image(x, y, 'atlas', 'chomp_p1_walk_1')
-      .setOrigin(0.5, 0.95).setDepth(18);      // it stands on its base plate
+      .setOrigin(0.5, 0.9).setDepth(18);       // it sits on its stand
   };
 
   PC.ChompFigure.prototype.update = function (dt, state, stateT) {
@@ -244,7 +245,7 @@ window.PC = window.PC || {};
       ? this.sprite.setTintFill(0xffffff) : this.sprite.clearTint());
 
     g.fillStyle(0x0a0716, 0.42);
-    g.fillEllipse(this.x, this.y + 4, 300 * sc, 46 * sc);
+    g.fillEllipse(this.x, this.y + 6, 230 * sc, 54 * sc);
   };
 
   PC.ChompFigure.prototype.destroy = function () {

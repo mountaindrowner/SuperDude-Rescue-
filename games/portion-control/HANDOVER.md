@@ -12,6 +12,51 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.49.0: CHOMP IS THE CAULDRON.** Eleven design rounds
+  with Mark, ending on his pick: "let's do f5, best so far" - a
+  colossal riveted STEW CAULDRON with a heavy gold rim, mint enamel
+  stew churning inside, ladle mounts around the edge, sensor lenses
+  and a grille for a face. A machine SHAPED like food, bolted in
+  place, and the ladle mounts are exactly where the four boom arms
+  will bolt on.
+  THE ROUNDS, because the failures are the useful part:
+  1 cute robot with legs -> "not enough of a stationary machine"
+  2 dark industrial box  -> "kind of scary"
+  3 pastel smiling drum  -> "they all look like babies"
+  4 serious faceless core-> "add a distorted, more neutral face"
+  5 radial disc + face   -> FAILED STRUCTURALLY: a radially symmetric
+    disc has NO TOP OR BOTTOM, so nothing in it can read as
+    eyes-above-mouth. The generator resolved the contradiction by
+    ignoring the face. Fix: give the body a definite top and bottom
+    and describe WHERE PARTS SIT, never saying the word "face".
+  6 pyramid              -> came back isometric, because a stepped
+    pyramid and a flat overhead view are mutually exclusive
+  7 face-first + blocky  -> view='side' pushed it into CHARACTER
+    territory and four of six came back as mechs WITH LEGS. 'high
+    top-down' has never once produced a limb; keep it.
+  8 hand-DRAWN blocky face (draw-chomp.py, kept in scratchpad) - the
+    fallback if generation had kept failing, and still the right tool
+    if CHOMP ever needs to animate its face.
+  RULES THAT NOW HOLD FOR ANY BOSS ART:
+  * generate ANCHOR CANDIDATES first, pick one, derive everything else
+    from that ONE image at init strength **150** (210 clones, 95
+    drifts into a different machine)
+  * `view: 'high top-down'` + `direction: 'south'` - the earlier
+    diagonal problem was that neither was ever set
+  * a frame needs a slot in **PC.ASSETS** or it ships INVISIBLE; a PNG
+    on disk plus a manifest line is not enough
+  SHIPPED: chomp_p1/p2/p3 x (walk_1, walk_2, serve_1) + chomp_down at
+  256px, all derived from the anchor so they are provably the same
+  machine; portrait_chomp REDONE to match (a portrait that disagrees
+  with the thing on screen breaks the game's most important scene -
+  this is the second time it has been redone for that reason).
+  Escalation is carried in code (PHASE_SCALE 0.7/0.82/0.95) because
+  the art holds its silhouette on purpose - a machine should not morph.
+  Gates: verify-confront and verify-roof-fight green, zero errors.
+  **STILL TO BUILD: the four boom arms (code, so they can rotate and
+  die one at a time) and CHOMP'S MOVESET.** It stands there and takes
+  it. PORTION SERVE (serve_1 art exists), CONVEYOR, BUFFET, SECONDS!
+
 - **2026-08-06 - v0.48.0: CHOMP IS A MACHINE NOW.** Mark on the first
   art pass: "I don't like that CHOMP, he's not enough of a stationary
   machine." He was right - it came back as a cute little robot with
