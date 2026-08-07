@@ -208,6 +208,7 @@ window.PC = window.PC || {};
     // 'drawn' = the hand-drawn blocky face, rendered to canvas textures
     this.style = style || PC.CHOMP_ART || 'art';
     if (this.style === 'drawn' && PC.buildChompDrawn) PC.buildChompDrawn(scene);
+    this.serving = 0;
     this.x = x; this.y = y;
     this.t = 0;
     this.rise = 0;                    // 0 = folded down, 1 = fully risen
@@ -216,6 +217,10 @@ window.PC = window.PC || {};
     this.powered = false;
     this.flash = 0;
     this.g = scene.add.graphics().setDepth(4);        // its shadow
+    // the LIVE FACE rides on top of the baked body: tracking eyes, a
+    // working mouth, steam. Only the moving parts cost a frame.
+    this.face = (this.style === 'drawn' && PC.ChompFace)
+      ? new PC.ChompFace(scene, this) : null;
     this.sprite = (this.style === 'drawn')
       ? scene.add.image(x, y, 'chompdrawn_p1').setOrigin(0.5, 0.9).setDepth(18)
       : scene.add.image(x, y, 'atlas', 'chomp_p1_walk_1')
@@ -259,10 +264,12 @@ window.PC = window.PC || {};
 
     g.fillStyle(0x0a0716, 0.42);
     g.fillEllipse(this.x, this.y + 6, 230 * sc, 54 * sc);
+    if (this.face) this.face.update(dt);
   };
 
   PC.ChompFigure.prototype.destroy = function () {
     this.g.destroy();
     this.sprite.destroy();
+    if (this.face) this.face.destroy();
   };
 })();

@@ -12,6 +12,38 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-06 - v0.55.0: CHOMP IS ALIVE.** Mark: "make his eyes follow
+  the player character wherever they go, make the mouth open and close
+  a bit, maybe a bit of smoke or steam out the top, maybe make his base
+  a bit wider too and a neck kind of segment?"
+  ARCHITECTURE: the body stays a BAKED texture and only the parts that
+  move are drawn per frame on top of it (`PC.ChompFace`, depth 19).
+  Same split as the sewer water over cached terrain - the heavy shading
+  work stays out of the frame loop, and about 30 draw ops a frame buy
+  the whole performance. The baked body deliberately leaves the eye
+  sockets and the mouth cavity HOLLOW; baking them would show a second,
+  staring pair through the overlay.
+  * **EYES TRACK THE PLAYER.** Two clamped lerps against the player's
+    offset, smoothed so they glide rather than snap, with a lit cyan
+    iris ring and a fixed specular. This is the single cheapest thing
+    in the file and the one that makes it feel alive - a machine whose
+    lenses follow you is watching you. Powered down, they roll down and
+    go dark.
+  * **THE MOUTH WORKS.** A slow idle chew on a sine, snapping WIDE
+    whenever it serves; the grille slats compress as the aperture
+    closes and an amber glow shows in the throat when it opens fully.
+  * **STEAM** from three vent stacks, pooled, swelling as it rises,
+    thinner and slower once powered down.
+  * **GEOMETRY**: the plinth is now the FULL width of the frame, and a
+    real ribbed NECK segment with gold collars sits between the face
+    block and the shoulders.
+  Gates: new verify-face - asserts the gaze actually crosses over when
+  the player moves left vs right (-0.96 / +0.92), that the mouth's
+  aperture varies over time, and that steam is live. 4/4, plus arms,
+  tower and confront green, zero errors.
+  **STILL TO BUILD: the moveset.** PORTION SERVE, CONVEYOR, BUFFET,
+  SECONDS! The serve pose and mouth-wide state are already wired for it.
+
 - **2026-08-06 - v0.54.0: THE DRAWN DESIGN WINS, AND THE ARMS ARE IN.**
   Mark: "our drawn version works great. More greeble and more extended
   tubes and wires leading to him would improve his design. And also add
