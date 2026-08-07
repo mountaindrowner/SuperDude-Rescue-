@@ -12,6 +12,43 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.63.0: BOSS ART + REMAKES ROUND (Mark's critique
+  batch).** Three notes: walking + special animations for the bosses;
+  the Cake Colossus candles read devilish ("would have liked a massive
+  cupcake, less fiendish"); the Vending Behemoth "looks badly made -
+  remake as a walking vending machine who goes slowly but spawns tons
+  of junk food and launches candy corn rockets"; and the Broccolisk
+  dig "could disappear then appear under the player".
+  * **CAKE COLOSSUS is now a GIANT CUPCAKE**: swirled pink frosting
+    dome, a cherry on top (no candles anywhere - `negative_description`
+    banned candles/fire/devil), pastel striped wrapper, stubby frosting
+    feet, friendly face. Fight unchanged (still the Shedder).
+  * **VENDING BEHEMOTH remade, art AND fight**: new walking-machine
+    art (red snack machine on sturdy legs). New script: it never
+    plants - it WALKS at you, slowly (spd 78 -> 46), always. RESTOCK
+    flings the door open and pours 6 junk minions onto the floor;
+    CANDY CORN ROCKETS - three per salvo, drawn in code as banded
+    yellow/orange/white rockets arcing from the roof hatch onto
+    magenta reticles that LOCK where you stood (step off = dodge, doc
+    2.3.4); every third salvo = SOLD OUT overheat (2.5s window kept).
+  * **BROCCOLISK dig rework**: no more mound chase - it vanishes
+    entirely, a reticle shadows you for 1.5s, LOCKS for 0.7s (ring
+    tightens + fills), and it erupts AT the lock point. Stepping off
+    after the lock always dodges; guard 0.25 while under stays.
+  * **ANIMATIONS**: 24 new frames via PixelLab (pixflux base + init-
+    image variants at strength 300, recipe 4; cake 64->128 x2, vending
+    48->144 x3, integer NEAREST only). Every boss's SPECIAL states now
+    map to art sets in PC.BOSSES.anims (rear = wind-up, lunge =
+    strike): broc fan/erupt, cake shed, vending restock/launch/
+    overheat, gloop ringTell/erupt. Walk flipbook verified live in the
+    gate (frame advances while walking; flipX covers left/right).
+  * PixelLab meter after the batch: ~875/2000 generations remain.
+  * Gate updates: verify-district-bosses now asserts the vanish-dig
+    surfaces AT the lock, rocket marks stay locked when the player
+    moves, the restock flood spawns, and the walk flipbook animates -
+    12 checks GREEN; arena + roof-fight re-run green.
+
+
 - **2026-08-07 - v0.62.0: THE BOSS ARENA.** Mark: "give me a menu item
   that allows me to test these bosses without having to select the
   levels. Just a quick boss arena, and I can select from each one to

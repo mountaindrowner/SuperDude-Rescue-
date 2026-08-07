@@ -17,22 +17,28 @@ PC.BOSSES = {
   // `anims` maps a STATE to an extra frame set (v0.22.0). Missing sets
   // fall back to the walk flipbook, so a boss can ship with as much or
   // as little animation as its art batch has produced.
+  // v0.63.0: each boss's SPECIAL states map onto its art sets (rear =
+  // the wind-up/tell frames, lunge = the strike frames), so every boss
+  // has a real ability animation on top of the 4-frame walk flipbook.
   broccolisk: { key: 'boss_d2_broc', size: 128, hp: 3400, spd: 108,
                 contact: 20, name: 'THE BROCCOLISK',
-                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
-                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
+                anims: { fan:   { set: 'rear', frames: 2, fps: 5 },
+                         erupt: { set: 'lunge', frames: 2, fps: 10 } } },
   cakeColossus: { key: 'boss_d3_cake', size: 128, hp: 4200, spd: 94,
                 contact: 24, name: 'LAYER CAKE COLOSSUS',
-                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
-                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
-  vendingBehemoth: { key: 'boss_d4_vending', size: 144, hp: 5000, spd: 78,
+                anims: { shed:  { set: 'rear', frames: 2, fps: 6 } } },
+  // v0.63.0 remake: spd 78 -> 46. It WALKS, slowly, always - the
+  // threat is the junk-food floods and the candy corn rockets, not the
+  // chase (Mark: "a walking vending machine who goes slowly").
+  vendingBehemoth: { key: 'boss_d4_vending', size: 144, hp: 5000, spd: 46,
                 contact: 26, name: 'VENDING BEHEMOTH',
-                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
-                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
+                anims: { restock:  { set: 'rear', frames: 2, fps: 6 },
+                         launch:   { set: 'lunge', frames: 2, fps: 8 },
+                         overheat: { set: 'rear', frames: 2, fps: 3 } } },
   gloopKing: { key: 'boss_d5_gloop', size: 144, hp: 5600, spd: 70,
                 contact: 26, name: 'THE GLOOP KING',
-                anims: { telegraph: { set: 'rear', frames: 2, fps: 5 },
-                         charge:    { set: 'lunge', frames: 2, fps: 10 } } },
+                anims: { ringTell: { set: 'rear', frames: 2, fps: 5 },
+                         erupt:    { set: 'lunge', frames: 2, fps: 10 } } },
 };
 
 PC.Boss = function (scene, x, y, id) {
