@@ -12,6 +12,58 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.61.0: FIVE BOSSES, FIVE FIGHTS.** Mark: "make sure
+  they're all different and related to their setting and their
+  character itself and to our boss md file. I want every boss to feel
+  different and fun."
+  * **The audit finding was stark**: all five district bosses ran the
+    IDENTICAL script - drift, red ketchup splat, telegraphed charge -
+    with only the numbers and the sprite changed. The Broccolisk lobbed
+    ketchup. The Gloop King fought exactly like a hot dog. That is the
+    boss doc's sponge complaint verbatim (2.3.5: the sponge problem is
+    a VARIETY problem).
+  * **New `src/systems/boss_scripts.js`** - one fight per boss, keyed
+    to character + district; `boss.js` is now a shared chassis (single
+    damage path, bar, contact, art flipbook, pose amp, defeat flow)
+    that dispatches to `PC.BossScripts[id]`:
+    - **FRANK the CHARGER** (bank): keeps charge + condiment splat -
+      they are HIS now, nobody else copies them. New: the charge ends
+      in a SKID (a sausage at speed does not corner) - 1.2s punish.
+    - **BROCCOLISK the BURROWER** (park): serpentine weave, GREEN
+      floret fan, burrow -> dirt mound chases you at 130 (you walk
+      190) -> erupts where it stops -> surfaces dazed 1.6s.
+    - **CAKE the SHEDDER** (suburbs): its HP phases ARE its tiers - at
+      2/3 and 1/3 a layer sheds into two live cupcakes and the boss
+      gets SMALLER and FASTER (1.32/76 -> 1.08/108 -> 0.88/138), stun
+      2s. Frosting mortar lays pink puddles that SLOW (0.55x), not
+      damage - pressure without chip.
+    - **VENDING the ARTILLERY** (labs): plants itself (only waddles if
+      you leave 480px), aimed can volleys, a 3x3 falling snack grid
+      with TWO safe cells (read the gap), minion restock (zipper +
+      sodacan), then OVERHEAT: "SOLD OUT", sparks, 2.5s window - the
+      longest before the Tower.
+    - **GLOOP the TIDE** (sewers): expanding goo ring with two gaps,
+      puddle DIVE that slides at you at 140 - shots into the puddle
+      still land at 25% (`guard`), because invulnerable-until-X is the
+      doc's named anti-trope - erupt + slow slick, drip call.
+  * **Doc spine across all five**: every telegraph is now the reserved
+    magenta (Frank's lane was red - also the ketchup colour, the exact
+    collision the rule forbids); every big move ends in a punish
+    window drawn with the same cyan ring CHOMP uses (vuln = double
+    damage); mounds/pulls are all slower than the player, so nothing
+    is guaranteed damage; each boss teaches ONE word in campaign order
+    (charge -> ground marker -> phase shed -> bullet grid -> area
+    wave), so by the Tower the player speaks CHOMP's whole language.
+  * Chassis additions: `guard` (partial damage while under), `vuln`,
+    `noContact`, `baseS` (Cake shrinks it), pooled hand-collided
+    `shots`, `splat(n, tint, kind)` with 'slow' puddles feeding a new
+    `scene.bossSlow` hook in game.js (recomputed every frame, same
+    contract as armSlow). Dead-branch clears the gfx layer so a boss
+    killed mid-tell doesn't leave its mound painted forever.
+  * Quick-run mode still gets Frank by default - unchanged.
+  * New gate `verify-district-bosses.js` (10 checks) GREEN; roof-fight,
+    bossdoc, phases and roles all re-run green.
+
 - **2026-08-07 - v0.60.0: PHASES THAT READ AS PHASES.** Mark: "we also
   didn't have phases in the fight with boss model changes? cinematic
   moments? difficulty spikes?"
