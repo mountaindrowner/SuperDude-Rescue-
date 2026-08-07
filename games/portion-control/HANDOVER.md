@@ -12,6 +12,65 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.59.0: FOUR ARMS, FOUR JOBS.** Mark: "let's make the
+  arms longer by 75%, let's have those blades at the end spinning, and
+  maybe have each arm have a different purpose?"
+  * **+75% REACH** - the boom constant went 320 -> 560
+    (`PC.CHOMP_ARM_REACH`, exposed so the gate can assert it).
+  * **EACH ARM IS A DIFFERENT APPLIANCE**, with its own head, its own
+    identity colour, its own clock and its own name in the kill message:
+    - **SERVER** (gold): a food cannon. Aimed barrel + spinning intake
+      fan; fires a 3-shot spread of portions on a magenta muzzle tell.
+      The pellets ride the moveset's existing crumb list, so they are
+      collided, drawn and amnestied by the same code as everything else
+      CHOMP throws - no second projectile system.
+    - **BLENDER** (red): a four-blade rotor on a real rotation with a
+      blur disc behind it. No cooldown - it is dangerous simply by
+      existing, which makes it the arm most players will take first.
+    - **ATTRACTOR** (violet): a tractor dish that DRAGS you toward it at
+      105px/s. Never damages you; it just ruins your positioning and
+      feeds you to everything else. 105 < the player's 190, so it is
+      always escapable (doc 2.3.4, no guaranteed damage).
+    - **SAUCER** (green): sprays goop puddles that slow you to 0.60.
+      Also harmless alone. 190*0.60 = 114 still beats the 105 pull, so
+      goop + beam together can never trap you - the doc's "stacked AoE"
+      complaint (2.3.6) taken seriously.
+  * That turns "shoot the arms" into a real decision instead of four
+    identical HP bags, which is the doc's "a good boss gives you
+    options" (2.3.9) and its note that variety, not health, is what
+    stops a long fight reading as a sponge (2.3.5).
+  * Colour discipline held: only the two arms that can actually hurt you
+    telegraph, and only the SERVER uses the reserved magenta. The
+    attractor and the saucer deliberately do NOT get a danger colour.
+  * The conveyor move now **prefers the blender** - swinging a spinning
+    blade rotor through you is coherent; swinging the attractor dish is
+    not. Falls back to the nearest live arm.
+  * `scene.armSlow` is the new slow hook in game.js, recomputed from
+    scratch every frame by the arms system so it can never stick after
+    the fight. `arms.amnesty()` now runs on every phase gate and on the
+    power-down alongside the moveset's.
+  * **TWO THINGS THE 75% BROKE, both found by gating rather than by
+    eye:**
+    1. **Tips wandered off screen.** The arm tips are TARGETS - each
+       carries the HP pip you shoot at. At fight zoom the camera is only
+       251 world px half-wide, and the anti-camp shove from v0.57.0
+       keeps the player ~245px off the core so the camera is never even
+       centred on CHOMP. A 560px boom cannot fit sideways at all. The
+       rest angles were re-aimed to within ~24 degrees of vertical
+       (where the portrait screen has 546px of room) and the squash
+       relaxed 0.62 -> 0.85. All four tips on screen at once is simply
+       not deliverable at this length; the gate asserts the thing that
+       IS true and matters - walk toward any arm and its head and pip
+       come into view.
+    2. **The down pair read as LEGS** - the exact note that killed the
+       old generated CHOMP ("he's not enough of a stationary machine").
+       Fixed by bolting each boom to its own hardpoint on the plinth
+       (`mountOf`, lining up with the gold sockets the body texture
+       already paints) instead of all four leaving one point, and by
+       staggering the rest angles so the four are not a symmetric X.
+  * New gate `verify-roles.js` (7 checks) GREEN; bossdoc, moves, arms,
+    roof-fight and confront all re-run green.
+
 - **2026-08-07 - v0.58.0: CHOMP'S PORTRAIT IS THE MACHINE HE ACTUALLY
   IS.** The shipped `portrait_chomp` PNG was generated back when CHOMP
   was the CAULDRON design. So on the roof the player talked to one

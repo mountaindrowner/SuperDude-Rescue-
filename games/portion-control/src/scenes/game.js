@@ -798,6 +798,10 @@ PC.GameScene.prototype.update = function (time, delta) {
   }
   this.moving = (v.x !== 0 || v.y !== 0);
   var spd = PC.PLAYER.SPEED * this.stats.spdMult;
+  // CHOMP's saucer arm sprays goop that slows you (v0.59.0). The arms
+  // system recomputes this every frame and resets it to 1 when nothing
+  // is standing in a puddle, so it can never stick after the fight.
+  if (this.armSlow && this.armSlow !== 1) spd *= this.armSlow;
   // sewer zone effects (v0.42.0): spore haze + wading water slow the
   // player; a tiny label the first time so the kid knows WHY
   this._zone = null;
