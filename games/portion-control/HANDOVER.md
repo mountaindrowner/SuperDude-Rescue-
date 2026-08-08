@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.70.0: V3 CHARACTER PIPELINE - THE BOSSES REALLY
+  WALK.** Mark (with screenshot proof at v0.69.0): "they stretch and
+  waddle but they don't walk. Not like Big Frank. Make new assets
+  using PixelLab v3 and create animations." He was right - the v0.69
+  animate-with-text frames only shuffled a few pixels.
+  * **THE V3 PIPELINE (first use in this project)**: `POST /v2/
+    create-character-v3` with our reference sprite -> library-persisted
+    character -> `POST /v2/animate-character {mode: 'template',
+    template_animation_id, directions: ['south']}` -> professional
+    skeleton-retargeted cycles -> `GET /characters/{id}/zip`.
+    Templates used: `walking` (6 frames), `cross-punch` (-> lunge),
+    `crouching` (-> rear/wind-up). REAL leg swings, identity locked.
+  * Character IDs (in Mark's PixelLab web library as pc_boss_*):
+    cake 7c2f6292, vend b3ffc166, gloop f617533c. A duplicate
+    pc_boss_vend 5727c365 exists from a connection-reset retry -
+    harmless, deletable from the library.
+  * All three walk cycles + matched rear/lunge installed, padded to
+    128 canvas (v3 outputs 116/124 - pad, never fractional-scale).
+    New-look v3 renders (sanctioned: "make NEW assets") - the cupcake
+    is the best it has ever looked.
+  * Engine: per-def `walkFrames` (6) + assets.js per-entry frame count
+    + manifest walk_5/6 lines + fps scaled so the cycle keeps its
+    cadence. baseS 1.45 for vend/gloop compensates canvas padding.
+  * LESSONS: v2 calls need retry wrappers (the egress proxy resets
+    connections ~1 in 10 - and a reset AFTER create still billed and
+    created the character: check /characters before re-creating).
+    Template ids are per-template validated - 'attack' is not in the
+    mannequin catalog; 'cross-punch' is.
+  * Gates: distinct-frames check extended to all 6 frames; atlas guard
+    knows the per-boss frame counts. district-bosses + arena GREEN.
+  * Meter: ~830/2000 generations.
+
+
 - **2026-08-07 - v0.69.0: REAL WALK CYCLES (the Frank pipeline).**
   Mark: "none of them walk - they squish and wobble. Is generating a
   walking animation not possible like you did with Big Frank?" It is -

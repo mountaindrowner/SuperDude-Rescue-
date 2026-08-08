@@ -114,17 +114,17 @@ window.PC = window.PC || {};
     { k: 'boss_d1_frank',   s: 128, c1: P.KETCHUP, c2: P.CRUST },
     { k: 'boss_d2_melon',   s: 128, c1: P.MINT,    c2: P.KETCHUP },
     { k: 'boss_d2_broc',    s: 128, c1: P.MINT,    c2: P.LIME },
-    { k: 'boss_d3_cake',    s: 128, c1: P.PINK,    c2: P.CHEESE },
-    { k: 'boss_d4_vending', s: 128, c1: P.STEEL,   c2: P.KETCHUP },
+    { k: 'boss_d3_cake',    s: 128, c1: P.PINK,    c2: P.CHEESE, f: 6 },
+    { k: 'boss_d4_vending', s: 128, c1: P.STEEL,   c2: P.KETCHUP, f: 6 },
     { k: 'boss_d5_mother',  s: 160, c1: P.BERRY,   c2: P.STEEL },
     { k: 'boss_d5_mother_p2', s: 160, c1: P.BERRY, c2: P.CHERRY },
     // v0.64.0: THE GLOOP KING had PNGs on disk and manifest lines but
     // NO SLOT HERE, so the atlas never packed him and the boss shipped
     // INVISIBLE - the exact CHOMP lesson repeated. PC.ASSETS is what
     // the atlas packs; a PNG + manifest line are NOT enough.
-    { k: 'boss_d5_gloop',   s: 128, c1: P.LIME,    c2: P.MINT },
+    { k: 'boss_d5_gloop',   s: 128, c1: P.LIME,    c2: P.MINT, f: 6 },
   ];
-  BOSSES.forEach(function (b) { creature(b.k, b.s, b.c1, b.c2, 4); });
+  BOSSES.forEach(function (b) { creature(b.k, b.s, b.c1, b.c2, b.f || 4); });
   // CHOMP (v0.47.0): three phase forms + the serve telegraph + the
   // powered-down pose. Declared here because PC.ASSETS is what the atlas
   // packs - a PNG on disk and a manifest line are NOT enough, the frame
