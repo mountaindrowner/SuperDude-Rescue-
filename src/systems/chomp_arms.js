@@ -400,7 +400,9 @@ window.PC = window.PC || {};
       { x: r.x + 260, y: r.y + r.h - 260 }, { x: r.x + r.w - 260, y: r.y + r.h - 260 },
       { x: r.x + r.w / 2, y: r.y + 130 },
     ];
+    this._anchors = anchors;                          // the finale snaps these
     for (var i = 0; i < anchors.length; i++) {
+      if (i < (this.snapped || 0)) continue;          // snapped pipes are gone
       var a = anchors[i];
       var sway = powered ? 0 : Math.sin(t * 0.8 + i * 1.3) * 5;
       // the sag point: pipes hang, they do not run straight

@@ -84,6 +84,19 @@ PC.SPAWN_SETS = {
     [210, 300, 0.42, 0.26,[['zipper', 3], ['sodacan', 2], ['chipbag', 3], ['menace', 2], ['burger', 2]], 3, 270],
     [300, 1e9, 0.24, 0.19,[['zipper', 3], ['sodacan', 2], ['chipbag', 3], ['menace', 3], ['burger', 3]], 3, 300],
   ],
+  // THE GAUNTLET (v0.68.0, map6 'mixed'): the Tower climb throws the
+  // whole campaign at you - every district's creatures, denser and
+  // sooner than any single district, because the climb IS the fight.
+  // Was silently falling back to the d1 fry roster: 'mixed' was named
+  // in map6.js but never existed here.
+  mixed: [
+    [0,   30,  1.1, 0.85, [['fry', 3], ['apple', 3], ['donut', 3]], 2, 70],
+    [30,  75,  0.85, 0.6, [['fry', 2], ['apple', 2], ['donut', 2], ['popcorn', 2], ['chipbit', 2]], 2, 110],
+    [75,  120, 0.6, 0.45, [['hotdog', 3], ['tomato', 3], ['cupcake', 3], ['zipper', 2], ['blob', 2]], 2, 160],
+    [120, 165, 0.45, 0.34,[['hotdog', 2], ['banana', 2], ['cupcake', 2], ['sodacan', 3], ['eggy', 3]], 3, 210],
+    [165, 205, 0.34, 0.26,[['toast', 2], ['melon', 2], ['frosting', 2], ['chipbag', 3], ['moldy', 3]], 3, 250],
+    [205, 1e9, 0.26, 0.2, [['pretzel', 2], ['melon', 2], ['golemite', 2], ['burger', 2], ['heap', 2], ['drip', 3]], 3, 290],
+  ],
   goo: [
     [0,   45,  1.5, 1.1,  [['blob', 1]], 1, 50],
     [45,  100, 1.1, 0.85, [['blob', 7], ['drip', 3]], 1, 90],

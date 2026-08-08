@@ -12,6 +12,63 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.68.0: THE GAUNTLET AND THE ENDING.** Mark: "flesh
+  out the seventeen floors - constant wave of enemies, with healing,
+  just a basic gauntlet. And the ending - explosions and all kinds of
+  effects, a lot of details, so it feels special."
+  * **THE GAUNTLET** (`src/story/gauntlet.js` + the `mixed` spawn set
+    that map6 named but NEVER EXISTED - it was silently falling back
+    to the d1 fry roster):
+    - The spawn clock is driven by ALTITUDE, not time: every floor
+      climbed is a permanent step up the heat curve (floor*12.5 into
+      the phase table, monotonic - retreating never cools it off).
+      Floor 1 opens gently; floor 17 runs at the roster ceiling.
+    - The `mixed` set throws the whole campaign at you: fries and
+      apples at the bottom, pretzels/golemites/burgers/heaps at the
+      top.
+    - FLOOR N/17 counter on every floor; a medkit drops at every
+      third landing (SUPPLIES!) - the breather that keeps constant
+      pressure fair for a kid.
+    - Stepping onto the roof ends the gauntlet and clears the crowd -
+      nothing follows Danny into the confrontation.
+  * **THE ENDING** (`src/story/finale.js`, PC.ChompFinale). The old
+    path had a LATENT CRASH - onChompDown handed to onBossDefeated,
+    which tweens `b.sprite` and hides `b.tele`; CHOMP has neither.
+    It had simply never been allowed to run to the end. Now the final
+    blow starts a ~9s spectacle:
+    - BOOMS 0-3.6s: an escalating explosion chain walks across the
+      machine; the four arms blow out one by one; the five roof
+      tethers SNAP one by one (chomp_arms `snapped` support - snapped
+      pipes stop drawing, sparks at each socket).
+    - THE BIG ONE at 3.6s: full white flash, the hardest shake in the
+      game (0.022), ten simultaneous bursts, a steam gush from every
+      vent (face emit forced).
+    - QUIET: it sinks, the lenses go dark (the face overlay's rise
+      guard does this for free), CHOMP STOPPED! gold card.
+    - FIREWORKS 6.2-8.8s: nova/levelup bursts across the sky + a coin
+      rain around Danny.
+    - Then the dialogue that lands the theme: "...did I... not
+      help?" / Danny's listening line + TWO new beats (CHOMP: "one
+      plate at a time?", Vic: "snack duty - SMALL snacks") - reviewed,
+      kid-safe.
+    - CAMPAIGN COMPLETE! card (3s, bursts), `PC.meta.setFlag(
+      'campaignComplete')`, then the mission closes through
+      `quest.onBossDown()` - the same path every mission ends on
+      (markCleared + results desk with the win).
+    - Driven from the storyPause block like the phase cinematic (the
+      twice-learned lesson), with boss.update + pickups.update kept
+      alive under it so the sink, dead arms, steam and coin vacuum
+      all play during the hold.
+  * New gate `verify-ending.js` - a full end-to-end: boots the REAL
+    finale mission, checks the mixed roster, the altitude clock
+    (floor 10 spawnT 125 vs floor 1 at 13), the medkit landings, the
+    roof clear, then fights through the confrontation, lands the
+    final blow and follows the whole ending to the results desk. 10
+    checks GREEN. roof-fight, phases, bossdoc, roles, arena re-run
+    green.
+  * Voice script: Mark will author later (his call this session).
+
+
 - **2026-08-07 - v0.67.0: callout sanitation, final pass.** Mark:
   "completely sanitized as close as we can, no room left for
   questioning" on STICKY FROSTING and GOO SPIRAL. Replaced with

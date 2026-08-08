@@ -172,6 +172,9 @@ PC.GameScene.prototype.create = function () {
     this.arenaSet = AB_SET[this.arenaBoss] || null;   // frank = d1 default
   }
   this.director = new PC.SpawnDirector(this);
+  // the seventeen-floor gauntlet (v0.68.0): altitude drives the heat
+  this.gauntlet = (this.region && this.region.def.id === 'tower' &&
+    this.storyMission && PC.TowerGauntlet) ? new PC.TowerGauntlet(this) : null;
   this._rings = {};
   this.pickups = new PC.PickupSystem(this);
   this.boss = null; this.bossSpawned = false; this.won = false;
@@ -785,6 +788,14 @@ PC.GameScene.prototype.update = function (time, delta) {
       if (this.boss.arms) this.boss.arms.update(dt);
       if (this.boss.moves) this.boss.moves.update(dt);   // clears stale tells
     }
+    // the ENDING spectacle holds the world the same way; the boss's own
+    // powering-down update keeps the sink, the dead arms and the steam
+    // alive underneath it
+    if (this.chompFinale) {
+      this.chompFinale.update(dt);
+      if (this.boss) this.boss.update(dt, this.px, this.py);
+      if (this.pickups) this.pickups.update(dt, this.px, this.py, PC.PLAYER.PICKUP_R);
+    }
     if (this.quest) this.quest.update(dt);
     this.ground.update(this.cameras.main);
     return;
@@ -991,6 +1002,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   // traveling, and capped before the deep-run phases ever arrive.
   // Enemy hp/dmg time-scaling rides the same clock, so late-mission
   // strays stop being spongy too. Quick run: spawnT === runT, no cap.
+  if (this.gauntlet) this.gauntlet.update(dt);
   if (this.region) {
     var qHot = this.quest && !this.quest.done && this.quest.state === 'active';
     this.spawnT = Math.min(210, (this.spawnT || 0) + dt * (qHot ? 1 : 0.25));
@@ -1080,28 +1092,71 @@ PC.GameScene.prototype.onChompArmsCleared = function () {
 };
 
 PC.GameScene.prototype.onChompDown = function () {
-  var self = this;
   PC.ROOF_RETRY = false;                   // the fight is over; stop warping
-  this.zoomTarget = this.baseZoom;         // back to normal for the ending
   if (this.allies) this.allies.running = false;
   this.enemies.clearAll();
+  // THE SPECTACLE (v0.68.0): explosions walk the machine, arms blow
+  // out, tethers snap, the big flash, fireworks - then the dialogue.
+  // Never onBossDefeated: that path tweens b.sprite and hides b.tele,
+  // which CHOMP does not have - it would crash on the final blow.
+  if (PC.ChompFinale) {
+    this.chompFinale = new PC.ChompFinale(this, this.boss);
+  } else {
+    this.chompEndingDialogue();
+  }
+};
+
+// the story's landing, after the fireworks: the theme said out loud,
+// the CAMPAIGN COMPLETE card, and the mission closed through the same
+// quest path every other mission ends on.
+PC.GameScene.prototype.chompEndingDialogue = function () {
+  var self = this;
   this.storyPause = true;
   var beats = [
     { speaker: 'chomp', text: '...did I... not help?' },
     { speaker: 'danny', text: "You wanted to feed everyone. That's a good heart, CHOMP. But helping means listening first." },
+    { speaker: 'chomp', text: 'Listening... I can try that. Maybe... one plate at a time?' },
+    { speaker: 'vic', text: "Welcome to the team, big guy. You're on snack duty - SMALL snacks." },
   ];
   var i = 0;
   function step() {
-    if (i >= beats.length) {
-      self.storyPause = false;
-      if (self.boss) self.boss.dead = true;
-      self.onBossDefeated();
-      return;
-    }
+    if (i >= beats.length) { self.campaignComplete(); return; }
     self.quest.box.show(beats[i++], step);
   }
   if (this.quest && this.quest.box) step();
-  else { this.storyPause = false; if (this.boss) this.boss.dead = true; this.onBossDefeated(); }
+  else this.campaignComplete();
+};
+
+PC.GameScene.prototype.campaignComplete = function () {
+  var self = this, W = PC.RENDER.W, H = PC.RENDER.H;
+  if (PC.meta) PC.meta.setFlag('campaignComplete');
+  // the big card, held for a beat with one last flourish
+  var g = this.uiAttach(this.add.graphics().setDepth(150));
+  g.fillStyle(0x0b0818, 0.6).fillRect(0, H * 0.30, W, H * 0.20);
+  g.fillStyle(0xffd977, 1).fillRect(0, H * 0.30, W, PC.uiK(2));
+  g.fillRect(0, H * 0.50 - PC.uiK(2), W, PC.uiK(2));
+  var t1 = this.uiAttach(this.add.text(W / 2, H * 0.37, 'CAMPAIGN COMPLETE!', {
+    fontFamily: 'monospace', fontSize: PC.uiK(17) + 'px',
+    color: '#ffd977', fontStyle: 'bold', stroke: '#0b0818', strokeThickness: 4,
+  }).setOrigin(0.5).setDepth(151));
+  var t2 = this.uiAttach(this.add.text(W / 2, H * 0.44, 'ADVENTURE CITY IS SAFE', {
+    fontFamily: 'monospace', fontSize: PC.uiK(9) + 'px', color: '#e8e2cc',
+  }).setOrigin(0.5).setDepth(151));
+  for (var i = 0; i < 8; i++) {
+    var fa = Math.random() * Math.PI * 2, fr = 60 + Math.random() * 120;
+    this.fx.burst(this.px + Math.cos(fa) * fr, this.py + Math.sin(fa) * fr - 40,
+      i % 2 ? 'fx_nova' : 'fx_levelup', 6, 0.6);
+  }
+  this.cameras.main.shake(220, 0.005);
+  if (PC.audio && PC.audio.chest) PC.audio.chest();
+  this.time.delayedCall(3000, function () {
+    g.destroy(); t1.destroy(); t2.destroy();
+    self.storyPause = false;
+    if (self.boss) self.boss.dead = true;
+    // the same close every mission uses: quest marks the clear, records
+    // the win, and hands to the results desk (finale has no next beat)
+    if (self.quest) self.quest.onBossDown();
+  });
 };
 
 PC.GameScene.prototype.die = function () {
