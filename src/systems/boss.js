@@ -24,7 +24,7 @@ PC.BOSSES = {
                 contact: 20, name: 'THE BROCCOLISK',
                 anims: { fan:   { set: 'rear', frames: 2, fps: 5 },
                          erupt: { set: 'lunge', frames: 2, fps: 10 } } },
-  cakeColossus: { key: 'boss_d3_cake', size: 128, hp: 4200, spd: 94,
+  cakeColossus: { key: 'boss_d3_cake', size: 128, walkFrames: 6, hp: 4200, spd: 94,
                 contact: 24, name: 'LAYER CAKE COLOSSUS',
                 anims: { shed:  { set: 'rear', frames: 2, fps: 6 } } },
   // v0.63.0 remake: spd 78 -> 46. It WALKS, slowly, always - the
@@ -33,12 +33,12 @@ PC.BOSSES = {
   // v0.69.0: vend + gloop art moved to the clean 64-grid (128px canvas,
   // real animate-with-text walk cycles); baseS 1.29 holds the on-screen
   // size the 144 canvas used to give. Hitboxes (size) unchanged.
-  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 1.29, hp: 5000, spd: 46,
+  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 1.45, walkFrames: 6, hp: 5000, spd: 46,
                 contact: 26, name: 'VENDING BEHEMOTH',
                 anims: { restock:  { set: 'rear', frames: 2, fps: 6 },
                          launch:   { set: 'lunge', frames: 2, fps: 8 },
                          overheat: { set: 'rear', frames: 2, fps: 3 } } },
-  gloopKing: { key: 'boss_d5_gloop', size: 144, baseS: 1.29, hp: 5600, spd: 70,
+  gloopKing: { key: 'boss_d5_gloop', size: 144, baseS: 1.45, walkFrames: 6, hp: 5600, spd: 70,
                 contact: 26, name: 'THE GLOOP KING',
                 anims: { ringTell: { set: 'rear', frames: 2, fps: 5 },
                          spiral:   { set: 'rear', frames: 2, fps: 6 },
@@ -70,6 +70,7 @@ PC.Boss = function (scene, x, y, id) {
   this.guard = 1;                  // burrow/dive damage multiplier (never 0)
   this.noContact = false;          // underground things don't body-block
   this.baseS = d.baseS || 1.15;    // pose base scale (per-def; Cake's script shrinks it)
+  this.walkFrames = d.walkFrames || 4;   // v3 template cycles ship 6 frames
   this.shots = [];                 // pooled hand-collided projectiles
   this.gfx = scene.add.graphics().setDepth(6);   // tells, mounds, rings
 
@@ -210,7 +211,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
   // plays that set; anything else uses the 4-frame walk cycle. The
   // texture check means a half-finished art batch degrades to walking
   // instead of showing the missing-frame box.
-  var set = 'walk', frames = 4, fps = 6;
+  var set = 'walk', frames = this.walkFrames, fps = 6 * (this.walkFrames / 4);
   var a = this.anims && this.anims[this.state];
   if (a && scene.textures.get('atlas').has(this.artKey + '_' + a.set + '_1')) {
     set = a.set; frames = a.frames; fps = a.fps;
