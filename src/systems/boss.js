@@ -30,12 +30,15 @@ PC.BOSSES = {
   // v0.63.0 remake: spd 78 -> 46. It WALKS, slowly, always - the
   // threat is the junk-food floods and the candy corn rockets, not the
   // chase (Mark: "a walking vending machine who goes slowly").
-  vendingBehemoth: { key: 'boss_d4_vending', size: 144, hp: 5000, spd: 46,
+  // v0.69.0: vend + gloop art moved to the clean 64-grid (128px canvas,
+  // real animate-with-text walk cycles); baseS 1.29 holds the on-screen
+  // size the 144 canvas used to give. Hitboxes (size) unchanged.
+  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 1.29, hp: 5000, spd: 46,
                 contact: 26, name: 'VENDING BEHEMOTH',
                 anims: { restock:  { set: 'rear', frames: 2, fps: 6 },
                          launch:   { set: 'lunge', frames: 2, fps: 8 },
                          overheat: { set: 'rear', frames: 2, fps: 3 } } },
-  gloopKing: { key: 'boss_d5_gloop', size: 144, hp: 5600, spd: 70,
+  gloopKing: { key: 'boss_d5_gloop', size: 144, baseS: 1.29, hp: 5600, spd: 70,
                 contact: 26, name: 'THE GLOOP KING',
                 anims: { ringTell: { set: 'rear', frames: 2, fps: 5 },
                          spiral:   { set: 'rear', frames: 2, fps: 6 },
@@ -66,7 +69,7 @@ PC.Boss = function (scene, x, y, id) {
   this.vulnAfter = 0;              // window queued by a move in flight
   this.guard = 1;                  // burrow/dive damage multiplier (never 0)
   this.noContact = false;          // underground things don't body-block
-  this.baseS = 1.15;               // pose base scale (Cake shrinks this)
+  this.baseS = d.baseS || 1.15;    // pose base scale (per-def; Cake's script shrinks it)
   this.shots = [];                 // pooled hand-collided projectiles
   this.gfx = scene.add.graphics().setDepth(6);   // tells, mounds, rings
 
@@ -238,9 +241,9 @@ PC.Boss.prototype.update = function (dt, px, py) {
     // chassis performs the walk: a step-timed squash-and-stretch with a
     // side-to-side sway, the boss-scale version of the hero walk bob.
     var wob = this.walkT * 8;
-    var sq = Math.sin(wob) * 0.07;
-    this.sprite.setScale(baseS * (1 - sq * 0.6), baseS * (1 + sq));
-    this.sprite.setAngle(Math.sin(wob * 0.5) * 5);
+    var sq = Math.sin(wob) * 0.045;                  // accent only: the real
+    this.sprite.setScale(baseS * (1 - sq * 0.6), baseS * (1 + sq));   // walk
+    this.sprite.setAngle(Math.sin(wob * 0.5) * 3.5); // lives in the frames now
   } else {
     this.sprite.setScale(baseS, baseS);
     this.sprite.setAngle(0);
