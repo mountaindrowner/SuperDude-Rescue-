@@ -12,6 +12,43 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-07 - v0.69.0: REAL WALK CYCLES (the Frank pipeline).**
+  Mark: "none of them walk - they squish and wobble. Is generating a
+  walking animation not possible like you did with Big Frank?" It is -
+  Frank's walk came from `/animate-with-text`, and the remade bosses
+  had only gotten init-image pose variants (near-clones). THREE rounds
+  to land it, all lessons recorded:
+  * Round 1 (generic description, default guidance): identity
+    mutation exactly as PIXELLAB.md warns - the cupcake grew human
+    legs with shorts, the vending machine became a pink CRT robot,
+    the gloop turned demon-frog. Unusable.
+  * Round 2 (FULL character description + `image_guidance_scale` 3.0):
+    CAKE landed perfectly (4 on-model waddle frames) and GLOOP landed
+    (crown slime, matches the installed D5 identity); vending still
+    reinvented itself every frame.
+  * Round 3 (+ `init_images: [ref] x 4` pinning every frame): VENDING
+    landed - four consistent frames of the red snack machine with its
+    legs clearly striding. **NEW RECIPE for rigid/odd-shaped subjects:
+    full character description + image_guidance_scale 3 + init_images
+    per frame.**
+  * Vend + gloop rear/lunge re-derived from the new walk frames
+    (strength-300 variants) so the whole family matches; ALL their art
+    moved to the clean 64-grid at 128px canvas (slots 144 -> 128 in
+    assets.js), with per-def `baseS` support in PC.Boss (1.29 for
+    both) holding the old on-screen size. Hitboxes unchanged.
+  * The code waddle stays but drops to an ACCENT (squash 0.07 ->
+    0.045, sway 5 -> 3.5 deg) - the walk lives in the frames now.
+  * NOTE FOR MARK: the vending machine's exact pixel identity shifted
+    slightly with the new consistent cycle (still a red glass-front
+    walking machine); the gloop walk now matches the crowned-slime
+    boss art properly. Veto either and the old frames are one command
+    away (git).
+  * Gate: new pairwise-distinct check hashes all 4 walk frames of
+    cake/vend/gloop from the PACKED ATLAS - the clone-frames bug
+    cannot ship again. district-bosses, arena, ending all GREEN.
+  * PixelLab meter: ~845/2000 generations remain.
+
+
 - **2026-08-07 - v0.68.0: THE GAUNTLET AND THE ENDING.** Mark: "flesh
   out the seventeen floors - constant wave of enemies, with healing,
   just a basic gauntlet. And the ending - explosions and all kinds of
