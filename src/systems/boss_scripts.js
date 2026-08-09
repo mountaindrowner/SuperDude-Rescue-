@@ -43,9 +43,12 @@ window.PC = window.PC || {};
 
   function TELL() { return PC.CHOMP_TELL_COLOR || 0xff3ea5; }
 
-  // party pastels for anything frosting-flavoured - never a single red
-  // splotch (v0.65.0, Mark: "it starts looking like blood")
-  var PASTELS = [0xff9ecb, 0xffd977, 0x9be8ff, 0xb4f2a8, 0xc9a8ff];
+  // BIRTHDAY-PARTY VIBRANT for anything frosting-flavoured (v0.72.0,
+  // Mark: "make sure the cake's frosting attack is vibrant multicolor").
+  // The v0.65 pastels read washed-out against the dark deck; these are
+  // saturated candy colours - and still never a single red splotch,
+  // which was the original note ("it starts looking like blood").
+  var PASTELS = [0xff2d9e, 0xffd400, 0x00d4ff, 0x4dff4d, 0xb44dff, 0xff8a00];
 
   function hurt(s, dmg) {
     if (s.dead || s.now < s.invUntil) return;

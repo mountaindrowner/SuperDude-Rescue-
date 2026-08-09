@@ -59,6 +59,42 @@
 > valid for quick one-off images and the skeleton/rotate/inpaint
 > primitives.
 
+## ★ PROVEN RECIPE: the v3 boss pipeline (2026-08-08, v0.70-0.72)
+
+The way to make a NON-HUMANOID character genuinely WALK. Mark rejected
+three earlier attempts ("they stretch and waddle but they don't walk,
+not like Big Frank") - only this produced real strides.
+
+```
+POST /v2/create-character-v3   {description, reference_image,
+                                image_size:{64,64}, view:'low top-down',
+                                name, no_background:true}
+   -> {background_job_id, character_id}   (poll /v2/background-jobs/{id})
+POST /v2/animate-character     {character_id, mode:'template',
+                                template_animation_id:'walk',
+                                frame_count:4, directions:['south']}
+   -> {background_job_ids:[...]}          (poll each)
+GET  /v2/characters/{id}/zip   -> Idle/animations/walking/south/frame_00N.png
+```
+
+- **The zip ships 6 frames even when frame_count is 4** - use all six;
+  the engine's `walkFrames` per boss def carries it.
+- Output canvas is 116-124px: **PAD to the game size, never scale.**
+- `template_animation_id` is validated per template: mannequin has NO
+  `attack`; use **`cross-punch`** (strike) and **`crouching`**
+  (wind-up). Full list comes back in the 422 body.
+- Characters PERSIST to Mark's web library (`pc_boss_cake`,
+  `pc_boss_vend`, `pc_boss_gloop`) - more animations can be minted any
+  time without re-creating the character.
+- **The egress proxy resets ~1 in 10 v2 calls.** Always wrap in retry -
+  and note a reset AFTER create still BILLED and created the character:
+  `GET /v2/characters` before re-creating, or you orphan a duplicate.
+- What does NOT work (three rounds of evidence): `/v1/animate-with-text`
+  mutates identity badly on non-humanoids (a cupcake grew human legs;
+  a vending machine became a CRT robot), and `init_image` pixflux
+  variants at strength 200-300 only shuffle a few pixels - the frames
+  look like clones in motion.
+
 ## Capability survey 2026-07-24 (Mark asked "what else is there?")
 
 Sources: live `/v2/openapi.json` + `/v2/llms.txt` + the MCP docs at
