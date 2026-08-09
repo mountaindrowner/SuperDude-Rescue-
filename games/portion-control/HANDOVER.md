@@ -12,6 +12,29 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-08 - v0.71.0: BIGGER MACHINE, THE OLD CUPCAKE, AND IT
+  HOPS.** Mark: "increase the size of the vending machine and let's go
+  back to the previous cake and have the cake jump instead of walk."
+  * Vending Behemoth baseS 1.45 -> 1.75 (hitbox unchanged).
+  * Cake art REVERTED to the v0.69 frames (git checkout from 66f67a6 -
+    the approved striped-wrapper cupcake identity, 4-frame set); the
+    v3 cake render is retired but its character stays in the PixelLab
+    library if ever wanted. assets/manifest/def all back to 4 frames
+    for cake; vend + gloop keep their 6-frame v3 cycles.
+  * **THE HOP** (Cake script, 'active'): locomotion in LEAPS - 0.38s
+    grounded coil (squash builds), 0.42s airborne arc toward the
+    player (b.hopY lifts the BODY 46px while the chassis shadow stays
+    grounded - that split sells the height), landing thud (shake +
+    dust + splat). Ground covered per cycle matches the old drift
+    speed exactly (hv = spd * 1.9), so the fight's balance is
+    untouched; after the 60% split the hops get faster for free.
+  * Chassis: scripts may set `b.hopY`; sprite position adds it, shadow
+    ignores it.
+  * Gate: hop check (airborne phase seen, lift < -20px, grounded rests,
+    net displacement) + frame-count table per boss (cake 4, vend/gloop
+    6). district-bosses + arena GREEN.
+
+
 - **2026-08-07 - v0.70.0: V3 CHARACTER PIPELINE - THE BOSSES REALLY
   WALK.** Mark (with screenshot proof at v0.69.0): "they stretch and
   waddle but they don't walk. Not like Big Frank. Make new assets

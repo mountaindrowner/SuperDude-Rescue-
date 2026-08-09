@@ -24,7 +24,7 @@ PC.BOSSES = {
                 contact: 20, name: 'THE BROCCOLISK',
                 anims: { fan:   { set: 'rear', frames: 2, fps: 5 },
                          erupt: { set: 'lunge', frames: 2, fps: 10 } } },
-  cakeColossus: { key: 'boss_d3_cake', size: 128, walkFrames: 6, hp: 4200, spd: 94,
+  cakeColossus: { key: 'boss_d3_cake', size: 128, hp: 4200, spd: 94,
                 contact: 24, name: 'LAYER CAKE COLOSSUS',
                 anims: { shed:  { set: 'rear', frames: 2, fps: 6 } } },
   // v0.63.0 remake: spd 78 -> 46. It WALKS, slowly, always - the
@@ -33,7 +33,7 @@ PC.BOSSES = {
   // v0.69.0: vend + gloop art moved to the clean 64-grid (128px canvas,
   // real animate-with-text walk cycles); baseS 1.29 holds the on-screen
   // size the 144 canvas used to give. Hitboxes (size) unchanged.
-  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 1.45, walkFrames: 6, hp: 5000, spd: 46,
+  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 1.75, walkFrames: 6, hp: 5000, spd: 46,
                 contact: 26, name: 'VENDING BEHEMOTH',
                 anims: { restock:  { set: 'rear', frames: 2, fps: 6 },
                          launch:   { set: 'lunge', frames: 2, fps: 8 },
@@ -219,7 +219,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
   var fr = 1 + (Math.floor(this.animT * fps) % frames);
   this.sprite.setFrame(this.artKey + '_' + set + '_' + fr);
   var hop = this.moving ? -Math.abs(Math.sin(this.walkT * 4)) * 5 : Math.sin(this.animT * 5) * 2;
-  this.sprite.setPosition(Math.round(this.x), Math.round(this.y) + Math.round(hop));
+  this.sprite.setPosition(Math.round(this.x), Math.round(this.y) + Math.round(hop) + Math.round(this.hopY || 0));
   // POSE AMPLIFICATION (v0.22.0). Generated pose art stays close to the
   // reference by design - at 128px on a phone the difference is too
   // subtle to read on its own. So the states also deform in code: the
