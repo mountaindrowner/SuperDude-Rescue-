@@ -273,9 +273,28 @@ window.PC = window.PC || {};
         if (s.floatText) s.floatText('IT SPLIT!', 0xff9ecb);
       }
       if (b.state === 'active') {
-        var dx = px - b.x, dy = py - b.y, len = Math.hypot(dx, dy) || 1;
-        b.x += (dx / len) * b.spd * dt;
-        b.y += (dy / len) * b.spd * dt;
+        // IT HOPS (v0.71.0, Mark: "have the cake jump instead of walk").
+        // A cupcake has no legs - it LEAPS: squash to wind up, an arc
+        // through the air toward you (the shadow stays on the ground,
+        // which is what sells the height), and a landing thud. Average
+        // ground speed matches the old drift, so the fight is untouched.
+        b.hopT = (b.hopT || 0) + dt;
+        if (b.hopPhase !== 'air') {
+          if (b.hopT > 0.38) {
+            b.hopPhase = 'air'; b.hopT = 0;
+            var dx = px - b.x, dy = py - b.y, len = Math.hypot(dx, dy) || 1;
+            var hv = b.spd * 1.9;                     // 0.8s cycle, 0.42s airborne
+            b.hvx = (dx / len) * hv; b.hvy = (dy / len) * hv;
+          }
+        } else {
+          b.x += b.hvx * dt; b.y += b.hvy * dt;
+          if (b.hopT > 0.42) {
+            b.hopPhase = 'rest'; b.hopT = 0;
+            s.cameras.main.shake(90, 0.003);
+            if (s.fx) s.fx.burst(b.x, b.y + 18, 'fx_pop', 3, 0.3);
+            if (PC.audio && PC.audio.splat) PC.audio.splat();
+          }
+        }
         b.mortarCd -= dt;
         if (b.mortarCd <= 0) {
           b.mortarCd = b.enraged() ? 5 : 7;
@@ -290,10 +309,29 @@ window.PC = window.PC || {};
     },
     pose: function (b) {
       if (b.state === 'shed') {
+        b.hopY = 0;
         b.sprite.setScale(b.baseS * (1 + Math.sin(b.animT * 22) * 0.06), b.baseS * 0.92);
         b.sprite.setAngle(Math.sin(b.animT * 16) * 7);
         return true;
       }
+      if (b.state === 'active') {
+        // the hop, drawn: anticipation squash on the ground, stretch +
+        // lift in the air. hopY raises the BODY only - the chassis keeps
+        // the shadow grounded underneath.
+        if (b.hopPhase === 'air') {
+          var k = Math.min(1, b.hopT / 0.42);
+          b.hopY = -Math.sin(k * Math.PI) * 46;
+          b.sprite.setScale(b.baseS * 0.90, b.baseS * 1.14);
+          b.sprite.setAngle(0);
+        } else {
+          b.hopY = 0;
+          var q = Math.max(0, (b.hopT - 0.16) / 0.22);   // coiling to leap
+          b.sprite.setScale(b.baseS * (1 + 0.11 * q), b.baseS * (1 - 0.13 * q));
+          b.sprite.setAngle(0);
+        }
+        return true;
+      }
+      b.hopY = 0;
       return false;
     },
   };

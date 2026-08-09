@@ -184,8 +184,6 @@ PC.ART_MANIFEST = [
   'boss_d3_cake_walk_2',
   'boss_d3_cake_walk_3',
   'boss_d3_cake_walk_4',
-  'boss_d3_cake_walk_5',
-  'boss_d3_cake_walk_6',
   'boss_d3_cake_rear_1',
   'boss_d3_cake_rear_2',
   'boss_d3_cake_lunge_1',
