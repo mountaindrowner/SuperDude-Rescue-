@@ -12,6 +12,51 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-08-08 - v0.72.0: VIBRANT FROSTING, BIGGER BOSSES, GLOOP'S BAD
+  FRAMES CUT.** Mark: "make sure the cake's frosting attack is vibrant
+  multicolor; the vending machine should be much bigger; goop's attack
+  frames are bad, don't use, and make him bigger; then update all our
+  essential files."
+  * **THE FROSTING BUG - AND THE GATE THAT HID IT.** The v0.65 "make it
+    multicoloured" change set a per-blob TINT... on `fx_puddle` art that
+    is painted KETCHUP RED, and Phaser tint MULTIPLIES. Cyan x red =
+    muddy red. The frosting had never actually been multicoloured on
+    screen, and **my gate passed it anyway because it asserted
+    `img.tintTopLeft` - the tint NUMBER, not the rendered pixel.** Same
+    class of mistake as the invisible Gloop King (asserting
+    `sprite.visible`). Fixes:
+    - 'slow' puddles are now DRAWN in the gfx layer (deep pool +
+      full-opacity core + highlight) in their true colour; only Frank's
+      damage puddles still use the red art, where red is correct. This
+      also fixes the gloop slick, which had been muddy-red too.
+    - Palette went pastel -> CANDY: hot pink / yellow / cyan / green /
+      purple / orange. Sprinkles doubled to 14 per puddle, bigger, full
+      opacity, white added.
+    - Sprinkles are gated on `party` (an array tint = frosting), so the
+      sewer slick never gets birthday sprinkles.
+    - **The gate now samples REAL CANVAS PIXELS** in a ring around each
+      puddle: >=80% must be vivid (channel spread >=60, brightness
+      >=110) across >=2 distinct hue buckets. Verified live:
+      15 samples, 14 vivid, 2 hues.
+  * **VENDING BEHEMOTH baseS 1.75 -> 2.35** (much bigger; hitbox
+    untouched).
+  * **GLOOP KING baseS 1.45 -> 2.05**, and his `anims` map is GONE -
+    the rejected v3 attack frames are DELETED from disk, the manifest
+    and PC.ASSETS rather than left dead in the atlas. Every state now
+    plays his good 6-frame walk cycle; his channel/erupt reads come
+    from the code poses already in his script (vent sag, spiral lean,
+    erupt stretch). Gate asserts the frames are absent AND that
+    `PC.BOSSES.gloopKing.anims` is undefined.
+  * **ESSENTIAL FILES UPDATED**: PIXELLAB.md gains a ★ PROVEN RECIPE
+    section for the v3 boss pipeline (exact call sequence, the 6-frames
+    -in-a-4-frame-request quirk, pad-never-scale, valid template ids,
+    library persistence, the proxy-reset/double-bill trap, and what
+    three failed approaches looked like). COMPENDIUM.md's boss art rule
+    now reads 4- OR 6-frame with `walkFrames` declaring it.
+  * All four suites GREEN: district-bosses (19 checks), arena, ending,
+    roof-fight.
+
+
 - **2026-08-08 - v0.71.0: BIGGER MACHINE, THE OLD CUPCAKE, AND IT
   HOPS.** Mark: "increase the size of the vending machine and let's go
   back to the previous cake and have the cake jump instead of walk."

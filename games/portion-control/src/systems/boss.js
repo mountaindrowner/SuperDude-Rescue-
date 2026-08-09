@@ -33,17 +33,18 @@ PC.BOSSES = {
   // v0.69.0: vend + gloop art moved to the clean 64-grid (128px canvas,
   // real animate-with-text walk cycles); baseS 1.29 holds the on-screen
   // size the 144 canvas used to give. Hitboxes (size) unchanged.
-  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 1.75, walkFrames: 6, hp: 5000, spd: 46,
+  vendingBehemoth: { key: 'boss_d4_vending', size: 144, baseS: 2.35, walkFrames: 6, hp: 5000, spd: 46,
                 contact: 26, name: 'VENDING BEHEMOTH',
                 anims: { restock:  { set: 'rear', frames: 2, fps: 6 },
                          launch:   { set: 'lunge', frames: 2, fps: 8 },
                          overheat: { set: 'rear', frames: 2, fps: 3 } } },
-  gloopKing: { key: 'boss_d5_gloop', size: 144, baseS: 1.45, walkFrames: 6, hp: 5600, spd: 70,
-                contact: 26, name: 'THE GLOOP KING',
-                anims: { ringTell: { set: 'rear', frames: 2, fps: 5 },
-                         spiral:   { set: 'rear', frames: 2, fps: 6 },
-                         burst:    { set: 'rear', frames: 2, fps: 8 },
-                         erupt:    { set: 'lunge', frames: 2, fps: 10 } } },
+  // v0.72.0 (Mark: "goop's attack frames are bad, don't use, and make
+  // him bigger"). NO `anims` at all - every state plays the good v3
+  // walk cycle, and his channel/erupt reads come from the code poses in
+  // his script (vent sag, spiral lean, erupt stretch) instead. His
+  // rear/lunge art is deleted rather than left dead in the atlas.
+  gloopKing: { key: 'boss_d5_gloop', size: 144, baseS: 2.05, walkFrames: 6, hp: 5600, spd: 70,
+                contact: 26, name: 'THE GLOOP KING' },
 };
 
 PC.Boss = function (scene, x, y, id) {
@@ -85,6 +86,7 @@ PC.Boss = function (scene, x, y, id) {
   this.puddles = [];
   for (var i = 0; i < 14; i++) {
     this.puddles.push({ active: false, x: 0, y: 0, r: 0, life: 0, tick: 0, kind: 'dmg',
+      party: false,
       img: scene.add.image(0, 0, 'atlas', 'fx_puddle_1').setTint(0xd93a3a).setAlpha(0.75).setDepth(3).setVisible(false) });
   }
   this.walkT = 0;                  // drives the waddle (v0.65.0)
@@ -138,13 +140,14 @@ PC.Boss.prototype.splat = function (n, tint, kind) {
     // an ARRAY tint means multicoloured: each blob picks its own pastel
     // (v0.65.0, Mark: the red splotches "start looking like blood")
     var bt = Array.isArray(tint) ? tint[Math.floor(Math.random() * tint.length)] : tint;
+    var party = Array.isArray(tint);           // frosting, not sewer slick
     (function (px2, py2, tint2) {
       var warn = scene.add.image(px2, py2, 'atlas', 'fx_pop_1')
         .setTint(PC.CHOMP_TELL_COLOR || 0xff3ea5).setAlpha(0.3).setScale(1.6, 0.9).setDepth(3);
       scene.tweens.add({ targets: warn, alpha: 0.55, scaleX: 2, scaleY: 1.1, duration: 500, yoyo: false,
         onComplete: function () {
           warn.destroy();
-          self._puddle(px2, py2, tint2, kind);
+          self._puddle(px2, py2, tint2, kind, party);
         } });
     })(tx, ty, bt);
   }
@@ -154,15 +157,24 @@ PC.Boss.prototype.splat = function (n, tint, kind) {
     scene.time.delayedCall(600, function () { self.vuln = Math.max(self.vuln, va); }); }
 };
 
-PC.Boss.prototype._puddle = function (x, y, tint, kind) {
+PC.Boss.prototype._puddle = function (x, y, tint, kind, party) {
   for (var i = 0; i < this.puddles.length; i++) {
     var p = this.puddles[i];
     if (p.active) continue;
     p.active = true; p.x = x; p.y = y; p.r = kind === 'slow' ? 44 : 30;
     p.life = kind === 'slow' ? 4.5 : 3; p.tick = 0; p.kind = kind || 'dmg';
-    p.seed = Math.random() * 100;
-    p.img.setPosition(x, y).setTint(tint || 0xd93a3a)
-      .setScale(kind === 'slow' ? 2.4 : 1.8).setAlpha(0.75).setVisible(true);
+    p.seed = Math.random() * 100; p.party = !!party; p.tint = tint || 0xd93a3a;
+    // SLOW puddles are DRAWN, not tinted (v0.72.0). The fx_puddle art is
+    // ketchup red and Phaser tint MULTIPLIES, so a cyan tint over red
+    // renders muddy red - which is exactly why the "multicoloured"
+    // frosting kept looking like one red splotch (and why the gloop
+    // slick never looked green). Drawing them in the gfx layer gives the
+    // true colour. Frank's damage puddles keep the art: red source, red
+    // subject, correct.
+    p.img.setVisible(kind !== 'slow');
+    if (kind !== 'slow') {
+      p.img.setPosition(x, y).setTint(p.tint).setScale(1.8).setAlpha(0.75);
+    }
     this.scene.fx.burst(x, y, 'fx_spark', 3, 0.2);
     return;
   }
@@ -276,15 +288,27 @@ PC.Boss.prototype._updatePuddles = function (dt, px, py) {
     if (!p.active) continue;
     p.life -= dt; p.tick -= dt;
     if (p.life <= 0) { p.active = false; p.img.setVisible(false); continue; }
-    p.img.setAlpha(0.75 * Math.min(1, p.life));
+    var fade = Math.min(1, p.life);
+    if (p.img.visible) p.img.setAlpha(0.75 * fade);
+    // the drawn puddle: a deep pool, a brighter core and a highlight,
+    // all in the puddle's OWN colour
+    if (p.kind === 'slow' && !this.dead) {
+      var wob = 1 + Math.sin(this.scene.now * 1.6 + p.seed) * 0.04;
+      this.gfx.fillStyle(p.tint, 0.75 * fade);
+      this.gfx.fillEllipse(p.x, p.y, p.r * 2.5 * wob, p.r * 1.7 * wob);
+      this.gfx.fillStyle(p.tint, 1.0 * fade);
+      this.gfx.fillEllipse(p.x, p.y, p.r * 1.9 * wob, p.r * 1.25 * wob);
+      this.gfx.fillStyle(0xffffff, 0.30 * fade);
+      this.gfx.fillEllipse(p.x - p.r * 0.4, p.y - p.r * 0.3, p.r * 0.6, p.r * 0.3);
+    }
     // SPRINKLES on frosting puddles: little coloured dashes so the
     // splotch reads as party frosting, never as anything gorier
-    if (p.kind === 'slow' && !this.dead) {
-      var SPR = [0xffd977, 0x9be8ff, 0xff9ecb, 0xb4f2a8, 0xc9a8ff];
-      for (var sp = 0; sp < 7; sp++) {
-        var sa = (p.seed + sp * 61) % 6.28, sr = ((p.seed * 7 + sp * 37) % 100) / 100 * p.r * 0.8;
-        this.gfx.fillStyle(SPR[(sp + Math.floor(p.seed)) % SPR.length], 0.9 * Math.min(1, p.life));
-        this.gfx.fillRect(p.x + Math.cos(sa) * sr - 2, p.y + Math.sin(sa) * sr * 0.7 - 1, 5, 2);
+    if (p.party && !this.dead) {
+      var SPR = [0xffffff, 0xffd400, 0x00d4ff, 0x4dff4d, 0xff2d9e, 0xb44dff, 0xff8a00];
+      for (var sp = 0; sp < 14; sp++) {
+        var sa = (p.seed + sp * 61) % 6.28, sr = ((p.seed * 7 + sp * 37) % 100) / 100 * p.r * 0.85;
+        this.gfx.fillStyle(SPR[(sp + Math.floor(p.seed)) % SPR.length], Math.min(1, p.life));
+        this.gfx.fillRect(p.x + Math.cos(sa) * sr - 3, p.y + Math.sin(sa) * sr * 0.7 - 1, 6, 3);
       }
     }
     var dx = px - p.x, dy = py - p.y;

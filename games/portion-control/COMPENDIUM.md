@@ -43,7 +43,8 @@ Vampire Survivors-level, exactly:
   in code for left/right. No idle, no attack, no death frames.
 - **Player characters: 4-frame walk loop** (they're stared at all game; 4 frames reads
   smoother). Idle = walk frame 1, or a code-driven 2px bob. Flip for direction.
-- **Bosses: 4-frame loop** (walk/hover). Attack **telegraphs are tints/flashes/shadows**
+- **Bosses: 4- OR 6-frame loop** (walk/hover; v3 template cycles ship 6 -
+  the def's `walkFrames` declares it). Attack **telegraphs are tints/flashes/shadows**
   drawn by code, not frames. Mother Batch gets a 4-frame phase-2 variant.
 - **Hurt = white flash** (`setTintFill(0xffffff)` for 80 ms). Zero frames.
 - **Death = shared Pop VFX** (one 4-frame puff, tinted per enemy color by code) + the enemy
