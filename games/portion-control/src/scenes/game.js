@@ -263,6 +263,12 @@ PC.GameScene.prototype.create = function () {
   this._zoneSeen = {};
 
   var cam = this.cameras.main;
+  // v0.73.0 (Mark: "player still starts in the corner of the map"): the
+  // sprite was still at (0,0) when the follow began, so the lerp camera
+  // opened on the map corner and panned across the city to the spawn.
+  // Place the figure first and snap the camera onto it.
+  this.player.setPosition(this.px, this.py);
+  cam.centerOn(this.px, this.py);
   cam.startFollow(this.player, true, PC.RENDER.CAMERA_LERP, PC.RENDER.CAMERA_LERP);
   // story beats hand off through a fade (freeroam.launch fades out, the
   // restarted scene fades back in) - a cut, never a menu

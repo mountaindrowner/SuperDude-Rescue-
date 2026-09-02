@@ -230,8 +230,8 @@ PC.Quest.prototype.chant = function (done) {
   var self = this, scene = this.scene;
   var W = PC.RENDER.W, H = PC.RENDER.H;
   var lines = [
-    { speaker: 'danny', text: 'For peace—!' },
-    { speaker: 'vic', text: 'For love—!' },
+    { speaker: 'danny', text: 'For peace!' },
+    { speaker: 'vic', text: 'For love!' },
     { speaker: 'danny', text: 'VICTORY!' },
   ];
   var i = 0;

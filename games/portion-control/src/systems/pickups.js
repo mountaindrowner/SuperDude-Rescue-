@@ -103,7 +103,9 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
     // gentle bob while idle
     if (!f.fly) {
       f.sprite.y = f.y + Math.sin(f.t * 4) * 1.5;
-      if (d2 < r2) { f.fly = true; f.spd = 120; }
+      // v0.73.0: coins SPIN on the spot (read as coins, not ore)
+      if (f.kind === 'coin') f.sprite.scaleX = Math.max(0.15, Math.abs(Math.cos(f.t * 5)));
+      if (d2 < r2) { f.fly = true; f.spd = 120; f.sprite.scaleX = 1; }
     }
     if (f.fly) {
       var d = Math.sqrt(d2) || 1;

@@ -15,7 +15,9 @@ window.PC = window.PC || {};
 PC.SentryBotWeapon = function (scene) {
   this.key = 'sentrybot'; this.name = 'SENTRY BOT';
   this.level = 1; this.max = 5;
-  this.bots = 1; this.burstCd = 1.1; this.dmg = 7; this.range = 220;
+  // v0.73.0 (Mark: "Vic's starting abilities too strong, turret shoots
+  // really fast"): bursts 1.1 -> 1.5s, the deployed turret 0.25 -> 0.42s.
+  this.bots = 1; this.burstCd = 1.5; this.dmg = 7; this.range = 220;
   this.cd = 12;                 // DEPLOY button cooldown (masterize: *0.8)
   this.life = 10;               // heavy turret life (masterize: *1.5)
   this.deployT = 0; this.t = 0;
@@ -37,18 +39,24 @@ PC.SentryBotWeapon.prototype.desc = function () {
           'Second bot!', 'Overcharged!'][Math.min(this.level + 1, 5)] || 'Faster bursts!';
 };
 PC.SentryBotWeapon.prototype.applyLevel = function () {
-  if (this.level === 2) this.burstCd = 0.85;
+  if (this.level === 2) this.burstCd = 1.15;
   else if (this.level === 3) this.dmg = 11;
   else if (this.level === 4) this.bots = 2;
   else if (this.level === 5) { this.dmg = 15; this.range = 270; }
 };
 PC.SentryBotWeapon.prototype._buildButton = function (scene) {
-  var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
+  var W = PC.RENDER.W, H = PC.RENDER.H, self = this, K = PC.uiK;
+  // v0.73.0 (Mark: "Victoria's Deploy button is overlapped by the map
+  // button: move it higher and make it a bit bigger"): the button now
+  // sits a full MAP-button height above the MAP pad, radius 20 -> 25.
+  this.bx = W - PC.SAFE - K(30) + K(17);
+  this.by = H - PC.SAFE_BOTTOM - K(22) - K(44);
+  this.br = K(25);
   this.btnGfx = scene.add.graphics().setDepth(102);
-  this.btnTxt = scene.add.text(W - 30, H - 52, 'DEPLOY', {
-    fontFamily: 'monospace', fontSize: '7px', color: '#f7f4ef', fontStyle: 'bold',
+  this.btnTxt = scene.add.text(this.bx, this.by, 'DEPLOY', {
+    fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#f7f4ef', fontStyle: 'bold',
   }).setOrigin(0.5).setDepth(103);
-  this.btnZone = scene.add.zone(W - 30, H - 52, 48, 48).setDepth(103)
+  this.btnZone = scene.add.zone(this.bx, this.by, this.br * 2.4, this.br * 2.4).setDepth(103)
     .setInteractive({ useHandCursor: true });
   this.btnZone.on('pointerdown', function (p, lx, ly, ev) {
     if (ev && ev.stopPropagation) ev.stopPropagation();   // don't grab the joystick
@@ -67,22 +75,21 @@ PC.SentryBotWeapon.prototype._buildButton = function (scene) {
   scene.uiAttach(this.btnZone);
 };
 PC.SentryBotWeapon.prototype._drawButton = function (scene) {
-  var W = PC.RENDER.W, H = PC.RENDER.H;
-  var g = this.btnGfx;
+  var g = this.btnGfx, cx = this.bx, cy = this.by, r = this.br;
   g.clear();
   var ready = this.deployT <= 0;
-  g.fillStyle(0x120e24, 0.85).fillCircle(W - 30, H - 52, 20);
-  g.lineStyle(2, ready ? 0x35d0ff : 0x45356e, 1).strokeCircle(W - 30, H - 52, 20);
+  g.fillStyle(0x120e24, 0.85).fillCircle(cx, cy, r);
+  g.lineStyle(2, ready ? 0x35d0ff : 0x45356e, 1).strokeCircle(cx, cy, r);
   if (!ready) {
     // cooldown ring sweep
     var k = 1 - this.deployT / (this.cd * scene.stats.cdMult);
     g.lineStyle(3, 0xf2c33c, 0.9);
     g.beginPath();
-    g.arc(W - 30, H - 52, 16, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k);
+    g.arc(cx, cy, r * 0.8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k);
     g.strokePath();
   } else {
     g.lineStyle(1, 0x35d0ff, 0.5 + 0.3 * Math.sin(scene.now * 6));
-    g.strokeCircle(W - 30, H - 52, 15);
+    g.strokeCircle(cx, cy, r * 0.75);
   }
 };
 PC.SentryBotWeapon.prototype.update = function (dt, scene) {
@@ -148,7 +155,7 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
           if (td < tbd) { tbd = td; tb = te; }
         }
         if (tb) {
-          t.fireT = 0.25;
+          t.fireT = 0.42;
           if (scene.vfx) scene.vfx.muzzleFlash(t.x, t.y - 9, 0xf2c33c,
             Math.atan2(tb.y - t.y, tb.x - t.x));
           scene.bullets.fire(t.x, t.y - 9, tb.x, tb.y,

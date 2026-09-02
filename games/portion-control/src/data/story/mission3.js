@@ -18,11 +18,11 @@ PC.STORY.missions.stage3 = {
     { // B1 - clear the Park Gates plaza
       type: 'clear', at: 'gates', count: 20, banner: 'CLEAR THE PARK GATES',
       intro: [
-        { say: { speaker: 'josh', text: "…easy now… easy… — oh, hey. Little help? The park's critters got into the junk and they are not themselves." } },
-        { say: { speaker: 'danny', text: "Hang on, Josh — sending the cavalry. Me. I'm the cavalry." } },
+        { say: { speaker: 'josh', text: "…easy now... easy... oh, hey. Little help? The park's critters got into the junk and they are not themselves." } },
+        { say: { speaker: 'danny', text: "Hang on, Josh, sending the cavalry. Me. I'm the cavalry." } },
       ],
       done: [
-        { say: { speaker: 'josh', text: "Gates are clear? Good. Now mind the vines — somethin' in the Greenhouse is feedin' 'em." } },
+        { say: { speaker: 'josh', text: "Gates are clear? Good. Now mind the vines, somethin' in the Greenhouse is feedin' 'em." } },
       ],
     },
     { // B2 - cap the three vine vents
@@ -37,7 +37,7 @@ PC.STORY.missions.stage3 = {
         { say: { speaker: 'danny', text: "Three vents pushing this stuff out. Greenhouse, the pond dock, and the old enclosures. On it." } },
       ],
       done: [
-        { say: { speaker: 'josh', text: "That's the pressure off. Poor things'll settle some now — they were just scared." } },
+        { say: { speaker: 'josh', text: "That's the pressure off. Poor things'll settle some now, they were just scared." } },
       ],
     },
     { // B3 - hold the pond while Josh's cart loads (spec: escort)
@@ -55,8 +55,8 @@ PC.STORY.missions.stage3 = {
       type: 'boss', at: 'ranger', banner: 'DEFEAT THE BROCCOLISK',
       boss: 'broccolisk',
       intro: [
-        { say: { speaker: 'josh', text: "That's a big'un! Don't hurt it more'n you gotta — it didn't ask for this!" } },
-        { say: { speaker: 'danny', text: "Gentle. Right. Gentle it is. SUPER DUDE — GO!" } },
+        { say: { speaker: 'josh', text: "That's a big'un! Don't hurt it more'n you gotta, it didn't ask for this!" } },
+        { say: { speaker: 'danny', text: "Gentle. Right. Gentle it is. SUPER DUDE, GO!" } },
       ],
       done: [
         { say: { speaker: 'danny', text: "It's just… a very large vegetable again. Josh, I think it's napping." } },
