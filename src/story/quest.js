@@ -18,6 +18,23 @@ PC.Quest = function (scene, region, mission) {
   this._waveAcc = 0;
   this.tpEarned = 0;
   this.done = false;
+  // v0.75.0 (Mark: "Vic's cage should always be there, with her in it,
+  // visible from the start, opened after the rescue"): if this mission
+  // rescues someone, the cage stands at that landmark's door from the
+  // first frame, captive visible inside, and rescueSequence cracks it.
+  this.cageImg = null; this.captiveImg = null;
+  for (var ri = 0; ri < mission.objectives.length; ri++) {
+    var ro = mission.objectives[ri];
+    if (ro.type !== 'rescue') continue;
+    var rmk = region.landmark(ro.at);
+    if (!rmk) break;
+    var rbx = rmk.cx, rby = rmk.y + rmk.h - 40;
+    this.cageImg = scene.add.image(rbx, rby, 'atlas', 'pickup_cage_1').setScale(1.4).setDepth(11);
+    this.captiveImg = scene.add.image(rbx, rby - 4, 'atlas', 'char_' + (ro.hero || 'victoria') + '_idle')
+      .setScale(0.9).setDepth(10).setTint(0x9a9ab8);
+    this.cageHero = ro.hero || 'victoria';
+    break;
+  }
   // objective swarms pull from the REGION's roster, so each map's rings
   // match its creatures (v0.21.0; table-driven since v0.27.0)
   this.ringKinds = ({
@@ -668,9 +685,11 @@ PC.Quest.prototype.rescueSequence = function (o) {
   var mk = this.region.landmark(o.at);
   var bx = mk.cx, by = mk.y + mk.h - 40;
   scene.storyPause = true;
-  var cage = scene.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.4).setDepth(11);
+  // the cage has stood here since mission start (constructor); crack it
+  var cage = this.cageImg || scene.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.4).setDepth(11);
   var hero = scene.add.image(bx, by - 4, 'atlas', 'char_' + (o.hero || 'victoria') + '_idle')
     .setScale(0.9).setDepth(12).setVisible(false);
+  if (this.captiveImg) { this.captiveImg.destroy(); this.captiveImg = null; }
   if (PC.audio) PC.audio.chest();
   scene.time.delayedCall(500, function () {
     cage.setFrame('pickup_cage_2'); scene.cameras.main.shake(120, 0.006);

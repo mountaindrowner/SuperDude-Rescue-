@@ -28,7 +28,11 @@ PC.STORY.maps.central = {
     // you walk up to between missions (Mark asked twice what it was)
     { id: 'board',      name: 'MISSION BOARD',      c0: 7,  r0: 6,  c1: 7,  r1: 6,  color: '#2e2a45', accent: '#f2c33c', open: true },
     { id: 'plaza',      name: 'CENTRAL PLAZA',      c0: 5,  r0: 8,  c1: 7,  r1: 9,  color: '#2e2a45', accent: '#35d0ff', open: true },
-    { id: 'substation', name: 'THE SUBSTATION',     c0: 11, r0: 9,  c1: 12, r1: 9,  color: '#3c2f38', accent: '#f2c33c' },
+    // v0.75.0 (Mark: "should be a real substation area, a large fenced-in
+    // area with pylons, wires, transformers in rows, the player weaving
+    // through the rows; it's what you defend"): an OPEN fenced yard now,
+    // with transformer rows as solids (region._substationSolids).
+    { id: 'substation', name: 'THE SUBSTATION',     c0: 11, r0: 9,  c1: 12, r1: 9,  color: '#3a3540', accent: '#f2c33c', open: true },
     { id: 'diner',      name: 'THE OLD DINER',      c0: 2,  r0: 11, c1: 2,  r1: 11, color: '#564a6c', accent: '#ff6b6b' },
     { id: 'bank',       name: 'FROSTBITE BANK',     c0: 8,  r0: 11, c1: 9,  r1: 12, color: '#4a4570', accent: '#35d0ff' },
   ],
