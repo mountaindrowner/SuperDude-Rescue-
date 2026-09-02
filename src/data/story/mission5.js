@@ -26,9 +26,10 @@ PC.STORY.missions.stage5 = {
         { say: { speaker: 'kevin', text: "Good start. The school's the worst of it, the kids got stuck inside when the frosting came down." } },
       ],
     },
-    { // B2 - free the three kids trapped at the School
-      type: 'fetch', banner: 'FREE THE TRAPPED KIDS',
-      itemName: 'TRAPPED KID', icon: 'pickup_cage_1',
+    { // B2 - free the three kids trapped at the School. v0.78.0: each is
+      // a HOLD - dig the door out while the sugar horde piles in
+      type: 'fetch', banner: 'DIG THE KIDS OUT', hold: 2.5,
+      itemName: 'KID FREED', icon: 'pickup_cage_1',
       items: [
         { at: 'school', dx: -170, dy: -10,
           line: { speaker: 'pip', text: "I KNEW you'd come, Super Dude!" } },

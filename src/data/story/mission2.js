@@ -24,18 +24,25 @@ PC.STORY.missions.stage2 = {
         { say: { speaker: 'vic', text: "Noted, Mayor. Stay away from the windows." } },
       ],
     },
-    { // B2 - salvage two signal boosters
-      type: 'fetch', banner: 'SALVAGE THE BOOSTERS',
-      itemName: 'SIGNAL BOOSTER',
+    { // B2 - v0.78.0 (Mark: missions should need thought): the array's
+      // three relay boxes must be re-armed IN ORDER, and the order is
+      // spread across the district - Garage, City Hall, then the tower.
+      // Wrong order = buzz + restart (quest.spawnSwitches).
+      type: 'sequence', banner: 'RE-ARM THE RELAYS IN ORDER',
+      icon: 'icon_passive_battery',
       items: [
-        { at: 'cityhall' },
-        { at: 'garage', line: { speaker: 'danny', text: "Vic, that's my garage. Please don't reorganize it again." } },
+        { at: 'garage',
+          line: { speaker: 'danny', text: "Relay one is in my garage? Vic, please don't reorganize it again." } },
+        { at: 'cityhall',
+          line: { speaker: 'vic', text: "Two. City Hall's relay. The Mayor labelled it 'important'. Helpful." } },
+        { at: 'bloomtower',
+          line: { speaker: 'vic', text: "Three. The array just woke up and it is HUNGRY for signal." } },
       ],
       intro: [
-        { say: { speaker: 'vic', text: "The array needs two boosters. City Hall has one. Your garage has the other, boss, assuming the fries haven't eaten it." } },
+        { say: { speaker: 'vic', text: "The array runs on three relays and they only arm in order. Garage first, City Hall second, the tower last. Skip one and it trips." } },
       ],
       done: [
-        { say: { speaker: 'vic', text: "Both boosters. Let's find out who else is still breathing out there." } },
+        { say: { speaker: 'vic', text: "All three relays armed. Let's find out who else is still breathing out there." } },
       ],
     },
     { // B3 - hold the tower while she triangulates
