@@ -35,15 +35,21 @@ PC.STORY.scripts.intro = [
   { say: { speaker: 'anchor', text: "Day two of the Junk-Food Flood. The streets are buried. And folks… viewers are reporting the food is FIGHTING BACK." } },
   { say: { speaker: 'bloom', text: "Danny, it won't stop! It's, it's ALIVE!" } },
   // v0.30.2: Danny answers the PRESS instead of brooding alone in his
-  // room (Mark: "it should really be another interview... what are you
-  // gonna do? I'm gonna find the team, and we're gonna fix this")
-  { scene: 'danny_interview' },
+  // room. v0.73.0 (Mark): "it should return to the newscaster with Danny
+  // in a picture-in-picture replying, and maybe he calls out to the
+  // adventure team through that newscast." Back to the desk, Danny in
+  // the window, then the feed flips to him live from the garage.
+  { scene: 'news_desk_danny' },
   { chrome: { banner: 'SUPER DUDE DANNY RESPONDS', live: true,
-    ticker: 'INVENTOR FACES THE PRESS  +++  CITY ASKS: CAN HE UNDO IT?' } },
-  { say: { speaker: 'anchor', text: "Super Dude Danny! The whole city is buried. What are you going to DO?" } },
+    ticker: 'LIVE LINK TO THE SUPER DUDE GARAGE  +++  CITY ASKS: CAN HE UNDO IT?' } },
+  { say: { speaker: 'anchor', text: "We go live now to the Super Dude Garage. Super Dude Danny! The whole city is buried. What are you going to DO?" } },
+  { scene: 'danny_live' },
+  { chrome: { banner: 'LIVE FROM THE SUPER DUDE GARAGE', live: true,
+    ticker: 'INVENTOR SPEAKS  +++  CITY ASKS: CAN HE UNDO IT?  +++  ADVENTURE TEAM STILL MISSING' } },
   { say: { speaker: 'danny', text: "I did this. So I'm going to fix it." } },
   { music: 'lift' },
   { say: { speaker: 'danny', text: "I'm gonna find my team, and we're gonna put this city back together. Every last crumb." } },
+  { say: { speaker: 'danny', text: "Vic. Josh. Kevin. Carlos. Nayah. If you can hear this... hang on. I'm coming for every one of you." } },
   { action: 'portraits6' },
   { say: { speaker: 'danny', text: "Crew, Adventure City needs us. Super Dude… GO!" } },
 ];

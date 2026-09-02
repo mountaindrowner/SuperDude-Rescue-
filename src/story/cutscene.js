@@ -238,8 +238,57 @@ PC.CutsceneScene.prototype.stamp = function (frame, x, y, scale, flip) {
 
 PC.CutsceneScene.prototype.clearFootage = function () {
   this.bg.clear();
+  if (this._floodEv) { this._floodEv.remove(false); this._floodEv = null; }
+  this._floodPulse = null;
   this.bgImgs.forEach(function (im) { im.destroy(); });
   this.bgImgs = [];
+};
+
+// ---- picture-in-picture inset (v0.73.0) ----
+// A framed satellite window with a label strip, used for the news desk
+// story graphic and for the Day-2 Danny link-up. kind: 'ray' paints the
+// Nourish-Ray on the tower; 'portrait_*' stamps that portrait; 'anchor'
+// stamps the anchor bust. Returns nothing; everything is footage.
+PC.CutsceneScene.prototype._paintPip = function (x, y, w, h, kind, label) {
+  var g = this.bg;
+  g.fillStyle(0x0a0716, 0.6).fillRect(x + 3, y + 3, w, h);          // drop shadow
+  g.fillStyle(0x120e24, 1).fillRect(x, y, w, h);
+  var ih = h - 12;                                                   // image area above label
+  if (kind === 'ray') {
+    g.fillStyle(0x35d0ff, 1).fillRect(x + 2, y + 2, w - 4, ih - 2);
+    g.fillStyle(0x7fb8d9, 0.6);
+    g.fillEllipse(x + w * 0.3, y + 8, 16, 5); g.fillEllipse(x + w * 0.72, y + 13, 20, 6);
+    g.fillStyle(0x1f4a66, 1);
+    for (var b = 0; b < 5; b++) {
+      var bh = ih * (0.22 + PC.hash01(b, 71, 3) * 0.3);
+      g.fillRect(x + 3 + b * (w - 6) / 5, y + ih - bh, (w - 6) / 5 - 2, bh);
+    }
+    var tx = x + w * 0.5, tw = w * 0.16;
+    g.fillStyle(0x2e2850, 1).fillRect(tx - tw / 2, y + ih * 0.28, tw, ih * 0.72);
+    g.fillStyle(0x45356e, 1).fillRect(tx - tw / 2 - 2, y + ih * 0.28, tw + 4, 3);
+    g.fillStyle(0xf2c33c, 0.7);
+    for (var wn = 0; wn < 6; wn++) g.fillRect(tx - tw / 2 + 2 + (wn % 2) * (tw / 2), y + ih * 0.36 + Math.floor(wn / 2) * 6, 2, 3);
+    g.fillStyle(0x6d6a8e, 1).fillRect(tx - 4, y + ih * 0.18, 8, ih * 0.10); // dish stem
+    g.fillStyle(0x35d0ff, 1).fillCircle(tx, y + ih * 0.16, 4);
+    g.fillStyle(0xffffff, 0.9).fillCircle(tx - 1, y + ih * 0.14, 1.5);
+    g.fillStyle(0xfff6e0, 0.25).fillTriangle(tx, y + ih * 0.16, tx - w * 0.3, y + 2, tx + w * 0.3, y + 2);
+    g.lineStyle(1, 0xfff6e0, 0.5).strokeCircle(tx, y + ih * 0.16, 7);
+  } else if (kind === 'anchor') {
+    g.fillStyle(0x1c3a52, 1).fillRect(x + 2, y + 2, w - 4, ih - 2);
+    g.fillStyle(0x35d0ff, 0.5).fillRect(x + 4, y + 4, w - 8, ih * 0.45);
+    this.stamp('portrait_anchor', x + w / 2, y + 2 + ih * 0.55, (ih * 0.95) / 128);
+  } else {
+    g.fillStyle(0x1a1630, 1).fillRect(x + 2, y + 2, w - 4, ih - 2);
+    g.fillStyle(0x35d0ff, 0.10).fillRect(x + 2, y + 2, w - 4, ih - 2);
+    this.stamp(kind, x + w / 2, y + 2 + ih * 0.5, (ih - 6) / 128);
+  }
+  // corner brackets + label strip
+  g.lineStyle(2, 0xf2c33c, 1).strokeRect(x, y, w, h);
+  g.fillStyle(0xf2c33c, 1).fillRect(x, y + h - 12, w, 12);
+  var t = this.add.text(x + w / 2, y + h - 6, label || '', {
+    fontFamily: 'monospace', fontSize: '6px', color: '#120e24', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(11);
+  this.tv.add(t); this.bgImgs.push(t);
 };
 
 // ---- news chrome ----
@@ -298,8 +347,12 @@ PC.CutsceneScene.prototype.paintScene = function (name) {
     return;
   }
 
-  if (name === 'news_desk') {
-    // newsroom: window band w/ skyline, desk, the anchor, story graphic
+  if (name === 'news_desk' || name === 'news_desk_danny') {
+    // newsroom: window band w/ skyline, desk, the anchor, story graphic.
+    // v0.73.0: the inset is a real picture-in-picture (_paintPip); the
+    // 'news_desk_danny' variant puts DANNY in the window, live from his
+    // garage, so Day 2 comes back to the desk instead of a street stand-up.
+    var withDanny = name === 'news_desk_danny';
     g.fillStyle(0x1c3a52, 1).fillRect(R.x, R.y, R.w, R.h);
     g.fillStyle(0x35d0ff, 0.9).fillRect(R.x + 8, R.y + 10, R.w - 16, R.h * 0.42);
     g.fillStyle(0xcfe9f2, 0.8);
@@ -329,14 +382,18 @@ PC.CutsceneScene.prototype.paintScene = function (name) {
     this.tv.add(plate); this.bgImgs.push(plate);
     // the anchor bust behind the desk
     this.stamp('portrait_anchor', R.x + R.w * 0.30, R.y + R.h * 0.47, (R.h * 0.52) / 128);
-    // story-graphic inset: the Nourish-Ray over the tower
-    g.fillStyle(0x120e24, 1).fillRect(R.x + R.w * 0.60, R.y + R.h * 0.30, R.w * 0.32, R.h * 0.30);
-    g.lineStyle(2, 0xf2c33c, 1).strokeRect(R.x + R.w * 0.60, R.y + R.h * 0.30, R.w * 0.32, R.h * 0.30);
-    var gx = R.x + R.w * 0.76, gy0 = R.y + R.h * 0.30;
-    g.fillStyle(0x45356e, 1).fillRect(gx - 7, gy0 + R.h * 0.10, 14, R.h * 0.19);
-    g.fillStyle(0x35d0ff, 1).fillCircle(gx, gy0 + R.h * 0.085, 5);
-    g.fillStyle(0x35d0ff, 0.35);
-    g.fillTriangle(gx, gy0 + R.h * 0.085, gx - 16, gy0 + 4, gx + 16, gy0 + 4);
+    // picture-in-picture window, upper right, clear of the anchor
+    var pw = R.w * 0.36, ph = R.h * 0.38;
+    var px0 = R.x + R.w * 0.58, py0 = R.y + R.h * 0.22;
+    if (withDanny) {
+      this._paintPip(px0, py0, pw, ph, 'portrait_danny', 'DANNY - LIVE');
+      // link-up icon between desk and window
+      g.fillStyle(0x35d0ff, 0.9).fillCircle(px0 - 8, py0 + ph * 0.5, 2);
+      g.lineStyle(1, 0x35d0ff, 0.6).strokeCircle(px0 - 8, py0 + ph * 0.5, 5);
+      g.lineStyle(1, 0x35d0ff, 0.3).strokeCircle(px0 - 8, py0 + ph * 0.5, 8);
+    } else {
+      this._paintPip(px0, py0, pw, ph, 'ray', 'THE NOURISH-RAY');
+    }
     return;
   }
 
@@ -465,6 +522,53 @@ PC.CutsceneScene.prototype.paintScene = function (name) {
     });
     return;
   }
+  if (name === 'danny_live') {
+    // v0.73.0 (Mark: "it should return to the newscaster with Danny in a
+    // picture-in-picture replying, and maybe he calls out to the team
+    // through that newscast"): the feed flips - Danny fills the screen,
+    // live from the Super Dude Garage, and the anchor shrinks to the PiP.
+    g.fillStyle(0x1a1630, 1).fillRect(R.x, R.y, R.w, R.h);
+    // garage back wall: pegboard, tool shadows, a workbench, the big
+    // roll-up door with its stripe, monitors glowing
+    g.fillStyle(0x241f3d, 1).fillRect(R.x, R.y, R.w, R.h * 0.62);
+    g.fillStyle(0x2e2850, 1).fillRect(R.x + R.w * 0.04, R.y + R.h * 0.08, R.w * 0.34, R.h * 0.36);
+    g.fillStyle(0x120e24, 0.7);
+    for (var pgx = 0; pgx < 6; pgx++) for (var pgy = 0; pgy < 5; pgy++) {
+      g.fillRect(R.x + R.w * 0.06 + pgx * R.w * 0.05, R.y + R.h * 0.10 + pgy * R.h * 0.065, 2, 2);
+    }
+    g.fillStyle(0x6d6a8e, 1);                                          // hung tools
+    g.fillRect(R.x + R.w * 0.08, R.y + R.h * 0.13, 3, R.h * 0.14);
+    g.fillRect(R.x + R.w * 0.16, R.y + R.h * 0.13, 8, 4); g.fillRect(R.x + R.w * 0.18, R.y + R.h * 0.13, 3, R.h * 0.12);
+    g.fillRect(R.x + R.w * 0.28, R.y + R.h * 0.15, 5, R.h * 0.10);
+    g.fillStyle(0x3a3652, 1).fillRect(R.x + R.w * 0.62, R.y + R.h * 0.06, R.w * 0.34, R.h * 0.50); // roll-up door
+    g.fillStyle(0x120e24, 0.35);
+    for (var sl = 0; sl < 7; sl++) g.fillRect(R.x + R.w * 0.62, R.y + R.h * 0.06 + sl * R.h * 0.07, R.w * 0.34, 2);
+    g.fillStyle(0xf2c33c, 0.9).fillRect(R.x + R.w * 0.62, R.y + R.h * 0.30, R.w * 0.34, 5);
+    g.fillStyle(0x120e24, 0.9);
+    for (var hz = 0; hz < 6; hz++) g.fillRect(R.x + R.w * 0.62 + hz * R.w * 0.06, R.y + R.h * 0.30, R.w * 0.03, 5);
+    // floor + workbench
+    g.fillStyle(0x2a2542, 1).fillRect(R.x, R.y + R.h * 0.62, R.w, R.h * 0.38);
+    g.fillStyle(0x000000, 0.12);
+    for (var fl = 0; fl < R.w; fl += 22) g.fillRect(R.x + fl, R.y + R.h * 0.62, 1, R.h * 0.38);
+    g.fillStyle(0x8a5a30, 1).fillRect(R.x + R.w * 0.04, R.y + R.h * 0.56, R.w * 0.40, 8);
+    g.fillStyle(0xa8713f, 1).fillRect(R.x + R.w * 0.04, R.y + R.h * 0.56, R.w * 0.40, 2);
+    g.fillStyle(0x6d6a8e, 1).fillRect(R.x + R.w * 0.06, R.y + R.h * 0.64, 6, R.h * 0.12);
+    g.fillRect(R.x + R.w * 0.40, R.y + R.h * 0.64, 6, R.h * 0.12);
+    // bench monitors, glowing cyan (the wrist-pad grid)
+    g.fillStyle(0x120e24, 1).fillRect(R.x + R.w * 0.10, R.y + R.h * 0.40, R.w * 0.13, R.h * 0.15);
+    g.fillStyle(0x35d0ff, 0.85).fillRect(R.x + R.w * 0.11, R.y + R.h * 0.41, R.w * 0.11, R.h * 0.12);
+    g.fillStyle(0x120e24, 0.6);
+    for (var gr = 0; gr < 4; gr++) g.fillRect(R.x + R.w * 0.11, R.y + R.h * 0.41 + gr * R.h * 0.03, R.w * 0.11, 1);
+    g.fillStyle(0x35d0ff, 0.10).fillEllipse(R.x + R.w * 0.5, R.y + R.h * 0.72, R.w * 0.6, R.h * 0.22);
+    // Danny at the mic, big, facing the camera; camera-light halo
+    var scl = R.h / 150;
+    g.fillStyle(0xffffff, 0.05).fillCircle(R.x + R.w * 0.5, R.y + R.h * 0.45, R.h * 0.34);
+    this.stamp('cs_danny_mic', R.x + R.w * 0.5, R.y + R.h * 0.70 - 48 * scl * 0.62, scl * 1.35);
+    g.fillStyle(0x0a0716, 0.35).fillEllipse(R.x + R.w * 0.5, R.y + R.h * 0.72, 52 * scl * 0.62, 11 * scl * 0.62);
+    // the anchor, now the small window
+    this._paintPip(R.x + R.w * 0.66, R.y + R.h * 0.20, R.w * 0.28, R.h * 0.30, 'anchor', 'ACN DESK');
+    return;
+  }
   if (name === 'danny_room') {
     // the TV drops to idle static; Danny himself steps into the room
     g.fillStyle(0x08060f, 1).fillRect(R.x, R.y, R.w, R.h);
@@ -496,17 +600,31 @@ PC.CutsceneScene.prototype.runAction = function (beat, done) {
   var W = PC.RENDER.W, H = PC.RENDER.H, R = this.scr, self = this;
   var a = beat.action;
   if (a === 'tvon') {
-    // CRT power-on: dot -> horizontal line -> full picture
+    // CRT power-on: dot -> horizontal line -> full picture.
+    // v0.73.0 (Mark: "the TV turning on effect is off centered / not on
+    // screen"): tweening a Rectangle's width grew it from its top-left
+    // corner, so the line shot off to the right of the set. It is now a
+    // graphics redraw centred on the tube every frame, masked to the
+    // glass, with a warm phosphor glow that blooms then settles.
     if (PC.audio) PC.audio.hiss();
-    var line = this.add.rectangle(R.x + R.w / 2, R.y + R.h / 2, 3, 2, 0xffffff)
-      .setDepth(34);
-    this.tweens.add({ targets: line, width: R.w, duration: 260, ease: 'Quad.out',
+    var cx = R.x + R.w / 2, cy = R.y + R.h / 2;
+    var pg = this.add.graphics().setDepth(34).setMask(this.tv.mask);
+    var st = { w: 3, h: 2, a: 1, glow: 0 };
+    var draw = function () {
+      pg.clear();
+      pg.fillStyle(0xfff6e0, st.glow * 0.35).fillEllipse(cx, cy, st.w + 30, st.h + 30);
+      pg.fillStyle(0xffffff, st.a).fillRect(cx - st.w / 2, cy - st.h / 2, st.w, st.h);
+      pg.fillStyle(0x35d0ff, st.a * 0.6).fillRect(cx - st.w / 2, cy - st.h / 2 - 1, st.w, 1);
+    };
+    draw();
+    this.tweens.add({ targets: st, glow: 1, duration: 200, yoyo: true });
+    this.tweens.add({ targets: st, w: R.w, duration: 280, ease: 'Quad.out', onUpdate: draw,
       onComplete: function () {
-        self.tweens.add({ targets: line, height: R.h, alpha: 0.7, duration: 200,
-          ease: 'Quad.in',
+        self.tweens.add({ targets: st, h: R.h, a: 0.75, duration: 220, ease: 'Quad.in',
+          onUpdate: draw,
           onComplete: function () {
-            self.tweens.add({ targets: line, alpha: 0, duration: 240,
-              onComplete: function () { line.destroy(); done(); } });
+            self.tweens.add({ targets: st, a: 0, duration: 260, onUpdate: draw,
+              onComplete: function () { pg.destroy(); done(); } });
           } });
       } });
     this._staticT = 0.7; this._staticAlpha = 0.5;
@@ -570,23 +688,41 @@ PC.CutsceneScene.prototype.runAction = function (beat, done) {
       .setDepth(12).setAlpha(0.8);
     this.tv.add(r2); this.bgImgs.push(r2);
     this.tweens.add({ targets: r2, alpha: 0, duration: 700 });
-    var stills = ['still_d1_fry', 'still_d1_hotdog', 'still_d1_popcorn', 'still_d1_toast'];
-    for (var i = 0; i < 20; i++) {
-      (function (i2) {
-        self.time.delayedCall(i2 * 45, function () {
-          var im = self.stamp(stills[i2 % stills.length], src.x, src.y - 12, 0.7);
-          im.setDepth(12);
-          self.tweens.add({ targets: im,
-            x: R.x + Math.random() * R.w,
-            y: R.y + 6 + Math.random() * 20, angle: Math.random() * 360,
-            duration: 450, ease: 'Quad.out',
+    // v0.73.0 (Mark: "the food flying out effect should NOT stop, it
+    // should keep going, keeps producing"): the Ray is a fountain now.
+    // A looping emitter keeps spitting snacks until the footage changes
+    // (clearFootage kills it); each snack arcs up, falls, and is freed.
+    var stills = ['still_d1_fry', 'still_d1_hotdog', 'still_d1_popcorn', 'still_d1_toast',
+                  'still_d1_pretzel'];
+    var n = 0, live = 0;
+    var spit = function () {
+      if (live > 26) return;
+      var i2 = n++;
+      var im = self.stamp(stills[i2 % stills.length], src.x, src.y - 12,
+        0.55 + PC.hash01(i2, 3, 9) * 0.35);
+      im.setDepth(12); live++;
+      var side = (i2 % 2 === 0 ? -1 : 1) * (0.2 + Math.random() * 0.8);
+      self.tweens.add({ targets: im,
+        x: src.x + side * R.w * 0.5,
+        y: R.y + 4 + Math.random() * 24, angle: Math.random() * 360,
+        duration: 420 + Math.random() * 160, ease: 'Quad.out',
+        onComplete: function () {
+          self.tweens.add({ targets: im, y: R.y + R.h + 24, angle: im.angle + 120,
+            duration: 520 + Math.random() * 200, ease: 'Quad.in',
             onComplete: function () {
-              self.tweens.add({ targets: im, y: R.y + R.h + 20, duration: 550,
-                ease: 'Quad.in' });
+              live--;
+              var k = self.bgImgs.indexOf(im);
+              if (k >= 0) self.bgImgs.splice(k, 1);
+              im.destroy();
             } });
-        });
-      })(i);
-    }
+        } });
+    };
+    if (this._floodEv) this._floodEv.remove(false);
+    this._floodEv = this.time.addEvent({ delay: 55, loop: true, callback: spit });
+    // the glow on the emitter never dies down either
+    var pulse = this.add.graphics().setDepth(11);
+    this.tv.add(pulse); this.bgImgs.push(pulse);
+    this._floodPulse = pulse;
     this._staticT = 2.2; this._staticAlpha = 0.18;   // transmission wobble
     this.time.delayedCall(1700, done);
   } else if (a === 'portraits6') {
@@ -634,6 +770,14 @@ PC.CutsceneScene.prototype.update = function (t, dtMs) {
   if (this.tickerTxt.visible && this._tickerText) {
     this.tickerTxt.x -= dt * 34;
     if (this.tickerTxt.x < R.x - this.tickerTxt.width) this.tickerTxt.x = R.x + R.w;
+  }
+  // the erupting Ray's glow (floodburst) keeps throbbing with the fountain
+  if (this._floodPulse && this._rayAnchor) {
+    var fp = this._floodPulse, an = this._rayAnchor;
+    fp.clear();
+    var k = 0.5 + 0.5 * Math.sin(t / 90);
+    fp.fillStyle(0xf2c33c, 0.25 + 0.25 * k).fillCircle(an.x, an.y - 10, 10 + 8 * k);
+    fp.fillStyle(0xfff6e0, 0.5 + 0.4 * k).fillCircle(an.x, an.y - 10, 4 + 3 * k);
   }
   // CRT static (also the danny_room idle fuzz)
   if (this._staticT > 0) {
