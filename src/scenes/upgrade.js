@@ -28,6 +28,7 @@ PC.UpgradeScene.prototype.create = function () {
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this, K = PC.uiK;
   this.cameras.main.setBackgroundColor(0x161226);
   this._tabUi = [];
+  if (PC.audio) PC.audio.startMusic(this._fromMission ? 'results' : 'menu');   // v0.77.0
 
   // header + wallet
   var hdrG = this.add.graphics();

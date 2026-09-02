@@ -108,8 +108,23 @@ window.PC = window.PC || {};
 
   // Adventure City tracks via HTMLAudioElement (iOS-safe); synth loop is
   // the fallback. Per-district loops slot in here later (Suno exports).
-  var CITY_TRACKS = ['assets/music/city_a.mp3', 'assets/music/city_b.mp3', 'assets/music/city_c.mp3'];
-  var musicEl = null;
+  var M = 'assets/music/';
+  var TRACKS = {
+    city:     [M + 'city_a.mp3', M + 'city_b.mp3', M + 'city_c.mp3'],
+    park:     [M + 'park_a.mp3', M + 'park_b.mp3'],
+    suburb:   [M + 'suburb_a.mp3', M + 'suburb_b.mp3'],
+    labs:     [M + 'labs_a.mp3', M + 'labs_b.mp3'],
+    sewer:    [M + 'sewer_a.mp3', M + 'sewer_b.mp3'],
+    tower:    [M + 'tower_a.mp3', M + 'tower_b.mp3'],
+    boss:     [M + 'boss_a.mp3', M + 'boss_b.mp3'],
+    chomp:    [M + 'chomp_a.mp3', M + 'chomp_b.mp3'],
+    story:    [M + 'story.mp3'],
+    title:    [M + 'title.mp3'],
+    menu:     [M + 'menu.mp3'],
+    results:  [M + 'results.mp3'],
+    gameover: [M + 'gameover.mp3'],
+  };
+  var musicEl = null, curSet = null, wantSet = null;
 
   function startSynth() {
     if (!ensure() || musicTimer) return;
@@ -229,21 +244,44 @@ window.PC = window.PC || {};
       if (ctx.state === 'suspended') ctx.resume();
       this.startMusic();
     },
-    startMusic: function () {
-      if ((musicEl && !musicEl.paused) || musicTimer) return;
+    // v0.77.0 MUSIC SETS (Mark: "make different music for the whole
+    // game, add more music, the Big Frank fight needs different music").
+    // Mark's own platformer soundtrack, re-cut into sets: one per
+    // district, one for bosses, one for CHOMP, plus title / menu / story
+    // / results / gameover. startMusic(set) is idempotent per set - the
+    // same set keeps playing, a different set crossfades. Before the
+    // first gesture the play() is refused; unlock() replays the wanted
+    // set, so nothing falls back to the synth just for being early.
+    startMusic: function (set) {
+      set = set || wantSet || 'city';
+      wantSet = set;
+      if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      if (musicEl && !musicEl.paused && curSet === set) return;
+      var list = TRACKS[set] || TRACKS.city;
+      var src = list[(Math.random() * list.length) | 0];
+      var old = musicEl;
+      if (old && !old.paused) {
+        // fade the old one out over ~0.6s, then let it go
+        var fade = setInterval(function () {
+          old.volume = Math.max(0, old.volume - 0.08);
+          if (old.volume <= 0.01) { clearInterval(fade); try { old.pause(); } catch (e) {} }
+        }, 50);
+      }
       try {
-        var src = CITY_TRACKS[(Math.random() * CITY_TRACKS.length) | 0];
         musicEl = new Audio(src);
+        curSet = set;
         musicEl.loop = true; musicEl.volume = VOLS.music;
-        musicEl.addEventListener('error', function () { startSynth(); });
+        musicEl.addEventListener('error', function () { curSet = null; startSynth(); });
         var p = musicEl.play();
-        if (p && p.catch) p.catch(function () { startSynth(); });
-      } catch (e) { startSynth(); }
+        if (p && p.catch) p.catch(function () { curSet = null; });
+      } catch (e) { curSet = null; startSynth(); }
     },
     stopMusic: function () {
       if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
       if (musicEl) { try { musicEl.pause(); } catch (e) {} }
+      curSet = null; wantSet = null;
     },
+    currentSet: function () { return curSet; },
     setHidden: function (h) {
       if (musicEl) { try { h ? musicEl.pause() : musicEl.play(); } catch (e) {} }
       if (!ctx) return;
@@ -303,6 +341,12 @@ window.PC = window.PC || {};
     // tracks land; each is a soft two-note pad via the music bus
     musicCue: function (tag) {
       if (!ensure()) return;
+      // v0.77.0: cutscenes run Mark's story track; the synth pads below
+      // only play if the MP3 is missing. 'boss' keeps its own set.
+      if (TRACKS[tag === 'boss' ? 'boss' : 'story']) {
+        this.startMusic(tag === 'boss' ? 'boss' : 'story');
+        if (musicEl) return;
+      }
       this.stopMusic();
       var NOTES = { hopeful: [392, 494], tense: [196, 208],
                     lift: [330, 415], warm: [262, 330],

@@ -120,6 +120,7 @@ PC.ResultsScene.prototype.create = function () {
   this.tweens.add({ targets: again, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
 
   if (win && PC.audio) PC.audio.levelup();
+  if (PC.audio) PC.audio.startMusic(win ? 'results' : 'gameover');   // v0.77.0
 
   var go = function () {
     if (PC.audio) PC.audio.ui();

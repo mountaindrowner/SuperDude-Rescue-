@@ -215,6 +215,7 @@ PC.GameScene.prototype.create = function () {
       if (rtSelf.confront) { rtSelf.confront.state = 'over'; rtSelf.confront.done = true; }
       if (!rtSelf.boss && PC.Chomp) {
         rtSelf.boss = new PC.Chomp(rtSelf, rtL.chompMark.x, rtL.chompMark.y);
+        if (PC.audio) PC.audio.startMusic('chomp');
         rtSelf.bossSpawned = true;
         if (PC.AllySystem && !rtSelf.allies) rtSelf.allies = new PC.AllySystem(rtSelf);
         if (rtSelf.allies) rtSelf.allies.start();
@@ -273,6 +274,11 @@ PC.GameScene.prototype.create = function () {
   // story beats hand off through a fade (freeroam.launch fades out, the
   // restarted scene fades back in) - a cut, never a menu
   if (this.region) cam.fadeIn(280, 0, 0, 0);
+  // v0.77.0: each district has its own music set (audio.js TRACKS)
+  if (PC.audio) {
+    var fab = this.region ? this.region.def.fabric : null;
+    PC.audio.startMusic(({ park: 'park', suburb: 'suburb', labs: 'labs', sewer: 'sewer', tower: 'tower' })[fab] || 'city');
+  }
   this.ground.update(cam);
 
   // ---- HUD (screen-space) ----
@@ -1237,6 +1243,7 @@ PC.GameScene.prototype.die = function () {
 // ---- BOSS spawn: big cinematic entrance (dopamine) ----
 PC.GameScene.prototype.spawnBoss = function (id) {
   this.bossSpawned = true;
+  if (PC.audio) PC.audio.startMusic('boss');      // v0.77.0: the fight gets its own track
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   // spawn off the top edge, drifting toward the player
   this.boss = new PC.Boss(this, this.px, this.py - Math.max(W, H) * 0.55, id);
