@@ -22,7 +22,7 @@ PC.STORY.missions.stage1 = {
     { say: { speaker: 'vic', text: "Drag anywhere to walk. Your gear fires on its own, you just pick the fights." } },
     { say: { speaker: 'vic', text: "See those fries? Pop 'em. Everything you beat drops something worth having." } },
     { say: { speaker: 'vic', text: "That gold arrow is your objective. Follow it and you'll never be lost, that's the whole job." } },
-    { say: { speaker: 'vic', text: "Between jobs the city's yours. Poke around, grab what you find, spend it at Sal's or the Garage. Then back to the arrow." } },
+    { say: { speaker: 'vic', text: "Gems become TECH, coins are GOLD. After every mission you spend both at the Upgrade Station. Then the next job." } },
     { say: { speaker: 'vic', text: "Alright. Adventure City's waiting, boss. Go be Super Dude." } },
   ],
   objectives: [
@@ -78,7 +78,7 @@ PC.STORY.missions.stage1 = {
         { say: { speaker: 'vic', text: "Then it's a good thing you didn't come alone." } },
         { say: { speaker: 'vic', text: "There. Tech grid's live, that's how we get everyone else back. One down, four to go." } },
         { action: 'chant' },
-        { say: { speaker: 'vic', text: "Spend what you earned before we roll out. Upgrades keep us breathing." } },
+        { say: { speaker: 'vic', text: "Now get me to a link. I've got a lot to tell you, boss, and a shop to show you." } },
       ],
     },
   ],

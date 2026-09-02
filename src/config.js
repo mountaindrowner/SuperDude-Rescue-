@@ -118,7 +118,10 @@ PC.XP = {
   GEM_SMALL: 1, GEM_MED: 5, GEM_GOLD: 20,
   // Mark playtest 2026-07-27: "3 minutes and I'm level six barely...
   // ramp up a little faster" - curve softened 1.35/3 -> 1.30/2
-  FIRST: 5, CURVE_MULT: 1.30, CURVE_ADD: 2,
+  // v0.76.0 (Mark: "my player is getting abilities too fast"): eased
+  // back about a fifth - 5/1.30 -> 7/1.36. The first card still lands
+  // inside the first minute; the fifth takes noticeably longer.
+  FIRST: 7, CURVE_MULT: 1.36, CURVE_ADD: 2,
   WEAPON_SLOTS: 4, PASSIVE_SLOTS: 4,
   PER_TP: 10,        // story mode: banked XP -> TECH at the results desk
 };

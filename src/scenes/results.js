@@ -31,17 +31,30 @@ PC.ResultsScene.prototype.create = function () {
       c._vy = 40 + Math.random() * 80; c._vx = (Math.random() - 0.5) * 30;
       this._confetti.push(c);
     }
-    this.add.text(W / 2, H * 0.16, 'DISTRICT\nCLEARED!', {
+    // v0.76.0: the finale is not a district clear - it's the whole city
+    this.add.text(W / 2, H * 0.16, d.finale ? 'ADVENTURE CITY\nSAVED!' : 'DISTRICT\nCLEARED!', {
       fontFamily: 'monospace', fontSize: '26px', color: '#a8e04a', fontStyle: 'bold',
       align: 'center', stroke: '#0a1a0a', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(2);
-    // the rescued hero, framed
-    this.add.image(W / 2, H * 0.42, 'atlas', d.rescuedArt || PC.D1_RESCUE.art)
-      .setScale(1.2).setDepth(2);
-    this.add.text(W / 2, H * 0.56, (d.rescued || 'A TEAMMATE') + '\nJOINED THE TEAM!', {
-      fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
-      align: 'center',
-    }).setOrigin(0.5).setDepth(2);
+    if (d.finale) {
+      var ids = ['victoria', 'josh', 'kevin', 'carlos', 'nayah', 'danny'];
+      for (var fi = 0; fi < ids.length; fi++) {
+        this.add.image(W / 2 + (fi - 2.5) * 30, H * 0.42, 'atlas', 'portrait_' + ids[fi])
+          .setDisplaySize(28, 28).setDepth(2);
+      }
+      this.add.text(W / 2, H * 0.56, 'THE WHOLE TEAM IS HOME!\nCHOMP IS SWITCHED OFF.', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
+        align: 'center',
+      }).setOrigin(0.5).setDepth(2);
+    } else {
+      // the rescued hero, framed
+      this.add.image(W / 2, H * 0.42, 'atlas', d.rescuedArt || PC.D1_RESCUE.art)
+        .setScale(1.2).setDepth(2);
+      this.add.text(W / 2, H * 0.56, (d.rescued || 'A TEAMMATE') + '\nJOINED THE TEAM!', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
+        align: 'center',
+      }).setOrigin(0.5).setDepth(2);
+    }
   } else {
     this.add.text(W / 2, H * 0.2, 'OVERWHELMED!', {
       fontFamily: 'monospace', fontSize: '22px', color: '#ff6b6b', fontStyle: 'bold',

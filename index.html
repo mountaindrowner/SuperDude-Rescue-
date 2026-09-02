@@ -16,7 +16,7 @@
      PC.VERSION) and cache-busts every script + art URL, so a device can
      never mix files from two builds (the v0.11.3 "purple squares" bug
      was exactly that: new weapon code + a stale cached asset registry). -->
-<script>window.PC_BUILD = '0.75.0';</script>
+<script>window.PC_BUILD = '0.76.0';</script>
 <script>
 // SELF-HEALING CACHE (v0.30.2). The ?v= stamp busts every SCRIPT, but
 // index.html itself has no buster - so a CDN/browser can keep serving
@@ -97,6 +97,7 @@
     'src/data/story/mission6.js',
     'src/data/story/mission7.js',
     'src/data/story/mission8.js',
+    'src/data/story/debriefs.js',
     'src/story/state.js',
     'src/story/dialogue.js',
     'src/story/tutorial.js',
@@ -107,7 +108,6 @@
     'src/story/chomptest.js',
     'src/story/region.js',
     'src/story/quest.js',
-    'src/story/freeroam.js',
     'src/story/doors.js',
     'src/systems/boss_scripts.js',
     'src/systems/boss.js',
@@ -122,6 +122,7 @@
     'src/scenes/select.js',
     'src/scenes/shop.js',
     'src/scenes/garage.js',
+    'src/scenes/upgrade.js',
     'src/scenes/mapview.js',
     'src/scenes/missions.js',
     'src/scenes/game.js',

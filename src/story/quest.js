@@ -430,15 +430,28 @@ PC.Quest.prototype.complete = function () {
   var chainEntry = PC.STORY.chainById && PC.STORY.chainById(this.mission.id);
   scene.recordRunStats(true);
 
-  // v0.19: the city STAYS OPEN between beats (Mark: linear flow, no
-  // menu bounce). Hand off to free roam when the next beat is playable;
-  // the results screen is now only for death / campaign end / a next
-  // beat whose map isn't built yet.
+  // v0.76.0 THE LINEAR LOOP (Mark: "finish the mission, then a cinematic
+  // with portraits explaining what just happened and the next mission,
+  // then the shop, then the next mission. A, B, C, D."). The free-roam
+  // Mission Board seam is retired. Banked XP converts to TECH right
+  // here (the results desk used to do it) so the Upgrade Station shows
+  // the full payout.
+  var xpTp = scene.bankedTp ? scene.bankedTp() : 0;
+  if (xpTp > 0 && PC.meta) PC.meta.bump('tp', xpTp);
+  var earned = { tp: self.tpEarned + xpTp, gold: scene.pickups.gold, kills: scene.kills };
   var next = PC.STORY.nextInChain ? PC.STORY.nextInChain(this.mission.id) : null;
+  var debrief = PC.STORY.debriefs && PC.STORY.debriefs[this.mission.id];
   if (next && PC.STORY.beatBuilt(next)) {
-    scene.time.delayedCall(700, function () {
-      scene.enterFreeRoam(next, { tp: self.tpEarned, gold: scene.pickups.gold,
-        kills: scene.kills });
+    scene.won = true;
+    scene.time.delayedCall(900, function () {
+      if (PC.audio) PC.audio.stopMusic();
+      var upgradeData = { next: 'PC_Missions', nextData: { autoBrief: next.id }, earned: earned };
+      if (debrief) {
+        scene.scene.start('PC_Cutscene', { mode: 'comms', script: debrief,
+          next: 'PC_Upgrade', nextData: upgradeData });
+      } else {
+        scene.scene.start('PC_Upgrade', upgradeData);
+      }
     });
     return;
   }
@@ -447,8 +460,9 @@ PC.Quest.prototype.complete = function () {
     scene.scene.start('PC_Results', {
       time: scene.runT, kills: scene.kills, level: scene.level,
       gold: scene.pickups.gold, win: true, story: true,
-      tp: self.tpEarned, hero: scene.hero.id,
-      xp: scene.bankedXp || 0, xpTp: scene.bankedTp ? scene.bankedTp() : 0,
+      tp: self.tpEarned + xpTp, hero: scene.hero.id,
+      xp: scene.bankedXp || 0, xpTp: 0,
+      finale: !next,
       rescued: (chainEntry && chainEntry.rescued) || 'A TEAMMATE',
       rescuedArt: rescueHero ? 'char_' + rescueHero + '_idle' : null,
     });

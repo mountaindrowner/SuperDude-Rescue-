@@ -82,7 +82,7 @@ window.PC = window.PC || {};
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: [PC.BootScene, PC.TitleScene, PC.SelectScene, PC.ShopScene,
-            PC.GarageScene, PC.MapViewScene, PC.CutsceneScene, PC.MissionsScene,
+            PC.GarageScene, PC.UpgradeScene, PC.MapViewScene, PC.CutsceneScene, PC.MissionsScene,
             PC.GameScene, PC.ResultsScene, PC.GalleryScene],
   };
 

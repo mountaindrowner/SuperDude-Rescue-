@@ -24,9 +24,9 @@ PC.STORY.maps.central = {
     { id: 'demostage',  name: 'THE DEMO SITE',      c0: 7,  r0: 4,  c1: 7,  r1: 4,  color: '#241f3d', accent: '#b45ce8', open: true },
     { id: 'garage',     name: 'SUPER DUDE GARAGE',  c0: 1,  r0: 5,  c1: 1,  r1: 5,  color: '#5a5388', accent: '#35d0ff' },
     { id: 'store',      name: "SAL'S CORNER STORE", c0: 11, r0: 5,  c1: 11, r1: 5,  color: '#6e5866', accent: '#a8e04a' },
-    // v0.31.0: an OPEN kiosk now, not a mystery building - a signboard
-    // you walk up to between missions (Mark asked twice what it was)
-    { id: 'board',      name: 'MISSION BOARD',      c0: 7,  r0: 6,  c1: 7,  r1: 6,  color: '#2e2a45', accent: '#f2c33c', open: true },
+    // v0.76.0: the MISSION BOARD kiosk is retired (Mark: "probably not a
+    // good idea anymore"). Missions chain through the Upgrade Station
+    // and the mission map now; its parcel returns to ordinary fabric.
     { id: 'plaza',      name: 'CENTRAL PLAZA',      c0: 5,  r0: 8,  c1: 7,  r1: 9,  color: '#2e2a45', accent: '#35d0ff', open: true },
     // v0.75.0 (Mark: "should be a real substation area, a large fenced-in
     // area with pylons, wires, transformers in rows, the player weaving

@@ -158,8 +158,8 @@ PC.TitleScene.prototype.create = function () {
     if (PC.STORY) PC.STORY.pendingMission = null;
     self.scene.start('PC_Select');
   });
-  button(H * 0.565 + 76, 'POWER-UPS', '#f2c33c', 0xf2c33c, function () {
-    self.scene.start('PC_Shop');
+  button(H * 0.565 + 76, 'UPGRADES', '#f2c33c', 0xf2c33c, function () {
+    self.scene.start('PC_Upgrade', { next: 'PC_Title' });
   });
 
   if (PC.DEV_MODE) {

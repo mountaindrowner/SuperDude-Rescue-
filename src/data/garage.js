@@ -11,14 +11,18 @@
 // level-ups still have somewhere to climb.
 window.PC = window.PC || {};
 
+// v0.76.0 ECONOMY FLIP (Mark: "spend your tech points on passives and
+// your money on abilities and weapons"): signature ranks and gadgets
+// are bought with GOLD now; TECH went to the passives (powerups.js).
+// tp() is kept for callers that still print the wallet.
 PC.GARAGE = {
-  COSTS: [60, 120, 200],          // TP for rank 1, 2, 3
+  COSTS: [120, 240, 400],         // GOLD for rank 1, 2, 3
 
   // ---- GEAR: one-time TP gadgets that soft-gate story maps (spec
   // I.2 "you must engage the Garage to progress"). v0.34.0: the
   // Hydro-Drill opens the Sewers' sealed Main Grate. ----
   GEAR: [
-    { id: 'hydrodrill', name: 'HYDRO-DRILL', cost: 150, icon: 'icon_weapon_cutter',
+    { id: 'hydrodrill', name: 'HYDRO-DRILL', cost: 300, icon: 'icon_weapon_cutter',
       desc: "Vic's water-jet cutter. Opens the sealed Main Grate down to THE UNDERGROUND." },
   ],
   gearById: function (id) {
@@ -28,8 +32,8 @@ PC.GARAGE = {
   hasGear: function (id) { return PC.meta ? !!PC.meta.stat('gear_' + id) : false; },
   buyGear: function (id) {
     var g = this.gearById(id);
-    if (!g || this.hasGear(id) || this.tp() < g.cost) return false;
-    PC.meta.bump('tp', -g.cost);
+    if (!g || this.hasGear(id) || this.gold() < g.cost) return false;
+    PC.meta.spendGold(g.cost);
     PC.meta.setFlag('gear_' + id);
     return true;
   },
@@ -37,6 +41,7 @@ PC.GARAGE = {
   rank: function (heroId) { return PC.meta ? PC.meta.stat('garage_' + heroId) : 0; },
   maxRank: function () { return this.COSTS.length; },
   tp: function () { return PC.meta ? PC.meta.stat('tp') : 0; },
+  gold: function () { return PC.meta ? PC.meta.gold() : 0; },
 
   nextCost: function (heroId) {
     var r = this.rank(heroId);
@@ -45,13 +50,13 @@ PC.GARAGE = {
 
   canBuy: function (heroId) {
     var c = this.nextCost(heroId);
-    return c !== null && this.tp() >= c;
+    return c !== null && this.gold() >= c;
   },
 
   buy: function (heroId) {
     var c = this.nextCost(heroId);
-    if (c === null || this.tp() < c) return false;
-    PC.meta.bump('tp', -c);
+    if (c === null || this.gold() < c) return false;
+    PC.meta.spendGold(c);
     PC.meta.bump('garage_' + heroId, 1);
     return true;
   },
