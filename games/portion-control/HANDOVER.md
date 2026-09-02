@@ -12,6 +12,103 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-09-02 - v0.73.0 -> v0.78.0: MARK'S PLAYTHROUGH PATCH (the big
+  list, stopped at the park mission).** Six ships, one per workstream.
+  Every item on the list is in; the "apply to the rest of the game"
+  half is mostly already true (park/suburbs/labs/sewers/tower all had
+  layout-engine set pieces; Central was the odd one out).
+  * **v0.73.0 quick fixes.** All 53 em dashes purged from dialogue
+    (missions 1-7, scripts, quest chant lines). `PC.RENDER.BASE` 400 ->
+    440 (10% zoom out). Danny's Resizer cd 0.55 -> 0.69 (25% slower;
+    level-4 step 0.45 -> 0.56). Vic's Sentry Bot bursts 1.1 -> 1.5s
+    (L2 0.85 -> 1.15), deployed turret 0.25 -> 0.42s. DEPLOY button
+    sits a full MAP-button height above the MAP pad, radius 20 -> 25,
+    positioned from PC.SAFE/uiK. **Corner start root cause**: the camera
+    follow began while the player sprite was still at (0,0), so the
+    lerp opened on the map corner and panned to the spawn; the sprite is
+    now placed and the camera snapped BEFORE startFollow (game.js).
+    Coins redrawn as minted coins (rim, inset ring, pixel $, highlight)
+    and they spin while idle (pickups.js).
+  * **v0.74.0 newscast.** CRT power-on is a centred graphics redraw
+    (a tweened Rectangle grew from its corner - that was the "off
+    screen" bug). The story-graphic inset is a real PiP (`_paintPip`:
+    framed window + label strip; kinds 'ray' / 'anchor' / any
+    portrait). The Ray is a FOUNTAIN: `floodburst` runs a looping
+    emitter (capped at ~26 live stills, freed on landing) until the
+    footage changes; `clearFootage` kills it; the emitter glow throbs
+    in update(). **Day 2 returns to the desk** (`news_desk_danny`: Danny
+    in the PiP) and then flips to `danny_live` (Danny big in the garage,
+    anchor in the PiP) with a new line calling every teammate by name.
+    Scripts.js beats rewritten accordingly.
+  * **v0.75.0 Central District set pieces** (region.js id branches):
+    City Hall = capitol (limestone wings, pink-granite dome on a
+    columned drum, colonnade, grand stair with red carpet, flags);
+    Bloom Tower = stepped high-rise (4 setback tiers with deep shadow,
+    pink window bands, rooftop garden + helipad, spire beacon, B
+    mark); Garage (corrugated roof, skylight strip, dish, cyan antenna
+    masts, SD bolt, tyres/crates, wide roll-up door, oil stain); Sal's
+    (rooftop marquee billboard, giant cup mascot, string lights,
+    green scalloped awning, produce crates); Diner (chrome banded
+    roof, neon EAT sign box, hot-dog pole sign, checkerboard band,
+    booth windows, jukebox glow); Frostbite Bank (frost panels, huge
+    vault dial, giant $ and snowflake, HVAC, colonnade, icicles, lit
+    holding pad). **THE SUBSTATION is an OPEN fenced yard now**
+    (`_substationLayout/_substationSolids/_paintSubstation`): 3 rows
+    of transformer units with walking gaps and a clear centre aisle
+    (the defend pad), lattice pylons with sagging wires, bus bars,
+    control shed, chain-link fence with a south gate + DANGER sign.
+    Its furniture is COLLISION via `region.extras` (new hook in
+    chunkSolids). **Central Plaza has a RING ROAD** (kerbs, asphalt,
+    dashed centre line following the organic outline, crosswalk stubs
+    at the street mouths, inner sidewalk ring, raised terrace with a
+    shadowed riser, lamp posts). **Vic's cage stands at the bank door
+    from mission start** with her greyed inside (quest.js constructor);
+    `rescueSequence` cracks that same cage.
+  * **v0.76.0 THE LINEAR LOOP.** mission complete -> `PC_Cutscene`
+    mode 'comms' (TEAM LINK: big facing portraits, speaker lights up
+    and leans in, others dim; cast of 2-3, surprise speakers take the
+    centre slot) -> `PC_Upgrade` (UPGRADE STATION, new scene: PASSIVES
+    tab = PC.POWERUPS priced in TECH; GEAR tab = every hero's signature
+    rank + gadgets priced in GOLD; payout strip; NEXT MISSION) ->
+    `PC_Missions` with `autoBrief` opening the next brief. Debrief
+    scripts live in `src/data/story/debriefs.js` (stage1..7); stage1
+    carries Vic's worked TECH/GOLD example; stage6/7 plant WHY THE
+    TOWER (every district feeds power up one line to the roof; the
+    Ray is growing a body there; the only route past the flood is
+    Nayah's tunnels into the lobby). **ECONOMY FLIPPED per Mark**:
+    TECH -> passives (costs /5), GOLD -> gear (garage ranks 120/240/
+    400, Hydro-Drill $300). Mission Board landmark removed from map1;
+    freeroam.js dropped from the loader (file kept, unused). Old
+    PC_Shop / PC_Garage scenes still exist but nothing routes to them.
+    Tutorial pad page 5 + Vic's radio line teach the new split. Finale
+    results card reads ADVENTURE CITY SAVED with the six portraits. XP
+    curve eased (FIRST 5 -> 7, CURVE_MULT 1.30 -> 1.36) for "abilities
+    too fast". Chain finale blurb rewritten.
+  * **v0.77.0 MUSIC SETS.** 19 of Mark's platformer tracks copied into
+    assets/music as sets: city(3) park suburb labs sewer tower boss
+    chomp story title menu results gameover. `PC.audio.startMusic(set)`
+    is idempotent per set and crossfades between sets; a refused
+    pre-gesture play() no longer triggers the synth (unlock replays the
+    wanted set). Hooks: game.js create picks the set from
+    `region.def.fabric`; spawnBoss -> 'boss'; CHOMP (confront.js +
+    retry) -> 'chomp'; title/missions/upgrade/results/gameover; cutscene
+    `music` beats play the story track (synth pads only if the MP3 is
+    missing). Verified: every set switches, every MP3 200s.
+  * **v0.78.0 MISSION AUDIT.** Stage 1 fuses, stage 4 crates and stage
+    5 kids are HOLD-to-take under guard swarms; stage 2 boosters became
+    an ORDERED relay sequence (garage -> city hall -> tower); stage 3
+    vents are an ordered sequence (greenhouse first, as Vic says).
+    Nayah's "suicidal" line sanitized.
+  * **Harness notes**: scratchpad probes (all fresh-page, WebGL denied,
+    402x874): probe-start, probe-cutscene, probe-landmarks (teleport +
+    zoom per lot), probe-flow (force `quest.complete()` -> debrief ->
+    upgrade buys -> auto brief), probe-music, probe-missions. Git MUST
+    run from the repo root (`games/portion-control` cwd breaks
+    pathspecs).
+  * **Open**: Mark to review all new copy (debriefs, relay/vent lines,
+    Danny's team call-out); the economy numbers are a first cut; the
+    old shop/garage scenes can be deleted once nothing else needs them.
+
 - **2026-08-08 - v0.72.0: VIBRANT FROSTING, BIGGER BOSSES, GLOOP'S BAD
   FRAMES CUT.** Mark: "make sure the cake's frosting attack is vibrant
   multicolor; the vending machine should be much bigger; goop's attack
