@@ -26,6 +26,7 @@ PC.MissionsScene.prototype.create = function () {
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
   this.cameras.main.setBackgroundColor(0x0d0a1c);
   this._briefUi = [];
+  if (PC.audio) PC.audio.startMusic('menu');       // v0.77.0
 
   // ---- backdrop: night-city map feel (stars + skyline + grid) ----
   var bg = this.add.graphics().setDepth(0);
@@ -319,7 +320,7 @@ PC.MissionsScene.prototype.openBossTest = function () {
           PC.ROOF_WARP = !L.test;                    // a fight warps; a look poses
           PC.STORY.pendingMission = PC.STORY.chainById('finale');
         }
-        if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
+        if (PC.audio) { PC.audio.ui(); }
         self.scene.start('PC_Game');
       });
       ui.push(bg, t, z);
@@ -502,7 +503,7 @@ PC.MissionsScene.prototype.openBrief = function (entry, status) {
       .setInteractive({ useHandCursor: true });
     gz.on('pointerdown', function () {
       PC.STORY.pendingMission = entry;
-      if (PC.audio) { PC.audio.ui(); PC.audio.startMusic(); }
+      if (PC.audio) { PC.audio.ui(); }
       self.scene.start('PC_Game');
     });
     ui.push(gg, goT, gz);

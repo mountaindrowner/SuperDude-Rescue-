@@ -142,6 +142,7 @@ PC.TitleScene.prototype.create = function () {
     self.menu.add(bg2); self.menu.add(t); self.menu.add(zone);
     return t;
   }
+  if (PC.audio) PC.audio.startMusic('title');   // v0.77.0 (plays once unlocked)
   // linear story (v0.18): intro cinematic once, then the MISSION MAP -
   // the story assigns hero + mission, so PC_Select never appears here
   var start = button(H * 0.565, '>> STORY <<', '#a8e04a', 0xa8e04a, function () {

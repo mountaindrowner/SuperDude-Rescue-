@@ -171,6 +171,7 @@ window.PC = window.PC || {};
     // BECOMES the boss - no swap, no cut, the same object on screen
     if (PC.Chomp && !s.boss) {
       s.boss = new PC.Chomp(s, this.chompAt.x, this.chompAt.y, this.chomp);
+      if (PC.audio) PC.audio.startMusic('chomp');     // v0.77.0: the final fight's own set
       s.bossSpawned = true;
       this.chomp = null;              // the fight owns the figure now
       if (PC.AllySystem && !s.allies) s.allies = new PC.AllySystem(s);
