@@ -25,16 +25,19 @@ PC.STORY.missions.stage3 = {
         { say: { speaker: 'josh', text: "Gates are clear? Good. Now mind the vines, somethin' in the Greenhouse is feedin' 'em." } },
       ],
     },
-    { // B2 - cap the three vine vents
-      type: 'fetch', banner: 'CAP THE VINE VENTS',
-      itemName: 'VINE CAP',
+    { // B2 - cap the three vine vents. v0.78.0: an ORDERED sequence -
+      // the Greenhouse vent feeds the other two, so it has to go first
+      // (Vic says so; a player who ignores her gets the buzz)
+      type: 'sequence', banner: 'CAP THE VENTS: GREENHOUSE FIRST',
+      icon: 'icon_weapon_seeds',
       items: [
         { at: 'green', line: { speaker: 'vic', text: "Greenhouse vent is the big one, boss. Cap it and the other two lose pressure." } },
-        { at: 'pond' },
-        { at: 'pens' },
+        { at: 'pond', line: { speaker: 'josh', text: "Pond vent's hissin' out. One more." } },
+        { at: 'pens', line: { speaker: 'josh', text: "That's the last vent. Listen... the vines are goin' quiet." } },
       ],
       intro: [
         { say: { speaker: 'danny', text: "Three vents pushing this stuff out. Greenhouse, the pond dock, and the old enclosures. On it." } },
+        { say: { speaker: 'vic', text: "Order matters, boss. Greenhouse first or the pressure just moves. Then the pond, then the pens." } },
       ],
       done: [
         { say: { speaker: 'josh', text: "That's the pressure off. Poor things'll settle some now, they were just scared." } },

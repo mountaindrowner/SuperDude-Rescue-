@@ -22,9 +22,11 @@ PC.STORY.missions.stage4 = {
         { say: { speaker: 'josh', text: "There now. See? They scatter soon as they got somewhere to go." } },
       ],
     },
-    { // B2 - round up the strays
-      type: 'fetch', banner: 'ROUND UP THE STRAYS',
-      itemName: 'CRITTER CRATE',
+    { // B2 - round up the strays. v0.78.0: each crate is a HOLD - Josh
+      // coaxes the critter in while its guard swarm closes; pick your
+      // moment, clear the ring, then commit
+      type: 'fetch', banner: 'COAX THE STRAYS INTO CRATES', hold: 2,
+      itemName: 'CRITTER CRATED',
       items: [
         { at: 'aviary', line: { speaker: 'josh', text: "Easy, little fella. Nobody's eatin' anybody today." } },
         { at: 'carousel' },

@@ -35,9 +35,12 @@ PC.STORY.missions.stage1 = {
         { say: { speaker: 'bloom', text: "Bless you! But the power's out, the doors are all locked tight!" } },
       ],
     },
-    { // B2 - fetch the 3 Power Fuses
-      type: 'fetch', banner: 'COLLECT THE POWER FUSES',
-      itemName: 'POWER FUSE',
+    { // B2 - pull the 3 Power Fuses. v0.78.0 (Mark: "missions should
+      // require thought, not just fetch"): each fuse is a HOLD - you
+      // stand and pull while its guard swarm closes in, so the choice of
+      // when to commit is the puzzle
+      type: 'fetch', banner: 'PULL THE POWER FUSES', hold: 2,
+      itemName: 'FUSE PULLED',
       items: [
         { at: 'diner', line: { speaker: 'sal', text: "Fuse? Sure, take it, say, you want a chili dog for the road? …No? Your loss!" } },
         { at: 'plaza' },

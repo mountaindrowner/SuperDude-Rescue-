@@ -63,7 +63,7 @@ PC.STORY.missions.stage7 = {
     { // B5 - rescue NAYAH
       type: 'rescue', at: 'sump', hero: 'nayah', banner: 'RESCUE NAYAH',
       script: [
-        { say: { speaker: 'nayah', text: "That climb up the Tower? Suicidal. Death-defying. Totally my thing. I'm in." } },
+        { say: { speaker: 'nayah', text: "That climb up the Tower? Seventeen floors of nope. Totally my thing. I'm in." } },
         { say: { speaker: 'danny', text: "That's everyone. Whole team, back together." } },
         { action: 'chant' },
         { say: { speaker: 'vic', text: "Five signals, five rescues, zero disasters left - except the big one. The Tower's waiting, boss." } },
