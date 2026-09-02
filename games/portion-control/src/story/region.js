@@ -46,6 +46,14 @@ PC.Region = function (def) {
   }
   this.spawnX = (def.spawn.c + 0.5) * PC.BLOCK + 96;
   this.spawnY = (def.spawn.r + 0.5) * PC.BLOCK + 96;
+  // v0.75.0: OPEN lots with their own furniture solids (the substation's
+  // transformer rows, fence and pylons) - world-space rects
+  this.extras = [];
+  for (var xi = 0; xi < this.marks.length; xi++) {
+    if (this.marks[xi].id === 'substation') {
+      this.extras = this.extras.concat(this._substationSolids(this.marks[xi]));
+    }
+  }
   // v0.26.0: park maps get the ORGANIC layout engine - their own paths,
   // trees, ponds and set pieces, with paint and collision from the same
   // functions. v0.27.0: suburbs get the crescent-street engine the same
@@ -125,6 +133,10 @@ PC.Region.prototype.chunkSolids = function (cx, cy) {
       out.push({ x: dx1, y: mk2.y, w: mk2.x + mk2.w - dx1, h: mk2.h });
       out.push({ x: dx0, y: mk2.y, w: doorW, h: mk2.h - 60 });   // door bay south
     }
+  }
+  for (var xe = 0; xe < this.extras.length; xe++) {
+    var ex = this.extras[xe];
+    if (ex.x < x0 + C && ex.x + ex.w > x0 && ex.y < y0 + C && ex.y + ex.h > y0) out.push(ex);
   }
   return out;
 };
@@ -372,12 +384,69 @@ PC.Region.prototype._paintDemoSite = function (g, mk, lx, ly) {
 PC.Region.prototype._paintPlaza = function (g, mk, lx, ly) {
   var w = mk.w, h = mk.h, i;
   var cx = lx + w / 2, cy = ly + h / 2;
+  // v0.75.0 (Mark: "Central Plaza is a giant circle slapped on, needs
+  // dimensionality, roads flowing around it organically"): a RING ROAD
+  // follows the lot's organic outline - kerbs, asphalt, dashed centre
+  // line - so the grid streets that run into the lot pour into a
+  // roundabout instead of dying at a painted edge. Inside the ring, a
+  // sidewalk band, then the plaza proper sits a step up with a shadowed
+  // riser and terraced paving.
+  g.lineJoin = 'round';
+  g.strokeStyle = '#5a5678'; g.lineWidth = 66;                 // kerbs
+  this._organicPath(g, mk, lx, ly, 40, 0.07); g.stroke();
+  g.strokeStyle = '#232031'; g.lineWidth = 58;                 // asphalt
+  this._organicPath(g, mk, lx, ly, 40, 0.07); g.stroke();
+  g.strokeStyle = 'rgba(20,17,30,0.35)'; g.lineWidth = 14;     // tyre wear
+  this._organicPath(g, mk, lx, ly, 30, 0.07); g.stroke();
+  this._organicPath(g, mk, lx, ly, 50, 0.07); g.stroke();
+  g.strokeStyle = '#c9a032'; g.lineWidth = 3;                  // dashed centre line
+  g.setLineDash ? g.setLineDash([16, 14]) : 0;
+  this._organicPath(g, mk, lx, ly, 40, 0.07); g.stroke();
+  g.setLineDash ? g.setLineDash([]) : 0;
+  g.fillStyle = '#413d5c';                                     // inner sidewalk ring
+  this._organicPath(g, mk, lx, ly, 69, 0.07); g.fill();
+  g.strokeStyle = '#363152'; g.lineWidth = 1;
+  for (i = 0; i < 40; i++) {                                   // slab seams, radial
+    var sa2 = (i / 40) * Math.PI * 2;
+    g.beginPath();
+    g.moveTo(cx + Math.cos(sa2) * (w / 2 - 69), cy + Math.sin(sa2) * (h / 2 - 69));
+    g.lineTo(cx + Math.cos(sa2) * (w / 2 - 92), cy + Math.sin(sa2) * (h / 2 - 92)); g.stroke();
+  }
+  // the raised plaza: shadowed riser, then the terrace
+  g.fillStyle = 'rgba(8,6,14,0.45)';
+  this._organicPath(g, mk, lx + 5, ly + 7, 92, 0.06); g.fill();
+  g.fillStyle = '#4a4566';
+  this._organicPath(g, mk, lx, ly, 92, 0.06); g.fill();
+  g.fillStyle = 'rgba(255,246,224,0.10)';
+  this._organicPath(g, mk, lx - 2, ly - 3, 94, 0.06); g.fill();
+  g.fillStyle = mk.color;
+  this._organicPath(g, mk, lx, ly, 98, 0.06); g.fill();
   // two-tone ring paving
   for (i = 6; i >= 1; i--) {
     g.fillStyle = i % 2 ? '#3a3550' : '#332e48';
     g.beginPath();
-    g.ellipse(cx, cy, w * 0.08 * i, h * 0.09 * i, 0, 0, Math.PI * 2); g.fill();
+    g.ellipse(cx, cy, w * 0.07 * i, h * 0.075 * i, 0, 0, Math.PI * 2); g.fill();
   }
+  // lamp posts around the sidewalk ring, crosswalk stubs at the four
+  // street mouths (the fabric streets meet the lot at 1/3 and 2/3 across
+  // and at half height)
+  for (i = 0; i < 12; i++) {
+    var la = (i / 12) * Math.PI * 2 + 0.26;
+    var lxp = cx + Math.cos(la) * (w / 2 - 80), lyp = cy + Math.sin(la) * (h / 2 - 80);
+    g.fillStyle = 'rgba(8,6,14,0.4)'; g.fillRect(lxp + 2, lyp + 2, 4, 12);
+    g.fillStyle = '#3a3f4a'; g.fillRect(lxp, lyp, 4, 12);
+    g.fillStyle = '#f2c33c'; g.fillRect(lxp - 2, lyp - 4, 8, 5);
+    g.fillStyle = 'rgba(242,195,60,0.10)';
+    g.beginPath(); g.arc(lxp + 2, lyp + 6, 22, 0, Math.PI * 2); g.fill();
+  }
+  g.fillStyle = 'rgba(247,244,239,0.75)';
+  [[cx - w / 6, ly + 20, 0], [cx + w / 6, ly + 20, 0], [cx - w / 6, ly + h - 60, 0], [cx + w / 6, ly + h - 60, 0],
+   [lx + 20, cy, 1], [lx + w - 60, cy, 1]].forEach(function (cw) {
+    for (var k = 0; k < 5; k++) {
+      if (cw[2]) g.fillRect(cw[0], cw[1] - 30 + k * 13, 40, 7);
+      else g.fillRect(cw[0] - 30 + k * 13, cw[1], 7, 40);
+    }
+  });
   g.strokeStyle = 'rgba(255,246,224,0.06)'; g.lineWidth = 2;
   for (i = 0; i < 8; i++) {
     var ra3 = (i / 8) * Math.PI * 2;
@@ -521,6 +590,172 @@ PC.Region.prototype._paintBallfield = function (g, mk, lx, ly) {
   for (i = 0; i < 3; i++) {
     g.fillRect(lx + w * 0.8 + i * 8, ly + h * 0.36 - i * 4, 6, h * 0.3);
   }
+};
+
+// THE SUBSTATION (v0.75.0): the yard's furniture, shared by the painter
+// and the collision pass. Three rows of transformer units with walking
+// gaps between them and a clear centre aisle (the defend spot), a lattice
+// pylon in each north corner, a control shed SE, and the perimeter fence
+// with the gate on the south side.
+PC.Region.prototype._substationLayout = function (mk) {
+  var w = mk.w, h = mk.h, units = [], rows = [0.26, 0.50, 0.74];
+  for (var r = 0; r < rows.length; r++) {
+    var yy = mk.y + h * rows[r] - 15;
+    for (var xx = mk.x + 84 + (r % 2) * 46; xx < mk.x + w - 110; xx += 92) {
+      if (Math.abs(xx + 26 - mk.cx) < 64) continue;              // centre aisle
+      units.push({ x: xx, y: yy, w: 52, h: 30, row: r });
+    }
+  }
+  return {
+    units: units,
+    pylons: [{ x: mk.x + 26, y: mk.y + 22, w: 56, h: 56 }, { x: mk.x + w - 82, y: mk.y + 22, w: 56, h: 56 }],
+    shed: { x: mk.x + w - 104, y: mk.y + h - 78, w: 72, h: 46 },
+    gateW: 84,
+  };
+};
+PC.Region.prototype._substationSolids = function (mk) {
+  var L = this._substationLayout(mk), out = [], i;
+  for (i = 0; i < L.units.length; i++) out.push({ x: L.units[i].x, y: L.units[i].y, w: L.units[i].w, h: L.units[i].h });
+  for (i = 0; i < L.pylons.length; i++) out.push(L.pylons[i]);
+  out.push(L.shed);
+  var F = 8;
+  out.push({ x: mk.x, y: mk.y, w: mk.w, h: F });                               // north
+  out.push({ x: mk.x, y: mk.y, w: F, h: mk.h });                               // west
+  out.push({ x: mk.x + mk.w - F, y: mk.y, w: F, h: mk.h });                    // east
+  out.push({ x: mk.x, y: mk.y + mk.h - F, w: mk.cx - L.gateW / 2 - mk.x, h: F });   // south, left of gate
+  out.push({ x: mk.cx + L.gateW / 2, y: mk.y + mk.h - F, w: mk.x + mk.w - mk.cx - L.gateW / 2, h: F });
+  return out;
+};
+PC.Region.prototype._paintSubstation = function (g, mk, lx, ly) {
+  var w = mk.w, h = mk.h, i, j;
+  var ox = lx - mk.x, oy = ly - mk.y;                    // world -> chunk-local
+  var L = this._substationLayout(mk);
+  // gravel yard with tyre ruts and oil stains
+  g.fillStyle = '#3a3540'; g.fillRect(lx, ly, w, h);
+  for (i = 0; i < 260; i++) {
+    g.fillStyle = i % 3 ? 'rgba(255,246,224,0.05)' : 'rgba(0,0,0,0.18)';
+    g.fillRect(lx + PC.hash01(i, 131, 3) * w, ly + PC.hash01(i, 132, 4) * h, 2 + (i % 3), 2);
+  }
+  g.fillStyle = 'rgba(0,0,0,0.14)';
+  g.fillRect(lx + w * 0.18, ly + h * 0.15, w * 0.07, h * 0.06); g.fillRect(lx + w * 0.62, ly + h * 0.6, w * 0.05, h * 0.05);
+  // concrete pads under each row + cable trench between rows
+  for (i = 0; i < 3; i++) {
+    var py = ly + h * [0.26, 0.50, 0.74][i];
+    g.fillStyle = '#4a4552'; g.fillRect(lx + 60, py - 24, w - 120, 48);
+    g.fillStyle = 'rgba(255,246,224,0.06)'; g.fillRect(lx + 60, py - 24, w - 120, 3);
+  }
+  g.fillStyle = '#2b2733';
+  g.fillRect(lx + 40, ly + h * 0.38 - 3, w - 80, 6); g.fillRect(lx + 40, ly + h * 0.62 - 3, w - 80, 6);
+  g.fillStyle = 'rgba(242,195,60,0.45)';
+  for (i = 0; i < (w - 80) / 24; i++) { g.fillRect(lx + 40 + i * 24, ly + h * 0.38 - 1, 12, 2); g.fillRect(lx + 40 + i * 24, ly + h * 0.62 - 1, 12, 2); }
+  // bus bars: three steel rails per row, carried on insulator posts
+  for (i = 0; i < 3; i++) {
+    var by = ly + h * [0.26, 0.50, 0.74][i] - 34;
+    for (j = 0; j < 3; j++) {
+      g.fillStyle = '#8f97a6'; g.fillRect(lx + 70, by + j * 5, w - 140, 2);
+      g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(lx + 70, by + j * 5, w - 140, 1);
+    }
+  }
+  // the transformer units
+  for (i = 0; i < L.units.length; i++) {
+    var u = L.units[i], ux = u.x + ox, uy = u.y + oy;
+    g.fillStyle = 'rgba(8,6,14,0.45)'; g.fillRect(ux + 5, uy + 6, u.w, u.h);
+    g.fillStyle = '#5d6673'; g.fillRect(ux, uy, u.w, u.h);                     // tank
+    g.fillStyle = '#7a8290'; g.fillRect(ux, uy, u.w, 5);                       // lit top edge
+    g.fillStyle = '#434a55';                                                   // cooling fins
+    for (j = 0; j < 6; j++) g.fillRect(ux + 4 + j * 8, uy + 8, 3, u.h - 12);
+    g.fillStyle = '#2b2f38'; g.fillRect(ux + u.w - 10, uy + 8, 7, u.h - 12);   // radiator
+    for (j = 0; j < 3; j++) {                                                  // bushings
+      g.fillStyle = '#c9cfd8'; g.fillRect(ux + 8 + j * 16, uy - 8, 6, 10);
+      g.fillStyle = '#8f97a6'; g.fillRect(ux + 8 + j * 16, uy - 8, 6, 2); g.fillRect(ux + 8 + j * 16, uy - 3, 6, 2);
+      g.fillStyle = '#f2c33c'; g.fillRect(ux + 10 + j * 16, uy - 11, 2, 3);
+    }
+    g.fillStyle = '#f2c33c'; g.fillRect(ux + u.w - 16, uy + u.h - 9, 10, 6);   // warning plate
+    g.fillStyle = '#120e24'; g.fillRect(ux + u.w - 12, uy + u.h - 7, 2, 2);
+    g.fillStyle = (i % 4 === 0) ? '#ff6b6b' : '#a8e04a'; g.fillRect(ux + 3, uy + u.h - 6, 3, 3);   // status lamp
+  }
+  // lattice pylons in the north corners, with wires strung across
+  for (i = 0; i < L.pylons.length; i++) {
+    var p = L.pylons[i], px = p.x + ox, py2 = p.y + oy;
+    g.fillStyle = 'rgba(8,6,14,0.4)'; g.fillRect(px + 6, py2 + 8, p.w, p.h);
+    g.fillStyle = '#57544d'; g.fillRect(px, py2, p.w, p.h);
+    g.fillStyle = '#3a3540'; g.fillRect(px + 8, py2 + 8, p.w - 16, p.h - 16);
+    g.strokeStyle = '#8a877d'; g.lineWidth = 3;
+    g.strokeRect(px + 3, py2 + 3, p.w - 6, p.h - 6);
+    g.beginPath(); g.moveTo(px + 3, py2 + 3); g.lineTo(px + p.w - 3, py2 + p.h - 3); g.stroke();
+    g.beginPath(); g.moveTo(px + p.w - 3, py2 + 3); g.lineTo(px + 3, py2 + p.h - 3); g.stroke();
+    g.fillStyle = '#c9cfd8'; g.fillRect(px + p.w / 2 - 4, py2 + p.h / 2 - 4, 8, 8);
+    g.fillStyle = '#ff6b6b'; g.fillRect(px + p.w / 2 - 1, py2 + p.h / 2 - 1, 3, 3);
+  }
+  var pA = L.pylons[0], pB = L.pylons[1];
+  g.lineCap = 'round';
+  for (i = 0; i < 3; i++) {
+    var wy = pA.y + oy + 14 + i * 12, sag = 22 + i * 6;
+    g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(pA.x + ox + pA.w / 2, wy);
+    g.quadraticCurveTo(lx + w / 2, wy + sag, pB.x + ox + pB.w / 2, wy); g.stroke();
+    g.strokeStyle = '#a9b0bc'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(pA.x + ox + pA.w / 2, wy);
+    g.quadraticCurveTo(lx + w / 2, wy + sag, pB.x + ox + pB.w / 2, wy); g.stroke();
+  }
+  // drops from the wires down to the first bus bar
+  for (i = 0; i < 5; i++) {
+    var dxw = lx + w * (0.2 + i * 0.15);
+    g.strokeStyle = '#a9b0bc'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(dxw, pA.y + oy + 30); g.lineTo(dxw, ly + h * 0.26 - 34); g.stroke();
+  }
+  // control shed
+  var s = L.shed, sx = s.x + ox, sy = s.y + oy;
+  g.fillStyle = 'rgba(8,6,14,0.45)'; g.fillRect(sx + 5, sy + 6, s.w, s.h);
+  g.fillStyle = '#6e6a86'; g.fillRect(sx, sy, s.w, s.h);
+  g.fillStyle = '#8a86a2'; g.fillRect(sx, sy, s.w, 5);
+  g.fillStyle = '#35d0ff'; g.fillRect(sx + 8, sy + 12, 14, 9); g.fillRect(sx + 30, sy + 12, 14, 9);
+  g.fillStyle = '#f2c33c'; g.fillRect(sx + s.w - 20, sy + s.h - 14, 12, 10);
+  g.fillStyle = '#120e24'; g.fillRect(sx + s.w - 16, sy + s.h - 11, 4, 4);
+  // perimeter chain-link fence with posts, gate on the south side
+  g.strokeStyle = 'rgba(207,212,232,0.35)'; g.lineWidth = 1;
+  var fenceSeg = function (x0, y0, x1, y1) {
+    var len = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)), n = Math.floor(len / 6);
+    g.beginPath();
+    for (var k = 0; k <= n; k++) {
+      var t0 = k / n, x = x0 + (x1 - x0) * t0, y = y0 + (y1 - y0) * t0;
+      if (x1 !== x0) { g.moveTo(x, y0 - 3); g.lineTo(x + 4, y0 + 4); g.moveTo(x + 4, y0 - 3); g.lineTo(x, y0 + 4); }
+      else { g.moveTo(x0 - 3, y); g.lineTo(x0 + 4, y + 4); g.moveTo(x0 - 3, y + 4); g.lineTo(x0 + 4, y); }
+    }
+    g.stroke();
+  };
+  fenceSeg(lx + 4, ly + 4, lx + w - 4, ly + 4);
+  fenceSeg(lx + 4, ly + 4, lx + 4, ly + h - 4);
+  fenceSeg(lx + w - 4, ly + 4, lx + w - 4, ly + h - 4);
+  fenceSeg(lx + 4, ly + h - 4, lx + w / 2 - L.gateW / 2, ly + h - 4);
+  fenceSeg(lx + w / 2 + L.gateW / 2, ly + h - 4, lx + w - 4, ly + h - 4);
+  g.strokeStyle = '#8f97a6'; g.lineWidth = 2;
+  g.strokeRect(lx + 2, ly + 2, w - 4, h - 4);
+  g.fillStyle = '#3a3540'; g.fillRect(lx + w / 2 - L.gateW / 2, ly + h - 8, L.gateW, 10);   // gate gap
+  g.fillStyle = '#c9cfd8';                                                        // posts
+  for (i = 0; i <= w / 48; i++) { g.fillRect(lx + i * 48, ly, 4, 8); g.fillRect(lx + i * 48, ly + h - 8, 4, 8); }
+  for (i = 0; i <= h / 48; i++) { g.fillRect(lx, ly + i * 48, 8, 4); g.fillRect(lx + w - 8, ly + i * 48, 8, 4); }
+  // gate: swung-open leaves + hazard stripes on the apron + the sign
+  g.fillStyle = '#8f97a6';
+  g.fillRect(lx + w / 2 - L.gateW / 2 - 4, ly + h - 40, 4, 40); g.fillRect(lx + w / 2 + L.gateW / 2, ly + h - 40, 4, 40);
+  for (i = 0; i < L.gateW / 12; i++) {
+    g.fillStyle = i % 2 ? '#f2c33c' : '#2a2833';
+    g.fillRect(lx + w / 2 - L.gateW / 2 + i * 12, ly + h - 16, 12, 6);
+  }
+  g.fillStyle = '#f2c33c'; g.fillRect(lx + w / 2 + L.gateW / 2 + 12, ly + h - 44, 58, 22);
+  g.fillStyle = '#120e24';
+  g.font = 'bold 8px monospace'; g.textAlign = 'center';
+  g.fillText('DANGER', lx + w / 2 + L.gateW / 2 + 41, ly + h - 34);
+  g.fillText('HIGH VOLTAGE', lx + w / 2 + L.gateW / 2 + 41, ly + h - 25);
+  // the defend pad in the centre aisle
+  g.strokeStyle = 'rgba(242,195,60,0.7)'; g.lineWidth = 3;
+  g.setLineDash ? g.setLineDash([10, 8]) : 0;
+  g.beginPath(); g.arc(lx + w / 2, ly + h / 2, 40, 0, Math.PI * 2); g.stroke();
+  g.setLineDash ? g.setLineDash([]) : 0;
+  g.fillStyle = 'rgba(242,195,60,0.12)';
+  g.beginPath(); g.arc(lx + w / 2, ly + h / 2, 38, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#c9cfd8'; g.fillRect(lx + w / 2 - 8, ly + h / 2 - 8, 16, 16);   // the breaker pedestal
+  g.fillStyle = '#35d0ff'; g.fillRect(lx + w / 2 - 4, ly + h / 2 - 4, 8, 8);
 };
 
 PC.Region.prototype.paintLandmark = function (g, mk, lx, ly) {
@@ -724,6 +959,8 @@ PC.Region.prototype.paintLandmark = function (g, mk, lx, ly) {
       this._paintDemoSite(g, mk, lx, ly);
     } else if (mk.id === 'plaza') {
       this._paintPlaza(g, mk, lx, ly);
+    } else if (mk.id === 'substation') {
+      this._paintSubstation(g, mk, lx, ly);
     } else if (mk.id === 'board') {
       this._paintBoardKiosk(g, mk, lx, ly);
     } else {
@@ -779,6 +1016,386 @@ PC.Region.prototype.paintLandmark = function (g, mk, lx, ly) {
       g.fillStyle = 'rgba(255,255,255,0.25)';
       g.beginPath(); g.moveTo(lx + 10, ly + h * 0.5); g.lineTo(lx + w * 0.4, ly + 8);
       g.lineTo(lx + w * 0.5, ly + 8); g.lineTo(lx + 16, ly + h * 0.6); g.closePath(); g.fill();
+    } else if (mk.id === 'cityhall') {
+      // v0.75.0 (Mark: "City Hall should look like a capitol, Texas /
+      // Austin style"): limestone wings with pitched ridges and skylight
+      // rows, a taller central block, a great domed rotunda on a
+      // columned drum, a grand south stair between a colonnade, flags.
+      var rt = h - 30, ccx = lx + w / 2;
+      g.fillStyle = '#cbbc9c'; g.fillRect(lx + 4, ly + 4, w - 8, rt);
+      g.fillStyle = '#b8a888';                                       // E + W wings
+      g.fillRect(lx + 4, ly + 4, w * 0.30, rt); g.fillRect(lx + w - 4 - w * 0.30, ly + 4, w * 0.30, rt);
+      g.fillStyle = 'rgba(255,246,224,0.35)';                        // ridge lines
+      g.fillRect(lx + 4, ly + 4 + rt * 0.5 - 2, w * 0.30, 4); g.fillRect(lx + w - 4 - w * 0.30, ly + 4 + rt * 0.5 - 2, w * 0.30, 4);
+      g.fillStyle = 'rgba(0,0,0,0.12)';                              // south-slope shade
+      g.fillRect(lx + 4, ly + 4 + rt * 0.5 + 2, w * 0.30, rt * 0.5 - 2); g.fillRect(lx + w - 4 - w * 0.30, ly + 4 + rt * 0.5 + 2, w * 0.30, rt * 0.5 - 2);
+      for (i = 0; i < 6; i++) {                                      // wing skylights
+        g.fillStyle = '#9ecfde';
+        g.fillRect(lx + 30 + i * 38, ly + rt * 0.25, 22, 12); g.fillRect(lx + 30 + i * 38, ly + rt * 0.70, 22, 12);
+        g.fillRect(lx + w - 52 - i * 38, ly + rt * 0.25, 22, 12); g.fillRect(lx + w - 52 - i * 38, ly + rt * 0.70, 22, 12);
+        g.fillStyle = 'rgba(255,255,255,0.5)';
+        g.fillRect(lx + 30 + i * 38, ly + rt * 0.25, 22, 3); g.fillRect(lx + w - 52 - i * 38, ly + rt * 0.25, 22, 3);
+      }
+      g.fillStyle = '#d9cbab'; g.fillRect(ccx - w * 0.20, ly + 4, w * 0.40, rt);   // central block
+      g.fillStyle = 'rgba(0,0,0,0.14)'; g.fillRect(ccx - w * 0.20, ly + 4, 5, rt); g.fillRect(ccx + w * 0.20 - 5, ly + 4, 5, rt);
+      g.fillStyle = 'rgba(255,246,224,0.3)'; g.fillRect(ccx - w * 0.20, ly + 4, w * 0.40, 5);
+      g.fillStyle = 'rgba(0,0,0,0.10)';                              // cornice steps
+      g.fillRect(ccx - w * 0.17, ly + 16, w * 0.34, 3); g.fillRect(ccx - w * 0.17, ly + rt - 12, w * 0.34, 3);
+      var dcy = ly + 4 + rt * 0.44, dR = Math.min(w, h) * 0.17;
+      g.fillStyle = 'rgba(8,6,14,0.35)';
+      g.beginPath(); g.arc(ccx + 8, dcy + 10, dR + 20, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#b8a888';                                       // the drum
+      g.beginPath(); g.arc(ccx, dcy, dR + 20, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#f4efe2';                                       // drum columns
+      for (i = 0; i < 28; i++) {
+        var ca = (i / 28) * Math.PI * 2;
+        g.fillRect(ccx + Math.cos(ca) * (dR + 12) - 2, dcy + Math.sin(ca) * (dR + 12) - 2, 5, 5);
+      }
+      g.fillStyle = '#b8746a';                                       // the dome (pink granite)
+      g.beginPath(); g.arc(ccx, dcy, dR, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#d09184';
+      g.beginPath(); g.arc(ccx - dR * 0.22, dcy - dR * 0.22, dR * 0.62, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#e4aa9c';
+      g.beginPath(); g.arc(ccx - dR * 0.3, dcy - dR * 0.3, dR * 0.3, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(60,30,30,0.35)'; g.lineWidth = 2;        // ribs
+      for (i = 0; i < 16; i++) {
+        var ra4 = (i / 16) * Math.PI * 2;
+        g.beginPath(); g.moveTo(ccx, dcy); g.lineTo(ccx + Math.cos(ra4) * dR, dcy + Math.sin(ra4) * dR); g.stroke();
+      }
+      g.strokeStyle = 'rgba(255,246,224,0.4)'; g.lineWidth = 3;
+      g.beginPath(); g.arc(ccx, dcy, dR * 0.55, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#f4efe2';                                       // lantern + finial
+      g.beginPath(); g.arc(ccx, dcy, 14, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#f2c33c';
+      g.beginPath(); g.arc(ccx, dcy, 7, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff6e0'; g.fillRect(ccx - 2, dcy - 2, 3, 3);
+      [[ccx - w * 0.17, ly + 18, '#d93a3a'], [ccx + w * 0.17 - 4, ly + 18, '#35d0ff']].forEach(function (f) {
+        g.fillStyle = '#cfd4e8'; g.fillRect(f[0], f[1] - 26, 3, 30);
+        g.fillStyle = f[2]; g.fillRect(f[0] + 3, f[1] - 26, 16, 9);
+      });
+      // colonnade along the face + the grand stair spilling south
+      g.fillStyle = '#e8dfc8';
+      for (i = 0; i < 12; i++) {
+        var colx = ccx - w * 0.19 + i * (w * 0.38 / 11);
+        if (colx > dx - 10 && colx < dx + doorW + 4) continue;
+        g.fillRect(colx, ly + h - 26, 6, 22);
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(colx + 4, ly + h - 26, 2, 22); g.fillStyle = '#e8dfc8';
+      }
+      for (i = 0; i < 4; i++) {
+        var stw = w * (0.46 - i * 0.03);
+        g.fillStyle = i % 2 ? '#cbbc9c' : '#d9cbab';
+        g.fillRect(ccx - stw / 2, ly + h - 4 + i * 7, stw, 7);
+        g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(ccx - stw / 2, ly + h + 1 + i * 7, stw, 2);
+      }
+      g.fillStyle = '#d93a3a'; g.fillRect(dx + 6, ly + h - 4, doorW - 12, 28);   // red carpet down the stair
+    } else if (mk.id === 'bloomtower') {
+      // v0.75.0 (Mark: "Bloom Tower is a gray-purple square, make it
+      // look like a tower / high-rise"): a stepped high-rise from above -
+      // four setback tiers climbing to a rooftop garden and helipad, pink
+      // window bands tracing every tier edge, a spire with a beacon.
+      var rt2 = h - 30, tcx = lx + w / 2;
+      var tiers = [[0, '#4a3d66'], [70, '#5f5080'], [140, '#78689c'], [206, '#9a8bbd']];
+      for (i = 0; i < tiers.length; i++) {
+        var tin = tiers[i][0], tx0 = lx + 4 + tin, ty0 = ly + 4 + tin * 0.9;
+        var tw0 = w - 8 - tin * 2, th0 = rt2 - tin * 1.8;
+        g.fillStyle = 'rgba(8,6,14,0.55)'; g.fillRect(tx0 + 16, ty0 + 20, tw0, th0);   // deep setback shadow
+        g.fillStyle = tiers[i][1]; g.fillRect(tx0, ty0, tw0, th0);
+        g.fillStyle = 'rgba(255,246,224,0.28)'; g.fillRect(tx0, ty0, tw0, 7); g.fillRect(tx0, ty0, 7, th0);
+        g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(tx0 + tw0 - 8, ty0, 8, th0); g.fillRect(tx0, ty0 + th0 - 8, tw0, 8);
+        g.fillStyle = 'rgba(0,0,0,0.10)';                            // panel seams
+        for (var sm = tx0 + 40; sm < tx0 + tw0 - 20; sm += 40) g.fillRect(sm, ty0 + 8, 2, th0 - 16);
+        for (var wx4 = tx0 + 12; wx4 < tx0 + tw0 - 12; wx4 += 16) {   // window bands
+          g.fillStyle = PC.hash01(wx4, i, 5) > 0.3 ? '#ff9ecb' : '#4a3a60';
+          g.fillRect(wx4, ty0 + 8, 9, 6); g.fillRect(wx4, ty0 + th0 - 14, 9, 6);
+        }
+        for (var wy4 = ty0 + 22; wy4 < ty0 + th0 - 22; wy4 += 16) {
+          g.fillStyle = PC.hash01(wy4, i, 7) > 0.3 ? '#ff9ecb' : '#4a3a60';
+          g.fillRect(tx0 + 8, wy4, 6, 9); g.fillRect(tx0 + tw0 - 14, wy4, 6, 9);
+        }
+      }
+      var crx = tcx, cry = ly + 4 + rt2 * 0.5;
+      g.fillStyle = '#3d5a33';                                       // rooftop garden
+      g.beginPath(); g.arc(crx, cry, 78, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#4f7a3f';
+      for (i = 0; i < 9; i++) {
+        var ga = (i / 9) * Math.PI * 2;
+        g.beginPath(); g.arc(crx + Math.cos(ga) * 58, cry + Math.sin(ga) * 58, 12, 0, Math.PI * 2); g.fill();
+      }
+      g.fillStyle = '#ff9ecb';
+      for (i = 0; i < 9; i++) {
+        var fa = (i / 9) * Math.PI * 2 + 0.35;
+        g.fillRect(crx + Math.cos(fa) * 56 - 2, cry + Math.sin(fa) * 56 - 2, 4, 4);
+      }
+      g.fillStyle = '#57544d';                                       // helipad
+      g.beginPath(); g.arc(crx, cry, 40, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#f4efe2'; g.lineWidth = 4;
+      g.beginPath(); g.arc(crx, cry, 32, 0, Math.PI * 2); g.stroke();
+      g.font = 'bold 34px monospace'; g.textAlign = 'center';
+      g.fillStyle = '#f4efe2'; g.fillText('H', crx, cry + 12);
+      g.fillStyle = 'rgba(8,6,14,0.5)'; g.fillRect(crx + 60, cry - 60, 6, 70);   // spire shadow
+      g.fillStyle = '#cfd4e8'; g.fillRect(crx + 56, cry - 64, 5, 70);
+      g.fillStyle = '#d93a3a';
+      g.beginPath(); g.arc(crx + 58, cry - 66, 5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(217,58,58,0.25)';
+      g.beginPath(); g.arc(crx + 58, cry - 66, 14, 0, Math.PI * 2); g.fill();
+      g.font = 'bold 44px monospace';                                // the B mark
+      g.fillStyle = 'rgba(8,6,14,0.5)'; g.fillText('B', lx + 4 + 62 + 40 + 3, ly + 4 + 56 + 44 + 3);
+      g.fillStyle = '#ff9ecb'; g.fillText('B', lx + 4 + 62 + 40, ly + 4 + 56 + 44);
+      g.fillStyle = 'rgba(158,207,222,0.7)';                         // glass canopy at the door
+      g.fillRect(dx - 24, ly + h - 6, doorW + 48, 14);
+      g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(dx - 24, ly + h - 6, doorW + 48, 3);
+    } else if (mk.id === 'garage') {
+      // v0.75.0 (Mark: "Super Dude Garage needs character"): corrugated
+      // roof with a skylight strip, satellite dish, antenna masts glowing
+      // cyan, the SD bolt painted across the roof, tyres and crates, a
+      // wide roll-up door on the face and an oil stain on the apron.
+      var rt3 = h - 30, gcx = lx + w / 2;
+      g.fillStyle = '#5a5388'; g.fillRect(lx + 4, ly + 4, w - 8, rt3);
+      g.fillStyle = 'rgba(0,0,0,0.14)';
+      for (i = lx + 8; i < lx + w - 8; i += 10) g.fillRect(i, ly + 4, 3, rt3);
+      g.fillStyle = '#9ecfde'; g.fillRect(lx + 30, ly + rt3 * 0.5 - 7, w - 60, 14);
+      g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(lx + 30, ly + rt3 * 0.5 - 7, w - 60, 3);
+      g.font = 'bold 52px monospace'; g.textAlign = 'center';        // SD on the roof
+      g.fillStyle = 'rgba(8,6,14,0.5)'; g.fillText('SD', gcx + 3, ly + rt3 * 0.34 + 3);
+      g.fillStyle = '#35d0ff'; g.fillText('SD', gcx, ly + rt3 * 0.34);
+      g.fillStyle = '#f2c33c';                                       // the bolt
+      g.beginPath(); g.moveTo(gcx + 6, ly + rt3 * 0.56); g.lineTo(gcx - 10, ly + rt3 * 0.74);
+      g.lineTo(gcx, ly + rt3 * 0.74); g.lineTo(gcx - 8, ly + rt3 * 0.92);
+      g.lineTo(gcx + 12, ly + rt3 * 0.70); g.lineTo(gcx + 2, ly + rt3 * 0.70); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(8,6,14,0.4)';                               // dish NE
+      g.beginPath(); g.arc(lx + w - 62, ly + 66, 34, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#cfd4e8';
+      g.beginPath(); g.arc(lx + w - 66, ly + 62, 32, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#8b88a8';
+      g.beginPath(); g.arc(lx + w - 66, ly + 62, 22, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#f4efe2';
+      g.beginPath(); g.arc(lx + w - 66, ly + 62, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#3a3f4a'; g.fillRect(lx + w - 68, ly + 62, 4, 30);
+      for (i = 0; i < 3; i++) {                                      // antenna masts NW
+        var mx4 = lx + 30 + i * 22, my4 = ly + 30 + (i % 2) * 14;
+        g.fillStyle = '#3a3f4a'; g.fillRect(mx4, my4, 4, 40 - i * 8);
+        g.fillStyle = '#35d0ff'; g.fillRect(mx4 - 2, my4 - 4, 8, 5);
+        g.fillStyle = 'rgba(53,208,255,0.18)';
+        g.beginPath(); g.arc(mx4 + 2, my4 - 2, 12, 0, Math.PI * 2); g.fill();
+      }
+      for (i = 0; i < 3; i++) {                                      // tyre stack SE
+        g.fillStyle = '#232031';
+        g.beginPath(); g.arc(lx + w - 50 - i * 6, ly + rt3 - 40 - i * 5, 15, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#57544d';
+        g.beginPath(); g.arc(lx + w - 50 - i * 6, ly + rt3 - 40 - i * 5, 6, 0, Math.PI * 2); g.fill();
+      }
+      for (i = 0; i < 3; i++) {                                      // crates SW
+        g.fillStyle = '#6b5334'; g.fillRect(lx + 26 + i * 26, ly + rt3 - 44 + (i % 2) * 12, 22, 18);
+        g.fillStyle = '#8a6f4a'; g.fillRect(lx + 26 + i * 26, ly + rt3 - 44 + (i % 2) * 12, 22, 4);
+      }
+      g.fillStyle = '#3a3f4a'; g.fillRect(dx - 30, ly + h - 26, doorW + 60, 22);   // roll-up door
+      g.fillStyle = 'rgba(0,0,0,0.3)';
+      for (i = 0; i < 5; i++) g.fillRect(dx - 30, ly + h - 24 + i * 4, doorW + 60, 1);
+      g.fillStyle = '#35d0ff'; g.fillRect(dx - 30, ly + h - 12, doorW + 60, 3);
+      g.fillStyle = '#f2c33c'; g.fillRect(dx - 30, ly + h - 26, 8, 22); g.fillRect(dx + doorW + 22, ly + h - 26, 8, 22);
+      g.fillStyle = 'rgba(0,0,0,0.22)';                               // oil stain on the apron
+      g.beginPath(); g.ellipse(gcx + 30, ly + h + 22, 40, 12, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(53,208,255,0.12)';
+      g.beginPath(); g.ellipse(gcx + 22, ly + h + 20, 14, 5, 0, 0, Math.PI * 2); g.fill();
+    } else if (mk.id === 'store') {
+      // v0.75.0 (Mark: "Sal's needs way more detail, pizzazz, character,
+      // colour"): rooftop billboard with bulb lights, the big soda cup
+      // mascot, string lights, a green-and-white scalloped awning, and
+      // produce crates flanking the door.
+      var rt4 = h - 30, scx = lx + w / 2;
+      g.fillStyle = '#7a5f62'; g.fillRect(lx + 4, ly + 4, w - 8, rt4);
+      g.fillStyle = 'rgba(0,0,0,0.10)';
+      for (i = 1; i < 5; i++) g.fillRect(lx + 4, ly + 4 + i * rt4 / 5, w - 8, 2);
+      g.fillStyle = '#4a3a28'; g.fillRect(scx - 96, ly + 20, 8, 60); g.fillRect(scx + 88, ly + 20, 8, 60);   // billboard
+      g.fillStyle = 'rgba(8,6,14,0.45)'; g.fillRect(scx - 100, ly + 18, 208, 58);
+      g.fillStyle = '#120e24'; g.fillRect(scx - 104, ly + 14, 208, 58);
+      g.strokeStyle = '#f2c33c'; g.lineWidth = 3; g.strokeRect(scx - 104, ly + 14, 208, 58);
+      for (i = 0; i < 16; i++) {                                     // marquee bulbs
+        g.fillStyle = i % 2 ? '#fff6e0' : '#f2c33c';
+        g.fillRect(scx - 100 + i * 13, ly + 10, 4, 4); g.fillRect(scx - 100 + i * 13, ly + 70, 4, 4);
+      }
+      g.font = 'bold 30px monospace'; g.textAlign = 'center';
+      g.fillStyle = '#a8e04a'; g.fillText("SAL'S", scx - 20, ly + 52);
+      g.fillStyle = '#d93a3a'; g.fillRect(scx + 44, ly + 26, 22, 34);   // the cup on the sign
+      g.fillStyle = '#f7f4ef'; g.fillRect(scx + 42, ly + 22, 26, 6);
+      g.fillStyle = '#6d6a8e'; g.fillRect(scx + 58, ly + 10, 3, 16);
+      g.fillStyle = '#d93a3a';                                       // giant cup mascot
+      g.beginPath(); g.moveTo(lx + 30, ly + rt4 * 0.5); g.lineTo(lx + 76, ly + rt4 * 0.5);
+      g.lineTo(lx + 70, ly + rt4 * 0.5 + 70); g.lineTo(lx + 36, ly + rt4 * 0.5 + 70); g.closePath(); g.fill();
+      g.fillStyle = '#f7f4ef'; g.fillRect(lx + 28, ly + rt4 * 0.5 - 6, 50, 8);
+      g.fillStyle = '#fff6e0'; g.fillRect(lx + 40, ly + rt4 * 0.5 + 24, 26, 10);
+      g.fillStyle = '#6d6a8e'; g.fillRect(lx + 60, ly + rt4 * 0.5 - 30, 4, 26);
+      g.fillStyle = '#232833'; g.fillRect(lx + 44, ly + rt4 * 0.5 + 12, 4, 4); g.fillRect(lx + 58, ly + rt4 * 0.5 + 12, 4, 4);
+      g.strokeStyle = 'rgba(207,212,232,0.5)'; g.lineWidth = 1;     // string lights
+      g.beginPath(); g.moveTo(lx + 8, ly + rt4 * 0.72); g.quadraticCurveTo(scx, ly + rt4 * 0.84, lx + w - 8, ly + rt4 * 0.72); g.stroke();
+      for (i = 0; i < 14; i++) {
+        var tq = i / 13, bxq = lx + 8 + (w - 16) * tq;
+        var byq = (1 - tq) * (1 - tq) * (ly + rt4 * 0.72) + 2 * (1 - tq) * tq * (ly + rt4 * 0.84) + tq * tq * (ly + rt4 * 0.72);
+        g.fillStyle = ['#f2c33c', '#ff6b6b', '#a8e04a', '#35d0ff'][i % 4]; g.fillRect(bxq - 2, byq, 4, 5);
+      }
+      for (i = 0; i < Math.floor((w - 8) / 16); i++) {               // scalloped awning
+        g.fillStyle = i % 2 ? '#3f8f3f' : '#fff6f0';
+        g.fillRect(lx + 4 + i * 16, ly + h - 46, 16, 10);
+        g.beginPath(); g.arc(lx + 12 + i * 16, ly + h - 36, 8, 0, Math.PI); g.fill();
+      }
+      g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(lx + 4, ly + h - 46, w - 8, 2);
+      [[dx - 70, '#d93a3a'], [dx - 42, '#f2c33c'], [dx + doorW + 14, '#a8e04a'], [dx + doorW + 42, '#ff9d3b']].forEach(function (cr) {
+        g.fillStyle = '#6b5334'; g.fillRect(cr[0], ly + h - 2, 24, 16);
+        g.fillStyle = '#8a6f4a'; g.fillRect(cr[0], ly + h - 2, 24, 3);
+        g.fillStyle = cr[1];
+        for (var k = 0; k < 6; k++) g.fillRect(cr[0] + 3 + (k % 3) * 7, ly + h - 6 + Math.floor(k / 3) * 5, 5, 5);
+      });
+    } else if (mk.id === 'diner') {
+      // v0.75.0: a proper chrome diner - banded steel roof with a neon
+      // tube outline, the giant hot-dog sign on its pole, a checkerboard
+      // band and red booths glowing through big picture windows.
+      var rt5 = h - 30, dcx = lx + w / 2;
+      g.fillStyle = '#8f97a6'; g.fillRect(lx + 4, ly + 4, w - 8, rt5);
+      for (i = 0; i < rt5 / 22; i++) {
+        g.fillStyle = i % 2 ? '#c9cfd8' : '#7a8290'; g.fillRect(lx + 4, ly + 4 + i * 22, w - 8, 11);
+        g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(lx + 4, ly + 4 + i * 22, w - 8, 2);
+      }
+      g.strokeStyle = 'rgba(255,107,107,0.35)'; g.lineWidth = 9; g.strokeRect(lx + 14, ly + 14, w - 28, rt5 - 20);
+      g.strokeStyle = '#ff6b6b'; g.lineWidth = 3; g.strokeRect(lx + 14, ly + 14, w - 28, rt5 - 20);
+      g.strokeStyle = 'rgba(53,208,255,0.35)'; g.lineWidth = 7; g.strokeRect(lx + 26, ly + 26, w - 52, rt5 - 44);
+      g.strokeStyle = '#35d0ff'; g.lineWidth = 2; g.strokeRect(lx + 26, ly + 26, w - 52, rt5 - 44);
+      // rooftop neon sign box (dark so the tubes glow), EAT + OPEN 24 HRS
+      g.fillStyle = 'rgba(8,6,14,0.45)'; g.fillRect(dcx - 86, ly + rt5 * 0.5 - 40, 172, 82);
+      g.fillStyle = '#120e24'; g.fillRect(dcx - 90, ly + rt5 * 0.5 - 44, 172, 82);
+      g.strokeStyle = '#35d0ff'; g.lineWidth = 3; g.strokeRect(dcx - 90, ly + rt5 * 0.5 - 44, 172, 82);
+      g.font = 'bold 44px monospace'; g.textAlign = 'center';
+      g.fillStyle = 'rgba(255,107,107,0.35)'; g.fillText('EAT', dcx - 4, ly + rt5 * 0.5 + 8);
+      g.fillStyle = '#ff6b6b'; g.fillText('EAT', dcx - 4, ly + rt5 * 0.5 + 6);
+      g.font = 'bold 12px monospace'; g.fillStyle = '#f2c33c'; g.fillText('OPEN 24 HRS', dcx - 4, ly + rt5 * 0.5 + 28);
+      for (i = 0; i < 12; i++) {                                     // bulbs along the sign box
+        g.fillStyle = i % 2 ? '#fff6e0' : '#f2c33c';
+        g.fillRect(dcx - 84 + i * 15, ly + rt5 * 0.5 - 50, 4, 4); g.fillRect(dcx - 84 + i * 15, ly + rt5 * 0.5 + 40, 4, 4);
+      }
+      g.fillStyle = '#3a3f4a'; g.fillRect(lx + w - 60, ly + 40, 8, rt5 - 60);   // sign pole
+      g.fillStyle = 'rgba(8,6,14,0.4)';
+      g.beginPath(); g.ellipse(lx + w - 52, ly + 46, 46, 20, -0.3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#d9a066';                                       // the hot dog
+      g.beginPath(); g.ellipse(lx + w - 56, ly + 42, 44, 18, -0.3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#c95a3a';
+      g.beginPath(); g.ellipse(lx + w - 56, ly + 38, 40, 9, -0.3, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#f2c33c'; g.lineWidth = 3; g.beginPath();
+      for (i = 0; i < 8; i++) {
+        var zx = lx + w - 90 + i * 10, zy = ly + 36 + (i % 2) * 6 - i * 3;
+        if (i === 0) g.moveTo(zx, zy); else g.lineTo(zx, zy);
+      }
+      g.stroke();
+      for (i = 0; i < Math.floor((w - 8) / 8); i++) {                // checkerboard band
+        g.fillStyle = i % 2 ? '#f4efe2' : '#232031'; g.fillRect(lx + 4 + i * 8, ly + h - 30, 8, 8);
+      }
+      [[lx + 14, dx - 24], [dx + doorW + 10, lx + w - 14]].forEach(function (win) {
+        var ww = win[1] - win[0]; if (ww < 20) return;
+        g.fillStyle = '#2b2338'; g.fillRect(win[0], ly + h - 22, ww, 18);
+        g.fillStyle = '#fff2d9'; g.fillRect(win[0] + 2, ly + h - 20, ww - 4, 14);
+        for (var b3 = win[0] + 8; b3 < win[1] - 16; b3 += 22) {      // red booths
+          g.fillStyle = '#d93a3a'; g.fillRect(b3, ly + h - 12, 14, 6);
+          g.fillStyle = '#f2c33c'; g.fillRect(b3 + 4, ly + h - 16, 6, 3);
+        }
+      });
+      g.fillStyle = '#b45ce8'; g.fillRect(dx + doorW + 12, ly + h - 26, 8, 6);   // jukebox glow
+      g.fillStyle = 'rgba(180,92,232,0.3)'; g.fillRect(dx + doorW + 6, ly + h - 30, 20, 14);
+    } else if (mk.id === 'bank') {
+      // v0.75.0: FROSTBITE BANK reads as a frozen vault - icy plating with
+      // snow drifts and icicles, a rooftop vault dial, a colonnade and
+      // the lit holding spot in front of the door where the cage stands.
+      var rt6 = h - 30, bcx = lx + w / 2;
+      g.fillStyle = '#5a6f9c'; g.fillRect(lx + 4, ly + 4, w - 8, rt6);
+      g.fillStyle = 'rgba(255,255,255,0.08)';
+      for (i = 1; i < 6; i++) g.fillRect(lx + 4, ly + 4 + i * rt6 / 6, w - 8, 2);
+      for (i = 1; i < 6; i++) g.fillRect(lx + 4 + i * (w - 8) / 6, ly + 4, 2, rt6);
+      g.fillStyle = '#eef4ff';                                       // snow drifts on the rim
+      for (i = 0; i < 9; i++) {
+        var sdx = lx + 10 + PC.hash01(i, 141, 3) * (w - 40);
+        g.beginPath(); g.ellipse(sdx, ly + 8, 22 + PC.hash01(i, 142, 4) * 20, 9, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(i % 2 ? lx + 8 : lx + w - 8, ly + 20 + PC.hash01(i, 143, 5) * (rt6 - 40), 9, 20, 0, 0, Math.PI * 2); g.fill();
+      }
+      // frosted roof panels (the lot is 896 wide - furniture must be BIG)
+      var PW2 = (w - 8) / 4, PH2 = rt6 / 4;
+      for (i = 0; i < 4; i++) for (var pj = 0; pj < 4; pj++) {
+        if ((i + pj) % 2) continue;
+        g.fillStyle = 'rgba(238,244,255,0.10)'; g.fillRect(lx + 4 + i * PW2, ly + 4 + pj * PH2, PW2, PH2);
+      }
+      for (i = 0; i < 40; i++) {                                     // frost crystals
+        var fxq = lx + 20 + PC.hash01(i, 145, 7) * (w - 40), fyq = ly + 20 + PC.hash01(i, 146, 8) * (rt6 - 40);
+        g.fillStyle = 'rgba(255,255,255,' + (0.15 + PC.hash01(i, 147, 9) * 0.3) + ')';
+        g.fillRect(fxq, fyq - 4, 2, 9); g.fillRect(fxq - 3, fyq, 8, 2);
+      }
+      var vR = Math.min(w, rt6) * 0.19, vcy2 = ly + 4 + rt6 * 0.48;  // the vault dial, huge
+      g.fillStyle = 'rgba(8,6,14,0.35)';
+      g.beginPath(); g.arc(bcx + 8, vcy2 + 10, vR + 14, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#cfd4e8';
+      g.beginPath(); g.arc(bcx, vcy2, vR + 14, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#8b98b8';
+      g.beginPath(); g.arc(bcx, vcy2, vR, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#a9b6d2';
+      g.beginPath(); g.arc(bcx - vR * 0.25, vcy2 - vR * 0.25, vR * 0.5, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#eef4ff'; g.lineWidth = 8;
+      g.beginPath(); g.arc(bcx, vcy2, vR * 0.62, 0, Math.PI * 2); g.stroke();
+      for (i = 0; i < 4; i++) {
+        var va2 = (i / 4) * Math.PI;
+        g.beginPath(); g.moveTo(bcx - Math.cos(va2) * vR * 0.6, vcy2 - Math.sin(va2) * vR * 0.6);
+        g.lineTo(bcx + Math.cos(va2) * vR * 0.6, vcy2 + Math.sin(va2) * vR * 0.6); g.stroke();
+      }
+      for (i = 0; i < 12; i++) {                                     // rim bolts
+        var vba2 = (i / 12) * Math.PI * 2;
+        g.fillStyle = '#4a5a80';
+        g.fillRect(bcx + Math.cos(vba2) * (vR + 6) - 4, vcy2 + Math.sin(vba2) * (vR + 6) - 4, 8, 8);
+      }
+      g.fillStyle = '#f2c33c';
+      g.beginPath(); g.arc(bcx, vcy2, 18, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff6e0'; g.fillRect(bcx - 4, vcy2 - 4, 6, 6);
+      g.font = 'bold 120px monospace'; g.textAlign = 'center';       // giant $ marks
+      g.fillStyle = 'rgba(8,6,14,0.4)'; g.fillText('$', lx + w * 0.2 + 5, ly + rt6 * 0.5 + 45);
+      g.fillStyle = '#f2c33c'; g.fillText('$', lx + w * 0.2, ly + rt6 * 0.5 + 40);
+      g.strokeStyle = '#eef4ff'; g.lineWidth = 6;                    // big snowflake east
+      for (i = 0; i < 3; i++) {
+        var fa2 = (i / 3) * Math.PI, sfx = lx + w * 0.8, sfy = ly + rt6 * 0.5;
+        g.beginPath(); g.moveTo(sfx - Math.cos(fa2) * 70, sfy - Math.sin(fa2) * 70);
+        g.lineTo(sfx + Math.cos(fa2) * 70, sfy + Math.sin(fa2) * 70); g.stroke();
+        for (var sk = -1; sk <= 1; sk += 2) {
+          var tipx = sfx + Math.cos(fa2) * 45 * sk, tipy = sfy + Math.sin(fa2) * 45 * sk;
+          g.beginPath(); g.moveTo(tipx, tipy);
+          g.lineTo(tipx + Math.cos(fa2 + 0.6) * 18 * sk, tipy + Math.sin(fa2 + 0.6) * 18 * sk); g.stroke();
+          g.beginPath(); g.moveTo(tipx, tipy);
+          g.lineTo(tipx + Math.cos(fa2 - 0.6) * 18 * sk, tipy + Math.sin(fa2 - 0.6) * 18 * sk); g.stroke();
+        }
+      }
+      for (i = 0; i < 6; i++) {                                      // rooftop HVAC + vents
+        var hvx = lx + 60 + PC.hash01(i, 148, 3) * (w - 160), hvy = ly + 40 + PC.hash01(i, 149, 4) * (rt6 - 120);
+        if (Math.abs(hvx - bcx) < vR + 40 && Math.abs(hvy - vcy2) < vR + 40) continue;
+        g.fillStyle = 'rgba(8,6,14,0.4)'; g.fillRect(hvx + 4, hvy + 4, 34, 24);
+        g.fillStyle = '#8b98b8'; g.fillRect(hvx, hvy, 34, 24);
+        g.fillStyle = '#5a6f9c'; g.fillRect(hvx + 4, hvy + 4, 26, 16);
+        g.fillStyle = '#eef4ff'; g.fillRect(hvx - 2, hvy - 3, 38, 5);
+      }
+      g.fillStyle = '#dfe7f5';                                       // colonnade
+      for (i = 0; i < 10; i++) {
+        var bcol = lx + 30 + i * ((w - 60) / 9);
+        if (bcol > dx - 12 && bcol < dx + doorW + 4) continue;
+        g.fillRect(bcol, ly + h - 26, 7, 22);
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(bcol + 5, ly + h - 26, 2, 22); g.fillStyle = '#dfe7f5';
+      }
+      g.fillStyle = '#eef4ff';                                       // icicles under the eave
+      for (i = 0; i < (w - 8) / 14; i++) {
+        var icx = lx + 6 + i * 14, ich = 5 + PC.hash01(i, 144, 6) * 9;
+        g.beginPath(); g.moveTo(icx, ly + h - 26); g.lineTo(icx + 6, ly + h - 26); g.lineTo(icx + 3, ly + h - 26 + ich); g.closePath(); g.fill();
+      }
+      // the holding spot: floodlights + a lit pad where the cage stands
+      [-64, 58].forEach(function (fo2) {
+        g.fillStyle = '#514e6b'; g.fillRect(bcx + fo2, ly + h - 6, 5, 22);
+        g.fillStyle = '#6d6a8e'; g.fillRect(bcx + fo2 - 5, ly + h - 12, 15, 8);
+        g.fillStyle = '#fff6e0'; g.fillRect(bcx + fo2 - 3, ly + h - 10, 11, 4);
+      });
+      g.fillStyle = 'rgba(255,246,224,0.12)';
+      g.beginPath(); g.ellipse(bcx, ly + h - 34, 60, 22, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(207,212,232,0.6)'; g.lineWidth = 2;
+      g.setLineDash ? g.setLineDash([6, 6]) : 0;
+      g.beginPath(); g.ellipse(bcx, ly + h - 34, 44, 16, 0, 0, Math.PI * 2); g.stroke();
+      g.setLineDash ? g.setLineDash([]) : 0;
     } else if (mk.id === 'aviary') {
       g.strokeStyle = 'rgba(207,212,232,0.45)'; g.lineWidth = 2;
       var acx = lx + w / 2, acy = ly + (h - 22) / 2;
