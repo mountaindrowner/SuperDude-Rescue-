@@ -293,7 +293,9 @@ PC.aimAt = function (scene, range) {
 PC.ResizerWeapon = function () {
   this.key = 'resizer'; this.name = 'RESIZER BEAM';
   this.level = 1; this.max = 5;
-  this.cd = 0.55; this.dmg = 12; this.amount = 1; this.speed = 520; this.pierce = 0;
+  // v0.73.0 (Mark: "Danny's starting ability fires too fast... 25%
+  // slower"): 0.55 -> 0.69 base, the level-4 step scales the same way.
+  this.cd = 0.69; this.dmg = 12; this.amount = 1; this.speed = 520; this.pierce = 0;
   this.range = 420; this.cdT = 0;
 };
 PC.ResizerWeapon.prototype.desc = function () {
@@ -303,7 +305,7 @@ PC.ResizerWeapon.prototype.desc = function () {
 PC.ResizerWeapon.prototype.applyLevel = function () {
   if (this.level === 2) this.dmg = 18;
   else if (this.level === 3) this.amount = 2;
-  else if (this.level === 4) this.cd = 0.45;
+  else if (this.level === 4) this.cd = 0.56;
   else if (this.level === 5) { this.dmg = 24; this.pierce = 1; }
 };
 PC.ResizerWeapon.prototype.update = function (dt, scene) {

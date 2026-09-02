@@ -55,7 +55,8 @@ try { PC.UNLOCK_ALL = /[?&]unlock/.test(window.location.search); } catch (e) {}
 
 PC.RENDER = {
   W: 480, H: 270,              // set live by main.js from BASE + device aspect
-  BASE: 400,                   // portrait width / landscape height (the zoom)
+  BASE: 440,                   // portrait width / landscape height (the zoom)
+                               // v0.73.0: 400 -> 440 (Mark: "another 10% zoom out")
   // 270 -> 340 (round 10 "zoom out so I can see more of the map")
   // 340 -> 312 (v0.23.0, Mark: "I would still zoom up again just a
   // little bit") - ~8% closer, which also pulls the on-screen firing

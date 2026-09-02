@@ -19,11 +19,11 @@ PC.STORY.missions.stage5 = {
     { // B1 - clear the entry cul-de-sac
       type: 'clear', at: 'welcome', count: 22, banner: 'CLEAR THE CUL-DE-SAC',
       intro: [
-        { say: { speaker: 'kevin', text: "Danny, the whole neighborhood's snowed in — frosting to the rooftops. Folks are trapped. Let's get 'em out, together." } },
-        { say: { speaker: 'danny', text: "Frosting to the— Kevin, there is a HOUSE with a CHERRY on it. Okay. Digging in." } },
+        { say: { speaker: 'kevin', text: "Danny, the whole neighborhood's snowed in, frosting to the rooftops. Folks are trapped. Let's get 'em out, together." } },
+        { say: { speaker: 'danny', text: "Frosting to the... Kevin, there is a HOUSE with a CHERRY on it. Okay. Digging in." } },
       ],
       done: [
-        { say: { speaker: 'kevin', text: "Good start. The school's the worst of it — the kids got stuck inside when the frosting came down." } },
+        { say: { speaker: 'kevin', text: "Good start. The school's the worst of it, the kids got stuck inside when the frosting came down." } },
       ],
     },
     { // B2 - free the three kids trapped at the School
@@ -41,7 +41,7 @@ PC.STORY.missions.stage5 = {
         { say: { speaker: 'danny', text: "Three kids still inside. Doors are frosted shut. Not for long." } },
       ],
       done: [
-        { say: { speaker: 'kevin', text: "Folks are sheltering at the Rec Center — and the sugar horde is sniffing around the ballfield." } },
+        { say: { speaker: 'kevin', text: "Folks are sheltering at the Rec Center, and the sugar horde is sniffing around the ballfield." } },
       ],
     },
     { // B3 - defend the Rec Center shelter
@@ -60,7 +60,7 @@ PC.STORY.missions.stage5 = {
       boss: 'cakeColossus',
       intro: [
         { say: { speaker: 'danny', text: "That is the biggest birthday cake I have ever seen. And it is FURIOUS." } },
-        { say: { speaker: 'kevin', text: "Watch the frosting fists! I'm right behind you — GO!" } },
+        { say: { speaker: 'kevin', text: "Watch the frosting fists! I'm right behind you, GO!" } },
       ],
       done: [
         { say: { speaker: 'danny', text: "Aaand it's a sheet cake. Somebody bring forks. NOT for eating! Evidence forks!" } },
@@ -71,9 +71,9 @@ PC.STORY.missions.stage5 = {
       script: [
         { say: { speaker: 'kevin', text: "You called a crew instead of going it alone. That's the smartest thing you've done all week." } },
         { say: { speaker: 'danny', text: "Take point, Captain?" } },
-        { say: { speaker: 'kevin', text: "Team — on me." } },
+        { say: { speaker: 'kevin', text: "Team, on me." } },
         { action: 'chant' },
-        { say: { speaker: 'vic', text: "Three rescued, boss. The Labs went dark an hour ago — Carlos is next." } },
+        { say: { speaker: 'vic', text: "Three rescued, boss. The Labs went dark an hour ago, Carlos is next." } },
       ],
     },
   ],

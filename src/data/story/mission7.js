@@ -20,7 +20,7 @@ PC.STORY.missions.stage7 = {
         { say: { speaker: 'danny', text: "Nayah, everything down here IS a rotten egg." } },
       ],
       done: [
-        { say: { speaker: 'nayah', text: "Junction's clear! Told you this place was a blast. Now the pumps — they've been dead for days and it REEKS." } },
+        { say: { speaker: 'nayah', text: "Junction's clear! Told you this place was a blast. Now the pumps, they've been dead for days and it REEKS." } },
       ],
     },
     { // B2 - restore the Pump Works: crank three valves (hold-to-turn -
@@ -29,14 +29,14 @@ PC.STORY.missions.stage7 = {
       itemName: 'VALVE OPEN',
       items: [
         { at: 'pumps' },
-        { at: 'fungal', line: { speaker: 'nayah', text: "Careful in the mushroom room — they glow, they're gorgeous, do NOT lick one. Asking for a friend." } },
+        { at: 'fungal', line: { speaker: 'nayah', text: "Careful in the mushroom room, they glow, they're gorgeous, do NOT taste one. Asking for a friend." } },
         { at: 'reservoir' },
       ],
       intro: [
         { say: { speaker: 'vic', text: "Pump Works are offline, boss. Three valves across the tunnels - stand on each one and CRANK until the flow catches. The goo will not love the noise." } },
       ],
       done: [
-        { say: { speaker: 'nayah', text: "Pumps are singing! Whatever you hear next — that gurgling? That's not the pumps." } },
+        { say: { speaker: 'nayah', text: "Pumps are singing! Whatever you hear next, that gurgling? That's not the pumps." } },
       ],
     },
     { // B3 - SURVIVE THE SURGE: cross the Catwalk Maze while it rises

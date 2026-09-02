@@ -671,14 +671,27 @@ window.PC = window.PC || {};
       g.fillStyle = hex(P.WHITE);
       g.fillRect(10, 10, 2, 2); g.fillRect(w - 12, h - 16, 2, 2);
     },
+    // v0.73.0 (Mark: "money should look like coins, not gold ore"): a
+    // proper minted coin - dark rim, bright face, an inset ring, a pixel
+    // dollar sign and a highlight crescent. pickups.js spins it.
     coin: function (g, a) {
       var c = a.w / 2;
       g.fillStyle = hex(P.INK);
-      g.beginPath(); g.arc(c, c, c - 1, 0, Math.PI * 2); g.fill();
-      g.fillStyle = hex(a.c1);
-      g.beginPath(); g.arc(c, c, c - 2, 0, Math.PI * 2); g.fill();
-      g.fillStyle = hex(a.c2);
-      g.fillRect(c - 2, 3, 1, a.w - 6);
+      g.beginPath(); g.arc(c, c, c - 0.5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(P.CRUST);                       // dark gold edge
+      g.beginPath(); g.arc(c, c, c - 1.5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = hex(a.c1);                          // face
+      g.beginPath(); g.arc(c, c, c - 2.5, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = hex(P.CRUST); g.lineWidth = 1;    // inset ring
+      g.beginPath(); g.arc(c, c, c - 4, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = hex(P.CRUST);                       // pixel "$"
+      g.fillRect(c - 0.5, c - 3.5, 1, 7);
+      g.fillRect(c - 2, c - 3, 4, 1); g.fillRect(c - 2, c - 0.5, 4, 1); g.fillRect(c - 2, c + 2, 4, 1);
+      g.fillRect(c - 2, c - 2, 1, 1); g.fillRect(c + 1, c + 1, 1, 1);
+      g.fillStyle = hex(a.c2);                          // highlight crescent
+      g.fillRect(c - 3, 2.5, 3, 1); g.fillRect(c - 4, 3.5, 1, 2);
+      g.fillStyle = hex(P.WHITE);
+      g.fillRect(c - 3, 2.5, 1, 1);
     },
     heart: function (g, a) {
       blob(g, 1, 3, a.w - 2, a.h - 6, a.c1);

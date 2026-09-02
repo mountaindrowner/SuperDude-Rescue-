@@ -21,11 +21,11 @@ PC.STORY.missions.stage6 = {
     { // B1 - clear the front gate
       type: 'clear', at: 'gate', count: 24, banner: 'CLEAR THE FRONT GATE',
       intro: [
-        { say: { speaker: 'carlos', text: "I've been watching the pattern from the array… it's not random, Danny. The Ray wants something. Come find me — I'll show you the big picture." } },
+        { say: { speaker: 'carlos', text: "I've been watching the pattern from the array… it's not random, Danny. The Ray wants something. Come find me, I'll show you the big picture." } },
         { say: { speaker: 'danny', text: "My own labs. It mutated MY OWN LABS. Okay. Badge's still in my other coat, so we're doing this the loud way." } },
       ],
       done: [
-        { say: { speaker: 'carlos', text: "Gate's clear. The blueprints for the Ray are still in the Prototype Vault — you'll want those for what comes next." } },
+        { say: { speaker: 'carlos', text: "Gate's clear. The blueprints for the Ray are still in the Prototype Vault, you'll want those for what comes next." } },
       ],
     },
     { // B2 - REROUTE THE VAULT POWER (v0.37.0, Mark's pick): three
@@ -35,24 +35,24 @@ PC.STORY.missions.stage6 = {
       icon: 'icon_passive_battery',
       items: [
         { at: 'vault', dx: -190, dy: -20,
-          line: { speaker: 'carlos', text: "Breaker one — intake. See how big that power number is? Keep going." } },
+          line: { speaker: 'carlos', text: "Breaker one, intake. See how big that power number is? Keep going." } },
         { at: 'vault', dx: 180, dy: 40,
           line: { speaker: 'danny', text: "Two. I really thought 'unlimited portions' sounded friendlier on paper." } },
         { at: 'vault', dx: -20, dy: 150,
-          line: { speaker: 'carlos', text: "Three — the vault's open. Blueprints are ours. Now the reactor's cooking itself; buy the vent team some time." } },
+          line: { speaker: 'carlos', text: "Three, the vault's open. Blueprints are ours. Now the reactor's cooking itself; buy the vent team some time." } },
       ],
       intro: [
-        { say: { speaker: 'danny', text: "Vault's power-locked and frosted in junk. Three breakers, IN ORDER — one, two, three. My own security system, working against me. Classic." } },
+        { say: { speaker: 'danny', text: "Vault's power-locked and frosted in junk. Three breakers, IN ORDER, one, two, three. My own security system, working against me. Classic." } },
       ],
       done: [
-        { say: { speaker: 'vic', text: "Blueprints secured, boss. Reactor Yard's next — it went orange on my board two minutes ago." } },
+        { say: { speaker: 'vic', text: "Blueprints secured, boss. Reactor Yard's next, it went orange on my board two minutes ago." } },
       ],
     },
     { // B3 - hold the Reactor Yard while it vents
       type: 'defend', at: 'reactor', secs: 70, radius: 230,
       banner: 'STABILIZE THE REACTOR',
       intro: [
-        { say: { speaker: 'carlos', text: "The junk keeps feeding on the reactor's charge. Hold the containment ring while it vents — seventy seconds." } },
+        { say: { speaker: 'carlos', text: "The junk keeps feeding on the reactor's charge. Hold the containment ring while it vents, seventy seconds." } },
         { say: { speaker: 'danny', text: "Standing on the glowing circle. Every childhood dream, wrong reasons." } },
       ],
       done: [
@@ -79,7 +79,7 @@ PC.STORY.missions.stage6 = {
         { say: { speaker: 'danny', text: "It's alive. Like everything else I broke." } },
         { say: { speaker: 'carlos', text: "Then we don't break it. We reach it." } },
         { action: 'chant' },
-        { say: { speaker: 'vic', text: "Four rescued. One signal left on the board, boss — it's coming from UNDER the city." } },
+        { say: { speaker: 'vic', text: "Four rescued. One signal left on the board, boss, it's coming from UNDER the city." } },
       ],
     },
   ],

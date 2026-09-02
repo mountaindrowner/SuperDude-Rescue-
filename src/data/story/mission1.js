@@ -18,10 +18,10 @@ PC.STORY.missions.stage1 = {
   // NOTE: these six lines are NEW (not in the locked spec) - Mark to
   // review; they are also flagged DRAFT in docs/VOICE_SCRIPT.md.
   tutorial: [
-    { say: { speaker: 'vic', text: "Okay boss, wrist-pad's live. I can see everything you see — let's get you moving." } },
-    { say: { speaker: 'vic', text: "Drag anywhere to walk. Your gear fires on its own — you just pick the fights." } },
+    { say: { speaker: 'vic', text: "Okay boss, wrist-pad's live. I can see everything you see, let's get you moving." } },
+    { say: { speaker: 'vic', text: "Drag anywhere to walk. Your gear fires on its own, you just pick the fights." } },
     { say: { speaker: 'vic', text: "See those fries? Pop 'em. Everything you beat drops something worth having." } },
-    { say: { speaker: 'vic', text: "That gold arrow is your objective. Follow it and you'll never be lost — that's the whole job." } },
+    { say: { speaker: 'vic', text: "That gold arrow is your objective. Follow it and you'll never be lost, that's the whole job." } },
     { say: { speaker: 'vic', text: "Between jobs the city's yours. Poke around, grab what you find, spend it at Sal's or the Garage. Then back to the arrow." } },
     { say: { speaker: 'vic', text: "Alright. Adventure City's waiting, boss. Go be Super Dude." } },
   ],
@@ -29,25 +29,25 @@ PC.STORY.missions.stage1 = {
     { // B1 - clear the swarm at City Hall Plaza
       type: 'clear', at: 'cityhall', count: 22, banner: 'CLEAR CITY HALL PLAZA',
       intro: [
-        { say: { speaker: 'danny', text: "Okay — clear a path so folks can get out. Here goes nothing!" } },
+        { say: { speaker: 'danny', text: "Okay, clear a path so folks can get out. Here goes nothing!" } },
       ],
       done: [
-        { say: { speaker: 'bloom', text: "Bless you! But the power's out — the doors are all locked tight!" } },
+        { say: { speaker: 'bloom', text: "Bless you! But the power's out, the doors are all locked tight!" } },
       ],
     },
     { // B2 - fetch the 3 Power Fuses
       type: 'fetch', banner: 'COLLECT THE POWER FUSES',
       itemName: 'POWER FUSE',
       items: [
-        { at: 'diner', line: { speaker: 'sal', text: "Fuse? Sure, take it — say, you want a chili dog for the road? …No? Your loss!" } },
+        { at: 'diner', line: { speaker: 'sal', text: "Fuse? Sure, take it, say, you want a chili dog for the road? …No? Your loss!" } },
         { at: 'plaza' },
         { at: 'substation' },
       ],
       intro: [
-        { say: { speaker: 'danny', text: "No power, no rescue. Vic's signal is coming from Frostbite Bank — I need three fuses to reach her." } },
+        { say: { speaker: 'danny', text: "No power, no rescue. Vic's signal is coming from Frostbite Bank, I need three fuses to reach her." } },
       ],
       done: [
-        { say: { speaker: 'vic', text: "Whoever's out there — nice work. Now get the substation online, hero." } },
+        { say: { speaker: 'vic', text: "Whoever's out there, nice work. Now get the substation online, hero." } },
       ],
     },
     { // B3 - defend the Substation for 60s
@@ -55,7 +55,7 @@ PC.STORY.missions.stage1 = {
       type: 'defend', at: 'substation', secs: 40, radius: 200,
       banner: 'DEFEND THE SUBSTATION',
       intro: [
-        { say: { speaker: 'danny', text: "Vic? VIC! Hang on — I'm booting the grid. Just gotta hold this spot!" } },
+        { say: { speaker: 'danny', text: "Vic? VIC! Hang on, I'm booting the grid. Just gotta hold this spot!" } },
       ],
       done: [
         { say: { speaker: 'vic', text: "There's the boss I remember. Door's unlocked. But… you've got company." } },
@@ -64,7 +64,7 @@ PC.STORY.missions.stage1 = {
     { // B4 - Boss: BIG FRANK at Frostbite Bank
       type: 'boss', at: 'bank', banner: 'DEFEAT BIG FRANK',
       intro: [
-        { say: { speaker: 'danny', text: "…that is the biggest hot dog I have ever seen. SUPER DUDE — GO!" } },
+        { say: { speaker: 'danny', text: "…that is the biggest hot dog I have ever seen. SUPER DUDE, GO!" } },
       ],
       done: [
         { say: { speaker: 'danny', text: "Phew. Extra mustard, hold the apocalypse." } },
@@ -74,9 +74,9 @@ PC.STORY.missions.stage1 = {
       type: 'rescue', at: 'bank', hero: 'victoria', banner: 'RESCUE VIC',
       script: [
         { say: { speaker: 'vic', text: "Took you long enough, boss. Nice explosion, by the way." } },
-        { say: { speaker: 'danny', text: "Vic — I messed up huge. The Ray re-coded. I can't fix it alone." } },
+        { say: { speaker: 'danny', text: "Vic, I messed up huge. The Ray re-coded. I can't fix it alone." } },
         { say: { speaker: 'vic', text: "Then it's a good thing you didn't come alone." } },
-        { say: { speaker: 'vic', text: "There. Tech grid's live — that's how we get everyone else back. One down, four to go." } },
+        { say: { speaker: 'vic', text: "There. Tech grid's live, that's how we get everyone else back. One down, four to go." } },
         { action: 'chant' },
         { say: { speaker: 'vic', text: "Spend what you earned before we roll out. Upgrades keep us breathing." } },
       ],

@@ -16,7 +16,7 @@ PC.STORY.missions.stage4 = {
       type: 'clear', at: 'amphi', count: 18,
       banner: 'CLEAR THE AMPHITHEATER',
       intro: [
-        { say: { speaker: 'josh', text: "Old amphitheater's packed tight. Let's thin it out gentle-like — no need to be rude about it." } },
+        { say: { speaker: 'josh', text: "Old amphitheater's packed tight. Let's thin it out gentle-like, no need to be rude about it." } },
       ],
       done: [
         { say: { speaker: 'josh', text: "There now. See? They scatter soon as they got somewhere to go." } },
@@ -31,7 +31,7 @@ PC.STORY.missions.stage4 = {
         { at: 'pens' },
       ],
       intro: [
-        { say: { speaker: 'josh', text: "Three crates got loose in the scramble. Aviary, the carousel, and the old pens. Real animals in 'em — mind the corners." } },
+        { say: { speaker: 'josh', text: "Three crates got loose in the scramble. Aviary, the carousel, and the old pens. Real animals in 'em, mind the corners." } },
       ],
       done: [
         { say: { speaker: 'vic', text: "That's all three on my board. Josh, you've got a whole zoo in a wagon." } },
@@ -42,11 +42,11 @@ PC.STORY.missions.stage4 = {
       type: 'defend', at: 'ranger', secs: 45, radius: 200,
       banner: 'SETTLE THE PENS',
       intro: [
-        { say: { speaker: 'josh', text: "Last bit. Stand with me while they settle — critters spook if the fightin' gets close." } },
+        { say: { speaker: 'josh', text: "Last bit. Stand with me while they settle, critters spook if the fightin' gets close." } },
       ],
       done: [
         { say: { speaker: 'josh', text: "Sleepin' like lambs. Well. The lambs are. The ostrich has opinions." } },
-        { say: { speaker: 'danny', text: "Josh — Vic's got a signal from the suburbs. Kevin's out there under all that frosting." } },
+        { say: { speaker: 'danny', text: "Josh, Vic's got a signal from the suburbs. Kevin's out there under all that frosting." } },
         { say: { speaker: 'josh', text: "Then let's go get the Captain. I'll drive." } },
       ],
     },
