@@ -11,60 +11,60 @@ window.PC = window.PC || {};
 PC.POWERUPS = [
   { id: 'muscles', name: 'BIGGER MUSCLES', icon: 'icon_passive_battery',
     desc: 'ALL weapons hit 4% harder per rank',
-    costs: [150, 300, 550, 900, 1400],
+    costs: [30, 60, 110, 180, 280],
     apply: function (scene, r) { scene.stats.heroDmg *= 1 + 0.04 * r; } },
   { id: 'quickhands', name: 'QUICK HANDS', icon: 'icon_passive_fan',
     desc: 'ALL weapons fire sooner (3% per rank)',
-    costs: [150, 300, 550, 900, 1400],
+    costs: [30, 60, 110, 180, 280],
     apply: function (scene, r) { scene.stats.heroCd *= 1 - 0.03 * r; } },
   { id: 'runningstart', name: 'RUNNING START', icon: 'icon_passive_shoes',
     desc: 'You run 3% faster per rank',
-    costs: [150, 300, 550, 900, 1400],
+    costs: [30, 60, 110, 180, 280],
     apply: function (scene, r) { scene.stats.heroSpd *= 1 + 0.03 * r; } },
   { id: 'bigappetite', name: 'BIG APPETITE', icon: 'icon_passive_leftovers',
     desc: '+10 max health per rank',
-    costs: [150, 300, 550, 900, 1400],
+    costs: [30, 60, 110, 180, 280],
     apply: function (scene, r) { scene.stats.metaHp += 10 * r; } },
   { id: 'longarms', name: 'LONG ARMS', icon: 'icon_passive_servo',
     desc: 'Blasts, rings & swings reach 6% wider per rank',
-    costs: [200, 450, 800],
+    costs: [40, 90, 160],
     apply: function (scene, r) { scene.stats.metaArea *= 1 + 0.06 * r; } },
   { id: 'snackradar', name: 'SNACK RADAR', icon: 'icon_passive_magnet',
     desc: 'Gems & coins fly to you from farther away',
-    costs: [200, 450, 800],
+    costs: [40, 90, 160],
     apply: function (scene, r) { scene.stats.metaPickup *= 1 + 0.15 * r; } },
   { id: 'fastfood', name: 'FAST FOOD', icon: 'icon_passive_lens',
     desc: 'Anything you SHOOT flies 6% faster per rank',
-    costs: [200, 450, 800],
+    costs: [40, 90, 160],
     apply: function (scene, r) { scene.stats.metaProj *= 1 + 0.06 * r; } },
   { id: 'sharpeyes', name: 'SHARP EYES', icon: 'icon_weapon_beam',
     desc: 'Gems are worth 5% more per rank',
-    costs: [150, 300, 550, 900, 1400],
+    costs: [30, 60, 110, 180, 280],
     apply: function (scene, r) { scene.xpMult *= 1 + 0.05 * r; } },
   { id: 'luckyspoon', name: 'LUCKY SPOON', icon: 'pickup_coin',
     desc: 'Coins are worth 10% more per rank',
-    costs: [120, 250, 450, 700, 1000],
+    costs: [25, 50, 90, 140, 200],
     apply: function (scene, r) { scene.goldMult = (scene.goldMult || 1) * (1 + 0.10 * r); } },
   { id: 'secondhelping', name: 'SECOND HELPING', icon: 'icon_passive_duplicator',
     desc: 'Shooting weapons fire +1 extra shot, always',
-    costs: [4000],
+    costs: [800],
     apply: function (scene, r) { scene.stats.metaExtraProj += r; } },
   // ---- faith-themed (kid-friendly, encouraging - Mark reviews) ----
   { id: 'armorofgod', name: 'ARMOR OF GOD', icon: 'icon_passive_coat',
     desc: 'Every hit hurts you 1 less per rank',
-    costs: [400, 900, 1600],
+    costs: [80, 180, 320],
     apply: function (scene, r) { scene.stats.metaArmor += r; } },
   { id: 'dailybread', name: 'DAILY BREAD', icon: 'still_d1_toast',
     desc: 'Heal a little every second, forever',
-    costs: [300, 700, 1200],
+    costs: [60, 140, 240],
     apply: function (scene, r) { scene.stats.metaRegen += 0.4 * r; } },
   { id: 'mustardseed', name: 'MUSTARD SEED', icon: 'icon_weapon_seeds',
     desc: 'Head start: a free upgrade at every mission start',
-    costs: [1500],
+    costs: [300],
     apply: function (scene, r) { scene._mustardSeed = true; } },
   { id: 'amazinggrace', name: 'AMAZING GRACE', icon: 'pickup_medkit',
     desc: 'Get back up once per run at half health',
-    costs: [8000],
+    costs: [1600],
     apply: function (scene, r) { scene.reviveCharges = (scene.reviveCharges || 0) + 1; } },
 ];
 
@@ -113,10 +113,13 @@ PC.meta = (function () {
       var r = data.pu[id] || 0;
       return r >= p.costs.length ? null : p.costs[r];
     },
+    // v0.76.0 (Mark: "spend your tech points on passives, spend your
+    // money on abilities and weapons"): passives are bought with TECH
+    // now. Costs in PC.POWERUPS are TECH amounts.
     buy: function (id) {
       var cost = this.nextCost(id);
-      if (cost === null || this.gold() < cost) return false;
-      try { localStorage.setItem('portioncontrol.gold', String(this.gold() - cost)); } catch (e) {}
+      if (cost === null || this.stat('tp') < cost) return false;
+      data.st.tp = (data.st.tp || 0) - cost;
       data.pu[id] = (data.pu[id] || 0) + 1;
       save();
       return true;

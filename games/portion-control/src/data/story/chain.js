@@ -62,7 +62,7 @@ PC.STORY.CHAIN = [
   { id: 'finale', map: 'tower', hero: 'danny',
     title: 'FINALE: TO THE TOP', place: 'ADVENTURE TOWER',
     rescued: null,
-    blurb: "The Ray climbed to the top of Adventure Tower and... grew. It's thinking. Reach it." },
+    blurb: "Every district feeds power up one line, and it ends on the roof of Adventure Tower. The Ray is growing a body up there. Nayah's tunnels come up in the lobby. Seventeen floors. Shut it down at the top." },
 ];
 
 PC.STORY.chainById = function (id) {

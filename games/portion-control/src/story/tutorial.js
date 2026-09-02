@@ -76,7 +76,7 @@ PC.TutorialPad = function (scene, onDone) {
     { head: 'DRAG TO MOVE', sub: 'Anywhere on the screen.', kind: 'stick' },
     { head: 'YOUR GEAR FIRES ITSELF', sub: "You steer. It shoots what's close.", kind: 'icon', frame: 'icon_weapon_resizer' },
     { head: 'FOLLOW THE GOLD ARROW', sub: 'It always points at the job.', kind: 'arrow' },
-    { head: 'GRAB DROPS. SPEND AT SHOPS.', sub: "Coins for Sal's. TECH for the Garage.", kind: 'loot' },
+    { head: 'GRAB DROPS. UPGRADE AFTER.', sub: 'Gems become TECH: team passives. Coins are GOLD: your own gear. Spend both after every mission.', kind: 'loot' },
   ];
 
   // full-screen tap zone (interactive, camera-fixed via uiAttach)

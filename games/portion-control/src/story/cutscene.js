@@ -21,6 +21,10 @@ PC.CutsceneScene.prototype.init = function (data) {
   this._script = (data && data.script) || [];
   this._next = (data && data.next) || 'PC_Title';
   this._nextData = (data && data.nextData) || undefined;
+  // v0.76.0: 'comms' = the between-mission debrief (big facing
+  // portraits on a team link, no TV set); default = the ACN newscast
+  this._comms = !!(data && data.mode === 'comms');
+  this._cast = [];
 };
 
 PC.CutsceneScene.prototype.create = function () {
@@ -42,8 +46,8 @@ PC.CutsceneScene.prototype.create = function () {
   var sy = Math.round(topPad + (boxTop - topPad - sh) / 2);
   this.scr = { x: sx, y: sy, w: sw, h: sh };
 
-  this.paintRoom();
-  this.paintBezel();
+  if (!this._comms) { this.paintRoom(); this.paintBezel(); }
+  else this.paintCommsRoom();
 
   // footage: graphics + stamped sprites inside a masked container
   this.bg = this.add.graphics();
@@ -73,7 +77,7 @@ PC.CutsceneScene.prototype.create = function () {
   this.tweens.add({ targets: this.liveDot, alpha: 0.2, duration: 500, yoyo: true, repeat: -1 });
 
   // CRT glass pass: scanlines + vignette + glare (over chrome)
-  this.paintGlass();
+  if (!this._comms) this.paintGlass();
 
   // static / signal-lost layer
   this.staticG = this.add.graphics().setDepth(32).setMask(mask);
@@ -205,7 +209,11 @@ PC.CutsceneScene.prototype._advance = function () {
   var beat = this._script[this._i++];
   var self = this;
   if (beat.say) {
+    if (this._comms) this._commsFocus(beat.say.speaker);
     this.box.show(beat.say, function () { self._advance(); });
+  } else if (beat.comms) {
+    this._commsSetup(beat.comms);
+    this._advance();
   } else if (beat.scene) {
     this.paintScene(beat.scene);
     this._advance();
@@ -763,8 +771,108 @@ PC.CutsceneScene.prototype.runAction = function (beat, done) {
   }
 };
 
+// ---- THE TEAM LINK (v0.76.0, comms mode) ----
+// The between-mission debrief: a wrist-pad call. Big portraits face each
+// other across a signal line; whoever is talking lights up and leans in,
+// the others dim. Two or three in the cast; a surprise speaker outside
+// the cast takes the centre slot.
+PC.CutsceneScene.prototype.paintCommsRoom = function () {
+  var W = PC.RENDER.W, H = PC.RENDER.H, R = this.scr, g = this.add.graphics().setDepth(1);
+  g.fillStyle(0x0d0a1c, 1).fillRect(0, 0, W, H);
+  g.lineStyle(1, 0x241f3d, 0.7);                                 // pad grid
+  for (var x = 0; x < W; x += 24) g.lineBetween(x, 0, x, H);
+  for (var y = 0; y < H; y += 24) g.lineBetween(0, y, W, y);
+  for (var i = 0; i < 60; i++) {                                  // scattered lit cells
+    g.fillStyle(i % 4 ? 0x1c1733 : 0x35d0ff, 0.12 + PC.hash01(i, 151, 3) * 0.2);
+    g.fillRect(Math.floor(PC.hash01(i, 152, 4) * W / 24) * 24 + 1, Math.floor(PC.hash01(i, 153, 5) * H / 24) * 24 + 1, 22, 22);
+  }
+  // the call frame around the portrait stage
+  g.fillStyle(0x120e24, 0.85).fillRoundedRect(R.x - 6, R.y - 6, R.w + 12, R.h + 12, 10);
+  g.lineStyle(2, 0x35d0ff, 0.8).strokeRoundedRect(R.x - 6, R.y - 6, R.w + 12, R.h + 12, 10);
+  g.fillStyle(0x45356e, 0.5).fillRoundedRect(R.x - 3, R.y - 3, R.w + 6, 20, 7);
+  this.add.text(R.x + 8, R.y + 7, 'TEAM LINK  -  SECURE', {
+    fontFamily: 'monospace', fontSize: '8px', color: '#35d0ff', fontStyle: 'bold',
+  }).setOrigin(0, 0.5).setDepth(2);
+  this._commsBars = this.add.graphics().setDepth(2);
+  this._commsBarX = R.x + R.w - 26; this._commsBarY = R.y + 12;
+  this._commsG = this.add.graphics().setDepth(3);
+  this._commsNames = [];
+};
+PC.CutsceneScene.prototype._commsSetup = function (cast) {
+  var R = this.scr, self = this;
+  this._cast.forEach(function (c) { c.img.destroy(); c.tag.destroy(); c.tagG.destroy(); });
+  this._cast = [];
+  var slots = [[0.27, 0.56], [0.73, 0.56], [0.5, 0.30]];
+  var n = Math.min(3, cast.length);
+  for (var i = 0; i < n; i++) this._commsAdd(cast[i], slots[i], i === 2 ? 0.7 : 1);
+  this._commsFocus(null);
+};
+PC.CutsceneScene.prototype._commsAdd = function (id, slot, scl) {
+  var R = this.scr;
+  var sp = PC.SPEAKERS[id] || { name: id.toUpperCase(), portrait: 'portrait_' + id };
+  var size = R.w * 0.36 * scl;
+  var x = R.x + R.w * slot[0], y = R.y + R.h * slot[1];
+  var img = this.add.image(x, y, 'atlas', sp.portrait).setDisplaySize(size, size).setDepth(5);
+  var tagG = this.add.graphics().setDepth(5);
+  var tag = this.add.text(x, y + size / 2 + 10, sp.name, {
+    fontFamily: 'monospace', fontSize: '9px', color: '#f7f4ef', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(6);
+  var c = { id: id, img: img, tag: tag, tagG: tagG, x: x, y: y, size: size, base: 1 };
+  this._cast.push(c);
+  return c;
+};
+PC.CutsceneScene.prototype._commsFocus = function (speaker) {
+  var self = this, g = this._commsG;
+  if (!g) return;
+  var found = false;
+  this._cast.forEach(function (c) { if (c.id === speaker) found = true; });
+  if (speaker && !found && this._cast.length) {
+    // a voice outside the cast: take (or make) the centre slot
+    var slotC = [0.5, 0.30];
+    if (this._cast.length >= 3) { var old = this._cast.pop(); old.img.destroy(); old.tag.destroy(); old.tagG.destroy(); }
+    this._commsAdd(speaker, slotC, 0.7);
+  }
+  g.clear();
+  this._cast.forEach(function (c) {
+    var on = c.id === speaker;
+    self.tweens.add({ targets: c.img, displayWidth: c.size * (on ? 1.1 : 0.92),
+      displayHeight: c.size * (on ? 1.1 : 0.92), alpha: on ? 1 : 0.45, duration: 160, ease: 'Quad.out' });
+    if (on) c.img.clearTint(); else c.img.setTint(0x8a86a8);
+    c.tag.setAlpha(on ? 1 : 0.5).setColor(on ? '#f2c33c' : '#cfd4e8');
+    c.tagG.clear();
+    // frame + halo under the speaker
+    if (on) {
+      c.tagG.fillStyle(0x35d0ff, 0.12).fillCircle(c.x, c.y, c.size * 0.62);
+      c.tagG.lineStyle(3, 0x35d0ff, 0.9).strokeRoundedRect(c.x - c.size * 0.56, c.y - c.size * 0.56, c.size * 1.12, c.size * 1.12, 8);
+    } else {
+      c.tagG.lineStyle(2, 0x45356e, 0.8).strokeRoundedRect(c.x - c.size * 0.48, c.y - c.size * 0.48, c.size * 0.96, c.size * 0.96, 8);
+    }
+    var tw = c.tag.width + 12;
+    c.tagG.fillStyle(0x120e24, 0.9).fillRect(c.x - tw / 2, c.tag.y - 7, tw, 14);
+    c.tagG.lineStyle(1, on ? 0xf2c33c : 0x45356e, 1).strokeRect(c.x - tw / 2, c.tag.y - 7, tw, 14);
+  });
+  // signal line between the first two, pulsing toward the speaker
+  if (this._cast.length >= 2) {
+    var a = this._cast[0], b = this._cast[1];
+    g.lineStyle(2, 0x35d0ff, 0.35);
+    g.lineBetween(a.x + a.size * 0.56, a.y, b.x - b.size * 0.56, b.y);
+    for (var k = 0; k < 5; k++) {
+      var t = (k + 0.5) / 5, px = a.x + a.size * 0.56 + (b.x - b.size * 0.56 - a.x - a.size * 0.56) * t;
+      g.fillStyle(0x35d0ff, 0.6).fillCircle(px, a.y, 2);
+    }
+  }
+};
+
 PC.CutsceneScene.prototype.update = function (t, dtMs) {
   var dt = dtMs / 1000, R = this.scr;
+  if (this._commsBars) {
+    var cb = this._commsBars; cb.clear();
+    var pulse = Math.floor(t / 260);
+    for (var bi = 0; bi < 3; bi++) {
+      cb.fillStyle(0x35d0ff, ((pulse + bi) % 4) !== 0 ? 0.9 : 0.25);
+      cb.fillRect(this._commsBarX + bi * 7, this._commsBarY - 3 - bi * 3, 4, 6 + bi * 3);
+    }
+  }
   this.box.update(dt);
   // scrolling ticker
   if (this.tickerTxt.visible && this._tickerText) {

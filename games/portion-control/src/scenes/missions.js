@@ -15,6 +15,12 @@ PC.MissionsScene = function () { Phaser.Scene.call(this, { key: 'PC_Missions' })
 PC.MissionsScene.prototype = Object.create(Phaser.Scene.prototype);
 PC.MissionsScene.prototype.constructor = PC.MissionsScene;
 
+// v0.76.0: the Upgrade Station hands off here with the NEXT mission's
+// id, and the brief opens by itself - one tap from shop to street
+PC.MissionsScene.prototype.init = function (data) {
+  this._autoBrief = (data && data.autoBrief) || null;
+};
+
 PC.MissionsScene.prototype.create = function () {
   PC.applyRenderScale(this);
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
@@ -153,11 +159,13 @@ PC.MissionsScene.prototype.create = function () {
     return t;
   };
   var bw = (W - 28) / 4;
-  mkBtn(8, bw, "SAL'S", '#a8e04a', function () {
-    self.scene.start('PC_Shop', { back: 'PC_Missions' });
+  // v0.76.0: both stores live in the Upgrade Station now (TECH tab /
+  // GOLD tab); these open it as a plain shop that comes back here
+  mkBtn(8, bw, 'PASSIVES', '#35d0ff', function () {
+    self.scene.start('PC_Upgrade', { next: 'PC_Missions', tab: 'passives' });
   });
-  mkBtn(12 + bw, bw, 'GARAGE', '#35d0ff', function () {
-    self.scene.start('PC_Garage', { back: 'PC_Missions' });
+  mkBtn(12 + bw, bw, 'GEAR', '#f2c33c', function () {
+    self.scene.start('PC_Upgrade', { next: 'PC_Missions', tab: 'gear' });
   });
   // scout the district you're about to drop into (v0.29.0)
   mkBtn(16 + bw * 2, bw, 'MAP', '#f2c33c', function () {
@@ -200,6 +208,15 @@ PC.MissionsScene.prototype.create = function () {
   var cur = PC.storyState.currentIndex();
   if (cur > 0 && cur < n && !PC.storyState.revealSeen(chain[cur].id)) {
     this.revealFanfare(this._nodes[cur], chain[cur]);
+  }
+  // straight from the Upgrade Station: open the next mission's brief
+  if (this._autoBrief) {
+    var ab = PC.STORY.chainById(this._autoBrief), abi = PC.STORY.chainIndex(this._autoBrief);
+    var abSt = abi >= 0 ? PC.storyState.status(abi) : 'hidden';
+    if (ab && (abSt === 'active' || abSt === 'cleared')) {
+      if (abi === cur) PC.storyState.markRevealSeen(ab.id);
+      this.time.delayedCall(350, function () { self.openBrief(ab, abSt); });
+    }
   }
 };
 
