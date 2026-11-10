@@ -12,6 +12,57 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - v0.79.0: SPLIT OUT + ITCH.IO LAUNCH PREP.** Mark: "split
+  the Vampire Survivors homage from the platformer into another branch and
+  prepare it for an itch.io launch."
+  * **New home: `claude/portion-control-standalone`.** Made with
+    `git subtree split --prefix=games/portion-control` from
+    `claude/portion-control-vslice` @ 74b27f8, so the repo root is now the
+    game root and all 171 game commits are kept; the platformer is not on
+    this branch. Paths in `tools/` resolve from their own location now.
+    (Older entries below say `games/portion-control/...`; on this branch
+    that is simply the repo root.)
+  * **Release gating (`PC.RELEASE = true`, config.js).** Dev mode is
+    `?dev=1` only, never sticky, and the 5-tap version-stamp toggle is off
+    (it gave 50,000 gold). Gated behind DEV_MODE: the G (gallery) and T
+    (stress) hotkeys desktop players would hit, `?gallery`, `?stress`,
+    `?roof`, `?chomptest`, `?chomp=art`, `?unlock`, and the BOSS ARENA pad
+    on the mission map.
+  * **itch iframe bug fixed:** `pickups.js` read localStorage outside a
+    try. itch serves the game in a cross-site iframe, and browsers that
+    block third-party storage throw on access, which would have crashed
+    every mission start. Verified in a sim with storage forced to throw.
+  * **Level-up cards fixed:** title / NEW! tag / description were centred
+    on fixed offsets, so a 2-line title plus 3-line description collided.
+    Cards are taller and lines stack by measured height, with the
+    description font stepping down if needed. Checked: 120 random draws at
+    480x854, 390x844 and 1280x720, zero overlaps.
+  * **Page hardening (index.html):** title + meta description, no
+    pull-to-refresh/long-press/selection, context menu off, noscript note.
+  * **Build:** `tools/build_itch.sh` -> `dist/portion-control-<ver>-itch.zip`
+    (index.html at zip root; only index/version/src/vendor/assets/CREDITS;
+    refuses to build if PC_BUILD and version.json disagree). v0.79.0:
+    389 files, 28 MB unpacked, 25 MB zipped. `dist/` is gitignored.
+  * **itch sim (passed):** zip unpacked under a CDN-style
+    `/html/<id>/` path on one origin, embedded at 480x854 in an iframe on a
+    different site. Title -> intro -> mission 1 -> complete -> team link ->
+    Upgrade Station -> next brief: zero page errors, zero 404s, no
+    version.json reload loop; same run with storage throwing; `?roof=1&unlock=1`
+    ignored.
+  * **Launch kit in `itch/`:** `PAGE.md` (page copy, embed settings
+    450x800 portrait + mobile friendly + fullscreen button, tags, the
+    required Generative AI disclosure, pre-publish checklist), cover
+    (630x500 and 2x), nine 960x1708 screenshots. `CREDITS.txt` ships in the
+    zip with Phaser's MIT notice. `README.md` and `CLAUDE.md` added.
+  * **Open for Mark:** (1) Vic's portrait/sprite wear a **NASA** patch;
+    NASA's name and insignia are protected, so regenerate with an invented
+    agency before selling. (2) Credits wording in `CREDITS.txt`.
+    (3) The stage-1 debrief line "every mission, your gear picks its own
+    upgrades from what drops" overstates story mode, which has NO mid-run
+    level-ups by design (XP banks into TECH); the random card picks are
+    Rush Mode only, and the v0.76 XP-curve easing only affects Rush.
+    (4) Human playtest of the itch preview on a phone before Public.
+
 - **2026-09-02 - v0.73.0 -> v0.78.0: MARK'S PLAYTHROUGH PATCH (the big
   list, stopped at the park mission).** Six ships, one per workstream.
   Every item on the list is in; the "apply to the rest of the game"

@@ -18,7 +18,10 @@ PC.PickupSystem = function (scene) {
   }
   this.crateAcc = 0;
   // gold persists across runs (roguelite meta-currency)
-  this.gold = parseInt((typeof localStorage !== 'undefined' && localStorage.getItem('portioncontrol.gold')) || '0', 10) || 0;
+  // guarded: itch.io runs the game in a cross-site iframe, and browsers
+  // that block third-party storage THROW on any localStorage access
+  this.gold = 0;
+  try { this.gold = parseInt(localStorage.getItem('portioncontrol.gold') || '0', 10) || 0; } catch (e) {}
   this.runGold = 0;
 };
 

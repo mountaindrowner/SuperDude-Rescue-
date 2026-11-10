@@ -326,7 +326,7 @@ Keep them exactly as written and drop the audio in `assets/vo/` — wiring is th
 
 1. Export **MP3, 44.1 kHz, 128 kbps, mono** (kid-friendly web game — file size matters more than fidelity).
 2. Name each file exactly its **File ID** + `.mp3`, e.g. `vo_intro_003_danny.mp3`.
-3. Drop them all in `games/portion-control/assets/vo/` and push (or hand me a zip).
+3. Drop them all in `assets/vo/` and push (or hand me a zip).
 4. Nothing else needed — the loader picks up whatever exists.
 
 **What I build on that end** (not built yet, ~half a day once audio exists):

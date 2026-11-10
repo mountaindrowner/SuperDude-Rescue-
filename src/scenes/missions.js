@@ -201,7 +201,7 @@ PC.MissionsScene.prototype.create = function () {
   // all the different versions of the boss fight"). It sits OFF the
   // chain - a red pad clipped to the side of the tower - because it is
   // not a story beat, it is a workbench. It never touches save state.
-  this.buildBossTest(W, top);
+  if (PC.DEV_MODE) this.buildBossTest(W, top);   // workbench, not a player feature
 
   PC.stampVersion(this);
 

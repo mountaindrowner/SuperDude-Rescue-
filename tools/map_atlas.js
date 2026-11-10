@@ -5,7 +5,7 @@
 // rendered chunk-by-chunk so we never allocate a 59-megapixel canvas.
 const { chromium } = require('playwright-core');
 const http = require('http'); const fs = require('fs'); const path = require('path');
-const ROOT = '/home/user/SuperDude-Rescue-/games/portion-control';
+const ROOT = path.resolve(__dirname, '..');   // repo root = the game (standalone branch)
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
   let rel = decodeURIComponent(req.url.split('?')[0]);

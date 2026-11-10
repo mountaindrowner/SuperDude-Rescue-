@@ -5,7 +5,7 @@
 # docs/STORY_SPEC.md Part IV + STORY_CAST_ADDENDUM (written, unbuilt).
 import csv, os
 
-DOCS = '/home/user/SuperDude-Rescue-/games/portion-control/docs'
+DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
 
 # id-suffix, speaker key, delivery direction, text
 # status: SHIPPED = in the game now | WRITTEN = spec'd, scene not built
@@ -440,7 +440,7 @@ A('## 3. HOW TO HAND THE AUDIO BACK')
 A('')
 A('1. Export **MP3, 44.1 kHz, 128 kbps, mono** (kid-friendly web game — file size matters more than fidelity).')
 A('2. Name each file exactly its **File ID** + `.mp3`, e.g. `vo_intro_003_danny.mp3`.')
-A('3. Drop them all in `games/portion-control/assets/vo/` and push (or hand me a zip).')
+A('3. Drop them all in `assets/vo/` and push (or hand me a zip).')
 A('4. Nothing else needed — the loader picks up whatever exists.')
 A('')
 A('**What I build on that end** (not built yet, ~half a day once audio exists):')

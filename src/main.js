@@ -47,6 +47,7 @@ window.PC = window.PC || {};
     }).setOrigin(1, 1).setDepth(999);
     // secret toggle: 5 fast taps on the stamp flips dev mode (query
     // strings get eaten by some mobile browsers/CDN redirects)
+    if (PC.RELEASE) return t;                 // no secret door in the itch build
     t.setInteractive(new Phaser.Geom.Rectangle(-30, -22, t.width + 60, t.height + 44),
       Phaser.Geom.Rectangle.Contains);
     t.on('pointerdown', function () {

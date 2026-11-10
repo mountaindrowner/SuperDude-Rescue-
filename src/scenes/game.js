@@ -373,9 +373,11 @@ PC.GameScene.prototype.create = function () {
   this.input.keyboard.on('keydown-M', function () { this.openMap(); }, this);
   this.input.keyboard.on('keydown-ESC', function () { this.openMap(); }, this);
 
-  this.input.keyboard.on('keydown-G', function () { this.scene.start('PC_Gallery'); }, this);
-  this.input.keyboard.on('keydown-T', function () { this.stress(); }, this);
-  if (/[?&]stress=1/.test(window.location.search)) {
+  if (PC.DEV_MODE) {                  // dev-only hotkeys (desktop players hit G/T)
+    this.input.keyboard.on('keydown-G', function () { this.scene.start('PC_Gallery'); }, this);
+    this.input.keyboard.on('keydown-T', function () { this.stress(); }, this);
+  }
+  if (PC.DEV_MODE && /[?&]stress=1/.test(window.location.search)) {
     this.time.delayedCall(400, this.stress, [], this);
   }
 
@@ -697,12 +699,15 @@ PC.GameScene.prototype.showCards = function () {
   var scrim = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0818, 0.72)
     .setDepth(200);
   ui.push(scrim);
-  ui.push(this.add.text(W / 2, H / 2 - PC.uiK(96), 'LEVEL UP! PICK ONE', {
-    fontFamily: 'monospace', fontSize: PC.uiK(13) + 'px', color: '#a8e04a', fontStyle: 'bold',
-  }).setOrigin(0.5).setDepth(201));
   var cards = PC.drawCards(this);
   this._shownCards = cards;   // testability hook (balance bots)
-  var cw = PC.uiK(78), ch = PC.uiK(120), gap = 8;
+  // v0.79.0: taller cards, and every line is STACKED by its measured
+  // height (the fixed offsets let a 2-line title + 3-line description
+  // run the NEW! tag straight into the text - seen on the itch shots)
+  var cw = PC.uiK(78), ch = PC.uiK(142), gap = 8;
+  ui.push(this.add.text(W / 2, H / 2 - ch / 2 - PC.uiK(16), 'LEVEL UP! PICK ONE', {
+    fontFamily: 'monospace', fontSize: PC.uiK(13) + 'px', color: '#a8e04a', fontStyle: 'bold',
+  }).setOrigin(0.5).setDepth(201));
   var x0 = W / 2 - (cards.length * (cw + gap) - gap) / 2 + cw / 2;
   cards.forEach(function (card, i) {
     var cx = x0 + i * (cw + gap), cy = H / 2;
@@ -715,19 +720,24 @@ PC.GameScene.prototype.showCards = function () {
       self.tweens.add({ targets: panel, scaleX: 1.04, scaleY: 1.04,
         duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
-    var icon = self.add.image(cx, cy - PC.uiK(32), 'atlas', card.icon)
+    var top = cy - ch / 2, bottom = cy + ch / 2 - PC.uiK(6);
+    var icon = self.add.image(cx, top + PC.uiK(20), 'atlas', card.icon)
       .setScale(0.8).setDepth(202);
-    var title = self.add.text(cx, cy + PC.uiK(2), card.title, {
+    var title = self.add.text(cx, top + PC.uiK(38), card.title, {
       fontFamily: 'monospace', fontSize: PC.uiK(11) + 'px', color: '#f7f4ef', fontStyle: 'bold',
-      align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 3,
-    }).setOrigin(0.5).setDepth(202);
-    var sub = self.add.text(cx, cy + PC.uiK(22), card.sub, {
+      align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 2,
+    }).setOrigin(0.5, 0).setDepth(202);
+    var sub = self.add.text(cx, title.y + title.height + PC.uiK(3), card.sub, {
       fontFamily: 'monospace', fontSize: PC.uiK(9) + 'px', color: '#f2c33c', fontStyle: 'bold',
-    }).setOrigin(0.5).setDepth(202);
-    var desc = self.add.text(cx, cy + PC.uiK(42), card.desc, {
+    }).setOrigin(0.5, 0).setDepth(202);
+    var desc = self.add.text(cx, sub.y + sub.height + PC.uiK(5), card.desc, {
       fontFamily: 'monospace', fontSize: PC.uiK(9) + 'px', color: '#cfd4e8',
-      align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 3,
-    }).setOrigin(0.5).setDepth(202);
+      align: 'center', wordWrap: { width: cw - 10 }, lineSpacing: 2,
+    }).setOrigin(0.5, 0).setDepth(202);
+    // a long description steps its font down rather than leave the card
+    for (var fs = 8; fs >= 6 && desc.y + desc.height > bottom; fs--) {
+      desc.setFontSize(PC.uiK(fs) + 'px');
+    }
     ui.push(panel, icon, title, sub, desc);
     panel.on('pointerdown', function () { self.pickCard(card); });
   });

@@ -29,7 +29,7 @@ PC.BootScene.prototype.preload = function () {
 PC.BootScene.prototype.create = function () {
   var info = PC.buildAtlas(this, this._loadedReal);
   PC.atlasInfo = info;
-  var wantGallery = /[?&]gallery=1/.test(window.location.search);
+  var wantGallery = PC.DEV_MODE && /[?&]gallery=1/.test(window.location.search);
   this.scene.start(wantGallery ? 'PC_Gallery' : 'PC_Title');
 };
 

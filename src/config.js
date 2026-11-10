@@ -156,16 +156,27 @@ PC.SFX_VOICES = true;          // per-weapon voice table (docs/SFX_VOICES.md, v0
 // three ways in, because mobile browsers/CDNs love dropping query
 // strings: ?dev=1, #dev, or the persisted toggle (tap the version
 // stamp 5x fast on any menu; persists until toggled off the same way)
+// RELEASE (v0.79.0, the itch.io build): players must never stumble into
+// dev mode. Dev is URL-only (?dev=1), never sticky, no secret tap, and
+// every test hook below (gallery, G/T keys, boss arena pad, ?roof,
+// ?chomptest, ?unlock) only works while it is on. Flip to false for a
+// private test build that wants the old sticky behaviour back.
+PC.RELEASE = true;
 PC.DEV_MODE = false;
 try {
   var _q = (window.location.search || '') + (window.location.hash || '');
-  if (/[?&#]dev(=1)?\b/.test(_q)) {
+  if (PC.RELEASE) {
+    PC.DEV_MODE = /[?&]dev=1\b/.test(window.location.search || '');
+  } else if (/[?&#]dev(=1)?\b/.test(_q)) {
     PC.DEV_MODE = true;
     localStorage.setItem('portioncontrol.dev', '1');   // sticky once visited
   } else {
     PC.DEV_MODE = localStorage.getItem('portioncontrol.dev') === '1';
   }
 } catch (e) {}
+if (PC.RELEASE && !PC.DEV_MODE) {
+  PC.CHOMP_TEST = null; PC.ROOF_WARP = false; PC.UNLOCK_ALL = false; PC.CHOMP_ART = 'drawn';
+}
 PC.setDevMode = function (on) {
   try { localStorage.setItem('portioncontrol.dev', on ? '1' : '0'); } catch (e) {}
   PC.DEV_MODE = !!on;

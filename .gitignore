@@ -1,0 +1,4 @@
+# itch.io build output (tools/build_itch.sh) - rebuild, never commit
+dist/
+node_modules/
+.DS_Store
