@@ -34,13 +34,26 @@ PC.PickupSystem.prototype._float = function () {
   return null;
 };
 
-// spawn a floating pickup (kind: 'medkit' | 'coin')
+// how each floater kind looks (v0.80.0: Snack Attack's crate prizes
+// borrow existing art - a big coin for a coin bag, the magnet for the
+// Snack Vacuum, a green coin for the Lucky Penny)
+PC.PICKUP_LOOK = {
+  coinbag: { frame: 'pickup_coin', scale: 1.7, tint: 0xffe08a },
+  vacuum:  { frame: 'pickup_magnet', scale: 1.3 },
+  bomb:    { frame: 'pickup_bomb', scale: 1.3 },
+  freeze:  { frame: 'icon_weapon_freeze', scale: 0.45, tint: 0x9adfff },
+  penny:   { frame: 'pickup_coin', scale: 1.2, tint: 0x7dd97b },
+};
+
+// spawn a floating pickup (kind: 'medkit' | 'coin' | a PICKUP_LOOK kind)
 PC.PickupSystem.prototype.drop = function (x, y, kind, val) {
   var f = this._float(); if (!f) return;
   f.active = true; f.x = x; f.y = y; f.kind = kind; f.val = val || 0;
   f.fly = false; f.spd = 0; f.t = 0;
-  f.sprite.setTexture('atlas', 'pickup_' + kind).setPosition(x, y)
-    .setScale(kind === 'coin' ? 1 : 1).setAlpha(1).setVisible(true);
+  var look = PC.PICKUP_LOOK[kind];
+  f.sprite.setTexture('atlas', look ? look.frame : 'pickup_' + kind).setPosition(x, y)
+    .setScale(look && look.scale ? look.scale : 1).setAlpha(1).setVisible(true);
+  if (look && look.tint) f.sprite.setTint(look.tint); else f.sprite.clearTint();
 };
 
 // break a crate -> spill 1 med-kit OR a fan of coins (weighted)
@@ -48,6 +61,7 @@ PC.PickupSystem.prototype.breakCrate = function (c) {
   c.active = false; c.sprite.setVisible(false);
   this.scene.fx.burst(c.x, c.y, 'fx_spark', 3, 0.2);
   if (PC.audio) PC.audio.chest ? PC.audio.chest() : PC.audio.ui();
+  if (this.scene.snack) { this.scene.snack.onCrate(c); return; }   // Snack Attack prize table
   var roll = Math.random();
   if (roll < 0.4) {
     this.drop(c.x, c.y, 'medkit', PC.PLAYER.MEDKIT_HEAL || 35);
@@ -67,7 +81,7 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
   this.crateAcc += dt;
   var liveCrates = 0, i;
   for (i = 0; i < this.crates.length; i++) if (this.crates[i].active) liveCrates++;
-  if (this.crateAcc > 6 && liveCrates < 4) {
+  if (this.crateAcc > (this.crateEvery || 6) && liveCrates < (this.crateMax || 4)) {
     this.crateAcc = 0;
     var c = this._crate();
     if (c) {
@@ -125,6 +139,8 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
 
 PC.PickupSystem.prototype.collect = function (f) {
   var scene = this.scene;
+  // Snack Attack keeps its own wallet and counts every prize (v0.80.0)
+  if (scene.snack && scene.snack.collect(f)) return;
   if (f.kind === 'medkit') {
     scene.hp = Math.min(PC.PLAYER.HP + (scene.stats.bonusHp || 0), scene.hp + f.val);
     scene.drawHud();

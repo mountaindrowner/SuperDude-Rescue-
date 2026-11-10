@@ -133,6 +133,11 @@ PC.meta = (function () {
         var r = data.pu[p.id] || 0;
         if (r > 0) p.apply(scene, r);
       });
+      // v0.80.0 FIX: the kit already copied heroDmg/heroCd/heroSpd into the
+      // LIVE multipliers before this ran, so BIGGER MUSCLES, QUICK HANDS and
+      // RUNNING START raised the base and the live value never moved (only
+      // a damage card would have recomputed it). Re-sync them here.
+      st.dmgMult = st.heroDmg; st.cdMult = st.heroCd; st.spdMult = st.heroSpd;
       // seed the live values (passive cards recompute them composing on meta*)
       st.bonusHp += st.metaHp;
       st.areaMult *= st.metaArea;

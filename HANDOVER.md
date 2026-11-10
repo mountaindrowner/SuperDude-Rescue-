@@ -12,6 +12,68 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - v0.80.0: SNACK ATTACK, the survivors mode.** Mark sent
+  *Vampire_Survivors_Game_Template.md* ("everything we've built can stay as
+  a story mode, but make the Vampire Survivors game part based on the
+  file"). His three calls: **15-minute runs** (not the template's 30),
+  **a separate save** from Story, the title button reads **SNACK ATTACK**
+  (it replaces RUSH MODE; the old quick-run code is unreachable but kept).
+  * **What's in (template Milestones A + B):** 15:00 runs that clear on
+    the timer; 6 weapons + 6 items; 8 weapon ranks (1-5 each weapon's own
+    levels, 6-8 scale `mastery` +15/+32/+50% and trim cooldown once); the
+    template XP curve (5, +10/level to 20, +13 to 40, +16 after, walls at
+    20 and 40); 3-card drafts (+1 card on a luck roll) from the UNLOCKED
+    pool only, never an evolution card; REROLL / SKIP / BANISH bought in
+    the shop; fallback gold/snack when everything is maxed; authored
+    per-minute wave rows + timed set pieces (golden elites at 1:00, 3:00,
+    5:00, 9:00, 10:00, 12:00, 12:02; rings; the district boss at 7:30);
+    elite and boss CHESTS with 1/3/5 rewards that upgrade what you carry,
+    and EVOLUTION only from an eligible chest (elites from 5:00, every boss)
+    for a rank-8 weapon + its partner item, one per chest; five stages on
+    the existing maps (Main Street = endless city, then Park / Suburbs /
+    Labs / Underground) gated at level 20/30/40/50 reached DURING a run of
+    the stage before; 6 heroes (Danny owned; Vic $10, Josh $100, Kevin $500
+    for sale; Carlos and Nayah earned then bought) at base x (1 + 10% per
+    hero bought); 19 gold PowerUps with the template's fee formula and
+    REFUND ALL; 70 achievements (39 hand-written + 5 stage clears + 26
+    evolutions generated from data) that drip every locked weapon, item,
+    stage and hero; crate prizes (coin, coin bag, medkit, Snack Vacuum,
+    Snack Bomb, Freeze Bell, Lucky Penny); one RELIC (the Recipe Book in
+    Adventure Park, shows recipes in PAUSE); edge arrows to unreached
+    chests; unlock toasts; pause (build, recipes, quit); results desk with
+    new unlocks; hub / heroes / stages / power-ups / unlocks menus.
+  * **Code:** `src/snack/` data.js (all content + [TUNABLE] numbers),
+    achievements.js, profile.js (`portioncontrol.snack`, atomic save,
+    exactly-once rewards, migration), unlocks.js (run + lifetime counters),
+    draft.js, chest.js, run.js (`PC.SnackRun` owns the run), and
+    `src/scenes/snack.js`. `PC_Game` branches on `this.snack` in a
+    handful of places; Story and the arena keep their exact paths. New
+    passives LUCKY PENNY / GOLD STAR / COIN JAR are `snackOnly` (kept out
+    of Story drafts). Enemy pool gained `elite` / `fam` / `scaleK` and the
+    Freeze Bell hold. `showCards` refuses to open under a Snack overlay;
+    `releaseHold()` opens queued level-ups when the overlay closes.
+  * **Bugs fixed along the way:** (1) STORY POWER-UPS DID NOTHING: Story's
+    `applyAll` raised heroDmg / heroCd / heroSpd after the kit had copied
+    them into the live multipliers, so BIGGER MUSCLES, QUICK HANDS and
+    RUNNING START were no-ops unless a damage card recomputed them (now
+    re-synced; covered by a test). (2) Thorn Seeds ignored `mastery`.
+    (3) Regen kept healing during the level-up pause.
+  * **Balance (tools/snack_bot.js, 30+ bot runs):** fresh saves now die
+    around 7-12 min at level 13-29 for 8-154 gold (avg ~85); about 1 in 4
+    runs clears Main Street; the Park opens within the first few runs;
+    the first 200-gold PowerUp after 2-3 runs. Kill coins taper with the
+    run's pop count so a snowballing clear no longer pays 1,500 gold.
+  * **Tests:** `node tests/snack_acceptance.js` = the template's section 23
+    as 48 checks, all passing (start state, drafts, slots, ranks, chests,
+    evolutions, gates, exactly-once rewards, prices, refund, migration,
+    save separation both ways, the Story fix, blocked storage).
+  * **Not built yet (template Milestone C):** Arcana cards, Hurry / Hyper
+    / Inverse / Endless modes, Limit Break, more relics (map, bestiary),
+    collection page, secrets, per-hero level traits. Bot balance is a
+    first pass; a human playtest should set the real feel.
+  * **Store kit:** PAGE.md copy updated for SNACK ATTACK. `03_swarm` and
+    `06_levelup` screenshots still show the old Rush 4+4 tray; retake.
+
 - **2026-11-10 - v0.79.0: SPLIT OUT + ITCH.IO LAUNCH PREP.** Mark: "split
   the Vampire Survivors homage from the platformer into another branch and
   prepare it for an itch.io launch."

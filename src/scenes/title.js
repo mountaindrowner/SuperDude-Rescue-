@@ -155,9 +155,11 @@ PC.TitleScene.prototype.create = function () {
       next: 'PC_Missions' });
   });
   this.tweens.add({ targets: start, alpha: 0.45, duration: 620, yoyo: true, repeat: -1 });
-  button(H * 0.565 + 38, 'RUSH MODE', '#35d0ff', 0x35d0ff, function () {
+  // v0.80.0: SNACK ATTACK replaces Rush Mode - the survivors mode, with
+  // its own heroes, stages, shop and save (scenes/snack.js)
+  button(H * 0.565 + 38, 'SNACK ATTACK', '#ff9ecb', 0xff9ecb, function () {
     if (PC.STORY) PC.STORY.pendingMission = null;
-    self.scene.start('PC_Select');
+    self.scene.start('PC_SnackHub');
   });
   button(H * 0.565 + 76, 'UPGRADES', '#f2c33c', 0xf2c33c, function () {
     self.scene.start('PC_Upgrade', { next: 'PC_Title' });

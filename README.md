@@ -20,6 +20,23 @@ python3 -m http.server 8000
 `?dev=1` turns on developer mode (boss arena on the mission map, gallery,
 hotkeys, every hero unlocked, test gold). Players never see it otherwise.
 
+## Two modes
+
+- **STORY** - the eight-mission campaign (TECH / GOLD, the Upgrade Station).
+- **SNACK ATTACK** - the survivors mode, built from Mark's *Vampire Survivors
+  Game Template*: 15-minute runs, 6 weapons + 6 items, 8 weapon ranks,
+  evolutions from chests, five level-gated stages, buyable heroes, a gold
+  PowerUps shop with refund, 70 unlocks. Its own save
+  (`portioncontrol.snack`), never shared with Story. Code in `src/snack/`
+  (data, achievements, profile, unlocks, draft, chest, run) and
+  `src/scenes/snack.js` (menus, results, pause).
+
+```sh
+node tests/snack_acceptance.js          # the template's section-23 checks (48)
+node tools/snack_bot.js 6 street danny 8    # balance bot: 6 fresh runs, report
+node tools/snack_bot.js 8 street danny 8 1  # same save across runs (progression)
+```
+
 ## Ship to itch.io
 
 ```sh

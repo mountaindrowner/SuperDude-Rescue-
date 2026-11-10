@@ -624,10 +624,22 @@ PC.PASSIVES = {
   duplicator: { name: 'DUPLICATOR TRAY', icon: 'icon_passive_duplicator', max: 2,
              desc: 'Shooting weapons fire +1 extra shot', apply: function (st, lv) { st.extraProj = lv + (st.metaExtraProj || 0); } },
   slowcooker: { name: 'SLOW COOKER', icon: 'icon_passive_slowcooker', max: 3,
-             desc: 'Slows, freezes & burns last 25% longer', apply: function (st, lv) { st.durMult = 1 + 0.25 * lv; } },
+             desc: 'Slows, freezes & burns last 25% longer', apply: function (st, lv) { st.durMult = (st.metaDur || 1) * (1 + 0.25 * lv); } },
   leftovers: { name: 'LEFTOVERS', icon: 'icon_passive_leftovers', max: 3,
              desc: '+15 max HP and heals a little all the time',
              apply: function (st, lv) { st.bonusHp = 15 * lv + (st.metaHp || 0); st.regen = 0.5 * lv + (st.metaRegen || 0); } },
+  // ---- SNACK ATTACK only (v0.80.0): the template's Luck / Growth /
+  // Greed roles. snackOnly keeps them out of Story and the old quick
+  // run, where luck and greed have nothing to act on.
+  luck:    { name: 'LUCKY PENNY', icon: 'pickup_coin', max: 5, snackOnly: true,
+             desc: 'Better chests and more 4-card level-ups',
+             apply: function (st, lv) { st.luck = (st.metaLuck || 0) + 0.10 * lv; } },
+  growth:  { name: 'GOLD STAR', icon: 'gem_gold', max: 5, snackOnly: true,
+             desc: 'Gems give 8% more experience per rank',
+             apply: function (st, lv) { st.growthMult = (st.metaGrowth || 1) * (1 + 0.08 * lv); } },
+  greed:   { name: 'COIN JAR', icon: 'pickup_chest_1', max: 5, snackOnly: true,
+             desc: 'Coins are worth 10% more per rank',
+             apply: function (st, lv) { st.greedMult = (st.metaGreed || 1) * (1 + 0.10 * lv); } },
 };
 // every weapon key owns its icon frame: icon_weapon_<key>
 PC.WEAPON_ICONS = {};
@@ -725,6 +737,7 @@ PC.drawCards = function (scene) {
   }
   for (var k in PC.PASSIVES) {
     var p = PC.PASSIVES[k];
+    if (p.snackOnly) continue;                 // Snack Attack drafts its own
     var lv = scene.passives[k] || 0;
     if (lv < p.max) {
       pool.push({ kind: 'passive', pk: k, title: p.name,

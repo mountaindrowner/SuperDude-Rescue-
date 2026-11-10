@@ -144,7 +144,7 @@ PC.SeedWeapon.prototype.update = function (dt, scene) {
     scene.fx.burst(tx, ty, 'fx_spark', 3, 0.2);
     if (PC.audio) PC.audio.weaponVoice('seeds');
   }
-  var dmg = this.dmg, r = this.radius * scene.stats.areaMult, self = this;
+  var dmg = this.dmg * (this.mastery || 1), r = this.radius * scene.stats.areaMult, self = this;   // v0.80.0: mastery was skipped here, so Snack ranks 6-8 (which scale mastery) did nothing for Seeds
   for (var j = 0; j < this.patches.length; j++) {
     var pt = this.patches[j];
     if (!pt.active) continue;
@@ -627,7 +627,7 @@ PC.applyHeroKit = function (scene) {
   // GARAGE (v0.20.0): Tech Points pre-level YOUR signature, so a tuned
   // hero starts the mission at level 1+rank. Exclusive by construction -
   // this only ever touches the hero you're actually playing.
-  if (PC.GARAGE) {
+  if (PC.GARAGE && !scene.snack) {     // Story's garage never reaches Snack Attack
     var gr = PC.GARAGE.rank(scene.hero.id);
     for (var gi = 0; gi < gr && w.level < w.max; gi++) {
       w.level++;

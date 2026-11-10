@@ -84,7 +84,9 @@ window.PC = window.PC || {};
     },
     scene: [PC.BootScene, PC.TitleScene, PC.SelectScene, PC.ShopScene,
             PC.GarageScene, PC.UpgradeScene, PC.MapViewScene, PC.CutsceneScene, PC.MissionsScene,
-            PC.GameScene, PC.ResultsScene, PC.GalleryScene],
+            PC.GameScene, PC.ResultsScene, PC.GalleryScene,
+            PC.SnackHubScene, PC.SnackHeroesScene, PC.SnackStagesScene,
+            PC.SnackShopScene, PC.SnackUnlocksScene, PC.SnackResultsScene],
   };
 
   PC.game = new Phaser.Game(config);

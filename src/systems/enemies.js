@@ -52,6 +52,12 @@ PC.EnemySystem.prototype.spawn = function (x, y, def) {
     e.r = def.size / 2 - 2;
     e.kbMult = def.kbMult != null ? def.kbMult : 1;   // heavies 0.3, bosses 0
     e.still = def.still || null;
+    // Snack Attack (v0.80.0): pooled sprites are recycled, so these are
+    // ALWAYS reset - a recycled elite must never come back golden
+    e.elite = !!def.elite; e.fam = def.fam || null;
+    e.scaleK = def.scaleK || 1; e.chestEvo = false;
+    e.slowUntil = 0; e.flashUntil = 0;
+    if (e.elite) e.sprite.setTint(0xffd75a); else e.sprite.clearTint();
   }
   e.sprite.setFrame(e.frameA);
   this.liveCount++;
@@ -86,7 +92,9 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
     var e = pool[i];
     if (!e.active) continue;
     var dx = px - e.x, dy = py - e.y;
-    if (now < e.kbUntil) {
+    if (now < (this.scene.freezeUntil || 0)) {
+      // Snack Attack FREEZE BELL: everything holds still (knockback too)
+    } else if (now < e.kbUntil) {
       // 120ms reversed-velocity knockback (ARTDNA 3) - half the game feel
       e.x += e.kbx * dt;
       e.y += e.kby * dt;
@@ -116,8 +124,9 @@ PC.EnemySystem.prototype.update = function (dt, px, py) {
       var sq = Math.sin(this.animT * 7 + e.phase * 2.3);
       // Danny's Resizer literally shrinks what it hits (VFX task 3)
       var shf = now < (e.shrinkUntil || 0) ? 0.82 : 1;
-      s.scaleY = (1 + sq * 0.07) * shf;
-      s.scaleX = (1 - sq * 0.045) * shf;
+      var sk = e.scaleK || 1;                     // golden elites are bigger
+      s.scaleY = (1 + sq * 0.07) * shf * sk;
+      s.scaleX = (1 - sq * 0.045) * shf * sk;
     }
   }
 

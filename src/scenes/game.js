@@ -19,9 +19,18 @@ PC.GameScene.prototype.create = function () {
   // the region and the hero (Mark: "you're given the character and then
   // given the mission"). Patrol/quick-run path is untouched (null).
   this.storyMission = (PC.STORY && PC.STORY.pendingMission) || null;
+  // SNACK ATTACK (v0.80.0): the survivors mode. Consumed here; a run
+  // never inherits story state, and a story run never inherits this.
+  this.snack = null; this.snackHold = false; this.freezeUntil = 0;
+  if (!this.storyMission && PC.Snack && PC.Snack.pending && PC.SnackRun) {
+    this.snack = new PC.SnackRun(this, PC.Snack.pending);
+  }
+  if (PC.Snack) PC.Snack.pending = null;
   this.region = null;
   if (this.storyMission && PC.STORY.maps[this.storyMission.map]) {
     this.region = new PC.Region(PC.STORY.maps[this.storyMission.map]);
+  } else if (this.snack && this.snack.stage.map && PC.STORY.maps[this.snack.stage.map]) {
+    this.region = new PC.Region(PC.STORY.maps[this.snack.stage.map]);
   }
   PC.installRegion(this.region);
   var regionSelf = this;
@@ -54,6 +63,7 @@ PC.GameScene.prototype.create = function () {
   // hero = the picked roster entry; scale normalizes figure height to
   // Danny's so every hero occupies the same world footprint.
   this.hero = this.storyMission ? PC.heroById(this.storyMission.hero)
+            : this.snack ? PC.heroById(this.snack.heroId)
                                 : PC.selectedHero();
   // DEPTH 22: above CHOMP's body (18) and its live face (19). Boss doc
   // 2.3.7 - the most-cited camera complaint in the survey is the boss
@@ -85,7 +95,9 @@ PC.GameScene.prototype.create = function () {
   this.xpMult = 1; this.dmgTakenMult = 1; this.kbMult = 1;
   this.passives = {};
   PC.applyHeroKit(this);            // signature weapon + hero passive (kits.js)
-  if (PC.meta) PC.meta.applyAll(this);   // permanent shop power-ups (WP-METASHOP)
+  // permanent shop power-ups: Snack Attack has its OWN shop and save
+  if (this.snack) this.snack.setupStats(this);
+  else if (PC.meta) PC.meta.applyAll(this);   // Story's (WP-METASHOP)
   // v0.30.2 CUT (Mark: "there's like this persistent cone that's on the
   // [character]... it's not a good idea, I don't like it"). It was a
   // muzzle-cone sprite pinned to the hero and pulsing forever - it read
@@ -136,7 +148,7 @@ PC.GameScene.prototype.create = function () {
   this.storyPause = false;
   this.quest = null;
   this.freeRoam = null;              // STORY-5: the between-missions seam
-  this.doors = this.region ? new PC.Doors(this) : null;   // walk-in stores
+  this.doors = (this.region && !this.snack) ? new PC.Doors(this) : null;   // walk-in stores (Story only)
   // ambient wildlife belongs to the green maps only - a squirrel in the
   // junk-flooded Labs breaks the fiction (v0.28.0)
   this.critters = (this.region && this.region.layout && PC.Critters &&
@@ -332,10 +344,12 @@ PC.GameScene.prototype.create = function () {
   // the tray sits under the bars, so the run stats move below it
   this.buildLoadout();
   // story runs skip the XP bar, so the stat column sits higher there
+  // keyed on storyMission, not region: Snack Attack stages load district
+  // maps but level up like a quick run (v0.80.0)
   var statY = K(5) + K(14) + K(8) + 2 * this.slotBox + this.slotGap + K(7) +
-              (this.region ? 0 : K(14));
+              (this.storyMission ? 0 : K(14));
   this.levelText = this.add.text(PC.SAFE - K(6), statY,
-    this.region ? 'TECH +0' : 'LV 1', {
+    this.storyMission ? 'TECH +0' : 'LV 1', {
     fontFamily: 'monospace', fontSize: K(9) + 'px', color: '#a8e04a',
   }).setDepth(101);
   this.goldText = this.add.text(PC.SAFE - K(6), statY + K(11), '', {
@@ -371,7 +385,10 @@ PC.GameScene.prototype.create = function () {
     .forEach(function (o) { if (o) this.uiAttach(o); }, this);
   this.attachLoadout();
   this.input.keyboard.on('keydown-M', function () { this.openMap(); }, this);
-  this.input.keyboard.on('keydown-ESC', function () { this.openMap(); }, this);
+  this.input.keyboard.on('keydown-ESC', function () {
+    if (this.snack) this.snack.pause(); else this.openMap();
+  }, this);
+  if (this.snack) this.snack.afterCreate(this);
 
   if (PC.DEV_MODE) {                  // dev-only hotkeys (desktop players hit G/T)
     this.input.keyboard.on('keydown-G', function () { this.scene.start('PC_Gallery'); }, this);
@@ -403,6 +420,23 @@ PC.GameScene.prototype.stress = function () {
 
 PC.GameScene.prototype.gainXp = function (v) {
   if (PC.audio) PC.audio.gem();
+  if (this.snack) {
+    // SNACK ATTACK: the template's XP curve [VS 5 / +10 / +13 / +16]
+    this.xp += this.snack.xpFor(v);
+    while (this.xp >= this.xpNext) {
+      this.xp -= this.xpNext;
+      this.level++;
+      this.xpNext = PC.SNACK.xpToNext(this.level);
+      this.levelText.setText('LV ' + this.level);
+      if (PC.audio) PC.audio.levelup();
+      if (this.kit && this.kit.onLevelUp) this.kit.onLevelUp(this);
+      this.pendingLevels++;
+      PC.SnackUnlocks.event(this.snack, 'level', this.level);   // gates open mid-run [VS]
+    }
+    if (this.pendingLevels > 0 && !this.cardsOpen && !this.snackHold) this.showCards();
+    this.drawHud();
+    return;
+  }
   this.xp += v * this.xpMult;
   // STORY MODE (v0.30.0, Mark: "I don't think our players should level
   // up in story mode - it should only be gathering exp and cash and
@@ -452,6 +486,11 @@ PC.GameScene.prototype.onKill = function (e) {
   this.fx.burst(e.x, e.y, 'fx_pop', 4, 0.3);
   if (e.still) this.fx.still(e.x, e.y, e.still, 0.4);
   this.gems.spawn(e.x, e.y, e.xp);
+  if (this.snack) {                       // its own drop table + unlock counters
+    this.snack.onKill(e);
+    if (PC.audio) PC.audio.pop();
+    return;
+  }
   var roll = Math.random();
   // story kills roll medkits at double odds (v0.33.0, Mark: recovery
   // should come from the tables - "random drops of health... whenever
@@ -471,11 +510,14 @@ PC.GameScene.prototype.onKill = function (e) {
 // and goes gold-framed when it's maxed or evolved.
 PC.GameScene.prototype.buildLoadout = function () {
   var K = PC.uiK, self = this;
-  this.slotBox = K(20); this.slotGap = K(3);
+  // Snack Attack carries six of each [VS]; Story and the quick run keep 4+4
+  this.wSlots = this.snack ? PC.SNACK.WEAPON_SLOTS : (PC.XP.WEAPON_SLOTS || 4);
+  this.pSlots = this.snack ? PC.SNACK.PASSIVE_SLOTS : (PC.XP.PASSIVE_SLOTS || 4);
+  this.slotBox = this.snack ? K(17) : K(20); this.slotGap = this.snack ? K(2) : K(3);
   // the right edge of the HUD column - the quest banner keeps clear of it
-  this.hudRight = PC.SAFE - K(6) + (PC.XP.WEAPON_SLOTS || 4) * (this.slotBox + this.slotGap) + K(6);
+  this.hudRight = PC.SAFE - K(6) + this.wSlots * (this.slotBox + this.slotGap) + K(6);
   this.slotIcons = [];
-  var n = (PC.XP.WEAPON_SLOTS || 4) + (PC.XP.PASSIVE_SLOTS || 4);
+  var n = this.wSlots + this.pSlots;
   for (var i = 0; i < n; i++) {
     var im = this.add.image(0, 0, 'atlas', 'icon_weapon_resizer')
       .setDepth(101).setVisible(false);
@@ -500,7 +542,7 @@ PC.GameScene.prototype.attachLoadout = function () {
 PC.GameScene.prototype.drawLoadout = function (g, top) {
   if (!this.slotIcons) return;
   var K = PC.uiK, B = this.slotBox, GAP = this.slotGap;
-  var WSLOTS = PC.XP.WEAPON_SLOTS || 4, PSLOTS = PC.XP.PASSIVE_SLOTS || 4;
+  var WSLOTS = this.wSlots, PSLOTS = this.pSlots;
   var pk = [], k;
   for (k in this.passives) if (this.passives[k] > 0) pk.push(k);
   var self = this;
@@ -691,7 +733,10 @@ PC.GameScene.prototype.openMap = function () {
 };
 
 // ---- M4: the 3-card pick (pause world, choose, resume) ----
-PC.GameScene.prototype.showCards = function () {
+PC.GameScene.prototype.showCards = function (keep) {
+  // never stack on a Snack Attack chest / pause overlay: the level-up
+  // waits and releaseHold() opens it the moment that overlay closes
+  if (this.snackHold) return;
   this.cardsOpen = true;
   var W = PC.RENDER.W, H = PC.RENDER.H;
   var self = this;
@@ -699,7 +744,8 @@ PC.GameScene.prototype.showCards = function () {
   var scrim = this.add.rectangle(W / 2, H / 2, W, H, 0x0b0818, 0.72)
     .setDepth(200);
   ui.push(scrim);
-  var cards = PC.drawCards(this);
+  // keep: re-render the same cards (banish mode toggled); else a new draw
+  var cards = keep || (this.snack ? PC.SnackDraft.draw(this) : PC.drawCards(this));
   this._shownCards = cards;   // testability hook (balance bots)
   // v0.79.0: taller cards, and every line is STACKED by its measured
   // height (the fixed offsets let a 2-line title + 3-line description
@@ -741,6 +787,13 @@ PC.GameScene.prototype.showCards = function () {
     ui.push(panel, icon, title, sub, desc);
     panel.on('pointerdown', function () { self.pickCard(card); });
   });
+  // Snack Attack: REROLL / SKIP / BANISH under the cards, when owned
+  if (this.snack) PC.SnackDraft.decorate(this, ui, H / 2 + ch / 2 + PC.uiK(10));
+  if (this.snack && this._banishMode) {
+    ui.push(this.add.text(W / 2, H / 2 + ch / 2 + PC.uiK(36), 'TAP THE CARD TO BANISH FOR THIS RUN', {
+      fontFamily: 'monospace', fontSize: PC.uiK(8) + 'px', color: '#ff6b6b', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(202));
+  }
   ui.forEach(function (o) { self.uiAttach(o); });
   this._cardKeys = [];
   cards.forEach(function (card, i) {
@@ -752,17 +805,41 @@ PC.GameScene.prototype.showCards = function () {
 
 PC.GameScene.prototype.pickCard = function (card) {
   if (!this.cardsOpen) return;
-  PC.applyCard(this, card);
+  if (this.snack && this._banishMode) { PC.SnackDraft.banish(this, card); return; }
+  if (this.snack) PC.SnackDraft.apply(this, card);
+  else PC.applyCard(this, card);
   if (PC.audio) PC.audio.cardSelect();
+  this.closeCards();
+};
+
+// a Snack Attack overlay (chest, pause) closed: hand the world back,
+// and show any level-up that queued up behind it
+PC.GameScene.prototype.releaseHold = function () {
+  this.snackHold = false;
+  if (this.pendingLevels > 0 && !this.cardsOpen && !this.dead) this.showCards();
+};
+
+// tear down the card overlay; consumes one pending level-up
+PC.GameScene.prototype._clearCardUi = function () {
   var self = this;
   this.cardUi.forEach(function (o) { o.destroy(); });
   this.cardUi = [];
   this._cardKeys.forEach(function (k) { self.input.keyboard.off(k[0], k[1]); });
   this._cardKeys = [];
   this.cardsOpen = false;
+};
+PC.GameScene.prototype.closeCards = function () {
+  this._clearCardUi();
+  this._banishMode = false;
   this.pendingLevels--;
   this.drawHud();
   if (this.pendingLevels > 0) this.showCards();
+};
+// same level-up, fresh overlay (reroll / banish); keep = same cards
+PC.GameScene.prototype.redrawCards = function (keep) {
+  var cards = keep ? this._shownCards : null;
+  this._clearCardUi();
+  this.showCards(cards);
 };
 
 PC.GameScene.prototype.update = function (time, delta) {
@@ -784,13 +861,16 @@ PC.GameScene.prototype.update = function (time, delta) {
   // Leftovers regen (arsenal expansion): slow trickle, hud at 1Hz
   if (this.stats.regen > 0 && this.hp > 0) {
     var mh = PC.PLAYER.HP + (this.stats.bonusHp || 0);
-    if (this.hp < mh) {
+    if (this.hp < mh && !this.cardsOpen && !this.snackHold) {
+      var hpBefore = this.hp;
       this.hp = Math.min(mh, this.hp + this.stats.regen * (this.game.loop.delta / 1000));
+      if (this.snack) this.snack.healed(this.hp - hpBefore);
       this._regenHud = (this._regenHud || 0) + this.game.loop.delta / 1000;
       if (this._regenHud > 1) { this._regenHud = 0; this.drawHud(); }
     }
   }
   if (this.cardsOpen) return;                 // world paused during the pick
+  if (this.snackHold) return;                 // Snack Attack chest / pause overlay
   var dt = Math.min(PC.DT_CLAMP, delta / 1000);
   // storefront doormats keep drawing through dialogue (they'd blink out
   // every time someone talked otherwise); Doors hides its own prompt
@@ -830,7 +910,7 @@ PC.GameScene.prototype.update = function (time, delta) {
   // THE OLD CISTERN (spec Map 5 "loot vault = big TP cache"): first
   // time any run walks into the vault, the floor erupts in gems and
   // coins. Once per save - the glint stays painted as a memory.
-  if (this.region && this.region.def.id === 'sewers' &&
+  if (this.region && this.region.def.id === 'sewers' && !this.snack &&
       PC.meta && !PC.meta.stat('cistern_looted')) {
     var cst = this.region.landmark('cistern');
     if (cst && this.px > cst.x && this.px < cst.x + cst.w &&
@@ -977,11 +1057,12 @@ PC.GameScene.prototype.update = function (time, delta) {
     if (e.active && e.flashUntil && this.now > e.flashUntil) {
       e.flashUntil = 0;
       if (this.now < e.slowUntil) e.sprite.setTint(0x9adfff);   // frozen
+      else if (e.elite) e.sprite.setTint(0xffd75a);               // golden elite
       else e.sprite.clearTint();
     }
     if (e.active && e.slowUntil && this.now > e.slowUntil && !e.flashUntil) {
       e.slowUntil = 0;
-      e.sprite.clearTint();
+      if (e.elite) e.sprite.setTint(0xffd75a); else e.sprite.clearTint();
     }
   }
 
@@ -1025,6 +1106,10 @@ PC.GameScene.prototype.update = function (time, delta) {
   // Enemy hp/dmg time-scaling rides the same clock, so late-mission
   // strays stop being spongy too. Quick run: spawnT === runT, no cap.
   if (this.gauntlet) this.gauntlet.update(dt);
+  if (this.snack) {
+    // SNACK ATTACK runs its own authored waves, elites, boss and clear
+    this.snack.update(dt);
+  } else {
   if (this.region) {
     var qHot = this.quest && !this.quest.done && this.quest.state === 'active';
     this.spawnT = Math.min(210, (this.spawnT || 0) + dt * (qHot ? 1 : 0.25));
@@ -1040,8 +1125,9 @@ PC.GameScene.prototype.update = function (time, delta) {
     }
   }
 
+  }   // end of the non-Snack spawn director
   // ---- BOSS (M5): Big Frank at the timer, then run his fight ----
-  if (!this.region && !this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
+  if (!this.region && !this.snack && !this.bossSpawned && this.runT >= PC.RUN.BOSS_AT_S) this.spawnBoss();
   if (this.boss) this.boss.update(dt, this.px, this.py);
   if (this.subway) this.subway.update(dt);
   if (this.sewerFlow) this.sewerFlow.update();
@@ -1229,6 +1315,15 @@ PC.GameScene.prototype.die = function () {
     return;
   }
   this.dead = true;
+  if (this.snack) {
+    // a Snack run that ends early still keeps every coin and unlock [VS]
+    if (PC.audio) { PC.audio.stopMusic(); PC.audio.hurt(); }
+    this.fx.burst(this.px, this.py, 'fx_pop', 4, 0.4);
+    this.player.setVisible(false);
+    var sSelf = this;
+    this.time.delayedCall(900, function () { sSelf.snack.end('down'); });
+    return;
+  }
   this.recordRunStats(false);
   if (PC.audio) { PC.audio.stopMusic(); PC.audio.hurt(); }
   this.fx.burst(this.px, this.py, 'fx_pop', 4, 0.4);
@@ -1305,6 +1400,9 @@ PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
 // ---- VICTORY: shrink + confetti + slowmo + DISTRICT CLEARED + rescue ----
 PC.GameScene.prototype.onBossDefeated = function () {
   if (this.won) return;
+  // Snack Attack: the district boss is a mid-run set piece, not the end -
+  // it drops a big chest and the clock keeps running
+  if (this.snack) { this.snack.onBossDefeated(this.boss); return; }
   this.won = true;
   this.recordRunStats(true);
   var self = this, W = PC.RENDER.W, H = PC.RENDER.H, b = this.boss;

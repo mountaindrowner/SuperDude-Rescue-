@@ -53,7 +53,7 @@ em dashes on purpose (house rule).
 
 **Inputs:** Touchscreen, Mouse, Keyboard
 
-**Average session:** About a half-hour
+**Average session:** 15 minutes per Snack Attack run; about a half-hour for Story
 
 **Languages:** English
 
@@ -101,15 +101,19 @@ Generated" tag by hand; the form adds it.
 >   the lead on missions of their own.
 > - **Upgrade between missions.** Gems become TECH for team-wide passives.
 >   Coins become GOLD for each hero's signature weapon.
-> - **Rush Mode** when you just want the swarm: level up as you go, pick one
->   of three random upgrades each time, and max a weapon to **evolve** it.
->   No two runs build the same way.
+> - **SNACK ATTACK**, the survival mode: last 15 minutes against a growing
+>   swarm. Level up, pick one of three random upgrades, carry up to six
+>   weapons and six items, and crack open golden chests to **evolve** a
+>   maxed weapon into something huge. No two runs build the same way.
+> - **Every run counts.** Coins you grab stay yours: buy new heroes and
+>   permanent POWER-UPS. Hit high levels to open five stages, and chase 70
+>   unlocks that add weapons, items and heroes as you go.
 >
 > **CONTROLS**
 >
 > - Phone / tablet: touch and drag anywhere to move.
 > - Desktop: click and drag, or WASD / arrow keys. M opens the map.
-> - Level-up cards: tap, or press 1 / 2 / 3.
+> - Level-up cards: tap, or press 1 / 2 / 3. P or Esc pauses Snack Attack.
 >
 > Your progress saves in your browser. Play in fullscreen for the best view.
 >
@@ -123,6 +127,9 @@ Generated" tag by hand; the form adds it.
   order: `03_swarm`, `04_bigfrank`, `05_chomp`, `06_levelup`,
   `02_newscast`, `08_upgrade`, `07_teamlink`, `01_title`, `09_danny_live`.
   itch shows the first few most, so lead with action.
+- Note: `03_swarm` and `06_levelup` were taken in the old Rush Mode (4+4
+  slot tray). Snack Attack shows a 6+6 tray; retake those two from a Snack
+  run before launch so the page matches the game.
 
 ## 8. Before you press Publish
 

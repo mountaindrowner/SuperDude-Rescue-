@@ -31,6 +31,16 @@
 - Test harness: Playwright (`require('playwright')`, preinstalled Chromium),
   canvas renderer forced by denying WebGL, viewport 402x874 or 480x854.
 
+## Snack Attack (the survivors mode)
+
+- Spec: Mark's *Vampire Survivors Game Template* (2026-11-10), with his
+  calls: **15-minute runs**, a **separate save** from Story, the title button
+  reads **SNACK ATTACK**. Numbers that are not documented VS values are
+  marked [TUNABLE] in `src/snack/data.js` and set with `tools/snack_bot.js`.
+- Everything Snack Attack is a branch on `scene.snack` in `PC_Game`; Story
+  and the boss arena must keep their exact paths. Run
+  `node tests/snack_acceptance.js` before every ship (must be 48/48).
+
 ## Build the itch upload
 
 `tools/build_itch.sh` -> `dist/portion-control-<version>-itch.zip`.
