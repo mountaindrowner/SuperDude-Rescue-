@@ -63,9 +63,13 @@ PC.GemSystem.prototype.update = function (dt, px, py, pickupR) {
     if (g.fly) {
       var d = Math.sqrt(d2) || 1;
       g.spd += 900 * dt;
-      g.x += (dx / d) * g.spd * dt;
-      g.y += (dy / d) * g.spd * dt;
-      if (d < 12) {
+      var stepG = g.spd * dt;
+      g.x += (dx / d) * stepG;
+      g.y += (dy / d) * stepG;
+      // arrives when this frame's step reaches the player: a fast gem
+      // (Snack Vacuum pulls from across the map) used to overshoot and
+      // orbit forever, never inside 12px, its XP lost
+      if (d < 12 || stepG >= d) {
         g.active = false;
         g.sprite.setVisible(false);
         this.onCollect(g.v);

@@ -249,6 +249,9 @@ PC.SnackRun.prototype.collect = function (f) {
     scene.freezeUntil = scene.now + 6;
     scene.floatText('FREEZE!', 0x9adfff);
   } else if (f.kind === 'penny') {                  // a little luck for this run
+    // into the run's base luck too, or the LUCKY PENNY item (which
+    // recomputes luck from metaLuck) wipes it out (v0.80.2)
+    scene.stats.metaLuck = (scene.stats.metaLuck || 0) + 0.10;
     scene.stats.luck = (scene.stats.luck || 0) + 0.10;
     scene.floatText('LUCKY PENNY! +LUCK', 0x7dd97b);
   } else return false;
@@ -269,7 +272,10 @@ PC.SnackRun.prototype.healed = function (amt) {
 
 // XP gained from a gem, with the stage and Growth bonuses
 PC.SnackRun.prototype.xpFor = function (v) {
-  return v * PC.SNACK.GEM_VALUE * this.stage.mods.xp * (this.scene.stats.growthMult || 1);
+  // xpMult = the hero kit's XP passive (Danny +10%, Nayah +15%): it only
+  // reached Story's path before v0.80.2
+  return v * PC.SNACK.GEM_VALUE * this.stage.mods.xp * (this.scene.stats.growthMult || 1) *
+    (this.scene.xpMult || 1);
 };
 
 // ---- chests in the world: walk onto one to open it ----
@@ -285,6 +291,9 @@ PC.SnackRun.prototype.dropChest = function (x, y, kind, evo) {
 };
 PC.SnackRun.prototype.updateChests = function () {
   var scene = this.scene;
+  // one overlay at a time: a gem can level you up in the same frame you
+  // step on a chest; the chest waits for the cards (v0.80.2)
+  if (scene.cardsOpen || scene.snackHold) return;
   for (var i = this.chests.length - 1; i >= 0; i--) {
     var c = this.chests[i];
     var dx = scene.px - c.x, dy = scene.py - c.y;
@@ -471,7 +480,8 @@ PC.SnackRun.prototype.end = function (reason) {
   if (this.ended) return;
   this.ended = true;
   var scene = this.scene, r = this.run;
-  r.t = scene.runT; r.level = scene.level;
+  // a clear reads 15:00, not 15:00 plus the 3.2s celebration
+  r.t = r.cleared ? Math.min(scene.runT, PC.SNACK.RUN_SEC) : scene.runT; r.level = scene.level;
   PC.SnackUnlocks.check(this);
   PC.SnackProfile.commitRun(r);
   PC.SnackProfile.save();

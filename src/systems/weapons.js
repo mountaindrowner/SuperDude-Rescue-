@@ -464,6 +464,14 @@ PC.SaltWeapon.prototype.update = function (dt, scene) {
         e.seasonPct = pct;
         PC.damageEnemy(scene, e, adx, 0, 0, scene._onKillCb);
       });
+      // the aura bites bosses too (v0.80.2: it returned before the boss
+      // check below, so Salt / SEASON STORM never hurt a boss)
+      if (scene.boss && !scene.boss.dead) {
+        var abx = scene.boss.x - pxa, aby = scene.boss.y - pya;
+        if (abx * abx + aby * aby < (scene.boss.r + R) * (scene.boss.r + R)) {
+          scene.hitBoss(scene.boss.x, scene.boss.y, adx, 0, 0);
+        }
+      }
     }
     var g0 = this.gfx;
     g0.clear();

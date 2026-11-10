@@ -11,6 +11,7 @@ PC.STORY.missions = PC.STORY.missions || {};
 PC.STORY.missions.finale = {
   id: 'finale',
   map: 'tower',
+  name: 'FINALE: TO THE TOP',      // every mission reads .name (blank map subtitle before v0.80.2)
   title: 'FINALE: TO THE TOP',
   objectives: [
     {

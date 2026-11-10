@@ -108,6 +108,8 @@ PC.SentryBotWeapon.prototype.update = function (dt, scene) {
     b.img.setPosition(Math.round(b.x), Math.round(b.y)).setVisible(true)
       .setFlipX(scene.facing < 0);
     if (b.firing > 0) {
+      // target popped mid-burst: stop, don't follow its recycled slot
+      if (b.target && !b.target.active) { b.firing = 0; b.target = null; continue; }
       b.fireGap -= dt;
       if (b.fireGap <= 0 && b.target) {
         b.fireGap = 0.08; b.firing--;

@@ -21,7 +21,7 @@ PC.PickupSystem = function (scene) {
   // guarded: itch.io runs the game in a cross-site iframe, and browsers
   // that block third-party storage THROW on any localStorage access
   this.gold = 0;
-  try { this.gold = parseInt(localStorage.getItem('portioncontrol.gold') || '0', 10) || 0; } catch (e) {}
+  this.gold = PC.meta ? PC.meta.gold() : 0;     // storage-blocked safe (v0.80.2)
   this.runGold = 0;
 };
 
@@ -115,7 +115,8 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
     var f = this.floats[i];
     if (!f.active) continue;
     f.t += dt;
-    if (f.t > 12) { f.active = false; f.sprite.setVisible(false); continue; }   // despawn stragglers
+    // despawn stragglers (never one already flying to the player)
+    if (f.t > 12 && !f.fly) { f.active = false; f.sprite.setVisible(false); continue; }
     var dx = px - f.x, dy = py - f.y, d2 = dx * dx + dy * dy;
     // gentle bob while idle
     if (!f.fly) {
@@ -127,9 +128,10 @@ PC.PickupSystem.prototype.update = function (dt, px, py, pickupR) {
     if (f.fly) {
       var d = Math.sqrt(d2) || 1;
       f.spd += 900 * dt;
-      f.x += (dx / d) * f.spd * dt; f.y += (dy / d) * f.spd * dt;
+      var stepF = f.spd * dt;
+      f.x += (dx / d) * stepF; f.y += (dy / d) * stepF;
       f.sprite.setPosition(f.x, f.y);
-      if (d < 12) {
+      if (d < 12 || stepF >= d) {          // fast floats used to overshoot forever
         f.active = false; f.sprite.setVisible(false);
         this.collect(f);
       }
@@ -149,7 +151,7 @@ PC.PickupSystem.prototype.collect = function (f) {
   } else if (f.kind === 'coin') {
     var gv = Math.max(1, Math.round(f.val * (this.scene.goldMult || 1)));
     this.gold += gv; this.runGold += gv;
-    try { localStorage.setItem('portioncontrol.gold', String(this.gold)); } catch (e) {}
+    if (PC.meta) PC.meta.setGold(this.gold);
     if (PC.audio) PC.audio.coin ? PC.audio.coin() : PC.audio.gem();
     scene.drawHud();
   }

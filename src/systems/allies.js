@@ -215,7 +215,8 @@ window.PC = window.PC || {};
         var e = pool[i];
         if (!e.active) continue;
         var ex = e.x - a.x, ey = e.y - a.y;
-        if (ex * ex + ey * ey < 220 * 220) PC.damageEnemy(s, e, dmg * 0.5);
+        // pass the kill callback: without it a foe at 0 HP stayed alive
+        if (ex * ex + ey * ey < 220 * 220) PC.damageEnemy(s, e, dmg * 0.5, 0, 0, s._onKillCb);
       }
     }
   };

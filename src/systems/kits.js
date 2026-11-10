@@ -530,7 +530,7 @@ PC.LassoWeapon.prototype.update = function (dt, scene) {
     if (self.stun) e.slowUntil = scene.now + 0.5;   // Josh flavor: dizzying spin
     var fdx = e.x - pxp, fdy = e.y - pyp;
     var fl = Math.sqrt(fdx * fdx + fdy * fdy) || 1;
-    PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg), fdx / fl * 1.6, fdy / fl * 1.6, scene._onKillCb);
+    PC.damageEnemy(scene, e, PC.rollDmg(scene, dmg * (self.mastery || 1)), fdx / fl * 1.6, fdy / fl * 1.6, scene._onKillCb);
     scene.fx.burst(e.x, e.y, 'fx_spark', 3, 0.14);
   });
   if (scene.boss && !scene.boss.dead && scene.now >= (scene._lassoBossCd || 0)) {

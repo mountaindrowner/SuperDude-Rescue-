@@ -75,6 +75,7 @@ PC.meta = (function () {
   try { data = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
   if (!data || typeof data !== 'object') data = { pu: {} };
   if (!data.pu) data.pu = {};
+  var memGold = 0;                  // the wallet when storage is blocked
 
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
@@ -99,14 +100,23 @@ PC.meta = (function () {
     },
     spendGold: function (n) {
       if (this.gold() < n) return false;
-      try { localStorage.setItem('portioncontrol.gold', String(this.gold() - n)); } catch (e) {}
+      this.setGold(this.gold() - n);
       return true;
     },
-    // gold lives in pickups' existing key - extend, don't fork (PHASE2)
+    // gold lives in pickups' existing key - extend, don't fork (PHASE2).
+    // v0.80.2: with storage BLOCKED (itch iframe) gold() read 0 forever,
+    // so nothing could be bought - not even the Hydro-Drill that stage 7
+    // requires. A memory copy keeps the wallet working for the session.
     gold: function () {
-      var g = 0;
-      try { g = parseInt(localStorage.getItem('portioncontrol.gold') || '0', 10) || 0; } catch (e) {}
-      return g;
+      try {
+        var raw = localStorage.getItem('portioncontrol.gold');
+        if (raw !== null) return parseInt(raw, 10) || 0;
+      } catch (e) {}
+      return memGold;
+    },
+    setGold: function (n) {
+      memGold = n;
+      try { localStorage.setItem('portioncontrol.gold', String(n)); } catch (e) {}
     },
     nextCost: function (id) {
       var p = byId(id); if (!p) return null;

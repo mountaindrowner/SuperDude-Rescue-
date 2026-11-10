@@ -13,6 +13,23 @@ var FRY_DEF = { key: 'enemy_d1_fry', spd: 80, hp: 10, dmg: 6, xp: 1, size: 24, s
 PC.GameScene.prototype.create = function () {
   PC.applyRenderScale(this);
   this.cameras.main.setBackgroundColor(0x2a2544);
+  // PER-RUN RESET (v0.80.2 bug sweep). Phaser keeps ONE PC_Game object
+  // for every run, so anything a run writes onto `this` outlives it
+  // unless it is cleared here, BEFORE the kit and shop perks apply:
+  // - boss slow-mo cancelled by a quick quit/death left timeScale 0.4
+  // - dying in boss goop/frosting left the player at 55-60% speed
+  // - LUCKY SPOON (*=) and AMAZING GRACE (+1) stacked every Story run,
+  //   and both (plus MUSTARD SEED) leaked into Snack Attack
+  // - boss-hit cooldowns are stored as `now + cd`; `now` restarts at 0,
+  //   so stale ones blocked whisk/microwave/beam/lasso boss damage
+  // - lifetime stats were recorded once per page load, not per run
+  this.time.timeScale = 1;
+  this.bossSlow = 1; this.armSlow = 1;
+  this.goldMult = 1; this.reviveCharges = 0; this._mustardSeed = false;
+  this._whiskBossCd = 0; this._mwBossCd = 0; this._beamBossCd = 0; this._lassoBossCd = 0;
+  this._bossHitSfxCd = 0; this._lastCrit = false;
+  this._statsRecorded = false; this._banishMode = false;
+  this.lastHurtT = 0; this._regenHud = 0; this._zoneSeen = {};
 
   // STORY-4 linear spine: PC.STORY.pendingMission (set by the mission
   // map's GO button) carries { map, hero, id } - the story assigns BOTH
@@ -723,6 +740,8 @@ PC.GameScene.prototype.updateBossDrop = function () {
 // ---- the district map: pause the run, show where everything is ----
 PC.GameScene.prototype.openMap = function () {
   if (!this.region || this.cardsOpen || this.storyPause || this.dead) return;
+  // never over a Snack chest / pause / the clear celebration (v0.80.2)
+  if (this.snackHold || (this.snack && (this.snack.cleared || this.snack.ended))) return;
   if (this.scene.isPaused()) return;
   if (PC.audio) { PC.audio.unlock(); PC.audio.ui(); }
   this.scene.pause();
@@ -798,8 +817,10 @@ PC.GameScene.prototype.showCards = function (keep) {
   this._cardKeys = [];
   cards.forEach(function (card, i) {
     var h = function () { self.pickCard(card); };
-    self.input.keyboard.on('keydown-' + ['ONE', 'TWO', 'THREE'][i], h);
-    self._cardKeys.push(['keydown-' + ['ONE', 'TWO', 'THREE'][i], h]);
+    // a luck draw can deal a 4th card: it needs a key too
+    var kn = 'keydown-' + ['ONE', 'TWO', 'THREE', 'FOUR'][i];
+    self.input.keyboard.on(kn, h);
+    self._cardKeys.push([kn, h]);
   });
 };
 
@@ -1339,7 +1360,7 @@ PC.GameScene.prototype.die = function () {
     // a LOSS still pays out (Mark: "upgrading after completions or
     // losses") - the banked XP converts to TECH either way
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
-      gold: self.pickups.gold, win: false, story: !!self.quest,
+      gold: self.pickups.runGold, win: false, story: !!self.quest,
       tp: self.quest ? self.quest.tpEarned : 0, hero: self.hero.id,
       xp: self.bankedXp || 0, xpTp: self.bankedTp() });
   });
@@ -1479,7 +1500,7 @@ PC.GameScene.prototype._rescueSequence = function (bx, by) {
   this.time.delayedCall(2800, function () {
     if (self.arenaBoss) { self.scene.start('PC_Missions'); return; }
     self.scene.start('PC_Results', { time: self.runT, kills: self.kills, level: self.level,
-      gold: self.pickups.gold, win: true, rescued: PC.D1_RESCUE.name,
+      gold: self.pickups.runGold, win: true, rescued: PC.D1_RESCUE.name,
       xp: self.bankedXp || 0, xpTp: self.bankedTp() });
   });
 };

@@ -10,6 +10,11 @@ PC.SpatialHash = function () {
   this._usedKeys = [];            // keys touched this frame, for cheap reset
 };
 
+// integer cell key (v0.80.2): the old "cx,cy" string key allocated a
+// fresh string per insert AND per query - thousands a frame on mobile.
+// Offset keeps it a non-negative integer, which engines store unboxed.
+PC.SpatialHash.key = function (cx, cy) { return (cx + 32768) * 65536 + (cy + 32768); };
+
 PC.SpatialHash.prototype.clear = function () {
   var u = this._usedKeys;
   for (var i = 0; i < u.length; i++) this.buckets[u[i]].length = 0;
@@ -18,7 +23,7 @@ PC.SpatialHash.prototype.clear = function () {
 
 PC.SpatialHash.prototype.insert = function (e) {
   var cx = Math.floor(e.x / this.cell), cy = Math.floor(e.y / this.cell);
-  var k = cx + ',' + cy;
+  var k = PC.SpatialHash.key(cx, cy);
   var b = this.buckets[k];
   if (!b) { b = this.buckets[k] = []; }
   if (b.length === 0) this._usedKeys.push(k);
@@ -31,9 +36,13 @@ PC.SpatialHash.prototype.eachNear = function (x, y, cb) {
   var cx = Math.floor(x / this.cell), cy = Math.floor(y / this.cell);
   for (var oy = -1; oy <= 1; oy++) {
     for (var ox = -1; ox <= 1; ox++) {
-      var b = this.buckets[(cx + ox) + ',' + (cy + oy)];
+      var b = this.buckets[PC.SpatialHash.key(cx + ox, cy + oy)];
       if (!b) continue;
       for (var i = 0; i < b.length; i++) {
+        // the hash is rebuilt once a frame: an enemy killed earlier this
+        // frame is still bucketed - skip it, or it eats bullets, takes
+        // more hits and can still deal contact damage (v0.80.2)
+        if (!b[i].active) continue;
         if (cb(b[i])) return;
       }
     }

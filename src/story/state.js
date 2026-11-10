@@ -16,6 +16,7 @@ PC.storyState = (function () {
       var p = JSON.parse(raw);
       if (p && typeof p === 'object') {
         data.introSeen = !!p.introSeen;
+        data.tutorialSeen = !!p.tutorialSeen;   // v0.80.2: saved but never reloaded
         data.cleared = p.cleared || {};
         data.revealSeen = p.revealSeen || {};
       }

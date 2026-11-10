@@ -12,6 +12,69 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - v0.80.2: preliminary bug sweep (Mark: "simulate the game
+  from the code... make sure the code goes where it needs to").**
+  * **How:** strict-ES5 eslint (no-undef etc.) over all 28k lines; three
+    independent code-read reviews (Story, Snack, combat) with id
+    cross-check scripts; the Snack bot on all 5 stages x 6 heroes; a
+    real-time hero comparison; and a NEW Story autopilot,
+    `tools/story_bot.js`, that plays the whole campaign from the title
+    button through every cutscene, debrief, Upgrade Station, brief and
+    the Hydro-Drill gate. It now clears all 8 stages with 0 page errors
+    in ~2.5 minutes (it arrived at the drill gate with $434-468, so the
+    gate is affordable without grinding).
+  * **Biggest class - run state leaking between runs.** Phaser keeps ONE
+    PC_Game object; `create()` now resets: time.timeScale (a boss kill
+    then a quick quit/death left the next run, Story included, at 0.4x
+    timers), bossSlow/armSlow (dying in goop left you at 55-60% speed),
+    goldMult and reviveCharges (LUCKY SPOON compounded 1.5x/2.25x/3.4x,
+    AMAZING GRACE stacked, both leaked into Snack), MUSTARD SEED (free
+    Snack level), the boss-hit cooldown clocks (whisk/microwave/beam/
+    lasso did no boss damage on a retry), `_statsRecorded` (lifetime
+    stats only counted the first run per page load), banish mode.
+  * **Combat:** RISTRETTO RAILGUN fired every frame (now 0.45s x cd);
+    the spatial hash handed already-killed enemies to weapons and to
+    contact damage; vacuumed gems/coins overshot the player forever (and
+    flying coins expired at 12s); Salt aura never hurt bosses; Lasso,
+    Microwave (boss) and Ketchup puddles skipped `mastery` (Snack ranks
+    6-8, owner bonus); ally spread shots left foes alive at 0 HP;
+    recycled enemies kept seasoned/shrink/quest tags, and the pool-full
+    recycler could delete a golden elite (its chest) or a quest target
+    (now last resort, and a recycled quest target leaves the count);
+    Sentry Bot bursts chased a dead target's recycled slot.
+  * **Snack:** Danny/Nayah XP kit bonus ignored in Snack; crate Lucky
+    Penny luck wiped by the LUCKY PENNY item; a chest could open on top
+    of level-up cards in the same frame; the 4th luck card had no hotkey;
+    the map could open over a chest/pause/clear; a clear reported 15:03.
+  * **Story:** Vic's tutorial replayed after every reload (`tutorialSeen`
+    saved, never loaded); the LAST fetch/switch line was replaced unread
+    by the done line (4 stages); results and the mission strip showed
+    the whole wallet as "GOLD +"; Nayah's (and Carlos's) rescue cage
+    stood 400-660px from where the rescue triggers, in sewer rock; the
+    finale had no `name` (blank map subtitle).
+  * **Garage:** the PC_Garage screen (where the stage 7 gate sends you)
+    priced and lit everything in TECH but charges GOLD - the drill read
+    "300 TP"; now gold throughout. Its next-upgrade text said "Power up!"
+    for 4 heroes (constructors threw on the stand-in scene).
+  * **itch, storage blocked:** Story gold read 0 forever, so nothing could
+    be bought and stage 7 was unreachable that session. PC.meta now keeps
+    an in-memory wallet (`setGold`), and pickups write through it.
+  * **Perf:** spatial hash keys are integers (were a new string per
+    insert AND per query, thousands a frame).
+  * Lint leftovers fixed: an implicit global in world_sewer.js, a
+    shadowed `ox` in mapview.js.
+  * **Not fixed (low impact, logged):** tweened/delayed damage (ketchup
+    shells, strike bombs, comets) can land during a card/chest/dialogue
+    pause; a comet re-tracks a dead target's recycled slot; per-frame
+    closure/object allocations in bullets.update, ground.resolveCircle
+    and homing scans; Story banks lifetime stats at the mid-mission boss
+    kill, so kills after it are not counted.
+  * **Bot note:** the Snack bot runs the world faster than the scene
+    clock, so delayed-impact weapons (Carlos's comets) look useless in
+    bot runs. At real speed Carlos is the strongest starter. Balance was
+    NOT retuned in this pass.
+  * Acceptance is **64/64** (11 new sweep regressions + 2 new itch checks).
+
 - **2026-11-10 - v0.80.1: OPTIONS is back (settings regression fixed).**
   * New `src/scenes/options.js`: `PC.OptionsPanel.open(scene, { onClose })`,
     one overlay with MUSIC and SOUND FX sliders (drag or tap, % readout)

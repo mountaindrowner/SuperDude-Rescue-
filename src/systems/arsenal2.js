@@ -126,7 +126,8 @@ PC.KetchupWeapon.prototype.update = function (dt, scene) {
     pt.tick -= dt;
     if (pt.tick > 0) continue;
     pt.tick = 0.5;
-    var pr = 30 * scene.stats.areaMult, pd = this.puddleDmg, s2 = scene;
+    var pr = 30 * scene.stats.areaMult, s2 = scene;
+    var pd = PC.rollDmg(scene, this.puddleDmg * (this.mastery || 1));   // was raw: no dmg stats, no ranks
     (function (px2, py2) {
       s2.enemies.hash.eachNear(px2, py2, function (e) {
         var dx = e.x - px2, dy = e.y - py2;
@@ -198,7 +199,7 @@ PC.MicrowaveWeapon.prototype.update = function (dt, scene) {
         while (bdiff < -Math.PI) bdiff += Math.PI * 2;
         if (Math.abs(bdiff) < half + 0.1) {
           scene._mwBossCd = scene.now + tickCd;
-          scene.hitBoss(scene.boss.x, scene.boss.y, dmg * scene.stats.dmgMult, 0, 0);
+          scene.hitBoss(scene.boss.x, scene.boss.y, PC.rollDmg(scene, dmg * (self.mastery || 1)), 0, 0);
         }
       }
     }

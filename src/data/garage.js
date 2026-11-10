@@ -69,7 +69,18 @@ PC.GARAGE = {
     var r = this.rank(heroId);
     if (r >= this.COSTS.length) return 'FULLY TUNED';
     try {
-      var w = kit.weapon({ stats: {}, now: 0, px: 0, py: 0 });
+      // a stand-in scene: several hero weapons build sprites/graphics in
+      // their constructor, which threw here and made the shop say
+      // "Power up!" for Vic, Nayah, Kevin and Josh (v0.80.2)
+      var stub = {};
+      ['setDepth', 'setBlendMode', 'setVisible', 'setScale', 'setOrigin', 'setAlpha', 'setTint',
+        'setRotation', 'setPosition', 'setFrame', 'clear', 'fillStyle', 'lineStyle', 'setInteractive', 'on', 'setSize',
+        'fillRoundedRect', 'strokeRoundedRect', 'fillCircle', 'strokeCircle', 'setText', 'setColor', 'setScrollFactor'].forEach(function (m) {
+        stub[m] = function () { return stub; };
+      });
+      var mk = function () { return stub; };
+      var w = kit.weapon({ stats: {}, now: 0, px: 0, py: 0, uiAttach: mk,
+        add: { image: mk, sprite: mk, graphics: mk, text: mk, rectangle: mk, container: mk, zone: mk } });
       w.level = 1 + r;
       return (w.desc && w.desc()) || 'Power up!';
     } catch (e) { return 'Power up!'; }

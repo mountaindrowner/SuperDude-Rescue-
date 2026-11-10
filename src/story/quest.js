@@ -28,7 +28,7 @@ PC.Quest = function (scene, region, mission) {
     if (ro.type !== 'rescue') continue;
     var rmk = region.landmark(ro.at);
     if (!rmk) break;
-    var rbx = rmk.cx, rby = rmk.y + rmk.h - 40;
+    var rcs = this.cageSpot(rmk), rbx = rcs.x, rby = rcs.y;
     this.cageImg = scene.add.image(rbx, rby, 'atlas', 'pickup_cage_1').setScale(1.4).setDepth(11);
     this.captiveImg = scene.add.image(rbx, rby - 4, 'atlas', 'char_' + (ro.hero || 'victoria') + '_idle')
       .setScale(0.9).setDepth(10).setTint(0x9a9ab8);
@@ -93,6 +93,19 @@ PC.Quest.prototype.spotOf = function (mk, pad) {
   // painted dock at the south shore instead of in the middle of the lake
   if (mk.water) return { x: mk.cx, y: mk.y + mk.h - 14 };
   return { x: mk.cx, y: mk.open ? mk.cy : mk.cy + mk.h / 2 + (pad || 40) };
+};
+
+// where a rescue cage stands: a building's door (its south edge, a step
+// from the apron the rescue triggers on); in an OPEN lot (plaza, sump,
+// antenna field) the trigger is the lot's middle, so the cage goes there
+// too (v0.80.2: Nayah's cage stood 664px away, in sewer rock, and her
+// rescue played off screen)
+PC.Quest.prototype.cageSpot = function (mk) {
+  if (mk.open || mk.water) {
+    var s = this.snapWalk(this.spotOf(mk));
+    return { x: s.x, y: s.y - 30 };
+  }
+  return { x: mk.cx, y: mk.y + mk.h - 40 };
 };
 
 // ---- helpers ----
@@ -438,7 +451,7 @@ PC.Quest.prototype.complete = function () {
   // the full payout.
   var xpTp = scene.bankedTp ? scene.bankedTp() : 0;
   if (xpTp > 0 && PC.meta) PC.meta.bump('tp', xpTp);
-  var earned = { tp: self.tpEarned + xpTp, gold: scene.pickups.gold, kills: scene.kills };
+  var earned = { tp: self.tpEarned + xpTp, gold: scene.pickups.runGold, kills: scene.kills };
   var next = PC.STORY.nextInChain ? PC.STORY.nextInChain(this.mission.id) : null;
   var debrief = PC.STORY.debriefs && PC.STORY.debriefs[this.mission.id];
   if (next && PC.STORY.beatBuilt(next)) {
@@ -459,7 +472,7 @@ PC.Quest.prototype.complete = function () {
   scene.time.delayedCall(600, function () {
     scene.scene.start('PC_Results', {
       time: scene.runT, kills: scene.kills, level: scene.level,
-      gold: scene.pickups.gold, win: true, story: true,
+      gold: scene.pickups.runGold, win: true, story: true,
       tp: self.tpEarned + xpTp, hero: scene.hero.id,
       xp: scene.bankedXp || 0, xpTp: 0,
       finale: !next,
@@ -473,6 +486,12 @@ PC.Quest.prototype.complete = function () {
 PC.Quest.prototype.update = function (dt) {
   var scene = this.scene, o = this.cur();
   this.drawHudBits();
+  if (this._finishAfterBox && !this.box.active && !this.done) {
+    var fo = this._finishAfterBox, fself = this;
+    this._finishAfterBox = null;
+    this.playScript(fo.done, function () { fself.next(); });
+    return;
+  }
   if (!o || this.done || this.box.active) {
     this.box.update(dt);
     return;
@@ -685,6 +704,9 @@ PC.Quest.prototype.update = function (dt) {
 PC.Quest.prototype.finishObjective = function (o) {
   var self = this;
   this.state = 'done';
+  // the LAST pickup/switch says its line in this same frame; showing the
+  // done script now would replace it unread (v0.80.2). Wait for it.
+  if (this.box.active) { this._finishAfterBox = o; return; }
   this.playScript(o.done, function () { self.next(); });
 };
 
@@ -697,7 +719,7 @@ PC.Quest.prototype.onBossDown = function () {
 PC.Quest.prototype.rescueSequence = function (o) {
   var self = this, scene = this.scene;
   var mk = this.region.landmark(o.at);
-  var bx = mk.cx, by = mk.y + mk.h - 40;
+  var cs = this.cageSpot(mk), bx = cs.x, by = cs.y;
   scene.storyPause = true;
   // the cage has stood here since mission start (constructor); crack it
   var cage = this.cageImg || scene.add.image(bx, by, 'atlas', 'pickup_cage_1').setScale(1.4).setDepth(11);

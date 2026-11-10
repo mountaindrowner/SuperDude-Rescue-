@@ -440,8 +440,11 @@ PC.EspressoWeapon.prototype.applyLevel = function () {
 PC.EspressoWeapon.prototype.update = function (dt, scene) {
   var g = this.gfx;
   g.clear();
-  if (this.instant) this.charge = 1;   // RISTRETTO RAILGUN: always hot
-  if (!scene.moving && !this.instant) {
+  // RISTRETTO RAILGUN: charges while moving too, and fast - but it HAS a
+  // rate (v0.80.2: `charge = 1` every frame fired 30-60 pierce-99 bolts
+  // a second and flooded the shared bullet pool)
+  if (this.instant) this.charge = Math.min(1, this.charge + dt / (0.45 * (scene.stats.cdMult || 1)));
+  else if (!scene.moving) {
     this.charge = Math.min(1, this.charge + dt / this.chargeTime);
   }
   if (this.charge > 0.05) {
@@ -450,7 +453,8 @@ PC.EspressoWeapon.prototype.update = function (dt, scene) {
     g.strokeCircle(scene.px, scene.py - 14, 10 + 6 * this.charge);
   }
   // release: on movement with any charge, or at full charge while still
-  var release = (scene.moving && this.charge > 0.25) || this.charge >= 1;
+  var release = this.instant ? this.charge >= 1
+    : (scene.moving && this.charge > 0.25) || this.charge >= 1;
   if (!release) return;
   var aim = PC.aimAt(scene, 500);
   if (!aim.target && !scene.moving) return;   // hold full charge until a target

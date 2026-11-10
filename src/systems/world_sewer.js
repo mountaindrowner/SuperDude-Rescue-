@@ -177,7 +177,7 @@ window.PC = window.PC || {};
     var sgx = Math.floor(((def.spawn.c + 0.5) * CH + 96) / CELL);
     var sgy = Math.floor(((def.spawn.r + 0.5) * CH + 96) / CELL);
     var seen2 = new Uint8Array(N * N), q2 = [sgy * N + sgx];
-    seen2[q2[0]] = 1; qh = 0;
+    seen2[q2[0]] = 1; var qh = 0;   // was an implicit global
     while (qh < q2.length) {
       var c1 = q2[qh++], cx1 = c1 % N, cy1 = (c1 / N) | 0;
       [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) {

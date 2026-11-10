@@ -1,5 +1,5 @@
 // garage.js - PC_Garage: the SUPER DUDE GARAGE storefront (v0.20.0).
-// Spends TECH POINTS on hero signature levels (data/garage.js). Opens
+// Spends GOLD on hero signature levels (data/garage.js). Opens
 // two ways: from the mission map, or by walking into the Garage
 // landmark in-world (overlay mode - the run pauses behind it, nothing
 // is lost). Layout mirrors PC_Shop so the two stores feel like a pair.
@@ -41,7 +41,7 @@ PC.GarageScene.prototype.create = function () {
     self.close();
   });
 
-  this.add.text(W / 2, 44, 'TECH POINTS LEVEL YOUR OWN SIGNATURE GEAR', {
+  this.add.text(W / 2, 44, 'GOLD LEVELS EACH HERO\'S OWN SIGNATURE WEAPON', {
     fontFamily: 'monospace', fontSize: '7px', color: '#6d6a8e', fontStyle: 'bold',
   }).setOrigin(0.5, 0);
 
@@ -123,11 +123,13 @@ PC.GarageScene.prototype.create = function () {
 
 PC.GarageScene.prototype.refresh = function () {
   var W = PC.RENDER.W;
-  this.tpText.setText('TECH POINTS:  ' + PC.GARAGE.tp() + ' TP');
+  // v0.80.2: garage ranks and gear are paid in GOLD (PC.GARAGE.buy /
+  // buyGear spend gold); this screen still priced and lit them in TECH
+  this.tpText.setText('GOLD:  $ ' + PC.GARAGE.gold());
   if (this._gearG) {
     var gear = PC.GARAGE.gearById('hydrodrill');
     var owned = PC.GARAGE.hasGear('hydrodrill');
-    var affordG = !owned && PC.GARAGE.tp() >= gear.cost;
+    var affordG = !owned && PC.GARAGE.gold() >= gear.cost;
     this._gearG.clear();
     PC.labPanel(this._gearG, 4, this._gearY, W - 8, this._gearH, {
       base: owned ? 0x1c3320 : (affordG ? 0x33240f : 0x1f1b35),
@@ -136,7 +138,7 @@ PC.GarageScene.prototype.refresh = function () {
     this._gearName.setText(gear.name + (owned ? '  - OWNED' : ''))
       .setColor(owned ? '#a8e04a' : '#f7f4ef');
     this._gearDesc.setText(gear.desc);
-    this._gearCost.setText(owned ? 'OK' : gear.cost + ' TP')
+    this._gearCost.setText(owned ? 'OK' : '$ ' + gear.cost)
       .setColor(owned ? '#a8e04a' : affordG ? '#f2c33c' : '#6d6a8e');
   }
   this._rows.forEach(function (r) {
@@ -144,7 +146,7 @@ PC.GarageScene.prototype.refresh = function () {
     var unlocked = PC.heroUnlocked(id);
     var rank = PC.GARAGE.rank(id);
     var next = PC.GARAGE.nextCost(id);
-    var afford = unlocked && next !== null && PC.GARAGE.tp() >= next;
+    var afford = unlocked && next !== null && PC.GARAGE.gold() >= next;
     r.panel.clear();
     PC.labPanel(r.panel, 4, r.y, W - 8, r.rowH - 4, {
       base: unlocked ? (afford ? 0x24243f : 0x1f1b35) : 0x171330,
@@ -157,7 +159,7 @@ PC.GarageScene.prototype.refresh = function () {
       .setColor(unlocked ? '#35d0ff' : '#45356e');
     PC.ui.fit(r.kit.setFontSize(8), W - 100, 7);      // R3
     r.eff.setText(unlocked ? PC.GARAGE.nextDesc(id) : '');
-    r.cost.setText(!unlocked ? '' : next === null ? 'MAX' : next + ' TP')
+    r.cost.setText(!unlocked ? '' : next === null ? 'MAX' : '$ ' + next)
       .setColor(next === null ? '#a8e04a' : afford ? '#f2c33c' : '#6d6a8e');
     // level pips: filled = ranks bought, hollow = buyable
     var g = r.pips; g.clear();

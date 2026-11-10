@@ -32,15 +32,21 @@ PC.EnemySystem.prototype.spawn = function (x, y, def) {
     if (!this.pool[i].active) { e = this.pool[i]; break; }
   }
   if (!e) {
-    var far = -1, farD = -1;
+    var far = 0, farD = -Infinity;
     var cam = this.scene.cameras.main;
     var cx = cam.worldView.centerX, cy = cam.worldView.centerY;
     for (i = 0; i < this.pool.length; i++) {
       var p = this.pool[i];
       var d = (p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy);
+      // never recycle a golden elite (its chest) or a quest target
+      // unless nothing else is left (v0.80.2)
+      if (p.elite || p._quest) d -= 1e12;
       if (d > farD) { farD = d; far = i; }
     }
     e = this.pool[far];
+    // a recycled quest target leaves the objective's count, or it could
+    // never reach zero
+    if (e._quest && this.scene.quest) this.scene.quest.notifyKill(e);
     this.liveCount--;
   }
   e.active = true;
@@ -57,6 +63,8 @@ PC.EnemySystem.prototype.spawn = function (x, y, def) {
     e.elite = !!def.elite; e.fam = def.fam || null;
     e.scaleK = def.scaleK || 1; e.chestEvo = false;
     e.slowUntil = 0; e.flashUntil = 0;
+    // debuffs and tags from the slot's previous life (v0.80.2)
+    e.seasonedUntil = 0; e.seasonPct = 0; e.shrinkUntil = 0; e._quest = false;
     if (e.elite) e.sprite.setTint(0xffd75a); else e.sprite.clearTint();
   }
   e.sprite.setFrame(e.frameA);

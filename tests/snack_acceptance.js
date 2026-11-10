@@ -492,7 +492,126 @@ async function test(section, name, fn) {
     return off.length === 0 || off;
   });
 
+  // ================= BUG SWEEP REGRESSIONS (v0.80.2) =================
+  // a Story mission straight into PC_Game (no menus)
+  const startStory = async (id) => {
+    await G((mid) => { PC.STORY.pendingMission = PC.STORY.chainById(mid); PC.game.scene.getScenes(true)[0].scene.start('PC_Game'); }, id);
+    await page.waitForFunction(() => PC.game.scene.isActive('PC_Game') && PC.game.scene.getScene('PC_Game').quest, null, { timeout: 20000 });
+    await sleep(250);
+  };
+  await test('sweep', 'nothing from one run leaks into the next (slow-mo, boss slows, perks, boss-hit clocks, stats)', async () => {
+    await startRun();
+    await G(() => { var g = PC.game.scene.getScene('PC_Game');
+      g.time.timeScale = 0.4; g.bossSlow = 0.55; g.armSlow = 0.6; g.goldMult = 3.4; g.reviveCharges = 2;
+      g._mustardSeed = true; g._whiskBossCd = 1e9; g._lassoBossCd = 1e9; g._statsRecorded = true; g._banishMode = true; });
+    await startRun();           // Snack after a "leaky" run
+    const a = await G(() => { var g = PC.game.scene.getScene('PC_Game');
+      return { ts: g.time.timeScale, bs: g.bossSlow, as: g.armSlow, gm: g.goldMult, rv: g.reviveCharges, ms: !!g._mustardSeed,
+        wc: g._whiskBossCd, lc: g._lassoBossCd, sr: !!g._statsRecorded, bm: !!g._banishMode }; });
+    await G(() => { var g = PC.game.scene.getScene('PC_Game'); g.reviveCharges = 3; g.goldMult = 9; });
+    await startStory('stage1');  // and Story after one
+    const b = await G(() => { var g = PC.game.scene.getScene('PC_Game'); return { ts: g.time.timeScale, rv: g.reviveCharges, gm: g.goldMult }; });
+    const ok = a.ts === 1 && a.bs === 1 && a.as === 1 && a.gm === 1 && a.rv === 0 && !a.ms && a.wc === 0 && a.lc === 0 && !a.sr && !a.bm &&
+      b.ts === 1 && b.rv === 0 && b.gm === 1;
+    return ok || { a, b };
+  });
+  await test('sweep', 'a vacuumed gem from across the map arrives (no endless overshoot)', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game'), got = 0, cb = g.gems.onCollect;
+      g.gems.onCollect = function (v) { got += v; };
+      g.gems.spawn(g.px + 3000, g.py, 5); var gm = g.gems.pool.filter(function (x) { return x.active; }).pop();
+      gm.fly = true; gm.spd = 200;
+      for (var i = 0; i < 300 && gm.active; i++) g.gems.update(1 / 30, g.px, g.py, 40);
+      g.gems.onCollect = cb;
+      return (!gm.active && got === 5) || { active: gm.active, x: Math.round(gm.x - g.px), got: got };
+    });
+  });
+  await test('sweep', 'RISTRETTO RAILGUN fires at a rate (was every frame)', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game');
+      var w = new PC.EspressoWeapon(g); w.level = 5; w.applyLevel && w.applyLevel();
+      PC.EVOLUTIONS.filter(function (r) { return r.base === 'espresso'; })[0].apply(w); w.evolved = true;
+      g.weapons = [w]; var shots = 0, f = g.bullets.fire; g.bullets.fire = function () { shots++; return f.apply(this, arguments); };
+      for (var k = 0; k < 12; k++) g.enemies.spawn(g.px + 120 + k * 8, g.py, PC.ENEMY_DEFS.pretzel);
+      for (var i = 0; i < 150; i++) { g.moving = (i % 2) === 0; w.update(1 / 30, g); }   // 5 seconds
+      g.bullets.fire = f;
+      return (shots >= 6 && shots <= 14) || { shots: shots };
+    });
+  });
+  await test('sweep', 'the spatial hash never hands a dead enemy to a weapon or to contact damage', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game'), h = new PC.SpatialHash();
+      var e = { x: 50, y: 50, active: true }; h.insert(e); e.active = false;
+      var n = 0; h.eachNear(50, 50, function () { n++; }); return n === 0 || n; });
+  });
+  await test('sweep', 'Salt aura damages a boss; kit XP bonus counts in Snack; crate penny luck survives the LUCKY PENNY item', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game');
+      PC.SALT_AURA = true;
+      var s = PC.SNACK.WEAPONS.salt.make(g); g.weapons = [s];
+      g.spawnBoss('frank'); g.boss.x = g.px + 20; g.boss.y = g.py; var hp0 = g.boss.hp;
+      for (var i = 0; i < 30; i++) s.update(1 / 30, g);
+      var bossHit = g.boss.hp < hp0;
+      var kx = g.xpMult; g.xpMult = 1; var base = g.snack.xpFor(1); g.xpMult = 1.1; var kit = g.snack.xpFor(1); g.xpMult = kx;
+      g.stats.metaLuck = 0; g.stats.luck = 0;
+      g.snack.collect({ kind: 'penny' }); PC.PASSIVES.luck.apply(g.stats, 1);
+      var luck = g.stats.luck;
+      return (bossHit && Math.abs(kit / base - 1.1) < 1e-9 && Math.abs(luck - 0.2) < 1e-9) || { bossHit: bossHit, kit: kit / base, luck: luck };
+    });
+  });
+  await test('sweep', 'a chest waits while level-up cards are open (one overlay at a time)', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game');
+      g.snack.dropChest(g.px, g.py, 'normal', false); g.cardsOpen = true;
+      g.snack.updateChests(); var waited = g.snack.chests.length === 1 && !g.snackHold;
+      g.cardsOpen = false; return waited || { chests: g.snack.chests.length, hold: g.snackHold }; });
+  });
+  await test('sweep', 'Garage shows each hero\'s real next upgrade (4 of 6 said "Power up!")', async () => G(() => {
+    var bad = ['victoria', 'nayah', 'kevin', 'josh', 'carlos'].filter(function (h) {
+      var d = PC.GARAGE.nextDesc(h); return !d || d === 'Power up!'; });
+    return bad.length === 0 || bad;
+  }));
+  await test('sweep', 'stage 7: the rescue cage stands where the rescue triggers (was 664px away in rock)', async () => {
+    await startStory('stage7');
+    return G(() => { var q = PC.game.scene.getScene('PC_Game').quest, o = null;
+      q.mission.objectives.forEach(function (x) { if (x.type === 'rescue') o = x; });
+      var t = q.snapWalk(q.spotOf(q.region.landmark(o.at)));
+      var d = Math.sqrt(Math.pow(q.cageImg.x - t.x, 2) + Math.pow(q.cageImg.y - t.y, 2));
+      return d < 90 || { d: Math.round(d) }; });
+  });
+  await test('sweep', 'the last pickup line is not swallowed by the objective\'s done line', async () => {
+    await startStory('stage2');
+    return G(() => { var g = PC.game.scene.getScene('PC_Game'), q = g.quest, seen = [];
+      var show = q.box.show; q.box.show = function (b, cb) { seen.push(b.text || b); return show.apply(this, arguments); };
+      while (q.box.active) q.box.tap();
+      q.playScript([{ say: { speaker: 'vic', text: 'LAST ITEM LINE' } }], null);
+      q.finishObjective({ type: 'fetch', done: [{ say: { speaker: 'vic', text: 'DONE LINE' } }] });
+      var firstShownIsItem = seen[seen.length - 1] === 'LAST ITEM LINE';
+      q.box.tap(); q.box.tap(); q.update(0.016);
+      q.box.show = show;
+      return (firstShownIsItem && seen.indexOf('DONE LINE') >= 0) || seen; });
+  });
+
   // ================= RESILIENCE =================
+  await test('itch', 'Story progress survives a reload: the tutorial flag loads back (it was saved but dropped)', async () => {
+    const c4 = await browser.newContext({ viewport: { width: 480, height: 854 } });
+    await c4.addInitScript(() => { try { localStorage.setItem('portioncontrol.story', JSON.stringify({ introSeen: true, tutorialSeen: true, cleared: {}, revealSeen: {} })); } catch (e) {} });
+    const p4 = await boot(c4);
+    const r = await p4.evaluate(() => PC.storyState.tutorialSeen());
+    await c4.close();
+    return r === true || r;
+  });
+  await test('itch', 'with storage blocked, Story gold still works for the session (the Hydro-Drill can be bought)', async () => {
+    const c5 = await browser.newContext({ viewport: { width: 480, height: 854 } });
+    await c5.addInitScript(() => { const boom = () => { throw new DOMException('blocked', 'SecurityError'); };
+      Object.defineProperty(window, 'localStorage', { get: boom, configurable: true });
+      Object.defineProperty(window, 'sessionStorage', { get: boom, configurable: true }); });
+    const p5 = await boot(c5);
+    const r = await p5.evaluate(() => { PC.meta.setGold(400); var a = PC.meta.gold(); var bought = PC.GARAGE.buyGear('hydrodrill');
+      return { a: a, bought: bought, left: PC.meta.gold() }; });
+    await c5.close();
+    return (r.a === 400 && r.bought && r.left === 100) || r;
+  });
   await test('itch', 'with storage blocked (itch iframe), a full Snack menu-to-results loop runs without errors', async () => {
     const ctx2 = await browser.newContext({ viewport: { width: 480, height: 854 } });
     await ctx2.addInitScript(() => {
