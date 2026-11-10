@@ -174,6 +174,7 @@ PC.SnackProfile = (function () {
       rec.level = Math.max(rec.level, run.level);
       rec.t = Math.max(rec.t, Math.floor(run.t));
       if (run.cleared) rec.cleared = true;
+      if ((run.overtime || 0) > (rec.ot || 0)) rec.ot = run.overtime;   // best OVERTIME (v0.80.4)
       save();
       return true;
     },

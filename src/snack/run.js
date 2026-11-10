@@ -23,7 +23,7 @@ PC.SnackRun = function (scene, cfg) {
   this.rerolls = 0; this.skips = 0; this.banishes = 0; this.banished = {};
   this.densityK = 1;            // [TUNABLE] global spawn-rate dial (balance bot)
   this._ev = 0; this._acc = 0; this._tick = 0; this._save = 0; this._heal = 0;
-  this.ended = false; this.cleared = false;
+  this.ended = false; this.cleared = false; this.overtime = false; this.otT = 0;
   this.chests = [];
   this.relic = null;
   this._toasts = []; this._toastBusy = false;
@@ -76,13 +76,14 @@ PC.SnackRun.prototype.update = function (dt) {
   var t = scene.runT;
   this.run.t = t;
   if (!this.cleared && t >= PC.SNACK.RUN_SEC) { this.clearStage(); return; }
-  if (this.cleared) return;
+  if (this.cleared && !this.overtime) return;      // the YOU SURVIVED moment
+  if (this.overtime) this.updateOvertime(dt);
 
   // authored waves: one row per minute [template section 12]
   var row = PC.SNACK.WAVE_ROWS[Math.min(PC.SNACK.WAVE_ROWS.length - 1, Math.floor(t / 60))];
   var curse = scene.stats.curse || 0;
   var interval = row[0] / ((1 + curse) * this.densityK);
-  if (scene.boss && !scene.boss.dead) interval *= 1.8;          // let the boss fight breathe
+  if (scene.boss && !scene.boss.dead && !this.overtime) interval *= 1.8;   // let the boss fight breathe
   var cap = Math.min(scene.enemies.cap - 8, Math.round(row[2] * (1 + curse)));
   this._acc += dt;
   if (this._acc >= interval && scene.enemies.liveCount < cap) {
@@ -449,42 +450,98 @@ PC.SnackRun.prototype.buildPauseButton = function () {
 };
 PC.SnackRun.prototype.pause = function () {
   var scene = this.scene;
-  if (this.ended || this.cleared || scene.cardsOpen || scene.snackHold || scene.dead) return;
+  if (this.ended || (this.cleared && !this.overtime) || scene.cardsOpen || scene.snackHold || scene.dead) return;
   if (PC.SnackPause) PC.SnackPause.open(scene);
 };
 
 // ---- the 15:00 clear [VS: the timer completing IS the clear] ----
+// v0.80.4: the clear is BANKED here (achievements + save, so closing the
+// tab in overtime can't lose it), then OVERTIME starts: the Reaper beat.
 PC.SnackRun.prototype.clearStage = function () {
   var scene = this.scene, self = this, W = PC.RENDER.W, H = PC.RENDER.H, K = PC.uiK;
+  var OT = PC.SNACK.OVERTIME;
   this.cleared = true;
-  scene.won = true;                                // nothing can hurt you now
+  scene.invUntil = Math.max(scene.invUntil, scene.now + OT.CELEBRATE_SEC + 1.5);   // a grace beat
   scene.enemies.clearAll(scene.fx);
-  var outlasted = null;                            // a boss you survived, not beat
-  if (scene.boss && !scene.boss.dead) {
-    var b = scene.boss;
-    outlasted = b.name;
-    if (b.sprite) b.sprite.setVisible(false);
-    if (b.shadow) b.shadow.setVisible(false);
-    if (b.tele) b.tele.setVisible(false);
-    scene.boss = null;
-    if (scene.bossBar) scene.bossBar.clear();
-  }
+  var outlasted = (scene.boss && !scene.boss.dead) ? scene.boss.name : null;
   PC.SnackUnlocks.event(this, 'clear', this.stage.id);
+  PC.SnackUnlocks.check(this);
+  PC.SnackProfile.save();
   if (PC.audio) { PC.audio.startMusic('results'); if (PC.audio.fanfare) PC.audio.fanfare(); }
   var t1 = PC.ui.text(scene, W / 2, H * 0.3, 'YOU SURVIVED!', 'title', { color: '#a8e04a', align: 'center' })
     .setOrigin(0.5).setDepth(151).setScale(0.4);
   var t2 = PC.ui.text(scene, W / 2, H * 0.3 + K(26),
     outlasted ? 'YOU OUTLASTED ' + outlasted + '!' : this.stage.title + ' CLEARED', 'label', { color: '#f2c33c', align: 'center' })
     .setOrigin(0.5).setDepth(151);
-  PC.ui.fit && PC.ui.fit(t2, W - K(16));
+  PC.ui.fit(t2, W - K(16));
   [t1, t2].forEach(scene.uiAttach);
   scene.tweens.add({ targets: t1, scale: 1, duration: 350, ease: 'Back.out' });
   var COLORS = [0xa8e04a, 0xf2c33c, 0x35d0ff, 0xff6b6b, 0xff9ecb];
   for (var i = 0; i < 40; i++) {
     var c = scene.uiAttach(scene.add.rectangle(Math.random() * W, -10 - Math.random() * 80, 4, 6, COLORS[i % 5]).setDepth(152));
-    scene.tweens.add({ targets: c, y: H + 12, angle: 360, duration: 1400 + Math.random() * 900 });
+    scene.tweens.add({ targets: c, y: H + 12, angle: 360, duration: 1400 + Math.random() * 900,
+      onComplete: function (tw, tg) { if (tg[0] && tg[0].destroy) tg[0].destroy(); } });
   }
-  scene.time.delayedCall(3200, function () { self.end('clear'); });
+  scene.time.delayedCall(OT.CELEBRATE_SEC * 1000, function () {
+    scene.tweens.add({ targets: [t1, t2], alpha: 0, duration: 300, onComplete: function () { t1.destroy(); t2.destroy(); } });
+    self.startOvertime();
+  });
+};
+
+// ---- OVERTIME: the supersized boss you can only outrun ----
+PC.SnackRun.prototype.startOvertime = function () {
+  var scene = this.scene, W = PC.RENDER.W, H = PC.RENDER.H, K = PC.uiK, OT = PC.SNACK.OVERTIME;
+  if (this.ended || scene.dead || this.overtime) return;
+  this.overtime = true; this.otT = 0; this._otGold = 0; this.run.otGold = 0;
+  var b = (scene.boss && !scene.boss.dead) ? scene.boss : null;
+  if (!b) { scene.spawnBoss(this.stage.boss); b = scene.boss; }    // beat it? it's back
+  else if (PC.audio) PC.audio.startMusic('boss');
+  var baseName = PC.BOSSES[this.stage.boss] && PC.BOSSES[this.stage.boss].name || b.name;
+  b.reaper = true;
+  b.name = 'SUPERSIZED ' + baseName;
+  b.hp = b.maxHp = 1;                               // a full bar that never drops
+  b.contact = OT.CONTACT;
+  b.baseS *= OT.SCALE; b.r = Math.round(b.r * OT.SCALE);
+  b.state = 'active'; b.stateT = 0; b.vuln = 0; b.guard = 1;
+  b.shots.length = 0; b.noContact = false;
+  if (b.tele) b.tele.setVisible(false);
+  b.chaseSpd = this.chaseSpeed();
+  var t1 = PC.ui.text(scene, W / 2, H * 0.28, 'OVERTIME!', 'title', { color: '#b45ce8', align: 'center' })
+    .setOrigin(0.5).setDepth(151).setScale(0.4);
+  var t2 = PC.ui.text(scene, W / 2, H * 0.28 + K(26), b.name + '!', 'label', { color: '#ff6b6b', align: 'center' })
+    .setOrigin(0.5).setDepth(151);
+  var t3 = PC.ui.text(scene, W / 2, H * 0.28 + K(46), 'SURVIVE AS LONG AS YOU CAN!', 'caption', { color: '#f7f4ef', align: 'center' })
+    .setOrigin(0.5).setDepth(151);
+  PC.ui.fit(t2, W - K(16)); PC.ui.fit(t3, W - K(16));
+  [t1, t2, t3].forEach(scene.uiAttach);
+  scene.tweens.add({ targets: t1, scale: 1, duration: 350, ease: 'Back.out' });
+  scene.tweens.add({ targets: [t1, t2, t3], alpha: 0, delay: 2600, duration: 500,
+    onComplete: function () { t1.destroy(); t2.destroy(); t3.destroy(); } });
+  if (PC.audio && PC.audio.roar) PC.audio.roar();
+  scene.cameras.main.shake(400, 0.01);
+};
+
+// chase speed: a fraction of YOUR speed that keeps climbing
+PC.SnackRun.prototype.chaseSpeed = function () {
+  var OT = PC.SNACK.OVERTIME, scene = this.scene;
+  var you = PC.PLAYER.SPEED * (scene.stats.spdMult || 1);
+  return you * (OT.SPEED0 + OT.RAMP * Math.floor((this.otT || 0) / OT.RAMP_EVERY));
+};
+
+PC.SnackRun.prototype.updateOvertime = function (dt) {
+  var scene = this.scene, OT = PC.SNACK.OVERTIME;
+  this.otT += dt;
+  if (scene.boss && scene.boss.reaper) scene.boss.chaseSpd = this.chaseSpeed();
+  // bonus gold for every few seconds you hold out
+  this._otGold += dt;
+  if (this._otGold >= OT.GOLD_EVERY && !scene.dead) {
+    this._otGold -= OT.GOLD_EVERY;
+    PC.SnackProfile.addGold(OT.GOLD);
+    scene.pickups.gold += OT.GOLD;
+    this.run.otGold += OT.GOLD;
+    PC.SnackUnlocks.event(this, 'gold', OT.GOLD);
+    scene.floatText('+' + OT.GOLD + ' OVERTIME GOLD', 0xf2c33c);
+  }
 };
 
 // ---- the end of every run: count it once, then the results desk ----
@@ -494,12 +551,14 @@ PC.SnackRun.prototype.end = function (reason) {
   var scene = this.scene, r = this.run;
   // a clear reads 15:00, not 15:00 plus the 3.2s celebration
   r.t = r.cleared ? Math.min(scene.runT, PC.SNACK.RUN_SEC) : scene.runT; r.level = scene.level;
+  r.overtime = this.overtime ? Math.floor(this.otT) : 0;
   PC.SnackUnlocks.check(this);
   PC.SnackProfile.commitRun(r);
   PC.SnackProfile.save();
   scene.scene.start('PC_SnackResults', {
     reason: reason, stage: this.stage.id, hero: this.heroId, t: r.t, level: r.level,
     kills: scene.kills, gold: r.gold, cleared: !!r.cleared, unlocks: this.newUnlocks.slice(),
+    overtime: r.overtime, otGold: r.otGold || 0,
     evolved: r.evolved.slice(), runId: r.id,
   });
 };

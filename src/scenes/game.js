@@ -1160,7 +1160,11 @@ PC.GameScene.prototype.update = function (time, delta) {
   if (this._dbgAcc > 0.25) {
     this._dbgAcc = 0;
     var m = Math.floor(this.runT / 60), sec = Math.floor(this.runT % 60);
-    this.timerText.setText(m + ':' + (sec < 10 ? '0' : '') + sec);
+    if (this.snack && this.snack.overtime) {          // v0.80.4: counts UP from 15:00
+      var ot = Math.floor(this.snack.otT);
+      this.timerText.setText('+' + Math.floor(ot / 60) + ':' + (ot % 60 < 10 ? '0' : '') + (ot % 60))
+        .setColor('#b45ce8');
+    } else this.timerText.setText(m + ':' + (sec < 10 ? '0' : '') + sec);
     if (PC.DEV_MODE) {
       this.debugText.setText('fps ' + Math.round(this.game.loop.actualFps) +
         ' - foes ' + this.enemies.liveCount);

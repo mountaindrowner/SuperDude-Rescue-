@@ -305,12 +305,30 @@ async function test(section, name, fn) {
       return (!PC.SnackProfile.isDone('rich') && PC.SnackProfile.isDone('nayah') && PC.SnackProfile.heroState('nayah') === 'forSale') ||
         { rich: PC.SnackProfile.isDone('rich'), nayah: PC.SnackProfile.isDone('nayah'), healed: PC.SnackProfile.get().life.healed }; });
   });
-  await test('gates', 'surviving the full 15:00 registers the clear', async () => {
+  await test('gates', 'surviving the full 15:00 banks the clear ON THE SPOT (before overtime ends the run)', async () => {
     await startRun();
     await G(() => { var g = PC.game.scene.getScene('PC_Game'); g.runT = PC.SNACK.RUN_SEC + 0.1; });
+    await page.waitForFunction(() => PC.game.scene.getScene('PC_Game').snack.cleared, null, { timeout: 9000 });
+    return G(() => { var d = PC.SnackProfile.get();
+      return (d.life.clears.street && PC.SnackProfile.isDone('clear_street')) || { clears: d.life.clears, done: PC.SnackProfile.isDone('clear_street') }; });
+  });
+  await test('overtime', 'OVERTIME: the boss supersizes, can not be hurt, speeds up, pays gold; going down ends the run as a CLEAR', async () => {
+    await startRun();
+    await G(() => { var g = PC.game.scene.getScene('PC_Game'); g.runT = PC.SNACK.RUN_SEC + 0.1; });
+    await page.waitForFunction(() => { var g = PC.game.scene.getScene('PC_Game'); return g.snack.overtime && g.boss && g.boss.reaper; }, null, { timeout: 9000 });
+    const a = await G(() => { var g = PC.game.scene.getScene('PC_Game'), b = g.boss, sr = g.snack;
+      var w0 = PC.SnackProfile.get().wallet;
+      b.damage(1e9, 0, 0); var alive = !b.dead && b.hp === b.maxHp;
+      var s0 = sr.chaseSpeed(); sr.otT = 30; var s1 = sr.chaseSpeed();
+      sr._otGold = 0; sr.updateOvertime(PC.SNACK.OVERTIME.GOLD_EVERY + 0.01);
+      var paid = PC.SnackProfile.get().wallet - w0;
+      return { alive: alive, faster: s1 > s0, paid: paid, name: b.name };
+    });
+    await G(() => { var g = PC.game.scene.getScene('PC_Game'); g.reviveCharges = 0; g.invUntil = 0; g.hp = 1; g.die(); });
     await page.waitForFunction(() => PC.game.scene.isActive('PC_SnackResults'), null, { timeout: 9000 });
-    return G(() => { var s = PC.game.scene.getScene('PC_SnackResults'), d = PC.SnackProfile.get();
-      return (s.d.cleared && d.life.clears.street && d.records.street.cleared && PC.SnackProfile.isDone('clear_street')) || s.d; });
+    const r = await G(() => { var s = PC.game.scene.getScene('PC_SnackResults'), d = PC.SnackProfile.get();
+      return { cleared: s.d.cleared, ot: s.d.overtime, t: s.d.t, rec: d.records.street.cleared, recOt: d.records.street.ot }; });
+    return (a.alive && a.faster && a.paid === 5 && a.name === 'SUPERSIZED BIG FRANK' && r.cleared && r.ot >= 30 && r.t === 900 && r.rec && r.recOt >= 30) || { a, r };
   });
   await test('gates', 'an early death still keeps every coin and unlock', async () => {
     await startRun();

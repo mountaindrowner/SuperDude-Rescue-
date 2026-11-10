@@ -277,7 +277,8 @@ PC.SnackStagesScene.prototype.build = function () {
         line3 = 'TO OPEN: reach level ' + st.gate.level + ' in ' + (P.stageOpen(prev.id) ? prev.title : '???');
       } else if (rec) {
         var m = Math.floor(rec.t / 60), s = rec.t % 60;
-        line3 = (rec.cleared ? 'CLEARED!  ' : '') + 'BEST: LV ' + rec.level + '  ' + m + ':' + (s < 10 ? '0' : '') + s;
+        line3 = (rec.cleared ? 'CLEARED!  ' : '') + 'BEST: LV ' + rec.level + '  ' + m + ':' + (s < 10 ? '0' : '') + s +
+          (rec.ot ? '  OT +' + Math.floor(rec.ot / 60) + ':' + (rec.ot % 60 < 10 ? '0' : '') + (rec.ot % 60) : '');
       } else line3 = st.blurb;
       var t3 = PC.ui.text(self, x + K(36), y + K(42), line3, 'caption', { color: rec && rec.cleared ? '#a8e04a' : '#8d8aa8' });
       PC.ui.fit(t3, w - K(46));
@@ -413,10 +414,15 @@ PC.SnackResultsScene.prototype.create = function () {
   var m = Math.floor((d.t || 0) / 60), s = Math.floor((d.t || 0) % 60);
   var g = this.add.graphics();
   var pw = Math.min(W - K(24), K(260)), px = W / 2 - pw / 2, py = K(78);
-  PC.labPanel(g, px, py, pw, K(70), { rivets: true });
+  var ot = d.overtime || 0, ph = ot ? K(88) : K(70);
+  PC.labPanel(g, px, py, pw, ph, { rivets: true });
   PC.ui.text(this, px + K(14), py + K(10),
     'TIME     ' + m + ':' + (s < 10 ? '0' : '') + s + '\nLEVEL    ' + (d.level || 1) + '\nPOPS     ' + (d.kills || 0),
     'body', { color: '#f7f4ef' });
+  if (ot) {          // OVERTIME (v0.80.4): how long you outran the supersized boss
+    PC.ui.text(this, px + K(14), py + K(66), 'OVERTIME +' + Math.floor(ot / 60) + ':' + (ot % 60 < 10 ? '0' : '') + (ot % 60) +
+      (d.otGold ? '   (+' + d.otGold + ' GOLD)' : ''), 'label', { color: '#b45ce8' });
+  }
   PC.ui.text(this, px + pw - K(14), py + K(10), '+' + (d.gold || 0) + ' GOLD', 'label', { color: '#f2c33c' }).setOrigin(1, 0);
   PC.ui.text(this, px + pw - K(14), py + K(30), 'WALLET ' + PC.SnackUI.wallet(), 'caption', { color: '#cfd4e8' }).setOrigin(1, 0);
   if (d.evolved && d.evolved.length) {
@@ -424,7 +430,7 @@ PC.SnackResultsScene.prototype.create = function () {
   }
   // new unlocks [template: "show a concise reward summary"]
   var u = d.unlocks || [];
-  var ly = py + K(84);
+  var ly = py + ph + K(14);
   PC.ui.text(this, W / 2, ly, u.length ? 'NEW UNLOCKS!' : 'NO NEW UNLOCKS THIS TIME', 'label',
     { color: u.length ? '#a8e04a' : '#6d6a8e', align: 'center' }).setOrigin(0.5, 0);
   var list = new PC.SnackList(this, K(12), ly + K(22), W - K(24), H - K(60) - (ly + K(22)), K(36));

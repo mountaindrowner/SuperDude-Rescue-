@@ -160,13 +160,13 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     if (this.scene.pickups && this.scene.pickups.hitAt(b.x, b.y)) {
       b.active = false; b.sprite.setVisible(false); continue;
     }
-    // Snack Attack (v0.80.3): a piercing bolt passes THROUGH a boss and
-    // hits it once - it used to stay inside the boss and hit every frame
-    // until its pierce ran out (MEGA RESIZER did ~15x anyone else's boss
-    // damage). Story keeps its tuned path exactly (CLAUDE.md).
-    var bossOk = !this.scene.snack || this.scene.now >= (b.bossCd || 0);
+    // a piercing bolt passes THROUGH a boss and hits it once per pass
+    // (v0.80.3 Snack, v0.80.4 everywhere - Mark OK'd Story too: in Story
+    // only a carded level-5 Resizer pierces, so no Story retune). It used
+    // to stay inside the boss and hit every frame until pierce ran out.
+    var bossOk = this.scene.now >= (b.bossCd || 0);
     if (bossOk && this.scene.hitBoss && this.scene.hitBoss(b.x, b.y, b.dmg, b.dx, b.dy)) {
-      if (this.scene.snack) b.bossCd = this.scene.now + 0.25;
+      b.bossCd = this.scene.now + 0.25;
       if (b.pierce > 0) { b.pierce--; } else { b.active = false; b.sprite.setVisible(false); continue; }
     }
     var hit = null;

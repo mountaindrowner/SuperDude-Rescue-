@@ -9,7 +9,10 @@ PC.EVOLUTIONS = [
     desc: 'Colossal triple bolts that pierce everything!',
     apply: function (w) {
       w.name = 'MEGA RESIZER';
-      w.dmg = 40; w.cd = 0.35; w.amount = 3; w.pierce = 3; w.speed = 640;
+      // v0.80.4 (Mark OK'd): was dmg 40 / cd 0.35 = 1,447 boss DPS in a
+      // late build vs 494 for the rank-8 base and 264 for the best other
+      // evolution. Now ~1.35x its base; triple bolts + pierce stay.
+      w.dmg = 22; w.cd = 0.42; w.amount = 3; w.pierce = 3; w.speed = 640;
     } },
   { base: 'whisk', requires: 'servo', name: 'TORNADO WHISK',
     desc: 'A roaring storm of giant whisks!',

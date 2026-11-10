@@ -71,6 +71,23 @@ PC.SNACK.WAVE_ROWS = [
 PC.SNACK.BOSS_HP_PER_LEVEL = 0.8;
 PC.SNACK.BOSS_HP_MIN_LEVEL = 12;
 
+// ---- OVERTIME: the Reaper beat (v0.80.4, Mark's call). [VS] the timer
+// completing IS the clear; then an unbeatable pursuer ends the run. At
+// 15:00 the clear is banked on the spot, the district boss SUPERSIZES
+// (or comes back if you beat it): it can't be hurt, its touch knocks you
+// out, and it chases at a speed that keeps climbing. Survive as long as
+// you can for bonus gold. [TUNABLE]
+PC.SNACK.OVERTIME = {
+  CELEBRATE_SEC: 2.6,   // the YOU SURVIVED moment before it starts
+  SPEED0: 0.70,         // chase speed as a fraction of YOUR move speed...
+  RAMP: 0.06,           // ...plus this much every RAMP_EVERY seconds
+  RAMP_EVERY: 5,
+  GOLD: 5,              // bonus gold every GOLD_EVERY seconds survived
+  GOLD_EVERY: 5,
+  CONTACT: 9999,        // one touch = down (AMAZING GRACE still saves once)
+  SCALE: 1.45,          // how much bigger it gets
+};
+
 // timed set pieces [TUNABLE]: elites drop chests, rings close in
 PC.SNACK.EVENTS = [
   { at: 60,  type: 'elite', tier: 'C', chest: 'normal' },   // early, non-evolution

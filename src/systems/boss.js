@@ -120,6 +120,12 @@ PC.Boss.prototype.enraged = function () { return this.hp < this.maxHp * 0.25; };
 // THE single HP path (Perf Bible 10)
 PC.Boss.prototype.damage = function (amount, dirx, diry) {
   if (this.dead) return;
+  // the Snack OVERTIME reaper (v0.80.4) can't be hurt: hits flash only
+  if (this.reaper) {
+    this.flashUntil = this.scene.now + 0.04;
+    this.sprite.setTintFill(0xffffff);
+    return;
+  }
   // guard < 1 while burrowed/dived (shots plink into the dirt - never a
   // full immunity, doc 2.3.9); vuln doubles it in the punish window
   this.hp -= amount * this.guard * (this.vuln > 0 ? 2 : 1);
@@ -212,12 +218,18 @@ PC.Boss.prototype.update = function (dt, px, py) {
   }
 
   // ---- the per-boss fight script ----
-  if (this.state === 'intro') {
+  if (this.reaper) {
+    // OVERTIME: no script, no specials - it just comes for you, faster
+    // and faster (SnackRun sets chaseSpd every frame)
+    var rdx = px - this.x, rdy = py - this.y, rd = Math.sqrt(rdx * rdx + rdy * rdy) || 1;
+    var step = Math.min(rd, (this.chaseSpd || this.spd) * dt);
+    this.x += rdx / rd * step; this.y += rdy / rd * step;
+  } else if (this.state === 'intro') {
     if (this.stateT > 1.4) { this.state = 'active'; this.stateT = 0; }
   } else if (this.script) {
     this.script.update(this, dt, px, py);
   }
-  if (this.script && PC.BossScripts) PC.BossScripts._stepShots(this, dt, g);
+  if (this.script && !this.reaper && PC.BossScripts) PC.BossScripts._stepShots(this, dt, g);
 
   // frame flipbook + bob. A state with its own art (wind-up, lunge)
   // plays that set; anything else uses the 4-frame walk cycle. The
@@ -329,7 +341,7 @@ PC.Boss.prototype._drawBar = function () {
   var W = PC.RENDER.W, y = PC.RENDER.H - 8;
   g.clear();
   g.fillStyle(0x1b1530, 0.85).fillRect(8, y, W - 16, 6);
-  g.fillStyle(0xff6b6b, 1).fillRect(9, y + 1, Math.max(0, (W - 18) * this.hp / this.maxHp), 4);
+  g.fillStyle(this.reaper ? 0xb45ce8 : 0xff6b6b, 1).fillRect(9, y + 1, Math.max(0, (W - 18) * this.hp / this.maxHp), 4);
 };
 
 PC.Boss.prototype.die = function () {

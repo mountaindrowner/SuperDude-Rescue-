@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - v0.80.4: OVERTIME (the Reaper beat), MEGA RESIZER nerf,
+  piercing fix everywhere.** Mark: "run all of that, implement it."
+  * **OVERTIME** (`PC.SNACK.OVERTIME` in data.js, all TUNABLE): at 15:00
+    the clear is BANKED on the spot (achievements + save, so quitting or
+    closing the tab can't lose it), "YOU SURVIVED!" plays for 2.6s, then
+    the district boss SUPERSIZES (x1.45, purple bar), or comes back if
+    you beat it earlier. It can't be hurt (hits only flash), drops its
+    script for a straight chase at 0.70x YOUR move speed +0.06 every 5s
+    (faster than you after ~25s), and one touch knocks you out (AMAZING
+    GRACE still saves once). Waves keep coming at the 14:00 row. +5 gold
+    every 5s survived. The HUD timer counts "+0:23" in purple; results
+    show "OVERTIME +m:ss (+N GOLD)"; the stage card keeps your best
+    ("OT +m:ss", `records[stage].ot`). Pause works in overtime; the map
+    does not. A death in overtime is still a CLEAR (VS: death and
+    victory are not exclusive).
+  * **MEGA RESIZER** dmg 40 -> 22, cd 0.35 -> 0.42 (3 bolts, pierce 3
+    kept). Late-build boss DPS was 1,447 vs 494 for the rank-8 base and
+    264 for BUFFET BLASTER (the best other evolution); now ~1.35x its
+    base. Shared with Story (evolutions are rare there).
+  * **Piercing bolts hit a boss once per pass in Story too** (v0.80.3 was
+    Snack only). Story's card pool has no piercing weapon and the Garage
+    caps the Resizer at level 4 (no pierce), so only a carded level-5
+    Resizer is affected: no Story retune needed.
+  * **Found, not changed (next call for Mark):** 4 of 6 signature weapons
+    (Vic's Sentry Bot, Carlos's Comet, Nayah's Haymaker, Kevin's Strike)
+    target regular snacks only and barely touch a boss, while Danny's
+    Resizer aims at the boss - so even after the nerf Danny out-damages
+    everyone on bosses (the rank-8 base Resizer alone is ~2x BUFFET
+    BLASTER). Letting signatures target the boss would even the heroes.
+  * Acceptance **68/68** (the 15:00 test now checks the clear is banked
+    before the run ends; a new OVERTIME test covers immunity, the speed
+    ramp, the gold, and a death ending as a clear with best OT saved).
+
 - **2026-11-10 - v0.80.3: the district boss is something you SURVIVE first.**
   Mark: "like in Vampire Survivors, you're not meant to beat the boss for a
   long while... the Reaper doesn't lose... you get a lot of upgrades and
