@@ -1,5 +1,10 @@
 # PORTION CONTROL — Session Handover
 
+> **MOVED (2026-11-10).** Portion Control now lives on its own branch,
+> **`claude/portion-control-standalone`**, where the repo root is the game
+> (split with `git subtree split`, full history kept). Develop there; this
+> folder is frozen at v0.78.0.
+
 > **New session? Read this file first, then `COMPENDIUM.md` (the full
 > design doc — §1 Pillars, §2 Art, §3 Performance Bible are law).
 > Before generating ANY art, read `PIXELLAB.md` — the complete
