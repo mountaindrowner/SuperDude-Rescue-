@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - template gap audit + the Sound Bible (no code change).**
+  * **REGRESSION to fix first:** the only settings UI (music volume, damage
+    numbers) lived on the old Rush hero select (`PC_Select`, `[ SETTINGS ]`).
+    v0.80.0 made that scene unreachable, so there is no volume control
+    anywhere. The template also wants OPTIONS on the main menu.
+  * **Gaps vs the VS template, biggest first:** Arcana cards (+ the 5:30 /
+    10:30 Arcana bosses for 15-min runs); modes (Hurry, Hyper, Inverse,
+    Endless) and Limit Break; relics (1 of ~12: map / bestiary / Arcana /
+    mode relics missing; the region MAP button works in Snack without one);
+    Collection page, secrets, per-hero x per-stage clear grid, hero level
+    feats; per-hero level traits (kits are static); weapon UNIONS; floor
+    passives that can exceed 6 slots and in-world character coffins;
+    stage-specific wave tables (all five stages share one row template
+    mapped to their rosters); ranks 6-8 are generic +power, not per-weapon
+    data; no uniform weapon stat interface; 6 of 13 passives cap below 5;
+    no temporary growth boost after the level 20/40 walls; achievements
+    show done/not done but no progress counters or staged reveal; no
+    in-game run telemetry (damage per weapon, peak enemies, frame time);
+    no deterministic RNG seed; only 6 heroes and 1 elite type per stage
+    (template launch: 12-18 heroes, 15-25 elites/bosses); stage select
+    does not show stage modifiers; results lack damage per weapon.
+  * **Deliberate deviations (Mark's calls / kid-tuning):** 15:00 runs,
+    gates 20/30/40/50, separate save, victory instead of the Reaper,
+    stages are the five story districts (no vertical or arena stage).
+  * **THE SOUND BIBLE** (https://claude.ai/artifact/Y1XRXXDZHTLM4dyRpBPbRJ):
+    35 cue sheets (menus, cinematic moods, 6 district sets, every boss +
+    CHOMP per phase, Snack hub + 5 stage loops, 11 stingers), four shared
+    melodies, delivery spec, prompts. File names there are the hookup
+    plan: drop-ins replace existing keys; `cue_*`, `boss_<name>`,
+    `chomp_p1-3`, `snack_*`, `sting_*` need a line in audio.js TRACKS and
+    the call site (today every cutscene mood plays `story.mp3`; all
+    district bosses share `boss_a/b`).
+
 - **2026-11-10 - v0.80.0: SNACK ATTACK, the survivors mode.** Mark sent
   *Vampire_Survivors_Game_Template.md* ("everything we've built can stay as
   a story mode, but make the Vampire Survivors game part based on the
