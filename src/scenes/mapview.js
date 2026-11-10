@@ -220,16 +220,26 @@ PC.MapViewScene.prototype.create = function () {
   }
 
   // ---- close / resume ----------------------------------------------
+  // v0.80.1: OPTIONS shares the strip (the Story pause had no volume
+  // control once the old Rush select and its SETTINGS were retired)
   var by = H - PC.SAFE_BOTTOM - K(24);
+  var ow = Math.round((W - K(26)) * 0.36), rw = W - K(26) - ow, ox = K(16) + rw;
   var bg = this.add.graphics();
-  PC.labPanel(bg, K(10), by, W - K(20), K(24), { base: 0x2a2544, edge: 0x35d0ff });
-  PC.ui.text(this, W / 2, by + K(6), this._overlay ? 'RESUME' : 'BACK', 'label',
+  PC.labPanel(bg, K(10), by, rw, K(24), { base: 0x2a2544, edge: 0x35d0ff });
+  PC.labPanel(bg, ox, by, ow, K(24), { base: 0x2a2544, edge: 0xcfd4e8 });
+  PC.ui.text(this, K(10) + rw / 2, by + K(6), this._overlay ? 'RESUME' : 'BACK', 'label',
     { color: '#35d0ff', align: 'center' }).setOrigin(0.5, 0);
-  var z = this.add.zone(W / 2, by + K(12), W - K(20), K(30))
+  PC.ui.text(this, ox + ow / 2, by + K(6), 'OPTIONS', 'label',
+    { color: '#cfd4e8', align: 'center' }).setOrigin(0.5, 0);
+  var z = this.add.zone(K(10) + rw / 2, by + K(12), rw, K(30))
     .setInteractive({ useHandCursor: true });
   z.on('pointerdown', function () { self.close(); });
-  this.input.keyboard.on('keydown-ESC', function () { self.close(); });
-  this.input.keyboard.on('keydown-M', function () { self.close(); });
+  var oz = this.add.zone(ox + ow / 2, by + K(12), ow, K(30))
+    .setInteractive({ useHandCursor: true });
+  oz.on('pointerdown', function () { if (PC.audio) PC.audio.ui(); PC.OptionsPanel.open(self); });
+  // with OPTIONS up, Esc / M close only OPTIONS (its own Esc handler)
+  this.input.keyboard.on('keydown-ESC', function () { if (!self._optionsOpen) self.close(); });
+  this.input.keyboard.on('keydown-M', function () { if (!self._optionsOpen) self.close(); });
   PC.stampVersion(this);
 };
 

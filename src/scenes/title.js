@@ -164,6 +164,11 @@ PC.TitleScene.prototype.create = function () {
   button(H * 0.565 + 76, 'UPGRADES', '#f2c33c', 0xf2c33c, function () {
     self.scene.start('PC_Upgrade', { next: 'PC_Title' });
   });
+  // v0.80.1: settings came back as their own panel (they were stranded on
+  // the retired Rush hero select)
+  button(H * 0.565 + 114, 'OPTIONS', '#cfd4e8', 0xcfd4e8, function () {
+    PC.OptionsPanel.open(self);
+  });
 
   if (PC.DEV_MODE) {
     var sfxT = this.add.text(6, 6, '[ SFX TEST ]', {
@@ -175,7 +180,7 @@ PC.TitleScene.prototype.create = function () {
     this.menu.add(sfxT);
   }
 
-  var goldT = this.add.text(W / 2, H * 0.565 + 108, '$ ' + PC.meta.gold(), {
+  var goldT = this.add.text(W / 2, H * 0.565 + 146, '$ ' + PC.meta.gold(), {
     fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
   }).setOrigin(0.5);
   this.menu.add(goldT);

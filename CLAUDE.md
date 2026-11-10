@@ -39,7 +39,7 @@
   marked [TUNABLE] in `src/snack/data.js` and set with `tools/snack_bot.js`.
 - Everything Snack Attack is a branch on `scene.snack` in `PC_Game`; Story
   and the boss arena must keep their exact paths. Run
-  `node tests/snack_acceptance.js` before every ship (must be 48/48).
+  `node tests/snack_acceptance.js` before every ship (must be 53/53).
 
 ## Build the itch upload
 

@@ -121,26 +121,32 @@ PC.SnackHubScene.prototype.create = function () {
   if (PC.audio) PC.audio.startMusic('menu');
   var prof = P.get();
   // the logo, in the title screen's plate style
-  var top = Math.max(K(70), H * 0.17);
+  // short, wide screens (landscape: H is only ~K(312)) cannot fit the
+  // logo over five buttons, so the logo goes left and the buttons right
+  var wide = H < K(410) && W > H;
+  var cx = wide ? W * 0.3 : W / 2, bx = wide ? W * 0.7 : W / 2;
+  var top = wide ? H / 2 - K(52) : Math.max(K(70), H * 0.17);
   var plate = function (word, col, hex, y) {
     var g = self.add.graphics().setDepth(2);
     var w = K(200), h = K(38);
-    PC.labPanel(g, W / 2 - w / 2, y - h / 2, w, h, { rivets: true, base: 0x1c1733, edge: 0x6d6a8e });
-    g.fillStyle(hex, 0.12).fillRoundedRect(W / 2 - w / 2 + 2, y - h / 2 + 2, w - 4, h - 4, 4);
-    PC.logoText(self, W / 2, y, word, K(26), col).setDepth(3);   // a container: above its plate
+    PC.labPanel(g, cx - w / 2, y - h / 2, w, h, { rivets: true, base: 0x1c1733, edge: 0x6d6a8e });
+    g.fillStyle(hex, 0.12).fillRoundedRect(cx - w / 2 + 2, y - h / 2 + 2, w - 4, h - 4, 4);
+    PC.logoText(self, cx, y, word, K(26), col).setDepth(3);   // a container: above its plate
   };
   plate('SNACK', '#ff9ecb', 0xff9ecb, top);
   plate('ATTACK', '#f2c33c', 0xf2c33c, top + K(46));
-  PC.ui.text(this, W / 2, top + K(74), 'SURVIVE 15 MINUTES. GET STRONGER EVERY RUN.', 'caption',
+  PC.ui.text(this, cx, top + K(74), 'SURVIVE 15 MINUTES. GET STRONGER EVERY RUN.', 'caption',
     { color: '#cfd4e8', align: 'center' }).setOrigin(0.5);
-  PC.ui.text(this, W / 2, top + K(92), 'GOLD  ' + PC.SnackUI.wallet(), 'label', { color: '#f2c33c', align: 'center' }).setOrigin(0.5);
+  PC.ui.text(this, cx, top + K(92), 'GOLD  ' + PC.SnackUI.wallet(), 'label', { color: '#f2c33c', align: 'center' }).setOrigin(0.5);
 
-  var bw = Math.min(W - K(60), K(220)), bh = K(34), y0 = top + K(130);
+  var bw = wide ? Math.min(W * 0.4, K(220)) : Math.min(W - K(60), K(220)), bh = K(34);
+  var y0 = wide ? H / 2 - K(88) : top + K(130);
   var done = prof.done.length, total = PC.SNACK.ACHIEVEMENTS.length;
-  PC.SnackUI.button(this, W / 2, y0, bw, bh, '>> PLAY <<', 0xa8e04a, function () { self.scene.start('PC_SnackHeroes'); });
-  PC.SnackUI.button(this, W / 2, y0 + K(44), bw, bh, 'POWER-UPS', 0xf2c33c, function () { self.scene.start('PC_SnackShop'); });
-  PC.SnackUI.button(this, W / 2, y0 + K(88), bw, bh, 'UNLOCKS  ' + done + '/' + total, 0x35d0ff, function () { self.scene.start('PC_SnackUnlocks'); });
-  PC.SnackUI.button(this, W / 2, y0 + K(132), bw, bh, '< BACK', 0x6d6a8e, function () { self.scene.start('PC_Title'); });
+  PC.SnackUI.button(this, bx, y0, bw, bh, '>> PLAY <<', 0xa8e04a, function () { self.scene.start('PC_SnackHeroes'); });
+  PC.SnackUI.button(this, bx, y0 + K(44), bw, bh, 'POWER-UPS', 0xf2c33c, function () { self.scene.start('PC_SnackShop'); });
+  PC.SnackUI.button(this, bx, y0 + K(88), bw, bh, 'UNLOCKS  ' + done + '/' + total, 0x35d0ff, function () { self.scene.start('PC_SnackUnlocks'); });
+  PC.SnackUI.button(this, bx, y0 + K(132), bw, bh, 'OPTIONS', 0xcfd4e8, function () { PC.OptionsPanel.open(self); });
+  PC.SnackUI.button(this, bx, y0 + K(176), bw, bh, '< BACK', 0x6d6a8e, function () { self.scene.start('PC_Title'); });
 
   // first visit: the whole mode in three lines
   if (!prof.seenIntro) {
@@ -507,16 +513,19 @@ PC.SnackPause = {
       scene.input.keyboard.off('keydown-ESC', escClose);
       scene.input.keyboard.off('keydown-P', escClose);
     };
-    var escClose = function () { close(); };
-    var bw = Math.min(K(150), (W - K(36)) / 2);
-    var b1 = PC.SnackUI.button(scene, W / 2 - bw / 2 - K(6), H - K(40), bw, K(32), 'RESUME', 0xa8e04a, close, 212);
+    var escClose = function () { if (!scene._optionsOpen) close(); };
+    var gap = K(6), bw = Math.min(K(120), (W - K(24) - gap * 2) / 3);
+    var b1 = PC.SnackUI.button(scene, W / 2 - bw - gap, H - K(40), bw, K(32), 'RESUME', 0xa8e04a, close, 212);
+    var b3 = PC.SnackUI.button(scene, W / 2, H - K(40), bw, K(32), 'OPTIONS', 0xcfd4e8, function () {
+      PC.OptionsPanel.open(scene);
+    }, 212);
     var quitArmed = false;
-    var b2 = PC.SnackUI.button(scene, W / 2 + bw / 2 + K(6), H - K(40), bw, K(32), 'QUIT RUN', 0xff6b6b, function () {
-      if (!quitArmed) { quitArmed = true; b2.t.setText('SURE? TAP'); return; }
+    var b2 = PC.SnackUI.button(scene, W / 2 + bw + gap, H - K(40), bw, K(32), 'QUIT RUN', 0xff6b6b, function () {
+      if (!quitArmed) { quitArmed = true; b2.t.setText('SURE?'); return; }
       close();
       sr.end('quit');
     }, 212);
-    [b1, b2].forEach(function (b) { keep(b.g); keep(b.t); keep(b.z); });
+    [b1, b3, b2].forEach(function (b) { keep(b.g); keep(b.t); keep(b.z); });
     // the run's own ESC/P handlers would reopen this, so they close it
     // only after this frame's keydown has finished dispatching
     scene.time.delayedCall(0, function () {

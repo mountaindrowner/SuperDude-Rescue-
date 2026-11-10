@@ -12,11 +12,30 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - v0.80.1: OPTIONS is back (settings regression fixed).**
+  * New `src/scenes/options.js`: `PC.OptionsPanel.open(scene, { onClose })`,
+    one overlay with MUSIC and SOUND FX sliders (drag or tap, % readout)
+    and a DAMAGE NUMBERS on/off row, saved through `PC.audio` and
+    `PC.setDmgNumbers` (both already storage-guarded). DONE or Esc closes.
+    In `PC_Game` it attaches to the camera-pinned `scene.ui` container and
+    converts taps into that container's space.
+  * Opened from: the title menu (OPTIONS under SNACK ATTACK), the SNACK
+    ATTACK hub (OPTIONS above BACK), the in-run Snack pause (now
+    RESUME / OPTIONS / QUIT RUN), and the district map, which is the Story
+    pause (its footer is now RESUME | OPTIONS). Esc closes OPTIONS first,
+    then the pause or map.
+  * **Also fixed:** the Snack hub overflowed in landscape (logical H is
+    only K(312) at 1280x720, so BACK sat off screen even in v0.80.0). When
+    `H < K(410)` and wide, the logo goes left and the buttons right.
+  * Tests: acceptance is now **53/53** (5 new OPTIONS checks: title open and
+    DONE, hub saves volumes + damage numbers, pause Esc order, map Esc order, landscape
+    buttons on screen; the blocked-storage pass also drives the panel).
+    A real-mouse slider-drag harness passed 28/28 in portrait and landscape.
+
 - **2026-11-10 - template gap audit + the Sound Bible (no code change).**
-  * **REGRESSION to fix first:** the only settings UI (music volume, damage
-    numbers) lived on the old Rush hero select (`PC_Select`, `[ SETTINGS ]`).
-    v0.80.0 made that scene unreachable, so there is no volume control
-    anywhere. The template also wants OPTIONS on the main menu.
+  * ~~REGRESSION to fix first~~ (fixed in v0.80.1): the only settings UI
+    (music volume, damage numbers) lived on the old Rush hero select
+    (`PC_Select`, `[ SETTINGS ]`), which v0.80.0 made unreachable.
   * **Gaps vs the VS template, biggest first:** Arcana cards (+ the 5:30 /
     10:30 Arcana bosses for 15-min runs); modes (Hurry, Hyper, Inverse,
     Endless) and Limit Break; relics (1 of ~12: map / bestiary / Arcana /
