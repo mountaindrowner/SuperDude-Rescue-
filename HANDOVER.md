@@ -12,6 +12,39 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-10 - v0.80.3: the district boss is something you SURVIVE first.**
+  Mark: "like in Vampire Survivors, you're not meant to beat the boss for a
+  long while... the Reaper doesn't lose... you get a lot of upgrades and
+  you're able to survive him."
+  * **Measured before** (real-time duel, invincible hero standing at the
+    boss): a typical 7:30 build (4 weapons at rank 4) killed Big Frank in
+    15-28s and the Gloop King in 28-52s; evolved builds in 7-16s. The bot's
+    Danny killed Frank 27s after he spawned. A speed bump, not a test.
+  * **Now:** [VS] boss HP scales with the player's level when it spawns:
+    story HP x `BOSS_HP_PER_LEVEL` 0.8 x max(12, level) (data.js, TUNABLE).
+    Frank at level 20 = 48,000; Gloop King at 20 = 89,600. A "SURVIVE
+    <BOSS>!" call follows the APPEARS banner, and reaching 15:00 with the
+    boss alive reads "YOU OUTLASTED <BOSS>!" (it used to vanish silently).
+    Killing it still drops the big chest, now a real late-run feat.
+  * **Bot check (fresh saves):** nobody killed a boss; the strongest run
+    (Danny, level 35, two evolutions) took Frank 84,000 -> 51,600 by 15:00.
+    The bot kites rather than focuses, so a focused player with shop
+    power-ups should get a late kill. Tune with the two constants.
+  * **Fixed (Snack only):** a piercing bolt hit the boss EVERY frame it
+    overlapped (pierce-3 = up to 4 hits); Danny's evolved build did 6,157
+    boss DPS vs ~380 for every other hero. Now one hit per pass (0.25s
+    per-bullet throttle, so a boomerang still hits out and back).
+  * **Open, for Mark:**
+    - The same multi-hit exists in Story boss fights; Story's boss HP
+      (0.42 ease) was tuned with it, so it was left alone.
+    - MEGA RESIZER is still ~4.7x any other evolved build (1,801 vs ~380
+      DPS): dmg 40, 3 bolts, cd 0.35 vs base L5 24 / 2 / 0.56. Evolutions
+      are shared with Story, so not retuned without a call.
+    - 15:00 is still a victory screen. The VS ending is the Reaper: at
+      the timer an unbeatable pursuer arrives, the clear is already
+      banked, and you survive as long as you can. Not built yet.
+  * Acceptance **67/67** (3 new boss checks).
+
 - **2026-11-10 - v0.80.2: preliminary bug sweep (Mark: "simulate the game
   from the code... make sure the code goes where it needs to").**
   * **How:** strict-ES5 eslint (no-undef etc.) over all 28k lines; three

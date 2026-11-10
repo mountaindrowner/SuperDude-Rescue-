@@ -170,7 +170,15 @@ PC.SnackRun.prototype.fire = function (ev) {
     var def = this.makeDef(PC.SNACK.TIERS.indexOf(ev.tier), false);
     for (var i = 0; i < ev.n; i++) this.spawn(def, (i / ev.n) * Math.PI * 2);
   } else if (ev.type === 'boss') {
-    if (!scene.boss && PC.BOSSES && PC.BOSSES[this.stage.boss]) scene.spawnBoss(this.stage.boss);
+    if (!scene.boss && PC.BOSSES && PC.BOSSES[this.stage.boss]) {
+      scene.spawnBoss(this.stage.boss);
+      // a survive-it boss: HP from the level you bring (see data.js)
+      var S = PC.SNACK, lv = Math.max(S.BOSS_HP_MIN_LEVEL, scene.level);
+      var bhp = Math.round(PC.BOSSES[this.stage.boss].hp * S.BOSS_HP_PER_LEVEL * lv);
+      scene.boss.hp = scene.boss.maxHp = bhp;
+      this.run.bossHp = bhp;
+      var bs = this; scene.time.delayedCall(2200, function () { if (scene.boss && !bs.cleared) scene.floatText('SURVIVE ' + scene.boss.name + '!', 0xff6b6b); });
+    }
   }
 };
 
@@ -451,8 +459,10 @@ PC.SnackRun.prototype.clearStage = function () {
   this.cleared = true;
   scene.won = true;                                // nothing can hurt you now
   scene.enemies.clearAll(scene.fx);
+  var outlasted = null;                            // a boss you survived, not beat
   if (scene.boss && !scene.boss.dead) {
     var b = scene.boss;
+    outlasted = b.name;
     if (b.sprite) b.sprite.setVisible(false);
     if (b.shadow) b.shadow.setVisible(false);
     if (b.tele) b.tele.setVisible(false);
@@ -463,8 +473,10 @@ PC.SnackRun.prototype.clearStage = function () {
   if (PC.audio) { PC.audio.startMusic('results'); if (PC.audio.fanfare) PC.audio.fanfare(); }
   var t1 = PC.ui.text(scene, W / 2, H * 0.3, 'YOU SURVIVED!', 'title', { color: '#a8e04a', align: 'center' })
     .setOrigin(0.5).setDepth(151).setScale(0.4);
-  var t2 = PC.ui.text(scene, W / 2, H * 0.3 + K(26), this.stage.title + ' CLEARED', 'label', { color: '#f2c33c', align: 'center' })
+  var t2 = PC.ui.text(scene, W / 2, H * 0.3 + K(26),
+    outlasted ? 'YOU OUTLASTED ' + outlasted + '!' : this.stage.title + ' CLEARED', 'label', { color: '#f2c33c', align: 'center' })
     .setOrigin(0.5).setDepth(151);
+  PC.ui.fit && PC.ui.fit(t2, W - K(16));
   [t1, t2].forEach(scene.uiAttach);
   scene.tweens.add({ targets: t1, scale: 1, duration: 350, ease: 'Back.out' });
   var COLORS = [0xa8e04a, 0xf2c33c, 0x35d0ff, 0xff6b6b, 0xff9ecb];

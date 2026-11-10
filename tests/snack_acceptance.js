@@ -592,6 +592,35 @@ async function test(section, name, fn) {
       return (firstShownIsItem && seen.indexOf('DONE LINE') >= 0) || seen; });
   });
 
+  // ================= THE SURVIVE-IT BOSS (v0.80.3) =================
+  await test('boss', 'district boss HP = story HP x 0.8 x your level at 7:30 (floor level 12)', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game'), S = PC.SNACK, out = [];
+      [3, 20].forEach(function (lv) {
+        if (g.boss) { g.boss.sprite.setVisible(false); g.boss = null; }
+        g.level = lv; g.snack.fire({ type: 'boss' });
+        out.push(g.boss.maxHp === Math.round(PC.BOSSES.frank.hp * S.BOSS_HP_PER_LEVEL * Math.max(S.BOSS_HP_MIN_LEVEL, lv)));
+      });
+      return out.join() === 'true,true' || out; });
+  });
+  await test('boss', 'a piercing bolt passes through the boss and hits it ONCE (was every frame)', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game');
+      g.spawnBoss('frank'); g.boss.update = function () {}; g.boss.x = g.px + 150; g.boss.y = g.py; g.weapons = [];
+      var hits = 0, hb = g.hitBoss; g.hitBoss = function () { var r = hb.apply(this, arguments); if (r) hits++; return r; };
+      g.bullets.fire(g.px, g.py, g.px + 300, g.py, { speed: 400, dmg: 1, pierce: 3, life: 1.5 });
+      for (var i = 0; i < 60; i++) { g.now += 1 / 30; g.bullets.update(1 / 30, g.enemies, g._onKillCb); }
+      g.hitBoss = hb;
+      return hits === 1 || { hits: hits }; });
+  });
+  await test('boss', 'surviving to 15:00 with the boss alive reads YOU OUTLASTED <BOSS>', async () => {
+    await startRun();
+    return G(() => { var g = PC.game.scene.getScene('PC_Game');
+      g.spawnBoss('frank'); g.snack.clearStage();
+      var txt = g.ui.list.filter(function (o) { return o.text && o.text.indexOf('YOU OUTLASTED BIG FRANK') === 0; }).length;
+      return txt === 1 || g.ui.list.filter(function (o) { return o.text; }).map(function (o) { return o.text; }); });
+  });
+
   // ================= RESILIENCE =================
   await test('itch', 'Story progress survives a reload: the tutorial flag loads back (it was saved but dropped)', async () => {
     const c4 = await browser.newContext({ viewport: { width: 480, height: 854 } });

@@ -62,7 +62,7 @@ PC.BulletSystem.prototype.fire = function (x, y, tx, ty, spec) {
   b.x = x; b.y = y;
   b.dx = dx / d; b.dy = dy / d;
   b.spd = spec.speed * (this.scene.stats ? this.scene.stats.projMult : 1);
-  b.dmg = spec.dmg; b.pierce = spec.pierce || 0;
+  b.dmg = spec.dmg; b.pierce = spec.pierce || 0; b.bossCd = 0;
   b.life = spec.life || 1.1;
   b.slowMs = spec.slowMs || 0;
   b.shrinkFx = spec.shrinkFx || 0;       // Danny: visually shrink victims
@@ -160,7 +160,13 @@ PC.BulletSystem.prototype.update = function (dt, enemies, onKill) {
     if (this.scene.pickups && this.scene.pickups.hitAt(b.x, b.y)) {
       b.active = false; b.sprite.setVisible(false); continue;
     }
-    if (this.scene.hitBoss && this.scene.hitBoss(b.x, b.y, b.dmg, b.dx, b.dy)) {
+    // Snack Attack (v0.80.3): a piercing bolt passes THROUGH a boss and
+    // hits it once - it used to stay inside the boss and hit every frame
+    // until its pierce ran out (MEGA RESIZER did ~15x anyone else's boss
+    // damage). Story keeps its tuned path exactly (CLAUDE.md).
+    var bossOk = !this.scene.snack || this.scene.now >= (b.bossCd || 0);
+    if (bossOk && this.scene.hitBoss && this.scene.hitBoss(b.x, b.y, b.dmg, b.dx, b.dy)) {
+      if (this.scene.snack) b.bossCd = this.scene.now + 0.25;
       if (b.pierce > 0) { b.pierce--; } else { b.active = false; b.sprite.setVisible(false); continue; }
     }
     var hit = null;

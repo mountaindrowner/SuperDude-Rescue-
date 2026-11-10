@@ -60,6 +60,17 @@ PC.SNACK.WAVE_ROWS = [
   [  0.24, 4, 290, [1, 2, 2, 3, 3], 'dense' ],            // 13
   [  0.22, 4, 300, [2, 2, 2, 3, 4], 'the last crowd' ],   // 14
 ];
+// ---- THE DISTRICT BOSS is something you SURVIVE first (v0.80.3, Mark:
+// "like in Vampire Survivors, you're not meant to beat the boss for a
+// long while... you get a lot of upgrades and you're able to survive
+// him"). [VS] boss HP scales with the player's level when it spawns, so
+// a snowballing build meets a tougher boss. Measured before this change:
+// a typical 7:30 build (4 weapons at rank 4) killed Big Frank in 15-28s
+// standing still, an evolved build in 7-16s - a speed bump, not a test.
+// HP = story HP x PER_LEVEL x max(MIN_LEVEL, level at spawn). [TUNABLE]
+PC.SNACK.BOSS_HP_PER_LEVEL = 0.8;
+PC.SNACK.BOSS_HP_MIN_LEVEL = 12;
+
 // timed set pieces [TUNABLE]: elites drop chests, rings close in
 PC.SNACK.EVENTS = [
   { at: 60,  type: 'elite', tier: 'C', chest: 'normal' },   // early, non-evolution
