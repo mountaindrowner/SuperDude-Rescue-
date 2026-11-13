@@ -12,6 +12,30 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-13 - v0.80.5: music stacking fixed** (Mark: "in the beginning it
+  plays like 2 or 3 songs").
+  * **Cause:** `PC.audio.startMusic` fades the old track by lowering its
+    volume and only paused it once the volume reached zero. iOS Safari
+    ignores element volume, so on iPhone/iPad the old track never got
+    quiet and never stopped: title kept playing under the intro cutscene's
+    story music, then the mission map's menu music joined (3 songs).
+    Reproduced headless by making `volume` read-only.
+  * **Fix (audio.js):** the old track is always paused (and its source
+    released) 650ms after a switch, whatever its volume did. Two related
+    fixes: a late play()/error callback from a REPLACED track no longer
+    clears `curSet` (the next tap would restart the music on a random
+    track), and returning to the tab no longer restarts music that
+    `stopMusic` had stopped.
+  * Checked desktop, iOS-like, and iOS-like with music blocked until the
+    first tap, over title -> STORY -> intro -> mission map -> title ->
+    SNACK ATTACK -> run -> pause -> tab hide/show: one track at every step.
+  * **Known, not changed:** on iPhone the music always plays at full
+    volume (iOS ignores element volume), so the MUSIC slider does nothing
+    there. Fix = route the MP3 through the Web Audio music bus, BUT iOS
+    mutes Web Audio with the silent switch, so music would then go silent
+    in silent mode (today only the sound effects do). Mark's call.
+  * Acceptance **70/70** (2 new music checks).
+
 - **2026-11-10 - v0.80.4: OVERTIME (the Reaper beat), MEGA RESIZER nerf,
   piercing fix everywhere.** Mark: "run all of that, implement it."
   * **OVERTIME** (`PC.SNACK.OVERTIME` in data.js, all TUNABLE): at 15:00

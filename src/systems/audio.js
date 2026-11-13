@@ -260,20 +260,30 @@ window.PC = window.PC || {};
       var list = TRACKS[set] || TRACKS.city;
       var src = list[(Math.random() * list.length) | 0];
       var old = musicEl;
-      if (old && !old.paused) {
-        // fade the old one out over ~0.6s, then let it go
+      if (old) {
+        // fade the old one out over ~0.6s, then STOP it no matter what.
+        // v0.80.5: the stop used to wait for the volume to reach zero -
+        // but iOS Safari ignores element volume, so the old track never
+        // got quiet, never stopped, and title + story + menu stacked up
+        // ("it plays 2 or 3 songs at the beginning")
         var fade = setInterval(function () {
-          old.volume = Math.max(0, old.volume - 0.08);
-          if (old.volume <= 0.01) { clearInterval(fade); try { old.pause(); } catch (e) {} }
+          try { old.volume = Math.max(0, old.volume - 0.08); } catch (e) {}
         }, 50);
+        setTimeout(function () {
+          clearInterval(fade);
+          try { old.pause(); old.removeAttribute('src'); old.load(); } catch (e) {}
+        }, old.paused ? 0 : 650);
       }
       try {
-        musicEl = new Audio(src);
+        var el = new Audio(src);
+        musicEl = el;
         curSet = set;
-        musicEl.loop = true; musicEl.volume = VOLS.music;
-        musicEl.addEventListener('error', function () { curSet = null; startSynth(); });
-        var p = musicEl.play();
-        if (p && p.catch) p.catch(function () { curSet = null; });
+        el.loop = true; el.volume = VOLS.music;
+        // these callbacks can land AFTER a newer track took over: only the
+        // current track may clear the state (or the next tap restarts it)
+        el.addEventListener('error', function () { if (musicEl === el) { curSet = null; startSynth(); } });
+        var p = el.play();
+        if (p && p.catch) p.catch(function () { if (musicEl === el) curSet = null; });
       } catch (e) { curSet = null; startSynth(); }
     },
     stopMusic: function () {
@@ -283,7 +293,14 @@ window.PC = window.PC || {};
     },
     currentSet: function () { return curSet; },
     setHidden: function (h) {
-      if (musicEl) { try { h ? musicEl.pause() : musicEl.play(); } catch (e) {} }
+      // coming back to the tab resumes only music that SHOULD be playing
+      // (it used to restart a track that stopMusic had stopped)
+      if (musicEl) {
+        try {
+          if (h) musicEl.pause();
+          else if (curSet) { var rp = musicEl.play(); if (rp && rp.catch) rp.catch(function () {}); }
+        } catch (e) {}
+      }
       if (!ctx) return;
       try { if (h && ctx.state === 'running') ctx.suspend(); else if (!h) ctx.resume(); } catch (e) {}
     },

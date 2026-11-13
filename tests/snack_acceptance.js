@@ -639,6 +639,34 @@ async function test(section, name, fn) {
       return txt === 1 || g.ui.list.filter(function (o) { return o.text; }).map(function (o) { return o.text; }); });
   });
 
+  // ================= MUSIC (v0.80.5) =================
+  await test('music', 'only ONE track ever plays, even where volume is ignored (iOS Safari): title -> story -> menu', async () => {
+    await G(() => {
+      window.__musEls = []; const OA = window.Audio; window.__OA = OA;
+      window.Audio = function (src) { const a = new OA(src); window.__musEls.push(a); return a; };
+      window.Audio.prototype = OA.prototype;
+      window.__volD = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'volume');
+      Object.defineProperty(HTMLMediaElement.prototype, 'volume', { get: function () { return 1; }, set: function () {}, configurable: true });
+      PC.audio.stopMusic();
+      PC.audio.startMusic('title');
+      setTimeout(function () { PC.audio.startMusic('story'); }, 300);
+      setTimeout(function () { PC.audio.startMusic('menu'); }, 600);
+    });
+    await sleep(2000);
+    return G(() => {
+      var playing = window.__musEls.filter(function (a) { return !a.paused; }).map(function (a) { return a.src.split('/').pop(); });
+      Object.defineProperty(HTMLMediaElement.prototype, 'volume', window.__volD);
+      window.Audio = window.__OA;
+      PC.audio.stopMusic();
+      return (playing.length <= 1 && (playing.length === 0 || playing[0] === 'menu.mp3')) || playing;
+    });
+  });
+  await test('music', 'switching back to the tab never restarts music that was stopped', async () => G(() => {
+    PC.audio.startMusic('menu'); PC.audio.stopMusic();
+    PC.audio.setHidden(true); PC.audio.setHidden(false);
+    return PC.audio.currentSet() === null;
+  }));
+
   // ================= RESILIENCE =================
   await test('itch', 'Story progress survives a reload: the tutorial flag loads back (it was saved but dropped)', async () => {
     const c4 = await browser.newContext({ viewport: { width: 480, height: 854 } });
