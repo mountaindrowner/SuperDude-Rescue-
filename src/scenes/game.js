@@ -434,11 +434,14 @@ PC.GameScene.prototype.gainXp = function (v) {
   if (PC.audio) PC.audio.gem();
   if (this.snack) {
     // SNACK ATTACK: the template's XP curve [VS 5 / +10 / +13 / +16]
-    this.xp += this.snack.xpFor(v);
+    // on a wall level (20, 40) the VS growth bridge doubles every gem
+    var onWall = !!PC.SNACK.XP_SPIKES[this.level];
+    this.xp += this.snack.xpFor(v) * (onWall ? 1 + (PC.SNACK.WALL_GROWTH || 0) : 1);
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
       this.level++;
       this.xpNext = PC.SNACK.xpToNext(this.level);
+      if (PC.SNACK.XP_SPIKES[this.level] && PC.SNACK.WALL_GROWTH) this.floatText('BIG LEVEL! XP x2', 0x35d0ff);
       this.levelText.setText('LV ' + this.level);
       if (PC.audio) PC.audio.levelup();
       if (this.kit && this.kit.onLevelUp) this.kit.onLevelUp(this);

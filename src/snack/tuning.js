@@ -28,7 +28,11 @@ PC.SNACK = PC.SNACK || {};
   // ============================================================ XP / LEVELS
   // XP to the next level: 5, then +10 per level to 20, +13 to 40, +16
   // after, plus a wall at 20 and 40.                 vs: same formula
-  T.XP_SPIKES = { 20: 300, 40: 1200 };              // vs: +600 / +2400
+  // v0.80.9 (VS parity phase 3): VS's own walls, with VS's bridge - while
+  // you're ON a wall level every gem counts x(1 + WALL_GROWTH), so the big
+  // bar fills fast instead of stalling (time on a wall ~ the old 300/1200)
+  T.XP_SPIKES = { 20: 600, 40: 2400 };              // vs: +600 / +2400
+  T.WALL_GROWTH = 1.0;                              // vs: +100% Growth until the next level
   T.xpToNext = function (level) {
     var need = 5, L;
     for (L = 2; L <= level; L++) need += (L <= 20 ? 10 : L <= 40 ? 13 : 16);

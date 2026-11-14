@@ -114,6 +114,15 @@ async function test(section, name, fn) {
     var d0 = sr.makeDef(0, false); g.runT = 59; var d1 = sr.makeDef(0, false); g.runT = 0;
     return (before === 0 && after >= want && d0.hp === d1.hp) || { before: before, after: after, want: want, hp0: d0.hp, hp59: d1.hp };
   }));
+  await test('run', 'VS level walls: +600 at 20 / +2400 at 40, and gems count double while you are on one', () => G(() => {
+    var g = PC.game.scene.getScene('PC_Game'), S = PC.SNACK;
+    var keep = { lv: g.level, xp: g.xp, nx: g.xpNext, pend: g.pendingLevels };
+    g.level = 19; g.xp = 0; g.xpNext = S.xpToNext(19); g.gainXp(0.001); var a = g.xp;
+    g.level = 20; g.xp = 0; g.xpNext = S.xpToNext(20); g.gainXp(0.001); var b = g.xp;
+    var walls = S.XP_SPIKES[20] === 600 && S.XP_SPIKES[40] === 2400;
+    g.level = keep.lv; g.xp = keep.xp; g.xpNext = keep.nx; g.pendingLevels = keep.pend;
+    return (walls && Math.abs(b / a - (1 + S.WALL_GROWTH)) < 1e-6) || { walls: walls, a: a, b: b };
+  }));
   await test('run', 'a big XP gain queues several level-ups and shows them one at a time', () => G(() => {
     var g = PC.game.scene.getScene('PC_Game');
     g.gainXp(400);

@@ -12,6 +12,12 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.80.9: VS PARITY phase 3 - level walls.** XP_SPIKES now VS's
+  +600 at 20 / +2400 at 40, with VS's bridge: while you're on a wall level
+  every gem counts x(1 + WALL_GROWTH 1.0), so the big bar fills fast instead
+  of stalling (time on a wall ~ the old 300/1200 without a bridge). A
+  "BIG LEVEL! XP x2" call marks it. Acceptance 76/76.
+
 - **2026-11-14 - v0.80.8: VS PARITY phase 2 - waves.** `tuning.js` WAVES replace
   WAVE_ROWS: per minute an on-screen MINIMUM (refilled at once, 6/frame), a
   trickle (`per` every `int` s) up to a `max` (without it every minute sat
