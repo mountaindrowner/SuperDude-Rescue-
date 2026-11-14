@@ -654,6 +654,11 @@ PC.PASSIVES = {
   greed:   { name: 'COIN JAR', icon: 'pickup_chest_1', max: 5, snackOnly: true,
              desc: 'Coins are worth 10% more per rank',
              apply: function (st, lv) { st.greedMult = (st.metaGreed || 1) * (1 + 0.10 * lv); } },
+  // v0.81.0 Snack only: LEFTOVERS did two jobs (max HP + healing); in Snack
+  // it is the max-HP item and this is the healing one
+  soup:    { name: 'WARM SOUP', icon: 'pickup_medkit', max: 5, snackOnly: true,
+             desc: 'Heals 0.2 health every second per rank',
+             apply: function (st, lv) { st.regen = (st.metaRegen || 0) + 0.2 * lv; } },
 };
 // every weapon key owns its icon frame: icon_weapon_<key>
 PC.WEAPON_ICONS = {};

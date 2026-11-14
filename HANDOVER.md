@@ -12,6 +12,17 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.81.0: VS PARITY phase 4 - items.** Snack reads items via
+  `PC.SNACK.passive(key)` = PC.PASSIVES (names/icons, shared with Story)
+  merged with `tuning.js` PASSIVE_TUNE (max/desc/apply, Snack only). Now VS
+  values at 5 levels: BATTERY +10% (Spinach), FAN -8% (Empty Tome), SHOES
+  +10% (Wings), SERVO +10% (Candelabrador, was 12% x3), LENS +10% (Bracer,
+  was 15% x3), SLOW COOKER +10% (Spellbinder, was 25% x3), APRON +1 armor
+  x5, MAGNET compounding to ~4x (Attractorb), LEFTOVERS = +20% max HP per
+  rank multiplicative (Hollow Heart). New Snack-only WARM SOUP (+0.2 HP/s
+  x5, Pummarola) in the starting pool (old saves get it on load); Story's
+  LEFTOVERS and every Story value are unchanged. 77/77; Story bot clean.
+
 - **2026-11-14 - v0.80.9: VS PARITY phase 3 - level walls.** XP_SPIKES now VS's
   +600 at 20 / +2400 at 40, with VS's bridge: while you're on a wall level
   every gem counts x(1 + WALL_GROWTH 1.0), so the big bar fills fast instead

@@ -50,6 +50,7 @@ PC.SnackProfile = (function () {
     for (k in PC.SNACK.WEAPONS) {
       if (PC.SNACK.WEAPONS[k].start && d.weapons.indexOf(k) < 0) d.weapons.push(k);
     }
+    PC.SNACK.PASSIVES_START.forEach(function (p) { if (d.passives.indexOf(p) < 0) d.passives.push(p); });
     d.schemaVersion = SCHEMA;
     return d;
   }

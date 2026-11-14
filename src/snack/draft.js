@@ -43,7 +43,7 @@ PC.SnackDraft = {
     var held = 0;
     for (var pk in scene.passives) if (scene.passives[pk] > 0) held++;
     for (var p in PC.PASSIVES) {
-      var def = PC.PASSIVES[p], lv = scene.passives[p] || 0;
+      var def = PC.SNACK.passive(p), lv = scene.passives[p] || 0;
       if (sr.banished[p] || lv >= def.max) continue;
       if (lv === 0 && (held >= S.PASSIVE_SLOTS || !P.passiveInPool(p))) continue;
       pool.push({ kind: 'passive', pk: p, key: p, wt: lv ? 1.3 : 1.0, title: def.name,
@@ -91,7 +91,7 @@ PC.SnackDraft = {
       PC.SnackUnlocks.event(sr, 'held', scene.weapons.length);
     } else if (card.kind === 'passive') {
       scene.passives[card.pk] = (scene.passives[card.pk] || 0) + 1;
-      PC.PASSIVES[card.pk].apply(scene.stats, scene.passives[card.pk]);
+      PC.SNACK.passive(card.pk).apply(scene.stats, scene.passives[card.pk]);
     } else if (card.kind === 'gold') {
       PC.SnackProfile.addGold(card.amount);
       scene.pickups.gold += card.amount;

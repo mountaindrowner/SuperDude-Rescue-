@@ -51,7 +51,7 @@ PC.SnackChest = {
       if (!w.evolved && w.level < PC.SNACK.WEAPON_MAX) c.push({ type: 'weapon', w: w });
     }
     for (var k in scene.passives) {
-      if (scene.passives[k] > 0 && scene.passives[k] < PC.PASSIVES[k].max) c.push({ type: 'passive', pk: k });
+      if (scene.passives[k] > 0 && scene.passives[k] < PC.SNACK.passive(k).max) c.push({ type: 'passive', pk: k });
     }
     return c.length ? c[(Math.random() * c.length) | 0] : null;
   },
@@ -60,7 +60,7 @@ PC.SnackChest = {
     if (it.type === 'weapon') PC.SnackDraft.rankUp(scene, it.w);
     else if (it.type === 'passive') {
       scene.passives[it.pk]++;
-      PC.PASSIVES[it.pk].apply(scene.stats, scene.passives[it.pk]);
+      PC.SNACK.passive(it.pk).apply(scene.stats, scene.passives[it.pk]);
     }
   },
 

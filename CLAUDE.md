@@ -42,7 +42,7 @@
   Measure changes with `tools/snack_bot.js`.
 - Everything Snack Attack is a branch on `scene.snack` in `PC_Game`; Story
   and the boss arena must keep their exact paths. Run
-  `node tests/snack_acceptance.js` before every ship (must be 76/76).
+  `node tests/snack_acceptance.js` before every ship (must be 77/77).
 - Story: `node tools/story_bot.js` plays the whole campaign from the title
   (~2.5 min); a clean run ends with all 8 stages cleared and ERRORS none.
 

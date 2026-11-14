@@ -158,6 +158,46 @@ PC.SNACK = PC.SNACK || {};
     underground: { mods: { enemyHp: 1.15, gold: 1.6,  xp: 1.4 }, otSpeed: 0.85, gate: { stage: 'labs',    level: 50 } },
   };
 
+  // ================================================== ITEMS (passives)
+  // v0.81.0 (VS parity phase 4): Snack's own item values. Names and icons
+  // come from PC.PASSIVES (shared with Story); max / desc / apply here win
+  // in Snack, so Story keeps its numbers. Read items through
+  // PC.SNACK.passive(key), never PC.PASSIVES directly, in Snack code.
+  var MAG = [1, 1.4, 1.9, 2.5, 3.2, 4.0];            // compounding magnet steps
+  T.PASSIVE_TUNE = {
+    battery:    { max: 5, desc: 'ALL weapons hit 10% harder per rank',                                // vs Spinach +10% x5 (was 8%)
+                  apply: function (st, lv) { st.dmgMult = (st.heroDmg || 1) * (1 + 0.10 * lv); } },
+    fan:        { max: 5, desc: 'ALL weapons fire 8% sooner per rank',                                // vs Empty Tome -8% x5 (was 6%)
+                  apply: function (st, lv) { st.cdMult = (st.heroCd || 1) * (1 - 0.08 * lv); } },
+    shoes:      { max: 5, desc: 'You run 10% faster per rank',                                        // vs Wings +10% x5 (was 6%)
+                  apply: function (st, lv) { st.spdMult = (st.heroSpd || 1) * (1 + 0.10 * lv); } },
+    servo:      { max: 5, desc: 'Blasts, rings and swings reach 10% wider per rank',                  // vs Candelabrador +10% x5 (was 12% x3)
+                  apply: function (st, lv) { st.areaMult = (st.metaArea || 1) * (1 + 0.10 * lv); } },
+    lens:       { max: 5, desc: 'Anything you SHOOT flies 10% faster per rank',                       // vs Bracer +10% x5 (was 15% x3)
+                  apply: function (st, lv) { st.projMult = (st.metaProj || 1) * (1 + 0.10 * lv); } },
+    slowcooker: { max: 5, desc: 'Slows, freezes and burns last 10% longer per rank',                  // vs Spellbinder +10% x5 (was 25% x3)
+                  apply: function (st, lv) { st.durMult = (st.metaDur || 1) * (1 + 0.10 * lv); } },
+    coat:       { max: 5, desc: 'Every hit hurts you 1 less per rank',                                // vs Armor +1 x5 (was x3)
+                  apply: function (st, lv) { st.armor = lv + (st.metaArmor || 0); } },
+    magnet:     { max: 5, desc: 'Gems and coins fly to you from much farther away',                   // vs Attractorb compounding, ~4x at 5 (was +20% x3)
+                  apply: function (st, lv) { st.pickupMult = (st.metaPickup || 1) * MAG[Math.min(5, lv)]; } },
+    leftovers:  { max: 5, desc: '+20% max health per rank',                                          // vs Hollow Heart x1.2 per level (was +15 HP and healing x3)
+                  apply: function (st, lv) { var base = PC.PLAYER.HP + (st.metaHp || 0);
+                    st.bonusHp = (st.metaHp || 0) + Math.round(base * (Math.pow(1.2, lv) - 1)); } },
+    // soup (WARM SOUP, vs Pummarola +0.2 HP/s x5), duplicator, luck (Clover),
+    // growth (Crown), greed (Stone Mask) already match VS: no override
+  };
+  var _pd = {};
+  T.passive = function (k) {
+    if (_pd[k]) return _pd[k];
+    var base = PC.PASSIVES && PC.PASSIVES[k];
+    if (!base) return null;
+    var t = T.PASSIVE_TUNE[k], d = {};
+    for (var f in base) d[f] = base[f];
+    if (t) for (var g in t) d[g] = t[g];
+    return (_pd[k] = d);
+  };
+
   // ================================================== CHESTS, GOLD, SHOP
   // chest contents: 1 / 3 / 5 rewards (5 rolled first, then 3), each
   // chance x (1 + luck); gold paid on top.

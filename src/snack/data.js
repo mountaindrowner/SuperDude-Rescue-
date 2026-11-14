@@ -130,7 +130,7 @@ PC.SNACK.WEAPONS = {
   seeds:     { title: 'THORN SEEDS',       desc: "Nayah's blooming thorn patches",   make: function (s) { return new PC.SeedWeapon(s); } },
 };
 // passives offered at the start [VS: damage + armor]; the rest are earned
-PC.SNACK.PASSIVES_START = ['battery', 'coat'];
+PC.SNACK.PASSIVES_START = ['battery', 'coat', 'soup'];
 
 // ---- RELICS [VS role]: one-time map finds that switch on a system
 PC.SNACK.RELICS = {

@@ -123,6 +123,15 @@ async function test(section, name, fn) {
     g.level = keep.lv; g.xp = keep.xp; g.xpNext = keep.nx; g.pendingLevels = keep.pend;
     return (walls && Math.abs(b / a - (1 + S.WALL_GROWTH)) < 1e-6) || { walls: walls, a: a, b: b };
   }));
+  await test('run', 'VS items in Snack: Spinach-style +10% x5, Hollow Heart +20% max HP x5, WARM SOUP heals; Story keeps its values', () => G(() => {
+    var S = PC.SNACK, st = { heroDmg: 1, metaHp: 0, metaRegen: 0 };
+    S.passive('battery').apply(st, 5); var dmg = st.dmgMult;
+    S.passive('leftovers').apply(st, 5); var hp = PC.PLAYER.HP + st.bonusHp;
+    S.passive('soup').apply(st, 5); var regen = st.regen;
+    var story = PC.PASSIVES.battery.max === 5 && PC.PASSIVES.servo.max === 3 && !!PC.PASSIVES.soup.snackOnly;
+    var start = S.PASSIVES_START.indexOf('soup') >= 0 && S.passive('servo').max === 5;
+    return (Math.abs(dmg - 1.5) < 1e-9 && hp === 249 && Math.abs(regen - 1) < 1e-9 && story && start) || { dmg: dmg, hp: hp, regen: regen, story: story, start: start };
+  }));
   await test('run', 'a big XP gain queues several level-ups and shows them one at a time', () => G(() => {
     var g = PC.game.scene.getScene('PC_Game');
     g.gainXp(400);
@@ -190,7 +199,7 @@ async function test(section, name, fn) {
   await test('run', 'a fully maxed build gets gold or a snack, never a blank draft', () => G(() => {
     var g = PC.game.scene.getScene('PC_Game');
     g.weapons.forEach(function (w) { w.level = 8; });
-    for (var k in g.passives) if (g.passives[k]) g.passives[k] = PC.PASSIVES[k].max;
+    for (var k in g.passives) if (g.passives[k]) g.passives[k] = PC.SNACK.passive(k).max;
     var c = PC.SnackDraft.draw(g);
     return (c.length > 0 && c.every(function (x) { return x.kind === 'gold' || x.kind === 'heal'; })) || c.map(function (x) { return x.kind; });
   }));
@@ -595,7 +604,7 @@ async function test(section, name, fn) {
       var bossHit = g.boss.hp < hp0;
       var kx = g.xpMult; g.xpMult = 1; var base = g.snack.xpFor(1); g.xpMult = 1.1; var kit = g.snack.xpFor(1); g.xpMult = kx;
       g.stats.metaLuck = 0; g.stats.luck = 0;
-      g.snack.collect({ kind: 'penny' }); PC.PASSIVES.luck.apply(g.stats, 1);
+      g.snack.collect({ kind: 'penny' }); PC.SNACK.passive('luck').apply(g.stats, 1);
       var luck = g.stats.luck;
       return (bossHit && Math.abs(kit / base - 1.1) < 1e-9 && Math.abs(luck - 0.2) < 1e-9) || { bossHit: bossHit, kit: kit / base, luck: luck };
     });
