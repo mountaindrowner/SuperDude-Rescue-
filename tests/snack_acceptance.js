@@ -167,7 +167,9 @@ async function test(section, name, fn) {
     return !newOffered;
   }));
   await test('run', 'ranks 6-8 grow the weapon; a rank-8 weapon leaves the pool', () => G(() => {
-    var g = PC.game.scene.getScene('PC_Game'), w = g.weapons[0];
+    // a FRESH weapon: the live run's chests may already have ranked weapons[0]
+    var g = PC.game.scene.getScene('PC_Game'), w = PC.SNACK.WEAPONS.blaster.make(g);
+    w.max = PC.SNACK.WEAPON_MAX; g.weapons[0] = w;       // same slot count as before
     while (w.level < 5) PC.SnackDraft.rankUp(g, w);
     var m5 = w.mastery || 1;
     PC.SnackDraft.rankUp(g, w); var m6 = w.mastery;
