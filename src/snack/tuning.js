@@ -42,9 +42,10 @@ PC.SNACK = PC.SNACK || {};
   // levels are reached in half the clock here.       vs: enemy XP x Growth
   // v0.80.6: 4.0 -> 3.0 (first runs hit LV 21-41 once gems stopped
   // orbiting uncollected; gates flew open).
-  // v0.81.3 (phase 7): 3.0 -> 2.5 - with VS waves, items and weapon steps a
-  // strong run hit LV 77-111 by 15:00 (VS reaches ~100 by 30:00)
-  T.GEM_VALUE = 2.5;
+  // v0.81.3 (phase 7): tried 2.5 - progression stalled (17 runs stuck on
+  // the Park, gates are level-based). 3.0 + LIGHTER late waves instead: the
+  // snowball (LV 77-111 by 15:00) came from the minute 11-14 XP fountain.
+  T.GEM_VALUE = 3.0;
   // chance of a 4th level-up card per +100% luck
   T.FOURTH_CARD_PER_LUCK = 0.5;                     // vs: P = 1 - 1/totalLuck
 
