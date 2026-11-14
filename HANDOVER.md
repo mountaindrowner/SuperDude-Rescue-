@@ -12,6 +12,21 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.81.3: VS PARITY phase 7 - economy + overall retune. ALL 7
+  PHASES DONE.** Measured with 6 more careers (bots buying like a kid):
+  * After phases 2-6 (careers G/H): good stage ladder but a run-3 snowball
+    (LV 77-111, 1,000-2,300 gold) and early deaths. Tried GEM_VALUE 2.5 +
+    lighter late waves (I/J): progression STALLED (17 runs on the Park).
+  * Final (K/L): GEM_VALUE 3.0, LIGHTER late waves (min 11-14 minimums
+    200/210/160/240), gentler minute 1 (min 35) and 12-snack bat swarms,
+    elite chest gold 15-40 (twice the chests now), Victoria starts her
+    Sentry Bot at rank 2 (HERO_START_RANKS). Ladder: Park run 4-5, Suburbs
+    6, Labs 7-10, Underground 10-13. Fresh runs LV 10-23, deaths 4-11 min;
+    the LV 80-120 power-fantasy runs arrive once ~15-20 shop ranks are owned
+    (from ~run 7), paying 1,000-2,600 gold. VS shape: struggle, invest, crush.
+  * Still noticed: the bot's Victoria dies early more than other heroes
+    (Sentry Bot needs her to stand and deploy; partly the bot). Watch it.
+
 - **2026-11-14 - v0.81.2: VS PARITY phase 6 - hero growth.** `tuning.js`
   HERO_GROWTH: every 10 levels (VS Antonio pattern) Danny +10% damage (to
   +50%), Victoria fires 4% sooner (to -16%), Josh +1 armor (to +4), Kevin
