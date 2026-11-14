@@ -660,6 +660,33 @@ async function test(section, name, fn) {
     return (a.hold && a.alive && a.rec && b.vis && b.shadow && b.contact && b.hop === 0 && b.puddles === 0 && c.revived && c.d >= 400) || { a, b, c };
   });
 
+  // ================= UI / SAVES (v0.80.6) =================
+  await test('ui', 'a corrupt Snack save field (life: null) loads as defaults instead of locking Snack Attack out', async () => G(() => {
+    var good = JSON.stringify(PC.SnackProfile.get());
+    try { var bad = JSON.parse(good); bad.life = null; bad.weapons = 'oops'; localStorage.setItem('portioncontrol.snack', JSON.stringify(bad)); } catch (e) {}
+    var ok = false;
+    try { PC.SnackProfile.reload(); var d = PC.SnackProfile.get(); ok = !!(d.life && typeof d.life.kills === 'number' && Array.isArray(d.weapons)); } catch (e) { ok = e.message; }
+    try { localStorage.setItem('portioncontrol.snack', good); PC.SnackProfile.reload(); } catch (e) {}
+    return ok;
+  }));
+  await test('ui', 'Story: the hidden store-door button never eats joystick/dialogue taps', async () => {
+    await startStory('stage1');
+    return G(() => { var g = PC.game.scene.getScene('PC_Game'); g.doors.update && g.doors.update();
+      return (g.doors.near ? true : g.doors.zone.input.enabled === false) || { near: !!g.doors.near, enabled: g.doors.zone.input.enabled }; });
+  });
+  await test('ui', 'Snack lists keep their scroll when a tap rebuilds them; the Corner Store prices in TECH', async () => {
+    await G(() => { PC.game.scene.getScenes(true)[0].scene.start('PC_SnackShop'); }); await sleep(400);
+    const a = await G(() => { var s = PC.game.scene.getScene('PC_SnackShop'), L = s.list || s._list;
+      if (!L) return 'no list'; L.setScroll(120); var want = L.scroll;
+      var rows = L.rows.length, keep = []; L.clear();
+      for (var i = 0; i < rows; i++) L.add(function () { return {}; });
+      return Math.abs(L.scroll - want) < 1 || { want: want, got: L.scroll }; });
+    await G(() => { PC.game.scene.getScenes(true)[0].scene.start('PC_Shop'); }); await sleep(400);
+    const b = await G(() => PC.game.scene.getScene('PC_Shop').goldText.text);
+    await G(() => { PC.game.scene.getScene('PC_Shop').scene.start('PC_Title'); }); await sleep(300);
+    return (a === true && /TECH/.test(b)) || { a: a, b: b };
+  });
+
   // ================= MUSIC (v0.80.5) =================
   await test('music', 'only ONE track ever plays, even where volume is ignored (iOS Safari): title -> story -> menu', async () => {
     await G(() => {

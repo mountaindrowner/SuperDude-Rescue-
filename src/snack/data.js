@@ -116,6 +116,11 @@ PC.SNACK.EVENTS = [
 // DURING a run of the previous stage and the next one opens on the spot,
 // even if you lose a second later. Each stage is a different shape of
 // map, so it plays differently, not just harder.
+// v0.80.6: enemyHp is tuned to the ROSTER. Each district's snacks are
+// already tougher than Main Street's (Story progression), and the old
+// 1.0/1.1/1.2/1.32/1.45 stacked on top: effective HP from minute 0 was
+// 32/37/47/75/70 - a 2.3x cliff at the Labs (careers died there 15-21
+// runs straight). Now a ramp: ~1.0/1.15/1.35/1.5/1.7x Main Street.
 PC.SNACK.STAGES = [
   { id: 'street', title: 'MAIN STREET', map: null, roster: ['fry', 'popcorn', 'hotdog', 'toast', 'pretzel'],
     boss: 'frank', shape: 'OPEN CITY', blurb: 'Endless downtown streets. The fries started it.',
@@ -126,13 +131,13 @@ PC.SNACK.STAGES = [
     relic: { id: 'recipebook', landmark: 'carousel' } },
   { id: 'suburbs', title: 'SWEET SUBURBS', map: 'suburbs', roster: ['donut', 'chipbit', 'cupcake', 'frosting', 'golemite'],
     boss: 'cakeColossus', shape: 'CURVY STREETS', blurb: 'Cul-de-sacs buried in frosting.',
-    mods: { enemyHp: 1.2, gold: 1.3, xp: 1.2 }, otSpeed: 0.95, gate: { stage: 'park', level: 30 } },
+    mods: { enemyHp: 1.1, gold: 1.3, xp: 1.2 }, otSpeed: 0.95, gate: { stage: 'park', level: 30 } },
   { id: 'labs', title: 'SUPER DUDE LABS', map: 'labs', roster: ['zipper', 'sodacan', 'chipbag', 'menace', 'burger'],
     boss: 'vendingBehemoth', shape: 'FACTORY MAZE', blurb: 'Pipes, yards and mutated junk.',
-    mods: { enemyHp: 1.32, gold: 1.45, xp: 1.3 }, otSpeed: 0.85, gate: { stage: 'suburbs', level: 40 } },
+    mods: { enemyHp: 0.85, gold: 1.45, xp: 1.3 }, otSpeed: 0.85, gate: { stage: 'suburbs', level: 40 } },
   { id: 'underground', title: 'THE UNDERGROUND', map: 'sewers', roster: ['blob', 'drip', 'eggy', 'moldy', 'heap'],
     boss: 'gloopKing', shape: 'TUNNELS', blurb: 'Dark tunnels and the stickiest crowd yet.',
-    mods: { enemyHp: 1.45, gold: 1.6, xp: 1.4 }, otSpeed: 0.85, gate: { stage: 'labs', level: 50 } },
+    mods: { enemyHp: 1.15, gold: 1.6, xp: 1.4 }, otSpeed: 0.85, gate: { stage: 'labs', level: 50 } },
 ];
 PC.SNACK.stageById = function (id) {
   for (var i = 0; i < PC.SNACK.STAGES.length; i++) if (PC.SNACK.STAGES[i].id === id) return PC.SNACK.STAGES[i];

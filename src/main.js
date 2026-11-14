@@ -114,6 +114,7 @@ window.PC = window.PC || {};
     PC.RENDER.W = s.w; PC.RENDER.H = s.h;
     PC.game.scale.setGameSize(s.w * S, s.h * S);
     PC.game.scale.refresh();
+    PC._resizedRestart = true;
     PC.game.scene.getScenes(true).forEach(function (sc) { sc.scene.restart(); });
   };
   window.addEventListener('resize', function () {

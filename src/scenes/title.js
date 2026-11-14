@@ -235,6 +235,9 @@ PC.TitleScene.prototype.create = function () {
     if (PC.audio) PC.audio.unlock();
     if (!self._done) self.finishNow();
   });
+  // rebuilt for a new screen size (v0.80.6): straight to the menu, the
+  // door intro was already seen
+  if (PC._resizedRestart) { PC._resizedRestart = false; this.time.delayedCall(0, function () { if (!self._done) self.finishNow(); }); }
 };
 
 // a logo word on a beveled steel plate with scanlines + glow

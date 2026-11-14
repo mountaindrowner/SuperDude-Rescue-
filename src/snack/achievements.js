@@ -48,18 +48,20 @@ PC.SNACK.ACHIEVEMENTS = [
     check: function (r) { return r.stage === 'labs' && r.level >= 50; }, rewards: [{ type: 'stage', id: 'underground' }] },
 
   // ---- heroes share their signature weapons [VS: Pasqualina -> Runetracer] ----
-  { id: 'sig_danny', title: 'SHRINK IT ALL',  how: 'Survive 5 minutes as DANNY',
-    check: function (r) { return r.hero === 'danny' && r.t >= 300; },    rewards: [{ type: 'weapon', id: 'resizer' }] },
-  { id: 'sig_vic',   title: 'TURRET TIME',    how: 'Survive 5 minutes as VICTORIA',
-    check: function (r) { return r.hero === 'victoria' && r.t >= 300; }, rewards: [{ type: 'weapon', id: 'sentry' }] },
-  { id: 'sig_josh',  title: 'YEE-HAW',        how: 'Survive 5 minutes as JOSH',
-    check: function (r) { return r.hero === 'josh' && r.t >= 300; },     rewards: [{ type: 'weapon', id: 'lasso' }] },
-  { id: 'sig_kevin', title: 'AIR SUPPORT',    how: 'Survive 5 minutes as KEVIN',
-    check: function (r) { return r.hero === 'kevin' && r.t >= 300; },    rewards: [{ type: 'weapon', id: 'strike' }] },
-  { id: 'sig_carlos', title: 'STARGAZER',     how: 'Survive 5 minutes as CARLOS',
-    check: function (r) { return r.hero === 'carlos' && r.t >= 300; },   rewards: [{ type: 'weapon', id: 'beam' }] },
-  { id: 'sig_nayah', title: 'GREEN THUMB',    how: 'Survive 5 minutes as NAYAH',
-    check: function (r) { return r.hero === 'nayah' && r.t >= 300; },    rewards: [{ type: 'weapon', id: 'seeds' }] },
+  // v0.80.6: 5 -> 8 minutes - they always landed on the same second as
+  // 'Survive 5 minutes', stacking run 1's unlock flood
+  { id: 'sig_danny', title: 'SHRINK IT ALL',  how: 'Survive 8 minutes as DANNY',
+    check: function (r) { return r.hero === 'danny' && r.t >= 480; },    rewards: [{ type: 'weapon', id: 'resizer' }] },
+  { id: 'sig_vic',   title: 'TURRET TIME',    how: 'Survive 8 minutes as VICTORIA',
+    check: function (r) { return r.hero === 'victoria' && r.t >= 480; }, rewards: [{ type: 'weapon', id: 'sentry' }] },
+  { id: 'sig_josh',  title: 'YEE-HAW',        how: 'Survive 8 minutes as JOSH',
+    check: function (r) { return r.hero === 'josh' && r.t >= 480; },     rewards: [{ type: 'weapon', id: 'lasso' }] },
+  { id: 'sig_kevin', title: 'AIR SUPPORT',    how: 'Survive 8 minutes as KEVIN',
+    check: function (r) { return r.hero === 'kevin' && r.t >= 480; },    rewards: [{ type: 'weapon', id: 'strike' }] },
+  { id: 'sig_carlos', title: 'STARGAZER',     how: 'Survive 8 minutes as CARLOS',
+    check: function (r) { return r.hero === 'carlos' && r.t >= 480; },   rewards: [{ type: 'weapon', id: 'beam' }] },
+  { id: 'sig_nayah', title: 'GREEN THUMB',    how: 'Survive 8 minutes as NAYAH',
+    check: function (r) { return r.hero === 'nayah' && r.t >= 480; },    rewards: [{ type: 'weapon', id: 'seeds' }] },
 
   // ---- weapon ranks open new things [VS: rank 4 / rank 7 rows] ----
   { id: 'whisk4',  title: 'WHISK IT',          how: 'Get WHISK CYCLONE to rank 4',
@@ -90,8 +92,8 @@ PC.SNACK.ACHIEVEMENTS = [
     check: function (r) { return r.curse > 0 && r.t >= 600; }, rewards: [{ type: 'weapon', id: 'espresso' }] },
   { id: 'greedy',  title: 'PIGGY BANK',        how: 'Collect 1,000 gold (all runs)',
     check: function (r, l) { return l.gold >= 1000; },   rewards: [{ type: 'passive', id: 'greed' }] },
-  { id: 'pops100', title: 'POP STAR',          how: 'Pop 100 snacks (all runs)',
-    check: function (r, l) { return l.kills >= 100; },   rewards: [{ type: 'gold', amount: 50 }] },
+  { id: 'pops100', title: 'POP STAR',          how: 'Pop 250 snacks (all runs)',      // v0.80.6: 100 -> 250 (spreads run 1)
+    check: function (r, l) { return l.kills >= 250; },   rewards: [{ type: 'gold', amount: 50 }] },
   { id: 'pops5k',  title: 'POP LEGEND',        how: 'Pop 5,000 snacks (all runs)',
     check: function (r, l) { return l.kills >= 5000; },  rewards: [{ type: 'gold', amount: 500 }] },
   { id: 'elites5', title: 'GOLDEN GOBBLER',    how: 'Pop 5 golden elites (all runs)',
