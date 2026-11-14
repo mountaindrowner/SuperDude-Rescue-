@@ -123,8 +123,8 @@ PC.SnackRun.prototype.makeDef = function (tierIdx, elite) {
   var def = {
     key: d.key, still: d.still, size: d.size, xp: d.xp, kbMult: d.kbMult, fam: key,
     spd: d.spd * (1 + 0.5 * curse),
-    hp: Math.round(d.hp * (1 + PC.TIMESCALE.HP_PER_MIN * min) * this.stage.mods.enemyHp * (1 + curse)),
-    dmg: Math.round(d.dmg * (1 + PC.TIMESCALE.DMG_PER_MIN * min)),
+    hp: Math.round(d.hp * (1 + PC.SNACK.ENEMY_HP_PER_MIN * min) * this.stage.mods.enemyHp * (1 + curse)),
+    dmg: Math.round(d.dmg * (1 + PC.SNACK.ENEMY_DMG_PER_MIN * min)),
   };
   if (elite) {
     // a GOLDEN SNACK: big, slow-ish, tough, and it carries a chest

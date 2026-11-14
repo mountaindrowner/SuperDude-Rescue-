@@ -12,6 +12,18 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.80.7: VS PARITY phase 1 - the tuning file.** Mark: "tune our
+  abilities, gameplay, progression and player development to be very
+  similar" to Vampire Survivors (all 7 phases, in order; no wiki access, so
+  the reference stays as researched). New `docs/VS_REFERENCE.md` (VS numbers,
+  sources, verification tags) and `docs/VS_PARITY.md` (side-by-side, gaps,
+  plan). New `src/snack/tuning.js` holds EVERY Snack knob (run, XP, enemy
+  growth, waves, events, boss, overtime, per-stage tune, chests, crates,
+  prices) with the VS value beside each; `data.js` is content only and
+  stage rows get mods/otSpeed/gate from `STAGE_TUNE` at load. Snack's enemy
+  growth is its own copy (`ENEMY_HP_PER_MIN`), Story keeps PC.TIMESCALE.
+  No gameplay change (74/74, bot unchanged). Next: phase 2, waves.
+
 - **2026-11-14 - v0.80.6: the extensive sweep** (Mark: "extensive bug sweep,
   lint sweep... make sure it feels fair, progresses well, not too much too
   soon"). Strict ES5 lint (clean: only dead locals + harmless per-branch

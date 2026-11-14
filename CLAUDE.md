@@ -33,10 +33,13 @@
 
 ## Snack Attack (the survivors mode)
 
-- Spec: Mark's *Vampire Survivors Game Template* (2026-11-10), with his
-  calls: **15-minute runs**, a **separate save** from Story, the title button
-  reads **SNACK ATTACK**. Numbers that are not documented VS values are
-  marked [TUNABLE] in `src/snack/data.js` and set with `tools/snack_bot.js`.
+- Spec: Mark's *Vampire Survivors Game Template* (`docs/VS_TEMPLATE.md`),
+  with his calls: **15-minute runs**, a **separate save** from Story, the
+  title button reads **SNACK ATTACK**.
+- **Every gameplay knob lives in `src/snack/tuning.js`**, each with its VS
+  reference value beside it (`docs/VS_REFERENCE.md`; the side-by-side and
+  the VS-parity plan are in `docs/VS_PARITY.md`). `data.js` is content only.
+  Measure changes with `tools/snack_bot.js`.
 - Everything Snack Attack is a branch on `scene.snack` in `PC_Game`; Story
   and the boss arena must keep their exact paths. Run
   `node tests/snack_acceptance.js` before every ship (must be 74/74).

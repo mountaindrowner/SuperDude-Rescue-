@@ -13,131 +13,23 @@
 // not a claim about the original game.
 window.PC = window.PC || {};
 
-PC.SNACK = {
-  RUN_SEC: 900,               // 15:00 stage clear (Mark; template is 30:00)
-  WEAPON_SLOTS: 6,            // [VS] six weapons
-  PASSIVE_SLOTS: 6,           // [VS] six passives
-  WEAPON_MAX: 8,              // [VS] base weapons have eight ranks
-  EVO_CHEST_FROM_SEC: 300,    // [TUNABLE] evolution chests from 5:00 (VS 10:00, halved)
-  GEM_VALUE: 3.0,             // [TUNABLE] XP per gem point. v0.80.6: 4.0 -> 3.0 - once gems stopped
-                              // orbiting uncollected (v0.80.2) first runs hit LV 21-41 and the stage
-                              // gates flew open; the career bot now shows the intended pace
-  PRICE_SCALE: 0.5,           // [TUNABLE] v0.80.6: PowerUp prices (base AND the 1.1^n fee) x this.
-                              // [VS] prices assume VS-sized gold; 15-min kid runs bank ~130, so the
-                              // shop stalled after the early achievement gold (10 ranks at run 10).
-  COIN_ODDS: 0.05,            // [TUNABLE] a regular pop rarely drops a coin (gold is not a kill salary)
-  CRATE_EVERY: 16,            // [TUNABLE] seconds between breakables (template 20-45s; kids get more)
-  FOURTH_CARD_PER_LUCK: 0.5,  // [TUNABLE] chance of a 4th draft card per +100% luck
-  HERO_PRICE_STEP: 0.10,      // [VS] +10% of base per hero already bought (additive)
-  HERO_PRICE_CAP: 2.0,        // [TUNABLE] price never above 2x base
-};
+PC.SNACK = {};   // every gameplay KNOB lives in snack/tuning.js (v0.80.7)
 
-// ---- XP curve [VS]: 5 XP for level 2, then +10 per level to 20, +13 to
-// 40, +16 after, with the two big walls at 20 and 40. Spike sizes are
-// [TUNABLE] (scaled to our 15-minute clock by the bot).
-PC.SNACK.XP_SPIKES = { 20: 300, 40: 1200 };
-PC.SNACK.xpToNext = function (level) {
-  var need = 5, L;
-  for (L = 2; L <= level; L++) need += (L <= 20 ? 10 : L <= 40 ? 13 : 16);
-  return need + (PC.SNACK.XP_SPIKES[level] || 0);
-};
-
-// ---- WAVE TEMPLATE: one row per minute of the 15. [TUNABLE]
-// Each row: interval seconds, spawns per tick, live cap, tier weights
-// A (basic) / B (fast, weak) / C (sturdy) / D (odd one) / E (heavy), and
-// a label for the beat it plays. Stages map tiers to their own roster and
-// may override rows, so every district keeps its own wave identity.
-PC.SNACK.WAVE_ROWS = [
-  //  int   per cap   A  B  C  D  E   beat
-  [  0.90, 1,  40, [1, 0, 0, 0, 0], 'learn' ],            // 0
-  [  0.75, 1,  70, [7, 3, 0, 0, 0], 'first elite' ],      // 1
-  [  0.80, 2, 100, [5, 3, 2, 0, 0], 'faster pressure' ],  // 2
-  [  0.78, 2, 115, [4, 2, 3, 1, 0], 'mixed' ],            // 3
-  [  0.66, 3, 130, [2, 6, 1, 1, 0], 'small swarm' ],      // 4
-  [  0.80, 2, 125, [3, 1, 3, 2, 1], 'respite + elite' ],  // 5
-  [  0.60, 2, 155, [2, 1, 3, 3, 1], 'variety' ],          // 6
-  [  0.45, 3, 200, [3, 2, 2, 2, 1], 'the district boss' ],// 7
-  [  0.36, 3, 230, [2, 6, 1, 1, 1], 'power-fantasy wave' ],// 8
-  [  0.34, 3, 240, [2, 2, 3, 2, 2], 'threat mix' ],       // 9
-  [  0.30, 3, 260, [2, 1, 2, 3, 2], 'elite threshold' ],  // 10
-  [  0.28, 3, 270, [1, 4, 2, 2, 2], 'rush' ],             // 11
-  [  0.26, 4, 280, [2, 2, 2, 2, 3], 'elite pack' ],       // 12
-  [  0.24, 4, 290, [1, 2, 2, 3, 3], 'dense' ],            // 13
-  [  0.22, 4, 300, [2, 2, 2, 3, 4], 'the last crowd' ],   // 14
-];
-// ---- THE DISTRICT BOSS is something you SURVIVE first (v0.80.3, Mark:
-// "like in Vampire Survivors, you're not meant to beat the boss for a
-// long while... you get a lot of upgrades and you're able to survive
-// him"). [VS] boss HP scales with the player's level when it spawns, so
-// a snowballing build meets a tougher boss. Measured before this change:
-// a typical 7:30 build (4 weapons at rank 4) killed Big Frank in 15-28s
-// standing still, an evolved build in 7-16s - a speed bump, not a test.
-// HP = story HP x PER_LEVEL x max(MIN_LEVEL, level at spawn). [TUNABLE]
-PC.SNACK.BOSS_HP_PER_LEVEL = 0.8;
-PC.SNACK.BOSS_HP_MIN_LEVEL = 12;
-
-// ---- OVERTIME: the Reaper beat (v0.80.4, Mark's call). [VS] the timer
-// completing IS the clear; then an unbeatable pursuer ends the run. At
-// 15:00 the clear is banked on the spot, the district boss SUPERSIZES
-// (or comes back if you beat it): it can't be hurt, its touch knocks you
-// out, and it chases at a speed that keeps climbing. Survive as long as
-// you can for bonus gold. [TUNABLE]
-PC.SNACK.OVERTIME = {
-  CELEBRATE_SEC: 2.6,   // the YOU SURVIVED moment before it starts
-  SPEED0: 0.70,         // chase speed as a fraction of YOUR move speed...
-  RAMP: 0.06,           // ...plus this much every RAMP_EVERY seconds
-  RAMP_EVERY: 5,
-  GOLD: 5,              // bonus gold every GOLD_EVERY seconds survived
-  GOLD_EVERY: 5,
-  // per stage `otSpeed` (STAGES below): the maze maps start it slower,
-  // since it floats through walls and you can't [TUNABLE]
-  CONTACT: 9999,        // one touch = down (AMAZING GRACE still saves once)
-  SCALE: 1.45,          // how much bigger it gets
-};
-
-// timed set pieces [TUNABLE]: elites drop chests, rings close in
-PC.SNACK.EVENTS = [
-  { at: 60,  type: 'elite', tier: 'C', chest: 'normal' },   // early, non-evolution
-  { at: 150, type: 'ring',  tier: 'A', n: 18 },
-  { at: 180, type: 'elite', tier: 'C', chest: 'normal' },
-  { at: 255, type: 'ring',  tier: 'B', n: 24 },
-  { at: 300, type: 'elite', tier: 'C', chest: 'normal' },   // first evolution window
-  { at: 450, type: 'boss' },                                 // the district boss
-  { at: 540, type: 'elite', tier: 'D', chest: 'normal' },
-  { at: 600, type: 'elite', tier: 'E', chest: 'normal' },
-  { at: 660, type: 'ring',  tier: 'C', n: 26 },
-  { at: 720, type: 'elite', tier: 'C', chest: 'normal' },
-  { at: 722, type: 'elite', tier: 'E', chest: 'normal' },
-  { at: 840, type: 'ring',  tier: 'E', n: 20 },
-];
-
-// ---- THE FIVE STAGES: the district ladder. Gates are [TUNABLE] versions
-// of the [VS] 20/40/60/80 rule for a 15-minute run: reach the level
-// DURING a run of the previous stage and the next one opens on the spot,
-// even if you lose a second later. Each stage is a different shape of
-// map, so it plays differently, not just harder.
-// v0.80.6: enemyHp is tuned to the ROSTER. Each district's snacks are
-// already tougher than Main Street's (Story progression), and the old
-// 1.0/1.1/1.2/1.32/1.45 stacked on top: effective HP from minute 0 was
-// 32/37/47/75/70 - a 2.3x cliff at the Labs (careers died there 15-21
-// runs straight). Now a ramp: ~1.0/1.15/1.35/1.5/1.7x Main Street.
+// ---- THE FIVE STAGES: the district ladder. Content only: each stage's
+// difficulty, gold/XP bonus, overtime speed and unlock gate are KNOBS in
+// snack/tuning.js (STAGE_TUNE), applied onto these rows at load.
 PC.SNACK.STAGES = [
   { id: 'street', title: 'MAIN STREET', map: null, roster: ['fry', 'popcorn', 'hotdog', 'toast', 'pretzel'],
-    boss: 'frank', shape: 'OPEN CITY', blurb: 'Endless downtown streets. The fries started it.',
-    mods: { enemyHp: 1.0, gold: 1.0, xp: 1.0 }, gate: null },
+    boss: 'frank', shape: 'OPEN CITY', blurb: 'Endless downtown streets. The fries started it.', },
   { id: 'park', title: 'ADVENTURE PARK', map: 'park', roster: ['apple', 'peeler', 'tomato', 'banana', 'melon'],
     boss: 'broccolisk', shape: 'WINDING PATHS', blurb: 'Trees, ponds and very rude produce.',
-    mods: { enemyHp: 1.1, gold: 1.15, xp: 1.1 }, otSpeed: 0.92, gate: { stage: 'street', level: 20 },
     relic: { id: 'recipebook', landmark: 'carousel' } },
   { id: 'suburbs', title: 'SWEET SUBURBS', map: 'suburbs', roster: ['donut', 'chipbit', 'cupcake', 'frosting', 'golemite'],
-    boss: 'cakeColossus', shape: 'CURVY STREETS', blurb: 'Cul-de-sacs buried in frosting.',
-    mods: { enemyHp: 1.1, gold: 1.3, xp: 1.2 }, otSpeed: 0.95, gate: { stage: 'park', level: 30 } },
+    boss: 'cakeColossus', shape: 'CURVY STREETS', blurb: 'Cul-de-sacs buried in frosting.', },
   { id: 'labs', title: 'SUPER DUDE LABS', map: 'labs', roster: ['zipper', 'sodacan', 'chipbag', 'menace', 'burger'],
-    boss: 'vendingBehemoth', shape: 'FACTORY MAZE', blurb: 'Pipes, yards and mutated junk.',
-    mods: { enemyHp: 0.85, gold: 1.45, xp: 1.3 }, otSpeed: 0.85, gate: { stage: 'suburbs', level: 40 } },
+    boss: 'vendingBehemoth', shape: 'FACTORY MAZE', blurb: 'Pipes, yards and mutated junk.', },
   { id: 'underground', title: 'THE UNDERGROUND', map: 'sewers', roster: ['blob', 'drip', 'eggy', 'moldy', 'heap'],
-    boss: 'gloopKing', shape: 'TUNNELS', blurb: 'Dark tunnels and the stickiest crowd yet.',
-    mods: { enemyHp: 1.15, gold: 1.6, xp: 1.4 }, otSpeed: 0.85, gate: { stage: 'labs', level: 50 } },
+    boss: 'gloopKing', shape: 'TUNNELS', blurb: 'Dark tunnels and the stickiest crowd yet.', },
 ];
 PC.SNACK.stageById = function (id) {
   for (var i = 0; i < PC.SNACK.STAGES.length; i++) if (PC.SNACK.STAGES[i].id === id) return PC.SNACK.STAGES[i];
@@ -239,24 +131,6 @@ PC.SNACK.WEAPONS = {
 };
 // passives offered at the start [VS: damage + armor]; the rest are earned
 PC.SNACK.PASSIVES_START = ['battery', 'coat'];
-
-// ---- PICKUPS from breakables [VS roles]: coin, coin bag, heal, vacuum,
-// screen-clear, freeze. Weights [TUNABLE].
-PC.SNACK.CRATE_TABLE = [
-  { kind: 'coin',    w: 34 },
-  { kind: 'coinbag', w: 10 },
-  { kind: 'medkit',  w: 26 },
-  { kind: 'vacuum',  w: 10 },
-  { kind: 'bomb',    w: 8 },
-  { kind: 'freeze',  w: 7 },
-  { kind: 'penny',   w: 5 },
-];
-
-// ---- CHESTS [VS]: 1 / 3 / 5 rewards, odds nudged by luck [TUNABLE]
-PC.SNACK.CHEST = {
-  normal: { three: 0.10, five: 0.02, gold: [25, 60] },
-  boss:   { three: 0.70, five: 0.30, gold: [120, 200] },
-};
 
 // ---- RELICS [VS role]: one-time map finds that switch on a system
 PC.SNACK.RELICS = {
