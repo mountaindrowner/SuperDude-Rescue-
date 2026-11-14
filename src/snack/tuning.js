@@ -198,6 +198,73 @@ PC.SNACK = PC.SNACK || {};
     return (_pd[k] = d);
   };
 
+  // ================================================== WEAPON LEVELS 6-8
+  // v0.81.1 (VS parity phase 5): levels 1-5 are each weapon's own steps;
+  // 6, 7 and 8 are listed here as real changes (more shots, bigger reach,
+  // faster, harder), not a flat damage multiplier.
+  // vs: every level is a concrete step (+1 Amount / +5-10 damage / +10%
+  //     Area / -cooldown / +1 Pierce), alternating "more" and "harder".
+  // Step = { add: { field: n }, mul: { field: x } }. Pooled weapons (whisk
+  // 3 blades, drone 2, sentry 3 turrets, sentry bot 2 bots) grow by reach,
+  // speed and damage, not count.
+  var A = function (o) { return { add: o }; }, M = function (o) { return { mul: o }; };
+  var AM = function (a, m) { return { add: a, mul: m }; };
+  T.WEAPON_LEVELS = {
+    blaster:   [A({ pellets: 2 }),          M({ cd: 0.88 }),               A({ dmg: 3 })],
+    whisk:     [M({ radius: 1.15 }),        A({ dmg: 6 }),                 A({ dmg: 6 })],
+    salt:      [M({ radius: 1.12 }),        A({ dmg: 4 }),                 A({ dmg: 5 })],
+    microwave: [M({ halfArc: 1.2 }),        M({ tickCd: 0.85 }),           A({ dmg: 5 })],
+    fridge:    [M({ life: 1.25 }),          M({ cd: 0.85 }),               A({ dmg: 6 })],
+    drone:     [M({ range: 1.15 }),         M({ fireCd: 0.85 }),           A({ dmg: 5 })],
+    freeze:    [A({ bolts: 1 }),            M({ cd: 0.88 }),               A({ dmg: 4 })],
+    ketchup:   [A({ shells: 1 }),           M({ burstR: 1.15 }),           A({ dmg: 8, puddleDmg: 2 })],
+    cutter:    [A({ cutters: 1 }),          M({ cd: 0.88 }),               A({ dmg: 5 })],
+    zap:       [M({ cd: 0.88 }),            A({ dmg: 5 }),                 A({ dmg: 5 })],
+    grease:    [M({ life: 1.25 }),          A({ dmg: 2 }),                 A({ dmg: 3 })],
+    jaw:       [A({ dmg: 6 }),              M({ cd: 0.88 }),               A({ dmg: 6 })],
+    sprinkle:  [A({ count: 2 }),            M({ cd: 0.88 }),               A({ dmg: 3 })],
+    skillet:   [M({ halfArc: 1.15 }),       M({ cd: 0.88 }),               A({ dmg: 7 })],
+    vortex:    [M({ radius: 1.12 }),        M({ dur: 1.2 }),               AM({ dmg: 3 }, { cd: 0.9 })],
+    espresso:  [A({ maxBonus: 15 }),        M({ chargeTime: 0.85 }),       A({ baseDmg: 8 })],
+    pineapple: [A({ dmg: 6 }),              A({ dmg: 6 }),                 A({ dmg: 8 })],
+    resizer:   [A({ amount: 1 }),           M({ cd: 0.88 }),               A({ pierce: 1, dmg: 4 })],   // vs Magic Wand: +1 amount, +1 pierce, +10 dmg
+    sentry:    [M({ fireCd: 0.85 }),        M({ life: 1.25 }),             A({ dmg: 5 })],
+    lasso:     [A({ dmg: 5 }),              M({ tickCd: 0.85 }),           A({ dmg: 6 })],
+    strike:    [A({ count: 2 }),            M({ cd: 0.88 }),               A({ dmg: 10 })],
+    beam:      [M({ width: 1.2 }),          M({ cd: 0.85 }),               A({ dmg: 25 })],
+    seeds:     [M({ radius: 1.15 }),        M({ cd: 0.85 }),               A({ dmg: 4 })],
+    sentrybot: [M({ range: 1.15 }),         M({ cd: 0.85, burstCd: 0.85 }), A({ dmg: 5 })],
+    comet:     [A({ comets: 1 }),           M({ cd: 0.88 }),               AM({ dmg: 14 }, { impactR: 1.1 })],
+    haymaker:  [A({ dmg: 5 }),              M({ cd: 0.88 }),               A({ dmg: 4, lifesteal: 1 })],
+  };
+  // what a step says on its level-up card
+  var NOUN = { pellets: 'pellets', bolts: 'bolts', shells: 'shells', cutters: 'cutters', count: 'more',
+               amount: 'more shots', comets: 'comets', pierce: 'pierce' };
+  T.stepDesc = function (st) {
+    var out = [], f;
+    if (st.add) for (f in st.add) {
+      if (f === 'dmg' || f === 'baseDmg') out.push('+' + st.add[f] + ' damage');
+      else if (f === 'maxBonus') out.push('Bigger charge');
+      else if (f === 'puddleDmg') out.push('Hotter puddles');
+      else if (f === 'lifesteal') out.push('Heals more per hit');
+      else out.push('+' + st.add[f] + ' ' + (NOUN[f] || f));
+    }
+    if (st.mul) for (f in st.mul) {
+      var pct = Math.round(Math.abs(st.mul[f] - 1) * 100);
+      if (/cd|Cd|chargeTime/.test(f)) out.push('Fires ' + pct + '% sooner');
+      else if (f === 'life' || f === 'dur') out.push('Lasts ' + pct + '% longer');
+      else out.push(pct + '% bigger reach');
+    }
+    return out.join(', ');
+  };
+  T.applyStep = function (w, st) {
+    var f;
+    if (st.add) for (f in st.add) if (typeof w[f] === 'number') w[f] += st.add[f];
+    if (st.mul) for (f in st.mul) if (typeof w[f] === 'number') w[f] *= st.mul[f];
+  };
+  T.FIRE_ON_LEVEL = true;       // a level-up fires that weapon at once       vs: same
+  T.EVO_MASTERY = 1.5;          // an evolved weapon's damage x this          vs: evolutions far outclass level 8
+
   // ================================================== CHESTS, GOLD, SHOP
   // chest contents: 1 / 3 / 5 rewards (5 rolled first, then 3), each
   // chance x (1 + luck); gold paid on top.

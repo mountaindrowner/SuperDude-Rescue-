@@ -15,9 +15,9 @@ PC.SnackDraft = {
   weaponCardDesc: function (w) {
     var next = w.level + 1;
     if (next <= 5) return w.desc();
-    if (next === 6) return 'More power! (+15% damage)';
-    if (next === 7) return 'Faster and stronger!';
-    return 'MAX RANK! Can EVOLVE from a chest';
+    var steps = PC.SNACK.WEAPON_LEVELS && PC.SNACK.WEAPON_LEVELS[w.key];
+    var d = steps && steps[next - 6] ? PC.SNACK.stepDesc(steps[next - 6]) : (next === 6 ? 'More power!' : 'Faster and stronger!');
+    return next === 8 ? d + '. MAX RANK: can EVOLVE!' : d;
   },
 
   draw: function (scene) {
@@ -70,12 +70,17 @@ PC.SnackDraft = {
 
   rankUp: function (scene, w) {
     w.level++;
+    var steps = PC.SNACK.WEAPON_LEVELS && PC.SNACK.WEAPON_LEVELS[w.key];
     if (w.level <= 5) { if (w.applyLevel) w.applyLevel(); }
-    else {
+    else if (steps && steps[w.level - 6]) {
+      PC.SNACK.applyStep(w, steps[w.level - 6]);     // v0.81.1: a real VS-style step
+    } else {
       if (w._m0 === undefined) w._m0 = w.mastery || 1;
       w.mastery = w._m0 * (PC.SnackDraft.RANK_POWER[w.level] || 1);
       if (w.level === 7 && typeof w.cd === 'number') w.cd *= 0.9;
     }
+    // [VS] leveling a weapon fires it at once
+    if (PC.SNACK.FIRE_ON_LEVEL && typeof w.cdT === 'number') w.cdT = 0;
     PC.SnackUnlocks.event(scene.snack, 'rank', { key: w.key, rank: w.level });
   },
 

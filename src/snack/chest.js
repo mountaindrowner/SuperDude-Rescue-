@@ -66,6 +66,9 @@ PC.SnackChest = {
 
   evolve: function (scene, rec, w) {
     rec.apply(w);
+    // evolutions set their own stats; this keeps them well above rank 8
+    w.mastery = (w.mastery || 1) * (PC.SNACK.EVO_MASTERY || 1);
+    if (PC.SNACK.FIRE_ON_LEVEL && typeof w.cdT === 'number') w.cdT = 0;
     w.evolved = true;
     PC.SnackUnlocks.event(scene.snack, 'evolve', rec.base);
   },

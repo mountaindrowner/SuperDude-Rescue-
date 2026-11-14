@@ -12,6 +12,16 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.81.1: VS PARITY phase 5 - weapon levels 6-8.** Ranks 6-8 are
+  real VS-style steps per weapon (`tuning.js` WEAPON_LEVELS: +pellets /
+  +bolts / +shells / +amount / reach / cooldown / damage; pooled weapons
+  grow by reach and speed, not count), with level-up card text built from
+  the step (`stepDesc`). The flat mastery x1.15/1.32/1.5 is now only a
+  fallback for a weapon with no table row. [VS] leveling a weapon fires it
+  at once (cdT = 0). Evolving multiplies damage by EVO_MASTERY 1.5 (what
+  evolutions used to inherit from rank mastery). A test proves every step
+  of all 26 weapons changes a stat the weapon has. 77/77.
+
 - **2026-11-14 - v0.81.0: VS PARITY phase 4 - items.** Snack reads items via
   `PC.SNACK.passive(key)` = PC.PASSIVES (names/icons, shared with Story)
   merged with `tuning.js` PASSIVE_TUNE (max/desc/apply, Snack only). Now VS

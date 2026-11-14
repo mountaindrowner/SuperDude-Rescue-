@@ -184,17 +184,28 @@ async function test(section, name, fn) {
     for (var i = 0; i < 80; i++) PC.SnackDraft.draw(g).forEach(function (c) { if (c.kind === 'passive' && !(g.passives[c.pk] > 0)) newOffered = true; });
     return !newOffered;
   }));
-  await test('run', 'ranks 6-8 grow the weapon; a rank-8 weapon leaves the pool', () => G(() => {
-    // a FRESH weapon: the live run's chests may already have ranked weapons[0]
-    var g = PC.game.scene.getScene('PC_Game'), w = PC.SNACK.WEAPONS.blaster.make(g);
-    w.max = PC.SNACK.WEAPON_MAX; g.weapons[0] = w;       // same slot count as before
-    while (w.level < 5) PC.SnackDraft.rankUp(g, w);
-    var m5 = w.mastery || 1;
-    PC.SnackDraft.rankUp(g, w); var m6 = w.mastery;
-    PC.SnackDraft.rankUp(g, w); PC.SnackDraft.rankUp(g, w);
+  await test('run', 'ranks 6-8 are real VS-style steps (every weapon, every step changes a stat it has); rank 8 leaves the pool', () => G(() => {
+    var g = PC.game.scene.getScene('PC_Game'), S = PC.SNACK, dead = [];
+    var KITW = {}; ['danny', 'victoria', 'josh', 'kevin', 'carlos', 'nayah'].forEach(function (h) { var kw = PC.KITS[h].weapon(g); KITW[kw.key] = PC.KITS[h]; });
+    Object.keys(S.WEAPON_LEVELS).forEach(function (k) {
+      var w = S.WEAPONS[k] ? S.WEAPONS[k].make(g) : KITW[k] && KITW[k].weapon(g); if (!w) { dead.push(k + ' (no weapon)'); return; }
+      w.max = S.WEAPON_MAX;
+      while (w.level < 5) PC.SnackDraft.rankUp(g, w);
+      [6, 7, 8].forEach(function (lv) {
+        var before = JSON.stringify(w, function (key, v) { return typeof v === 'number' ? v : (key === '' ? v : undefined); });
+        PC.SnackDraft.rankUp(g, w);
+        var after = JSON.stringify(w, function (key, v) { return typeof v === 'number' ? v : (key === '' ? v : undefined); });
+        var st = S.WEAPON_LEVELS[k][lv - 6], changed = false;
+        [st.add || {}, st.mul || {}].forEach(function (o) { for (var f in o) if (typeof w[f] === 'number') changed = true; });
+        if (!changed) dead.push(k + ' L' + lv);
+      });
+    });
+    // rank 8 leaves the draft pool
+    var w8 = S.WEAPONS.blaster.make(g); w8.max = S.WEAPON_MAX; g.weapons[0] = w8;
+    while (w8.level < 8) PC.SnackDraft.rankUp(g, w8);
     var offered = false;
-    for (var i = 0; i < 60; i++) PC.SnackDraft.draw(g).forEach(function (c) { if (c.kind === 'weapon-up' && c.w === w) offered = true; });
-    return (w.level === 8 && m6 > m5 && w.mastery > m6 && !offered) || { lv: w.level, m5: m5, m6: m6, m8: w.mastery, offered: offered };
+    for (var i = 0; i < 60; i++) PC.SnackDraft.draw(g).forEach(function (c) { if (c.kind === 'weapon-up' && c.w === w8) offered = true; });
+    return (dead.length === 0 && !offered) || { dead: dead, offered: offered };
   }));
   await test('run', 'a fully maxed build gets gold or a snack, never a blank draft', () => G(() => {
     var g = PC.game.scene.getScene('PC_Game');
