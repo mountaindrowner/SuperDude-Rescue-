@@ -132,6 +132,17 @@ async function test(section, name, fn) {
     var start = S.PASSIVES_START.indexOf('soup') >= 0 && S.passive('servo').max === 5;
     return (Math.abs(dmg - 1.5) < 1e-9 && hp === 249 && Math.abs(regen - 1) < 1e-9 && story && start) || { dmg: dmg, hp: hp, regen: regen, story: story, start: start };
   }));
+  await test('run', 'VS hero growth: Danny +10% damage at 10 / 20 / ... levels (max 5), and an item recompute keeps it', () => G(() => {
+    var g = PC.game.scene.getScene('PC_Game'), S = PC.SNACK, st = g.stats;
+    var d0 = st.dmgMult, h0 = st.heroDmg, lv0 = g.level;
+    g.level = 10; S.heroGrow(g); var d1 = st.dmgMult;
+    g.level = 20; S.heroGrow(g); var d2 = st.dmgMult;
+    g.level = 15; S.heroGrow(g); var d3 = st.dmgMult;           // not a growth level
+    S.passive('battery').apply(st, 0); var rec = st.dmgMult;      // items recompute from the base
+    st.heroDmg = h0; st.dmgMult = d0; g.level = lv0;
+    var ok = g.hero.id !== 'danny' || (Math.abs(d1 / d0 - 1.1) < 1e-9 && Math.abs(d2 / d0 - 1.2) < 1e-9 && d3 === d2 && Math.abs(rec - h0 * 1.2) < 1e-9);
+    return ok || { hero: g.hero.id, d0: d0, d1: d1, d2: d2, d3: d3, rec: rec };
+  }));
   await test('run', 'a big XP gain queues several level-ups and shows them one at a time', () => G(() => {
     var g = PC.game.scene.getScene('PC_Game');
     g.gainXp(400);

@@ -217,10 +217,13 @@ PC.SnackHeroesScene.prototype.build = function () {
       if (st === 'locked') {
         var a = PC.SNACK.achievementById(hd.unlockBy);
         how = 'TO UNLOCK: ' + (a ? a.how : '???');
+      } else if (PC.SNACK.HERO_GROWTH && PC.SNACK.HERO_GROWTH[hd.id]) {
+        how = 'GROWS: ' + PC.SNACK.HERO_GROWTH[hd.id].label;      // v0.81.2
       }
       // locked rows have no kit line, so the unlock goal takes that space
       var hint = PC.ui.text(self, x + K(58), y + (st === 'locked' ? K(26) : K(40)), how, 'caption',
-        { color: '#8d8aa8', wrap: w - K(130) });
+        st === 'locked' ? { color: '#8d8aa8', wrap: w - K(130) } : { color: '#a8e04a' });
+      if (st !== 'locked') PC.ui.fit(hint, w - K(130));   // one line, never clipped
       var right = st === 'owned' ? (sel ? 'PICKED' : 'OWNED') : st === 'forSale' ? '$ ' + price : 'LOCKED';
       var rc = st === 'owned' ? (sel ? '#a8e04a' : '#cfd4e8') : st === 'forSale' ? (afford ? '#f2c33c' : '#6d6a8e') : '#45356e';
       var rt = PC.ui.text(self, x + w - K(8), y + h / 2, right, 'label', { color: rc }).setOrigin(1, 0.5);

@@ -442,6 +442,7 @@ PC.GameScene.prototype.gainXp = function (v) {
       this.level++;
       this.xpNext = PC.SNACK.xpToNext(this.level);
       if (PC.SNACK.XP_SPIKES[this.level] && PC.SNACK.WALL_GROWTH) this.floatText('BIG LEVEL! XP x2', 0x35d0ff);
+      if (PC.SNACK.heroGrow) PC.SNACK.heroGrow(this);     // [VS] the hero's own growth
       this.levelText.setText('LV ' + this.level);
       if (PC.audio) PC.audio.levelup();
       if (this.kit && this.kit.onLevelUp) this.kit.onLevelUp(this);

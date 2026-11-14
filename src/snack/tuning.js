@@ -265,6 +265,38 @@ PC.SNACK = PC.SNACK || {};
   T.FIRE_ON_LEVEL = true;       // a level-up fires that weapon at once       vs: same
   T.EVO_MASTERY = 1.5;          // an evolved weapon's damage x this          vs: evolutions far outclass level 8
 
+  // ================================================== HERO GROWTH
+  // v0.81.2 (VS parity phase 6): each hero grows every `every` levels, up to
+  // `max` times, on top of their starting perk, so they come online over
+  // a run. Our own heroes and numbers, VS's pattern.
+  // vs: Antonio +10% Might every 10 levels to +50%; Arca -5% cooldown every
+  //     10 to -15%; others grow XP / speed / area on a level schedule.
+  // `grow(st, n)` applies step n (1, 2, ...) to both the base stat and the
+  // live one, so items that recompute from the base keep the growth.
+  var ratio = function (per, n, sign) { return (1 + sign * per * n) / (1 + sign * per * (n - 1)); };
+  T.HERO_GROWTH = {
+    danny:    { every: 10, max: 5, label: '+10% DMG / 10 LV',
+                call: '+10% DAMAGE', grow: function (st, n) { var f = ratio(0.10, n, 1); st.heroDmg *= f; st.dmgMult *= f; } },
+    victoria: { every: 10, max: 4, label: 'FIRES FASTER / 10 LV',
+                call: 'FIRES SOONER', grow: function (st, n) { var f = ratio(0.04, n, -1); st.heroCd *= f; st.cdMult *= f; } },
+    josh:     { every: 10, max: 4, label: '+1 ARMOR / 10 LV',
+                call: '+1 ARMOR', grow: function (st) { st.metaArmor = (st.metaArmor || 0) + 1; st.armor = (st.armor || 0) + 1; } },
+    kevin:    { every: 10, max: 4, label: '+10% AREA / 10 LV',
+                call: 'BIGGER STRIKES', grow: function (st, n) { var f = ratio(0.10, n, 1); st.metaArea = (st.metaArea || 1) * f; st.areaMult *= f; } },
+    carlos:   { every: 10, max: 4, label: '+3% CRIT / 10 LV',
+                call: '+3% CRITS', grow: function (st) { st.critChance = (st.critChance || 0) + 0.03; } },
+    nayah:    { every: 10, max: 4, label: '+HEALING / 10 LV',
+                call: 'HEALS FASTER', grow: function (st) { st.metaRegen = (st.metaRegen || 0) + 0.3; st.regen = (st.regen || 0) + 0.3; } },
+  };
+  T.heroGrow = function (scene) {
+    var h = scene.hero && T.HERO_GROWTH[scene.hero.id];
+    if (!h || scene.level % h.every !== 0) return;
+    var n = scene.level / h.every;
+    if (n > h.max) return;
+    h.grow(scene.stats, n);
+    if (scene.floatText) scene.floatText(scene.hero.name + ' GROWS! ' + h.call, 0xa8e04a);
+  };
+
   // ================================================== CHESTS, GOLD, SHOP
   // chest contents: 1 / 3 / 5 rewards (5 rolled first, then 3), each
   // chance x (1 + luck); gold paid on top.

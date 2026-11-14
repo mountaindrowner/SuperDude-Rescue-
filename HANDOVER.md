@@ -12,6 +12,14 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.81.2: VS PARITY phase 6 - hero growth.** `tuning.js`
+  HERO_GROWTH: every 10 levels (VS Antonio pattern) Danny +10% damage (to
+  +50%), Victoria fires 4% sooner (to -16%), Josh +1 armor (to +4), Kevin
+  +10% area (to +40%), Carlos +3% crit (to +12%), Nayah +0.3 HP/s (to
+  +1.2), with a "<HERO> GROWS!" call; growth goes on the base stat AND the
+  live one, so item recomputes keep it. The hero picker shows each hero's
+  GROWS line. Snack only. 78/78.
+
 - **2026-11-14 - v0.81.1: VS PARITY phase 5 - weapon levels 6-8.** Ranks 6-8 are
   real VS-style steps per weapon (`tuning.js` WEAPON_LEVELS: +pellets /
   +bolts / +shells / +amount / reach / cooldown / damage; pooled weapons
