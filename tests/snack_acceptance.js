@@ -103,8 +103,16 @@ async function test(section, name, fn) {
   await startRun();
   await test('run', 'waves come from the stage table: minute 0 spawns tier A only, minute 14 spawns heavies too', () => G(() => {
     var sr = PC.game.scene.getScene('PC_Game').snack;
-    var R = PC.SNACK.WAVE_ROWS;
-    return R[0][3].join() === '1,0,0,0,0' && R[14][3][4] > 0 && sr.stage.roster.length === 5;
+    var R = PC.SNACK.WAVES;
+    return R[0].w.join() === '1,0,0,0,0' && R[14].w[4] > 0 && R.length === 15 && sr.stage.roster.length === 5;
+  }));
+  await test('run', 'VS wave rule: below the minute\'s on-screen minimum the stage refills; no per-minute HP creep', () => G(() => {
+    var g = PC.game.scene.getScene('PC_Game'), sr = g.snack;
+    g.enemies.clearAll(); var before = g.enemies.liveCount;
+    for (var i = 0; i < 10; i++) sr.update(0.016);
+    var after = g.enemies.liveCount, want = PC.SNACK.WAVES[0].min;
+    var d0 = sr.makeDef(0, false); g.runT = 59; var d1 = sr.makeDef(0, false); g.runT = 0;
+    return (before === 0 && after >= want && d0.hp === d1.hp) || { before: before, after: after, want: want, hp0: d0.hp, hp59: d1.hp };
   }));
   await test('run', 'a big XP gain queues several level-ups and shows them one at a time', () => G(() => {
     var g = PC.game.scene.getScene('PC_Game');
@@ -258,6 +266,9 @@ async function test(section, name, fn) {
   await test('chest', 'a chest overlay and the level-up cards never stack', async () => {
     return G(() => { var g = PC.game.scene.getScene('PC_Game');
       g.snack.chests.forEach(function (c) { c.img.destroy(); c.glow.destroy(); }); g.snack.chests = [];
+      // the live loop keeps killing (and levelling) between tests: start clean
+      var m = 0; while (g.cardsOpen && m++ < 50) g.pickCard(g._shownCards[0]);
+      g.pendingLevels = 0; g.enemies.clearAll();
       PC.SnackChest.open(g, 'normal', false);
       g.gainXp(200);
       var stacked = g.cardsOpen;

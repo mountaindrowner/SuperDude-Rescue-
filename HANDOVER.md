@@ -12,6 +12,19 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.80.8: VS PARITY phase 2 - waves.** `tuning.js` WAVES replace
+  WAVE_ROWS: per minute an on-screen MINIMUM (refilled at once, 6/frame), a
+  trickle (`per` every `int` s) up to a `max` (without it every minute sat
+  at the 300 cap), a stepped toughness `hp`/`dmg` (tougher versions arrive
+  and are drawn up to 25% bigger) and cast weights. Per-minute HP/damage
+  creep is OFF (VS has none). The density follows Mad Forest compressed
+  x0.5: spikes (5 the big swarm, 7 the boss, 11-12 the flood, 14 the last
+  crowd) with breathers after. Golden elites follow VS's ~13 minute
+  bosses (14 now, was 7) and their HP = tier base x stage x max(8, your
+  level) like VS minute bosses. Rings = bat swarms / flower walls.
+  Fresh-save bots: deaths 5:46-11:07 (median ~8.5 min), one clear; the
+  rest of the player-power phases come next, then a phase 7 retune.
+
 - **2026-11-14 - v0.80.7: VS PARITY phase 1 - the tuning file.** Mark: "tune our
   abilities, gameplay, progression and player development to be very
   similar" to Vampire Survivors (all 7 phases, in order; no wiki access, so

@@ -79,16 +79,25 @@ PC.SnackRun.prototype.update = function (dt) {
   if (this.cleared && !this.overtime) return;      // the YOU SURVIVED moment
   if (this.overtime) this.updateOvertime(dt);
 
-  // authored waves: one row per minute [template section 12]
-  var row = PC.SNACK.WAVE_ROWS[Math.min(PC.SNACK.WAVE_ROWS.length - 1, Math.floor(t / 60))];
-  var curse = scene.stats.curse || 0;
-  var interval = row[0] / ((1 + curse) * this.densityK);
-  if (scene.boss && !scene.boss.dead && !this.overtime) interval *= 1.8;   // let the boss fight breathe
-  var cap = Math.min(scene.enemies.cap - 8, Math.round(row[2] * (1 + curse)));
-  this._acc += dt;
-  if (this._acc >= interval && scene.enemies.liveCount < cap) {
+  // authored waves, VS rule (v0.80.8): keep at least `min` on screen
+  // (refill at once, a few per frame), else `per` more every `int` s
+  var W = PC.SNACK.WAVES, row = W[Math.min(W.length - 1, Math.floor(t / 60))];
+  this.row = row;
+  var curse = scene.stats.curse || 0, k = (1 + curse) * this.densityK;
+  var minOn = row.min * k;
+  if (scene.boss && !scene.boss.dead && !this.overtime) minOn *= PC.SNACK.BOSS_BREATHER;
+  var cap = scene.enemies.cap - 8, live = scene.enemies.liveCount;
+  if (live < minOn) {
+    for (var r = 0; r < PC.SNACK.REFILL_PER_FRAME && live < minOn && live < cap; r++, live++) {
+      this.spawn(this.makeDef(this.pickTier(row.w), false));
+    }
     this._acc = 0;
-    for (var n = 0; n < row[1]; n++) this.spawn(this.makeDef(this.pickTier(row[3]), false));
+  } else {
+    this._acc += dt;
+    if (this._acc >= row.int / k && live < Math.min(cap, (row.max || cap) * k)) {
+      this._acc = 0;
+      for (var n = 0; n < row.per; n++) this.spawn(this.makeDef(this.pickTier(row.w), false));
+    }
   }
   // timed set pieces
   var E = PC.SNACK.EVENTS;
@@ -120,16 +129,22 @@ PC.SnackRun.prototype.makeDef = function (tierIdx, elite) {
   var key = this.stage.roster[tierIdx] || this.stage.roster[0];
   var d = PC.ENEMY_DEFS[key];
   var min = this.scene.runT / 60, curse = this.scene.stats.curse || 0;
+  var W = PC.SNACK.WAVES, step = W[Math.min(W.length - 1, Math.floor(min))];
   var def = {
     key: d.key, still: d.still, size: d.size, xp: d.xp, kbMult: d.kbMult, fam: key,
     spd: d.spd * (1 + 0.5 * curse),
-    hp: Math.round(d.hp * (1 + PC.SNACK.ENEMY_HP_PER_MIN * min) * this.stage.mods.enemyHp * (1 + curse)),
-    dmg: Math.round(d.dmg * (1 + PC.SNACK.ENEMY_DMG_PER_MIN * min)),
+    hp: Math.round(d.hp * (1 + PC.SNACK.ENEMY_HP_PER_MIN * min) * this.stage.mods.enemyHp * (1 + curse) * step.hp),
+    dmg: Math.round(d.dmg * (1 + PC.SNACK.ENEMY_DMG_PER_MIN * min) * step.dmg),
   };
+  // tougher versions read BIGGER, so their arrival is visible
+  if (step.hp > 1) def.scaleK = Math.min(1.25, 1 + (step.hp - 1) * 0.12);
   if (elite) {
-    // a GOLDEN SNACK: big, slow-ish, tough, and it carries a chest
+    // a GOLDEN SNACK: big, slow-ish, tough, and it carries a chest. HP
+    // scales with YOUR level like a VS minute boss (v0.80.8)
+    var S = PC.SNACK, lvE = Math.max(S.ELITE_HP_MIN_LEVEL, this.scene.level || 1);
     def.elite = true; def.scaleK = 1.6; def.size = Math.round(d.size * 1.6);
-    def.hp = Math.round(def.hp * 10); def.xp = d.xp * 8; def.kbMult = 0.12;
+    def.hp = Math.round(d.hp * this.stage.mods.enemyHp * (1 + curse) * S.ELITE_HP_PER_LEVEL * lvE);
+    def.xp = d.xp * 8; def.kbMult = 0.12;
     def.spd = def.spd * 0.85; def.dmg = Math.round(def.dmg * 1.5);
   }
   return def;

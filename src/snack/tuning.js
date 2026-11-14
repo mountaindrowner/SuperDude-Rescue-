@@ -43,51 +43,78 @@ PC.SNACK = PC.SNACK || {};
   T.FOURTH_CARD_PER_LUCK = 0.5;                     // vs: P = 1 - 1/totalLuck
 
   // =============================================================== ENEMIES
-  // Snack's own copy of enemy growth per minute (Story keeps PC.TIMESCALE).
-  T.ENEMY_HP_PER_MIN = 0.06;                        // vs: 0 (VS swaps tougher TYPES in instead)
-  T.ENEMY_DMG_PER_MIN = 0.025;                      // vs: 0
+  // v0.80.8 (VS parity phase 2): NO per-minute HP/damage creep. VS keeps
+  // every enemy's stats fixed and gets harder by swapping tougher TYPES in
+  // on schedule; ours does the same with each minute's `hp`/`dmg` step
+  // below (the tougher versions are drawn bigger so you SEE them arrive).
+  T.ENEMY_HP_PER_MIN = 0;                           // vs: 0 (was 0.06 until v0.80.7)
+  T.ENEMY_DMG_PER_MIN = 0;                          // vs: 0 (was 0.025)
 
-  // ---- WAVES: one row per minute of the 15. Each row: spawn interval s,
-  // spawns per tick, live cap, tier weights A (basic) / B (fast, weak) /
-  // C (sturdy) / D (odd one) / E (heavy), and a label for the beat.
-  // vs: per minute an on-screen MINIMUM (refilled at once) + an interval;
-  //     Mad Forest minimums 15 -> 50 in 3 min, 10-100 to min 10, then 300.
-  T.WAVE_ROWS = [
-    //  int   per cap   A  B  C  D  E   beat
-    [  0.90, 1,  40, [1, 0, 0, 0, 0], 'learn' ],            // 0
-    [  0.75, 1,  70, [7, 3, 0, 0, 0], 'first elite' ],      // 1
-    [  0.80, 2, 100, [5, 3, 2, 0, 0], 'faster pressure' ],  // 2
-    [  0.78, 2, 115, [4, 2, 3, 1, 0], 'mixed' ],            // 3
-    [  0.66, 3, 130, [2, 6, 1, 1, 0], 'small swarm' ],      // 4
-    [  0.80, 2, 125, [3, 1, 3, 2, 1], 'respite + elite' ],  // 5
-    [  0.60, 2, 155, [2, 1, 3, 3, 1], 'variety' ],          // 6
-    [  0.45, 3, 200, [3, 2, 2, 2, 1], 'the district boss' ],// 7
-    [  0.36, 3, 230, [2, 6, 1, 1, 1], 'power-fantasy wave' ],// 8
-    [  0.34, 3, 240, [2, 2, 3, 2, 2], 'threat mix' ],       // 9
-    [  0.30, 3, 260, [2, 1, 2, 3, 2], 'elite threshold' ],  // 10
-    [  0.28, 3, 270, [1, 4, 2, 2, 2], 'rush' ],             // 11
-    [  0.26, 4, 280, [2, 2, 2, 2, 3], 'elite pack' ],       // 12
-    [  0.24, 4, 290, [1, 2, 2, 3, 3], 'dense' ],            // 13
-    [  0.22, 4, 300, [2, 2, 2, 3, 4], 'the last crowd' ],   // 14
+  // ---- WAVES: one row per minute of the 15 (VS's 30 compressed x0.5).
+  //   min  : on-screen MINIMUM. Below it the stage refills at once (a few
+  //          per frame, so nothing pops in a heap).    vs: same rule
+  //   int  : with the minimum met, `per` more every `int` seconds...
+  //   max  : ...but only up to `max` on screen, so quiet minutes really are
+  //          quiet (without it every minute filled to the 300 cap).
+  //   hp / dmg : the toughness step for this minute's cast (stepped, not
+  //          creeping: tougher versions ARRIVE).       vs: new types at 5 / 12 / 17
+  //   w    : cast weights over the stage roster's tiers A (basic) / B (fast,
+  //          weak) / C (sturdy) / D (odd one) / E (heavy).
+  // vs Mad Forest minimums: 15, 30, 50, 40, 30, 10, 20, 80, 100, 30, 10,
+  //   300 (11:00), 20, 150, 20, 100, 100, 20, 60, 100, 100, 300, 200, 300,
+  //   300, 100, 150, 300, -, 300: spikes with breathers after them.
+  T.WAVES = [
+    { max:  40, min:  20, int: 1.00, per: 1, hp: 1.00, dmg: 1.00, w: [1, 0, 0, 0, 0], beat: 'learn' },               // 0  vs 0-1
+    { max:  70, min:  45, int: 0.60, per: 1, hp: 1.00, dmg: 1.00, w: [6, 4, 0, 0, 0], beat: 'first swarm' },         // 1  vs 2-3
+    { max:  60, min:  25, int: 0.80, per: 2, hp: 1.00, dmg: 1.00, w: [4, 3, 3, 0, 0], beat: 'breather' },            // 2  vs 4-5
+    { max: 100, min:  60, int: 0.50, per: 2, hp: 1.15, dmg: 1.05, w: [3, 3, 3, 1, 0], beat: 'sturdy ones arrive' },  // 3  vs 6-7
+    { max: 130, min:  80, int: 0.50, per: 2, hp: 1.15, dmg: 1.05, w: [2, 5, 2, 1, 0], beat: 'fast swarm' },          // 4  vs 8-9
+    { max: 160, min: 110, int: 0.20, per: 2, hp: 1.25, dmg: 1.08, w: [3, 4, 2, 1, 0], beat: 'THE BIG SWARM' },       // 5  vs 10-11
+    { max:  90, min:  40, int: 0.40, per: 2, hp: 1.25, dmg: 1.08, w: [2, 1, 3, 3, 1], beat: 'breather, heavies' },   // 6  vs 12
+    { max: 160, min: 110, int: 0.30, per: 3, hp: 1.55, dmg: 1.15, w: [3, 2, 2, 2, 1], beat: 'the district boss' },   // 7  vs 13-14
+    { max: 130, min:  70, int: 0.25, per: 3, hp: 1.55, dmg: 1.15, w: [2, 4, 2, 1, 1], beat: 'power fantasy' },       // 8  vs 15-16
+    { max: 180, min: 110, int: 0.25, per: 3, hp: 1.80, dmg: 1.25, w: [2, 2, 3, 2, 2], beat: 'threat mix' },          // 9  vs 17-18
+    { max: 160, min:  90, int: 0.30, per: 3, hp: 1.80, dmg: 1.25, w: [1, 2, 2, 3, 2], beat: 'heavies' },             // 10 vs 19-20
+    { max: 270, min: 220, int: 0.10, per: 3, hp: 2.10, dmg: 1.35, w: [2, 3, 2, 2, 2], beat: 'THE FLOOD' },           // 11 vs 21-22
+    { max: 290, min: 240, int: 0.10, per: 4, hp: 2.10, dmg: 1.35, w: [1, 2, 2, 3, 3], beat: 'the flood, heavier' },  // 12 vs 23-24
+    { max: 230, min: 160, int: 0.12, per: 4, hp: 2.40, dmg: 1.45, w: [1, 1, 2, 3, 4], beat: 'the test' },            // 13 vs 25-26
+    { max: 300, min: 280, int: 0.10, per: 4, hp: 2.40, dmg: 1.45, w: [2, 2, 2, 3, 4], beat: 'the last crowd' },      // 14 vs 27-29
   ];
+  T.REFILL_PER_FRAME = 6;       // spawns per frame while below the minimum
+  T.BOSS_BREATHER = 0.6;        // minimum x this while the district boss is up (let the fight breathe)
 
-  // ---- TIMED SET PIECES: golden elites carry chests, rings close in.
-  // vs: Mad Forest minute bosses at 1, 3, 5, 7, 9, 10, 15, 16, 18, 20, 22,
-  //     23, 25, 27, 29 (most drop a chest), Arcana holders at 11 and 21.
+  // ---- TIMED SET PIECES: golden elites carry chests (from EVO_CHEST_FROM_SEC
+  // they can evolve), rings are VS's bat swarms and flower walls.
+  // vs: minute bosses at 1, 3, 5, 7, 9, 10, 15, 16, 18, 20, 22, 23, 25, 27,
+  //     29 (~13 chests a run); bat swarms 2-4; flower walls 5, 15, 21.
   T.EVENTS = [
-    { at: 60,  type: 'elite', tier: 'C', chest: 'normal' },   // early, non-evolution
-    { at: 150, type: 'ring',  tier: 'A', n: 18 },
-    { at: 180, type: 'elite', tier: 'C', chest: 'normal' },
-    { at: 255, type: 'ring',  tier: 'B', n: 24 },
-    { at: 300, type: 'elite', tier: 'C', chest: 'normal' },   // first evolution window
-    { at: 450, type: 'boss' },                                 // the district boss
-    { at: 540, type: 'elite', tier: 'D', chest: 'normal' },
-    { at: 600, type: 'elite', tier: 'E', chest: 'normal' },
-    { at: 660, type: 'ring',  tier: 'C', n: 26 },
-    { at: 720, type: 'elite', tier: 'C', chest: 'normal' },
-    { at: 722, type: 'elite', tier: 'E', chest: 'normal' },
-    { at: 840, type: 'ring',  tier: 'E', n: 20 },
+    { at: 60,  type: 'elite', tier: 'C' },                    // vs 1:00-3:00
+    { at: 75,  type: 'ring',  tier: 'B', n: 16 },             // bat swarm
+    { at: 105, type: 'ring',  tier: 'B', n: 16 },             // bat swarm
+    { at: 150, type: 'elite', tier: 'C' },                    // vs 5:00
+    { at: 165, type: 'ring',  tier: 'A', n: 18 },             // flower wall
+    { at: 225, type: 'elite', tier: 'D' },                    // vs 7-9
+    { at: 300, type: 'elite', tier: 'C' },                    // vs 10:00: first evolution chest
+    { at: 330, type: 'elite', tier: 'B' },                    // vs 11:00
+    { at: 390, type: 'elite', tier: 'D' },                    // vs 13
+    { at: 450, type: 'boss' },                                // the district boss (vs 15:00 Giant Werewolf)
+    { at: 480, type: 'elite', tier: 'E' },                    // vs 16
+    { at: 540, type: 'elite', tier: 'D' },                    // vs 18
+    { at: 600, type: 'elite', tier: 'E' },                    // vs 20
+    { at: 630, type: 'ring',  tier: 'C', n: 26 },             // flower wall (vs 21)
+    { at: 660, type: 'elite', tier: 'C' },                    // vs 22
+    { at: 690, type: 'elite', tier: 'D' },                    // vs 23
+    { at: 750, type: 'elite', tier: 'E' },                    // vs 25: the big test
+    { at: 780, type: 'ring',  tier: 'E', n: 20 },
+    { at: 810, type: 'elite', tier: 'C' },                    // vs 27
+    { at: 840, type: 'ring',  tier: 'B', n: 30 },             // vs 29 bat swarm
+    { at: 870, type: 'elite', tier: 'E' },                    // vs 29
   ];
+  // golden elite HP = its tier's base HP x the stage x this x max(MIN, your
+  // level) - a snowballing build meets tougher elites.
+  // vs: minute boss HP = listed HP x player level at spawn
+  T.ELITE_HP_PER_LEVEL = 1.0;
+  T.ELITE_HP_MIN_LEVEL = 8;
 
   // ---- THE DISTRICT BOSS: survived first, beaten later (v0.80.3, Mark).
   // HP = its Story HP x PER_LEVEL x max(MIN_LEVEL, your level at spawn).
