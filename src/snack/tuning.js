@@ -42,7 +42,9 @@ PC.SNACK = PC.SNACK || {};
   // levels are reached in half the clock here.       vs: enemy XP x Growth
   // v0.80.6: 4.0 -> 3.0 (first runs hit LV 21-41 once gems stopped
   // orbiting uncollected; gates flew open).
-  T.GEM_VALUE = 3.0;
+  // v0.81.3 (phase 7): 3.0 -> 2.5 - with VS waves, items and weapon steps a
+  // strong run hit LV 77-111 by 15:00 (VS reaches ~100 by 30:00)
+  T.GEM_VALUE = 2.5;
   // chance of a 4th level-up card per +100% luck
   T.FOURTH_CARD_PER_LUCK = 0.5;                     // vs: P = 1 - 1/totalLuck
 
@@ -69,7 +71,7 @@ PC.SNACK = PC.SNACK || {};
   //   300, 100, 150, 300, -, 300: spikes with breathers after them.
   T.WAVES = [
     { max:  40, min:  20, int: 1.00, per: 1, hp: 1.00, dmg: 1.00, w: [1, 0, 0, 0, 0], beat: 'learn' },               // 0  vs 0-1
-    { max:  70, min:  45, int: 0.60, per: 1, hp: 1.00, dmg: 1.00, w: [6, 4, 0, 0, 0], beat: 'first swarm' },         // 1  vs 2-3
+    { max:  60, min:  35, int: 0.60, per: 1, hp: 1.00, dmg: 1.00, w: [6, 4, 0, 0, 0], beat: 'first swarm' },         // 1  vs 2-3
     { max:  60, min:  25, int: 0.80, per: 2, hp: 1.00, dmg: 1.00, w: [4, 3, 3, 0, 0], beat: 'breather' },            // 2  vs 4-5
     { max: 100, min:  60, int: 0.50, per: 2, hp: 1.15, dmg: 1.05, w: [3, 3, 3, 1, 0], beat: 'sturdy ones arrive' },  // 3  vs 6-7
     { max: 130, min:  80, int: 0.50, per: 2, hp: 1.15, dmg: 1.05, w: [2, 5, 2, 1, 0], beat: 'fast swarm' },          // 4  vs 8-9
@@ -79,10 +81,10 @@ PC.SNACK = PC.SNACK || {};
     { max: 130, min:  70, int: 0.25, per: 3, hp: 1.55, dmg: 1.15, w: [2, 4, 2, 1, 1], beat: 'power fantasy' },       // 8  vs 15-16
     { max: 180, min: 110, int: 0.25, per: 3, hp: 1.80, dmg: 1.25, w: [2, 2, 3, 2, 2], beat: 'threat mix' },          // 9  vs 17-18
     { max: 160, min:  90, int: 0.30, per: 3, hp: 1.80, dmg: 1.25, w: [1, 2, 2, 3, 2], beat: 'heavies' },             // 10 vs 19-20
-    { max: 270, min: 220, int: 0.10, per: 3, hp: 2.10, dmg: 1.35, w: [2, 3, 2, 2, 2], beat: 'THE FLOOD' },           // 11 vs 21-22
-    { max: 290, min: 240, int: 0.10, per: 4, hp: 2.10, dmg: 1.35, w: [1, 2, 2, 3, 3], beat: 'the flood, heavier' },  // 12 vs 23-24
+    { max: 240, min: 200, int: 0.10, per: 3, hp: 2.10, dmg: 1.35, w: [2, 3, 2, 2, 2], beat: 'THE FLOOD' },           // 11 vs 21-22
+    { max: 260, min: 210, int: 0.10, per: 4, hp: 2.10, dmg: 1.35, w: [1, 2, 2, 3, 3], beat: 'the flood, heavier' },  // 12 vs 23-24
     { max: 230, min: 160, int: 0.12, per: 4, hp: 2.40, dmg: 1.45, w: [1, 1, 2, 3, 4], beat: 'the test' },            // 13 vs 25-26
-    { max: 300, min: 280, int: 0.10, per: 4, hp: 2.40, dmg: 1.45, w: [2, 2, 2, 3, 4], beat: 'the last crowd' },      // 14 vs 27-29
+    { max: 280, min: 240, int: 0.10, per: 4, hp: 2.40, dmg: 1.45, w: [2, 2, 2, 3, 4], beat: 'the last crowd' },      // 14 vs 27-29
   ];
   T.REFILL_PER_FRAME = 6;       // spawns per frame while below the minimum
   T.BOSS_BREATHER = 0.6;        // minimum x this while the district boss is up (let the fight breathe)
@@ -93,8 +95,8 @@ PC.SNACK = PC.SNACK || {};
   //     29 (~13 chests a run); bat swarms 2-4; flower walls 5, 15, 21.
   T.EVENTS = [
     { at: 60,  type: 'elite', tier: 'C' },                    // vs 1:00-3:00
-    { at: 75,  type: 'ring',  tier: 'B', n: 16 },             // bat swarm
-    { at: 105, type: 'ring',  tier: 'B', n: 16 },             // bat swarm
+    { at: 75,  type: 'ring',  tier: 'B', n: 12 },             // bat swarm
+    { at: 105, type: 'ring',  tier: 'B', n: 12 },             // bat swarm
     { at: 150, type: 'elite', tier: 'C' },                    // vs 5:00
     { at: 165, type: 'ring',  tier: 'A', n: 18 },             // flower wall
     { at: 225, type: 'elite', tier: 'D' },                    // vs 7-9
@@ -288,6 +290,10 @@ PC.SNACK = PC.SNACK || {};
     nayah:    { every: 10, max: 4, label: '+HEALING / 10 LV',
                 call: 'HEALS FASTER', grow: function (st) { st.metaRegen = (st.metaRegen || 0) + 0.3; st.regen = (st.regen || 0) + 0.3; } },
   };
+  // a hero's starting weapon begins above level 1 (Snack only). Victoria's
+  // Sentry Bot was the weakest opener (careers: deaths at 1-4 min)
+  // vs: some VS characters start with a bonus (+1 Amount, +10% Speed)
+  T.HERO_START_RANKS = { victoria: 1 };
   T.heroGrow = function (scene) {
     var h = scene.hero && T.HERO_GROWTH[scene.hero.id];
     if (!h || scene.level % h.every !== 0) return;
@@ -303,7 +309,7 @@ PC.SNACK = PC.SNACK || {};
   // vs: typical boss row 5-item 3% / 3-item 10% / 1-item 100%, x totalLuck;
   //     chest gold 100-200 / 300-600 / 500-1,000 (VS-sized economy).
   T.CHEST = {
-    normal: { three: 0.10, five: 0.02, gold: [25, 60] },
+    normal: { three: 0.10, five: 0.02, gold: [15, 40] },     // v0.81.3: twice the chests now (14 elites)
     boss:   { three: 0.70, five: 0.30, gold: [120, 200] },
   };
   // a regular pop rarely drops a coin (gold is not a kill salary)

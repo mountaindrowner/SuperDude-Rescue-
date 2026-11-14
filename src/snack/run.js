@@ -48,7 +48,12 @@ PC.SnackRun.prototype.setupStats = function (scene) {
 PC.SnackRun.prototype.afterCreate = function (scene) {
   var self = this, K = PC.uiK;
   var w0 = scene.weapons[0];
-  if (w0) { w0.max = PC.SNACK.WEAPON_MAX; this.run.ranks[w0.key] = w0.level; }
+  if (w0) {
+    w0.max = PC.SNACK.WEAPON_MAX;
+    var extra = (PC.SNACK.HERO_START_RANKS || {})[this.heroId] || 0;
+    while (extra-- > 0 && w0.level < w0.max) PC.SnackDraft.rankUp(scene, w0);
+    this.run.ranks[w0.key] = w0.level;
+  }
   scene.xpNext = PC.SNACK.xpToNext(1);
   scene.pickups.gold = 0;                       // the HUD shows THIS run's gold
   scene.pickups.crateEvery = PC.SNACK.CRATE_EVERY;
