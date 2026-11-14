@@ -75,6 +75,7 @@ PC.OptionsPanel = {
       var up = function () { held = false; };
       scene.input.on('pointermove', move);
       scene.input.on('pointerup', up);
+      scene.input.on('pointerupoutside', up);     // released off the canvas (v0.80.6)
       sliders.push({ move: move, up: up, draw: draw, bx: bx, bw: bw, y: y, set: set });
       draw();
     };
@@ -110,7 +111,7 @@ PC.OptionsPanel = {
     var close = function () {
       if (!scene._optionsOpen) return;
       scene._optionsOpen = false;
-      sliders.forEach(function (s) { scene.input.off('pointermove', s.move); scene.input.off('pointerup', s.up); });
+      sliders.forEach(function (s) { scene.input.off('pointermove', s.move); scene.input.off('pointerup', s.up); scene.input.off('pointerupoutside', s.up); });
       scene.input.keyboard.off('keydown-ESC', escClose);
       ui.forEach(function (o) { o.destroy(); });
       if (opts.onClose) opts.onClose();

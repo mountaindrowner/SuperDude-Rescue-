@@ -52,7 +52,7 @@ PC.STORY.missions.stage2 = {
         { say: { speaker: 'vic', text: "Triangulating. Forty-five seconds of standing perfectly still, which is historically when everything shows up." } },
       ],
       done: [
-        { say: { speaker: 'vic', text: "Got them. Five signals, five separate disasters." } },
+        { say: { speaker: 'vic', text: "Got them. Four signals, four separate disasters." } },
         { say: { speaker: 'danny', text: "Give me the closest one." } },
         { say: { speaker: 'vic', text: "Adventure Park. That's Josh, and he's talking to the wildlife. Boss, he sounds calm." } },
         { say: { speaker: 'danny', text: "That's just Josh. Gear up, we're going to the zoo." } },

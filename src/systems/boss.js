@@ -115,13 +115,31 @@ PC.Boss.prototype.say = function (text, tint) {
     onComplete: function () { t.destroy(); if (self.sayTxt === t) self.sayTxt = null; } });
 };
 
+// v0.80.6: put a scripted boss back to a plain, visible, grounded body
+// with no puddles or shots left behind (the Snack overtime hand-off: a
+// burrowed Broccolisk / dived Gloop King stayed INVISIBLE as the reaper,
+// Cake froze mid-leap, and frosting/slick puddles slowed you into it)
+PC.Boss.prototype.settle = function () {
+  this.sprite.setVisible(true).setAlpha(1).setAngle(0);
+  if (this.shadow) this.shadow.setVisible(true).setAlpha(1);
+  if (this.tele) this.tele.setVisible(false);
+  this.hopY = 0; this.hopPhase = 0; this.noContact = false; this.guard = 1; this.vuln = 0;
+  this.state = 'active'; this.stateT = 0;
+  this.shots.length = 0;
+  if (this.gfx) this.gfx.clear();
+  for (var i = 0; i < this.puddles.length; i++) { this.puddles[i].active = false; this.puddles[i].img.setVisible(false); }
+  this.scene.bossSlow = 1;
+};
+
 PC.Boss.prototype.enraged = function () { return this.hp < this.maxHp * 0.25; };
 
 // THE single HP path (Perf Bible 10)
 PC.Boss.prototype.damage = function (amount, dirx, diry) {
   if (this.dead) return;
-  // the Snack OVERTIME reaper (v0.80.4) can't be hurt: hits flash only
-  if (this.reaper) {
+  // the Snack OVERTIME reaper (v0.80.4) can't be hurt: hits flash only.
+  // otHold = the 15:00 celebration beat: frozen and untouchable too, so
+  // a kill there can't race the reaper hand-off (v0.80.6)
+  if (this.reaper || this.otHold) {
     this.flashUntil = this.scene.now + 0.04;
     this.sprite.setTintFill(0xffffff);
     return;
@@ -218,7 +236,9 @@ PC.Boss.prototype.update = function (dt, px, py) {
   }
 
   // ---- the per-boss fight script ----
-  if (this.reaper) {
+  if (this.otHold) {
+    // the YOU SURVIVED beat: stand still, no script (no burrow/dive)
+  } else if (this.reaper) {
     // OVERTIME: no script, no specials - it just comes for you, faster
     // and faster (SnackRun sets chaseSpd every frame)
     var rdx = px - this.x, rdy = py - this.y, rd = Math.sqrt(rdx * rdx + rdy * rdy) || 1;
@@ -250,7 +270,7 @@ PC.Boss.prototype.update = function (dt, px, py) {
   // wind-up REARS UP and tilts back, the strike STRETCHES along its
   // heading. Same VS "code-side life" law the hero walk-bob uses.
   var baseS = this.baseS;
-  if (this.script && this.script.pose && this.script.pose(this)) {
+  if (!this.reaper && !this.otHold && this.script && this.script.pose && this.script.pose(this)) {
     // the script drew its own pose (skid wobble, shed shake, overheat)
   } else if (this.state === 'telegraph' || this.state === 'fan' ||
              this.state === 'volleyTell' || this.state === 'ringTell') {

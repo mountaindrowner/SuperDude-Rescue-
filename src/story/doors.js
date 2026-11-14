@@ -14,9 +14,9 @@ PC.Doors = function (scene) {
 
   // door lots: landmark id -> what opens
   this.spots = [];
-  [{ at: 'store', label: "ENTER SAL'S CORNER STORE", sub: 'SPEND COINS - TEAM UPGRADES',
+  [{ at: 'store', label: "ENTER SAL'S CORNER STORE", sub: 'SPEND TECH - TEAM UPGRADES',
      scene: 'PC_Shop', color: 0xa8e04a },
-   { at: 'garage', label: 'ENTER THE SUPER DUDE GARAGE', sub: 'SPEND TECH - SIGNATURE GEAR',
+   { at: 'garage', label: 'ENTER THE SUPER DUDE GARAGE', sub: 'SPEND GOLD - SIGNATURE GEAR',
      scene: 'PC_Garage', color: 0x35d0ff }].forEach(function (d) {
     var mk = scene.region && scene.region.landmark(d.at);
     if (!mk) return;
@@ -38,6 +38,10 @@ PC.Doors = function (scene) {
   }).setOrigin(0.5).setDepth(104).setVisible(false);
   this.zone = scene.add.zone(W / 2, H - 106, 190, 30)
     .setInteractive({ useHandCursor: true });
+  // v0.80.6: only tappable while the ENTER prompt shows - the hidden zone
+  // used to swallow every touch in that bottom-centre strip (joystick
+  // and dialogue taps) in every Story mission
+  this.zone.input.enabled = false;
   this.zone.on('pointerdown', function (p, lx, ly, ev) {
     if (ev && ev.stopPropagation) ev.stopPropagation();
     self.enter();
@@ -84,6 +88,7 @@ PC.Doors.prototype.update = function () {
   }
   var on = !!this.near && !scene.storyPause && !scene.cardsOpen && !scene.dead;
   this.btnTxt.setVisible(on); this.subTxt.setVisible(on);
+  if (this.zone.input) this.zone.input.enabled = !!on;
   this.btnG.setVisible(on).clear();
   if (!on) return;
   this.btnTxt.setText(this.near.def.label);

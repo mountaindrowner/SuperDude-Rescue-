@@ -367,12 +367,13 @@ async function test(section, name, fn) {
     P.reload();
     return (ok && !broke && P.get().wallet === 20 && P.heroState('victoria') === 'owned') || P.get();
   }));
-  await test('shop', 'PowerUp price = base x (1 + owned) + floor(20 x 1.1^all ranks)', () => G(() => {
+  await test('shop', 'PowerUp price = (base x (1 + owned) + floor(20 x 1.1^all ranks)) x PRICE_SCALE', () => G(() => {
     var P = PC.SnackProfile; P.reset(); P.get().wallet = 1e6;
     var c = [P.powerupCost('might')]; P.buyPowerup('might');
     c.push(P.powerupCost('might')); c.push(P.powerupCost('greed')); P.buyPowerup('greed');
     c.push(P.powerupCost('might'));
-    var want = [200, 400 + Math.floor(20 * 1.1), 200 + Math.floor(20 * 1.1), 400 + Math.floor(20 * Math.pow(1.1, 2))];
+    var k = PC.SNACK.PRICE_SCALE || 1;
+    var want = [200, 400 + Math.floor(20 * 1.1), 200 + Math.floor(20 * 1.1), 400 + Math.floor(20 * Math.pow(1.1, 2))].map(function (v) { return Math.round(v * k); });
     return c.join() === want.join() || { got: c, want: want };
   }));
   await test('shop', 'REFUND ALL returns every coin, resets ranks, keeps heroes and unlocks', () => G(() => {
@@ -637,6 +638,26 @@ async function test(section, name, fn) {
       g.spawnBoss('frank'); g.snack.clearStage();
       var txt = g.ui.list.filter(function (o) { return o.text && o.text.indexOf('YOU OUTLASTED BIG FRANK') === 0; }).length;
       return txt === 1 || g.ui.list.filter(function (o) { return o.text; }).map(function (o) { return o.text; }); });
+  });
+
+  await test('overtime', '15:00 hand-off: a burrowed/hidden boss comes back VISIBLE, untouchable in the celebration, puddles cleared, stage card written', async () => {
+    await startRun({ stage: 'park' });
+    const a = await G(() => { var g = PC.game.scene.getScene('PC_Game'), sr = g.snack;
+      g.level = 12; sr.fire({ type: 'boss' }); var b = g.boss;
+      // the Broccolisk mid-burrow: hidden, no contact, a puddle on the deck
+      b.sprite.setVisible(false); b.shadow.setVisible(false); b.noContact = true; b.hopY = -31;
+      b.splat && b.splat(2, 0xff0000, 'slow');
+      g.runT = PC.SNACK.RUN_SEC + 0.05; sr.update(0.016);
+      var hold = !!b.otHold; b.damage(1e9, 0, 0);
+      var rec = PC.SnackProfile.get().records.park;
+      return { hold: hold, alive: !b.dead, rec: !!(rec && rec.cleared) }; });
+    await page.waitForFunction(() => { var g = PC.game.scene.getScene('PC_Game'); return g.snack.overtime && g.boss && g.boss.reaper; }, null, { timeout: 9000 });
+    const b = await G(() => { var g = PC.game.scene.getScene('PC_Game'), b = g.boss;
+      return { vis: b.sprite.visible, shadow: b.shadow.visible, contact: !b.noContact, hop: b.hopY, puddles: b.puddles.filter(function (p) { return p.active; }).length }; });
+    const c = await G(() => { var g = PC.game.scene.getScene('PC_Game'), b = g.boss;
+      b.x = g.px + 30; b.y = g.py; g.reviveCharges = 1; g.invUntil = 0; g.hp = 1; g.die();
+      return { revived: !g.dead, d: Math.round(Math.hypot(b.x - g.px, b.y - g.py)) }; });
+    return (a.hold && a.alive && a.rec && b.vis && b.shadow && b.contact && b.hop === 0 && b.puddles === 0 && c.revived && c.d >= 400) || { a, b, c };
   });
 
   // ================= MUSIC (v0.80.5) =================

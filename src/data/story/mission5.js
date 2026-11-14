@@ -29,6 +29,10 @@ PC.STORY.missions.stage5 = {
     { // B2 - free the three kids trapped at the School. v0.78.0: each is
       // a HOLD - dig the door out while the sugar horde piles in
       type: 'fetch', banner: 'DIG THE KIDS OUT', hold: 2.5,
+      // the three lines play 1st/2nd/3rd freed, whatever door you dig
+      // first (v0.80.6: "every kid accounted for" could play with two
+      // still trapped)
+      linesInOrder: true,
       itemName: 'KID FREED', icon: 'pickup_cage_1',
       items: [
         { at: 'school', dx: -170, dy: -10,

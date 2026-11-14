@@ -419,12 +419,7 @@ PC.GameScene.prototype.create = function () {
   var unlock = function () { PC.audio.unlock(); };
   this.input.once('pointerdown', unlock);
   this.input.keyboard.once('keydown', unlock);
-  if (!this._visHooked) {
-    this._visHooked = true;
-    document.addEventListener('visibilitychange', function () {
-      PC.audio.setHidden(document.hidden);
-    });
-  }
+  // (tab-hidden pause lives in audio.js since v0.80.6, so menus get it too)
 };
 
 PC.GameScene.prototype.stress = function () {
@@ -756,6 +751,9 @@ PC.GameScene.prototype.showCards = function (keep) {
   // never stack on a Snack Attack chest / pause overlay: the level-up
   // waits and releaseHold() opens it the moment that overlay closes
   if (this.snackHold) return;
+  // a thumb still steering when the cards pop must not pick one: taps
+  // arm after a beat (v0.80.6; a reroll/banish redraw keeps the arm)
+  if (!keep) this._cardsArmAt = Date.now() + 450;
   this.cardsOpen = true;
   var W = PC.RENDER.W, H = PC.RENDER.H;
   var self = this;
@@ -804,7 +802,7 @@ PC.GameScene.prototype.showCards = function (keep) {
       desc.setFontSize(PC.uiK(fs) + 'px');
     }
     ui.push(panel, icon, title, sub, desc);
-    panel.on('pointerdown', function () { self.pickCard(card); });
+    panel.on('pointerdown', function () { if (Date.now() >= (self._cardsArmAt || 0)) self.pickCard(card); });
   });
   // Snack Attack: REROLL / SKIP / BANISH under the cards, when owned
   if (this.snack) PC.SnackDraft.decorate(this, ui, H / 2 + ch / 2 + PC.uiK(10));
@@ -1336,6 +1334,12 @@ PC.GameScene.prototype.die = function () {
     if (this.vfx) this.vfx.shake(2.5, 110);
     if (PC.audio && PC.audio.revive) PC.audio.revive();
     this.floatText('AMAZING GRACE!', 0xf2c33c);
+    // Snack overtime: the reaper is knocked back too, or the 2.5s of
+    // grace is all the revive buys (v0.80.6)
+    if (this.boss && this.boss.reaper) {
+      var rbx = this.boss.x - this.px, rby = this.boss.y - this.py, rbl = Math.sqrt(rbx * rbx + rby * rby) || 1;
+      this.boss.x = this.px + rbx / rbl * 420; this.boss.y = this.py + rby / rbl * 420;
+    }
     this.drawHud();
     return;
   }
@@ -1371,7 +1375,7 @@ PC.GameScene.prototype.die = function () {
 };
 
 // ---- BOSS spawn: big cinematic entrance (dopamine) ----
-PC.GameScene.prototype.spawnBoss = function (id) {
+PC.GameScene.prototype.spawnBoss = function (id, quiet) {
   this.bossSpawned = true;
   if (PC.audio) PC.audio.startMusic('boss');      // v0.77.0: the fight gets its own track
   var W = PC.RENDER.W, H = PC.RENDER.H, self = this;
@@ -1382,7 +1386,7 @@ PC.GameScene.prototype.spawnBoss = function (id) {
   this.tweens.add({ targets: flash, alpha: 0, duration: 500, onComplete: function () { flash.destroy(); } });
   this.cameras.main.shake(400, 0.01);
   if (PC.audio) PC.audio.roar();
-  this.bossBanner(this.boss.name);
+  if (!quiet) this.bossBanner(this.boss.name);    // overtime raises its own card
 };
 
 // shared "<NAME> APPEARS!" card (story bosses raise it from the quest)
@@ -1412,6 +1416,11 @@ PC.GameScene.prototype.hitBoss = function (x, y, dmg, dx, dy) {
   }
   var ddx = b.x - x, ddy = b.y - y;
   if (ddx * ddx + ddy * ddy > (b.r + 8) * (b.r + 8)) return false;
+  if (b.reaper || b.otHold) {                     // absorbs the shot, no fake numbers
+    b.damage(dmg, dx, dy);
+    this.fx.burst(x, y, 'fx_spark', 2, 0.12);
+    return true;
+  }
   b.damage(dmg, dx, dy);
   this.fx.burst(x, y, 'fx_spark', 3, 0.16);
   if (this.juice) this.juice.dmgNum(x, y - 10, dmg, this._lastCrit);

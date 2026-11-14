@@ -640,18 +640,23 @@ PC.applyHeroKit = function (scene) {
 // ---------------------------------------------------------------
 // Hero unlock meta (PHASE2 §3 default: DEV_ALL_UNLOCKED honored)
 // ---------------------------------------------------------------
+// v0.80.6: a memory copy too - with storage BLOCKED (itch iframe) every
+// rescue was forgotten at once, so the Garage showed rescued heroes as ???
+PC._heroesMem = {};
 PC.unlockedHeroes = function () {
   var out = { danny: true };
   try {
     var raw = localStorage.getItem('portioncontrol.heroesUnlocked');
     if (raw) JSON.parse(raw).forEach(function (id) { out[id] = true; });
   } catch (e) {}
+  for (var k in PC._heroesMem) out[k] = true;
   return out;
 };
 PC.unlockHero = function (id) {
   var u = PC.unlockedHeroes();
   if (u[id]) return false;
   u[id] = true;
+  PC._heroesMem[id] = true;
   try {
     localStorage.setItem('portioncontrol.heroesUnlocked',
       JSON.stringify(Object.keys(u)));

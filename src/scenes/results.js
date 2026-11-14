@@ -20,6 +20,10 @@ PC.ResultsScene.prototype.create = function () {
   if (d.story) freshHeroes = [];
   this.cameras.main.setBackgroundColor(win ? 0x142a1a : 0x1b1530);
   var m = Math.floor((d.time || 0) / 60), s = Math.floor((d.time || 0) % 60);
+  // v0.80.6: on a short, wide screen the hero + caption sit LEFT and the
+  // stats RIGHT (stacked, "JOINED THE TEAM!" ran over the TIME row)
+  var wide = W > H * 1.2;
+  var cxA = wide ? W * 0.3 : W / 2, cxS = wide ? W * 0.7 : W / 2, syS = wide ? H * 0.5 : H * 0.68;
 
   if (win) {
     // confetti rain
@@ -39,18 +43,18 @@ PC.ResultsScene.prototype.create = function () {
     if (d.finale) {
       var ids = ['victoria', 'josh', 'kevin', 'carlos', 'nayah', 'danny'];
       for (var fi = 0; fi < ids.length; fi++) {
-        this.add.image(W / 2 + (fi - 2.5) * 30, H * 0.42, 'atlas', 'portrait_' + ids[fi])
+        this.add.image(cxA + (fi - 2.5) * 30, H * 0.42, 'atlas', 'portrait_' + ids[fi])
           .setDisplaySize(28, 28).setDepth(2);
       }
-      this.add.text(W / 2, H * 0.56, 'THE WHOLE TEAM IS HOME!\nCHOMP IS SWITCHED OFF.', {
+      this.add.text(cxA, H * 0.56, 'THE WHOLE TEAM IS HOME!\nCHOMP IS SWITCHED OFF.', {
         fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
         align: 'center',
       }).setOrigin(0.5).setDepth(2);
     } else {
       // the rescued hero, framed
-      this.add.image(W / 2, H * 0.42, 'atlas', d.rescuedArt || PC.D1_RESCUE.art)
+      this.add.image(cxA, H * 0.42, 'atlas', d.rescuedArt || PC.D1_RESCUE.art)
         .setScale(1.2).setDepth(2);
-      this.add.text(W / 2, H * 0.56, (d.rescued || 'A TEAMMATE') + '\nJOINED THE TEAM!', {
+      this.add.text(cxA, H * 0.56, (d.rescued || 'A TEAMMATE') + '\nJOINED THE TEAM!', {
         fontFamily: 'monospace', fontSize: '11px', color: '#f2c33c', fontStyle: 'bold',
         align: 'center',
       }).setOrigin(0.5).setDepth(2);
@@ -81,12 +85,12 @@ PC.ResultsScene.prototype.create = function () {
     '\nGOLD  $ ' + (d.gold || 0) +
     ((d.tp || xpTp) ? '\nTECH  +' + ((d.tp || 0) + xpTp) + ' TP' : '');
   var rowN = rows.split('\n').length;
-  PC.labPanel(statG, W / 2 - 70, H * 0.68 - 38, 140, 18 + rowN * 16, { rivets: true });
-  this.add.text(W / 2, H * 0.68, rows, {
+  PC.labPanel(statG, cxS - 70, syS - 38, 140, 18 + rowN * 16, { rivets: true });
+  this.add.text(cxS, syS, rows, {
     fontFamily: 'monospace', fontSize: '12px', color: '#cfd4e8', align: 'center', lineSpacing: 4,
   }).setOrigin(0.5).setDepth(2);
   if (xpTp > 0) {
-    this.add.text(W / 2, H * 0.68 + 8 + rowN * 8, '(' + (d.xp || 0) + ' XP BANKED)', {
+    this.add.text(cxS, syS + 8 + rowN * 8, '(' + (d.xp || 0) + ' XP BANKED)', {
       fontFamily: 'monospace', fontSize: '8px', color: '#6d6a8e',
     }).setOrigin(0.5, 0).setDepth(2);
   }

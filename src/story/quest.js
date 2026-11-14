@@ -103,6 +103,14 @@ PC.Quest.prototype.spotOf = function (mk, pad) {
 PC.Quest.prototype.cageSpot = function (mk) {
   if (mk.open || mk.water) {
     var s = this.snapWalk(this.spotOf(mk));
+    // v0.80.6: on open floor, not inside a prop (Carlos's cage sat in the
+    // antenna mast footing): first nearby spot collision doesn't push
+    var C = [[0, -30], [0, 30], [-36, 0], [36, 0], [-36, -30], [36, -30], [0, 0]];
+    for (var i = 0; i < C.length; i++) {
+      var cx = s.x + C[i][0], cy = s.y + C[i][1];
+      var r = PC.resolveCircle ? PC.resolveCircle(cx, cy, 18) : { x: cx, y: cy };
+      if (Math.abs(r.x - cx) + Math.abs(r.y - cy) < 0.5) return { x: cx, y: cy };
+    }
     return { x: s.x, y: s.y - 30 };
   }
   return { x: mk.cx, y: mk.y + mk.h - 40 };
@@ -565,14 +573,14 @@ PC.Quest.prototype.update = function (dt) {
           it.img.destroy(); it.glow.destroy();
           if (PC.audio) PC.audio.chest();
           scene.floatText(o.itemName + '!', 0x35d0ff);
-          if (it.line) this.playScript([{ say: it.line }], null);
+          var itLine2 = this.lineFor(o, it); if (itLine2) this.playScript([{ say: itLine2 }], null);
         }
       } else if (d2 < 26 * 26) {
         it.taken = true;
         it.img.destroy(); it.glow.destroy();
         if (PC.audio) PC.audio.chest();
         scene.floatText(o.itemName + '!', 0x35d0ff);
-        if (it.line) this.playScript([{ say: it.line }], null);
+        var itLine2 = this.lineFor(o, it); if (itLine2) this.playScript([{ say: itLine2 }], null);
       }
     }
     var left = 0;
@@ -609,7 +617,7 @@ PC.Quest.prototype.update = function (dt) {
           rw.num.setColor('#f2c33c');
         }
         if (PC.audio) PC.audio.hurt();
-        scene.floatText('WRONG ORDER - START OVER!', 0xff6b6b);
+        scene.floatText('WRONG ORDER! START OVER!', 0xff6b6b);
       }
     }
     if (this._seqLock && !anyNear) this._seqLock = false;
@@ -699,6 +707,16 @@ PC.Quest.prototype.update = function (dt) {
       }
     }
   }
+};
+
+// a pickup's line: its own, or (linesInOrder) the Nth line for the Nth
+// item taken, so story beats can't play out of order
+PC.Quest.prototype.lineFor = function (o, it) {
+  if (!o.linesInOrder) return it.line;
+  var n = 0;
+  for (var i = 0; i < this.items.length; i++) if (this.items[i].taken) n++;
+  var src = o.items && o.items[n - 1];
+  return src ? src.line : it.line;
 };
 
 PC.Quest.prototype.finishObjective = function (o) {

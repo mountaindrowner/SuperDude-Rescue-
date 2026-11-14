@@ -28,6 +28,19 @@ PC.EnemySystem = function (scene) {
 // spawn one enemy at world (x, y). At cap: recycle the farthest live enemy.
 PC.EnemySystem.prototype.spawn = function (x, y, def) {
   var e = null, i;
+  // v0.80.6: on the carved maps (Sewers, Tower) a spawn point inside rock
+  // left the enemy wedged in the wall strips, drifting at you through
+  // it. Step out to the nearest carved floor first.
+  var L = this.scene.region && this.scene.region.layout;
+  if (L && L.carvedAt && !L.carvedAt(x, y)) {
+    var found = false;
+    for (var rr = 1; rr <= 8 && !found; rr++) {
+      for (var a = 0; a < 12; a++) {
+        var th = a * Math.PI / 6, nx = x + Math.cos(th) * rr * 40, ny = y + Math.sin(th) * rr * 40;
+        if (L.carvedAt(nx, ny)) { x = nx; y = ny; found = true; break; }
+      }
+    }
+  }
   for (i = 0; i < this.pool.length; i++) {
     if (!this.pool[i].active) { e = this.pool[i]; break; }
   }

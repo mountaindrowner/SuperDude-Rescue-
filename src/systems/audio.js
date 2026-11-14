@@ -431,4 +431,12 @@ window.PC = window.PC || {};
       }, 300);
     },
   };
+  // v0.80.6: pause everything while the tab is hidden, on EVERY screen
+  // (it used to be hooked from PC_Game, so the title/menu music kept
+  // playing in a background tab until a run had started)
+  try {
+    document.addEventListener('visibilitychange', function () {
+      if (PC.audio && PC.audio.setHidden) PC.audio.setHidden(document.hidden);
+    });
+  } catch (e) {}
 })();

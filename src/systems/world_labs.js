@@ -305,8 +305,10 @@ window.PC = window.PC || {};
           { ax: a[0], ay: a[1], bx: b[0], by: b[1] });
       }
     });
+    // v0.80.6: file furniture under EVERY chunk it overlaps (a forklift
+    // hanging over a chunk edge had a strip with no collision)
     this.furniture.forEach(function (f) {
-      bput(self.furnBuckets, Math.floor(f.x / CH), Math.floor(f.y / CH), f);
+      span(self.furnBuckets, f.x, f.y, f.x, f.y, 34, f);
     });
   };
 

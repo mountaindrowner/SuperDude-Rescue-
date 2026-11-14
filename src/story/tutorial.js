@@ -34,7 +34,7 @@ PC.TutorialPad = function (scene, onDone) {
   this.barX = px + pw / 2 - K(26); this.barY = py - ph / 2 + K(16);
 
   keep(scene.add.text(px - pw / 2 + K(10), py - ph / 2 + K(8),
-    'INCOMING - TIME TECH VIC', {
+    'INCOMING: TIME TECH VIC', {
       fontFamily: 'monospace', fontSize: PC.TYPE.caption.size + 'px',
       color: '#35d0ff', fontStyle: 'bold',
     }).setDepth(D + 2));
@@ -72,7 +72,7 @@ PC.TutorialPad = function (scene, onDone) {
 
   // one idea per screen, in Vic's voice, aimed at the player
   this.pages = [
-    { head: 'HEY - YOU WITH THE PAD.', sub: "I'm Vic. Four things and you're ready.", kind: 'wave' },
+    { head: 'HEY, YOU WITH THE PAD.', sub: "I'm Vic. Four things and you're ready.", kind: 'wave' },
     { head: 'DRAG TO MOVE', sub: 'Anywhere on the screen.', kind: 'stick' },
     { head: 'YOUR GEAR FIRES ITSELF', sub: "You steer. It shoots what's close.", kind: 'icon', frame: 'icon_weapon_resizer' },
     { head: 'FOLLOW THE GOLD ARROW', sub: 'It always points at the job.', kind: 'arrow' },

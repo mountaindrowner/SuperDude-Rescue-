@@ -89,8 +89,10 @@ PC.ShopScene.prototype.create = function () {
 };
 
 PC.ShopScene.prototype.redraw = function () {
-  var gold = PC.meta.gold();
-  this.goldText.setText('YOUR GOLD  $ ' + gold);
+  // v0.80.6: these passives are bought with TECH (PC.meta.buy, since
+  // v0.76.0) - the store still priced and lit them in gold
+  var gold = PC.meta.stat('tp');
+  this.goldText.setText('YOUR TECH  ' + gold + ' TP');
   this._cells.forEach(function (c) {
     var p = c.p;
     var rank = PC.meta.rank(p.id);
@@ -109,7 +111,7 @@ PC.ShopScene.prototype.redraw = function () {
       if (r < rank) c.panel.fillStyle(0xa8e04a, 1).fillRect(px, py, 6, 3);
       else c.panel.fillStyle(0x45356e, 1).fillRect(px, py, 6, 3);
     }
-    c.cost.setText(maxed ? 'MAXED!' : '$ ' + next)
+    c.cost.setText(maxed ? 'MAXED!' : next + ' TP')
       .setColor(maxed ? '#7dd97b' : (afford ? '#f2c33c' : '#6d6a8e'));
   });
 };

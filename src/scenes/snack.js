@@ -82,8 +82,9 @@ PC.SnackList = function (scene, x, y, w, h, rowH) {
   scene.input.on('wheel', function (p, go, dx, dy) { self.setScroll(self.scroll + dy * 0.6); });
 };
 PC.SnackList.prototype.maxScroll = function () { return Math.max(0, this.rows.length * this.rowH - this.h); };
-PC.SnackList.prototype.setScroll = function (s) {
+PC.SnackList.prototype.setScroll = function (s, keepWant) {
   this.scroll = Math.max(0, Math.min(this.maxScroll(), s));
+  if (!keepWant) this._want = this.scroll;
   this.c.y = -this.scroll;
   var g = this.bar; g.clear();
   var ms = this.maxScroll();
@@ -98,13 +99,15 @@ PC.SnackList.prototype.add = function (build) {
   var y = this.y + this.rows.length * this.rowH;
   var row = build(this.c, this.x, y, this.w - 6, this.rowH) || {};
   this.rows.push(row);
-  this.setScroll(this.scroll);
+  // a rebuild (tap to select) keeps where you'd scrolled: it used to jump
+  // to the top, so the second tap ("tap again = go") hit another row
+  this.setScroll(this._want || 0, true);
   return row;
 };
 PC.SnackList.prototype.clear = function () {
   this.c.removeAll(true);
   this.rows = [];
-  this.setScroll(0);
+  this.setScroll(0, true);         // _want survives: add() restores it
 };
 
 // ---------------------------------------------------------------
@@ -454,8 +457,11 @@ PC.SnackResultsScene.prototype.create = function () {
     });
   });
   var bw = Math.min(K(150), (W - K(36)) / 2);
-  PC.SnackUI.button(this, W / 2 - bw / 2 - K(6), H - K(28), bw, K(32), 'PLAY AGAIN', 0xa8e04a, function () { self.scene.start('PC_SnackStages'); });
-  PC.SnackUI.button(this, W / 2 + bw / 2 + K(6), H - K(28), bw, K(32), 'MENU', 0xf2c33c, function () { self.scene.start('PC_SnackHub'); });
+  // a steering thumb lands here 900ms after a death: arm the buttons
+  // after a beat so the results and unlocks are actually seen (v0.80.6)
+  var armAt = Date.now() + 700;
+  PC.SnackUI.button(this, W / 2 - bw / 2 - K(6), H - K(28), bw, K(32), 'PLAY AGAIN', 0xa8e04a, function () { if (Date.now() >= armAt) self.scene.start('PC_SnackStages'); });
+  PC.SnackUI.button(this, W / 2 + bw / 2 + K(6), H - K(28), bw, K(32), 'MENU', 0xf2c33c, function () { if (Date.now() >= armAt) self.scene.start('PC_SnackHub'); });
 };
 
 // ---------------------------------------------------------------
@@ -474,8 +480,13 @@ PC.SnackPause = {
     var m = Math.floor(scene.runT / 60), s = Math.floor(scene.runT % 60);
     keep(PC.ui.text(scene, W / 2, K(60), sr.stage.title + '   ' + m + ':' + (s < 10 ? '0' : '') + s + '   LV ' + scene.level,
       'caption', { color: '#cfd4e8', align: 'center' }).setOrigin(0.5).setDepth(211));
-    // the build
+    // the build. v0.80.6: on a short, wide screen (landscape: H is only
+    // ~K(312)) a single column ran under the buttons, so weapons / items /
+    // recipes sit side by side there
+    var wide = H < K(420) && W > H * 1.2;
     var y = K(80), col = Math.min(W - K(24), K(300)), x0 = W / 2 - col / 2;
+    if (wide) { col = Math.min(K(240), (W - K(24)) / 3); x0 = W / 2 - col * 1.5; }
+    var top0 = y;
     keep(PC.ui.text(scene, x0, y, 'WEAPONS', 'caption', { color: '#35d0ff' }).setDepth(211));
     y += K(14);
     scene.weapons.forEach(function (w) {
@@ -485,6 +496,7 @@ PC.SnackPause = {
       y += K(18);
     });
     y += K(6);
+    if (wide) { x0 += col; y = top0; }
     keep(PC.ui.text(scene, x0, y, 'ITEMS', 'caption', { color: '#a8e04a' }).setDepth(211));
     y += K(14);
     for (var pk in scene.passives) {
@@ -497,7 +509,9 @@ PC.SnackPause = {
     // THE RECIPE BOOK relic: which weapon + item makes which evolution
     if (PC.SnackProfile.hasRelic('recipebook')) {
       y += K(6);
-      keep(PC.ui.text(scene, x0, y, 'RECIPE BOOK  (MAX RANK 8 + ITEM + A CHEST)', 'caption', { color: '#b45ce8' }).setDepth(211));
+      if (wide) { x0 += col; y = top0; }
+      var rbT = keep(PC.ui.text(scene, x0, y, 'RECIPE BOOK  (MAX RANK 8 + ITEM + A CHEST)', 'caption', { color: '#b45ce8' }).setDepth(211));
+      PC.ui.fit(rbT, col - K(4));
       y += K(14);
       var P = PC.SnackProfile, shown = 0;
       (PC.EVOLUTIONS || []).forEach(function (rec) {

@@ -91,17 +91,33 @@ window.PC = window.PC || {};
 
   PC.game = new Phaser.Game(config);
 
-  // live re-fit on rotation / resize
+  // live re-fit on rotation / resize. v0.80.6: changing the logical size
+  // under a scene that already laid itself out pushed it off screen (the
+  // itch fullscreen button, a phone rotation). Now a menu is REBUILT at
+  // the new size; a run, a cutscene or the Story results desk (which pays
+  // TECH in create) keeps its layout letterboxed and the new size waits
+  // until that screen ends.
+  var HOLD = ['PC_Game', 'PC_Cutscene', 'PC_Results', 'PC_MapView'];
+  var holding = function () {
+    for (var i = 0; i < HOLD.length; i++) {
+      var k = HOLD[i];
+      if (PC.game.scene.isActive(k) || PC.game.scene.isPaused(k)) return true;
+    }
+    return false;
+  };
   var rt = null;
+  var applySize = function () {
+    clearTimeout(rt); rt = null;
+    var s = logicalSize();
+    if (s.w === PC.RENDER.W && s.h === PC.RENDER.H) { PC.game.scale.refresh(); return; }
+    if (holding()) { PC.game.scale.refresh(); rt = setTimeout(applySize, 1000); return; }
+    PC.RENDER.W = s.w; PC.RENDER.H = s.h;
+    PC.game.scale.setGameSize(s.w * S, s.h * S);
+    PC.game.scale.refresh();
+    PC.game.scene.getScenes(true).forEach(function (sc) { sc.scene.restart(); });
+  };
   window.addEventListener('resize', function () {
     clearTimeout(rt);
-    rt = setTimeout(function () {
-      var s = logicalSize();
-      if (s.w !== PC.RENDER.W || s.h !== PC.RENDER.H) {
-        PC.RENDER.W = s.w; PC.RENDER.H = s.h;
-        PC.game.scale.setGameSize(s.w * S, s.h * S);
-      }
-      PC.game.scale.refresh();
-    }, 120);
+    rt = setTimeout(applySize, 120);
   });
 })();

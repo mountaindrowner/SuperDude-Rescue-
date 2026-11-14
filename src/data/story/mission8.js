@@ -19,7 +19,7 @@ PC.STORY.missions.finale = {
       // seventeen floors of switchback. The crowd is the pressure; the
       // per-floor beats get authored on top of this.
       intro: [
-        { say: { speaker: 'vic', text: "Elevator's junk - of course it is. Seventeen floors, boss. On foot." } },
+        { say: { speaker: 'vic', text: "Elevator's junk. Of course it is. Seventeen floors, boss. On foot." } },
         { say: { speaker: 'kevin', text: "Steady climb, team." } },
       ],
     },

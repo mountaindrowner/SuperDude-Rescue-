@@ -125,7 +125,9 @@ PC.UpgradeScene.prototype.buildPassives = function () {
   keep(this.add.text(W / 2, this._listTop, 'TECH MAKES THE WHOLE TEAM TOUGHER', {
     fontFamily: 'monospace', fontSize: K(7) + 'px', color: '#6d6a8e', fontStyle: 'bold',
   }).setOrigin(0.5, 0));
-  var cols = 2, top = this._listTop + K(12), bottom = this._listBottom;
+  // v0.80.6: 4 columns on a short, wide screen (2 crushed the cells so
+  // the cost and rank pips printed over the names)
+  var cols = W > PC.RENDER.H * 1.2 ? 4 : 2, top = this._listTop + K(12), bottom = this._listBottom;
   var rows = Math.ceil(PC.POWERUPS.length / cols);
   var cellW = W / cols, cellH = (bottom - top) / rows;
   var cells = [];
@@ -208,27 +210,33 @@ PC.UpgradeScene.prototype.buildGear = function () {
     gearUi = { g: gg, name: gn, desc: gd, cost: gc, y: gy, h: gearH };
     listTop = gy + gearH + K(4);
   }
-  var rowH = Math.min(K(56), (bottom - listTop) / PC.ROSTER.length);
-  var top = listTop + Math.max(0, (bottom - listTop - rowH * PC.ROSTER.length) / 2);
+  // v0.80.6: two columns of heroes on a short, wide screen (one column
+  // squeezed rows to ~28px: portraits overlapped, effect lines clipped)
+  var gcols = W > PC.RENDER.H * 1.2 ? 2 : 1;
+  var nRows = Math.ceil(PC.ROSTER.length / gcols);
+  var rowH = Math.min(K(56), (bottom - listTop) / nRows);
+  var top = listTop + Math.max(0, (bottom - listTop - rowH * nRows) / 2);
+  var rw = (W - 8 - (gcols - 1) * 4) / gcols;
   PC.ROSTER.forEach(function (hero, i) {
-    var y = top + i * rowH;
+    var x0 = 4 + (i % gcols) * (rw + 4);
+    var y = top + Math.floor(i / gcols) * rowH;
     var unlocked = PC.heroUnlocked(hero.id);
     var panel = keep(self.add.graphics());
-    var portrait = keep(self.add.image(K(22), y + rowH / 2 - 2, 'atlas', 'portrait_' + hero.id).setDisplaySize(K(30), K(30)));
+    var portrait = keep(self.add.image(x0 + K(18), y + rowH / 2 - 2, 'atlas', 'portrait_' + hero.id).setDisplaySize(K(30), K(30)));
     if (!unlocked) portrait.setTint(0x241f3d).setAlpha(0.35);
-    var name = keep(self.add.text(K(42), y + K(4), '', { fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#f7f4ef', fontStyle: 'bold' }));
-    var kit = keep(self.add.text(K(42), y + K(14), '', { fontFamily: 'monospace', fontSize: K(6.5) + 'px', color: '#35d0ff' }));
-    var eff = keep(self.add.text(K(42), y + K(23), '', { fontFamily: 'monospace', fontSize: K(6) + 'px', color: '#8d8aa8', wordWrap: { width: W - K(120) } }));
+    var name = keep(self.add.text(x0 + K(38), y + K(4), '', { fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#f7f4ef', fontStyle: 'bold' }));
+    var kit = keep(self.add.text(x0 + K(38), y + K(14), '', { fontFamily: 'monospace', fontSize: K(6.5) + 'px', color: '#35d0ff' }));
+    var eff = keep(self.add.text(x0 + K(38), y + K(23), '', { fontFamily: 'monospace', fontSize: K(6) + 'px', color: '#8d8aa8', wordWrap: { width: rw - K(116) } }));
     var pips = keep(self.add.graphics());
-    var cost = keep(self.add.text(W - K(8), y + K(4), '', { fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#f2c33c', fontStyle: 'bold' }).setOrigin(1, 0));
-    var zone = keep(self.add.zone(W / 2, y + rowH / 2, W - 8, rowH - 4).setInteractive({ useHandCursor: true }));
+    var cost = keep(self.add.text(x0 + rw - K(4), y + K(4), '', { fontFamily: 'monospace', fontSize: K(8) + 'px', color: '#f2c33c', fontStyle: 'bold' }).setOrigin(1, 0));
+    var zone = keep(self.add.zone(x0 + rw / 2, y + rowH / 2, rw, rowH - 4).setInteractive({ useHandCursor: true }));
     zone.on('pointerdown', function () {
       if (!PC.heroUnlocked(hero.id)) { if (PC.audio) PC.audio.hurt(); return; }
       if (PC.audio) PC.audio.unlock();
       if (PC.GARAGE.buy(hero.id)) { if (PC.audio) PC.audio.levelup(); redraw(); }
       else if (PC.audio) PC.audio.hurt();
     });
-    rowsUi.push({ hero: hero, panel: panel, name: name, kit: kit, eff: eff, pips: pips, cost: cost, y: y, rowH: rowH });
+    rowsUi.push({ hero: hero, panel: panel, name: name, kit: kit, eff: eff, pips: pips, cost: cost, y: y, rowH: rowH, x0: x0, rw: rw });
   });
   var redraw = function () {
     var gold = PC.meta.gold();
@@ -247,7 +255,7 @@ PC.UpgradeScene.prototype.buildGear = function () {
       var rank = PC.GARAGE.rank(id), next = PC.GARAGE.nextCost(id);
       var afford = unlocked && next !== null && gold >= next;
       r.panel.clear();
-      PC.labPanel(r.panel, 4, r.y, W - 8, r.rowH - 4,
+      PC.labPanel(r.panel, r.x0, r.y, r.rw, r.rowH - 4,
         { base: unlocked ? (afford ? 0x2a2438 : 0x1f1b35) : 0x171330, edge: afford ? 0xf2c33c : 0x45356e, radius: 5 });
       r.name.setText(unlocked ? r.hero.name : '???').setColor(unlocked ? '#f7f4ef' : '#45356e');
       var kitName = (PC.KITS && PC.KITS[id]) ? PC.KITS[id].kitName : '';
@@ -258,7 +266,7 @@ PC.UpgradeScene.prototype.buildGear = function () {
       r.pips.clear();
       for (var p = 0; p < PC.GARAGE.maxRank(); p++) {
         r.pips.fillStyle(p < rank ? 0xf2c33c : 0x45356e, 1)
-          .fillRect(W - K(8) - (PC.GARAGE.maxRank() - p) * K(9), r.y + K(17), K(7), K(3));
+          .fillRect(r.x0 + r.rw - K(4) - (PC.GARAGE.maxRank() - p) * K(9), r.y + K(17), K(7), K(3));
       }
     });
     self.refreshWallet();

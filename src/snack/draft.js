@@ -123,6 +123,7 @@ PC.SnackDraft = {
       var z = scene.add.zone(x + bw / 2, y + K(10), bw, K(24)).setDepth(203).setInteractive({ useHandCursor: true });
       z.on('pointerdown', function (p, lx, ly, ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (Date.now() < (scene._cardsArmAt || 0)) return;     // a steering thumb, not a choice
         if (PC.audio) PC.audio.ui();
         if (o.id === 'reroll') { sr.rerolls--; scene._banishMode = false; scene.redrawCards(); }
         else if (o.id === 'skip') {

@@ -73,7 +73,10 @@ PC.MapViewScene.prototype.create = function () {
   // ---- the map square ----------------------------------------------
   var footer = K(34);                      // the RESUME button strip
   var strip = K(26);                       // the objective line
-  var rowH = K(13);
+  // v0.80.6: landscape puts the map LEFT and the text column RIGHT - the
+  // stacked layout ran its legend and checklist under the buttons
+  var wide = W > H * 1.2;
+  var rowH = wide ? K(11) : K(13);
   var legendH = Math.ceil(region.marks.length / 2) * rowH + K(8);
   var beatsH = mission ? (mission.objectives.length * rowH + K(22)) : 0;
   var avail = H - hdrH - footer - strip - legendH - beatsH - K(26);
@@ -84,6 +87,12 @@ PC.MapViewScene.prototype.create = function () {
   var slack = Math.max(0, avail - size);
   var ox = Math.round((W - size) / 2);
   var oy = Math.round(4 + hdrH + K(8) + slack / 2);
+  if (wide) {
+    size = Math.max(K(110), Math.min(H - hdrH - footer - K(22), W * 0.48));
+    ox = K(8); oy = Math.round(4 + hdrH + K(8));
+  }
+  var px0 = wide ? ox + size + K(10) : 6;          // the text column
+  var pw = wide ? W - px0 - K(8) : W - 12;
   var k = size / region.size;              // world px -> screen px
   function mx(wx) { return ox + wx * k; }
   function my(wy) { return oy + wy * k; }
@@ -154,7 +163,7 @@ PC.MapViewScene.prototype.create = function () {
   g.lineStyle(2, 0x6d6a8e, 0.9); g.strokeRect(ox, oy, size, size);
 
   // ---- the objective line -------------------------------------------
-  var sy = oy + size + K(6);
+  var sy = wide ? oy : oy + size + K(6);
   if (quest && mission && mission.objectives[quest.idx]) {
     var o2 = mission.objectives[quest.idx];
     var line = 'OBJECTIVE ' + (quest.idx + 1) + '/' + mission.objectives.length +
@@ -166,31 +175,31 @@ PC.MapViewScene.prototype.create = function () {
       dist = Math.round(Math.sqrt(dx * dx + dy * dy) / 32) + 'm ' + PC.compassDir(dx, dy);
     }
     var og = this.add.graphics();
-    PC.labPanel(og, 6, sy, W - 12, K(20), { base: 0x241f3d, edge: 0xf2c33c });
-    PC.ui.fit(PC.ui.text(this, K(12), sy + K(5), line, 'caption', { color: '#f2c33c' }),
-      W - K(24) - (dist ? K(52) : 0));
+    PC.labPanel(og, px0, sy, pw, K(20), { base: 0x241f3d, edge: 0xf2c33c });
+    PC.ui.fit(PC.ui.text(this, px0 + K(6), sy + K(5), line, 'caption', { color: '#f2c33c' }),
+      pw - K(12) - (dist ? K(52) : 0));
     if (dist) {
-      PC.ui.text(this, W - K(12), sy + K(5), dist, 'caption',
+      PC.ui.text(this, px0 + pw - K(6), sy + K(5), dist, 'caption',
         { color: '#a8e04a' }).setOrigin(1, 0);
     }
   } else if (game && game.freeRoam) {
     var fg = this.add.graphics();
-    PC.labPanel(fg, 6, sy, W - 12, K(20), { base: 0x241f3d, edge: 0xa8e04a });
-    PC.ui.text(this, W / 2, sy + K(5), 'WALK TO THE MISSION BOARD', 'caption',
+    PC.labPanel(fg, px0, sy, pw, K(20), { base: 0x241f3d, edge: 0xa8e04a });
+    PC.ui.text(this, px0 + pw / 2, sy + K(5), 'WALK TO THE MISSION BOARD', 'caption',
       { color: '#a8e04a', align: 'center' }).setOrigin(0.5, 0);
   } else if (mission) {
     var rg = this.add.graphics();
-    PC.labPanel(rg, 6, sy, W - 12, K(20), { base: 0x241f3d, edge: 0x6d6a8e });
-    PC.ui.text(this, W / 2, sy + K(5), mission.objectives.length + ' OBJECTIVES', 'caption',
+    PC.labPanel(rg, px0, sy, pw, K(20), { base: 0x241f3d, edge: 0x6d6a8e });
+    PC.ui.text(this, px0 + pw / 2, sy + K(5), mission.objectives.length + ' OBJECTIVES', 'caption',
       { color: '#cfd4e8', align: 'center' }).setOrigin(0.5, 0);
   }
 
   // ---- legend: two columns of numbered landmarks --------------------
   var ly = sy + K(26);
-  var colW = (W - K(20)) / 2;
+  var colW = (pw - K(8)) / 2;
   marks.forEach(function (mk, i) {
     var col = i % 2, row = Math.floor(i / 2);
-    var lx = K(10) + col * colW, yy = ly + row * rowH;
+    var lx = px0 + K(4) + col * colW, yy = ly + row * rowH;
     var lg = self.add.graphics();
     lg.fillStyle(PC.hexNum(mk.accent), i === objIdx ? 1 : 0.75);
     lg.fillRect(lx, yy + K(3), K(4), K(7));
@@ -205,17 +214,17 @@ PC.MapViewScene.prototype.create = function () {
   // ---- the beat checklist: what's done, what's now, what's coming ----
   if (mission) {
     var by2 = ly + Math.ceil(marks.length / 2) * rowH + K(8);
-    PC.ui.text(this, K(10), by2, 'MISSION', 'caption', { color: '#6d6a8e' });
+    PC.ui.text(this, px0 + K(4), by2, 'MISSION', 'caption', { color: '#6d6a8e' });
     by2 += K(12);
     mission.objectives.forEach(function (ob2, i) {
       var done = beatIdx >= 0 && i < beatIdx;
       var now = beatIdx >= 0 ? i === beatIdx : i === 0;
       var glyph = done ? '✓' : (now ? '▶' : '·');
       var col2 = done ? '#a8e04a' : (now ? '#f2c33c' : '#6d6a8e');
-      PC.ui.text(self, K(12), by2 + i * rowH, glyph, 'micro', { color: col2 });
-      PC.ui.fit(PC.ui.text(self, K(24), by2 + i * rowH,
+      PC.ui.text(self, px0 + K(6), by2 + i * rowH, glyph, 'micro', { color: col2 });
+      PC.ui.fit(PC.ui.text(self, px0 + K(18), by2 + i * rowH,
         (ob2.banner || (ob2.type || '').toUpperCase()), 'micro',
-        { color: done ? '#6d6a8e' : (now ? '#f7f4ef' : '#8f8ba8') }), W - K(36));
+        { color: done ? '#6d6a8e' : (now ? '#f7f4ef' : '#8f8ba8') }), pw - K(24));
     });
   }
 

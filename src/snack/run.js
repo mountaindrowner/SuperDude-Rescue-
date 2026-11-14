@@ -359,11 +359,13 @@ PC.SnackRun.prototype.onBossDefeated = function (b) {
   }
   scene.time.delayedCall(1100, function () {
     scene.time.timeScale = 1;
-    scene.boss = null;
-    if (scene.bossBar) scene.bossBar.clear();
+    if (scene.boss === b) {                        // never a newer boss (the reaper)
+      scene.boss = null;
+      if (scene.bossBar) scene.bossBar.clear();
+    }
     self.dropChest(b.x, b.y, 'boss', true);
     PC.SnackUnlocks.event(self, 'boss');
-    if (PC.audio) PC.audio.startMusic(self.musicSet());
+    if (PC.audio && !self.cleared) PC.audio.startMusic(self.musicSet());
   });
 };
 PC.SnackRun.prototype.musicSet = function () {
@@ -462,10 +464,22 @@ PC.SnackRun.prototype.clearStage = function () {
   var OT = PC.SNACK.OVERTIME;
   this.cleared = true;
   scene.invUntil = Math.max(scene.invUntil, scene.now + OT.CELEBRATE_SEC + 1.5);   // a grace beat
+  // a golden snack still on the field keeps its promise: its chest drops
+  // where it stood before the field is cleared (v0.80.6)
+  var pool = scene.enemies.pool;
+  for (var ei = 0; ei < pool.length; ei++) {
+    if (pool[ei].active && pool[ei].elite) this.dropChest(pool[ei].x, pool[ei].y, 'normal', !!pool[ei].chestEvo);
+  }
   scene.enemies.clearAll(scene.fx);
   var outlasted = (scene.boss && !scene.boss.dead) ? scene.boss.name : null;
+  // the boss freezes, untouchable, through the celebration: no burrow or
+  // dive to strand it invisible, no kill racing the overtime hand-off
+  if (outlasted) { scene.boss.otHold = true; scene.boss.settle(); }
   PC.SnackUnlocks.event(this, 'clear', this.stage.id);
   PC.SnackUnlocks.check(this);
+  // the stage card's CLEARED! too, not only the achievements (closing the
+  // tab in overtime used to lose it until end() committed the run)
+  PC.SnackProfile.markCleared(this.stage.id, scene.level, PC.SNACK.RUN_SEC);
   PC.SnackProfile.save();
   if (PC.audio) { PC.audio.startMusic('results'); if (PC.audio.fanfare) PC.audio.fanfare(); }
   var t1 = PC.ui.text(scene, W / 2, H * 0.3, 'YOU SURVIVED!', 'title', { color: '#a8e04a', align: 'center' })
@@ -494,17 +508,16 @@ PC.SnackRun.prototype.startOvertime = function () {
   if (this.ended || scene.dead || this.overtime) return;
   this.overtime = true; this.otT = 0; this._otGold = 0; this.run.otGold = 0;
   var b = (scene.boss && !scene.boss.dead) ? scene.boss : null;
-  if (!b) { scene.spawnBoss(this.stage.boss); b = scene.boss; }    // beat it? it's back
+  if (!b) { scene.spawnBoss(this.stage.boss, true); b = scene.boss; }    // beat it? it's back
   else if (PC.audio) PC.audio.startMusic('boss');
+  b.otHold = false;
+  b.settle();
   var baseName = PC.BOSSES[this.stage.boss] && PC.BOSSES[this.stage.boss].name || b.name;
   b.reaper = true;
   b.name = 'SUPERSIZED ' + baseName;
   b.hp = b.maxHp = 1;                               // a full bar that never drops
   b.contact = OT.CONTACT;
   b.baseS *= OT.SCALE; b.r = Math.round(b.r * OT.SCALE);
-  b.state = 'active'; b.stateT = 0; b.vuln = 0; b.guard = 1;
-  b.shots.length = 0; b.noContact = false;
-  if (b.tele) b.tele.setVisible(false);
   b.chaseSpd = this.chaseSpeed();
   var t1 = PC.ui.text(scene, W / 2, H * 0.28, 'OVERTIME!', 'title', { color: '#b45ce8', align: 'center' })
     .setOrigin(0.5).setDepth(151).setScale(0.4);
@@ -525,7 +538,10 @@ PC.SnackRun.prototype.startOvertime = function () {
 PC.SnackRun.prototype.chaseSpeed = function () {
   var OT = PC.SNACK.OVERTIME, scene = this.scene;
   var you = PC.PLAYER.SPEED * (scene.stats.spdMult || 1);
-  return you * (OT.SPEED0 + OT.RAMP * Math.floor((this.otT || 0) / OT.RAMP_EVERY));
+  // fair on every map: wading/spores slow it as they slow you, and the
+  // maze maps (it floats through walls, you can't) start it slower
+  var zone = (scene._zone && scene._zone.slow) || 1;
+  return you * zone * (this.stage.otSpeed || 1) * (OT.SPEED0 + OT.RAMP * Math.floor((this.otT || 0) / OT.RAMP_EVERY));
 };
 
 PC.SnackRun.prototype.updateOvertime = function (dt) {

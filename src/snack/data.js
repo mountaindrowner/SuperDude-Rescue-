@@ -19,7 +19,12 @@ PC.SNACK = {
   PASSIVE_SLOTS: 6,           // [VS] six passives
   WEAPON_MAX: 8,              // [VS] base weapons have eight ranks
   EVO_CHEST_FROM_SEC: 300,    // [TUNABLE] evolution chests from 5:00 (VS 10:00, halved)
-  GEM_VALUE: 4.0,             // [TUNABLE] XP per gem point, set by the balance bot (tools/snack_bot.js)
+  GEM_VALUE: 3.0,             // [TUNABLE] XP per gem point. v0.80.6: 4.0 -> 3.0 - once gems stopped
+                              // orbiting uncollected (v0.80.2) first runs hit LV 21-41 and the stage
+                              // gates flew open; the career bot now shows the intended pace
+  PRICE_SCALE: 0.5,           // [TUNABLE] v0.80.6: PowerUp prices (base AND the 1.1^n fee) x this.
+                              // [VS] prices assume VS-sized gold; 15-min kid runs bank ~130, so the
+                              // shop stalled after the early achievement gold (10 ranks at run 10).
   COIN_ODDS: 0.05,            // [TUNABLE] a regular pop rarely drops a coin (gold is not a kill salary)
   CRATE_EVERY: 16,            // [TUNABLE] seconds between breakables (template 20-45s; kids get more)
   FOURTH_CARD_PER_LUCK: 0.5,  // [TUNABLE] chance of a 4th draft card per +100% luck
@@ -84,6 +89,8 @@ PC.SNACK.OVERTIME = {
   RAMP_EVERY: 5,
   GOLD: 5,              // bonus gold every GOLD_EVERY seconds survived
   GOLD_EVERY: 5,
+  // per stage `otSpeed` (STAGES below): the maze maps start it slower,
+  // since it floats through walls and you can't [TUNABLE]
   CONTACT: 9999,        // one touch = down (AMAZING GRACE still saves once)
   SCALE: 1.45,          // how much bigger it gets
 };
@@ -115,17 +122,17 @@ PC.SNACK.STAGES = [
     mods: { enemyHp: 1.0, gold: 1.0, xp: 1.0 }, gate: null },
   { id: 'park', title: 'ADVENTURE PARK', map: 'park', roster: ['apple', 'peeler', 'tomato', 'banana', 'melon'],
     boss: 'broccolisk', shape: 'WINDING PATHS', blurb: 'Trees, ponds and very rude produce.',
-    mods: { enemyHp: 1.1, gold: 1.15, xp: 1.1 }, gate: { stage: 'street', level: 20 },
+    mods: { enemyHp: 1.1, gold: 1.15, xp: 1.1 }, otSpeed: 0.92, gate: { stage: 'street', level: 20 },
     relic: { id: 'recipebook', landmark: 'carousel' } },
   { id: 'suburbs', title: 'SWEET SUBURBS', map: 'suburbs', roster: ['donut', 'chipbit', 'cupcake', 'frosting', 'golemite'],
     boss: 'cakeColossus', shape: 'CURVY STREETS', blurb: 'Cul-de-sacs buried in frosting.',
-    mods: { enemyHp: 1.2, gold: 1.3, xp: 1.2 }, gate: { stage: 'park', level: 30 } },
+    mods: { enemyHp: 1.2, gold: 1.3, xp: 1.2 }, otSpeed: 0.95, gate: { stage: 'park', level: 30 } },
   { id: 'labs', title: 'SUPER DUDE LABS', map: 'labs', roster: ['zipper', 'sodacan', 'chipbag', 'menace', 'burger'],
     boss: 'vendingBehemoth', shape: 'FACTORY MAZE', blurb: 'Pipes, yards and mutated junk.',
-    mods: { enemyHp: 1.32, gold: 1.45, xp: 1.3 }, gate: { stage: 'suburbs', level: 40 } },
+    mods: { enemyHp: 1.32, gold: 1.45, xp: 1.3 }, otSpeed: 0.85, gate: { stage: 'suburbs', level: 40 } },
   { id: 'underground', title: 'THE UNDERGROUND', map: 'sewers', roster: ['blob', 'drip', 'eggy', 'moldy', 'heap'],
     boss: 'gloopKing', shape: 'TUNNELS', blurb: 'Dark tunnels and the stickiest crowd yet.',
-    mods: { enemyHp: 1.45, gold: 1.6, xp: 1.4 }, gate: { stage: 'labs', level: 50 } },
+    mods: { enemyHp: 1.45, gold: 1.6, xp: 1.4 }, otSpeed: 0.85, gate: { stage: 'labs', level: 50 } },
 ];
 PC.SNACK.stageById = function (id) {
   for (var i = 0; i < PC.SNACK.STAGES.length; i++) if (PC.SNACK.STAGES[i].id === id) return PC.SNACK.STAGES[i];

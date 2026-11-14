@@ -33,7 +33,7 @@ PC.STORY.missions.stage7 = {
         { at: 'reservoir' },
       ],
       intro: [
-        { say: { speaker: 'vic', text: "Pump Works are offline, boss. Three valves across the tunnels - stand on each one and CRANK until the flow catches. The goo will not love the noise." } },
+        { say: { speaker: 'vic', text: "Pump Works are offline, boss. Three valves across the tunnels. Stand on each one and CRANK until the flow catches. The goo will not love the noise." } },
       ],
       done: [
         { say: { speaker: 'nayah', text: "Pumps are singing! Whatever you hear next, that gurgling? That's not the pumps." } },
@@ -43,7 +43,7 @@ PC.STORY.missions.stage7 = {
       type: 'reach', at: 'catwalk', banner: 'SURVIVE THE SURGE',
       side: 'south',                    // the far side: cross top to bottom
       intro: [
-        { say: { speaker: 'vic', text: "Restarting the flow woke the whole system - a sludge surge is coming through the Catwalk Maze. Cross it. Do not stop." } },
+        { say: { speaker: 'vic', text: "Restarting the flow woke the whole system. A sludge surge is coming through the Catwalk Maze. Cross it. Do not stop." } },
         { say: { speaker: 'nayah', text: "RUN THE PLANKS, SUPER DUDE! WOOO!" } },
       ],
       done: [
@@ -66,7 +66,7 @@ PC.STORY.missions.stage7 = {
         { say: { speaker: 'nayah', text: "That climb up the Tower? Seventeen floors of nope. Totally my thing. I'm in." } },
         { say: { speaker: 'danny', text: "That's everyone. Whole team, back together." } },
         { action: 'chant' },
-        { say: { speaker: 'vic', text: "Five signals, five rescues, zero disasters left - except the big one. The Tower's waiting, boss." } },
+        { say: { speaker: 'vic', text: "Four signals, four rescues, zero disasters left. Except the big one. The Tower's waiting, boss." } },
       ],
     },
   ],

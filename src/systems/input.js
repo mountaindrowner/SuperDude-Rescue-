@@ -41,6 +41,13 @@ PC.MoveInput = function (scene) {
   }
   scene.input.on('pointerup', release);
   scene.input.on('pointerupoutside', release);
+  // v0.80.6: a PAUSED scene never hears the pointerup, so steering with
+  // the mouse held into the map / a store left the hero walking on alone
+  // after it closed. Drop the stick whenever the run pauses or resumes.
+  var drop = function () { release({ id: self._ptrId }); };
+  scene.events.on('pause', drop);
+  scene.events.on('resume', drop);
+  scene.events.once('shutdown', function () { scene.events.off('pause', drop); scene.events.off('resume', drop); });
 };
 
 PC.MoveInput.prototype._updateTouch = function (p) {

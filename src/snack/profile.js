@@ -39,10 +39,14 @@ PC.SnackProfile = (function () {
     };
   }
   // fill any field a newer build added, so old saves never lose money or unlocks
+  // v0.80.6: a field of the WRONG TYPE (corrupt/hand-edited save) is
+  // reset too - one `life: null` used to throw on every load and lock
+  // Snack Attack out entirely
+  function kind(v) { return v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v; }
   function migrate(d) {
     var f = fresh(), k;
-    for (k in f) if (d[k] === undefined) d[k] = f[k];
-    for (k in f.life) if (d.life[k] === undefined) d.life[k] = f.life[k];
+    for (k in f) if (d[k] === undefined || (f[k] !== null && kind(d[k]) !== kind(f[k]))) d[k] = f[k];
+    for (k in f.life) if (d.life[k] === undefined || kind(d.life[k]) !== kind(f.life[k])) d.life[k] = f.life[k];
     for (k in PC.SNACK.WEAPONS) {
       if (PC.SNACK.WEAPONS[k].start && d.weapons.indexOf(k) < 0) d.weapons.push(k);
     }
@@ -52,7 +56,8 @@ PC.SnackProfile = (function () {
   function load() {
     var d = null;
     try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
-    data = (d && typeof d === 'object' && d.schemaVersion) ? migrate(d) : fresh();
+    try { data = (d && typeof d === 'object' && d.schemaVersion) ? migrate(d) : fresh(); }
+    catch (e) { data = fresh(); }
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
@@ -105,7 +110,7 @@ PC.SnackProfile = (function () {
       if (own >= def.max) return null;
       var total = P.totalRanks();
       var fee = total === 0 ? 0 : Math.floor(20 * Math.pow(1.1, total));
-      return def.price * (1 + own) + fee;
+      return Math.round((def.price * (1 + own) + fee) * (PC.SNACK.PRICE_SCALE || 1));
     },
     buyPowerup: function (id) {
       var d = P.get(), cost = P.powerupCost(id);
@@ -164,6 +169,14 @@ PC.SnackProfile = (function () {
     },
 
     // end of run: count it ONCE per run id, keep records
+    // the 15:00 clear writes the stage card on the spot (v0.80.6); the
+    // run's own commit later only raises the bests
+    markCleared: function (stageId, level, t) {
+      var d = P.get();
+      var rec = d.records[stageId] || (d.records[stageId] = { level: 0, t: 0, cleared: false });
+      rec.cleared = true; rec.level = Math.max(rec.level, level || 0); rec.t = Math.max(rec.t, Math.floor(t || 0));
+      save();
+    },
     commitRun: function (run) {
       var d = P.get();
       if (d.lastRunId === run.id) return false;
