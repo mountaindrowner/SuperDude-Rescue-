@@ -12,6 +12,64 @@
 
 ## WHERE WE ARE (latest first)
 
+- **2026-11-14 - v0.80.6: the extensive sweep** (Mark: "extensive bug sweep,
+  lint sweep... make sure it feels fair, progresses well, not too much too
+  soon"). Strict ES5 lint (clean: only dead locals + harmless per-branch
+  redeclares), 3 code reviews (UI/input/saves, world/story content, recent
+  changes + Snack data), Snack CAREER bots (a kid's progression: newest
+  stage, rotate owned heroes, buy cheapest; 6 careers x 14-25 runs), and an
+  HONEST Story pilot (A* walking, no teleport, takes damage, retries).
+  * **Progression (Snack) - the big fixes:**
+    - Stage HP was a cliff: each district's roster is already tougher, and
+      `enemyHp` 1.0/1.1/1.2/1.32/1.45 stacked on top - effective HP from
+      minute 0 was 32/37/47/75/70 (Labs 2.3x Main Street). Careers died in
+      the Labs 15-21 runs straight. Now 1.0/1.1/1.1/0.85/1.15 = a ramp
+      ~1.0/1.15/1.35/1.5/1.7x.
+    - XP: `GEM_VALUE` 4 -> 3. Once gems stopped orbiting uncollected
+      (v0.80.2) first runs hit LV 21-41 and gates flew open.
+    - Shop: `PRICE_SCALE` 0.5 on PowerUps (base AND the 1.1^n fee). VS
+      prices assume VS gold; our runs bank ~130, so the shop stalled at
+      ~10 ranks by run 10 / 13 by run 20 (sim). Now ~16 / ~20 / 27 at 40.
+    - Unlock flood: hero signatures 5 -> 8 min (always landed with Survive
+      5), Pop 100 -> 250. Run 1 still gives 7-15 on a strong run (VS-like).
+    - After (careers E/F): Park run 1-3, Suburbs run 4-5, Labs run 5-7,
+      Underground ~run 8; Labs runs LV 29-59 and 100-600 gold; steady buys.
+  * **Overtime hand-off (review):** the boss holds untouchable + scriptless
+    through the 2.6s celebration, then `Boss.settle()` makes the reaper
+    visible/grounded with puddles/shots cleared (a burrowed Broccolisk or
+    dived Gloop King stayed INVISIBLE; Cake froze mid-leap); a late boss
+    kill can't delete the reaper; quiet respawn (no APPEARS overlap), no
+    fake damage numbers; AMAZING GRACE knocks the reaper 420px back; chase
+    speed follows zone slows and `stage.otSpeed` (maze maps 0.85); live
+    golden snacks drop their chest at 15:00; `markCleared` writes the stage
+    card at 15:00.
+  * **UI/input/saves:** resize/rotation/itch-fullscreen rebuilds menus (runs,
+    cutscenes, Story results and the map letterbox until they end; the title
+    skips its intro on a rebuild); Sal's Corner Store prices in TECH (it
+    charges TECH) and the door prompts name the right currency; the hidden
+    door button no longer eats joystick/dialogue taps in every mission;
+    Snack lists keep scroll on tap (landscape picked the wrong stage);
+    landscape layouts for the Snack pause, district map, Upgrade Station and
+    Story results; tab-hidden music pause on EVERY screen (audio.js);
+    steering taps can't pick level-up cards (450ms) or results buttons
+    (700ms); the options slider releases off-canvas; the joystick drops on
+    pause/resume; rescued heroes and gold survive blocked storage; a corrupt
+    Snack save field resets instead of locking Snack Attack out.
+  * **World/story:** enemies no longer spawn inside rock (Tower/Sewers snap
+    to carved floor); Labs forklifts filed in every chunk they overlap;
+    Carlos's cage on open floor; stage 5 kid lines play 1st/2nd/3rd
+    (`linesInOrder`); "four signals" (was five); no spaced-hyphen dashes.
+  * **Story fairness (honest pilot, partial - a container restart cut it):**
+    stage 1 won 3:47 (min HP 34), stage 2 won 2:44 (min HP 22), stage 3
+    (Broccolisk) 2 deaths then a win at 2 HP - the first real spike; losses
+    still pay TECH. Every objective on every map is reachable on foot
+    except the Tower climb (floors). Central spawn sits in a footprint
+    (pushed out on frame 1; harmless).
+  * **Tools:** the career bot and honest pilot live in the scratchpad (not
+    committed); `tools/snack_bot.js` / `tools/story_bot.js` unchanged.
+  * Acceptance **74/74** (overtime hand-off, corrupt save, door zone, list
+    scroll + store currency added).
+
 - **2026-11-13 - v0.80.5: music stacking fixed** (Mark: "in the beginning it
   plays like 2 or 3 songs").
   * **Cause:** `PC.audio.startMusic` fades the old track by lowering its
