@@ -14,6 +14,18 @@ heroes, snacks, art and story. Numbers and rules only; nothing copied.
 
 Legend: SAME = already matches, CLOSE = small gap, DIFF = changes the feel.
 
+## Status (v0.81.2)
+
+Phases 1-6 are DONE; every value below lives in `src/snack/tuning.js`:
+1. tuning file (v0.80.7)  2. waves: on-screen minimum + capped trickle,
+stepped toughness, no per-minute creep, 14 elites with HP x level (v0.80.8)
+3. VS level walls +600/+2400 with the x2 growth bridge (v0.80.9)
+4. items at VS values, 5 levels, LEFTOVERS = Hollow Heart, new WARM SOUP =
+Pummarola (v0.81.0)  5. real per-weapon steps for levels 6-8, level-up
+fires the weapon, evolutions x1.5 (v0.81.1)  6. hero growth every 10
+levels (v0.81.2). Phase 7 (economy + overall retune) is being measured.
+The tables below are the ORIGINAL gap analysis, kept for reference.
+
 ## 1. Run structure and enemies (biggest feel gap)
 
 | System | VS | Snack Attack now | Verdict |
